@@ -16,7 +16,7 @@
 site_name = "canVODpy"
 site_description = "GNSS Transmissometry (GNSS-T) analysis framework for Python"
 site_author = "Nicolas Bader"
-site_url = "https://nfb2021.github.io/canvodpy/"
+site_url = "https://canvodpy.eu/"
 copyright = "Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose."
 
 repo_url = "https://github.com/nfb2021/canvodpy"

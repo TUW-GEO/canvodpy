@@ -43,7 +43,7 @@ vod_ds = TauOmegaZerothOrder.from_datasets(
 
 ## Documentation
 
-[Full documentation](https://nfb2021.github.io/canvodpy/packages/vod/overview/)
+[Full documentation](https://canvodpy.eu/packages/vod/overview/)
 
 
 ## License

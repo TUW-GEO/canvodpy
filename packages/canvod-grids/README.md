@@ -18,7 +18,7 @@ correctness test suite (solid-angle sum, no below-horizon cells, no seam
 artifacts, structural invariants) — but `equal_area` remains the only type
 recommended for production VOD analysis; `equal_angle`/`equirectangular` are
 zenith-biased by design, and the others trade strict equal-area for other
-properties (see the [package docs](https://nfb2021.github.io/canvodpy/packages/grids/overview/)
+properties (see the [package docs](https://canvodpy.eu/packages/grids/overview/)
 for the per-type tradeoffs).
 
 ## Installation
@@ -50,7 +50,7 @@ per_cell = agg.aggregate(ds, variable="vod", method="median")
 
 ## Documentation
 
-[Full documentation](https://nfb2021.github.io/canvodpy/packages/grids/overview/)
+[Full documentation](https://canvodpy.eu/packages/grids/overview/)
 
 ## Development
 

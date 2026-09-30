@@ -256,7 +256,7 @@ functions — not `canvodpy.functional` directly. `FluentWorkflow`, the flat `pr
 deprecated (`DeprecationWarning` on use) — kept working, no longer taught;
 `VODWorkflow` additionally has a broken augmentation step and shouldn't be
 used regardless. See the
-[API Levels guide](https://nfb2021.github.io/canvodpy/guides/api-levels/) for details.
+[API Levels guide](https://canvodpy.eu/guides/api-levels/) for details.
 
 ## Development Setup
 
@@ -291,14 +291,14 @@ just notebooks           # List available notebooks
 
 ## Documentation
 
-Full documentation is available at **[nfb2021.github.io/canvodpy](https://nfb2021.github.io/canvodpy/)**.
+Full documentation is available at **[canvodpy.eu](https://canvodpy.eu/)**.
 
 Key pages:
 
-- [Getting Started](https://nfb2021.github.io/canvodpy/guides/getting-started/)
-- [Architecture & Design Patterns](https://nfb2021.github.io/canvodpy/guides/architecture-design/)
-- [API Levels](https://nfb2021.github.io/canvodpy/guides/api-levels/)
-- [Configuration Guide](https://nfb2021.github.io/canvodpy/guides/configuration/)
+- [Getting Started](https://canvodpy.eu/guides/getting-started/)
+- [Architecture & Design Patterns](https://canvodpy.eu/guides/architecture-design/)
+- [API Levels](https://canvodpy.eu/guides/api-levels/)
+- [Configuration Guide](https://canvodpy.eu/guides/configuration/)
 - [Contributing](CONTRIBUTING.md)
 
 ## Project Structure
@@ -371,7 +371,7 @@ First-time contributors: add yourself to [CONTRIBUTORS.md](CONTRIBUTORS.md) in y
 Licensed under the [Apache License 2.0](LICENSE).
 
 This software is provided "as is" without warranty of any kind. See the
-[Impressum](https://nfb2021.github.io/canvodpy/impressum/) for full legal notice
+[Impressum](https://canvodpy.eu/impressum/) for full legal notice
 and AI disclosure.
 
 ## Affiliation
