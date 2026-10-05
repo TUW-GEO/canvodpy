@@ -153,6 +153,9 @@ Icechunk is a cloud-native transactional storage format for multidimensional arr
     daily commits land mid-chunk and force a read-modify-write of the whole
     chunk instead of a clean append.
 
+    `chunk_strategies` has exactly two keys, `gnss_store` and `vod_store`;
+    a store left out keeps its default, and any other key fails validation.
+
     Set `chunk_strategies` in `canvod-settings.yaml` to match **before** a
     group's first-ever write — chunk shape is fixed at creation and does not
     change on later config edits. An existing store needs an explicit

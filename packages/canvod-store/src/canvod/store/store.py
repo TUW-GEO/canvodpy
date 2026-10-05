@@ -446,12 +446,15 @@ class MyIcechunkStore:
         self.compression_level = compression_level or ic_cfg.compression_level
         self.compression_algorithm = icechunk.CompressionAlgorithm.Zstd
 
-        # Chunk strategy
-        chunk_strategies = {
-            k: {"epoch": v.epoch, "sid": v.sid}
-            for k, v in ic_cfg.chunk_strategies.items()
-        }
-        self.chunk_strategy = chunk_strategies.get(store_type, {})
+        # Chunk strategy: one per store type, no silent fallback to no chunking
+        if store_type not in type(ic_cfg.chunk_strategies).model_fields:
+            msg = (
+                f"Unknown store_type {store_type!r}; expected one of "
+                f"{list(type(ic_cfg.chunk_strategies).model_fields)}"
+            )
+            raise ValueError(msg)
+        strategy = getattr(ic_cfg.chunk_strategies, store_type)
+        self.chunk_strategy = {"epoch": strategy.epoch, "sid": strategy.sid}
 
         # Storage config cached for metadata rows
         self._gnss_store_strategy = _gnss_store_strategy

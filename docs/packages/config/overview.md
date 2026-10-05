@@ -158,7 +158,10 @@ n_cores = config.processing.params.n_max_threads
 
     All values are validated by Pydantic models. Unknown keys (typos), invalid
     emails and out-of-range parameters produce structured error messages
-    immediately — not at runtime hours into a long processing run.
+    immediately — not at runtime hours into a long processing run. An
+    unknown key's error names the closest allowed key ("Did you mean
+    'vod_store'?") and lists the allowed keys; it is never corrected
+    automatically.
 
 ---
 

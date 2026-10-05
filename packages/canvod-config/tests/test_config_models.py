@@ -681,6 +681,55 @@ class TestCompressionConfig:
             CompressionConfig(complevel=10)
 
 
+class TestChunkStrategies:
+    def test_defaults_for_both_stores(self):
+        ic = IcechunkConfig()
+        assert ic.chunk_strategies.gnss_store == ChunkStrategy(epoch=17280, sid=-1)
+        assert ic.chunk_strategies.vod_store == ChunkStrategy(epoch=17280, sid=-1)
+
+    def test_one_store_set_keeps_the_other_default(self):
+        ic = IcechunkConfig(chunk_strategies={"gnss_store": {"epoch": 720}})
+        assert ic.chunk_strategies.gnss_store.epoch == 720
+        assert ic.chunk_strategies.vod_store.epoch == 17280
+
+    def test_misspelled_store_rejected_with_suggestion(self):
+        with pytest.raises(ValidationError) as exc:
+            IcechunkConfig(chunk_strategies={"vod_stores": {"epoch": 720}})
+        msg = str(exc.value)
+        assert "chunk_strategies.vod_stores" in msg
+        assert "Did you mean 'vod_store'?" in msg
+        assert "Allowed keys: gnss_store, vod_store" in msg
+
+
+class TestUnknownKeySuggestion:
+    """Every settings model names the closest allowed key for a typo."""
+
+    def test_nested_typo_names_location_and_match(self):
+        with pytest.raises(ValidationError) as exc:
+            IcechunkConfig(chunk_strategies={"gnss_store": {"epok": 720}})
+        err = exc.value.errors()[0]
+        assert err["loc"] == ("chunk_strategies", "gnss_store", "epok")
+        assert err["type"] == "extra_forbidden"
+        assert "Did you mean 'epoch'?" in err["msg"]
+
+    def test_no_close_match_lists_allowed_keys_only(self):
+        with pytest.raises(ValidationError) as exc:
+            ChunkStrategy(xyz=1)
+        msg = exc.value.errors()[0]["msg"]
+        assert "Did you mean" not in msg
+        assert "Allowed keys: epoch, sid" in msg
+
+    def test_other_errors_reported_alongside(self):
+        with pytest.raises(ValidationError) as exc:
+            IcechunkConfig(compression_level=99, compresion_level=3)
+        types = {e["type"] for e in exc.value.errors()}
+        assert types == {"less_than_equal", "extra_forbidden"}
+
+    def test_typo_not_corrected(self):
+        with pytest.raises(ValidationError):
+            ChunkStrategy(epochs=720)
+
+
 class TestChunkStrategy:
     def test_defaults(self):
         cs = ChunkStrategy()

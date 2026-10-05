@@ -15,6 +15,7 @@ import X`` keeps working exactly as it did when this was a single file.
 from .aux_data import AuxDataConfig
 from .base import _StrictModel
 from .compression import (
+    ChunkStrategies,
     ChunkStrategy,
     CompressionConfig,
     IcechunkConfig,
@@ -60,6 +61,7 @@ __all__ = [
     "PREPROCESSING_RECORD_VERSION",
     "AuxDataConfig",
     "CanvodConfig",
+    "ChunkStrategies",
     "ChunkStrategy",
     "CompressionConfig",
     "CredentialsConfig",

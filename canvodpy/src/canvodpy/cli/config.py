@@ -553,7 +553,7 @@ def _show_processing(config: ProcessingConfig) -> None:
     )
     console.print(f"  Inline threshold:  {ic.inline_chunk_threshold_bytes} bytes")
     console.print(f"  Get concurrency:   {ic.get_partial_values_concurrency}")
-    for store_name, strategy in ic.chunk_strategies.items():
+    for store_name, strategy in ic.chunk_strategies:
         console.print(
             f"  Chunks ({store_name}): epoch={strategy.epoch}, sid={strategy.sid}"
         )

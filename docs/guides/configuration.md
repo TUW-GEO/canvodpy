@@ -94,7 +94,13 @@ config/
 
 Only the fields you want to change need to be written — everything else falls back to package
 defaults. Unknown field names are rejected throughout the config tree (`extra="forbid"`),
-so typos surface at load time rather than causing silent misconfiguration.
+so typos surface at load time rather than causing silent misconfiguration. The error names
+the closest allowed key and lists all allowed keys; nothing is corrected automatically:
+
+```text
+processing.icechunk.chunk_strategies.vod_stores
+  Unknown key 'vod_stores'. Did you mean 'vod_store'? Allowed keys: gnss_store, vod_store
+```
 
 Two environment variables control *where* configuration is read from:
 

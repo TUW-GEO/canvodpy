@@ -44,6 +44,29 @@ class ChunkStrategy(_StrictModel):
     )
 
 
+class ChunkStrategies(_StrictModel):
+    """Chunking strategy per store type.
+
+    Notes
+    -----
+    This is a Pydantic model for configuration validation. A fixed field per
+    store type, so a misspelled store type fails validation instead of
+    leaving that store unchunked.
+    """
+
+    # 17280 = 86400 s/day / 5 s sampling interval (the reference site's
+    # actual cadence): append_to_group() commits once per day, so chunks
+    # match one day exactly. Sites sampling at a different rate must override.
+    gnss_store: ChunkStrategy = Field(
+        default_factory=lambda: ChunkStrategy(epoch=17280, sid=-1),
+        description="Chunking of the GNSS store",
+    )
+    vod_store: ChunkStrategy = Field(
+        default_factory=lambda: ChunkStrategy(epoch=17280, sid=-1),
+        description="Chunking of the VOD store",
+    )
+
+
 class IcechunkConfig(_StrictModel):
     """Icechunk storage configuration.
 
@@ -84,16 +107,7 @@ class IcechunkConfig(_StrictModel):
         ge=0,
         description="Maximum bytes of chunk data to cache in memory (None = icechunk default)",
     )
-    chunk_strategies: dict[str, ChunkStrategy] = Field(
-        default_factory=lambda: {
-            # 34560 accidentally represented 2 days of epochs — append_to_group()
-            # commits once per day, so chunks should match one day exactly.
-            # 17280 = 86400 s/day / 5 s sampling interval (the reference site's
-            # actual cadence). Sites sampling at a different rate must override.
-            "gnss_store": ChunkStrategy(epoch=17280, sid=-1),
-            "vod_store": ChunkStrategy(epoch=17280, sid=-1),
-        },
-    )
+    chunk_strategies: ChunkStrategies = Field(default_factory=ChunkStrategies)
     manifest_preload_enabled: bool = Field(
         False,
         description="Enable manifest preloading for faster chunk access",

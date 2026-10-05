@@ -12,9 +12,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import pytest
 import xarray as xr
 
-from canvod.store import create_vod_store
+from canvod.store import MyIcechunkStore, create_vod_store
 
 
 def _ds(n_epoch: int, n_sid: int) -> xr.Dataset:
@@ -36,6 +37,11 @@ def test_no_chunk_strategy_configured_returns_empty(tmp_path: Path) -> None:
     store = create_vod_store(tmp_path / "site" / "vod_store")
     store.chunk_strategy = {}
     assert store.chunk_encoding_for(_ds(10, 5)) == {}
+
+
+def test_unknown_store_type_refused(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="Unknown store_type 'vod'"):
+        MyIcechunkStore(tmp_path / "site" / "vod_store", store_type="vod")
 
 
 def test_configured_dim_uses_config_size_not_write_size(tmp_path: Path) -> None:
