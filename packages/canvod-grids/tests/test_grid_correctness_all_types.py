@@ -270,3 +270,19 @@ class TestRingGridCoverage:
         np.testing.assert_allclose(
             grid.get_solid_angles().sum(), 2 * np.pi * (1 - np.cos(np.deg2rad(80)))
         )
+
+    @pytest.mark.parametrize(
+        "grid_type", ["equal_area", "equal_angle", "equirectangular"]
+    )
+    @pytest.mark.parametrize("resolution", [3.75, 7.0, 25.0, 30.0])
+    def test_sectors_end_at_2pi_with_centres_inside(
+        self, grid_type: str, resolution: float
+    ) -> None:
+        # 7° and 25° do not divide 360°; at 3.75° and 30° np.arange rounding
+        # used to add a zero-width equirectangular sector at 2*pi.
+        grid = create_hemigrid(grid_type, angular_resolution=resolution).grid
+        assert grid["phi_max"].max() == pytest.approx(2 * np.pi)
+        assert (grid["phi_max"] - grid["phi_min"]).min() > 1e-9
+        assert (
+            (grid["phi"] >= grid["phi_min"]) & (grid["phi"] <= grid["phi_max"])
+        ).all()
