@@ -23,6 +23,7 @@ import structlog
 import xarray as xr
 
 from canvod.grids._internal.cell_lookup import cell_lookup
+from canvod.store_metadata.io import commit_with_rebase
 from canvod.utils.tools import deprecated
 
 if TYPE_CHECKING:
@@ -542,7 +543,7 @@ def store_grid(
         from icechunk.xarray import to_icechunk
 
         to_icechunk(ds_grid, session, group=group_path, mode="w")
-        snapshot_id = session.commit(f"Stored {grid_name} grid structure")
+        snapshot_id = commit_with_rebase(session, f"Stored {grid_name} grid structure")
 
     print(f"  ✓ Stored to '{group_path}'")
     print(f"  ✓ Snapshot: {snapshot_id[:8]}...")
@@ -597,8 +598,9 @@ def store_dataset_with_cell_ids(
         from icechunk.xarray import to_icechunk
 
         to_icechunk(ds, session, group=group_name, mode="w")
-        snapshot_id = session.commit(
-            f"Stored {group_name} with cell-ID mappings ({', '.join(cell_id_vars)})"
+        snapshot_id = commit_with_rebase(
+            session,
+            f"Stored {group_name} with cell-ID mappings ({', '.join(cell_id_vars)})",
         )
 
     print(f"  ✓ Snapshot: {snapshot_id[:8]}...")

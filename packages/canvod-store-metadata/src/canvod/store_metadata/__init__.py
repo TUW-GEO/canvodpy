@@ -18,6 +18,7 @@ from .inventory import (
 )
 from .io import (
     apply_updates,
+    commit_with_rebase,
     metadata_exists,
     read_metadata,
     update_metadata,
@@ -33,6 +34,7 @@ __all__ = [
     "apply_updates",
     "collect_config_snapshot",
     "collect_metadata",
+    "commit_with_rebase",
     "extract_env",
     "format_metadata",
     "metadata_exists",

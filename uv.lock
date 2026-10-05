@@ -283,6 +283,7 @@ version = "0.4.0"
 source = { editable = "packages/canvod-grids" }
 dependencies = [
     { name = "canvod-store" },
+    { name = "canvod-store-metadata" },
     { name = "canvod-utils" },
     { name = "dask" },
     { name = "loguru" },
@@ -308,6 +309,7 @@ optional = [
 [package.metadata]
 requires-dist = [
     { name = "canvod-store", editable = "packages/canvod-store" },
+    { name = "canvod-store-metadata", editable = "packages/canvod-store-metadata" },
     { name = "canvod-utils", editable = "packages/canvod-utils" },
     { name = "dask", specifier = ">=2024.1.0" },
     { name = "loguru", specifier = ">=0.7.0" },
@@ -446,6 +448,7 @@ dependencies = [
     { name = "canvod-config" },
     { name = "canvod-grids" },
     { name = "canvod-readers" },
+    { name = "canvod-store-metadata" },
     { name = "canvod-utils" },
     { name = "canvod-vod" },
     { name = "icechunk" },
@@ -470,6 +473,7 @@ requires-dist = [
     { name = "canvod-config", editable = "packages/canvod-config" },
     { name = "canvod-grids", editable = "packages/canvod-grids" },
     { name = "canvod-readers", editable = "packages/canvod-readers" },
+    { name = "canvod-store-metadata", editable = "packages/canvod-store-metadata" },
     { name = "canvod-utils", editable = "packages/canvod-utils" },
     { name = "canvod-vod", editable = "packages/canvod-vod" },
     { name = "icechunk", specifier = ">=2.0.0" },

@@ -63,6 +63,7 @@ from canvod.store import GnssResearchSite, scoped_zarr_concurrency
 from canvod.store.prepare import prepare_write
 from canvod.store.store import _with_run_id
 from canvod.store.time_encoding import with_time_units
+from canvod.store_metadata.io import commit_with_rebase
 from canvod.utils.logging import get_run_id, set_run_id, stage_timer
 from canvod.utils.tools import (
     _worker_init,
@@ -2704,7 +2705,9 @@ class RinexDataProcessor:
                             rows=[row],
                             session=prepass_session,
                         )
-                    prepass_snapshot_id = prepass_session.commit(prepass_msg)
+                    prepass_snapshot_id = commit_with_rebase(
+                        prepass_session, prepass_msg
+                    )
                     log.info(
                         "Committed pre-pass %s (snapshot: %s...)",
                         yyyydoy,
@@ -2820,8 +2823,8 @@ class RinexDataProcessor:
                     }
                     agg_metadata[f"group__{name}"] = json.dumps(group_meta)
 
-                batch_snapshot_id = base_session.commit(
-                    commit_msg, metadata=agg_metadata
+                batch_snapshot_id = commit_with_rebase(
+                    base_session, commit_msg, metadata=agg_metadata
                 )
                 log.info(
                     "Committed batch %s (snapshot: %s...)",
@@ -3398,7 +3401,9 @@ class RinexDataProcessor:
                         for r in metadata_records
                         if r.get("canonical_name")
                     )
-                snapshot_id = session.commit(commit_msg, metadata=_commit_meta)
+                snapshot_id = commit_with_rebase(
+                    session, commit_msg, metadata=_commit_meta
+                )
                 t8 = time.time()
                 log.info(
                     "Commit complete in %.2fs (snapshot: %s...)",
@@ -4868,7 +4873,9 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             group=receiver_name,
             mode="w",
         )
-        session.commit(_with_run_id(f"Initialize {receiver_name} structure"))
+        commit_with_rebase(
+            session, _with_run_id(f"Initialize {receiver_name} structure")
+        )
 
         # STEP 2: Now do cooperative distributed writes
         session = repo.writable_session("main")
@@ -4932,8 +4939,8 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
 
         # Merge all remote sessions
         session.merge(*remote_sessions)
-        _snapshot_id = session.commit(
-            _with_run_id(f"[v{version}] Cooperative write for {receiver_name}")
+        _snapshot_id = commit_with_rebase(
+            session, _with_run_id(f"[v{version}] Cooperative write for {receiver_name}")
         )
 
         return [f.name for f in rinex_files_sorted]  # ty: ignore[invalid-return-type]

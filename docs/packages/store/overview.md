@@ -55,6 +55,12 @@ This gives the store three properties that matter for reproducible science:
   the exact dataset state used for that analysis.
 - **Auditability** — `store.get_ops_log()` shows what was written, when,
   and by whom; `store.plot_commit_graph()` visualises the full history.
+- **Overlapping writers** — if another commit lands while a write is in
+  progress, canVODpy rebases the write onto it when the two touched
+  different groups (e.g. two receivers). If both changed the same data, the
+  later commit fails with `icechunk.RebaseFailedError` and writes nothing.
+  On a local or network disk, two processes must still not commit at the
+  same moment: Icechunk cannot detect that race there.
 
 ---
 

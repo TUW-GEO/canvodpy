@@ -20,11 +20,17 @@ calling icechunk directly.
 - **Storage is the local file system** (an SSD or a network mount, never an
   object store). Local storage makes no conditional writes
   (`unsafe_use_conditional_update` is `False`), so icechunk cannot detect
-  two commits to the same branch at the same time: one is lost without an
-  error, and `rebase_with=` never triggers. icechunk itself warns: "The
-  LocalFileSystem storage is not safe for concurrent commits". Rule: one
-  process commits to a branch at a time; parallel work uses fork/merge
-  into one session (below).
+  two commits to the same branch at the same moment: one can be lost
+  without an error. icechunk itself warns: "The LocalFileSystem storage is
+  not safe for concurrent commits". Rule: one process commits to a branch
+  at a time; parallel work uses fork/merge into one session (below).
+- **Out-of-date sessions rebase.** A session opened before another commit
+  landed on its branch raises `ConflictError` on commit, unless it rebases.
+  Every canvodpy commit goes through
+  `canvod.store_metadata.io.commit_with_rebase` (`rebase_with=
+  icechunk.ConflictDetector()`): changes to other groups are rebased onto
+  the new tip; changes to the same nodes raise `RebaseFailedError`. Never
+  call `session.commit()` directly.
 - **A commit ends a session.** After `session.commit()` the session is
   read-only; start a new `repo.writable_session(branch)`.
 - **Read with `consolidated=False`**: `xr.open_zarr(session.store,

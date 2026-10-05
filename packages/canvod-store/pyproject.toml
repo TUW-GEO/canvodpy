@@ -23,6 +23,7 @@ dependencies = [
     "canvod-grids>=0.4.0",
     "canvod-utils>=0.4.0",
     "canvod-config>=0.4.0",
+    "canvod-store-metadata>=0.4.0",
     "canvod-vod>=0.4.0",
     "canvod-auxiliary>=0.4.0",
     "canvod-readers>=0.4.0",
@@ -43,6 +44,7 @@ dev = [
 ]
 
 [tool.uv.sources]
+canvod-store-metadata = { workspace = true }
 canvod-grids = { workspace = true }
 canvod-utils = { workspace = true }
 canvod-config = { workspace = true }

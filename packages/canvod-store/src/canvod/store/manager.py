@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 import structlog
 from canvod.config.models import VodAnalysisConfig
+from canvod.store_metadata.io import commit_with_rebase
 from canvod.utils.tools import deprecated
 
 from canvod.store.prepare import prepare_write
@@ -842,7 +843,7 @@ class GnssResearchSite:
 
             version = importlib.metadata.version("canvod-store")
             commit_msg = f"[v{version}] VOD for {analysis_name}"
-            snapshot_id = session.commit(commit_msg)
+            snapshot_id = commit_with_rebase(session, commit_msg)
 
         self.vod_store.append_metadata(
             group_name=analysis_name,

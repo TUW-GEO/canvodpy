@@ -28,6 +28,8 @@ import numpy as np
 import structlog
 import xarray as xr
 
+from canvod.store_metadata.io import commit_with_rebase
+
 if TYPE_CHECKING:
     from canvod.store.store import MyIcechunkStore
 
@@ -181,8 +183,8 @@ class AnalysisStorage:
 
             mode = "w" if overwrite else "w-"
             to_icechunk(ds_weights, session, group=group_path, mode=mode)
-            snapshot_id: str = session.commit(
-                f"Stored weights for {dataset_name}/{grid_name}"
+            snapshot_id: str = commit_with_rebase(
+                session, f"Stored weights for {dataset_name}/{grid_name}"
             )
 
         logger.info("Weights stored (snapshot: %s)", snapshot_id[:8])
@@ -316,8 +318,8 @@ class AnalysisStorage:
                 to_icechunk(ds_masks, session, group=group_path, mode=mode)
 
             logger.info("Committing")
-            snapshot_id = session.commit(
-                f"Stored filter masks for {dataset_name}/{grid_name}"
+            snapshot_id = commit_with_rebase(
+                session, f"Stored filter masks for {dataset_name}/{grid_name}"
             )
 
         logger.info("Filter masks stored (snapshot: %s)", snapshot_id[:8])
@@ -517,8 +519,8 @@ class AnalysisStorage:
 
             mode = "w" if overwrite else "w-"
             to_icechunk(ds_masks, session, group=group_path, mode=mode)
-            snapshot_id = session.commit(
-                f"Stored spatial masks for {dataset_name}/{grid_name}"
+            snapshot_id = commit_with_rebase(
+                session, f"Stored spatial masks for {dataset_name}/{grid_name}"
             )
 
         logger.info("Spatial masks stored (snapshot: %s)", snapshot_id[:8])
@@ -686,8 +688,8 @@ class AnalysisStorage:
 
             mode = "w" if overwrite else "w-"
             to_icechunk(ds_stats, session, group=group_path, mode=mode)
-            snapshot_id = session.commit(
-                f"Stored statistics for {dataset_name}/{grid_name}"
+            snapshot_id = commit_with_rebase(
+                session, f"Stored statistics for {dataset_name}/{grid_name}"
             )
 
         logger.info("Statistics stored (snapshot: %s)", snapshot_id[:8])
@@ -846,7 +848,7 @@ class AnalysisStorage:
             store: Any = zarr.open(session.store, mode="r+")
             if group_path in store:
                 del store[group_path]
-                snapshot_id = session.commit(f"Deleted {label}")
+                snapshot_id = commit_with_rebase(session, f"Deleted {label}")
                 logger.info("%s deleted (snapshot: %s)", label, snapshot_id[:8])
                 return snapshot_id
             raise ValueError(f"Group {group_path} does not exist")
@@ -963,8 +965,8 @@ class AnalysisStorage:
 
             with dask.config.set(scheduler="threads", num_workers=4):
                 to_icechunk(ds, session, group=group_name, mode="w")
-            snapshot_id: str = session.commit(
-                f"Stored per-cell timeseries for {group_name}"
+            snapshot_id: str = commit_with_rebase(
+                session, f"Stored per-cell timeseries for {group_name}"
             )
 
         logger.info("Per-cell timeseries stored (snapshot: %s)", snapshot_id[:8])
@@ -1077,8 +1079,9 @@ class AnalysisStorage:
             group: Any = zarr.open(session.store, path=group_path, mode="r+")
             if weight_name in group:
                 del group[weight_name]
-                snapshot_id = session.commit(
-                    f"Deleted weight '{weight_name}' for {dataset_name}/{grid_name}"
+                snapshot_id = commit_with_rebase(
+                    session,
+                    f"Deleted weight '{weight_name}' for {dataset_name}/{grid_name}",
                 )
                 logger.info(
                     "Weight '%s' deleted (snapshot: %s)",
@@ -1122,7 +1125,7 @@ class AnalysisStorage:
                     f"Deleted filter mask '{filter_type}' for "
                     f"{dataset_name}/{grid_name}"
                 )
-                snapshot_id = session.commit(commit_msg)
+                snapshot_id = commit_with_rebase(session, commit_msg)
                 logger.info(
                     "Filter mask '%s' deleted (snapshot: %s)",
                     filter_type,

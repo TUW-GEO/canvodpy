@@ -25,6 +25,7 @@ from canvod.config.models import (
     vod_preprocessing_settings,
 )
 from canvod.readers.base import validate_vod_dataset
+from canvod.store_metadata.io import commit_with_rebase
 from canvod.utils.logging import get_run_id, stage_timer
 from canvod.utils.tools import get_version_from_pyproject, sanitize_directory
 from icechunk.session import ForkSession
@@ -1276,7 +1277,7 @@ class MyIcechunkStore:
                 commit_msg=commit_message,
                 dataset_attrs=dataset.attrs,
             )
-            session.commit(_with_run_id(commit_message))
+            commit_with_rebase(session, _with_run_id(commit_message))
 
         self._logger.info(
             f"Created group '{group_name}' with {len(dataset.epoch)} epochs, "
@@ -1477,7 +1478,7 @@ class MyIcechunkStore:
                 commit_msg=commit_message,
                 dataset_attrs=dataset.attrs,
             )
-            session.commit(commit_message)
+            commit_with_rebase(session, commit_message)
 
     def get_group_info(self, group_name: str, branch: str = "main") -> dict[str, Any]:
         """
@@ -1572,8 +1573,8 @@ class MyIcechunkStore:
         ds = self._cleanse_dataset_attrs(ds)
         with self.writable_session(branch) as session:
             self._to_icechunk_throttled(ds, session, group=path, mode="w")
-            return session.commit(
-                _with_run_id(f"[v{version}] metadata/{name} for {group_name}")
+            return commit_with_rebase(
+                session, _with_run_id(f"[v{version}] metadata/{name} for {group_name}")
             )
 
     def write_metadata_parts(
@@ -1691,11 +1692,12 @@ class MyIcechunkStore:
         version = get_version_from_pyproject()
         with self.writable_session(branch) as session:
             total_epochs = self.write_metadata_parts(parts, group_name, name, session)
-            return session.commit(
+            return commit_with_rebase(
+                session,
                 _with_run_id(
                     f"[v{version}] metadata/{name} for {group_name} "
                     f"({total_epochs} epochs)"
-                )
+                ),
             )
 
     def read_metadata_dataset(
@@ -1925,7 +1927,7 @@ class MyIcechunkStore:
                 commit_msg=commit_message,
                 dataset_attrs=dataset.attrs,
             )
-            session.commit(_with_run_id(commit_message))
+            commit_with_rebase(session, _with_run_id(commit_message))
 
         if action == "append":
             self._logger.info(
@@ -2031,7 +2033,7 @@ class MyIcechunkStore:
                 self._log_group_write(
                     session, group_name, dataset, "append", commit_message
                 )
-                session.commit(commit_message)
+                commit_with_rebase(session, commit_message)
             self._logger.info(
                 f"Appended {len(dataset.epoch)} epochs to group '{group_name}'"
             )
@@ -2048,7 +2050,7 @@ class MyIcechunkStore:
                 self._log_group_write(
                     session, group_name, dataset, "write", commit_message
                 )
-                session.commit(commit_message)
+                commit_with_rebase(session, commit_message)
             self._logger.info(
                 f"Created group '{group_name}' with {len(dataset.epoch)} epochs"
             )
@@ -2258,7 +2260,9 @@ class MyIcechunkStore:
         else:
             with self.writable_session() as sess:
                 _do_append(sess)
-                sess.commit(_with_run_id(f"Bulk metadata append for {group_name}"))
+                commit_with_rebase(
+                    sess, _with_run_id(f"Bulk metadata append for {group_name}")
+                )
 
     # ------------------------------------------------------------------
     # VOD store: {model}/{analysis_name} group hierarchy + dedicated ledger
@@ -2587,7 +2591,7 @@ class MyIcechunkStore:
                 calculator_name=calculator_name,
                 dataset_attrs=dict(dataset.attrs),
             )
-            session.commit(commit_message)
+            commit_with_rebase(session, commit_message)
 
         self._logger.info(
             f"{action.capitalize()}d VOD group '{group_name}' "
@@ -2822,8 +2826,8 @@ class MyIcechunkStore:
                     summary_parts.append(group_name)
 
                 if summary_parts:
-                    prepass_snapshot_id = prepass_session.commit(
-                        prepass_msg, metadata=prepass_metadata
+                    prepass_snapshot_id = commit_with_rebase(
+                        prepass_session, prepass_msg, metadata=prepass_metadata
                     )
                     for name in summary_parts:
                         results[name].snapshot_id = prepass_snapshot_id
@@ -2856,8 +2860,8 @@ class MyIcechunkStore:
                         raise
 
                 base_session.merge(*forks.values())
-                batch_snapshot_id = base_session.commit(
-                    commit_msg, metadata=agg_metadata
+                batch_snapshot_id = commit_with_rebase(
+                    base_session, commit_msg, metadata=agg_metadata
                 )
                 for name, result in completed.items():
                     result.snapshot_id = batch_snapshot_id
@@ -3924,11 +3928,12 @@ class MyIcechunkStore:
                         source_subgroup, target_subgroup
                     )
 
-            snapshot_id = session.commit(
+            snapshot_id = commit_with_rebase(
+                session,
                 _with_run_id(
                     f"Rechunked {group_name} with chunks={chunks} "
                     f"({subgroup_count} subgroups restored)"
-                )
+                ),
             )
 
         self._logger.info(
