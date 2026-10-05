@@ -43,6 +43,7 @@ class _StrictModel(BaseModel):
             hint = f" Did you mean '{match[0]}'?" if match else ""
             error_type = PydanticCustomError(
                 "extra_forbidden",
-                f"Unknown key '{key}'.{hint} Allowed keys: {', '.join(allowed)}",
+                "Unknown key '{key}'.{hint} Allowed keys: {allowed}",
+                {"key": key, "hint": hint, "allowed": ", ".join(allowed)},
             )
         return {"type": error_type, "loc": err["loc"], "input": err["input"]}
