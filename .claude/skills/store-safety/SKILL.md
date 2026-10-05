@@ -18,8 +18,8 @@ For the icechunk API itself see the `icechunk` guide.
    hash, time overlap with stored files, overlap inside the batch). Code
    that writes around them (`to_icechunk` directly on a run's group) is a
    bug.
-3. **Write strategy** (`processing.storage.gnss_store_strategy`,
-   `vod_store_strategy`): `skip` is the safe default; `overwrite`
+3. **Write strategy** (`processing.storage.gnss_store_strategy`; VOD
+   writes always skip): `skip` is the safe default; `overwrite`
    replaces the stored time ranges of re-processed files;
    `unsafe_append` stores duplicates. Never switch a user to
    `unsafe_append`.

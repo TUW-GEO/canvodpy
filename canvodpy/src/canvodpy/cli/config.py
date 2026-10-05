@@ -543,7 +543,6 @@ def _show_processing(config: ProcessingConfig) -> None:
     aux_dir = str(st.aux_data_dir) if st.aux_data_dir else "[dim]system temp[/dim]"
     console.print(f"  Aux data dir:      {aux_dir}")
     console.print(f"  GNSS strategy:     {st.gnss_store_strategy}")
-    console.print(f"  VOD strategy:      {st.vod_store_strategy}")
     console.print()
 
     # Icechunk

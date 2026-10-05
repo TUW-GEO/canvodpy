@@ -23,8 +23,9 @@ Background: `docs/packages/store/overview.md`,
 - **Dedup before writing**, in three layers: file hash already in the
   metadata table; time range overlapping stored files; overlap inside the
   batch. A rejected file is reported, never written silently.
-- **Write strategies** (`processing.storage.gnss_store_strategy`,
-  `vod_store_strategy`): `skip`, `overwrite`, `unsafe_append`. Their
+- **Write strategies** (`processing.storage.gnss_store_strategy`):
+  `skip`, `overwrite`, `unsafe_append`; VOD writes always skip
+  (`vod_store_strategy` is deprecated, has no effect). Their
   meaning is documented on the settings model in
   `packages/canvod-config/src/canvod/config/models/storage.py`; keep code
   and that description in step.

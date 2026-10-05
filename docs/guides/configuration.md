@@ -263,7 +263,6 @@ processing:
   storage:
     stores_root_dir: /path/to/stores  # prefer CANVOD__PROCESSING__STORAGE__STORES_ROOT_DIR
     gnss_store_strategy: skip         # skip, overwrite, or unsafe_append -- see warning below
-    vod_store_strategy: overwrite
 ```
 
 ### Key fields

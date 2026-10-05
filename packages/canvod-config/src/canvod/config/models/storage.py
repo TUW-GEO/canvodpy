@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from canvod.utils.tools import deprecated
 
@@ -196,7 +196,15 @@ class StorageConfig(_StrictModel):
             "guarded ones above is unprotected."
         ),
     )
-    vod_store_strategy: Literal["skip", "overwrite", "unsafe_append"] = "overwrite"
+    vod_store_strategy: Literal["skip", "overwrite", "unsafe_append"] | None = Field(
+        None,
+        description=(
+            "Deprecated, has no effect. VOD writes always skip a result "
+            "whose source files or epoch range are already in the VOD "
+            "store. To recompute VOD for days already stored, write to a "
+            "new VOD store (set another vod_store_name)."
+        ),
+    )
     keeper_tags: bool = Field(
         False,
         description=(
@@ -208,6 +216,21 @@ class StorageConfig(_StrictModel):
         ),
     )
     maintenance: MaintenanceConfig = Field(default_factory=MaintenanceConfig)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_vod_store_strategy(cls, data: object) -> object:
+        if isinstance(data, dict) and data.get("vod_store_strategy") is not None:
+            import warnings
+
+            warnings.warn(
+                "The storage setting 'vod_store_strategy' is left over from development and will be removed with the next major version. "
+                "It has no effect: VOD writes always skip results already in the store. "
+                "Remove it from your settings; to recompute VOD, set another 'vod_store_name'.",
+                FutureWarning,
+                stacklevel=2,
+            )
+        return data
 
     @field_validator("stores_root_dir", mode="before")
     @classmethod

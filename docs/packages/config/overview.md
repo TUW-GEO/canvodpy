@@ -110,7 +110,6 @@ processing:
   storage:
     stores_root_dir: /path/to/your/gnss/stores
     gnss_store_strategy: skip
-    vod_store_strategy: overwrite
 
 sites:
   examplesite:

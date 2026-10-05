@@ -7,6 +7,8 @@
   audit rows of files skipped as already ingested.
 - ``overwrite_file_in_group`` keeps ``epoch`` monotonic when the replaced
   range lies before the latest stored data.
+- The VOD store's log book records ``skip``, what VOD writes do with a result
+  already in the store.
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ import pytest
 import xarray as xr
 import zarr
 
-from canvod.store import create_gnss_store
+from canvod.store import create_gnss_store, create_vod_store
 
 
 def _make_dataset(start: str, n_epochs: int, file_hash: str) -> xr.Dataset:
@@ -156,3 +158,13 @@ def test_overwrite_keeps_epoch_monotonic(store) -> None:
     epochs = store.read_group("canopy_01").epoch.values
     assert len(epochs) == 10 + 12
     assert np.all(np.diff(epochs) > np.timedelta64(0, "ns"))
+
+
+def test_vod_log_book_records_skip(tmp_path: Path) -> None:
+    vod = create_vod_store(tmp_path / "site" / "vod_store")
+    group = "tau_omega/canopy_01_vs_reference_01"
+    vod.write_initial_group(_make_dataset("2025-01-02T00:00", 4, "h1"), group)
+
+    with vod.readonly_session("main") as session:
+        df = vod.load_metadata(session.store, group)
+    assert df["write_strategy"].to_list() == ["skip"]

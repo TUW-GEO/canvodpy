@@ -60,7 +60,6 @@ icechunk:
 storage:
   stores_root_dir: /path/to/stores  # MUST be set by user!
   gnss_store_strategy: skip
-  vod_store_strategy: overwrite
 
 logging:
   log_dir: null  # Defaults to .logs/ in monorepo root

@@ -565,6 +565,18 @@ class TestStorageConfig:
         assert any(issubclass(x.category, FutureWarning) for x in w)
         assert result == tmp_path / "rosalia" / "rinex"
 
+    def test_vod_store_strategy_deprecated(self, tmp_path):
+        with pytest.warns(FutureWarning, match="'vod_store_strategy' is left over"):
+            StorageConfig(stores_root_dir=tmp_path, vod_store_strategy="overwrite")
+
+    def test_vod_store_strategy_unset_no_warning(self, tmp_path):
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            sc = StorageConfig(stores_root_dir=tmp_path)
+        assert sc.vod_store_strategy is None
+
     def test_placeholder_path_not_validated(self):
         """Placeholder paths starting with /path/ skip existence check."""
         sc = StorageConfig(stores_root_dir=Path("/path/to/stores"))

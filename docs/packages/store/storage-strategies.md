@@ -5,14 +5,14 @@ GNSS store (same file hash, or an overlapping epoch range). New files are
 always written, whatever the strategy. Set it in `canvod-settings.yaml`
 under `processing.storage.gnss_store_strategy`.
 
-!!! warning "`vod_store_strategy` has no effect yet"
-    The settings also accept `processing.storage.vod_store_strategy`
-    (default `overwrite`), but VOD writes do not read it. A VOD result is
-    always skipped when the store already holds one computed from the same
-    source files, or one whose epoch range overlaps it; the value is only
-    recorded in the store's log book. To recompute VOD for days already in
-    the store, write to a new VOD store (set another
-    `processing.storage.vod_store_name`).
+!!! note "VOD writes always skip"
+    The strategy applies to the GNSS store only. A VOD result is always
+    skipped when the VOD store already holds one computed from the same
+    source files, or one whose epoch range overlaps it; the log book records
+    `skip`. To recompute VOD for days already in the store, write to a new
+    VOD store (set another `processing.storage.vod_store_name`). The
+    setting `processing.storage.vod_store_strategy` is deprecated: it has
+    no effect, and setting it gives a warning.
 
 <div class="grid cards" markdown>
 

@@ -145,6 +145,10 @@ def _written_rows_overlapping(
 #: only the steps it applied to the data already in the group.
 GROUP_WIDE_ACTION = "add_variables"
 
+#: What a VOD write does with a result already in the store: it skips it.
+#: Recorded in the ``write_strategy`` column of the VOD store's log book.
+VOD_WRITE_STRATEGY = "skip"
+
 
 def _extend_record(record: str, added: list[str], vod: bool) -> str:
     """``record`` with the steps of the group-wide records ``added`` appended.
@@ -425,14 +429,12 @@ class MyIcechunkStore:
             cfg = load_config()
             ic_cfg = cfg.processing.icechunk
             _gnss_store_strategy = cfg.processing.storage.gnss_store_strategy
-            _vod_store_strategy = cfg.processing.storage.vod_store_strategy
             _log_path_depth = cfg.processing.logging.log_path_depth
         except Exception:
             from canvod.config.models import IcechunkConfig
 
             ic_cfg = IcechunkConfig()
             _gnss_store_strategy = "skip"
-            _vod_store_strategy = "overwrite"
             _log_path_depth = 3
 
         self.store_path = Path(store_path)
@@ -453,7 +455,6 @@ class MyIcechunkStore:
 
         # Storage config cached for metadata rows
         self._gnss_store_strategy = _gnss_store_strategy
-        self._vod_store_strategy = _vod_store_strategy
         self._log_path_depth = _log_path_depth
         self._zarr_async_concurrency = ic_cfg.zarr_async_concurrency
 
@@ -2381,7 +2382,7 @@ class MyIcechunkStore:
             "written_at": written_at,
             "write_strategy": str(self._gnss_store_strategy)
             if self.store_type == "gnss_store"
-            else str(self._vod_store_strategy),
+            else VOD_WRITE_STRATEGY,
             "attrs": json.dumps(dataset_attrs, default=str),
             "preprocessing": record,
             "canonical_name": str(canonical_name) if canonical_name else "",
@@ -2579,7 +2580,7 @@ class MyIcechunkStore:
             "commit_msg": str(commit_msg),
             "run_id": get_run_id() or "",
             "written_at": written_at,
-            "write_strategy": str(self._vod_store_strategy),
+            "write_strategy": VOD_WRITE_STRATEGY,
             "calculator_name": str(calculator_name),
             "attrs": json.dumps(dataset_attrs, default=str),
             "preprocessing": record,
