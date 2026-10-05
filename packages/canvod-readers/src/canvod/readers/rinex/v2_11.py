@@ -57,6 +57,7 @@ from canvod.readers.gnss_specs.metadata import (
     SNR_METADATA,
     epoch_coord_attrs,
     get_global_attrs,
+    require_gps_time,
 )
 from canvod.readers.gnss_specs.models import (
     Observation,
@@ -1357,7 +1358,11 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         ]
 
         coords = {
-            "epoch": ("epoch", timestamps, epoch_coord_attrs(self.header.time_system)),
+            "epoch": (
+                "epoch",
+                timestamps,
+                epoch_coord_attrs(self.header.time_system, self.fpath.name),
+            ),
             "sid": signal_id_coord,
             "sv": ("sid", sv_list, COORDS_METADATA["sv"]),
             "system": ("sid", constellation_list, COORDS_METADATA["system"]),
@@ -1461,6 +1466,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         add_future_datavars = bool(kwargs.pop("add_future_datavars", True))
         keep_sids = cast(list[str] | None, kwargs.pop("keep_sids", None))
 
+        require_gps_time(self.header.time_system, self.fpath.name)
         ds = self.create_rinex_netcdf_with_signal_id()
 
         if keep_data_vars is not None:

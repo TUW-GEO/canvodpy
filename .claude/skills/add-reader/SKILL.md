@@ -18,7 +18,8 @@ closest existing reader as the template:
   that subclasses `GNSSDataReader` and implements every abstract member
   of `packages/canvod-readers/src/canvod/readers/base.py`.
 - Build the dataset with `DatasetBuilder` (`packages/canvod-readers/src/canvod/readers/builder.py`), passing
-  `time_system=` (the file's epoch time scale). Don't build SIDs or
+  `time_system="GPS"`: every stored epoch is GPS time, so convert other
+  scales first (UTC: `gnss_specs.leap_seconds.utc_to_gps`). Don't build SIDs or
   frequency coordinates by hand.
 - Fail loudly on corrupt input; never return a partial dataset silently.
 - No settings reads: options are arguments with visible defaults.

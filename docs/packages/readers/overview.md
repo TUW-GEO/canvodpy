@@ -66,13 +66,18 @@ The `canvod-readers` package provides validated parsers for [GNSS](https://gssc.
 | Extension | `.rnx` | `.YYo`, `.rnx` | `.sbf` | `.nmea` |
 | Tracking codes | Exact (RINEX 3 attribute) | Exact where RINEX 2.11 defines them, else lowercase marker | Exact | From the GSV signal ID, else `X` |
 | Observables | SNR, pseudorange, phase, Doppler, LLI, SSI | as RINEX 3 | SNR, pseudorange, phase, Doppler, SSI, flags | SNR only |
-| Epoch time scale | From the header (normally GPS time) | From the header (normally GPS time) | GPS time | UTC |
+| Epoch time scale | GPS time (header; other time systems refused) | GPS time (header; other time systems refused) | GPS time | UTC, converted to GPS time |
 | Satellite geometry (θ, φ) | SP3 download | SP3 download | SP3 download, or **embedded** (SatVisibility) | SP3 download |
 | Extra metadata | Header only | Header only | PVT · DOP · quality | None |
 | `to_ds_and_auxiliary()` | `{}` aux | `{}` aux | `{"sbf_obs": meta_ds}` | `{}` aux |
 
-Every reader has `to_ds()` and `iter_epochs()`. The `epoch` coordinate
-records its time scale in the `time_system` attribute.
+Every reader has `to_ds()` and `iter_epochs()`. Every epoch is GPS time,
+the time scale of the orbits and clocks (SP3, CLK), recorded in the
+`time_system` attribute of the `epoch` coordinate (`GPS`). NMEA times are
+UTC: the reader adds the leap seconds of the date (GPS − UTC, 18 s since
+2017; `canvod.readers.gnss_specs.leap_seconds`). Stores written before
+canVODpy stored every epoch in GPS time have SBF and NMEA epochs in UTC;
+the store refuses to append to them (`EpochTimeSystemError`).
 
 !!! note "Consistent output structure"
 

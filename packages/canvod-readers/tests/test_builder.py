@@ -239,15 +239,16 @@ class TestDatasetBuilder:
             builder.add_signal(sv="X01", band="L1", code="C")
 
     def test_epoch_records_time_system(self, reader: _StubReader):
-        builder = DatasetBuilder(reader, time_system="GLO")
+        builder = DatasetBuilder(reader, time_system="GPS")
         ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         sig = builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(ei, sig, "SNR", 42.0)
-        assert builder.build()["epoch"].attrs["time_system"] == "UTC"
+        assert builder.build()["epoch"].attrs["time_system"] == "GPS"
 
-    def test_unknown_time_system_is_rejected(self, reader: _StubReader):
-        with pytest.raises(ValueError, match="unknown epoch time system"):
-            DatasetBuilder(reader, time_system="LOCAL")
+    @pytest.mark.parametrize("scale", ["UTC", "GLO", "LOCAL"])
+    def test_other_time_systems_are_rejected(self, reader: _StubReader, scale):
+        with pytest.raises(ValueError, match="stores every epoch in GPS time"):
+            DatasetBuilder(reader, time_system=scale)
 
 
 class TestSidCoords:

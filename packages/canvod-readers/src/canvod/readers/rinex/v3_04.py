@@ -57,6 +57,7 @@ from canvod.readers.gnss_specs.metadata import (
     OBSERVABLES_METADATA,
     SNR_METADATA,
     epoch_coord_attrs,
+    require_gps_time,
 )
 from canvod.readers.gnss_specs.models import (
     Observation,
@@ -1896,7 +1897,11 @@ class Rnxv3Obs(GNSSDataReader):
             return [sid_properties[sid][key] for sid in sorted_sids]
 
         coords = {
-            "epoch": ("epoch", timestamps, epoch_coord_attrs(self.header.time_system)),
+            "epoch": (
+                "epoch",
+                timestamps,
+                epoch_coord_attrs(self.header.time_system, self.fpath.name),
+            ),
             "sid": xr.DataArray(
                 np.array(sorted_sids, dtype=object),
                 dims=["sid"],
@@ -2065,6 +2070,7 @@ class Rnxv3Obs(GNSSDataReader):
         parser = cast(RinexV3Parser, kwargs.pop("parser", "validated"))
 
         kept = None if keep_data_vars is None else frozenset(keep_data_vars)
+        require_gps_time(self.header.time_system, self.fpath.name)
         ds = self._create_dataset(kept, parser)
 
         if pad_global_sid:

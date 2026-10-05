@@ -158,7 +158,7 @@ class MyFormatReader(GNSSDataReader):
         keep_data_vars: list[str] | None = None,
         **kwargs,
     ) -> xr.Dataset:
-        # the time scale of the epochs: "GPS", "UTC", ... (required)
+        # the time scale of the epochs: must be "GPS" (required)
         builder = DatasetBuilder(self, time_system="GPS")
         for epoch in self.iter_epochs():
             ei = builder.add_epoch(epoch.timestamp)

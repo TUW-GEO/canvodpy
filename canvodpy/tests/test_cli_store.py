@@ -40,7 +40,7 @@ def _make_dataset(slot: int, n_epochs: int = 20) -> xr.Dataset:
 
     return xr.Dataset(
         {"S1C": (("epoch", "sid"), s1c)},
-        coords={"epoch": epochs, "sid": _SIDS},
+        coords={"epoch": ("epoch", epochs, {"time_system": "GPS"}), "sid": _SIDS},
         attrs={"File Hash": file_hash, "station": "TST", "receiver": "canopy_01"},
     )
 

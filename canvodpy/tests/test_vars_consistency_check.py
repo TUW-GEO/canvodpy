@@ -40,7 +40,7 @@ def _make_ds(data_vars: list[str], file_hash: str, n_epochs: int = 5) -> xr.Data
     }
     return xr.Dataset(
         data,
-        coords={"epoch": epochs, "sid": _SIDS},
+        coords={"epoch": ("epoch", epochs, {"time_system": "GPS"}), "sid": _SIDS},
         attrs={"File Hash": file_hash},
     )
 

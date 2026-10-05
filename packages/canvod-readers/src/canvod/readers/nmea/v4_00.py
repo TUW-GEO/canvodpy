@@ -5,7 +5,8 @@ with ``(epoch, sid)`` dimensions compatible with the canvodpy pipeline.
 
 Supports:
 - GPS ($GP), GLONASS ($GL), Galileo ($GA), BeiDou ($GB) GSV sentences
-- RMC and GGA sentences for epoch timestamps
+- RMC and GGA sentences for epoch timestamps (UTC, converted to GPS time
+  with the leap seconds of the date, see ``gnss_specs.leap_seconds``)
 - PRN-to-RINEX SV mapping per NMEA v4 PRN numbering scheme
 - Checksum validation
 
@@ -32,6 +33,7 @@ from canvod.readers.base import (
     require_aggregated_glonass,
     validate_dataset,
 )
+from canvod.readers.gnss_specs.leap_seconds import utc_to_gps
 from canvod.readers.gnss_specs.metadata import (
     COORDS_METADATA,
     DTYPES,
@@ -376,6 +378,11 @@ class NmeaObs(GNSSDataReader, BaseModel):
     for satellite SNR values.  Produces an ``xarray.Dataset`` compatible
     with the canvodpy pipeline.
 
+    NMEA times are UTC. The epochs (and ``start_time``, ``end_time``) are
+    GPS time: the UTC times plus the leap seconds of the date (18 s since
+    2017). A time after the leap seconds known to canVODpy raises
+    ``ValueError``.
+
     Parameters
     ----------
     fpath : Path
@@ -543,7 +550,7 @@ class NmeaObs(GNSSDataReader, BaseModel):
         )
 
         coords = {
-            "epoch": ("epoch", timestamps, epoch_coord_attrs("UTC")),
+            "epoch": ("epoch", timestamps, epoch_coord_attrs("GPS")),
             "sid": signal_id_coord,
             "sv": ("sid", sv_list, COORDS_METADATA["sv"]),
             "system": ("sid", system_list, COORDS_METADATA["system"]),
@@ -640,7 +647,8 @@ class NmeaObs(GNSSDataReader, BaseModel):
             if current_dt is not None and current_sats:
                 epochs.append(
                     _ParsedEpoch(
-                        timestamp=current_dt,
+                        # NMEA times are UTC; every stored epoch is GPS time
+                        timestamp=utc_to_gps(current_dt),
                         satellites=dict(current_sats),
                     )
                 )

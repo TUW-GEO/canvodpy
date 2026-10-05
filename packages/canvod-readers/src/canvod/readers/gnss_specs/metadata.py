@@ -213,45 +213,63 @@ COORDS_METADATA: Final[dict[str, dict[str, str]]] = {
 }
 
 # Time scale of the epoch coordinate, recorded in its "time_system"
-# attribute. Epochs are stored in the time scale the file is written in;
-# no reader converts between scales except the SBF reader (to UTC).
-# Identifiers follow RINEX 3.04 Table A2 (TIME OF FIRST OBS); RINEX "GLO"
-# is defined there as the UTC time system and is recorded as "UTC".
-EPOCH_TIME_SYSTEMS: Final[dict[str, str]] = {
-    "GPS": "GPS time",
-    "GAL": "Galileo System Time",
-    "QZS": "QZSS time",
-    "BDT": "BDS time",
-    "IRN": "IRNSS time",
-    "UTC": "UTC",
-}
+# attribute. Every stored epoch is GPS time, so that all receivers and the
+# orbits and clocks (SP3, CLK) share one time scale. RINEX and SBF are
+# written in GPS time; the NMEA reader converts its UTC times to GPS time.
+# Identifiers follow RINEX 3.04 Table A2 (TIME OF FIRST OBS).
+EPOCH_TIME_SYSTEM: Final = "GPS"
+EPOCH_TIME_SYSTEM_NAME: Final = "GPS time"
 
 
-def epoch_coord_attrs(time_system: str) -> dict[str, str]:
+def require_gps_time(time_system: str, source: str | None = None) -> None:
+    """Refuse epochs that are not in GPS time.
+
+    Parameters
+    ----------
+    time_system : str
+        Time scale of the epochs (RINEX 3.04 Table A2 identifier).
+    source : str, optional
+        The file the epochs come from, named in the error.
+
+    Raises
+    ------
+    ValueError
+        If ``time_system`` is not ``"GPS"``.
+
+    """
+    if time_system != EPOCH_TIME_SYSTEM:
+        where = f"{source}: " if source else ""
+        msg = (
+            f"{where}epochs are in time system {time_system!r}, but canVODpy "
+            "stores every epoch in GPS time ('GPS'), the time scale of the "
+            "orbits and clocks, and does not convert from "
+            f"{time_system!r}. Convert the epochs to GPS time first."
+        )
+        raise ValueError(msg)
+
+
+def epoch_coord_attrs(time_system: str, source: str | None = None) -> dict[str, str]:
     """Return the epoch coordinate attributes, including its time scale.
 
     Parameters
     ----------
     time_system : str
-        One of ``EPOCH_TIME_SYSTEMS`` or RINEX ``"GLO"`` (recorded as UTC).
+        Time scale of the epochs: must be ``"GPS"``. Readers state it, so
+        that epochs in another scale are refused instead of stored.
+    source : str, optional
+        The file the epochs come from, named in the error.
 
     Raises
     ------
     ValueError
-        If the time system is unknown.
+        If ``time_system`` is not GPS time (:func:`require_gps_time`).
 
     """
-    scale = "UTC" if time_system == "GLO" else time_system
-    if scale not in EPOCH_TIME_SYSTEMS:
-        msg = (
-            f"unknown epoch time system {time_system!r}; "
-            f"expected one of {sorted(EPOCH_TIME_SYSTEMS)} or 'GLO'"
-        )
-        raise ValueError(msg)
+    require_gps_time(time_system, source)
     return {
         **COORDS_METADATA["epoch"],
-        "time_system": scale,
-        "time_system_name": EPOCH_TIME_SYSTEMS[scale],
+        "time_system": EPOCH_TIME_SYSTEM,
+        "time_system_name": EPOCH_TIME_SYSTEM_NAME,
     }
 
 

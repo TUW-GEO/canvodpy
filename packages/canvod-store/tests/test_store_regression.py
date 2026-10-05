@@ -441,7 +441,7 @@ class TestMetadataDatasets:
                     rng.uniform(1.0, 4.0, n_ep).astype(np.float32), dims=["epoch"]
                 )
             },
-            coords={"epoch": epochs},
+            coords={"epoch": ("epoch", epochs, {"time_system": "GPS"})},
         )
 
     def test_write_and_read_metadata_dataset(self, tmp_store):

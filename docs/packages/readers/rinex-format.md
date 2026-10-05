@@ -319,12 +319,13 @@ stripped v3.05 reader uses the same parsers.
 
 ## Epoch time
 
-Epochs are stored as written in the file, in the time system of its
-`TIME OF FIRST OBS` header record (RINEX 3.04 Table A2: `GPS`, `GLO`, `GAL`,
-`QZS`, `BDT`, `IRN`; a single-system file defaults to its own system). No
-conversion to another time scale is made. The epoch coordinate records the
-time scale in its `time_system` attribute; RINEX `GLO` is defined as UTC and
-is recorded as `UTC`. Seconds keep the 100 ns resolution of the epoch
+Epochs are stored as written in the file. They must be GPS time, the time
+scale of the orbits and clocks: the time system of the `TIME OF FIRST OBS`
+header record (RINEX 3.04 Table A2; a single-system file defaults to its
+own system) must be `GPS`. `to_ds()` refuses a file in another time system
+(`GLO`, which is UTC, `GAL`, `QZS`, `BDT`, `IRN`) with a `ValueError`
+naming the file; nothing is converted. The epoch coordinate records
+`time_system: GPS`. Seconds keep the 100 ns resolution of the epoch
 record's `F11.7` field.
 
 ## Error Handling

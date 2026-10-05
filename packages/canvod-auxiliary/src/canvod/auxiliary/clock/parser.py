@@ -34,12 +34,22 @@ def parse_clk_header(file_handle: TextIO) -> set[str]:
     Raises
     ------
     ValueError
-        If header format is invalid.
+        If header format is invalid, or if the time system (``TIME SYSTEM
+        ID``; GPS if absent) is not GPS time.
     """
     satellites = set()
 
     for line in file_handle:
-        if "OF SOLN SATS" in line:
+        if "TIME SYSTEM ID" in line:
+            time_system = line[3:6]
+            if time_system != "GPS":
+                msg = (
+                    f"CLK time system is {time_system!r}, but canVODpy needs "
+                    "clocks in GPS time ('GPS'), the time scale of the stored "
+                    "observation epochs. Use a product in GPS time."
+                )
+                raise ValueError(msg)
+        elif "OF SOLN SATS" in line:
             _ = int(line[4:6])
         elif "PRN LIST" in line:
             # Parse PRN list line(s)
@@ -144,8 +154,11 @@ def parse_clk_file(
         (epochs, satellites, clock_offsets).
     """
     with filepath.open() as f:
-        # Parse header (skip it, we get satellites from data anyway)
-        _ = parse_clk_header(f)
+        # Parse header (checks the time system; satellites come from the data)
+        try:
+            _ = parse_clk_header(f)
+        except ValueError as e:
+            raise ValueError(f"{filepath.name}: {e}") from e
 
         # Parse data
         epochs, satellites, clock_offsets = parse_clk_data(f)

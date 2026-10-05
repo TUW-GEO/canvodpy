@@ -60,7 +60,7 @@ def _make_ds(
     s1c = rng.uniform(30.0, 55.0, (n_epochs, len(_SIDS))).astype(np.float32)
     return xr.Dataset(
         {"S1C": xr.DataArray(s1c, dims=["epoch", "sid"])},
-        coords={"epoch": epochs, "sid": _SIDS},
+        coords={"epoch": ("epoch", epochs, {"time_system": "GPS"}), "sid": _SIDS},
         attrs={
             "File Hash": hashlib.sha256(file_id.encode()).hexdigest()[:16],
             "canonical_name": file_id,
@@ -326,7 +326,7 @@ class _SbfConfig:
 def _sbf_obs_for(ds: xr.Dataset) -> xr.Dataset:
     return xr.Dataset(
         {"pdop": xr.DataArray(np.ones(ds.sizes["epoch"], np.float32), dims=["epoch"])},
-        coords={"epoch": ds["epoch"].values},
+        coords={"epoch": ("epoch", ds["epoch"].values, {"time_system": "GPS"})},
     )
 
 

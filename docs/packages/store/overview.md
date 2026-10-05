@@ -159,7 +159,12 @@ per-file ingest registry used by the deduplication guardrails.
    labels are stored once per group, so other labels (e.g. after switching
    `processing.params.aggregate_glonass_fdma`) would relabel the stored data.
    Such an append stops the run (`GroupVariablesMismatchError`,
-   `GroupCoordinatesMismatchError`).
+   `GroupCoordinatesMismatchError`). Every stored epoch is GPS time
+   (`epoch.attrs["time_system"] == "GPS"`); epochs in another time scale, and
+   groups that do not record theirs, stop the run too (`EpochTimeSystemError`).
+   Groups written by canVODpy before it stored every epoch in GPS time have no
+   record (their SBF and NMEA epochs were UTC, 18 s earlier): write to a new
+   store.
 4. **Query** — Retrieve by time range, signal, or group name
 5. **VOD** — `VodComputer` reads canopy and reference groups and writes the VOD store
 

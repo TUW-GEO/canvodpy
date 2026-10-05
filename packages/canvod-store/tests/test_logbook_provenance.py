@@ -27,7 +27,10 @@ def _make_dataset(start: str, n_epochs: int, file_hash: str) -> xr.Dataset:
     epochs = np.datetime64(start, "ns") + np.arange(n_epochs) * np.timedelta64(5, "s")
     return xr.Dataset(
         {"SNR": (["epoch", "sid"], np.random.rand(n_epochs, 2).astype(np.float32))},
-        coords={"epoch": epochs, "sid": ["G01|L1|C", "G02|L1|C"]},
+        coords={
+            "epoch": ("epoch", epochs, {"time_system": "GPS"}),
+            "sid": ["G01|L1|C", "G02|L1|C"],
+        },
         attrs={"File Hash": file_hash},
     )
 

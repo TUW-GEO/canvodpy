@@ -58,7 +58,7 @@ def _dataset(
         data[name] = (["epoch", "sid"], np.full((n, 2), value))
     return xr.Dataset(
         data,
-        coords={"epoch": epochs, "sid": sids},
+        coords={"epoch": ("epoch", epochs, {"time_system": "GPS"}), "sid": sids},
         attrs={"File Hash": file_hash, PREPROCESSING_ATTR: record},
     )
 
@@ -75,7 +75,10 @@ def _cells(store) -> xr.Dataset:
     group = store.read_group("canopy_01")
     return xr.Dataset(
         {"cell_id_x": (("epoch", "sid"), np.ones((group.sizes["epoch"], 2)))},
-        coords={"epoch": group["epoch"].values, "sid": group["sid"].values},
+        coords={
+            "epoch": ("epoch", group["epoch"].values, {"time_system": "GPS"}),
+            "sid": group["sid"].values,
+        },
     )
 
 
@@ -194,7 +197,10 @@ class TestGuardAfterGroupWideStep:
         group = "tau_omega/canopy_01_vs_reference_01"
         cells = xr.Dataset(
             {"cell_id_x": (("epoch", "sid"), np.ones((4, 2)))},
-            coords={"epoch": ds["epoch"].values, "sid": _SIDS},
+            coords={
+                "epoch": ("epoch", ds["epoch"].values, {"time_system": "GPS"}),
+                "sid": _SIDS,
+            },
         )
 
         vod.add_group_variables(group, cells, _STEP, _SOFTWARE)

@@ -26,10 +26,13 @@ Background: `docs/packages/readers/architecture.md`,
 - Every reader's output passes `validate_dataset`. New code imports the
   contract from `base.py`; it never restates it.
 - SIDs are built in `builder.py` only, so readers and stores agree.
-- `epoch.attrs["time_system"]` records the epoch time scale: RINEX takes
-  it from the header (`TIME OF FIRST OBS` is mandatory), SBF is GPS time
-  (TOW/WNc, no leap seconds), NMEA is UTC. `DatasetBuilder(time_system=...)`
-  is required. No fixed leap-second shift is applied.
+- Every stored epoch is GPS time; `epoch.attrs["time_system"]` is `"GPS"`
+  (`epoch_coord_attrs` refuses anything else). RINEX: the header's
+  `TIME OF FIRST OBS` time system (mandatory) must be GPS, other scales are
+  refused, not converted. SBF is GPS time (TOW/WNc, no leap seconds). NMEA
+  is UTC, converted with the leap-second table of the date
+  (`gnss_specs/leap_seconds.py`, extend it with each IERS Bulletin C).
+  `DatasetBuilder(time_system="GPS")` is required.
 - RINEX 3: the validated parser is the default. `parser="unvalidated_fast"`
   stays opt-in, warns on every use (`UnvalidatedParserWarning`) and must
   give the same dataset on valid files.

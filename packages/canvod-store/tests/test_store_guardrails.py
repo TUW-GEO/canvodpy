@@ -66,7 +66,7 @@ def _make_15min_dataset(
     ds = xr.Dataset(
         {"SNR": (["epoch", "sid"], np.random.rand(n_epochs, 3).astype(np.float32))},
         coords={
-            "epoch": epochs,
+            "epoch": ("epoch", epochs, {"time_system": "GPS"}),
             "sid": ["G01|L1|C", "G02|L1|C", "G03|L1|C"],
         },
         attrs={"File Hash": f"hash_{day}_slot{slot:02d}"},
@@ -89,7 +89,7 @@ def _make_daily_dataset(day: str, n_epochs: int = 1000) -> tuple[Path, xr.Datase
     ds = xr.Dataset(
         {"SNR": (["epoch", "sid"], np.random.rand(n_epochs, 3).astype(np.float32))},
         coords={
-            "epoch": epochs,
+            "epoch": ("epoch", epochs, {"time_system": "GPS"}),
             "sid": ["G01|L1|C", "G02|L1|C", "G03|L1|C"],
         },
         attrs={"File Hash": f"hash_{day}_daily"},

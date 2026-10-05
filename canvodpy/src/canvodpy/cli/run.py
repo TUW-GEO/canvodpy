@@ -705,6 +705,7 @@ def run(
     )
     from canvod.config.models import PreprocessingMismatchError
     from canvod.store.prepare import (
+        EpochTimeSystemError,
         GroupCoordinatesMismatchError,
         GroupVariablesMismatchError,
     )
@@ -725,6 +726,7 @@ def run(
         PreprocessingMismatchError,
         GroupVariablesMismatchError,
         GroupCoordinatesMismatchError,
+        EpochTimeSystemError,
     ) as e:
         # Every later day would be refused the same way: stop, and say
         # what to change.

@@ -42,7 +42,7 @@ def _file(day: int, preprocessing: PreprocessingConfig | None) -> xr.Dataset:
             "phi": (("epoch", "sid"), rng.uniform(0, 2 * np.pi, (n, 3))),
             "theta": (("epoch", "sid"), rng.uniform(0, np.pi / 2.2, (n, 3))),
         },
-        coords={"epoch": epochs, "sid": sids},
+        coords={"epoch": ("epoch", epochs, {"time_system": "GPS"}), "sid": sids},
         attrs={"File Hash": f"hash{day}"},
     )
     [(_, out)] = preprocess_files([(f"day{day}", ds)], preprocessing)

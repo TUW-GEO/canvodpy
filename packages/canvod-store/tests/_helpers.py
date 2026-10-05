@@ -137,7 +137,7 @@ def make_synthetic_dataset(
             "S2W": xr.DataArray(s2w, dims=["epoch", "sid"]),
         },
         coords={
-            "epoch": epochs,
+            "epoch": ("epoch", epochs, {"time_system": "GPS"}),
             "sid": _SIDS,
         },
         attrs={
@@ -175,7 +175,11 @@ def make_synthetic_vod_dataset(
             "theta": (("epoch", "sid"), rng.uniform(0, np.pi / 2, vod.shape)),
         },
         coords={
-            "epoch": obs["epoch"].values.astype("datetime64[ns]"),
+            "epoch": (
+                "epoch",
+                obs["epoch"].values.astype("datetime64[ns]"),
+                {"time_system": "GPS"},
+            ),
             **sid_coords(signals, mapper=SignalIDMapper()),
         },
     )

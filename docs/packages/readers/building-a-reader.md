@@ -406,7 +406,7 @@ class MyFormatReader(GNSSDataReader):
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `DatasetBuilder(reader, time_system=...)` | builder | Create a new builder; `time_system` is the time scale of the epochs you add (`"GPS"`, `"GAL"`, `"QZS"`, `"BDT"`, `"IRN"`, `"UTC"`, or RINEX `"GLO"`, recorded as UTC), recorded in the epoch coordinate |
+| `DatasetBuilder(reader, time_system=...)` | builder | Create a new builder; `time_system` is the time scale of the epochs you add, recorded in the epoch coordinate. It must be `"GPS"`: canVODpy stores every epoch in GPS time, and anything else raises `ValueError` |
 | `add_epoch(timestamp)` | `int` | Register an epoch, returns its index |
 | `add_signal(sv, band, code)` | `SignalID` | Register a signal (idempotent — same args = same ID) |
 | `set_value(ei, sig, var, value)` | `None` | Set a value for epoch index + signal + variable |
@@ -455,7 +455,7 @@ The builder supports GLONASS FDMA channel aggregation via the `aggregate_glonass
 ```python
 builder = DatasetBuilder(
     reader,
-    time_system="GLO",
+    time_system="GPS",
     aggregate_glonass_fdma=True,  # default
 )
 ```
@@ -913,6 +913,7 @@ from pydantic import ConfigDict
 
 from canvod.readers.base import GNSSDataReader
 from canvod.readers.builder import DatasetBuilder
+from canvod.readers.gnss_specs.leap_seconds import utc_to_gps
 from canvod.utils.tools import file_hash as compute_hash
 
 
@@ -993,11 +994,12 @@ class GnsdReader(GNSSDataReader):
         keep_data_vars: list[str] | None = None,
         **kwargs,
     ) -> xr.Dataset:
-        # The file writes its epochs with "Z": UTC
-        builder = DatasetBuilder(self, time_system="UTC")
+        # The file writes its epochs with "Z": UTC. canVODpy stores GPS time,
+        # so add the leap seconds of the date.
+        builder = DatasetBuilder(self, time_system="GPS")
 
         for epoch in self.iter_epochs():
-            ei = builder.add_epoch(epoch.timestamp)
+            ei = builder.add_epoch(utc_to_gps(epoch.timestamp))
             for obs in epoch.observations:
                 sig = builder.add_signal(
                     sv=obs.sv, band=obs.band, code=obs.code
@@ -1134,21 +1136,22 @@ assert ds.dims["epoch"] == 100
 assert ds.sizes["epoch"] == 100
 ```
 
-### 8. Epochs in another time scale than `time_system`
+### 8. Epochs that are not GPS time
 
-The builder stores each epoch as given and drops any `tzinfo` without
-converting. The epochs must therefore already be in the time scale you
-pass as `time_system`:
+canVODpy stores every epoch in GPS time, the time scale of the orbits and
+clocks, and `time_system` must be `"GPS"`. The builder stores each epoch as
+given and drops any `tzinfo` without converting, so convert the epochs
+before `add_epoch`:
 
 ```python
-# WRONG — local time, labelled as UTC
-builder = DatasetBuilder(self, time_system="UTC")
+builder = DatasetBuilder(self, time_system="GPS")
+
+# WRONG: UTC (or local time) stored as GPS time, 18 s off since 2017
 builder.add_epoch(datetime(2025, 1, 1, 1, 0, tzinfo=ZoneInfo("Europe/Vienna")))
 
-# CORRECT — convert first
-builder.add_epoch(local_ts.astimezone(UTC))
-# or: GPS time from the file, labelled as such
-builder = DatasetBuilder(self, time_system="GPS")
+# CORRECT: to UTC, then add the leap seconds of the date
+from canvod.readers.gnss_specs.leap_seconds import utc_to_gps
+builder.add_epoch(utc_to_gps(local_ts.astimezone(UTC)))
 ```
 
 ---

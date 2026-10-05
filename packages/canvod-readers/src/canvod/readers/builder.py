@@ -131,10 +131,12 @@ class DatasetBuilder:
         The reader instance (used for ``_build_attrs()`` and file hash).
     time_system : str
         Time scale of the epoch timestamps as given to :meth:`add_epoch`,
-        recorded in the epoch coordinate's ``time_system`` attribute: one of
-        ``"GPS"``, ``"GAL"``, ``"QZS"``, ``"BDT"``, ``"IRN"``, ``"UTC"`` (RINEX
-        ``"GLO"`` is recorded as UTC). Required, since the builder cannot
-        infer it from the timestamps.
+        recorded in the epoch coordinate's ``time_system`` attribute. Must be
+        ``"GPS"``: canVODpy stores every epoch in GPS time, so convert other
+        time scales (for example UTC, plus the leap seconds from
+        :func:`canvod.readers.gnss_specs.leap_seconds.utc_to_gps`) before
+        :meth:`add_epoch`. Required, since the builder cannot infer it from
+        the timestamps; anything else raises ``ValueError``.
     aggregate_glonass_fdma : bool, optional
         Whether to aggregate GLONASS FDMA channels (default True).
 

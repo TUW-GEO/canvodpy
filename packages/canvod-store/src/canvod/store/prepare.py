@@ -42,6 +42,19 @@ class GroupCoordinatesMismatchError(Exception):
     """
 
 
+class EpochTimeSystemError(Exception):
+    """Epochs that are not GPS time, or a group not known to be GPS time.
+
+    Every stored epoch is GPS time (``epoch.attrs["time_system"] == "GPS"``),
+    the time scale of the orbits and clocks. Groups written before canVODpy
+    recorded the time scale do not say theirs: SBF and NMEA epochs were UTC
+    then, 18 s off GPS time, so appending GPS-time epochs would mix scales.
+
+    Deliberately not a ``ValueError``, like
+    :class:`GroupVariablesMismatchError`.
+    """
+
+
 def prepare_write(
     ds: xr.Dataset, store: Any, group: str, *, append_dim: str | None
 ) -> xr.Dataset:
@@ -66,7 +79,13 @@ def prepare_write(
         or ``None`` for a write that creates, replaces or fills a region of
         the group. An append is checked with :func:`check_append_variables`
         and :func:`check_append_coordinates`.
+
+    Raises
+    ------
+    EpochTimeSystemError
+        See :func:`check_epoch_time_system`.
     """
+    check_epoch_time_system(ds, store, group)
     if append_dim is not None:
         check_append_variables(ds, store, group, append_dim)
         check_append_coordinates(ds, store, group, append_dim)
@@ -74,6 +93,50 @@ def prepare_write(
     ds = ds.copy(deep=False)
     ds.attrs = attrs
     return prepare_times(ds, store, group)
+
+
+def check_epoch_time_system(ds: xr.Dataset, store: Any, group: str) -> None:
+    """Refuse epochs that are not GPS time, or a group not in GPS time.
+
+    Data without an ``epoch`` coordinate are not checked. A group that does
+    not exist yet, or has no ``epoch`` array, is only checked through ``ds``.
+
+    Raises
+    ------
+    EpochTimeSystemError
+        If the ``epoch`` coordinate of ``ds`` is not GPS time, or if the
+        group's ``epoch`` is not, or does not record its time scale.
+    """
+    if "epoch" not in ds.coords:
+        return
+    new = ds["epoch"].attrs.get("time_system")
+    if new != "GPS":
+        msg = (
+            f"Cannot write to group '{group}': the epochs are in time system "
+            f"{new!r}, but every stored epoch is GPS time ('GPS', recorded in "
+            "epoch.attrs['time_system'] by the readers)."
+        )
+        raise EpochTimeSystemError(msg)
+    try:
+        zgroup = zarr.open_group(store, mode="r", path=group)
+    except FileNotFoundError, zarr.errors.GroupNotFoundError:
+        return
+    if "epoch" not in set(zgroup.array_keys()):
+        return
+    stored = zgroup["epoch"].attrs.get("time_system")
+    if stored != "GPS":
+        said = (
+            "does not record its time scale: it was written before canVODpy "
+            "stored every epoch in GPS time, when SBF and NMEA epochs were UTC"
+            if stored is None
+            else f"is in time system {stored!r}"
+        )
+        msg = (
+            f"Cannot write to group '{group}': its epochs {said}. The new "
+            "epochs are GPS time, and one group cannot mix time scales. "
+            "Write to a new store, or rebuild this one from the raw files."
+        )
+        raise EpochTimeSystemError(msg)
 
 
 def check_append_variables(
