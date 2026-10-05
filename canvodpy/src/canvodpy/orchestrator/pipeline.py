@@ -1388,8 +1388,8 @@ class PipelineOrchestrator:
 
 @deprecated(
     "SingleReceiverProcessor is left over from development and will be removed with the next major version. "
-    "Its process() method fails because it calls a method that no longer "
-    "exists. Use canvodpy.Site(<site>).pipeline() instead."
+    "Its process() method raises NotImplementedError. Use "
+    "canvodpy.Site(<site>).pipeline().process_date(<YYYYDOY>) instead."
 )
 class SingleReceiverProcessor:
     """Process a single receiver for one day.
@@ -1450,57 +1450,29 @@ class SingleReceiverProcessor:
         return [found.path for found in discover_files(day, self.reader_name)]
 
     def process(self, keep_vars: list[str] | None = None) -> xr.Dataset:
-        """Process all RINEX files for this receiver and write to Icechunk.
+        """Refuse: this class can no longer process a receiver.
+
+        Use ``canvodpy.Site(<site>).pipeline().process_date(<YYYYDOY>)``,
+        which returns the dataset of every receiver of the site for that
+        day, keyed by receiver name.
 
         Parameters
         ----------
         keep_vars : list[str], optional
-            Variables to keep in datasets
+            Ignored.
 
-        Returns
-        -------
-        xr.Dataset
-            Final daily dataset for this receiver
-
+        Raises
+        ------
+        NotImplementedError
+            Always.
         """
-        rinex_files = self._get_rinex_files()
-
-        if not rinex_files:
-            self._logger.error(
-                "no_rinex_files_found",
-                data_dir=str(self.data_dir),
-            )
-            msg = f"No RINEX files found in {self.data_dir}"
-            raise ValueError(msg)
-
-        self._logger.info(
-            "receiver_processing_started",
-            rinex_files=len(rinex_files),
+        msg = (
+            "SingleReceiverProcessor.process() no longer works: it relied on "
+            "a processor method that has been removed. Use "
+            f"canvodpy.Site({self.site.site_name!r}).pipeline().process_date("
+            f"{self.yyyydoy.to_str()!r})[{self.receiver_name!r}] instead."
         )
-
-        # Create matched dirs for aux data (using first available dir as dummy)
-        matched_dirs = MatchedDirs(
-            canopy_data_dir=self.data_dir,
-            reference_data_dir=self.data_dir,  # Dummy, aux data is date-based
-            yyyydoy=self.yyyydoy,
-        )
-
-        # Initialize processor with receiver name override
-        processor = RinexDataProcessor(
-            matched_data_dirs=matched_dirs,
-            site=self.site,
-            n_max_workers=self.n_max_workers,
-            reader_name=self.reader_name,
-        )
-
-        # Process with actual receiver name (NOT type)
-        # This requires modifying RinexDataProcessor to accept receiver_name parameter
-        return processor._process_receiver(  # ty: ignore[unresolved-attribute]
-            rinex_files=rinex_files,
-            receiver_name=self.receiver_name,  # Use actual name as group
-            receiver_type=self.receiver_type,
-            keep_vars=keep_vars,
-        )
+        raise NotImplementedError(msg)
 
 
 if __name__ == "__main__":
