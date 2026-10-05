@@ -138,9 +138,7 @@ class ProductRequest(BaseModel):
         max_length=3,
         description="Agency code (3 letters)",
     )
-    product_type: Literal["final", "rapid", "ultrarapid", "predicted"] = Field(
-        ..., description="Product type"
-    )
+    product_type: Literal["final", "rapid"] = Field(..., description="Product type")
     file_format: Literal["SP3", "CLK"] = Field(..., description="File format")
     local_dir: Path = Field(..., description="Local directory for storage")
 
@@ -193,7 +191,7 @@ class ProductRequest(BaseModel):
 
         try:
             spec = get_product_spec(self.agency, self.product_type)
-        except ValueError as e:
+        except KeyError as e:
             raise ValueError(f"Product not available: {e}") from e
 
         if self.file_format not in spec.available_formats:

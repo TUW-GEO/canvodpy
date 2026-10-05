@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import xarray as xr
-from canvod.utils.tools import YYYYDOY
+from canvod.utils.tools import YYYYDOY, deprecated
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
@@ -86,7 +86,7 @@ class AuxFile(ABC):
         agency : str
             Agency providing the data (e.g., "COD", "IGS").
         product_type : str
-            Product type ("final", "rapid", "ultrarapid").
+            Product type ("final" or "rapid").
         ftp_server : str
             Base URL for file downloads.
         local_dir : Path
@@ -318,28 +318,68 @@ class AuxFile(ABC):
         return self._data
 
     def check_file_exists(self) -> Path:
-        """Verify file exists locally or download it if needed.
+        """Return the local file, downloading it if needed.
+
+        The candidate names (one per sampling the product has been
+        published with) are tried in order: first a local copy of any of
+        them, then a download of each in turn.
 
         Returns
         -------
         Path
             Local file path.
+
+        Raises
+        ------
+        RuntimeError
+            If no candidate could be downloaded; the message names every
+            file tried.
         """
-        filename = self.generate_filename_based_on_type()
-        file_path = self.local_dir / filename
-        if not file_path.exists():
-            print(f"File {file_path} does not exist. Downloading...")
-            self.download_aux_file()
-        else:
-            print(f"File {file_path} exists.")
-        return file_path
+        candidates = self.candidate_filenames()
+        for name in candidates:
+            file_path = self.local_dir / name
+            if file_path.exists():
+                print(f"File {file_path} exists.")
+                return file_path
+
+        errors: list[str] = []
+        for name in candidates:
+            print(f"File {self.local_dir / name} does not exist. Downloading...")
+            try:
+                self.download_aux_file(name)
+            except RuntimeError as e:
+                if "No internet connection" in str(e):
+                    raise
+                errors.append(f"{name}:\n{e}")
+                continue
+            return self.local_dir / name
+
+        raise RuntimeError(
+            f"No {'/'.join(self.file_type)} file of {self.agency}/"
+            f"{self.product_type} for {self.date} could be downloaded. "
+            f"Tried {', '.join(candidates)}.\n\n" + "\n\n".join(errors)
+        )
 
     @abstractmethod
+    def candidate_filenames(self) -> list[str]:
+        """File names of this file, in the order they are tried."""
+
+    @deprecated(
+        "AuxFile.generate_filename_based_on_type() is left over from "
+        "development and will be removed with the next major version. Use "
+        "AuxFile.candidate_filenames() instead: a product can be published "
+        "with several samplings."
+    )
     def generate_filename_based_on_type(self) -> Path:
-        """Generate the appropriate filename for this type of auxiliary file."""
-        pass
+        """First candidate file name."""
+        return Path(self.candidate_filenames()[0])
 
     @abstractmethod
-    def download_aux_file(self) -> None:
-        """Download the auxiliary file from the specified FTP server."""
-        pass
+    def download_aux_file(self, filename: str) -> None:
+        """Download one candidate file into ``local_dir``.
+
+        Parameters
+        ----------
+        filename : str
+            One of :meth:`candidate_filenames`.
+        """

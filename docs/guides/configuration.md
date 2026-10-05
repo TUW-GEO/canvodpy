@@ -222,7 +222,7 @@ processing:
 
   aux_data:
     agency: COD          # SP3/CLK analysis center code
-    product_type: final  # final, rapid, or ultra-rapid
+    product_type: final  # final or rapid; the agency must publish it
     # fetch_clock: true  # set false to skip CLK download/interpolation — unused by VOD
 
   params:
@@ -322,6 +322,12 @@ Agency SP3/CLK products are downloaded from **ESA GSSC** — no account or crede
 are required. Setting `credentials.nasa_earthdata_acc_mail` to the email address of a
 (free) NASA Earthdata account adds **NASA CDDIS** as a fallback, used when ESA GSSC
 fails.
+
+`aux_data.agency` and `aux_data.product_type` must name a product of the
+[product registry](../packages/auxiliary/products.md), which also lists the
+GNSS each product covers; a run and `canvodpy config validate` stop on any
+other combination and name the closest products. Ultra-rapid products are
+not supported.
 
 ---
 

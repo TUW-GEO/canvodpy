@@ -364,7 +364,17 @@ def validate(
         console.print(f"    - {name}")
 
     console.print(f"\n  SID mode: {config.sids.mode}")
-    console.print(f"  Agency: {config.processing.aux_data.agency}")
+    aux = config.processing.aux_data
+    console.print(f"  Agency: {aux.agency} ({aux.product_type})")
+    if config.processing.params.ephemeris_source != "broadcast":
+        from canvod.auxiliary.products import check_product
+
+        try:
+            spec = check_product(aux.agency, aux.product_type, aux.fetch_clock)
+        except (KeyError, ValueError) as e:
+            console.print(f"\n[red]❌ Orbit product:[/red]\n{e}\n")
+            raise typer.Exit(1) from e
+        console.print(f"  Orbit product: {spec.prefix} ({spec.description})")
 
     for name, site_cfg in config.sites.sites.items():
         console.print(f"  {name} data root: {site_cfg.gnss_site_data_root}")

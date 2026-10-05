@@ -84,7 +84,7 @@ processing:
 
   aux_data:
     agency: COD              # Analysis center: COD, GFZ, IGS, ESA, etc.
-    product_type: final      # final, rapid, ultra-rapid
+    product_type: final      # final or rapid
 
   storage:
     stores_root_dir: /path/to/stores

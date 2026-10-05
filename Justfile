@@ -187,6 +187,19 @@ naming-init SITE NAME:
     print("Next: fill in the receiver identity and the fields of your file names,")
     print("then check them with: just config-check-data {{ SITE }}")
 
+# check every orbit/clock product of the registry against the FTP servers (days as YYYYDOY; default: 2025001 and three weeks ago)
+check-products *DAYS:
+    #!/usr/bin/env -S uv run python
+    import os
+    import sys
+
+    os.environ["CANVOD_CONFIG_DIR"] = {{ quote(config_dir) }}
+    from canvod.auxiliary.products.check import main
+    from canvod.config import load_config
+
+    mail = load_config().nasa_earthdata_acc_mail
+    sys.exit(main("{{ DAYS }}".split() + (["--cddis-mail", mail] if mail else [])))
+
 # show the current configuration
 config-show:
     uv run canvodpy config show {{ config_flag }}

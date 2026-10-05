@@ -1,6 +1,6 @@
 # Product Registry
 
-The product registry provides declarative configuration for 37 SP3 and CLK products from 17 analysis centres (agency codes). Products are defined in TOML — no hardcoded URLs in the processing code.
+The product registry provides declarative configuration for 23 final and rapid SP3/CLK products from 14 analysis centres (agency codes). Products are defined in TOML — no hardcoded URLs in the processing code. Every product was checked against the file listings of ESA GSSC and NASA CDDIS (2025-001 and 2026-244, checked 2026-10-05); `just check-products` repeats the check (see [Checking the registry](#checking-the-registry)).
 
 ---
 
@@ -26,50 +26,57 @@ The product registry provides declarative configuration for 37 SP3 and CLK produ
     Available the following day. Use for near-real-time processing when
     final products have not yet been released.
 
--   :fontawesome-solid-clock: &nbsp; **Ultra-rapid**
-
-    ---
-
-    Latency **3–9 hours** · Accuracy **few cm (predicted half)**
-
-    Partially predicted. The predicted half has lower accuracy.
-    Use only when rapid products are insufficient.
-
 </div>
 
 | Type | Latency | Orbit accuracy | Clock accuracy |
 |------|---------|---------------|----------------|
 | Final | 14–21 d | < 2.5 cm | < 75 ps |
 | Rapid | 17–24 h | < 2.5 cm | < 75 ps |
-| Ultra-rapid (observed) | 3–9 h | < 3 cm | < 150 ps |
-| Ultra-rapid (predicted) | 0 h | < 5 cm | < 3 ns |
+
+Ultra-rapid, real-time and near-real-time products are not supported: they
+are issued several times a day, are partly predicted, and their file names
+carry the issue hour. The settings reject `product_type: ultra-rapid`.
 
 ---
 
-## Available Agencies
+## Available Products
 
-| Code | Agency | Product types in the registry |
-|------|--------|-------------------------------|
-| COD | Center for Orbit Determination in Europe | final, rapid, ultrarapid |
-| EMR | Natural Resources Canada | final, rapid, ultrarapid |
-| ESA | European Space Agency | final, rapid, ultrarapid |
-| GFZ | GeoForschungsZentrum Potsdam | final, rapid, ultrarapid |
-| GRG | CNES | final, rapid, ultrarapid |
-| IAC | Information-Analytical Centre | final |
-| IGS | International GNSS Service | rapid, ultrarapid, real-time |
-| JAX, JGX | JAXA | final (JAX); final, rapid, ultrarapid (JGX) |
-| JPL | Jet Propulsion Laboratory | final, rapid |
-| MIT | Massachusetts Institute of Technology | final |
-| NGS | National Geodetic Survey | final, rapid |
-| SHA | Shanghai Observatory | ultrarapid |
-| SIO | Scripps Institution of Oceanography | rapid, ultrarapid |
-| USN | US Naval Observatory | rapid, ultrarapid |
-| WHU | Wuhan University | rapid, ultrarapid |
-| WUM | Wuhan University (Multi-GNSS) | rapid, near-real-time |
+Systems: G GPS, R GLONASS, E Galileo, C BeiDou, J QZSS, read from the SP3
+header of 2026-09-01. A run drops the observations of satellites the product
+has no orbits for (warning `sids_dropped_no_ephemeris`, once per file), so those
+signals get no VOD: choose a product that covers the systems of your
+[signal selection](../../guides/configuration.md), or narrow the selection.
 
-`canvod.auxiliary.list_products()` lists them; the registry is the truth. The final
-products of EMR, GFZ, GRG, JGX, JPL, MIT and NGS are hosted by NASA CDDIS only
-(see below); COD and ESA final products come from ESA.
+| Code | Agency | Final | Rapid |
+|------|--------|-------|-------|
+| COD | Center for Orbit Determination in Europe | GRECJ | GRE |
+| EMR | Natural Resources Canada | G | GR |
+| ESA | European Space Agency | GRECJ | GR |
+| GFZ | GeoForschungsZentrum Potsdam | GRE | GRECJ |
+| GRG | CNES | GEC | GEC |
+| IAC | Information-Analytical Centre | GRECJ | – |
+| IGS | International GNSS Service | G (NASA CDDIS only) | G |
+| JAX | JAXA (multi-GNSS) | GRECJ | – |
+| JGX | JAXA | GRE | GRE |
+| JPL | Jet Propulsion Laboratory | GE | GE |
+| MIT | Massachusetts Institute of Technology | GE | – |
+| NGS | National Geodetic Survey | G, no clocks | – |
+| SIO | Scripps Institution of Oceanography | G, no clocks | G, no clocks |
+| USN | US Naval Observatory | – | G |
+
+`canvod.auxiliary.list_products()` lists them; the registry is the truth. The
+default, COD final, covers all five systems. Products without clock files need
+`fetch_clock: false`; a run, and `canvodpy config validate`, stops before any
+download if the configured product does not exist or has no clocks while
+`fetch_clock` is true, and names the closest products.
+
+!!! note "Several samplings per product"
+    Agencies have changed the sampling of their files over the years (e.g. ESA
+    rapid: 15 min SP3 and 5 min CLK in 2025, 5 min SP3 and 30 s CLK in 2026).
+    The registry lists every sampling a product has been published with, and
+    the readers try them in that order, locally and then on each server. The
+    sampling of the file used is recorded in the orbit dataset's
+    `sampling_rate` attribute.
 
 !!! tip "Servers and fallback"
     Products are downloaded from ESA GSSC (no account needed). NASA CDDIS is a
@@ -88,8 +95,10 @@ products of EMR, GFZ, GRG, JGX, JPL, MIT and NGS are hosted by NASA CDDIS only
 
     spec = get_product_spec("COD", "final")
     spec.prefix              # "COD0MGXFIN"
-    spec.sampling_rate       # "05M"
-    spec.available_formats   # ["SP3", "CLK"]
+    spec.sp3_samplings       # ["05M"], tried in this order
+    spec.clk_samplings       # ["30S"]; [] if the product has no clocks
+    spec.systems             # "GRECJ"
+    spec.sp3_filenames("2025001")  # ["COD0MGXFIN_20250010000_01D_05M_ORB.SP3"]
     [s.url for s in spec.ftp_servers]  # ESA first, then NASA CDDIS
     ```
 
@@ -121,20 +130,40 @@ Products are declared in
 agency = "COD"
 type = "final"
 prefix = "COD0MGXFIN"
-sampling = "05M"
-duration = "01D"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GRECJ"
 description = "CODE final multi-GNSS"
-formats = ["SP3", "CLK"]
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
-description = "ESA primary"
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
-description = "NASA CDDIS fallback"
 requires_auth = true
+description = "NASA CDDIS"
 ```
+
+`type` is `final` or `rapid`. Every file covers one day (`01D`).
+
+---
+
+## Checking the registry
+
+```bash
+just check-products                    # 2025-001 and the day three weeks ago
+just check-products 2025001 2026244    # chosen days (YYYYDOY)
+```
+
+The recipe lists each server's GPS-week directory once per day and looks up
+every product's SP3 file, and CLK file if it has clocks, under each of its
+samplings. It prints the file found per product and day, or, for a missing
+product, the files of that product the servers do have, and exits with 1 if
+any product is missing. NASA CDDIS is checked when the settings hold
+`credentials.nasa_earthdata_acc_mail`; otherwise products hosted only there
+are reported as skipped. Run it after editing `products.toml`, and from time
+to time: agencies rename products, change samplings and stop publishing.

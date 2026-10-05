@@ -43,7 +43,7 @@ class FileMetadata:
     agency : str
         Agency identifier (e.g., "COD", "IGS").
     product_type : str
-        Product type ("final", "rapid", "ultrarapid").
+        Product type ("final" or "rapid").
     local_dir : Path
         Local directory for storage.
     ftp_server : str
@@ -52,6 +52,6 @@ class FileMetadata:
 
     date: str  # Format: YYYYDOY
     agency: str  # e.g., 'COD', 'IGS'
-    product_type: str  # 'final', 'rapid', 'ultrarapid'
+    product_type: str  # 'final' or 'rapid'
     local_dir: Path
     ftp_server: str

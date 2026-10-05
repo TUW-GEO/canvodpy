@@ -78,10 +78,10 @@ class Sp3File(AuxFile):
         )
         return Sp3InterpolationStrategy(config=config)
 
-    def generate_filename_based_on_type(self) -> Path:
-        """Generate filename using product registry.
+    def candidate_filenames(self) -> list[str]:
+        """SP3 file names, one per sampling the product has been published with.
 
-        Pattern: {PREFIX}_{YYYYDOY}0000_{DURATION}_{SAMPLING}_ORB.SP3
+        Pattern: {PREFIX}_{YYYYDOY}0000_01D_{SAMPLING}_ORB.SP3
 
         Example: COD0MGXFIN_20240150000_01D_05M_ORB.SP3
         """
@@ -89,18 +89,19 @@ class Sp3File(AuxFile):
             "product_spec must be set via \
             __post_init__"
         )
-        prefix = self.product_spec.prefix
-        duration = self.product_spec.duration
-        sampling = self.product_spec.sampling_rate
+        return self.product_spec.sp3_filenames(self.date)
 
-        return Path(f"{prefix}_{self.date}0000_{duration}_{sampling}_ORB.SP3")
-
-    def download_aux_file(self) -> None:
-        """Download SP3 file, trying all servers from the product registry.
+    def download_aux_file(self, filename: str) -> None:
+        """Download one SP3 file, trying all servers from the product registry.
 
         Servers are tried in priority order from products.toml. Auth-required
         servers are skipped when no credentials are configured. Warnings are
         printed when falling back to alternate servers.
+
+        Parameters
+        ----------
+        filename : str
+            One of :meth:`candidate_filenames`.
 
         Raises
         ------
@@ -113,7 +114,7 @@ class Sp3File(AuxFile):
             "product_spec must be set via \
             __post_init__"
         )
-        orbit_file = self.generate_filename_based_on_type()
+        orbit_file = Path(filename)
         gps_week = get_gps_week_from_filename(orbit_file)
 
         ftp_path = self.product_spec.ftp_path_pattern.format(
@@ -181,8 +182,8 @@ class Sp3File(AuxFile):
             "product_type": self.product_type,
             "ftp_server": self.ftp_server,
             "date": self.date,
-            "sampling_rate": self.product_spec.sampling_rate,
-            "duration": self.product_spec.duration,
+            "sampling_rate": self.fpath.name.split("_")[3],
+            "duration": self.fpath.name.split("_")[2],
         }
         return ds
 

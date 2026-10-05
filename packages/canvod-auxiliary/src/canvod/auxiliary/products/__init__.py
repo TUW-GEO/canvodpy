@@ -10,6 +10,8 @@ from canvod.auxiliary.products.registry_config import (
     FtpServerConfig,
     ProductRegistry,
     ProductSpec,
+    UnknownProductError,
+    check_product,
     get_product_spec,
     get_products_for_agency,
     get_registry,
@@ -27,6 +29,8 @@ __all__ = [
     "ProductSpec",
     # Models
     "Sp3Header",
+    "UnknownProductError",
+    "check_product",
     "get_product_spec",
     "get_products_for_agency",
     "get_registry",

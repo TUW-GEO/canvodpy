@@ -681,6 +681,16 @@ class TestCompressionConfig:
             CompressionConfig(complevel=10)
 
 
+class TestAuxDataProductType:
+    @pytest.mark.parametrize("value", ["ultra-rapid", "ultrarapid"])
+    def test_ultra_rapid_refused_with_reason(self, value):
+        with pytest.raises(ValidationError, match="Ultra-rapid products are not"):
+            AuxDataConfig(product_type=value)
+
+    def test_rapid_accepted(self):
+        assert AuxDataConfig(product_type="rapid").product_type == "rapid"
+
+
 class TestChunkStrategies:
     def test_defaults_for_both_stores(self):
         ic = IcechunkConfig()

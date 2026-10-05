@@ -86,7 +86,7 @@ class EphemerisProvider(ABC):
 class AgencyEphemerisProvider(EphemerisProvider):
     """SP3/CLK-based ephemeris from analysis centres.
 
-    Downloads final/rapid/ultra products from COD, ESA, IGS etc.,
+    Downloads final or rapid products from COD, ESA, IGS etc.,
     interpolates via Hermite cubic splines, and computes theta/phi
     via ECEF→spherical coordinate transformation.
 
@@ -95,7 +95,7 @@ class AgencyEphemerisProvider(EphemerisProvider):
     agency : str
         Analysis centre code (``"COD"``, ``"ESA"``, ``"GFZ"``, ``"JPL"``).
     product_type : str
-        Product type (``"final"``, ``"rapid"``, ``"ultra"``).
+        Product type (``"final"`` or ``"rapid"``).
     aux_data_dir : Path, optional
         Directory for cached aux Zarr files.
     keep_sids : list[str], optional

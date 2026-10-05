@@ -391,7 +391,6 @@ def check_sp3_availability(ds: str) -> object:
 
     Uses a date-age heuristic keyed to ``processing.aux_data.product_type``:
 
-    * ``ultra-rapid`` — gate at 0 days (always available)
     * ``rapid``       — gate at 2 days
     * ``final``       — gate at 14 days (default)
 
@@ -426,7 +425,7 @@ def check_sp3_availability(ds: str) -> object:
     except Exception:
         product_type = "final"
 
-    _MIN_AGE: dict[str, int] = {"ultra-rapid": 0, "rapid": 2, "final": 14}
+    _MIN_AGE: dict[str, int] = {"rapid": 2, "final": 14}
     min_age = _MIN_AGE.get(product_type, 14)
     available = age >= min_age
 

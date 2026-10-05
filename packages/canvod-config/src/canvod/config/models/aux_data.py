@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from .base import _StrictModel
 
@@ -18,9 +18,12 @@ class AuxDataConfig(_StrictModel):
     """
 
     agency: str = Field("COD", description="Analysis center code")
-    product_type: Literal["final", "rapid", "ultra-rapid"] = Field(
+    product_type: Literal["final", "rapid"] = Field(
         "final",
-        description="Product type",
+        description=(
+            "Product type. The agency must publish it: see the product "
+            "registry of canvod-auxiliary (products.toml)."
+        ),
     )
     ftp_timeout_s: int = Field(
         30, ge=1, description="FTP connection timeout in seconds"
@@ -48,6 +51,19 @@ class AuxDataConfig(_StrictModel):
             "different store with its own write-frequency profile."
         ),
     )
+
+    @field_validator("product_type", mode="before")
+    @classmethod
+    def _reject_ultra_rapid(cls, v: object) -> object:
+        if isinstance(v, str) and v.replace("-", "").lower() == "ultrarapid":
+            msg = (
+                "Ultra-rapid products are not supported: they are issued "
+                "several times a day, are half predicted, and their files "
+                "span two days and carry the issue hour. Use 'rapid' or "
+                "'final'."
+            )
+            raise ValueError(msg)
+        return v
 
     def get_ftp_servers(
         self,

@@ -49,6 +49,7 @@ from canvod.auxiliary.position import (
     add_spherical_coords_to_dataset,
     compute_spherical_coordinates,
 )
+from canvod.auxiliary.products import check_product
 from canvod.config import load_config
 from canvod.config.models import (
     PREPROCESSING_ATTR,
@@ -1011,6 +1012,9 @@ class RinexDataProcessor:
         aux_cfg = config.processing.aux_data
         self._agency = aux_cfg.agency
         self._product_type = aux_cfg.product_type
+        if not self.use_sbf_geometry:
+            # Fail before any file is read, not at the first day's download
+            check_product(aux_cfg.agency, aux_cfg.product_type, aux_cfg.fetch_clock)
         servers = aux_cfg.get_ftp_servers(config.nasa_earthdata_acc_mail)
         self._ftp_server = servers[0][0]
         self._gnss_store_strategy = config.processing.storage.gnss_store_strategy
