@@ -1186,7 +1186,13 @@ class MyIcechunkStore:
                 None,
             )
             if template is not None and "chunks" in template.encoding:
-                to_write[name].encoding["chunks"] = template.encoding["chunks"]
+                chunks = template.encoding["chunks"]
+                # Variables computed from read_group carry its dask chunks;
+                # each must lie within one zarr chunk of the group.
+                to_write[name] = to_write[name].chunk(
+                    dict(zip(to_write[name].dims, chunks, strict=True))
+                )
+                to_write[name].encoding["chunks"] = chunks
 
         tip = self.repo.lookup_branch(branch)
         temp_branch = f"add_variables_{group_name.replace('/', '__')}"

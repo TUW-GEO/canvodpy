@@ -156,6 +156,15 @@ class TestAddGroupVariables:
         root = zarr.open_group(store.repo.readonly_session("main").store, mode="r")
         assert "canopy_01/metadata/x" in root
 
+    def test_other_dask_chunks_written(self, store) -> None:
+        """Variables computed from read_group carry its dask chunks, not the store's."""
+        cells = _cells(store).chunk({"epoch": 3})
+
+        store.add_group_variables("canopy_01", cells, _STEP, _SOFTWARE)
+
+        after = store.read_group("canopy_01").compute()
+        assert after["cell_id_x"].values.tolist() == [[1.0, 1.0]] * 8
+
     def test_refuses_existing_variable(self, store) -> None:
         store.add_group_variables("canopy_01", _cells(store), _STEP, _SOFTWARE)
         with pytest.raises(ValueError, match="already has"):
