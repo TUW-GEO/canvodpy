@@ -101,19 +101,22 @@ its documentation for the install command.
 
 ## Configuration
 
-Site and processing configuration lives in YAML files (not committed):
+Site and processing configuration lives in one YAML file (not committed),
+`config/canvod-settings.yaml`, with the sections `processing:`, `sites:` and
+`sids:`:
 
 ```bash
-just config-init      # create config/processing.yaml + sites.yaml + sids.yaml
+just config-init      # create config/canvod-settings.yaml from the template
 just config-validate  # validate against Pydantic models
 ```
 
 Optional NASA CDDIS access (for SP3/CLK ephemeris downloads):
 
-```bash
-# config/processing.yaml
-credentials:
-  nasa_earthdata_acc_mail: your.email@example.com
+```yaml
+# config/canvod-settings.yaml
+processing:
+  credentials:
+    nasa_earthdata_acc_mail: your.email@example.com
 ```
 
 Without credentials, canvodpy uses ESA GSSC (no authentication required).

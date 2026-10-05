@@ -183,8 +183,8 @@ def _format_validation_error(report: ValidationReport, base_dir: Path) -> str:
         if len(report.unmatched) > 5:
             lines.append(f"    ... and {len(report.unmatched) - 5} more")
         lines.append(
-            "\n  If these ARE your data files, check the 'naming:' section in"
-            " sites.yaml — the source_pattern or directory_layout may not match"
+            "\n  If these ARE your data files, check the 'naming:' section of"
+            " the site in canvod-settings.yaml — the source_pattern or directory_layout may not match"
             " your filenames."
         )
         return "\n".join(lines)

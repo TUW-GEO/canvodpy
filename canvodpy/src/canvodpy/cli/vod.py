@@ -33,7 +33,11 @@ def _to_datetime(yyyydoy: str, *, end_of_day: bool) -> datetime.datetime:
 
 def vod(
     site: Annotated[
-        str, typer.Option("--site", help="Site name, as defined in sites.yaml")
+        str,
+        typer.Option(
+            "--site",
+            help="Site name, as defined under sites: in canvod-settings.yaml",
+        ),
     ],
     analysis: Annotated[
         str,
@@ -86,7 +90,11 @@ def vod(
 
 def vod_reconcile(
     site: Annotated[
-        str, typer.Option("--site", help="Site name, as defined in sites.yaml")
+        str,
+        typer.Option(
+            "--site",
+            help="Site name, as defined under sites: in canvod-settings.yaml",
+        ),
     ],
     analysis: Annotated[
         str,

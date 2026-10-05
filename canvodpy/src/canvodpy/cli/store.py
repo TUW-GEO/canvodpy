@@ -106,7 +106,12 @@ def list_stores(
 
 @store_app.command()
 def info(
-    site: Annotated[str, typer.Argument(help="Site name, as defined in sites.yaml")],
+    site: Annotated[
+        str,
+        typer.Argument(
+            help="Site name, as defined under sites: in canvod-settings.yaml"
+        ),
+    ],
     store: Annotated[
         str, typer.Option("--store", help="Which store: gnss or vod")
     ] = "gnss",
@@ -172,7 +177,12 @@ def _print_group_content(icestore, group_name: str, branch: str) -> None:
 
 @store_app.command()
 def log(
-    site: Annotated[str, typer.Argument(help="Site name, as defined in sites.yaml")],
+    site: Annotated[
+        str,
+        typer.Argument(
+            help="Site name, as defined under sites: in canvod-settings.yaml"
+        ),
+    ],
     store: Annotated[
         str, typer.Option("--store", help="Which store: gnss or vod")
     ] = "gnss",
@@ -208,7 +218,12 @@ def log(
 
 @store_app.command()
 def maintain(
-    site: Annotated[str, typer.Argument(help="Site name, as defined in sites.yaml")],
+    site: Annotated[
+        str,
+        typer.Argument(
+            help="Site name, as defined under sites: in canvod-settings.yaml"
+        ),
+    ],
     store: Annotated[
         str, typer.Option("--store", help="Which store: gnss or vod")
     ] = "gnss",

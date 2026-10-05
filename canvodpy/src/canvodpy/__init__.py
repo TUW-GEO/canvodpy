@@ -40,7 +40,8 @@ Package Structure
 
 Configuration
 -------------
-Site configurations are stored in ``config/sites.yaml``.
+Site configurations are stored in the ``sites:`` section of
+``config/canvod-settings.yaml``.
 Default variables and settings are in `globals.py`.
 
 Examples

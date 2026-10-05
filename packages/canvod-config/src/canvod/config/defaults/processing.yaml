@@ -1,8 +1,8 @@
 # ============================================================================
 # Default Processing Configuration
 # ============================================================================
-# These are package defaults. Users should create config/processing.yaml
-# with their own settings by running: just config-init
+# These are package defaults. The processing: section of the user's
+# config/canvod-settings.yaml (created by: just config-init) overrides them.
 
 metadata:
   author: Unknown

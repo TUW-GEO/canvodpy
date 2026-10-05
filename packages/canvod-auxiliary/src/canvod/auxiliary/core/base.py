@@ -30,7 +30,8 @@ class AuxFile(ABC):
     - user_email: Optional email for NASA CDDIS authentication
       - If None: Uses ESA FTP server exclusively (no authentication required)
       - If provided: Enables NASA CDDIS as fallback server (requires registration)
-      - To enable CDDIS, set nasa_earthdata_acc_mail in config/processing.yaml
+      - To enable CDDIS, set processing.credentials.nasa_earthdata_acc_mail
+        in config/canvod-settings.yaml
 
     Notes
     -----

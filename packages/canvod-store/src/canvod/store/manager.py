@@ -89,7 +89,7 @@ class GnssResearchSite:
         gnss_store_path = config.processing.storage.get_gnss_store_path(site_name)
         vod_store_path = config.processing.storage.get_vod_store_path(site_name)
 
-        # Initialize stores using paths from processing.yaml
+        # Initialize stores using paths from the processing: settings
         self.gnss_store = create_gnss_store(gnss_store_path)
         self.vod_store = create_vod_store(vod_store_path)
 
@@ -145,8 +145,8 @@ class GnssResearchSite:
     ) -> dict[str, str | int | float | bool] | None:
         """Get freeform metadata for a receiver.
 
-        Returns the ``metadata`` dict from ``ReceiverConfig`` in
-        ``sites.yaml``, or ``None`` if not configured.
+        Returns the ``metadata`` dict of the receiver in the ``sites:``
+        section of ``canvod-settings.yaml``, or ``None`` if not configured.
 
         Parameters
         ----------

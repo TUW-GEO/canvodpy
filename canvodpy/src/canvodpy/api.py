@@ -147,7 +147,8 @@ class Site:
         Explicit values override the config.
 
         Reader format is configured per-receiver via ``reader_format`` in
-        ``sites.yaml`` (default: ``"auto"``).
+        the ``sites:`` section of ``config/canvod-settings.yaml`` (default:
+        ``"auto"``).
 
         Parameters
         ----------
@@ -218,11 +219,12 @@ class Pipeline:
     Provides a clean API for processing workflows while using
     proven orchestrator logic internally.
 
-    All parameters default to ``None``, which means "read from
-    ``config/processing.yaml``". Explicit values override the config.
+    All parameters default to ``None``, which means "read from the
+    ``processing:`` section of ``config/canvod-settings.yaml``". Explicit
+    values override the config.
 
-    Reader format is configured per-receiver via ``reader_format`` in
-    ``sites.yaml`` (default: ``"auto"``).
+    Reader format is configured per-receiver via ``reader_format`` in the
+    ``sites:`` section (default: ``"auto"``).
 
     Parameters
     ----------
@@ -598,7 +600,8 @@ def process_date(
 
     This is the simplest way to process GNSS data - just provide
     the site name and date. All optional parameters default to
-    values from ``config/processing.yaml``.
+    values from the ``processing:`` section of
+    ``config/canvod-settings.yaml``.
 
     Parameters
     ----------

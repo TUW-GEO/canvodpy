@@ -1,4 +1,4 @@
-"""Pydantic models for naming configuration in sites.yaml.
+"""Pydantic models for the naming configuration of the sites: section.
 
 These models validate the ``naming:`` sections at site and receiver level.
 The ``canvod-utils`` package stores these as opaque ``dict | None`` fields;

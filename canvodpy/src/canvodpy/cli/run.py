@@ -591,7 +591,8 @@ def run(
         typer.Option(
             "--site",
             help=(
-                "Site name as defined in sites.yaml (e.g. ExampleSite). Repeat "
+                "Site name as defined under sites: in canvod-settings.yaml "
+                "(e.g. ExampleSite). Repeat "
                 "the flag for multiple sites — processed sequentially."
             ),
         ),
