@@ -42,7 +42,9 @@ velocities at both ends of the interval
 SP3 files read by canVODpy provide positions only. The SP3 reader
 (`Sp3File`, `add_velocities=True` by default) estimates the velocities
 from the positions by central differences (forward and backward
-differences at the first and last epoch).
+differences at the first and last epoch); a run computes them on the day
+joined with its neighbors (see below), so the day's own first and last
+epochs get central differences too.
 
 ```python
 from canvod.auxiliary.interpolation import Sp3Config, Sp3InterpolationStrategy
@@ -61,15 +63,38 @@ result = interpolator.interpolate(sp3_data, target_epochs)
 | `use_velocities` | `True` | Hermite spline if `Vx`, `Vy`, `Vz` are in the dataset |
 | `fallback_method` | `"linear"` | `xarray` interpolation method without velocities |
 
-!!! warning "End of the day"
-    A daily SP3 file usually ends one sampling interval before midnight
-    (for example 23:55 for 5-minute orbits), and the next day's file is
-    not loaded. Grid epochs after the last SP3 epoch are extrapolated
-    from the last spline segment. Satellites without any finite position
-    are NaN.
+### Start and end of the day
 
-canVODpy has not measured the interpolation error against a reference
-orbit; the docs give no accuracy figure for it.
+A daily orbit file can end before midnight (ESA's 15-minute rapid orbits
+end at 23:45; CODE's 5-minute orbits include 24:00), and the velocities of
+its first and last epoch are one-sided differences. So every run loads the
+orbit and clock files of the **previous and the next day** too
+(`AuxDataPipeline.create_standard`), keeps one hour of each
+(`AuxFile.join_days`; where files overlap, the day's own epoch is kept) and
+computes the velocities on the joined data. Every epoch of the day then
+lies between two orbit epochs: nothing is extrapolated. If a neighboring
+day's file cannot be obtained, the run stops with an error naming it.
+Final products come out per GPS week, so the last day of a week can be
+processed only once the next week's products are published.
+
+The spline is fitted per satellite on the epochs with data. A target epoch
+outside a satellite's data, or in a gap of more than 1.5 sampling
+intervals, is NaN.
+
+### Accuracy
+
+Measured on the CODE final orbits of 2025-001 (with 2024-366 and
+2025-002), by leaving orbit epochs out and interpolating them from the
+rest; the angle is the largest direction error seen from the ground:
+
+| Orbit sampling | Largest position error | Largest angle error |
+|---|---|---|
+| 10 min (positions at the 5-min epochs in between) | 81 m | 0.0002° |
+| 15 min | 1.1 km | 0.004° |
+
+With the day's file alone (before the neighbors were loaded), the first
+and last interval of the day were off by up to 37 km (0.11°), and a
+15-minute file ending at 23:45 was extrapolated by up to 990 km (2.9°).
 
 ---
 

@@ -294,23 +294,35 @@ class Sp3InterpolationStrategy(Interpolator):
         vels : dict[str, np.ndarray]
             Output velocity arrays to fill.
         """
+        step = float(np.median(np.diff(t_source))) if len(t_source) > 1 else 0.0
         for coord, vel in [("X", "Vx"), ("Y", "Vy"), ("Z", "Vz")]:
             # Select by satellite dimension name
             pos = ds[coord].sel({sat_dim: sat}).values
             vel_data = ds[vel].sel({sat_dim: sat}).values
-
-            # Skip if data is all NaN
-            if not np.isfinite(pos).any() or not np.isfinite(vel_data).any():
-                coords[coord][:, idx] = np.nan
-                if vels is not None:
-                    vels[vel][:, idx] = np.nan
-                continue
-
-            # Hermite cubic spline interpolation
-            interpolator = CubicHermiteSpline(t_source, pos, vel_data)
-            coords[coord][:, idx] = interpolator(t_target)
+            coords[coord][:, idx] = np.nan
             if vels is not None:
-                vels[vel][:, idx] = interpolator.derivative()(t_target)
+                vels[vel][:, idx] = np.nan
+
+            # The spline is fitted on the epochs with data only (a satellite
+            # can be missing from part of a file, or from one of the joined
+            # days, see AuxFile.join_days)
+            ok = np.isfinite(pos) & np.isfinite(vel_data)
+            if ok.sum() < 2:
+                continue
+            t_ok = t_source[ok]
+
+            # Hermite cubic spline interpolation; no value where the
+            # satellite has no data around the target: outside its epochs
+            # (no extrapolation) or in a gap wider than 1.5 steps
+            interpolator = CubicHermiteSpline(t_ok, pos[ok], vel_data[ok])
+            right = np.clip(np.searchsorted(t_ok, t_target), 1, len(t_ok) - 1)
+            bracket = t_ok[right] - t_ok[right - 1]
+            covered = (
+                (t_target >= t_ok[0]) & (t_target <= t_ok[-1]) & (bracket <= 1.5 * step)
+            )
+            coords[coord][covered, idx] = interpolator(t_target[covered])
+            if vels is not None:
+                vels[vel][covered, idx] = interpolator.derivative()(t_target[covered])
 
     def _interpolate_positions_only(
         self, ds: xr.Dataset, target_epochs: np.ndarray

@@ -8,7 +8,7 @@ from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from canvod.auxiliary._internal import UREG, get_gps_week_from_filename
-from canvod.auxiliary.core.base import AuxFile
+from canvod.auxiliary.core.base import DAY_JOIN_MARGIN, AuxFile
 from canvod.auxiliary.ephemeris.parser import Sp3Parser
 from canvod.auxiliary.ephemeris.validator import Sp3Validator
 from canvod.auxiliary.interpolation import (
@@ -187,11 +187,29 @@ class Sp3File(AuxFile):
         }
         return ds
 
+    def join_days(
+        self,
+        previous: AuxFile,
+        following: AuxFile,
+        margin: np.timedelta64 = DAY_JOIN_MARGIN,
+    ) -> xr.Dataset:
+        """Like :meth:`AuxFile.join_days`, with the velocities recomputed.
+
+        The velocities of each file have one-sided differences at its first
+        and last epoch; recomputed on the joined data, the day's first and
+        last epochs get central differences.
+        """
+        joined = super().join_days(previous, following, margin)
+        if self.add_velocities:
+            joined = self.compute_velocity(joined)
+        return joined
+
     def compute_velocity(self, ds: xr.Dataset) -> xr.Dataset:
         """Compute satellite velocities from position data.
 
         Uses central differences for interior points, forward/backward
-        differences for endpoints.
+        differences for endpoints, with the actual epoch spacing (the days
+        joined by :meth:`join_days` may come with different samplings).
 
         Parameters
         ----------
@@ -201,31 +219,13 @@ class Sp3File(AuxFile):
         Returns
         -------
         xr.Dataset
-            Dataset augmented with Vx, Vy, Vz velocities.
+            Dataset augmented (or updated) with Vx, Vy, Vz velocities.
         """
-        # Calculate time step
-        time_diffs = np.diff(ds["epoch"].values)
-        dt = np.median(time_diffs).astype("timedelta64[s]").astype(float)
+        epochs = ds["epoch"].values
+        t = (epochs - epochs[0]) / np.timedelta64(1, "s")
+        dt = float(np.median(np.diff(t)))
 
-        # Initialize velocity arrays
-        vx = np.zeros_like(ds["X"].values)
-        vy = np.zeros_like(ds["Y"].values)
-        vz = np.zeros_like(ds["Z"].values)
-
-        # Central difference for interior points
-        vx[1:-1] = (ds["X"].values[2:] - ds["X"].values[:-2]) / (2 * dt)
-        vy[1:-1] = (ds["Y"].values[2:] - ds["Y"].values[:-2]) / (2 * dt)
-        vz[1:-1] = (ds["Z"].values[2:] - ds["Z"].values[:-2]) / (2 * dt)
-
-        # Forward difference for first point
-        vx[0] = (ds["X"].values[1] - ds["X"].values[0]) / dt
-        vy[0] = (ds["Y"].values[1] - ds["Y"].values[0]) / dt
-        vz[0] = (ds["Z"].values[1] - ds["Z"].values[0]) / dt
-
-        # Backward difference for last point
-        vx[-1] = (ds["X"].values[-1] - ds["X"].values[-2]) / dt
-        vy[-1] = (ds["Y"].values[-1] - ds["Y"].values[-2]) / dt
-        vz[-1] = (ds["Z"].values[-1] - ds["Z"].values[-2]) / dt
+        vx, vy, vz = (np.gradient(ds[c].values, t, axis=0, edge_order=1) for c in "XYZ")
 
         # Add units if needed
         if not self.dimensionless:

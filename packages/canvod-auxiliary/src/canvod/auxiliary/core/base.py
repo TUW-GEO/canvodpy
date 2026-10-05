@@ -1,10 +1,13 @@
 """Abstract base class for auxiliary GNSS files."""
 
+from __future__ import annotations
+
 import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import xarray as xr
 from canvod.utils.tools import YYYYDOY, deprecated
 from pydantic import ConfigDict, Field
@@ -12,6 +15,11 @@ from pydantic.dataclasses import dataclass
 
 from canvod.auxiliary.core.downloader import FileDownloader, FtpDownloader
 from canvod.auxiliary.interpolation import Interpolator
+
+# How much of the previous and next day AuxFile.join_days keeps: several
+# epochs of any product (15 min orbits, 30 s clocks), enough for the clock
+# jump detection window on both sides.
+DAY_JOIN_MARGIN = np.timedelta64(1, "h")
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
@@ -308,6 +316,55 @@ class AuxFile(ABC):
     def get_interpolation_strategy(self) -> Interpolator:
         """Get the interpolation strategy for this file type."""
         pass
+
+    def join_days(
+        self,
+        previous: AuxFile,
+        following: AuxFile,
+        margin: np.timedelta64 = DAY_JOIN_MARGIN,
+    ) -> xr.Dataset:
+        """This file's data with the end of the previous and the start of the next day.
+
+        A daily file can end before midnight (e.g. a 15 min orbit file at
+        23:45), and its first and last epochs have neighbors on one side
+        only. With ``margin`` of the neighboring days on both sides, the
+        whole day lies inside the data: nothing is extrapolated.
+
+        Parameters
+        ----------
+        previous, following : AuxFile
+            The same product for the previous and the next day.
+        margin : np.timedelta64
+            How much of each neighboring day is kept.
+
+        Returns
+        -------
+        xr.Dataset
+            The epochs of this file, plus those of the neighbors within
+            ``margin`` of this day that this file lacks (e.g. this file's
+            24:00 epoch wins over the next file's 00:00), sorted by epoch.
+            Satellites missing in a file are NaN there. Attrs of this file.
+        """
+        day = self.data
+        start = np.datetime64(YYYYDOY.from_str(self.date).date, "ns")
+        end = start + np.timedelta64(1, "D")
+        before = previous.data.sel(epoch=slice(start - margin, None))
+        after = following.data.sel(epoch=slice(None, end + margin))
+        parts = [
+            part.sel(epoch=~part.epoch.isin(day.epoch.values))
+            for part in (before, after)
+        ]
+        joined = xr.concat(
+            [parts[0], day, parts[1]],
+            dim="epoch",
+            join="outer",
+            data_vars="minimal",
+            coords="minimal",
+            compat="override",
+            combine_attrs="override",
+        ).sortby("epoch")
+        joined.attrs = dict(day.attrs)
+        return joined
 
     @property
     def data(self) -> xr.Dataset:

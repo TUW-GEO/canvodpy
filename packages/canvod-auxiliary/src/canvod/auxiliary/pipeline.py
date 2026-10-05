@@ -5,6 +5,7 @@ Manages downloading, reading, preprocessing, and caching of auxiliary files
 (ephemerides, clock, atmospheric corrections, etc.) for RINEX processing.
 """
 
+import datetime
 import threading
 from pathlib import Path
 
@@ -12,6 +13,7 @@ import numpy as np
 import structlog
 import xarray as xr
 from canvod.readers.matching import MatchedDirs
+from canvod.utils.tools import YYYYDOY
 
 from canvod.auxiliary.core.base import AuxFile
 from canvod.auxiliary.preprocessing import prep_aux_ds
@@ -82,7 +84,13 @@ class AuxDataPipeline:
             keep_sids_count=len(keep_sids) if keep_sids else None,
         )
 
-    def register(self, name: str, aux_file: AuxFile, required: bool = False) -> None:
+    def register(
+        self,
+        name: str,
+        aux_file: AuxFile,
+        required: bool = False,
+        neighbors: tuple[AuxFile, AuxFile] | None = None,
+    ) -> None:
         """Register an auxiliary file handler.
 
         Parameters
@@ -93,6 +101,11 @@ class AuxDataPipeline:
             Instance of AuxFile subclass (Sp3File, ClkFile, etc.).
         required : bool, default False
             If True, pipeline will fail if this file cannot be loaded.
+        neighbors : tuple[AuxFile, AuxFile] | None
+            The same product for the previous and the next day. If given,
+            the file is loaded joined with them
+            (:meth:`~canvod.auxiliary.core.base.AuxFile.join_days`), so the
+            whole day lies inside the data.
 
         Examples
         --------
@@ -113,6 +126,7 @@ class AuxDataPipeline:
             "handler": aux_file,
             "required": required,
             "loaded": False,
+            "neighbors": neighbors,
         }
 
         self._logger.info(
@@ -160,8 +174,10 @@ class AuxDataPipeline:
                     file_path=str(handler.fpath),
                 )
 
-                # Stage 1: Download & read raw dataset
-                raw_ds = handler.data
+                # Stage 1: Download & read raw dataset (joined with the
+                # neighboring days if registered with them)
+                neighbors = entry.get("neighbors")
+                raw_ds = handler.join_days(*neighbors) if neighbors else handler.data
 
                 # Stage 2: Preprocess (sv → sid mapping) with keep_sids filter
                 preprocessed_ds = prep_aux_ds(
@@ -269,11 +285,19 @@ class AuxDataPipeline:
     def source_file_paths(self) -> dict[str, Path | None]:
         """On-disk source path for every registered aux file handler.
 
-        ``{name: handler.fpath}`` -- lets callers (e.g. a cache
-        fingerprint) key off which raw SP3/CLK files fed this pipeline
-        without reaching into the private ``_registry``.
+        ``{name: handler.fpath}``, plus ``{name}_previous_day`` and
+        ``{name}_next_day`` for a file registered with neighbors -- lets
+        callers (e.g. a cache fingerprint) key off which raw SP3/CLK files
+        fed this pipeline without reaching into the private ``_registry``.
         """
-        return {name: entry["handler"].fpath for name, entry in self._registry.items()}
+        paths: dict[str, Path | None] = {}
+        for name, entry in self._registry.items():
+            paths[name] = entry["handler"].fpath
+            neighbors = entry.get("neighbors")
+            if neighbors:
+                paths[f"{name}_previous_day"] = neighbors[0].fpath
+                paths[f"{name}_next_day"] = neighbors[1].fpath
+        return paths
 
     def get_for_time_range(
         self,
@@ -463,30 +487,51 @@ class AuxDataPipeline:
         if date_obj is None:
             raise ValueError("MatchedDirs.yyyydoy must include a valid date")
 
-        # Register ephemerides (REQUIRED)
-        sp3_file = Sp3File.from_datetime_date(
-            date=date_obj,
-            agency=agency,
-            product_type=product_type,
-            ftp_server=ftp_server,
-            local_dir=sp3_dir,
-            user_email=user_email,
-            ftp_timeout_s=ftp_timeout_s,
+        def three_days(
+            file_cls: type[AuxFile], local_dir: Path
+        ) -> tuple[AuxFile, tuple[AuxFile, AuxFile]]:
+            """The day's file and those of the previous and the next day."""
+            day_str = matched_dirs.yyyydoy.to_str()
+            files = {}
+            for offset in (0, -1, 1):
+                when = date_obj + datetime.timedelta(days=offset)
+                try:
+                    files[offset] = file_cls.from_datetime_date(
+                        date=when,
+                        agency=agency,
+                        product_type=product_type,
+                        ftp_server=ftp_server,
+                        local_dir=local_dir,
+                        user_email=user_email,
+                        ftp_timeout_s=ftp_timeout_s,
+                    )
+                except RuntimeError as e:
+                    if offset == 0:
+                        raise
+                    which = "previous" if offset < 0 else "next"
+                    edge = "first" if offset < 0 else "last"
+                    msg = (
+                        f"{agency}/{product_type} {file_cls.__name__} of the "
+                        f"{which} day ({YYYYDOY.from_date(when).to_str()}) is "
+                        f"needed for the {edge} epochs of {day_str}, so that "
+                        "they are interpolated, not extrapolated, but it could "
+                        "not be obtained. Products are published per GPS week: "
+                        "the first day of the next week comes out with that "
+                        f"week. Process {day_str} once it is published.\n\n{e}"
+                    )
+                    raise RuntimeError(msg) from e
+            return files[0], (files[-1], files[1])
+
+        # Register ephemerides (REQUIRED), joined with the neighboring days
+        sp3_file, sp3_neighbors = three_days(Sp3File, sp3_dir)
+        pipeline.register(
+            "ephemerides", sp3_file, required=True, neighbors=sp3_neighbors
         )
-        pipeline.register("ephemerides", sp3_file, required=True)
 
         # Register clock, unless disabled via config/fetch_clock
         if fetch_clock:
-            clk_file = ClkFile.from_datetime_date(
-                date=date_obj,
-                agency=agency,
-                product_type=product_type,
-                ftp_server=ftp_server,
-                local_dir=clk_dir,
-                user_email=user_email,
-                ftp_timeout_s=ftp_timeout_s,
-            )
-            pipeline.register("clock", clk_file, required=True)
+            clk_file, clk_neighbors = three_days(ClkFile, clk_dir)
+            pipeline.register("clock", clk_file, required=True, neighbors=clk_neighbors)
             clock_msg = "ephemerides and clock"
         else:
             clock_msg = "ephemerides only (clock fetching disabled)"
