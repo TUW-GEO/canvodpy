@@ -2047,15 +2047,18 @@ class RinexDataProcessor:
         augmented_datasets: list[tuple[Path, xr.Dataset]],
         existing_hashes: set[str],
         file_hash_map: dict[Path, str | None],
+        aux_datasets: dict[Path, dict[str, xr.Dataset]] | None = None,
     ) -> set[Path]:
         """Rewrite the group with the batch's files replacing their epoch ranges.
 
         Reads the existing group, masks out the temporal ranges of files
         being overwritten, drops data_vars not present in the incoming batch,
         merges in every hashed file of the batch, sorts by epoch and rewrites
-        the group with mode="w". Merging before the rewrite, instead of
-        appending the replacement data afterwards, keeps ``epoch``
-        monotonic when the replaced range lies before the latest stored data.
+        the group (``MyIcechunkStore.rewrite_group``). Merging before the
+        rewrite, instead of appending the replacement data afterwards, keeps
+        ``epoch`` monotonic when the replaced range lies before the latest
+        stored data. The log book is kept; ``sbf_obs`` loses the replaced
+        ranges and gains the ``sbf_obs`` of the merged files.
 
         Returns
         -------
@@ -2128,19 +2131,15 @@ class RinexDataProcessor:
             [ds_filtered, *incoming], dim="epoch", combine_attrs="override"
         ).sortby("epoch")
 
-        # 6. Backup metadata, rewrite group, restore metadata
-        metadata_backup = store.backup_metadata_table(receiver_name, session)
-
-        ds_rewrite = store._normalize_encodings(ds_rewrite)
-        to_icechunk(
-            prepare_write(ds_rewrite, session.store, receiver_name, append_dim=None),
+        # 6. Rewrite the group, keeping its metadata/
+        sbf_parts = self._sbf_obs_parts(aux_datasets, sorted(merged_fnames))
+        store.rewrite_group(
             session,
-            group=receiver_name,
-            mode="w",
+            receiver_name,
+            ds_rewrite,
+            epochs_to_remove,
+            {"sbf_obs": sbf_parts} if sbf_parts else None,
         )
-
-        if metadata_backup is not None:
-            store.restore_metadata_table(receiver_name, metadata_backup, session)
 
         return merged_fnames
 
@@ -2238,14 +2237,26 @@ class RinexDataProcessor:
     # each receiver on a temp branch and promotes it with
     # `MyIcechunkStore.promote_branch` (refused if main moved meanwhile).
 
+    def _sbf_obs_parts(
+        self,
+        aux_datasets: dict[Path, dict[str, xr.Dataset]] | None,
+        fnames: Sequence[Path],
+    ) -> list[xr.Dataset]:
+        """The ``sbf_obs`` of *fnames* to store (none with ``store_sbf_metadata: false``)."""
+        if not aux_datasets or not self._config.processing.params.store_sbf_metadata:
+            return []
+        return [
+            aux_datasets[fname]["sbf_obs"]
+            for fname in fnames
+            if "sbf_obs" in aux_datasets.get(fname, {})
+        ]
+
     def _write_sbf_obs(
         self,
         session: Any,
         receiver_name: str,
         aux_datasets: dict[Path, dict[str, xr.Dataset]] | None,
         written_fnames: Sequence[Path],
-        *,
-        replace_overlaps: bool = False,
     ) -> None:
         """Add the ``sbf_obs`` of the written files into the observations' session.
 
@@ -2254,21 +2265,11 @@ class RinexDataProcessor:
         in the same commit. Skipped with ``store_sbf_metadata: false``.
         Errors propagate, so the caller does not commit either.
         """
-        if not aux_datasets or not self._config.processing.params.store_sbf_metadata:
-            return
-        parts = [
-            aux_datasets[fname]["sbf_obs"]
-            for fname in written_fnames
-            if "sbf_obs" in aux_datasets.get(fname, {})
-        ]
+        parts = self._sbf_obs_parts(aux_datasets, written_fnames)
         if not parts:
             return
         n_epochs = self.site.gnss_store.write_metadata_parts(
-            parts,
-            receiver_name,
-            "sbf_obs",
-            session,
-            replace_overlaps=replace_overlaps,
+            parts, receiver_name, "sbf_obs", session
         )
         self._logger.info(
             "sbf_obs_written",
@@ -3175,6 +3176,7 @@ class RinexDataProcessor:
                     augmented_datasets,
                     existing_hashes,
                     file_hash_map,
+                    aux_datasets,
                 )
                 t_overwrite_prep = time.perf_counter() - _t_ovr0
 
@@ -3377,15 +3379,13 @@ class RinexDataProcessor:
                 log.info("Dataset processing complete in %.2fs", t6 - t5)
 
                 # STEP 4: Write sbf_obs and the log book, then a single commit
-                # for data + metadata. An overwrite rewrote the group with
-                # mode="w", which deletes its metadata/ subgroups, so sbf_obs
-                # is rebuilt from the session's base snapshot.
+                # for data + metadata. The sbf_obs of files an overwrite
+                # rewrote is already in the rewritten group.
                 self._write_sbf_obs(
                     session,
                     receiver_name,
                     aux_datasets,
-                    written_fnames,
-                    replace_overlaps=is_overwrite,
+                    [f for f in written_fnames if f not in rewritten_fnames],
                 )
                 summary = ", ".join(f"{k}={v}" for k, v in actions.items() if v > 0)
                 commit_msg = _with_run_id(

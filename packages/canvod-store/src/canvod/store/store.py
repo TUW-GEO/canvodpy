@@ -1514,6 +1514,11 @@ class MyIcechunkStore:
         -------
         pl.DataFrame | None
             DataFrame with metadata rows, or None if missing.
+
+        Raises
+        ------
+        RuntimeError
+            If the table exists but cannot be read.
         """
         try:
             zroot = zarr.open_group(session.store, mode="r")
@@ -1546,10 +1551,10 @@ class MyIcechunkStore:
             return df
 
         except Exception as e:
-            self._logger.warning(
-                f"Failed to backup metadata table for group '{group_name}': {e}"
-            )
-            return None
+            # Raise: a rewrite would otherwise delete the log book unnoticed
+            raise RuntimeError(
+                f"Could not back up the metadata table of group '{group_name}': {e}"
+            ) from e
 
     def restore_metadata_table(
         self,
@@ -1627,6 +1632,74 @@ class MyIcechunkStore:
                 f"Critical error: could not restore metadata table: {e}"
             ) from e
 
+    def rewrite_group(
+        self,
+        session: Any,
+        group_name: str,
+        dataset: xr.Dataset,
+        drop_ranges: Sequence[tuple[np.datetime64, np.datetime64]],
+        metadata_parts: dict[str, list[xr.Dataset]] | None = None,
+    ) -> None:
+        """Rewrite *group_name* with *dataset* and keep its ``metadata/``.
+
+        A ``mode="w"`` write deletes the group's subgroups. The log book
+        comes back unchanged; every other metadata dataset (e.g. ``sbf_obs``)
+        comes back from the session's base snapshot without its epochs
+        inside *drop_ranges* (the replaced data), merged in epoch order with
+        the datasets in *metadata_parts* (name -> per-file datasets). A
+        metadata dataset left without epochs is not written back. Writes
+        into *session* without committing.
+        """
+        path = f"{group_name}/metadata"
+        table = self.backup_metadata_table(group_name, session)
+        base = self.repo.readonly_session(snapshot_id=session.snapshot_id)
+        stored_meta = zarr.open_group(base.store, mode="r").get(path)
+        stored_names = (
+            set(stored_meta.group_keys()) - {"table"}
+            if stored_meta is not None
+            else set()
+        )
+        parts = metadata_parts or {}
+
+        self._to_icechunk_throttled(
+            self._normalize_encodings(dataset), session, group=group_name, mode="w"
+        )
+        if table is not None:
+            self.restore_metadata_table(group_name, table, session)
+
+        for name in sorted(stored_names | set(parts)):
+            datasets = [
+                self._cleanse_dataset_attrs(self._normalize_encodings(part))
+                for part in parts.get(name, [])
+            ]
+            if name in stored_names:
+                stored = xr.open_zarr(
+                    base.store, group=f"{path}/{name}", consolidated=False
+                )
+                if "epoch" in stored.dims:
+                    epochs = stored["epoch"].values
+                    keep = np.ones(epochs.size, dtype=bool)
+                    for start, end in drop_ranges:
+                        keep &= (epochs < start) | (epochs > end)
+                    stored = stored.isel(epoch=keep)
+                if stored.sizes.get("epoch", 1) > 0:
+                    datasets.insert(0, stored)
+            if not datasets:
+                continue
+            rewrite = (
+                xr.concat(datasets, dim="epoch", combine_attrs="override").sortby(
+                    "epoch"
+                )
+                if len(datasets) > 1
+                else datasets[0]
+            )
+            self._to_icechunk_throttled(
+                self._normalize_encodings(rewrite),
+                session,
+                group=f"{path}/{name}",
+                mode="w",
+            )
+
     def overwrite_file_in_group(
         self,
         dataset: xr.Dataset,
@@ -1641,7 +1714,8 @@ class MyIcechunkStore:
 
         The group's epochs outside ``[start, end]`` and ``dataset`` are merged
         and rewritten in epoch order, so ``epoch`` stays monotonic when the
-        replaced range lies before the latest stored data.
+        replaced range lies before the latest stored data. The log book and
+        the other metadata datasets are kept (:meth:`rewrite_group`).
         """
 
         dataset = self._normalize_encodings(dataset)
@@ -1654,9 +1728,6 @@ class MyIcechunkStore:
                 scheduler="synchronous"
             )  # synchronous avoids Dask serialization error
 
-            # Backup the existing metadata table
-            metadata_backup = self.backup_metadata_table(group_name, session)
-
             mask = (ds_from_store.epoch.values < start) | (
                 ds_from_store.epoch.values > end
             )
@@ -1665,11 +1736,7 @@ class MyIcechunkStore:
                 dim="epoch",
                 combine_attrs="override",
             ).sortby("epoch")
-            ds_rewrite = self._normalize_encodings(ds_rewrite)
-            self._to_icechunk_throttled(ds_rewrite, session, group=group_name, mode="w")
-
-            # write back the backed up metadata table
-            self.restore_metadata_table(group_name, metadata_backup, session)
+            self.rewrite_group(session, group_name, ds_rewrite, [(start, end)])
 
             if commit_message is None:
                 version = get_version_from_pyproject()
@@ -1795,8 +1862,6 @@ class MyIcechunkStore:
         group_name: str,
         name: str,
         session: Any,
-        *,
-        replace_overlaps: bool = False,
     ) -> int:
         """Add per-file metadata datasets to *{group_name}/metadata/{name}*.
 
@@ -1815,13 +1880,6 @@ class MyIcechunkStore:
             Dataset name under ``metadata/`` (e.g. ``"sbf_obs"``).
         session : Session or ForkSession
             Open writable session of the observations' write.
-        replace_overlaps : bool, default False
-            Rewrite the dataset from the session's base snapshot without
-            the stored epochs that fall in the epoch range of any part, as
-            the ``overwrite`` store strategy does for the observations.
-            Needed whenever the observation group was rewritten with
-            ``mode="w"`` in *session*, which deletes its ``metadata/``
-            subgroups.
 
         Returns
         -------
@@ -1837,30 +1895,6 @@ class MyIcechunkStore:
             self._cleanse_dataset_attrs(self._normalize_encodings(part))
             for part in parts
         ]
-        if replace_overlaps:
-            # Read the stored dataset from the snapshot this session started
-            # from: rewriting the observation group with mode="w" (overwrite
-            # strategy) has already deleted its metadata/ subgroups in the
-            # session itself. Opened lazily, so only the rewrite streams it.
-            base = self.repo.readonly_session(snapshot_id=session.snapshot_id)
-            if zarr.open_group(base.store, mode="r").get(path) is not None:
-                stored = xr.open_zarr(base.store, group=path, consolidated=False)
-                epochs = stored["epoch"].values
-                keep = np.ones(epochs.size, dtype=bool)
-                for part in clean:
-                    start = part["epoch"].values.min()
-                    end = part["epoch"].values.max()
-                    keep &= (epochs < start) | (epochs > end)
-                rewrite = xr.concat(
-                    [stored.isel(epoch=keep), *clean],
-                    dim="epoch",
-                    combine_attrs="override",
-                ).sortby("epoch")
-                self._to_icechunk_throttled(
-                    self._normalize_encodings(rewrite), session, group=path, mode="w"
-                )
-                return sum(part.sizes.get("epoch", 0) for part in clean)
-
         exists = zarr.open_group(session.store, mode="r").get(path) is not None
         for i, part in enumerate(clean):
             if i == 0 and not exists:

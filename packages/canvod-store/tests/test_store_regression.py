@@ -505,29 +505,44 @@ class TestMetadataDatasets:
         ds_back = tmp_store.read_metadata_dataset(GROUP, "sbf_obs").compute()
         assert ds_back.sizes["epoch"] == 2 * meta.sizes["epoch"]
 
-    def test_replace_overlaps_after_group_rewrite(self, tmp_store):
-        """Overwrite strategy: mode="w" on the group deletes metadata/;
-        replace_overlaps rebuilds sbf_obs from the base snapshot, keeps the
-        other files' epochs and replaces the overlapping ones."""
-        from icechunk.xarray import to_icechunk
-
+    def test_rewrite_group_keeps_metadata(self, tmp_store):
+        """Overwrite strategy: rewriting the group keeps the log book, and
+        sbf_obs keeps the other files' epochs and gets the new part for the
+        replaced range."""
         ds = make_synthetic_dataset(slot=0)
         tmp_store.write_initial_group(ds, group_name=GROUP)
         parts = [self._make_meta_ds(slot=i) for i in range(3)]
         tmp_store.append_metadata_datasets(parts, group_name=GROUP, name="sbf_obs")
+        rows = tmp_store.metadata_row_count(GROUP)
 
         corrected = self._make_meta_ds(slot=1)
         corrected["pdop"] = corrected["pdop"] * 0 + 9.0
+        replaced = (corrected["epoch"].values.min(), corrected["epoch"].values.max())
         with tmp_store.writable_session("main") as session:
-            to_icechunk(ds, session, group=GROUP, mode="w")
-            tmp_store.write_metadata_parts(
-                [corrected], GROUP, "sbf_obs", session, replace_overlaps=True
+            tmp_store.rewrite_group(
+                session, GROUP, ds, [replaced], {"sbf_obs": [corrected]}
             )
             session.commit("overwrite")
 
+        assert tmp_store.metadata_row_count(GROUP) == rows
         ds_back = tmp_store.read_metadata_dataset(GROUP, "sbf_obs").compute()
         expected = xr.concat([parts[0], corrected, parts[2]], dim="epoch")
         np.testing.assert_array_equal(ds_back["epoch"].values, expected["epoch"].values)
         np.testing.assert_array_almost_equal(
             ds_back["pdop"].values, expected["pdop"].values, decimal=5
         )
+
+    def test_rewrite_group_drops_replaced_range_without_new_part(self, tmp_store):
+        ds = make_synthetic_dataset(slot=0)
+        tmp_store.write_initial_group(ds, group_name=GROUP)
+        parts = [self._make_meta_ds(slot=i) for i in range(3)]
+        tmp_store.append_metadata_datasets(parts, group_name=GROUP, name="sbf_obs")
+
+        replaced = (parts[1]["epoch"].values.min(), parts[1]["epoch"].values.max())
+        with tmp_store.writable_session("main") as session:
+            tmp_store.rewrite_group(session, GROUP, ds, [replaced])
+            session.commit("overwrite")
+
+        ds_back = tmp_store.read_metadata_dataset(GROUP, "sbf_obs").compute()
+        expected = xr.concat([parts[0], parts[2]], dim="epoch")
+        np.testing.assert_array_equal(ds_back["epoch"].values, expected["epoch"].values)

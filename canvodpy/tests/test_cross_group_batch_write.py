@@ -407,3 +407,63 @@ def test_overwrite_keeps_commit_made_to_main_meanwhile(
 
     assert store.get_root_attrs()["other_writer"] == "yes"
     assert "overwrite_reference_01_2025087" in store.repo.list_branches()
+
+
+def _overwrite_after_two_files(
+    store: MyIcechunkStore, store_sbf_metadata: bool
+) -> tuple[xr.Dataset, xr.Dataset]:
+    """Write files a and b with sbf_obs, then overwrite b (same file again).
+
+    Returns the stored sbf_obs of a and b before the overwrite.
+    """
+    files = [(Path(f"{i}.sbf"), _make_ds(i, slot=n)) for n, i in enumerate("ab")]
+    aux = {fname: {"sbf_obs": _sbf_obs_for(ds)} for fname, ds in files}
+    proc = _TestProcessor(store)
+    proc._config = _SbfConfig(store_sbf_metadata=True)
+    proc._append_to_icechunk(files, "canopy_01", [f for f, _ in files], aux)
+
+    proc = _TestProcessor(store, strategy="overwrite")
+    proc._config = _SbfConfig(store_sbf_metadata=store_sbf_metadata)
+    fname, ds = files[1]
+    new_obs = _sbf_obs_for(ds)
+    new_obs["pdop"] = new_obs["pdop"] * 0 + 9.0
+    proc._append_to_icechunk(
+        [(fname, ds)], "canopy_01", [fname], {fname: {"sbf_obs": new_obs}}
+    )
+    return aux[files[0][0]]["sbf_obs"], new_obs
+
+
+def test_overwrite_replaces_sbf_obs_of_rewritten_file(store: MyIcechunkStore) -> None:
+    kept, replaced = _overwrite_after_two_files(store, store_sbf_metadata=True)
+
+    meta = store.read_metadata_dataset("canopy_01", "sbf_obs").compute()
+    expected = xr.concat([kept, replaced], dim="epoch")
+    np.testing.assert_array_equal(meta["epoch"].values, expected["epoch"].values)
+    np.testing.assert_array_equal(meta["pdop"].values, expected["pdop"].values)
+
+
+def test_overwrite_without_sbf_obs_keeps_other_files_sbf_obs(
+    store: MyIcechunkStore,
+) -> None:
+    """A batch without sbf_obs drops only the rewritten file's epochs."""
+    kept, _ = _overwrite_after_two_files(store, store_sbf_metadata=False)
+
+    meta = store.read_metadata_dataset("canopy_01", "sbf_obs").compute()
+    np.testing.assert_array_equal(meta["epoch"].values, kept["epoch"].values)
+
+
+def test_overwrite_keeps_other_metadata_datasets(store: MyIcechunkStore) -> None:
+    files = [(Path(f"{i}.rnx"), _make_ds(i, slot=n)) for n, i in enumerate("ab")]
+    proc = _TestProcessor(store)
+    proc._append_to_icechunk(files, "canopy_01", [f for f, _ in files])
+    other = xr.Dataset({"x": ("station", np.arange(3.0))})
+    with store.writable_session("main") as session:
+        store.write_metadata_parts([other], "canopy_01", "other", session)
+        session.commit("other metadata")
+
+    proc = _TestProcessor(store, strategy="overwrite")
+    proc._append_to_icechunk(files[1:], "canopy_01", [files[1][0]])
+
+    xr.testing.assert_equal(
+        store.read_metadata_dataset("canopy_01", "other").compute(), other
+    )

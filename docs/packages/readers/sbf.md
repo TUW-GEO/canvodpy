@@ -145,7 +145,8 @@ observations dataset and carries receiver geometry and quality monitoring
 signals. The pipeline stores it under `{group}/metadata/sbf_obs` in the
 Icechunk store, in the same commit as the observations of the same files:
 a file whose observations are skipped as already stored adds no `sbf_obs`
-either, so `sbf_obs` covers exactly the stored observation files. Set
+either, so `sbf_obs` covers exactly the stored observation files. An
+`overwrite` run replaces a file's `sbf_obs` together with its observations. Set
 `processing.params.store_sbf_metadata: false` to not store it; broadcast
 geometry still works, since it uses `sbf_obs` in memory.
 
