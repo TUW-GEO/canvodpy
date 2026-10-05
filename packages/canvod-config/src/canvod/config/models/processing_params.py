@@ -63,10 +63,12 @@ class ProcessingParams(_StrictModel):
     aggregate_glonass_fdma: bool = Field(
         True,
         description=(
-            "Aggregate GLONASS FDMA sub-bands into effective G1*/G2* bands. "
-            "When False, each satellite keeps its precise frequency — increases "
-            "SID count and changes the store SID axis. Do not change on an "
-            "existing store without understanding append-compatibility implications."
+            "Aggregate GLONASS FDMA sub-bands into effective G1/G2 bands. "
+            "When False, the GLONASS signal IDs name the FDMA bands "
+            "(G1_FDMA, G2_FDMA), for the observations and the orbit data "
+            "alike. RINEX only: the SBF and NMEA readers refuse False. "
+            "It changes the GLONASS signal IDs, so do not switch it for an "
+            "existing store."
         ),
     )
     store_radial_distance: bool = Field(

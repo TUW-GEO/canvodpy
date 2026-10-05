@@ -17,6 +17,7 @@ def _fp(**overrides) -> str:
         "ephemeris_source": "final",
         "canonical_grid_seconds": CANONICAL_AUX_GRID_SECONDS,
         "source_file_paths": {"ephemerides": None, "clock": None},
+        "aggregate_glonass_fdma": True,
     }
     defaults.update(overrides)
     return compute_aux_cache_fingerprint(**defaults)
@@ -40,6 +41,10 @@ def test_sensitive_to_ephemeris_source() -> None:
 
 def test_sensitive_to_canonical_grid_seconds() -> None:
     assert _fp(canonical_grid_seconds=1.0) != _fp(canonical_grid_seconds=0.5)
+
+
+def test_sensitive_to_aggregate_glonass_fdma() -> None:
+    assert _fp(aggregate_glonass_fdma=True) != _fp(aggregate_glonass_fdma=False)
 
 
 def test_source_file_key_order_does_not_matter() -> None:

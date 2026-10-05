@@ -464,6 +464,12 @@ When enabled, GLONASS FDMA channels are aggregated into the effective bands `G1`
 - Center frequencies being the mean of the respective FDMA sub-bands
 - Bandwidth stretching across all sub-bands including their respective bandwidths
 
+A run passes `processing.params.aggregate_glonass_fdma` to the reader, to the padding
+to all signal IDs (`pad_to_global_sid`) and to the orbit data (`prep_aux_ds`), so the
+GLONASS signal IDs of observations and orbits match. A reader that only gives
+aggregated bands (SBF, NMEA) refuses `aggregate_glonass_fdma=False` with
+`require_aggregated_glonass`; a new reader of that kind should do the same.
+
 ---
 
 ## Step 6 — Implement `to_ds_and_auxiliary()` (Optional)

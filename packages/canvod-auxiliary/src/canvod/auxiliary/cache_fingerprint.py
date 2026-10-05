@@ -33,6 +33,7 @@ def compute_aux_cache_fingerprint(
     ephemeris_source: str,
     canonical_grid_seconds: float,
     source_file_paths: dict[str, Path | None],
+    aggregate_glonass_fdma: bool,
 ) -> str:
     """Compute a stable fingerprint for one day's aux cache entry.
 
@@ -41,6 +42,9 @@ def compute_aux_cache_fingerprint(
     consumers already filter the cached aux data down to their own SID/epoch
     needs at read time (see ``preprocess_with_hermite_aux`` step 2-3), so a
     broader/denser shared cache entry is always a valid superset.
+
+    ``aggregate_glonass_fdma`` is included because it changes the GLONASS
+    signal IDs of the cached data.
 
     Source file mtimes are included so a silent upstream reprocessing (e.g.
     rapid orbit revised to final) produces a new fingerprint rather than
@@ -52,6 +56,7 @@ def compute_aux_cache_fingerprint(
         "product_type": product_type,
         "ephemeris_source": ephemeris_source,
         "canonical_grid_seconds": canonical_grid_seconds,
+        "aggregate_glonass_fdma": aggregate_glonass_fdma,
         "source_files": {
             name: (
                 {"path": str(path), "mtime": path.stat().st_mtime}

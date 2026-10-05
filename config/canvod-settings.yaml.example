@@ -83,9 +83,10 @@ processing:
       # - Phase
       # - Doppler
 
-    # Aggregate GLONASS FDMA sub-bands into effective G1*/G2* bands (recommended).
-    # Set false only if you need per-satellite precise frequencies and understand
-    # that this changes the SID axis (append-incompatible with existing stores).
+    # Aggregate GLONASS FDMA sub-bands into effective G1/G2 bands (recommended).
+    # false: GLONASS signal IDs name the FDMA bands (G1_FDMA, G2_FDMA). RINEX
+    # only; the SBF and NMEA readers refuse false. Changes the GLONASS signal
+    # IDs, so do not switch it for an existing store.
     aggregate_glonass_fdma: true
 
     store_radial_distance: false   # Store satellite-receiver distance (r)

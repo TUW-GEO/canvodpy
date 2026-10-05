@@ -32,9 +32,13 @@ import numpy as np
 import structlog
 import xarray as xr
 from numpy.typing import NDArray
-from pydantic import ConfigDict
+from pydantic import ConfigDict, field_validator
 
-from canvod.readers.base import GNSSDataReader, validate_dataset
+from canvod.readers.base import (
+    GNSSDataReader,
+    require_aggregated_glonass,
+    validate_dataset,
+)
 from canvod.readers.gnss_specs.constants import UREG
 from canvod.readers.gnss_specs.constellations import (
     BEIDOU,
@@ -1350,6 +1354,9 @@ class SbfReader(GNSSDataReader):
     ----------
     fpath : Path
         Path to the ``*.sbf`` (or ``*.SBF``, or receiver-named) binary file.
+    aggregate_glonass_fdma : bool, default True
+        Must be ``True``: GLONASS FDMA signals are always given as
+        aggregated G1/G2 bands; ``False`` is refused.
 
     Examples
     --------
@@ -1376,6 +1383,13 @@ class SbfReader(GNSSDataReader):
     """
 
     model_config = ConfigDict(extra="ignore")
+
+    aggregate_glonass_fdma: bool = True
+
+    @field_validator("aggregate_glonass_fdma")
+    @classmethod
+    def _aggregated_glonass_only(cls, v: bool) -> bool:
+        return require_aggregated_glonass("SBF", v)
 
     @property
     def source_format(self) -> str:

@@ -2071,7 +2071,11 @@ class Rnxv3Obs(GNSSDataReader):
             from canvod.readers.preprocessing import pad_to_global_sid
 
             # Pad/filter to specified sids or all possible sids
-            ds = pad_to_global_sid(ds, keep_sids=keep_sids)
+            ds = pad_to_global_sid(
+                ds,
+                keep_sids=keep_sids,
+                aggregate_glonass_fdma=self.aggregate_glonass_fdma,
+            )
 
         if strip_fillval:
             from canvod.readers.preprocessing import strip_fillvalue

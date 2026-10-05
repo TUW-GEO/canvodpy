@@ -27,7 +27,11 @@ import numpy as np
 import xarray as xr
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from canvod.readers.base import GNSSDataReader, validate_dataset
+from canvod.readers.base import (
+    GNSSDataReader,
+    require_aggregated_glonass,
+    validate_dataset,
+)
 from canvod.readers.gnss_specs.metadata import (
     COORDS_METADATA,
     DTYPES,
@@ -376,11 +380,20 @@ class NmeaObs(GNSSDataReader, BaseModel):
     ----------
     fpath : Path
         Path to the NMEA file.
+    aggregate_glonass_fdma : bool, default True
+        Must be ``True``: GLONASS FDMA signals are always given as
+        aggregated G1/G2 bands; ``False`` is refused.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True, frozen=False)
 
     fpath: Path
+    aggregate_glonass_fdma: bool = True
+
+    @field_validator("aggregate_glonass_fdma")
+    @classmethod
+    def _aggregated_glonass_only(cls, v: bool) -> bool:
+        return require_aggregated_glonass("NMEA", v)
 
     @field_validator("fpath")
     @classmethod

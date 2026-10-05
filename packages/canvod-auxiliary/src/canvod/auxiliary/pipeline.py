@@ -48,7 +48,12 @@ class AuxDataPipeline:
         Logger instance for this pipeline.
     """
 
-    def __init__(self, matched_dirs: MatchedDirs, keep_sids: list[str] | None = None):
+    def __init__(
+        self,
+        matched_dirs: MatchedDirs,
+        keep_sids: list[str] | None = None,
+        aggregate_glonass_fdma: bool = True,
+    ):
         """Initialize the auxiliary data pipeline.
 
         Parameters
@@ -57,9 +62,13 @@ class AuxDataPipeline:
             Matched directories for this processing day.
         keep_sids : list[str] | None
             Optional list of specific SIDs to keep. If None, keeps all possible SIDs.
+        aggregate_glonass_fdma : bool, default True
+            Map GLONASS FDMA satellites to aggregated G1/G2 signal IDs. Must
+            match the GNSS reader's setting, or the GLONASS IDs differ.
         """
         self.matched_dirs = matched_dirs
         self.keep_sids = keep_sids
+        self.aggregate_glonass_fdma = aggregate_glonass_fdma
         self._registry: dict[str, dict] = {}
         self._cache: dict[str, xr.Dataset] = {}
         self._lock = threading.Lock()
@@ -155,7 +164,11 @@ class AuxDataPipeline:
                 raw_ds = handler.data
 
                 # Stage 2: Preprocess (sv → sid mapping) with keep_sids filter
-                preprocessed_ds = prep_aux_ds(raw_ds, keep_sids=self.keep_sids)
+                preprocessed_ds = prep_aux_ds(
+                    raw_ds,
+                    keep_sids=self.keep_sids,
+                    aggregate_glonass_fdma=self.aggregate_glonass_fdma,
+                )
 
                 # Cache the preprocessed version
                 with self._lock:
@@ -369,6 +382,7 @@ class AuxDataPipeline:
         user_email: str | None = None,
         keep_sids: list[str] | None = None,
         fetch_clock: bool | None = None,
+        aggregate_glonass_fdma: bool | None = None,
     ) -> AuxDataPipeline:
         """Factory method to create a standard pipeline with ephemerides and
         clock.
@@ -397,6 +411,10 @@ class AuxDataPipeline:
         fetch_clock : bool, optional
             Whether to also register CLK clock-correction files. If None,
             uses ``config.processing.aux_data.fetch_clock``.
+        aggregate_glonass_fdma : bool, optional
+            GLONASS FDMA signal IDs as aggregated G1/G2 bands, as the GNSS
+            reader produces them. If None, uses
+            ``config.processing.params.aggregate_glonass_fdma``.
 
         Returns
         -------
@@ -423,6 +441,8 @@ class AuxDataPipeline:
         product_type = product_type or aux_cfg.product_type
         ftp_timeout_s = aux_cfg.ftp_timeout_s
         fetch_clock = aux_cfg.fetch_clock if fetch_clock is None else fetch_clock
+        if aggregate_glonass_fdma is None:
+            aggregate_glonass_fdma = cfg.processing.params.aggregate_glonass_fdma
         user_email = user_email or cfg.nasa_earthdata_acc_mail
         if ftp_server is None:
             servers = aux_cfg.get_ftp_servers(user_email)
@@ -433,7 +453,11 @@ class AuxDataPipeline:
         clk_dir = aux_file_path / _CLK_SUBDIR
 
         # Initialize pipeline
-        pipeline = cls(matched_dirs=matched_dirs, keep_sids=keep_sids)
+        pipeline = cls(
+            matched_dirs=matched_dirs,
+            keep_sids=keep_sids,
+            aggregate_glonass_fdma=aggregate_glonass_fdma,
+        )
 
         date_obj = matched_dirs.yyyydoy.date
         if date_obj is None:

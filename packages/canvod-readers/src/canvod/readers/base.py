@@ -168,6 +168,36 @@ def validate_vod_dataset(ds: xr.Dataset) -> None:
 # ---------------------------------------------------------------------------
 
 
+def require_aggregated_glonass(reader: str, aggregate_glonass_fdma: bool) -> bool:
+    """Refuse ``aggregate_glonass_fdma=False`` for a reader that cannot honor it.
+
+    Parameters
+    ----------
+    reader : str
+        Reader name for the message (e.g. ``"SBF"``).
+    aggregate_glonass_fdma : bool
+        The requested setting.
+
+    Returns
+    -------
+    bool
+        ``True``.
+
+    Raises
+    ------
+    ValueError
+        If ``aggregate_glonass_fdma`` is ``False``.
+    """
+    if not aggregate_glonass_fdma:
+        msg = (
+            f"The {reader} reader gives GLONASS FDMA signals as aggregated G1/G2 "
+            f"bands only. Set processing.params.aggregate_glonass_fdma to true "
+            f"for {reader} data."
+        )
+        raise ValueError(msg)
+    return aggregate_glonass_fdma
+
+
 class DatasetStructureValidator(BaseModel):
     """Validates that an xarray.Dataset meets the GNSSDataReader contract.
 

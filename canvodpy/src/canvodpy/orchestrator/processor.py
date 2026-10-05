@@ -248,6 +248,7 @@ def _preprocess_file(
     pad_global_sid: bool,
     aux_group: str | None,
     rinex_v3_parser: str,
+    aggregate_glonass_fdma: bool,
     use_sbf_geometry: bool = False,
     broadcast_canopy_file: Path | None = None,
     broadcast_canopy_fmt: str | None = None,
@@ -311,7 +312,10 @@ def _preprocess_file(
             from canvodpy.factories import ReaderFactory
 
             rnx = ReaderFactory.create(
-                reader_name, fpath=rnx_file, **run_reader_options(reader_name)
+                reader_name,
+                fpath=rnx_file,
+                aggregate_glonass_fdma=aggregate_glonass_fdma,
+                **run_reader_options(reader_name),
             )
             ds, aux_datasets = rnx.to_ds_and_auxiliary(
                 keep_data_vars=keep_vars,
@@ -509,6 +513,7 @@ def preprocess_with_hermite_aux(
     pad_global_sid: bool = True,
     aux_group: str | None = None,
     rinex_v3_parser: str = "validated",
+    aggregate_glonass_fdma: bool = True,
 ) -> tuple[Path, xr.Dataset, dict[str, xr.Dataset], dict[str, list[str]]]:
     """Read RINEX and compute coordinates using Hermite-interpolated aux data from Zarr.
 
@@ -549,6 +554,10 @@ def preprocess_with_hermite_aux(
     rinex_v3_parser : {"validated", "unvalidated_fast"}, default "validated"
         Parser of RINEX v3 files (``processing.params.rinex_v3_parser``);
         ignored by the other readers.
+    aggregate_glonass_fdma : bool, default True
+        Aggregate the GLONASS FDMA channels into one G1 and one G2 band
+        (``processing.params.aggregate_glonass_fdma``). Passed to the reader;
+        the aux data at ``aux_zarr_path`` must use the same setting.
 
     Returns
     -------
@@ -571,6 +580,7 @@ def preprocess_with_hermite_aux(
         pad_global_sid,
         aux_group,
         rinex_v3_parser,
+        aggregate_glonass_fdma,
         use_sbf_geometry=use_sbf_geometry,
         broadcast_canopy_file=broadcast_canopy_file,
         broadcast_canopy_fmt=broadcast_canopy_fmt,
@@ -606,6 +616,7 @@ def preprocess_reference_with_hermite_aux_fanout(
     pad_global_sid: bool = True,
     aux_group: str | None = None,
     rinex_v3_parser: str = "validated",
+    aggregate_glonass_fdma: bool = True,
 ) -> tuple[Path, dict[str, xr.Dataset], dict[str, xr.Dataset], dict[str, list[str]]]:
     """Read a shared reference file once, then compute geometry per canopy pairing.
 
@@ -653,6 +664,7 @@ def preprocess_reference_with_hermite_aux_fanout(
         pad_global_sid,
         aux_group,
         rinex_v3_parser,
+        aggregate_glonass_fdma,
     )
 
 
@@ -1085,6 +1097,7 @@ class RinexDataProcessor:
             ftp_server=self._ftp_server,
             user_email=user_email,
             keep_sids=self.keep_sids,
+            aggregate_glonass_fdma=config.processing.params.aggregate_glonass_fdma,
         )
         t2 = time.perf_counter()
 
@@ -1694,6 +1707,9 @@ class RinexDataProcessor:
             ephemeris_source=self._config.processing.params.ephemeris_source,
             canonical_grid_seconds=CANONICAL_AUX_GRID_SECONDS,
             source_file_paths=self.aux_pipeline.source_file_paths(),
+            aggregate_glonass_fdma=(
+                self._config.processing.params.aggregate_glonass_fdma
+            ),
         )
         group = f"{fingerprint}/{date_str}"
 
@@ -1887,6 +1903,9 @@ class RinexDataProcessor:
                     store_sbf_raw_observables,
                     aux_group=aux_group,
                     rinex_v3_parser=self._config.processing.params.rinex_v3_parser,
+                    aggregate_glonass_fdma=(
+                        self._config.processing.params.aggregate_glonass_fdma
+                    ),
                 ): rinex_file
                 for rinex_file in rinex_files
             }
@@ -3980,6 +3999,7 @@ class RinexDataProcessor:
             self._config.processing.params.store_sbf_raw_observables
         )
         rinex_v3_parser = self._config.processing.params.rinex_v3_parser
+        aggregate_glonass_fdma = self._config.processing.params.aggregate_glonass_fdma
 
         # In broadcast + shared position mode, a reference file takes the
         # satellite geometry of the file of its paired canopy (its
@@ -4128,6 +4148,7 @@ class RinexDataProcessor:
                         broadcast_canopy_fmt=canopy_reader_fmt,
                         aux_group=aux_group,
                         rinex_v3_parser=rinex_v3_parser,
+                        aggregate_glonass_fdma=aggregate_glonass_fdma,
                     )
                 )
 
@@ -4196,6 +4217,7 @@ class RinexDataProcessor:
                         store_sbf_raw_observables=store_sbf_raw_observables,
                         aux_group=aux_group,
                         rinex_v3_parser=rinex_v3_parser,
+                        aggregate_glonass_fdma=aggregate_glonass_fdma,
                     )
                 )
 
