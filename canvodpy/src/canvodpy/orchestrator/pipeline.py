@@ -50,6 +50,7 @@ from canvodpy.orchestrator.discovery import (
     clear_discovery_cache,
     detect_reader_format,
     discover_files,
+    is_compressed,
     receiver_days,
     recipe_file,
     unprocessed_files,
@@ -309,9 +310,27 @@ class PipelineOrchestrator:
         recipe = recipe_file(self.site.site_name, cfg.recipe)
         days = receiver_days(receiver_name, directory, reader_format, recipe)
         skipped = unprocessed_files(directory, reader_format, recipe)
-        if skipped:
-            from canvodpy.orchestrator.data_check import group_by_file_type
+        from canvodpy.orchestrator.data_check import group_by_file_type
 
+        compressed = [p for p in skipped if is_compressed(p)]
+        skipped = [p for p in skipped if not is_compressed(p)]
+        if compressed:
+            self._logger.warning(
+                "compressed_files_not_processed",
+                receiver=receiver_name,
+                directory=str(directory),
+                n_files=len(compressed),
+                by_file_type={
+                    kind: f"{count} (e.g. {example.name})"
+                    for kind, count, example in group_by_file_type(compressed)
+                },
+                hint=(
+                    "canVODpy does not decompress yet. Decompress these files "
+                    "first (gzip/zip, and crx2rnx for Hatanaka-compressed "
+                    "RINEX)."
+                ),
+            )
+        if skipped:
             self._logger.warning(
                 "files_not_processed",
                 receiver=receiver_name,

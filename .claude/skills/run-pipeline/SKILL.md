@@ -43,7 +43,8 @@ deprecated surfaces (`FluentWorkflow`, `process_date()`, `VODWorkflow`,
 ## 3. Check the result
 
 - The run ends with a summary; files it did not process are listed
-  (`files_not_processed`). Report them to the user.
+  (`files_not_processed`; compressed ones apart,
+  `compressed_files_not_processed`). Report them to the user.
 - `just store-info <site>` and `just store-log <site>` show what the
   store holds and its history.
 

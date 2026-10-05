@@ -87,6 +87,28 @@ def test_unrecognized_and_other_format_files_are_reported(tmp_path: Path) -> Non
     assert "2 file(s)" in report.warnings[0]
 
 
+def test_compressed_files_are_reported_apart(tmp_path: Path) -> None:
+    _touch(tmp_path / "rx", DAY1, DAY2 + ".gz", "notes.txt")
+    report, _ = _check(tmp_path)
+    assert report.errors == []
+    assert report.files == 1
+    assert [p.name for p in report.compressed] == [DAY2 + ".gz"]
+    assert [p.name for p in report.unrecognized] == ["notes.txt"]
+    assert any(
+        "1 compressed file(s)" in w and "does not decompress" in w
+        for w in report.warnings
+    )
+
+
+def test_only_compressed_files_is_an_error(tmp_path: Path) -> None:
+    _touch(tmp_path / "rx", DAY1 + ".gz", DAY2 + ".gz")
+    report, _ = _check(tmp_path)
+    assert len(report.errors) == 1
+    assert "2 compressed file(s)" in report.errors[0]
+    assert "Nothing would be processed" in report.errors[0]
+    assert report.warnings == []
+
+
 def test_discovery_errors_are_reported(tmp_path: Path) -> None:
     _touch(tmp_path / "rx" / "a", DAY1)
     _touch(tmp_path / "rx" / "b", DAY1)

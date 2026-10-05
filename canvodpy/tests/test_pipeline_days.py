@@ -108,3 +108,30 @@ def test_canopy_and_reference_of_different_formats_fail(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="same file format"):
         _orchestrator(tmp_path, canopy_format="rinex3")._group_by_date_and_receiver()
+
+
+def test_compressed_files_get_their_own_warning(tmp_path: Path) -> None:
+    _touch(
+        tmp_path / "canopy",
+        "ROSA01TUW_R_20250020000_15M_05S_AA.sbf",
+        "ROSA01TUW_R_20250020015_15M_05S_AA.sbf.gz",
+        "ROSA01TUW_R_20250020030_15M_05S_AA.sbf.zip",
+    )
+    _touch(tmp_path / "ref", "ROSR01TUW_R_20250020000_15M_05S_AA.sbf")
+    orch = _orchestrator(tmp_path)
+
+    grouped = orch._group_by_date_and_receiver()
+
+    assert list(grouped) == ["2025002"]
+    orch._logger.warning.assert_called_once()
+    event, fields = (
+        orch._logger.warning.call_args.args[0],
+        orch._logger.warning.call_args.kwargs,
+    )
+    assert event == "compressed_files_not_processed"
+    assert fields["n_files"] == 2
+    assert fields["by_file_type"] == {
+        ".sbf.gz": "1 (e.g. ROSA01TUW_R_20250020015_15M_05S_AA.sbf.gz)",
+        ".sbf.zip": "1 (e.g. ROSA01TUW_R_20250020030_15M_05S_AA.sbf.zip)",
+    }
+    assert "does not decompress" in fields["hint"]

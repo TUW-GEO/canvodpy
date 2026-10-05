@@ -292,6 +292,10 @@ def _print_site_report(report) -> None:
             say(f"      [red]{escape(error)}[/red]")
         for warning in rx.warnings:
             say(f"      [yellow]{escape(warning)}[/yellow]")
+        if rx.compressed:
+            say("      Compressed, not processed, by file type:")
+            for kind, count, example in group_by_file_type(rx.compressed):
+                say(f"        {escape(kind)}: {count} (e.g. {escape(example.name)})")
         if rx.unrecognized:
             say("      Not processed, by file type:")
             for kind, count, example in group_by_file_type(rx.unrecognized):

@@ -21,12 +21,14 @@ import numpy as np
 
 from canvod.config.models import mixed_format_error
 from canvodpy.orchestrator.discovery import (
+    COMPRESSION_SUFFIXES,
     DiscoveredFile,
     DiscoveryError,
     check_receivers,
     clear_discovery_cache,
     detect_reader_format,
     discover_files,
+    is_compressed,
     receiver_days,
     recipe_file,
     scan_directory,
@@ -58,6 +60,10 @@ class ReceiverReport:
     unrecognized : list[Path]
         Files that are never processed: neither the recipe nor the naming
         convention recognizes them, or they are of another reader format.
+        Compressed files are listed in ``compressed`` instead.
+    compressed : list[Path]
+        Compressed files, which the readers cannot read
+        (:func:`~canvodpy.orchestrator.discovery.is_compressed`).
     sampling_checked : list[float]
         Sampling intervals (seconds) of the data files whose sampling was
         checked and agrees with their canonical name.
@@ -75,6 +81,7 @@ class ReceiverReport:
     days: list[str] = field(default_factory=list)
     files: int = 0
     unrecognized: list[Path] = field(default_factory=list)
+    compressed: list[Path] = field(default_factory=list)
     sampling_checked: list[float] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -105,9 +112,6 @@ class SiteReport:
         return not self.errors and not any(r.errors for r in self.receivers.values())
 
 
-_COMPRESSION_SUFFIXES = {".gz", ".z", ".zip", ".bz2", ".xz"}
-
-
 def file_type(path: Path) -> str:
     """Extension of a file with its digits replaced by ``#``.
 
@@ -116,7 +120,7 @@ def file_type(path: Path) -> str:
     before it (``.rnx.gz``).
     """
     suffixes = path.suffixes
-    if len(suffixes) >= 2 and suffixes[-1].lower() in _COMPRESSION_SUFFIXES:
+    if len(suffixes) >= 2 and suffixes[-1].lower() in COMPRESSION_SUFFIXES:
         suffix = "".join(suffixes[-2:])
     else:
         suffix = path.suffix
@@ -231,7 +235,9 @@ def check_receiver_data(
     files_of_day = {day.yyyydoy: discover_files(day, reader_format) for day in days}
     report.days = sorted(files_of_day)
     report.files = sum(len(files) for files in files_of_day.values())
-    report.unrecognized = unprocessed_files(directory, reader_format, recipe_path)
+    skipped = unprocessed_files(directory, reader_format, recipe_path)
+    report.compressed = [p for p in skipped if is_compressed(p)]
+    report.unrecognized = [p for p in skipped if not is_compressed(p)]
 
     if configured_format == "auto" and files_of_day:
         # One file per day: a run detects the format per day, from all of
@@ -244,7 +250,14 @@ def check_receiver_data(
             report.errors.append(str(exc))
             return report
 
+    compressed_note = (
+        f"{len(report.compressed)} compressed file(s) in {directory} are not "
+        f"processed: canVODpy does not decompress yet. Decompress them first "
+        f"(gzip/zip, and crx2rnx for Hatanaka-compressed RINEX)."
+    )
     if not report.files:
+        if report.compressed:
+            report.errors.append(compressed_note + " Nothing would be processed.")
         if report.unrecognized:
             what = (
                 f"its recipe '{recipe}'"
@@ -256,9 +269,12 @@ def check_receiver_data(
                 f"{directory} holds {len(report.unrecognized)} file(s), but none "
                 f"of them is recognized by {what}, so nothing would be processed."
             )
-        else:
+        elif not report.compressed:
             report.warnings.append(f"{directory} holds no files.")
         return report
+
+    if report.compressed:
+        report.warnings.append(compressed_note)
 
     if report.unrecognized:
         report.warnings.append(

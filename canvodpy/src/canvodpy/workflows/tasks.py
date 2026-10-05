@@ -357,6 +357,7 @@ def validate_data_dirs(site: str) -> dict:
             "days": len(r.days),
             "files": r.files,
             "unrecognized": len(r.unrecognized),
+            "compressed": len(r.compressed),
             "warnings": r.warnings,
         }
         for name, r in report.receivers.items()

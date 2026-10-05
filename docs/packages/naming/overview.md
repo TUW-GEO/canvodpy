@@ -32,7 +32,7 @@ Every canVOD-compatible GNSS file follows this naming format:
 | `SAMPLING` | 3 | Data frequency: value + unit | `05S`, `01S` |
 | `CONTENT` | 2 | User-defined content code | `AA` |
 | `TYPE` | 3--4 | File format, lowercase; runs read `rnx`, `sbf` and `nmea` | `rnx`, `sbf`, `nmea`, `ubx` |
-| `COMPRESSION` | -- | Optional compression extension; runs do not read compressed files, decompress them first | `zip`, `gz` |
+| `COMPRESSION` | -- | Optional compression extension; runs do not read compressed files (warning `compressed_files_not_processed`), decompress them first | `zip`, `gz` |
 
 ### Duration codes
 
@@ -84,6 +84,12 @@ Files a run does not process (names that neither the recipe nor the convention
 recognizes, or a file type the receiver's `reader_format` does not read) do not stop it.
 The run processes the other files and logs one warning per receiver,
 `files_not_processed`, with the number of such files per file type and an example.
+
+Compressed files are never processed, with or without a recipe: general compression
+(`.gz`, `.Z`, `.zip`, `.bz2`, `.xz`, `.zst`, ...) and Hatanaka-compressed RINEX (`.crx`,
+RINEX 2 `.yyd`). They get a warning of their own, `compressed_files_not_processed`.
+Decompress them first (for Hatanaka, `crx2rnx`). A receiver directory holding only
+compressed files fails the check below.
 
 Check a site before processing it; the check finds the files exactly as a run does and
 also lists the files a run would pass over:

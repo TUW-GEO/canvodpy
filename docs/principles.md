@@ -266,7 +266,7 @@ hard validation gate rather than a default that can be bypassed — see
 | `SAMPLING` | 3 | Data frequency: 2-digit value + unit (S/M/H/D) | `01S`, `05S`, `05M` |
 | `CONTENT` | 2 | User-defined content code, default `AA` | `AA` |
 | `TYPE` | 3–4 | File format, lowercase | `rnx`, `sbf`, `ubx`, `nmea` |
-| `COMPRESSION` | — | Optional compression extension (part of the convention; runs do not read compressed files, decompress them first) | `zip`, `gz`, `bz2`, `zst` |
+| `COMPRESSION` | — | Optional compression extension (part of the convention; runs do not read compressed files and warn about them, decompress them first) | `zip`, `gz`, `bz2`, `zst` |
 
 !!! note "Receiver type: 'active' vs 'canopy'"
     In the filename, `T=A` denotes an **active** receiver — the below-canopy unit

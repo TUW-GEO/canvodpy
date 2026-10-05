@@ -16,9 +16,11 @@ from canvodpy.orchestrator.discovery import (
     clear_discovery_cache,
     detect_reader_format,
     discover_files,
+    is_compressed,
     receiver_days,
     recipe_file,
     scan_directory,
+    unprocessed_files,
 )
 
 CANONICAL = "ROSA01TUW_R_20250010000_15M_05S_AA.rnx"
@@ -383,8 +385,53 @@ def test_scan_reports_unrecognized_files(tmp_path: Path) -> None:
     _touch(tmp_path, DAY1, "notes.txt", DAY2 + ".gz")
     scan = scan_directory(tmp_path)
     assert scan.identity == "ROSA01TUW"
-    assert {p.name for p in scan.unrecognized} == {"notes.txt", DAY2 + ".gz"}
+    assert {p.name for p in scan.unrecognized} == {"notes.txt"}
+    assert [p.name for p in scan.compressed] == [DAY2 + ".gz"]
     assert list(scan.days) == ["2025001"]
+
+
+@pytest.mark.parametrize(
+    ("name", "compressed"),
+    [
+        (DAY1 + ".gz", True),
+        ("rosa0010.25o.Z", True),
+        ("rosa0010.25o.zip", True),
+        ("ROSA00TUW_R_20250010000_01D_30S_MO.crx", True),
+        ("ROSA00TUW_R_20250010000_01D_30S_MO.crx.gz", True),
+        ("rosa0010.25d", True),
+        ("rosa0010.25D", True),
+        (DAY1, False),
+        ("rosa0010.25o", False),
+        ("ROSA01TUW_R_20250010000_15M_05S_AA.sbf", False),
+        ("notes.txt", False),
+    ],
+)
+def test_is_compressed(name: str, compressed: bool) -> None:
+    assert is_compressed(Path(name)) is compressed
+
+
+def test_recipe_never_sees_compressed_files(tmp_path: Path) -> None:
+    """A recipe whose glob also matches compressed files does not get them."""
+    seen: list[str] = []
+
+    def matches(name: str) -> bool:
+        seen.append(name)
+        return False
+
+    recipe = SimpleNamespace(glob="*", matches=matches)
+    _touch(tmp_path, "rref001a00.25o", "rref001a15.25o.gz", "rref001a30.25d")
+    with mock.patch(
+        "canvodpy.orchestrator.discovery._load_recipe", return_value=recipe
+    ):
+        scan = scan_directory(tmp_path, Path("ref.yaml"))
+        skipped = unprocessed_files(tmp_path, recipe=Path("ref.yaml"))
+    assert seen == ["rref001a00.25o"]
+    assert [p.name for p in scan.compressed] == ["rref001a15.25o.gz", "rref001a30.25d"]
+    assert [p.name for p in skipped] == [
+        "rref001a15.25o.gz",
+        "rref001a30.25d",
+        "rref001a00.25o",
+    ]
 
 
 @pytest.mark.parametrize(

@@ -18,9 +18,13 @@ Which files count:
    and the recipe sets the receiver identity (e.g. ``ROSA01TUW``).
 2. **Canonical convention** -- otherwise, only files whose names follow the
    canVOD naming convention (``canvod-preflight``) are processed, restricted
-   by ``reader_format``. Compressed files are not selected, because the
-   readers do not decompress. Whether ``canvod-filemap`` is installed does
-   not change this.
+   by ``reader_format``. Whether ``canvod-filemap`` is installed does not
+   change this.
+
+Compressed files (gzip, zip and the like, and Hatanaka-compressed RINEX:
+``.crx``, RINEX 2 ``.yyd``) are never selected, with or without a recipe,
+because the readers do not decompress. They are reported apart from the
+other files a run skips (:func:`is_compressed`).
 
 Each receiver needs its own directory: a directory whose canonical files
 belong to more than one receiver identity is an error, and so are two files
@@ -32,6 +36,7 @@ the same day).
 from __future__ import annotations
 
 import os
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from fnmatch import fnmatch
@@ -40,6 +45,24 @@ from pathlib import Path
 from typing import Any
 
 from natsort import natsorted
+
+#: Suffixes of general-purpose compression, compared in lower case.
+COMPRESSION_SUFFIXES = frozenset(
+    {".gz", ".z", ".zip", ".bz2", ".xz", ".zst", ".7z", ".tgz", ".tar", ".rar"}
+)
+#: Hatanaka-compressed RINEX: ``.crx`` (RINEX 3/4), ``.yyd`` (RINEX 2).
+_HATANAKA = re.compile(r"\.(?:crx|\d{2}d)$", re.IGNORECASE)
+
+
+def is_compressed(path: Path) -> bool:
+    """``True`` if ``path`` is a compressed file the readers cannot read.
+
+    Covers general-purpose compression (``.gz``, ``.Z``, ``.zip``, ...) and
+    Hatanaka-compressed RINEX observations (``.crx``, RINEX 2 ``.yyd``).
+    """
+    return path.suffix.lower() in COMPRESSION_SUFFIXES or bool(
+        _HATANAKA.search(path.name)
+    )
 
 
 @dataclass(frozen=True)
@@ -326,11 +349,14 @@ class DirectoryScan:
     unrecognized : tuple[Path, ...]
         Files neither the recipe nor the naming convention recognizes, and
         which are therefore never processed.
+    compressed : tuple[Path, ...]
+        Compressed files (:func:`is_compressed`), never processed.
     """
 
     days: dict[str, tuple[DiscoveredFile, ...]]
     identity: str | None
     unrecognized: tuple[Path, ...]
+    compressed: tuple[Path, ...] = ()
 
 
 def scan_directory(directory: Path, recipe: Path | None = None) -> DirectoryScan:
@@ -358,6 +384,7 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
         raise DiscoveryError(str(exc)) from exc
     found: list[DiscoveredFile] = []
     unrecognized: list[Path] = []
+    compressed: list[Path] = []
     if directory.is_dir():
         for dirpath, dirnames, filenames in os.walk(directory, followlinks=False):
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
@@ -365,6 +392,9 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
                 if name.startswith("."):
                     continue
                 path = Path(dirpath) / name
+                if is_compressed(path):
+                    compressed.append(path)
+                    continue
                 discovered = (
                     _recipe_file(path, naming_recipe)
                     if naming_recipe is not None
@@ -426,6 +456,7 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
         },
         identity=identities[0] if identities else None,
         unrecognized=tuple(natsorted(unrecognized, key=str)),
+        compressed=tuple(natsorted(compressed, key=str)),
     )
 
 
@@ -488,9 +519,9 @@ def unprocessed_files(
 ) -> list[Path]:
     """Files in ``directory`` that a run never processes.
 
-    These are the files neither the recipe nor the naming convention
-    recognizes, followed by the recognized files of another file type than
-    ``reader_format`` reads.
+    These are the compressed files (:func:`is_compressed`), the files
+    neither the recipe nor the naming convention recognizes, and the
+    recognized files of another file type than ``reader_format`` reads.
 
     Parameters
     ----------
@@ -504,7 +535,8 @@ def unprocessed_files(
     Returns
     -------
     list[Path]
-        Unrecognized files, then the files of another type, each sorted.
+        Compressed files, unrecognized files, then the files of another
+        type, each sorted.
     """
     scan = _scan_directory(Path(directory), recipe)
     read = {
@@ -515,7 +547,7 @@ def unprocessed_files(
     other_type = sorted(
         f.path for files in scan.days.values() for f in files if f.path not in read
     )
-    return [*scan.unrecognized, *other_type]
+    return [*scan.compressed, *scan.unrecognized, *other_type]
 
 
 def detect_reader_format(files: list[DiscoveredFile]) -> str:

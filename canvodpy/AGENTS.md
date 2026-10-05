@@ -11,8 +11,8 @@ other package is a library this one composes.
 | `cli/app.py` | The `canvodpy` console script: `run`, `vod`, `vod-reconcile`, `doctor`, `dashboard`, `config ...`, `store ...` |
 | `cli/run.py` | `canvodpy run`; resumes from the store's last date when `--start` is omitted |
 | `api.py` | `Site`, `Pipeline` (`Site(site).pipeline()`); the deprecated flat functions |
-| `orchestrator/discovery.py` | Which files of a receiver a day processes: naming recipe or canonical names, any folder layout |
-| `orchestrator/pipeline.py` | `PipelineOrchestrator`: days, receivers, batches; warns `files_not_processed` |
+| `orchestrator/discovery.py` | Which files of a receiver a day processes: naming recipe or canonical names, any folder layout; compressed files never (`is_compressed`) |
+| `orchestrator/pipeline.py` | `PipelineOrchestrator`: days, receivers, batches; warns `files_not_processed` and `compressed_files_not_processed` |
 | `orchestrator/processor.py` | Reads, adds geometry, applies preprocessing, writes the observation store |
 | `orchestrator/data_check.py` | `canvodpy config validate`: same discovery as a run |
 | `vod_computer.py` | `VodComputer`, the only VOD implementation (`site.vod`, `canvodpy run`, `canvodpy vod`, `vod-reconcile`) |
