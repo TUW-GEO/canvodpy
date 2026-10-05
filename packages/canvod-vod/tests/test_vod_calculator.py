@@ -319,7 +319,17 @@ class TestTauOmegaZerothOrder:
                 pytest.warns(FutureWarning, match="compute_bulk"),
                 pytest.raises(ImportError, match="canvod-store"),
             ):
-                TauOmegaZerothOrder.from_icechunkstore("/fake/path")
+                TauOmegaZerothOrder.from_icechunkstore(
+                    "/fake/path", "canopy_01", "reference_01_canopy_01"
+                )
+
+    def test_from_icechunkstore_requires_groups(self):
+        """No default groups: the old sky_group default named no stored group."""
+        with (
+            pytest.warns(FutureWarning, match="compute_bulk"),
+            pytest.raises(TypeError, match="sky_group"),
+        ):
+            TauOmegaZerothOrder.from_icechunkstore("/fake/path", "canopy_01")
 
 
 class TestFromDatasets:

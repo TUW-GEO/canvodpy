@@ -88,8 +88,8 @@ class VODCalculator(ABC, BaseModel):
     def from_icechunkstore(
         cls,
         icechunk_store_pth: Path,
-        canopy_group: str = "canopy_01",
-        sky_group: str = "reference_01",
+        canopy_group: str,
+        sky_group: str,
         **open_kwargs: Any,
     ) -> xr.Dataset:
         """Convenience method to calculate VOD directly from an IcechunkStore.
@@ -99,9 +99,11 @@ class VODCalculator(ABC, BaseModel):
         icechunk_store_pth : Path
             Path to Icechunk store.
         canopy_group : str
-            Canopy receiver group name.
+            Canopy receiver group name, e.g. ``"canopy_01"``.
         sky_group : str
-            Sky/reference receiver group name.
+            Reference receiver group name. Runs store a reference receiver
+            once per canopy receiver it is paired with, as
+            ``{reference}_{canopy}``, e.g. ``"reference_01_canopy_01"``.
         open_kwargs : dict[str, Any]
             Additional keyword arguments for IcechunkStore.open().
             Currently unused.
