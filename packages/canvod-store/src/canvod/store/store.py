@@ -767,7 +767,7 @@ class MyIcechunkStore:
     def readonly_session(
         self,
         branch: str = "main",
-    ) -> Generator[icechunk.ReadonlySession]:
+    ) -> Generator[icechunk.Session]:
         """Thin wrapper over ``repo.readonly_session()`` for this CM."""
         yield self.repo.readonly_session(branch)
 
@@ -775,7 +775,7 @@ class MyIcechunkStore:
     def writable_session(
         self,
         branch: str = "main",
-    ) -> Generator[icechunk.WritableSession]:
+    ) -> Generator[icechunk.Session]:
         """Thin wrapper over ``repo.writable_session()`` for this CM."""
         yield self.repo.writable_session(branch)
 
@@ -2445,7 +2445,7 @@ class MyIcechunkStore:
         self,
         group_name: str,
         rows: list[dict[str, Any]],
-        session: icechunk.WritableSession | None = None,
+        session: icechunk.Session | icechunk.ForkSession | None = None,
     ) -> None:
         """
         Append multiple metadata rows in one commit.
@@ -2457,7 +2457,7 @@ class MyIcechunkStore:
         rows : list[dict[str, Any]]
             List of metadata records matching the schema used in
             append_metadata().
-        session : icechunk.WritableSession, optional
+        session : icechunk.Session or icechunk.ForkSession, optional
             If provided, rows are written into this session (caller commits later).
             If None, this method opens its own writable session and commits once.
         """
@@ -2487,12 +2487,12 @@ class MyIcechunkStore:
         # Prepare the Polars DataFrame
         df = pl.DataFrame(rows)
 
-        def _do_append(session_obj: icechunk.WritableSession) -> None:
+        def _do_append(session_obj: icechunk.Session | icechunk.ForkSession) -> None:
             """Append metadata rows to a writable session.
 
             Parameters
             ----------
-            session_obj : icechunk.WritableSession
+            session_obj : icechunk.Session or icechunk.ForkSession
                 Writable session to update.
 
             Returns
