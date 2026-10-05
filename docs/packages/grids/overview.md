@@ -86,12 +86,6 @@ with `cutoff_theta = 0`); those of the triangle and pixel grids add up to
 somewhat more (geodesic 1.01 to 1.05 × 2π, HEALPix 1.01 to 1.08 × 2π at
 2° to 10°).
 
-!!! bug "`EqualAreaBuilder` with `cutoff_theta > 0`"
-    `EqualAreaBuilder` currently applies `cutoff_theta` at the zenith as
-    well: with `cutoff_theta=10` it also leaves out the cells near the
-    zenith (θ < 7.5° at 5° resolution). Use `cutoff_theta=0` with this grid type
-    until this is fixed.
-
 ### Optional dependencies
 
 !!! warning "HEALPix requires an explicit install"

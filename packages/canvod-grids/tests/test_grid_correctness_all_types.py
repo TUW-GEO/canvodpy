@@ -263,12 +263,20 @@ class TestRingGridCoverage:
         np.testing.assert_allclose(grid.get_solid_angles().sum(), 2 * np.pi)
         assert grid.grid["theta_max"].max() == pytest.approx(np.pi / 2)
 
-    @pytest.mark.parametrize("grid_type", ["equal_angle", "equirectangular"])
-    def test_outer_edge_is_the_cutoff(self, grid_type: str) -> None:
-        grid = create_hemigrid(grid_type, angular_resolution=5.0, cutoff_theta=10)
-        assert grid.grid["theta_max"].max() == pytest.approx(np.deg2rad(80))
+    @pytest.mark.parametrize(
+        "grid_type", ["equal_area", "equal_angle", "equirectangular"]
+    )
+    @pytest.mark.parametrize("cutoff", [10, 25])
+    def test_outer_edge_is_the_cutoff(self, grid_type: str, cutoff: int) -> None:
+        # The cutoff is an elevation mask: it moves the outer edge only, the
+        # grid still starts at the zenith (equal_area used to drop the cells
+        # within the cutoff angle of the zenith, A20 #9).
+        grid = create_hemigrid(grid_type, angular_resolution=5.0, cutoff_theta=cutoff)
+        assert grid.grid["theta_min"].min() == 0.0
+        assert grid.grid["theta_max"].max() == pytest.approx(np.deg2rad(90 - cutoff))
         np.testing.assert_allclose(
-            grid.get_solid_angles().sum(), 2 * np.pi * (1 - np.cos(np.deg2rad(80)))
+            grid.get_solid_angles().sum(),
+            2 * np.pi * (1 - np.cos(np.deg2rad(90 - cutoff))),
         )
 
     @pytest.mark.parametrize(

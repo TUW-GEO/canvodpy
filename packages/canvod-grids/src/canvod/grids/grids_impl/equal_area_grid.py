@@ -61,9 +61,9 @@ class EqualAreaBuilder(BaseGridBuilder):
         Theta-band width in degrees.  Controls both the radial resolution and
         (indirectly, via the equal-area constraint) the azimuthal resolution.
     cutoff_theta : float
-        Minimum elevation above the horizon in degrees.  Bands whose outer
-        edge is at or below this cutoff are omitted.  In GNSS terms this is
-        the satellite elevation mask angle.
+        Minimum elevation above the horizon in degrees.  The last band ends
+        at θ = 90° − cutoff_theta; the sky below that elevation gets no
+        cells.  In GNSS terms this is the satellite elevation mask angle.
     phi_rotation : float
         Rigid rotation applied to all phi coordinates after grid construction,
         in degrees.
@@ -120,35 +120,29 @@ class EqualAreaBuilder(BaseGridBuilder):
         phi_lims = []
         cell_ids = []
 
-        # Zenith cell (special case) - only if cutoff allows
-        next_cell_id = 0
+        # Zenith cell (special case). cutoff_theta is an elevation mask: it
+        # only moves the outer edge (above), never the zenith.
         zenith_theta_max = self.angular_resolution_rad / 2
-
-        if self.cutoff_theta_rad < zenith_theta_max:
-            cells.append(
-                pl.DataFrame(
-                    {
-                        "phi": [0.0],
-                        "theta": [0.0],
-                        "phi_min": [0.0],
-                        "phi_max": [2 * np.pi],
-                        "theta_min": [max(0.0, self.cutoff_theta_rad)],
-                        "theta_max": [zenith_theta_max],
-                    }
-                )
+        cells.append(
+            pl.DataFrame(
+                {
+                    "phi": [0.0],
+                    "theta": [0.0],
+                    "phi_min": [0.0],
+                    "phi_max": [2 * np.pi],
+                    "theta_min": [0.0],
+                    "theta_max": [zenith_theta_max],
+                }
             )
-            theta_lims.append(zenith_theta_max)
-            phi_lims.append(np.array([0.0]))
-            cell_ids.append(np.array([0]))
-            next_cell_id = 1
+        )
+        theta_lims.append(zenith_theta_max)
+        phi_lims.append(np.array([0.0]))
+        cell_ids.append(np.array([0]))
+        next_cell_id = 1
 
         # Build theta bands
         for iband, theta_outer in enumerate(theta_edges[1:]):
             theta_inner = theta_edges[iband]
-
-            # Skip bands below cutoff
-            if theta_outer <= self.cutoff_theta_rad:
-                continue
 
             # Solid angle of this band
             band_omega = 2 * np.pi * (np.cos(theta_inner) - np.cos(theta_outer))

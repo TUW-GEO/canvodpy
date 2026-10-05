@@ -94,10 +94,10 @@ class TestGridBuilder:
         builder = EqualAreaBuilder(angular_resolution=10.0, cutoff_theta=10.0)
         grid = builder.build()
 
-        # All cells should have theta_max >= cutoff
-        # (theta_min can be 0 for the zenith cell that spans the cutoff)
-        min_theta_max = grid.grid["theta_max"].min()
-        assert min_theta_max >= np.deg2rad(10.0) * 0.95  # Allow small tolerance
+        # cutoff_theta is an elevation mask: the grid starts at the zenith
+        # and ends 10 deg above the horizon
+        assert grid.grid["theta_min"].min() == 0.0
+        assert grid.grid["theta_max"].max() == pytest.approx(np.deg2rad(80.0))
 
     def test_builder_with_rotation(self):
         """Test builder with phi rotation."""
