@@ -1,6 +1,7 @@
 """Cells without data in the 3D views."""
 
 import numpy as np
+import plotly.graph_objects as go
 import pytest
 
 from canvod.grids import create_hemigrid
@@ -44,3 +45,38 @@ def test_cell_mesh_is_oriented_like_the_surface():
     v1 = np.asarray(grid.grid["htm_vertex_1"][0], dtype=float)
     assert list(mesh.x[:2]) == pytest.approx([v0[1], v1[1]])
     assert list(mesh.y[:2]) == pytest.approx([v0[0], v1[0]])
+
+
+@pytest.mark.parametrize(
+    "grid_type",
+    ["equal_area", "equal_angle", "equirectangular", "geodesic", "fibonacci"],
+)
+def test_cell_mesh_draws_every_grid(grid_type):
+    """Grids other than HTM are drawn like plot_hemisphere_surface."""
+    grid = create_hemigrid(grid_type, angular_resolution=10.0)
+    viz = HemisphereVisualizer3D(grid)
+    data = np.linspace(0.0, 1.0, grid.ncells)
+    mesh = viz.plot_cell_mesh(data=data, show_edges=False).data[0]
+    surface = viz.plot_hemisphere_surface(data=data, show_wireframe=False).data[0]
+    assert list(mesh.x) == pytest.approx(list(surface.x))
+    assert len(mesh.i) > 0
+
+
+def test_elevation_rings_are_elevations():
+    """Ring 0 is the horizon (z = 0), ring 60 lies 60 deg above it."""
+    grid = create_hemigrid("equal_area", angular_resolution=10.0)
+    viz = HemisphereVisualizer3D(grid)
+    fig = viz.add_spherical_overlays(
+        go.Figure(), elevation_rings=[0, 60], meridians_deg=[]
+    )
+    horizon, ring60 = fig.data
+    assert np.asarray(horizon.z) == pytest.approx(0.0)
+    assert np.asarray(ring60.z) == pytest.approx(np.sin(np.radians(60)))
+
+
+def test_elevation_rings_outside_0_90_raise():
+    grid = create_hemigrid("equal_area", angular_resolution=10.0)
+    with pytest.raises(ValueError, match="elevation_rings"):
+        HemisphereVisualizer3D(grid).add_spherical_overlays(
+            go.Figure(), elevation_rings=[-5]
+        )

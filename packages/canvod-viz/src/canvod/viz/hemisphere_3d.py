@@ -854,12 +854,26 @@ class HemisphereVisualizer3D:
         plotly.graph_objects.Figure
             Interactive mesh plot
 
-        Raises
-        ------
-        NotImplementedError
-            For any grid type other than HTM.
+        Notes
+        -----
+        HTM grids are drawn as one trace per triangle. All other grids are
+        drawn like :meth:`plot_hemisphere_surface` (one mesh of all cells),
+        with ``show_edges`` as its ``show_wireframe``.
 
         """
+        grid_type = self.grid.grid_type.lower()
+        if grid_type != "htm":
+            return self.plot_hemisphere_surface(
+                data=data,
+                title=title or "Hemisphere Mesh 3D",
+                colorscale=colorscale,
+                opacity=opacity,
+                show_wireframe=show_edges,
+                width=width,
+                height=height,
+                nan_color=nan_color,
+            )
+
         traces = []
 
         # Prepare data
@@ -869,10 +883,9 @@ class HemisphereVisualizer3D:
             values = data
 
         grid_df = self.grid.grid
-        grid_type = self.grid.grid_type.lower()
 
         # Check if grid supports mesh rendering
-        if grid_type == "htm" and "htm_vertex_0" in grid_df.columns:
+        if "htm_vertex_0" in grid_df.columns:
             # HTM triangular mesh
             for idx, row in enumerate(grid_df.iter_rows(named=True)):
                 try:
@@ -916,12 +929,13 @@ class HemisphereVisualizer3D:
                 except KeyError, TypeError, ValueError:
                     continue
         else:
-            # Not supported for this grid type
-            raise NotImplementedError(
-                f"Cell mesh rendering not implemented for {grid_type} grids"
+            raise ValueError(
+                "HTM grid has no 'htm_vertex_0' column; cannot draw its "
+                "cells. Build it with create_hemigrid('htm', ...)."
             )
 
-        # Sample colorscale (no longer needed above, but kept for compatibility)
+        if show_edges and traces:
+            traces.append(self._extract_wireframe_lines())
 
         # Add colorbar trace
         if values is not None and len(traces) > 0:
@@ -978,7 +992,8 @@ class HemisphereVisualizer3D:
         fig : plotly.graph_objects.Figure
             Existing 3D figure to add overlays to
         elevation_rings : list of int, optional
-            Elevation angles in degrees. Default: [15, 30, 45, 60, 75, 90]
+            Elevation angles in degrees above the horizon (0 = horizon,
+            90 = zenith). Default: [0, 15, 30, 45, 60, 75]
         meridians_deg : list of int, optional
             Meridian angles in degrees. Default: [0, 45, 90, 135, 180, 225, 270, 315]
         overlay_color : str, default 'lightgray'
@@ -991,15 +1006,27 @@ class HemisphereVisualizer3D:
         fig : plotly.graph_objects.Figure
             Modified figure with overlays
 
+        Raises
+        ------
+        ValueError
+            If an elevation is outside [0, 90] degrees.
+
         """
         if elevation_rings is None:
-            elevation_rings = [15, 30, 45, 60, 75, 90]
+            elevation_rings = [0, 15, 30, 45, 60, 75]
         if meridians_deg is None:
             meridians_deg = list(range(0, 360, 45))
+        outside = [e for e in elevation_rings if not 0 <= e <= 90]
+        if outside:
+            msg = (
+                f"elevation_rings must be elevations in [0, 90] degrees "
+                f"(0 = horizon, 90 = zenith), got {outside}"
+            )
+            raise ValueError(msg)
 
-        # Elevation rings
-        for theta_deg in elevation_rings:
-            theta = np.radians(theta_deg)
+        # Elevation rings: polar angle theta = 90 deg - elevation
+        for elevation_deg in elevation_rings:
+            theta = np.radians(90 - elevation_deg)
             phi = np.linspace(0, 2 * np.pi, 200)
             x = np.sin(theta) * np.sin(phi)
             y = np.sin(theta) * np.cos(phi)

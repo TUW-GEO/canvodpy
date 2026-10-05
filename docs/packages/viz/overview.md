@@ -108,8 +108,12 @@ The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T
     Cells without data (NaN) are not part of the color scale: 2D plots
     leave them white, the 3D views draw them in `nan_color` (default
     `"lightgray"`), so they never look like the minimum value.
-    `plot_3d_mesh` renders HTM grids only; other grids raise
-    `NotImplementedError`.
+    `plot_3d_mesh` draws HTM grids one triangle at a time and every other
+    grid like `plot_3d`.
+
+`add_spherical_overlays(fig, elevation_rings=...)` takes elevations above
+the horizon (0 = horizon, 90 = zenith); the default draws rings at 0, 15,
+30, 45, 60 and 75 degrees.
 
 ---
 
