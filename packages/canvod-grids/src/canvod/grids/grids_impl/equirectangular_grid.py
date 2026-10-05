@@ -12,15 +12,18 @@ class EquirectangularBuilder(BaseGridBuilder):
 
     The hemisphere is divided into a regular rectangular array: a constant
     number of theta bands, each containing the same constant number of phi
-    sectors.  Every cell is an identical rectangle in angular coordinates.
-    This is *structurally* identical to ``EqualAngleBuilder`` except for one
-    difference in the zenith treatment: ``EqualAngleBuilder`` collapses the
-    first band into a single zenith cap, while this builder does not — every
-    band has the same number of sectors.
+    sectors.  Every cell is a rectangle of the same angular size in
+    (theta, phi), except the last band and the last sector, which are
+    narrower when Δθ does not divide their range.  It differs from
+    ``EqualAngleBuilder`` at the zenith: ``EqualAngleBuilder`` makes the
+    innermost half band a single zenith cap and puts its band edges half a
+    band off, while this builder starts the first band at the zenith with
+    the same number of sectors as every other band.
 
-    Because solid angle depends on cos(theta), cells near the zenith subtend
-    *more* solid angle than cells near the horizon.  This makes the grid
-    biased toward the zenith for any solid-angle-weighted statistic.
+    A cell's solid angle is Δφ · (cos θ_min − cos θ_max) ≈ Δφ · Δθ · sin θ,
+    so cells near the zenith subtend *less* solid angle than cells near the
+    horizon.  A statistic that weights every cell equally therefore gives
+    the sky near the zenith more weight than its share of the hemisphere.
     **Not recommended for scientific analysis** – use ``EqualAreaBuilder``
     instead.
 
@@ -33,11 +36,10 @@ class EquirectangularBuilder(BaseGridBuilder):
     What ``angular_resolution`` means
     ----------------------------------
     ``angular_resolution`` (degrees) is used as **both** the theta-band width
-    *and* the phi-sector width.  The grid is therefore square in angular
-    coordinates::
+    *and* the phi-sector width::
 
-        n_theta = round((π/2 − cutoff) / Δθ)
-        n_phi   = round(2π / Δθ)
+        n_theta = ceil((π/2 − cutoff) / Δθ)
+        n_phi   = ceil(2π / Δθ)
         total cells = n_theta × n_phi
 
     Mathematical construction
@@ -45,7 +47,8 @@ class EquirectangularBuilder(BaseGridBuilder):
     1. Theta edges are placed at ``0``, ``Δθ``, ``2Δθ``, … up to
        ``π/2 − cutoff_theta`` (the last edge is clamped exactly to
        ``π/2 − cutoff_theta`` rather than overshooting it).
-    2. Phi edges are placed at 0, Δθ, 2Δθ, … up to 2π.
+    2. Phi edges are placed at 0, Δθ, 2Δθ, … up to 2π (the last sector's
+       ``phi_max`` is clamped to 2π).
     3. Every (theta_band, phi_sector) combination produces one cell.  The
        cell centre is the midpoint of the rectangle.
     4. No special zenith cap is created; the band nearest the zenith has
@@ -56,8 +59,8 @@ class EquirectangularBuilder(BaseGridBuilder):
     angular_resolution : float
         Angular spacing in degrees, applied identically in both theta and phi.
     cutoff_theta : float
-        Elevation mask angle in degrees.  Bands whose *inner* edge is at or
-        below ``π/2 − cutoff_theta`` are omitted.
+        Elevation mask angle in degrees.  The last band ends at
+        θ = 90° − cutoff_theta; the sky below that elevation gets no cells.
     phi_rotation : float
         Rigid azimuthal rotation applied after construction, in degrees.
 
@@ -85,7 +88,7 @@ class EquirectangularBuilder(BaseGridBuilder):
             One row per cell with columns: phi, theta, phi_min, phi_max,
             theta_min, theta_max, cell_id.
         theta_lims : np.ndarray
-            Inner theta edge of each band (radians).
+            Outer theta edge of each band (radians).
         phi_lims : list[np.ndarray]
             Array of phi_min values for each band (identical across bands).
         cell_ids : list[np.ndarray]
