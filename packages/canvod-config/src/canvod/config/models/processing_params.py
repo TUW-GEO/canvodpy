@@ -67,8 +67,8 @@ class ProcessingParams(_StrictModel):
             "When False, the GLONASS signal IDs name the FDMA bands "
             "(G1_FDMA, G2_FDMA), for the observations and the orbit data "
             "alike. RINEX only: the SBF and NMEA readers refuse False. "
-            "It changes the GLONASS signal IDs, so do not switch it for an "
-            "existing store."
+            "It changes the GLONASS signal IDs, so an existing store refuses "
+            "data written with the other value."
         ),
     )
     store_radial_distance: bool = Field(

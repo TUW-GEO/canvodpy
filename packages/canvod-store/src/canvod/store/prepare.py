@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
 import xarray as xr
 import zarr
 import zarr.errors
@@ -23,6 +24,21 @@ class GroupVariablesMismatchError(Exception):
 
     Deliberately not a ``ValueError``: a run stops on it instead of skipping
     the receiver-day, because every later day would be refused the same way.
+    """
+
+
+class GroupCoordinatesMismatchError(Exception):
+    """An append does not carry the same labels as the store group.
+
+    The labels of every dimension but the append dimension (e.g. ``sid``)
+    are stored once for the whole group. An append with other labels of the
+    same length would overwrite them for the data already in the group.
+    Usually a setting changed between runs (e.g.
+    ``processing.params.aggregate_glonass_fdma``, which renames the GLONASS
+    sids, or the sid selection).
+
+    Deliberately not a ``ValueError``, like
+    :class:`GroupVariablesMismatchError`.
     """
 
 
@@ -48,10 +64,12 @@ def prepare_write(
     append_dim : str | None
         The dimension the write appends along (``append_dim=`` of the write),
         or ``None`` for a write that creates, replaces or fills a region of
-        the group. An append is checked with :func:`check_append_variables`.
+        the group. An append is checked with :func:`check_append_variables`
+        and :func:`check_append_coordinates`.
     """
     if append_dim is not None:
         check_append_variables(ds, store, group, append_dim)
+        check_append_coordinates(ds, store, group, append_dim)
     attrs, _ = split_preprocessing(ds.attrs)
     ds = ds.copy(deep=False)
     ds.attrs = attrs
@@ -104,6 +122,57 @@ def check_append_variables(
             "processing.preprocessing.grid_assignment), or write to a new store."
         )
         raise GroupVariablesMismatchError(msg)
+
+
+def check_append_coordinates(
+    ds: xr.Dataset, store: Any, group: str, append_dim: str
+) -> None:
+    """Refuse an append whose labels differ from the group's.
+
+    Compares the coordinate of every dimension of ``ds`` but ``append_dim``
+    (e.g. ``sid``) with the one stored in the group, label by label and in
+    order. A group that does not exist yet, or a dimension the group has no
+    coordinate for, is not checked.
+
+    Raises
+    ------
+    GroupCoordinatesMismatchError
+        If a coordinate of ``ds`` has other labels, or another order, than
+        the group's.
+    """
+    try:
+        zgroup = zarr.open_group(store, mode="r", path=group)
+    except FileNotFoundError, zarr.errors.GroupNotFoundError:
+        return
+    stored_names = set(zgroup.array_keys())
+    for dim in ds.dims:
+        if dim == append_dim or dim not in ds.coords or dim not in stored_names:
+            continue
+        array = zgroup[str(dim)]
+        if not isinstance(array, zarr.Array):
+            continue
+        stored = [str(v) for v in np.asarray(array[...])]
+        new = [str(v) for v in ds[dim].values]
+        if stored == new:
+            continue
+        if len(stored) != len(new):
+            what = f"{len(new)} labels, the group has {len(stored)}"
+        else:
+            differing = [(a, b) for a, b in zip(stored, new, strict=True) if a != b]
+            examples = ", ".join(f"{a!r} -> {b!r}" for a, b in differing[:3])
+            what = (
+                f"other labels than the group's at {len(differing)} of "
+                f"{len(stored)} positions (e.g. {examples})"
+            )
+        msg = (
+            f"Cannot append to group '{group}': the new '{dim}' coordinate "
+            f"has {what}. The labels are stored once for the whole group, so "
+            "the append would relabel the data already in it. Restore the "
+            "settings the group was written with (e.g. "
+            "processing.params.aggregate_glonass_fdma or the sid selection), "
+            "or write to a new store."
+        )
+        raise GroupCoordinatesMismatchError(msg)
 
 
 def _dimension_names(array: zarr.Array) -> tuple[str, ...]:

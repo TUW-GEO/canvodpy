@@ -3,6 +3,8 @@
 - An append whose variables along ``epoch`` differ from the group's is
   refused: the variable would end up shorter than the others and the group
   could no longer be opened.
+- An append whose ``sid`` labels differ from the group's is refused: the
+  labels are stored once per group, so it would relabel the stored data.
 - ``add_group_variables`` writes only the new variables, keeps the log book
   and other subgroups, and records one group-wide log-book row.
 - The preprocessing of the data already in the group then includes the
@@ -25,7 +27,10 @@ from canvod.config.models import (
 )
 
 from canvod.store import create_gnss_store, create_vod_store
-from canvod.store.prepare import GroupVariablesMismatchError
+from canvod.store.prepare import (
+    GroupCoordinatesMismatchError,
+    GroupVariablesMismatchError,
+)
 from canvod.store.store import GROUP_WIDE_ACTION
 
 _SIDS = ["G01|L1|C", "G02|L1|C"]
@@ -38,7 +43,11 @@ def _record(steps: list[dict]) -> str:
 
 
 def _dataset(
-    day: int, file_hash: str, record: str, extra: dict | None = None
+    day: int,
+    file_hash: str,
+    record: str,
+    extra: dict | None = None,
+    sids: list[str] = _SIDS,
 ) -> xr.Dataset:
     n = 4
     epochs = np.datetime64(f"2025-01-0{day}T00:00:00", "ns") + np.arange(
@@ -49,7 +58,7 @@ def _dataset(
         data[name] = (["epoch", "sid"], np.full((n, 2), value))
     return xr.Dataset(
         data,
-        coords={"epoch": epochs, "sid": _SIDS},
+        coords={"epoch": epochs, "sid": sids},
         attrs={"File Hash": file_hash, PREPROCESSING_ATTR: record},
     )
 
@@ -89,6 +98,30 @@ class TestAppendCheck:
         group = store.read_group("canopy_01")
         assert group["cell_id_x"].shape == group["SNR"].shape
         assert group["cell_id_x"].values[-1].tolist() == [2.0, 2.0]
+
+
+class TestAppendCoordinateCheck:
+    def test_renamed_sids_refused(self, store) -> None:
+        # The GLONASS names of aggregate_glonass_fdma=False, same count.
+        new = _dataset(3, "h3", _record([]), sids=["G01|L1|C", "R01|G1_FDMA|C"])
+        with pytest.raises(GroupCoordinatesMismatchError, match="1 of 2") as e:
+            store.append_to_group(new, "canopy_01")
+        assert "'G02|L1|C' -> 'R01|G1_FDMA|C'" in str(e.value)
+        assert store.read_group("canopy_01")["sid"].values.tolist() == _SIDS
+
+    def test_reordered_sids_refused(self, store) -> None:
+        new = _dataset(3, "h3", _record([]), sids=_SIDS[::-1])
+        with pytest.raises(GroupCoordinatesMismatchError):
+            store.append_to_group(new, "canopy_01")
+
+    def test_other_sid_count_refused(self, store) -> None:
+        new = _dataset(3, "h3", _record([])).isel(sid=slice(0, 1))
+        with pytest.raises(GroupCoordinatesMismatchError, match="1 labels"):
+            store.append_to_group(new, "canopy_01")
+
+    def test_same_sids_appended(self, store) -> None:
+        store.append_to_group(_dataset(3, "h3", _record([])), "canopy_01")
+        assert store.read_group("canopy_01").sizes["epoch"] == 12
 
 
 class TestAddGroupVariables:

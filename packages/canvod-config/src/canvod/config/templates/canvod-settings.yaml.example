@@ -81,7 +81,7 @@ processing:
     # Aggregate GLONASS FDMA sub-bands into effective G1/G2 bands (recommended).
     # false: GLONASS signal IDs name the FDMA bands (G1_FDMA, G2_FDMA). RINEX
     # only; the SBF and NMEA readers refuse false. Changes the GLONASS signal
-    # IDs, so do not switch it for an existing store.
+    # IDs, so an existing store refuses data written with the other value.
     aggregate_glonass_fdma: true
 
     store_radial_distance: false   # Store satellite-receiver distance (r)

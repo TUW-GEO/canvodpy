@@ -35,7 +35,8 @@ Background: `docs/packages/store/overview.md`,
   (`prepare.prepare_write`, call it before every `to_icechunk`/`to_zarr`;
   pass `append_dim=` for an append, `None` otherwise: an append whose
   variables along it differ from the group's raises
-  `GroupVariablesMismatchError`)
+  `GroupVariablesMismatchError`, one whose labels of another dimension, e.g.
+  `sid`, differ from the group's raises `GroupCoordinatesMismatchError`)
   and the log-book row stores it in the `preprocessing` column (GNSS: the
   record; VOD: `{receiver: [records]}`). Never store it as a data attribute.
   A group refuses data whose settings differ from any record in its log book

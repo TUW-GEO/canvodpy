@@ -154,7 +154,12 @@ per-file ingest registry used by the deduplication guardrails.
 1. **Ingest** — Raw GNSS data (RINEX, SBF or NMEA readers) + satellite geometry
 2. **Preprocess** — Normalise encodings, pad to global SID, strip fill values; the
    optional preprocessing (`processing.preprocessing`) only if set
-3. **Store observations** — Append to `{group}/` with three-layer deduplication
+3. **Store observations** — Append to `{group}/` with three-layer deduplication.
+   An append must have the variables and the `sid` labels of the group: the
+   labels are stored once per group, so other labels (e.g. after switching
+   `processing.params.aggregate_glonass_fdma`) would relabel the stored data.
+   Such an append stops the run (`GroupVariablesMismatchError`,
+   `GroupCoordinatesMismatchError`).
 4. **Query** — Retrieve by time range, signal, or group name
 5. **VOD** — `VodComputer` reads canopy and reference groups and writes the VOD store
 
