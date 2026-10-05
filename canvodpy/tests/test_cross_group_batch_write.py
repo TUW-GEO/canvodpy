@@ -12,8 +12,9 @@ intra-group use -- these tests target the new orchestration logic on top of
 it: pre-pass reconciliation for new groups, action/metadata bookkeeping, and
 fail-fast merge/commit semantics.
 
-"overwrite" strategy is untouched by this refactor (`_append_to_icechunk`
-still handles it, unmodified) -- no dedicated test needed here.
+The "overwrite" strategy still goes through `_append_to_icechunk`; its
+tests at the end check that the promote to main never drops a commit made
+to main meanwhile.
 
 Note on commit count: a batch that creates brand-new groups costs *two*
 commits (a sequential pre-pass commit, then the fork/merge batch commit),
@@ -76,6 +77,9 @@ class _FakeSite:
 
 class _FakeYyyyDoy:
     def __str__(self) -> str:
+        return "2025087"
+
+    def to_str(self) -> str:
         return "2025087"
 
 
@@ -370,3 +374,36 @@ def test_store_sbf_metadata_false_skips_sbf_obs(store: MyIcechunkStore) -> None:
         [("canopy_01", [(Path("only.sbf"), ds)], [Path("only.sbf")], aux, None, "sbf")]
     )
     assert not store.metadata_dataset_exists("canopy_01", "sbf_obs")
+
+
+def test_overwrite_promotes_temp_branch_to_main(store: MyIcechunkStore) -> None:
+    proc = _TestProcessor(store, strategy="overwrite")
+    files = [(Path("ref_1.rnx"), _make_ds("ref_1", slot=0))]
+
+    proc._append_to_icechunk(files, "reference_01", [f for f, _ in files])
+
+    assert "reference_01" in (store.list_groups() or [])
+    assert store.repo.list_branches() == {"main"}
+
+
+def test_overwrite_keeps_commit_made_to_main_meanwhile(
+    store: MyIcechunkStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Another writer commits to main during an overwrite: it is not lost."""
+    from canvod.store.store import BranchMovedError
+
+    proc = _TestProcessor(store, strategy="overwrite")
+    files = [(Path("ref_1.rnx"), _make_ds("ref_1", slot=0))]
+    promote = store.promote_branch
+
+    def promote_after_other_writer(*args, **kwargs):
+        store.set_root_attrs({"other_writer": "yes"}, branch="main")
+        return promote(*args, **kwargs)
+
+    monkeypatch.setattr(store, "promote_branch", promote_after_other_writer)
+
+    with pytest.raises(BranchMovedError):
+        proc._append_to_icechunk(files, "reference_01", [f for f, _ in files])
+
+    assert store.get_root_attrs()["other_writer"] == "yes"
+    assert "overwrite_reference_01_2025087" in store.repo.list_branches()

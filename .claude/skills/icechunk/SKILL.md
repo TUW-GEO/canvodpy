@@ -125,7 +125,10 @@ repo.ops_log()                        # administrative operations: resets, expir
 ```
 
 `reset_branch(..., from_snapshot_id=)` only resets if the tip is still
-the expected one; use it.
+the expected one; use it. On a mismatch it raises a plain
+`IcechunkError`. canvodpy promotes temporary branches (overwrite,
+rechunk) only through `MyIcechunkStore.promote_branch`, which raises
+`BranchMovedError` and keeps the temporary branch.
 
 ## Repository metadata and status (new in icechunk 2)
 

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import json
 import os
 import time
@@ -2230,10 +2229,9 @@ class RinexDataProcessor:
     # writes across receiver groups (e.g. reference + N canopies) using
     # Icechunk's fork/merge primitive instead of one sequential commit per
     # group. Scope: only the "skip" and "unsafe_append" gnss_store_strategy
-    # values -- "overwrite" keeps using `_append_to_icechunk` unchanged
-    # (temp-branch-create + reset_branch has the same ref-write hazard this
-    # plan sidesteps for the other two strategies, and redesigning it is
-    # separate future work).
+    # values -- "overwrite" keeps using `_append_to_icechunk`, which stages
+    # each receiver on a temp branch and promotes it with
+    # `MyIcechunkStore.promote_branch` (refused if main moved meanwhile).
 
     def _write_sbf_obs(
         self,
@@ -3092,6 +3090,7 @@ class RinexDataProcessor:
         # STEP 2: Branch-stage-promote for overwrite; direct main for others
         is_overwrite = self._gnss_store_strategy == "overwrite"
         temp_branch = None
+        current_snapshot = ""
 
         # Timing for perf-degradation investigation (dev/perf_degradation_
         # findings_2026_07_15.md follow-up, 2026-07-18): batch_write_complete's
@@ -3106,15 +3105,16 @@ class RinexDataProcessor:
             _t_branch0 = time.perf_counter()
             yyyydoy = self.matched_data_dirs.yyyydoy.to_str()
             temp_branch = f"overwrite_{receiver_name}_{yyyydoy}"
-            current_snapshot = next(
-                self.site.gnss_store.repo.ancestry(branch="main")
-            ).id
-            try:
-                self.site.gnss_store.repo.create_branch(temp_branch, current_snapshot)
-            except Exception:
-                # Branch may exist from a failed previous run; delete and recreate
+            current_snapshot = self.site.gnss_store.repo.lookup_branch("main")
+            if temp_branch in self.site.gnss_store.repo.list_branches():
+                # Left by an earlier overwrite of this receiver and day that
+                # failed or could not be promoted; this run redoes its work.
+                log.warning(
+                    "Replacing temp branch '%s' left by an earlier overwrite",
+                    temp_branch,
+                )
                 self.site.gnss_store.repo.delete_branch(temp_branch)
-                self.site.gnss_store.repo.create_branch(temp_branch, current_snapshot)
+            self.site.gnss_store.repo.create_branch(temp_branch, current_snapshot)
             log.info(
                 "Created temp branch '%s' for overwrite (snapshot: %s...)",
                 temp_branch,
@@ -3644,21 +3644,12 @@ class RinexDataProcessor:
                 exc_info=True,
             )
 
-        # Promote temp branch to main after successful commit
+        # Promote temp branch to main after successful commit. Refused with
+        # BranchMovedError if main moved since the temp branch was created
+        # (the new commits would be dropped); the temp branch is then kept.
         if is_overwrite and temp_branch:
-            try:
-                new_tip = next(
-                    self.site.gnss_store.repo.ancestry(branch=temp_branch)
-                ).id
-                self.site.gnss_store.repo.reset_branch("main", new_tip)
-                log.info(
-                    "Promoted %s to main (snapshot: %s...)",
-                    temp_branch,
-                    new_tip[:8],
-                )
-            finally:
-                with contextlib.suppress(Exception):
-                    self.site.gnss_store.repo.delete_branch(temp_branch)
+            self.site.gnss_store.promote_branch(temp_branch, "main", current_snapshot)
+            self.site.gnss_store.repo.delete_branch(temp_branch)
 
         # Additive stage_timing for the performance dashboard's per-iteration
         # breakdown (reading/validating/augmenting/writing) -- reuses the
@@ -4476,11 +4467,10 @@ class RinexDataProcessor:
         # ====================================================================
         # PHASE 3 — writes + yields
         # ====================================================================
-        # "overwrite" keeps today's exact sequential per-group loop
-        # (temp-branch-create + reset_branch has the same LocalFileSystem
-        # ref-write hazard the forked path below sidesteps for the other two
-        # strategies -- redesigning it is separate future work, see
-        # dev/cross_group_fork_merge_plan.md). "skip"/"unsafe_append" go
+        # "overwrite" keeps the sequential per-group loop: each receiver is
+        # staged on a temp branch and promoted with
+        # `MyIcechunkStore.promote_branch` (refused if main moved meanwhile;
+        # see dev/cross_group_fork_merge_plan.md). "skip"/"unsafe_append" go
         # through the cross-group fork/merge batch write instead: one
         # ThreadPoolExecutor dispatch + one shared commit for the whole
         # batch, rather than one sequential commit per group.

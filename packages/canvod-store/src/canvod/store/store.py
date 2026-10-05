@@ -93,6 +93,14 @@ def _with_run_id(commit_message: str) -> str:
     return f"{commit_message} (run={run_id})"
 
 
+class BranchMovedError(RuntimeError):
+    """A branch moved while work for it was staged on a temporary branch.
+
+    Promoting the temporary branch would drop the commits made in the
+    meantime, so canVODpy refuses and keeps the temporary branch.
+    """
+
+
 def _json_log_row(row: dict[str, Any]) -> dict[str, Any]:
     """A log-book row with JSON or plain-text values only.
 
@@ -3833,11 +3841,10 @@ class MyIcechunkStore:
         ``metadata/{table,sbf_obs}`` nesting.
 
         Both the data read and the subtree copy are pinned to the exact
-        snapshot captured at the start of this call (not just "whatever
-        ``source_branch`` currently points to"), so this is safe to run
-        even if ``source_branch`` keeps advancing concurrently — anything
-        committed after this call started is simply not part of the
-        rechunk and stays untouched on ``source_branch``.
+        snapshot captured at the start of this call. If ``source_branch``
+        moves before the promotion, the promotion is refused with
+        ``BranchMovedError`` (the new commits would be dropped) and the
+        rechunked data stays on ``temp_branch``.
 
         Parameters
         ----------
@@ -3851,7 +3858,8 @@ class MyIcechunkStore:
             Temporary branch name for rechunked data. If None, uses
             "{group_name}_rechunked".
         promote_to_main : bool
-            If True, reset main branch to rechunked snapshot after writing
+            If True, move ``source_branch`` to the rechunked snapshot after
+            writing (see ``promote_branch``).
         delete_temp_branch : bool
             If True, delete temporary branch after promotion (only if
             promote_to_main=True).
@@ -3860,6 +3868,13 @@ class MyIcechunkStore:
         -------
         str
             Snapshot ID of the rechunked data
+
+        Raises
+        ------
+        ValueError
+            If ``temp_branch`` already exists.
+        BranchMovedError
+            If ``source_branch`` moved during the rechunk.
         """
         if temp_branch is None:
             temp_branch = f"{group_name}_rechunked_temp"
@@ -3873,13 +3888,17 @@ class MyIcechunkStore:
         current_snapshot = self.repo.lookup_branch(source_branch)
 
         # Create temp branch from that snapshot (preserves all existing groups)
-        try:
-            self.repo.create_branch(temp_branch, current_snapshot)
-            self._logger.info(
-                f"Created temporary branch '{temp_branch}' from current {source_branch}"
+        if temp_branch in self.repo.list_branches():
+            raise ValueError(
+                f"Temporary branch '{temp_branch}' already exists (e.g. from "
+                "an earlier rechunk that could not be promoted). Inspect it, "
+                "then delete it with delete_branch() or pass another "
+                "temp_branch."
             )
-        except Exception as e:
-            self._logger.warning(f"Branch '{temp_branch}' may already exist: {e}")
+        self.repo.create_branch(temp_branch, current_snapshot)
+        self._logger.info(
+            f"Created temporary branch '{temp_branch}' from current {source_branch}"
+        )
 
         # Read original data, pinned to current_snapshot
         session = self.repo.readonly_session(snapshot_id=current_snapshot)
@@ -3943,12 +3962,7 @@ class MyIcechunkStore:
 
         # Promote to main if requested
         if promote_to_main:
-            rechunked_snapshot = self.repo.lookup_branch(temp_branch)
-            self.repo.reset_branch(source_branch, rechunked_snapshot)
-            self._logger.info(
-                f"Reset branch '{source_branch}' to rechunked snapshot "
-                f"{rechunked_snapshot}"
-            )
+            self.promote_branch(temp_branch, source_branch, current_snapshot)
 
             # Delete temp branch if requested
             if delete_temp_branch:
@@ -3956,6 +3970,60 @@ class MyIcechunkStore:
                 self._logger.info(f"Deleted temporary branch '{temp_branch}'")
 
         return snapshot_id
+
+    def promote_branch(
+        self,
+        temp_branch: str,
+        target_branch: str,
+        expected_tip: str,
+    ) -> str:
+        """Move ``target_branch`` to the tip of ``temp_branch``.
+
+        Only if ``target_branch`` still points at ``expected_tip``, the
+        snapshot ``temp_branch`` was created from. Otherwise other commits
+        landed on ``target_branch`` meanwhile and moving it would drop them.
+
+        Parameters
+        ----------
+        temp_branch : str
+            Branch holding the staged work.
+        target_branch : str
+            Branch to move (usually ``"main"``).
+        expected_tip : str
+            Snapshot ID ``target_branch`` pointed at when ``temp_branch``
+            was created.
+
+        Returns
+        -------
+        str
+            The new tip of ``target_branch``.
+
+        Raises
+        ------
+        BranchMovedError
+            If ``target_branch`` moved. ``temp_branch`` is left in place.
+        """
+        new_tip = self.repo.lookup_branch(temp_branch)
+        try:
+            self.repo.reset_branch(
+                target_branch, new_tip, from_snapshot_id=expected_tip
+            )
+        except icechunk.IcechunkError as e:
+            current_tip = self.repo.lookup_branch(target_branch)
+            if current_tip == expected_tip:
+                raise
+            raise BranchMovedError(
+                f"Branch '{target_branch}' moved from {expected_tip[:8]} to "
+                f"{current_tip[:8]} while the work was staged on "
+                f"'{temp_branch}'. '{target_branch}' was not changed, so the "
+                f"new commits are kept; the staged work is still on "
+                f"'{temp_branch}' (snapshot {new_tip[:8]}). Run the step "
+                "again once the other writer is done."
+            ) from e
+        self._logger.info(
+            f"Promoted '{temp_branch}' to '{target_branch}' (snapshot {new_tip[:8]})"
+        )
+        return new_tip
 
     def create_branch(self, branch_name: str, snapshot_id: str) -> None:
         """

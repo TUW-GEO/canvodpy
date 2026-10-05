@@ -177,3 +177,61 @@ class TestRechunkGroup:
             "main branch chunking changed despite promote_to_main=False"
         )
         assert f"{group}_rechunked_temp" in store.repo.list_branches()
+
+
+class TestPromoteBranch:
+    """promote_branch() never drops commits made to the target meanwhile."""
+
+    def test_moves_target_when_unchanged(self, store_with_data) -> None:
+        store, _, _ = store_with_data
+        tip = store.repo.lookup_branch("main")
+        store.repo.create_branch("staged", tip)
+        staged_tip = store.set_root_attrs({"staged": "yes"}, branch="staged")
+
+        assert store.promote_branch("staged", "main", tip) == staged_tip
+        assert store.repo.lookup_branch("main") == staged_tip
+
+    def test_refuses_when_target_moved(self, store_with_data) -> None:
+        from canvod.store.store import BranchMovedError
+
+        store, _, _ = store_with_data
+        tip = store.repo.lookup_branch("main")
+        store.repo.create_branch("staged", tip)
+        store.set_root_attrs({"staged": "yes"}, branch="staged")
+        moved_tip = store.set_root_attrs({"other_writer": "yes"}, branch="main")
+
+        with pytest.raises(BranchMovedError, match="moved"):
+            store.promote_branch("staged", "main", tip)
+
+        assert store.repo.lookup_branch("main") == moved_tip
+        assert "staged" in store.repo.list_branches()
+
+    def test_rechunk_keeps_concurrent_commit(
+        self, store_with_data, monkeypatch
+    ) -> None:
+        """A commit to main during a rechunk survives; the rechunk is refused."""
+        from canvod.store.store import BranchMovedError
+
+        store, group, _ = store_with_data
+        write = store._to_icechunk_throttled
+
+        def write_after_other_writer(*args, **kwargs):
+            store.set_root_attrs({"other_writer": "yes"}, branch="main")
+            return write(*args, **kwargs)
+
+        monkeypatch.setattr(store, "_to_icechunk_throttled", write_after_other_writer)
+
+        with pytest.raises(BranchMovedError):
+            store.rechunk_group(group, chunks={"epoch": 360, "sid": -1})
+
+        assert store.get_root_attrs()["other_writer"] == "yes"
+        assert f"{group}_rechunked_temp" in store.repo.list_branches()
+
+    def test_rechunk_refuses_existing_temp_branch(self, store_with_data) -> None:
+        store, group, _ = store_with_data
+        store.repo.create_branch(
+            f"{group}_rechunked_temp", store.repo.lookup_branch("main")
+        )
+
+        with pytest.raises(ValueError, match="already exists"):
+            store.rechunk_group(group, chunks={"epoch": 360, "sid": -1})

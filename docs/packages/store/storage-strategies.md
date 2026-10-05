@@ -29,7 +29,11 @@ under `processing.storage.gnss_store_strategy`.
     ---
 
     Deletes the existing epochs for that file's range, then writes the new version.
-    Each run produces a new Icechunk snapshot for audit.
+    Each run produces a new Icechunk snapshot for audit. The new version is
+    staged on a temporary branch (`overwrite_{receiver}_{YYYYDOY}`) and moved to
+    `main` only if nothing else was committed to `main` meanwhile; otherwise the
+    run stops with `BranchMovedError`, `main` keeps the other commit, and the
+    staged version stays on the temporary branch.
 
     *Best for: correcting already-ingested data after a pipeline bug fix*
 
