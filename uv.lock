@@ -337,6 +337,7 @@ source = { editable = "packages/canvod-ops" }
 dependencies = [
     { name = "canvod-config" },
     { name = "canvod-grids" },
+    { name = "canvod-store" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "structlog" },
@@ -353,6 +354,7 @@ dev = [
 requires-dist = [
     { name = "canvod-config", editable = "packages/canvod-config" },
     { name = "canvod-grids", editable = "packages/canvod-grids" },
+    { name = "canvod-store", editable = "packages/canvod-store" },
     { name = "numpy", specifier = ">=1.26.0" },
     { name = "pandas", specifier = ">=2.1.0" },
     { name = "structlog", specifier = ">=24.1.0" },

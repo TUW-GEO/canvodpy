@@ -826,7 +826,9 @@ class GnssResearchSite:
 
             if analysis_name not in groups:
                 to_icechunk(
-                    prepare_write(vod_ds, session.store, analysis_name),
+                    prepare_write(
+                        vod_ds, session.store, analysis_name, append_dim=None
+                    ),
                     session,
                     group=analysis_name,
                     mode="w",
@@ -834,7 +836,9 @@ class GnssResearchSite:
                 action = "write"
             else:
                 to_icechunk(
-                    prepare_write(vod_ds, session.store, analysis_name),
+                    prepare_write(
+                        vod_ds, session.store, analysis_name, append_dim="epoch"
+                    ),
                     session,
                     group=analysis_name,
                     append_dim="epoch",

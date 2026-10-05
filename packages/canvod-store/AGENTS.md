@@ -31,12 +31,17 @@ Background: `docs/packages/store/overview.md`,
 - **VOD writes** check `validate_vod_dataset` (canvod-readers) first.
 - **Preprocessing record**: a dataset carries its record in memory
   (`PREPROCESSING_ATTR`, canvod-config); every write drops it from the data
-  (`prepare.prepare_write`, call it before every `to_icechunk`/`to_zarr`)
+  (`prepare.prepare_write`, call it before every `to_icechunk`/`to_zarr`;
+  pass `append_dim=` for an append, `None` otherwise: an append whose
+  variables along it differ from the group's raises
+  `GroupVariablesMismatchError`)
   and the log-book row stores it in the `preprocessing` column (GNSS: the
   record; VOD: `{receiver: [records]}`). Never store it as a data attribute.
   A group refuses data whose settings differ from any record in its log book
   (`check_preprocessing_matches`, raises `PreprocessingMismatchError`, which
-  is not a `ValueError` so runs stop on it).
+  is not a `ValueError` so runs stop on it). A group-wide row (action
+  `add_variables`, from `add_group_variables`) adds its steps to every
+  earlier row (`preprocessing_records`).
 - **Log-book rows are JSON or text only** (`_json_log_row`).
 - **One committer per branch.** On local or network file systems icechunk
   cannot detect concurrent commits; the second silently wins. Parallel

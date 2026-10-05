@@ -16,6 +16,7 @@ Vertex / grid conversion
 from __future__ import annotations
 
 import warnings
+from importlib.metadata import version
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -552,60 +553,54 @@ def store_grid(
     return snapshot_id
 
 
+@deprecated(
+    "store_dataset_with_cell_ids() is left over from development and will be "
+    "removed with the next major version. Use canvod.ops.assign_grid_cells_in_store() "
+    "instead."
+)
 def store_dataset_with_cell_ids(
     ds: xr.Dataset,
     store: Any,
     group_name: str,
 ) -> str:
-    """Write a dataset (with cell-ID LUT columns) back to the store.
+    """Add the ``cell_id_*`` variables of a dataset to its store group.
 
-    After calling :func:`add_cell_ids_to_vod_fast` or
-    :func:`add_cell_ids_to_ds_fast`, the dataset carries
-    ``cell_id_<grid_name>`` variables and a ``grid_references`` attr.
-    This function persists those additions to the Icechunk store.
+    Only the ``cell_id_*`` variables are written
+    (``MyIcechunkStore.add_group_variables``); the group's data, log book
+    and other subgroups stay as they are. ``ds`` must cover all epochs and
+    signals of the group, in the same order.
+
+    The cells were computed outside canVODpy's preprocessing, so the log
+    book records them as an operation no run applies: later writes into
+    the group are refused. ``canvod.ops.assign_grid_cells_in_store`` computes the
+    cells as a run does, so runs with the same grid assignment can still
+    append.
 
     Parameters
     ----------
     ds : xr.Dataset
         Dataset with cell-ID variables already added.
     store
-        Icechunk store instance (e.g., MyIcechunkStore).
+        Icechunk store instance (``MyIcechunkStore``).
     group_name : str
-        Zarr group path, e.g. ``'reference_01_canopy_01'``.
+        Zarr group path, e.g. ``'canopy_01'``.
 
     Returns
     -------
     str
-        Snapshot ID from the commit.
-
-    Examples
-    --------
-    >>> from canvod.grids import (
-    ...     add_cell_ids_to_ds_fast, store_dataset_with_cell_ids,
-    ... )
-    >>> ds = add_cell_ids_to_ds_fast(vod_ds, grid, "equal_area_2deg")
-    >>> snapshot_id = store_dataset_with_cell_ids(ds, store, "receiver_01")
-
+        The new tip of ``main``.
     """
     cell_id_vars = [str(v) for v in ds.data_vars if str(v).startswith("cell_id_")]
-    grid_refs = ds.attrs.get("grid_references", [])
-
-    print(f"\nStoring dataset to '{group_name}'...")
-    print(f"  Cell-ID variables: {cell_id_vars}")
-    print(f"  Grid references: {grid_refs}")
-
-    with store.writable_session() as session:
-        from icechunk.xarray import to_icechunk
-
-        to_icechunk(ds, session, group=group_name, mode="w")
-        snapshot_id = commit_with_rebase(
-            session,
-            f"Stored {group_name} with cell-ID mappings ({', '.join(cell_id_vars)})",
-        )
-
-    print(f"  ✓ Snapshot: {snapshot_id[:8]}...")
-
-    return snapshot_id
+    return store.add_group_variables(
+        group_name,
+        ds[cell_id_vars],
+        step={
+            "op": "store_dataset_with_cell_ids",
+            "settings": {"variables": cell_id_vars},
+            "result": {},
+        },
+        software={"canvod-grids": version("canvod-grids")},
+    )
 
 
 def load_grid(

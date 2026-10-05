@@ -272,5 +272,37 @@ mismatch, the write raises `PreprocessingMismatchError` and `canvodpy run`
 stops with exit code 1, since every later day would be refused the same way:
 keep the setting for the life of a store, or start a new store.
 
+### Adding grid cells to stored data
+
+Data written without `grid_assignment` can get their cells afterwards, for a
+GNSS receiver group or a VOD analysis group:
+
+```python
+from canvod.ops import assign_grid_cells_in_store
+
+assign_grid_cells_in_store(
+    site.gnss_store, "canopy_01", grid_type="equal_area", angular_resolution=2.0
+)
+```
+
+It runs the same operation as `grid_assignment` in a run on all data of the
+group and writes only the new `cell_id_*` variable; the data, the log book and
+the other subgroups stay as they are. The log book receives one row for the
+whole group (action `add_variables`, no time range) whose record holds the
+`grid_assign` step. From then on, the data already in the group count as
+preprocessed with that step as well:
+
+- A later run must set `grid_assignment` to the same `grid_type` and
+  `angular_resolution`; its data then carry the cells, and the append goes
+  through. A run without it is refused with `PreprocessingMismatchError`.
+- A VOD analysis group accepts only VOD computed from GNSS data with the same
+  grid assignment: assign the cells to the receiver groups too, or compute the
+  VOD again from them.
+
+An append whose variables differ from the group's (e.g. data without the
+`cell_id_*` variable of the group) is refused in any case
+(`GroupVariablesMismatchError`, which also stops a run): the variable would no
+longer be as long as the others, and the group could no longer be opened.
+
 `build_default_pipeline(config)` builds the same pipeline from a
 `PreprocessingConfig`; called without one, it reads the setting.

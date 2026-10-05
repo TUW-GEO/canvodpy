@@ -1,12 +1,15 @@
 """Grid cell assignment operation."""
 
 import time
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import structlog
 import xarray as xr
 
-from canvod.ops.base import Op, OpResult
+from canvod.ops.base import Op, OpResult, software_versions
+
+if TYPE_CHECKING:
+    from canvod.store import MyIcechunkStore
 
 logger = structlog.get_logger(__name__)
 
@@ -126,3 +129,66 @@ def grid_assign(
     op = GridAssignment(grid_type=grid_type, angular_resolution=angular_resolution)
     out, _ = op(ds)
     return out
+
+
+def assign_grid_cells_in_store(
+    store: MyIcechunkStore,
+    group_name: str,
+    grid_type: str,
+    angular_resolution: float,
+    branch: str = "main",
+) -> str:
+    """Assign the observations already in a store group to grid cells.
+
+    The same operation as ``processing.preprocessing.grid_assignment`` in a
+    run, applied afterwards to all data of ``group_name`` (a GNSS receiver
+    group or a VOD analysis group). Only the new ``cell_id_<grid>`` variable
+    is written; the data, the log book and the other subgroups stay as they
+    are (``MyIcechunkStore.add_group_variables``).
+
+    Later writes into the group must carry the cells too: a run is accepted
+    only with ``processing.preprocessing.grid_assignment`` set to the same
+    ``grid_type`` and ``angular_resolution``. A VOD analysis group accepts
+    only VOD computed from GNSS data with the same grid assignment, so
+    assign the cells to the receiver groups as well.
+
+    Parameters
+    ----------
+    store : MyIcechunkStore
+        GNSS or VOD store.
+    group_name : str
+        Group whose observations to assign.
+    grid_type : str
+        Grid builder name (e.g. ``"equal_area"``).
+    angular_resolution : float
+        Grid resolution in degrees.
+    branch : str, default "main"
+        Branch to change.
+
+    Returns
+    -------
+    str
+        The new tip of ``branch``.
+
+    Raises
+    ------
+    ValueError
+        If the group has no ``phi`` / ``theta`` on ``(epoch, sid)``, already
+        has these cells, or a temporary branch is left from an earlier call.
+    """
+    op = GridAssignment(grid_type=grid_type, angular_resolution=angular_resolution)
+    ds = store.read_group(group_name, branch=branch)
+    out, result = op(ds)
+    if not result.result.get("assigned"):
+        raise ValueError(
+            f"Group '{group_name}' has no phi/theta (epoch, sid) variables to "
+            "assign to grid cells"
+        )
+    variable = result.result["variable"]
+    return store.add_group_variables(
+        group_name,
+        out[[variable]],
+        step=result.step(),
+        software=software_versions(GridAssignment.packages),
+        branch=branch,
+    )

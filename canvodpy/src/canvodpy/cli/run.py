@@ -703,6 +703,7 @@ def run(
         dashboard_port=dashboard_port,
     )
     from canvod.config.models import PreprocessingMismatchError
+    from canvod.store.prepare import GroupVariablesMismatchError
     from canvodpy.orchestrator.discovery import DiscoveryError
 
     try:
@@ -716,7 +717,7 @@ def run(
             file=sys.stderr,
         )
         code = 1
-    except PreprocessingMismatchError as e:
+    except (PreprocessingMismatchError, GroupVariablesMismatchError) as e:
         # Every later day would be refused the same way: stop, and say
         # what to change.
         print(f"Error: {e}", file=sys.stderr)

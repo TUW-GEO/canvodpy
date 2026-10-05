@@ -23,6 +23,7 @@ dependencies = [
     "pandas>=2.1.0",
     "canvod-config>=0.4.0",
     "canvod-grids>=0.4.0",
+    "canvod-store>=0.4.0",
     "structlog>=24.1.0",
 ]
 
@@ -35,6 +36,7 @@ dev = [
 [tool.uv.sources]
 canvod-config = { workspace = true }
 canvod-grids = { workspace = true }
+canvod-store = { workspace = true }
 
 [project.urls]
 Homepage = "https://github.com/nfb2021/canvodpy"

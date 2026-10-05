@@ -18,9 +18,12 @@ import structlog
 import xarray as xr
 import zarr
 from canvod.config.models import (
+    PREPROCESSING_ATTR,
     PreprocessingMismatchError,
     describe_settings,
+    preprocessing_record,
     preprocessing_settings,
+    preprocessing_steps,
     split_preprocessing,
     vod_preprocessing_settings,
 )
@@ -133,6 +136,76 @@ def _written_rows_overlapping(
     else:
         skipped = exists
     return rows.filter(~skipped)
+
+
+#: Log-book action of a row that describes a change to the whole group
+#: (:meth:`MyIcechunkStore.add_group_variables`), not the data of one file.
+#: Its ``start`` and ``end`` are empty (NaT) and its ``rinex_hash`` is "", so
+#: the duplicate checks never match it; its ``preprocessing`` record holds
+#: only the steps it applied to the data already in the group.
+GROUP_WIDE_ACTION = "add_variables"
+
+
+def _extend_record(record: str, added: list[str], vod: bool) -> str:
+    """``record`` with the steps of the group-wide records ``added`` appended.
+
+    For a VOD store, ``record`` holds the GNSS records behind a result
+    (``vod_preprocessing_record``); the steps are appended to each of them.
+    """
+    if not added:
+        return record
+    if vod:
+        sources = json.loads(record) if record else {"": [""]}
+        return json.dumps(
+            {
+                name: [_extend_record(r, added, vod=False) for r in records]
+                for name, records in sources.items()
+            },
+            sort_keys=True,
+        )
+    steps = preprocessing_steps(record)
+    software = dict(json.loads(record).get("software", {})) if record else {}
+    for group_wide in added:
+        steps += preprocessing_steps(group_wide)
+        software.update(json.loads(group_wide)["software"])
+    return preprocessing_record(steps, software)
+
+
+def _effective_preprocessing(df: pl.DataFrame, vod: bool) -> pl.DataFrame:
+    """File rows of a log book, each with the preprocessing its data have now.
+
+    That is the row's own record plus the steps of every group-wide row
+    (:data:`GROUP_WIDE_ACTION`) written after it. Group-wide rows are left
+    out.
+    """
+    if "action" not in df.columns or "preprocessing" not in df.columns:
+        return df
+    is_group_wide = pl.col("action") == GROUP_WIDE_ACTION
+    group_wide = df.filter(is_group_wide).sort("index")
+    files = df.filter(~is_group_wide)
+    if group_wide.is_empty():
+        return files
+    gw_index = group_wide["index"].to_list()
+    gw_records = group_wide["preprocessing"].to_list()
+    cache: dict[tuple[str, int], str] = {}
+    effective = []
+    for index, record in zip(
+        files["index"].to_list(), files["preprocessing"].to_list(), strict=True
+    ):
+        first_later = next(
+            (i for i, gw in enumerate(gw_index) if gw > index), len(gw_index)
+        )
+        key = (record, first_later)
+        if key not in cache:
+            cache[key] = _extend_record(record, gw_records[first_later:], vod)
+        effective.append(cache[key])
+    return files.with_columns(pl.Series("preprocessing", effective))
+
+
+def _time_or_none(value: np.datetime64) -> np.datetime64 | None:
+    """``value`` in ns for a log-book row; ``None`` for NaT (a group-wide row)."""
+    value = np.datetime64(value, "ns")
+    return None if np.isnat(value) else value
 
 
 def _describe(record: str, settings_of: Any) -> str:
@@ -498,7 +571,9 @@ class MyIcechunkStore:
         ``throttle`` overrides the config-derived default when explicitly
         passed; leave it ``None`` to defer to config.
         """
-        dataset = prepare_write(dataset, session.store, kwargs["group"])
+        dataset = prepare_write(
+            dataset, session.store, kwargs["group"], append_dim=kwargs.get("append_dim")
+        )
         if "encoding" in kwargs:
             kwargs["encoding"] = with_time_units(dataset, kwargs["encoding"])
         should_throttle = (
@@ -953,6 +1028,9 @@ class MyIcechunkStore:
         """Preprocessing records in ``group_name``'s log book, without repeats.
 
         In ingest order; rows written before the record existed give ``""``.
+        Each file row's record includes the steps of the group-wide rows
+        written after it (:meth:`add_group_variables`): it describes the
+        data as they are now.
         With ``start`` and ``end``, only rows whose data overlap that range,
         without rows of files skipped as already ingested (as
         :meth:`source_file_hashes`). A group without a log book gives none.
@@ -962,6 +1040,7 @@ class MyIcechunkStore:
                 df = self.load_metadata(session.store, group_name)
         except KeyError, zarr.errors.GroupNotFoundError:
             return []
+        df = _effective_preprocessing(df, vod=self.store_type == "vod_store")
         if start is not None and end is not None:
             df = _written_rows_overlapping(df, start, end)
         if df.is_empty():
@@ -1013,6 +1092,131 @@ class MyIcechunkStore:
                     "setting, or write to a new store."
                 )
                 raise PreprocessingMismatchError(msg)
+
+    def add_group_variables(
+        self,
+        group_name: str,
+        variables: xr.Dataset,
+        step: dict[str, Any],
+        software: dict[str, str],
+        branch: str = "main",
+    ) -> str:
+        """Add variables computed from the data already in a group.
+
+        For example the grid cells of every observation
+        (``canvod.ops.assign_grid_cells_in_store``). Only the new variables are
+        written; the group's other variables, its log book and its other
+        subgroups stay as they are. The write is staged on a temporary
+        branch and moved to ``branch`` with :meth:`promote_branch`.
+
+        The log book receives one group-wide row (:data:`GROUP_WIDE_ACTION`)
+        whose preprocessing record holds ``step``. From then on, the
+        preprocessing of the data already in the group counts as their own
+        plus ``step`` (:meth:`preprocessing_records`), so a later write is
+        accepted only if it was preprocessed with ``step`` as well, and
+        thus carries the new variables too.
+
+        Parameters
+        ----------
+        group_name : str
+            Store group, e.g. ``"canopy_01"`` or a VOD analysis group.
+        variables : xr.Dataset
+            The new variables, with the group's dimensions and coordinate
+            values (all of its epochs and signals, in the same order).
+        step : dict
+            The operation that computed them, as a preprocessing step
+            ``{"op", "settings", "result"}`` (``canvod.ops.OpResult.step``).
+        software : dict[str, str]
+            Version of each package whose code computed them.
+        branch : str, default "main"
+            Branch to change.
+
+        Returns
+        -------
+        str
+            The new tip of ``branch``.
+
+        Raises
+        ------
+        ValueError
+            If the group does not exist, already has one of the variables,
+            or ``variables`` do not match its dimensions and coordinates; or
+            if the temporary branch already exists.
+        BranchMovedError
+            If ``branch`` moved meanwhile; the work stays on the temporary
+            branch.
+        """
+        if not self.group_exists(group_name, branch):
+            raise ValueError(f"Group '{group_name}' does not exist on '{branch}'")
+        with self.readonly_session(branch) as session:
+            existing = xr.open_zarr(session.store, group=group_name, consolidated=False)
+        new_names = [str(name) for name in variables.data_vars]
+        if not new_names:
+            raise ValueError("No variables to add")
+        present = sorted(set(new_names) & {str(v) for v in existing.variables})
+        if present:
+            raise ValueError(
+                f"Group '{group_name}' already has {present}; they are not replaced."
+            )
+        for dim in variables.dims:
+            if dim not in existing.dims:
+                raise ValueError(f"Group '{group_name}' has no dimension '{dim}'")
+            if variables.sizes[dim] != existing.sizes[dim] or (
+                dim in variables.coords
+                and not np.array_equal(variables[dim].values, existing[dim].values)
+            ):
+                raise ValueError(
+                    f"The new variables do not cover the {dim!r} values of group "
+                    f"'{group_name}' exactly (all of them, in the same order)"
+                )
+
+        to_write = variables.drop_vars(list(variables.coords))
+        for name in new_names:
+            to_write[name].encoding.clear()
+            template = next(
+                (
+                    existing[v]
+                    for v in existing.data_vars
+                    if existing[v].dims == to_write[name].dims
+                ),
+                None,
+            )
+            if template is not None and "chunks" in template.encoding:
+                to_write[name].encoding["chunks"] = template.encoding["chunks"]
+
+        tip = self.repo.lookup_branch(branch)
+        temp_branch = f"add_variables_{group_name.replace('/', '__')}"
+        if temp_branch in self.repo.list_branches():
+            raise ValueError(
+                f"Temporary branch '{temp_branch}' already exists (e.g. from an "
+                "earlier call that could not be promoted). Inspect it, then "
+                "delete it with delete_branch()."
+            )
+        self.repo.create_branch(temp_branch, tip)
+
+        commit_message = _with_run_id(
+            f"Added {', '.join(new_names)} to {group_name} ({step['op']})"
+        )
+        session = self.repo.writable_session(temp_branch)
+        self._to_icechunk_throttled(to_write, session, group=group_name, mode="a")
+        self._append_metadata_row(
+            zroot=zarr.open_group(session.store, mode="a"),
+            group_name=group_name,
+            rinex_hash="",
+            start=np.datetime64("NaT", "ns"),
+            end=np.datetime64("NaT", "ns"),
+            snapshot_id="",
+            action=GROUP_WIDE_ACTION,
+            commit_msg=commit_message,
+            dataset_attrs={
+                PREPROCESSING_ATTR: preprocessing_record([step], software),
+                "variables": new_names,
+            },
+        )
+        commit_with_rebase(session, commit_message)
+        new_tip = self.promote_branch(temp_branch, branch, tip)
+        self.repo.delete_branch(temp_branch)
+        return new_tip
 
     def read_group(
         self,
@@ -2135,8 +2339,8 @@ class MyIcechunkStore:
         written_at = datetime.now(UTC).isoformat()
         row = {
             "rinex_hash": str(rinex_hash),
-            "start": np.datetime64(start, "ns"),
-            "end": np.datetime64(end, "ns"),
+            "start": _time_or_none(start),
+            "end": _time_or_none(end),
             "snapshot_id": str(snapshot_id),
             "action": str(action),
             "commit_msg": str(commit_msg),
@@ -2149,7 +2353,10 @@ class MyIcechunkStore:
             "canonical_name": str(canonical_name) if canonical_name else "",
             "physical_path": str(physical_path) if physical_path else "",
         }
-        df_row = pl.DataFrame([row])
+        df_row = pl.DataFrame(
+            [row],
+            schema_overrides={"start": pl.Datetime("ns"), "end": pl.Datetime("ns")},
+        )
         zmeta = zroot.require_group(f"{group_name}/metadata/table")
         _append_log_rows(zmeta, df_row)
 
@@ -2331,8 +2538,8 @@ class MyIcechunkStore:
         row = {
             "source_file_hashes": json.dumps(source_file_hashes, sort_keys=True),
             "source_gnss_stores": json.dumps(source_gnss_stores, sort_keys=True),
-            "start": np.datetime64(start, "ns"),
-            "end": np.datetime64(end, "ns"),
+            "start": _time_or_none(start),
+            "end": _time_or_none(end),
             "snapshot_id": str(snapshot_id),
             "action": str(action),
             "commit_msg": str(commit_msg),
@@ -2343,7 +2550,10 @@ class MyIcechunkStore:
             "attrs": json.dumps(dataset_attrs, default=str),
             "preprocessing": record,
         }
-        df_row = pl.DataFrame([row])
+        df_row = pl.DataFrame(
+            [row],
+            schema_overrides={"start": pl.Datetime("ns"), "end": pl.Datetime("ns")},
+        )
         zmeta = zroot.require_group(f"{group_name}/metadata/table")
         _append_log_rows(zmeta, df_row)
 

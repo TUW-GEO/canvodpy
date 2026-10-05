@@ -1,0 +1,176 @@
+"""Tests for variables added to a whole group, and for the append check (A22).
+
+- An append whose variables along ``epoch`` differ from the group's is
+  refused: the variable would end up shorter than the others and the group
+  could no longer be opened.
+- ``add_group_variables`` writes only the new variables, keeps the log book
+  and other subgroups, and records one group-wide log-book row.
+- The preprocessing of the data already in the group then includes the
+  group-wide step (``preprocessing_records``), so the guard accepts only
+  later data preprocessed with that step too.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+import xarray as xr
+import zarr
+from canvod.config.models import (
+    PREPROCESSING_ATTR,
+    PreprocessingMismatchError,
+    preprocessing_record,
+    preprocessing_settings,
+    vod_preprocessing_record,
+)
+
+from canvod.store import create_gnss_store, create_vod_store
+from canvod.store.prepare import GroupVariablesMismatchError
+from canvod.store.store import GROUP_WIDE_ACTION
+
+_SIDS = ["G01|L1|C", "G02|L1|C"]
+_STEP = {"op": "grid_assign", "settings": {"grid_type": "equal_area"}, "result": {}}
+_SOFTWARE = {"canvod-ops": "1.0.0"}
+
+
+def _record(steps: list[dict]) -> str:
+    return preprocessing_record(steps, _SOFTWARE)
+
+
+def _dataset(
+    day: int, file_hash: str, record: str, extra: dict | None = None
+) -> xr.Dataset:
+    n = 4
+    epochs = np.datetime64(f"2025-01-0{day}T00:00:00", "ns") + np.arange(
+        n
+    ) * np.timedelta64(5, "s")
+    data = {"SNR": (["epoch", "sid"], np.full((n, 2), 40.0, dtype=np.float32))}
+    for name, value in (extra or {}).items():
+        data[name] = (["epoch", "sid"], np.full((n, 2), value))
+    return xr.Dataset(
+        data,
+        coords={"epoch": epochs, "sid": _SIDS},
+        attrs={"File Hash": file_hash, PREPROCESSING_ATTR: record},
+    )
+
+
+@pytest.fixture
+def store(tmp_path):
+    store = create_gnss_store(tmp_path / "site" / "gnss_store")
+    store.write_initial_group(_dataset(1, "h1", _record([])), "canopy_01")
+    store.append_to_group(_dataset(2, "h2", _record([])), "canopy_01")
+    return store
+
+
+def _cells(store) -> xr.Dataset:
+    group = store.read_group("canopy_01")
+    return xr.Dataset(
+        {"cell_id_x": (("epoch", "sid"), np.ones((group.sizes["epoch"], 2)))},
+        coords={"epoch": group["epoch"].values, "sid": group["sid"].values},
+    )
+
+
+class TestAppendCheck:
+    def test_missing_variable_refused(self, store) -> None:
+        store.add_group_variables("canopy_01", _cells(store), _STEP, _SOFTWARE)
+        with pytest.raises(GroupVariablesMismatchError, match="cell_id_x"):
+            store.append_to_group(_dataset(3, "h3", _record([_STEP])), "canopy_01")
+
+    def test_extra_variable_refused(self, store) -> None:
+        new = _dataset(3, "h3", _record([]), extra={"cell_id_x": 1.0})
+        with pytest.raises(GroupVariablesMismatchError, match="cell_id_x"):
+            store.append_to_group(new, "canopy_01")
+
+    def test_matching_variables_appended(self, store) -> None:
+        store.add_group_variables("canopy_01", _cells(store), _STEP, _SOFTWARE)
+        new = _dataset(3, "h3", _record([_STEP]), extra={"cell_id_x": 2.0})
+        store.append_to_group(new, "canopy_01")
+
+        group = store.read_group("canopy_01")
+        assert group["cell_id_x"].shape == group["SNR"].shape
+        assert group["cell_id_x"].values[-1].tolist() == [2.0, 2.0]
+
+
+class TestAddGroupVariables:
+    def test_keeps_log_book_and_data(self, store) -> None:
+        before = store.read_group("canopy_01").compute()
+        rows_before = store.metadata_row_count("canopy_01")
+
+        store.add_group_variables("canopy_01", _cells(store), _STEP, _SOFTWARE)
+
+        after = store.read_group("canopy_01").compute()
+        xr.testing.assert_equal(after["SNR"], before["SNR"])
+        assert after["cell_id_x"].values.tolist() == [[1.0, 1.0]] * 8
+        assert store.metadata_row_count("canopy_01") == rows_before + 1
+        with store.readonly_session() as session:
+            log_book = store.load_metadata(session.store, "canopy_01")
+        row = log_book.sort("index").row(-1, named=True)
+        assert row["action"] == GROUP_WIDE_ACTION
+        assert row["rinex_hash"] == ""
+        assert row["start"] is None
+        assert store.repo.list_branches() == {"main"}
+
+    def test_keeps_other_subgroups(self, store) -> None:
+        session = store.repo.writable_session("main")
+        zarr.open_group(session.store, mode="a").create_group("canopy_01/metadata/x")
+        session.commit("subgroup")
+
+        store.add_group_variables("canopy_01", _cells(store), _STEP, _SOFTWARE)
+
+        root = zarr.open_group(store.repo.readonly_session("main").store, mode="r")
+        assert "canopy_01/metadata/x" in root
+
+    def test_refuses_existing_variable(self, store) -> None:
+        store.add_group_variables("canopy_01", _cells(store), _STEP, _SOFTWARE)
+        with pytest.raises(ValueError, match="already has"):
+            store.add_group_variables("canopy_01", _cells(store), _STEP, _SOFTWARE)
+
+    def test_refuses_other_epochs(self, store) -> None:
+        cells = _cells(store).isel(epoch=slice(1, None))
+        with pytest.raises(ValueError, match="exactly"):
+            store.add_group_variables("canopy_01", cells, _STEP, _SOFTWARE)
+
+
+class TestGuardAfterGroupWideStep:
+    def test_old_rows_count_with_the_step(self, store) -> None:
+        store.add_group_variables("canopy_01", _cells(store), _STEP, _SOFTWARE)
+
+        records = store.preprocessing_records("canopy_01")
+        assert [preprocessing_settings(r) for r in records] == [
+            [{"op": "grid_assign", "settings": {"grid_type": "equal_area"}}]
+        ]
+
+    def test_data_with_the_step_accepted(self, store) -> None:
+        store.add_group_variables("canopy_01", _cells(store), _STEP, _SOFTWARE)
+        store.check_preprocessing_matches(
+            "canopy_01", _dataset(3, "h3", _record([_STEP]))
+        )
+
+    def test_data_without_the_step_refused(self, store) -> None:
+        store.add_group_variables("canopy_01", _cells(store), _STEP, _SOFTWARE)
+        with pytest.raises(PreprocessingMismatchError):
+            store.check_preprocessing_matches(
+                "canopy_01", _dataset(3, "h3", _record([]))
+            )
+
+    def test_vod_records_include_the_step(self, tmp_path) -> None:
+        vod = create_vod_store(tmp_path / "site" / "vod_store")
+        sources = {"canopy_01": [_record([])], "reference_01": [_record([])]}
+        ds = _dataset(1, "h1", vod_preprocessing_record(sources))
+        vod.write_initial_group(ds, "tau_omega/canopy_01_vs_reference_01")
+        group = "tau_omega/canopy_01_vs_reference_01"
+        cells = xr.Dataset(
+            {"cell_id_x": (("epoch", "sid"), np.ones((4, 2)))},
+            coords={"epoch": ds["epoch"].values, "sid": _SIDS},
+        )
+
+        vod.add_group_variables(group, cells, _STEP, _SOFTWARE)
+
+        gridded = {"canopy_01": [_record([_STEP])], "reference_01": [_record([_STEP])]}
+        vod.check_preprocessing_matches(
+            group, _dataset(2, "h2", vod_preprocessing_record(gridded))
+        )
+        with pytest.raises(PreprocessingMismatchError):
+            vod.check_preprocessing_matches(
+                group, _dataset(2, "h2", vod_preprocessing_record(sources))
+            )
