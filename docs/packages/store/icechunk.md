@@ -129,11 +129,24 @@ Icechunk is a cloud-native transactional storage format for multidimensional arr
     Override per read call — does not affect on-disk layout:
 
     ```python
-    ds = reader.read(
-        time_range=("2024-01-01", "2024-01-31"),
+    ds = store.read_group(
+        "canopy_01",
+        time_slice=slice("2024-01-01", "2024-01-31"),
         chunks={"epoch": 3600, "sid": -1},  # 1-hour lazy chunks in memory
     )
     ```
+
+!!! info "Reads are lazy"
+    `read_group()` opens a group with `xarray.open_zarr()`, so every data
+    variable is a lazy Dask array: nothing is read until a value is needed
+    (`.compute()`, `.values`, a plot), and then only the chunks the result
+    depends on. One day of a multi-year group reads one day; groups larger
+    than memory are processed chunk by chunk, in parallel. A chunk is the
+    unit of reading, compression and writing, so with the default
+    `sid: -1` one signal over a year reads 365 chunks holding all signals;
+    for such access patterns, rechunk along `sid` with `rechunk_group()`.
+    Variables computed from a read and added with `add_group_variables()`
+    are rechunked to the group's stored chunks before writing.
 
 !!! warning "Match epoch chunk size to your site's sampling rate"
     The default `epoch: 17280` is tuned for **5 s sampling** — one full day
