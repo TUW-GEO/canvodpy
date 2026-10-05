@@ -1,15 +1,21 @@
 """Orbits and clocks joined with the neighboring days (no extrapolation)."""
 
 from datetime import date
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 import xarray as xr
+from canvod.utils.tools import YYYYDOY
 
 from canvod.auxiliary.core.base import AuxFile
-from canvod.auxiliary.interpolation import Sp3Config, Sp3InterpolationStrategy
+from canvod.auxiliary.interpolation import (
+    Sp3Config,
+    Sp3InterpolationStrategy,
+    interpolate_aux_day,
+)
 from canvod.auxiliary.pipeline import AuxDataPipeline
 
 DAY = np.datetime64("2025-01-01T00:00", "ns")
@@ -181,3 +187,66 @@ class TestCreateStandardNeighbors:
             )
         assert "last epochs of 2025004" in str(err.value)
         assert "Process 2025004 once it is published" in str(err.value)
+
+
+AUX_DATA = Path(__file__).parents[2] / "canvod-readers/tests/test_data/valid/aux_data"
+
+
+@pytest.mark.skipif(
+    not (AUX_DATA / "01_SP3/COD0MGXFIN_20250020000_01D_05M_ORB.SP3").exists(),
+    reason="test data of the neighboring days not available",
+)
+class TestRealNeighborFiles:
+    """2025-001 with the CODE files of 2024-366 and 2025-002, no download."""
+
+    @pytest.fixture(scope="class")
+    def pipeline(self):
+        cfg = TestCreateStandardNeighbors()._config()
+        cfg.processing.aux_data.fetch_clock = True
+        md = SimpleNamespace(yyyydoy=YYYYDOY(year=2025, doy=1))
+        with (
+            patch("canvod.config.load_config", return_value=cfg),
+            patch.object(
+                AuxFile,
+                "download_with_fallback",
+                side_effect=AssertionError("must not download"),
+            ),
+        ):
+            pipeline = AuxDataPipeline.create_standard(
+                md, AUX_DATA, ftp_server="ftp://unused"
+            )
+            pipeline.load_all()
+        return pipeline
+
+    def test_the_day_lies_inside_the_data(self, pipeline):
+        hour = np.timedelta64(1, "h")
+        for name in ("ephemerides", "clock"):
+            e = pipeline.get(name).epoch.values
+            assert e[0] == DAY - hour
+            assert e[-1] == DAY + np.timedelta64(1, "D") + hour
+
+    def test_velocity_at_midnight_is_a_central_difference(self, pipeline):
+        ephem = pipeline.get("ephemerides")
+        midnight = DAY + np.timedelta64(1, "D")
+        five = np.timedelta64(5, "m")
+        sid = "G01|L1|C"
+        dx = ephem["X"].sel(sid=sid, epoch=midnight + five) - ephem["X"].sel(
+            sid=sid, epoch=midnight - five
+        )
+        assert ephem["Vx"].sel(sid=sid, epoch=midnight).item() == pytest.approx(
+            dx.item() / 600.0
+        )
+
+    def test_committed_aux_cache_is_what_a_run_computes(self, pipeline):
+        cache = xr.open_zarr(AUX_DATA / "aux_2025001.zarr", consolidated=False)
+        edges = np.r_[0:120, -120:0]  # first and last 10 minutes
+        expected = cache.isel(epoch=edges).compute()
+
+        got = interpolate_aux_day(
+            pipeline.get("ephemerides"), pipeline.get("clock"), expected.epoch.values
+        )
+
+        assert list(got.sid.values) == list(expected.sid.values)
+        for var in ("X", "Y", "Z", "Vx", "Vy", "Vz", "clock_offset"):
+            np.testing.assert_allclose(got[var], expected[var], rtol=0, atol=1e-9)
+        assert np.isfinite(got["X"].sel(sid="G01|L1|C")).all()
