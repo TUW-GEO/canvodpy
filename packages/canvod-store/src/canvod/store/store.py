@@ -710,13 +710,13 @@ class MyIcechunkStore:
             Snapshot ID from the commit.
         """
         message = f"Set root attrs: {list(attrs.keys())}"
-        with self.repo.transaction(branch, message=message) as store:
-            try:
-                root = zarr.open_group(store, mode="r+")
-            except zarr.errors.GroupNotFoundError:
-                root = zarr.open_group(store, mode="w")
-            root.attrs.update(attrs)
-        return self.repo.lookup_branch(branch)
+        session = self.repo.writable_session(branch)
+        try:
+            root = zarr.open_group(session.store, mode="r+")
+        except zarr.errors.GroupNotFoundError:
+            root = zarr.open_group(session.store, mode="w")
+        root.attrs.update(attrs)
+        return commit_with_rebase(session, message)
 
     def get_root_attrs(self, branch: str = "main") -> dict[str, Any]:
         """Read root-level Zarr attributes from the store.
@@ -2159,28 +2159,29 @@ class MyIcechunkStore:
         canonical_name: str | None = None,
         physical_path: str | None = None,
     ) -> None:
-        """Standalone metadata-row append — opens its own transaction.
+        """Standalone metadata-row append — commits on its own.
 
         For ingest paths (write_initial_group, append_to_group) use
         _append_metadata_row directly inside the data-write session to avoid
         an extra commit per file.
         """
         message = f"Appended metadata row for {group_name}, hash={rinex_hash}"
-        with self.repo.transaction(branch, message=message) as store:
-            zroot = zarr.open_group(store, mode="a")
-            self._append_metadata_row(
-                zroot=zroot,
-                group_name=group_name,
-                rinex_hash=rinex_hash,
-                start=start,
-                end=end,
-                snapshot_id=snapshot_id,
-                action=action,
-                commit_msg=commit_msg,
-                dataset_attrs=dataset_attrs,
-                canonical_name=canonical_name,
-                physical_path=physical_path,
-            )
+        session = self.repo.writable_session(branch)
+        zroot = zarr.open_group(session.store, mode="a")
+        self._append_metadata_row(
+            zroot=zroot,
+            group_name=group_name,
+            rinex_hash=rinex_hash,
+            start=start,
+            end=end,
+            snapshot_id=snapshot_id,
+            action=action,
+            commit_msg=commit_msg,
+            dataset_attrs=dataset_attrs,
+            canonical_name=canonical_name,
+            physical_path=physical_path,
+        )
+        commit_with_rebase(session, message)
 
         self._logger.info(
             f"Metadata appended for group '{group_name}': "
