@@ -38,7 +38,7 @@ Processing chain, one receiver-day at a time:
 files (RINEX/SBF) -> reader -> Dataset(epoch, sid)
   -> satellite geometry (SP3/CLK or broadcast) -> theta, phi
   -> optional preprocessing (only if set in the settings)
-  -> observation store (Icechunk) -> VOD (canopy vs reference) -> VOD store
+  -> GNSS store (Icechunk) -> VOD (canopy vs reference) -> VOD store
 ```
 
 | Package | Import | Role | Read first |

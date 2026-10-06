@@ -31,7 +31,7 @@ main_app.add_typer(store_app, name="store")
 main_app.command("run")(run_command)
 main_app.command(
     "vod",
-    help="Compute VOD in bulk from an existing RINEX store (backfill/reprocessing).",
+    help="Compute VOD in bulk from an existing GNSS store (backfill/reprocessing).",
 )(vod_command)
 main_app.command(
     "vod-reconcile",

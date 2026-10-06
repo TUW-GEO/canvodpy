@@ -19,7 +19,7 @@ def _make_minimal_metadata() -> StoreMetadata:
     return StoreMetadata(
         identity=StoreIdentity(
             id="test/gnss_store",
-            title="Test Rinex Store",
+            title="Test GNSS Store",
             store_type="gnss_store",
             source_format="rinex3",
         ),

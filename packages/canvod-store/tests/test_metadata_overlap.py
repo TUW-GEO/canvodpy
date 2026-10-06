@@ -36,7 +36,7 @@ def _make_dataset(start: str, end: str, n_epochs: int = 10) -> xr.Dataset:
 
 @pytest.fixture
 def gnss_store(tmp_path: Path):
-    """Create a RINEX store with one 15-min file already ingested."""
+    """Create a GNSS store with one 15-min file already ingested."""
     store = create_gnss_store(tmp_path / "test_rinex")
 
     # Write initial group with a 15-min dataset

@@ -589,7 +589,7 @@ def process_rinex(
     aux_zarr_path: str,
     receiver_files: dict | None = None,
 ) -> dict:
-    """Read RINEX, augment with aux data, and write to Icechunk RINEX store.
+    """Read RINEX, augment with aux data, and write to the GNSS store.
 
     Parameters
     ----------

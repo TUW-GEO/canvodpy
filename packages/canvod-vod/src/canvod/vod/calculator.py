@@ -16,7 +16,7 @@ log = structlog.get_logger(__name__)
 
 
 class VODCalculator(ABC, BaseModel):
-    """Abstract base class for VOD calculation from RINEX store data.
+    """Abstract base class for VOD calculation from GNSS store data.
 
     Notes
     -----

@@ -42,7 +42,7 @@ class GnssResearchSite:
     for site-wide operations.
 
     Architecture:
-    - RINEX Store: Raw/standardized observations per receiver
+    - GNSS Store: Raw/standardized observations per receiver
     - VOD Store: Analysis products comparing receiver pairs
 
     Features:
@@ -169,7 +169,7 @@ class GnssResearchSite:
         gnss_store_path: Path,
     ) -> GnssResearchSite:
         """
-        Create a GnssResearchSite instance from a RINEX store path.
+        Create a GnssResearchSite instance from a GNSS store path.
 
         Parameters
         ----------
@@ -191,14 +191,14 @@ class GnssResearchSite:
 
         config = load_config()
 
-        # Try to match against each site's expected rinex store path
+        # Try to match against each site's expected GNSS store path
         for site_name in config.sites.sites.keys():
             expected_path = config.processing.storage.get_gnss_store_path(site_name)
             if expected_path == gnss_store_path:
                 return cls(site_name)
 
         raise ValueError(
-            f"No research site found for RINEX store path: {gnss_store_path}"
+            f"No research site found for GNSS store path: {gnss_store_path}"
         )
 
     def get_reference_canopy_pairs(self) -> list[tuple[str, str]]:
@@ -282,7 +282,7 @@ class GnssResearchSite:
 
     def get_receiver_groups(self) -> list[str]:
         """
-        Get list of receiver groups that exist in the RINEX store.
+        Get list of receiver groups that exist in the GNSS store.
 
         Returns
         -------

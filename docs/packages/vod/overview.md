@@ -106,7 +106,7 @@ flowchart TD
         open sky`"]
     end
 
-    subgraph STORE["Observation Store Groups"]
+    subgraph STORE["GNSS Store Groups"]
         SG1["canopy_01"]
         SG2["canopy_02"]
         SG3["`**reference_01_canopy_01**

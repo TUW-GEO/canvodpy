@@ -51,6 +51,6 @@ deprecated surfaces (`FluentWorkflow`, `process_date()`, `VODWorkflow`,
 ## VOD only
 
 - `uv run canvodpy vod --site <site> --analysis <name>`: VOD from an
-  existing observation store, without reading files again.
+  existing GNSS store, without reading files again.
 - `uv run canvodpy vod-reconcile --site <site> --analysis <name>`: lists
   days with observations but no VOD; `--execute` computes them.

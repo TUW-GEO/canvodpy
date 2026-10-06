@@ -313,7 +313,7 @@ strategies:
     ```python
     from datetime import datetime
 
-    # Recompute VOD for an entire time range from the RINEX store
+    # Recompute VOD for an entire time range from the GNSS store
     site.vod.compute_bulk(
         "canopy_01_vs_reference_01",
         start=datetime(2025, 1, 1),

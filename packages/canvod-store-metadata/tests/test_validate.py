@@ -22,7 +22,7 @@ def _make_complete_metadata() -> StoreMetadata:
     return StoreMetadata(
         identity=StoreIdentity(
             id="Rosalia/gnss_store",
-            title="Rosalia Rinex Store",
+            title="Rosalia GNSS Store",
             description="GNSS observations from Rosalia research site",
             store_type="gnss_store",
             source_format="rinex3",

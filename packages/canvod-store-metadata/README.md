@@ -94,10 +94,10 @@ Identifies the store and enables discovery in catalogs.
 
 | Field | Type | Description | Standard |
 |---|---|---|---|
-| `id` | str | Unique store identifier, e.g. `ExampleSite/rinex_store` | DataCite, STAC |
+| `id` | str | Unique store identifier, e.g. `ExampleSite/gnss_store` | DataCite, STAC |
 | `title` | str | Human-readable title | DataCite, ACDD, STAC |
 | `description` | str? | Free-text description | ACDD, STAC |
-| `store_type` | str | `rinex_store`, `vod_store`, etc. | DataCite (resourceType) |
+| `store_type` | str | `gnss_store`, `vod_store`, etc. | DataCite (resourceType) |
 | `source_format` | str | `rinex3`, `rinex2`, `sbf` | — |
 | `keywords` | list[str] | Discovery keywords | ACDD, STAC |
 | `conventions` | str | Metadata conventions followed (default `ACDD-1.3`) | ACDD |
@@ -200,7 +200,7 @@ Exact software stack used to create the store.
 | `software` | dict[str, str] | Package name → version | W3C PROV |
 | `python` | str? | Python version + implementation | W3C PROV |
 | `uv_version` | str? | `uv` package manager version | — |
-| `level` | str | Processing level: `L1` (obs store) or `L2` (VOD store) | — |
+| `level` | str | Processing level: `L1` (GNSS store) or `L2` (VOD store) | — |
 | `lineage` | str? | Processing lineage description | W3C PROV |
 | `facility` | str? | Hostname of the processing machine | W3C PROV |
 | `datetime` | str? | Processing timestamp | W3C PROV |
@@ -350,12 +350,12 @@ from canvod.store_metadata import scan_stores
 
 df = scan_stores(Path("/Volumes/ExtremePro/stores/ExampleSite/"))
 print(df)
-# ┌─────────────────────┬───────────────┬─────────┬─────────────┐
-# │ id                  ┆ store_type    ┆ site    ┆ total_epochs│
-# ╞═════════════════════╪═══════════════╪═════════╪═════════════╡
-# │ ExampleSite/rinex_store ┆ rinex_store   ┆ ExampleSite ┆ 86400       │
-# │ ExampleSite/sbf_store   ┆ sbf_store     ┆ ExampleSite ┆ 86400       │
-# └─────────────────────┴───────────────┴─────────┴─────────────┘
+# ┌────────────────────────┬────────────┬─────────────┬──────────────┐
+# │ id                     ┆ store_type ┆ site        ┆ total_epochs │
+# ╞════════════════════════╪════════════╪═════════════╪══════════════╡
+# │ ExampleSite/gnss_store ┆ gnss_store ┆ ExampleSite ┆ 86400        │
+# │ ExampleSite/vod_store  ┆ vod_store  ┆ ExampleSite ┆ 86400        │
+# └────────────────────────┴────────────┴─────────────┴──────────────┘
 ```
 
 ## Modules

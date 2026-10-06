@@ -28,7 +28,7 @@ class TestStoreCreation:
     """Test store creation and initialization."""
 
     def test_create_gnss_store(self, tmp_path: Path) -> None:
-        """Create RINEX store and verify directory structure."""
+        """Create GNSS store and verify directory structure."""
         store_path = tmp_path / "test_site" / "gnss_store"
 
         store = create_gnss_store(store_path)

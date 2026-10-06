@@ -71,7 +71,7 @@ def ensure_vod_store_metadata(
     VOD writes never called ``collect_metadata()``/``write_metadata()``
     before this — every VOD store showed "No metadata found" (see
     ``canvod.store_metadata``). Wired the same way ``processor.py`` does
-    for RINEX stores (write once on first use; on later calls, re-snapshot
+    for GNSS stores (write once on first use; on later calls, re-snapshot
     the config and record drift rather than silently freezing the config
     section at whatever was true on the very first write). Best-effort:
     swallows failures so a metadata problem never blocks the actual VOD

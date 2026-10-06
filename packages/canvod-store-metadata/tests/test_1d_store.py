@@ -227,7 +227,7 @@ class TestOneDayStore:
             gnss_store_path,
             datasets,
             store_id="Rosalia/gnss_store",
-            title="Rosalia Rinex Store (1-day test)",
+            title="Rosalia GNSS Store (1-day test)",
             store_type="gnss_store",
             source_format="rinex3",
             file_count=len(obs_files),

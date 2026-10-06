@@ -202,7 +202,7 @@ def cmd_delete_all_stores(args: argparse.Namespace) -> None:
     vod_path = storage.get_vod_store_path(site)
 
     paths = [
-        (f"RINEX store ({site})", rinex_path),
+        (f"GNSS store ({site})", rinex_path),
         (f"VOD store ({site})", vod_path),
     ]
     _banner(

@@ -66,7 +66,7 @@ This gives the store three properties that matter for reproducible science:
 
 ## Architecture
 
-`GnssResearchSite` coordinates **two separate Icechunk repositories per site**, not one — an observation store (RINEX, SBF or NMEA data) and a VOD store for retrieval results:
+`GnssResearchSite` coordinates **two separate Icechunk repositories per site**, not one — a GNSS store (RINEX, SBF or NMEA data) and a VOD store for retrieval results:
 
 ```mermaid
 graph TD
@@ -94,7 +94,7 @@ graph TD
     ```python
     from canvod.store import create_gnss_store, create_vod_store
 
-    # Create or open an observation store
+    # Create or open a GNSS store
     store = create_gnss_store(store_path)
 
     # Write a new group (first ingest for this receiver)

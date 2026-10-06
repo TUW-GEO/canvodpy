@@ -246,7 +246,7 @@ class StorageConfig(_StrictModel):
         return v
 
     def get_gnss_store_path(self, site_name: str) -> Path:
-        """Get the GNSS observation store path for a site.
+        """Get the GNSS store path for a site.
 
         Parameters
         ----------
@@ -256,7 +256,7 @@ class StorageConfig(_StrictModel):
         Returns
         -------
         Path
-            Path to the site's GNSS observation store.
+            Path to the site's GNSS store.
         """
         return self.stores_root_dir / site_name / self.gnss_store_name
 

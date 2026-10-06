@@ -4,7 +4,7 @@ dev/todo_later.md §43 -- a run can complete RINEX ingestion for a date
 range cleanly, then fail before (or during) the corresponding VOD-store
 write, leaving those dates permanently un-backfilled: the pipeline's
 resume logic (``_last_processed_date()``, ``cli/run.py``) only looks at
-the RINEX store, so an already-RINEX-complete date is never re-yielded
+the GNSS store, so an already-RINEX-complete date is never re-yielded
 for VOD computation on a later run. This module finds that gap cheaply
 -- two whole-table metadata reads (RINEX group + VOD group), not one
 query per candidate date -- so it scales fine to a site's full history.
@@ -99,7 +99,7 @@ def find_vod_backfill_gaps(
 ) -> list[str]:
     """Dates with RINEX data ingested but no corresponding VOD result.
 
-    Compares the RINEX store's ``{reference}_{canopy}`` group metadata
+    Compares the GNSS store's ``{reference}_{canopy}`` group metadata
     table against the VOD store's ``{calculator}/{analysis}`` group
     metadata table for ``analysis_name`` -- two single, cheap whole-table
     reads via ``read_metadata_table()``, not a per-date query.
@@ -117,7 +117,7 @@ def find_vod_backfill_gaps(
     Returns
     -------
     list[str]
-        Sorted YYYYDOY strings present in the RINEX store's analysis
+        Sorted YYYYDOY strings present in the GNSS store's analysis
         pair group but absent from the VOD store's result group. Empty
         if there's no gap.
 

@@ -1,4 +1,4 @@
-"""``canvodpy vod`` — compute VOD in bulk from an existing RINEX store.
+"""``canvodpy vod`` — compute VOD in bulk from an existing GNSS store.
 
 Thin wrapper around ``VodComputer.compute_bulk()``: reads canopy/reference
 data directly from the site's RINEX Icechunk store (rather than inline
@@ -59,7 +59,7 @@ def vod(
     ] = "tau_omega",
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Compute VOD in bulk from an existing RINEX store and write the result."""
+    """Compute VOD in bulk from an existing GNSS store and write the result."""
     from canvodpy.api import Site
     from canvodpy.vod_computer import VodComputer
 
@@ -117,7 +117,7 @@ def vod_reconcile(
 ) -> None:
     """Find (and optionally backfill) RINEX-ingested-but-VOD-missing dates.
 
-    ``canvodpy run`` only resumes from the RINEX store's latest date, so a
+    ``canvodpy run`` only resumes from the GNSS store's latest date, so a
     date that got RINEX-ingested but never got its VOD computed (e.g. a
     run that crashed on the VOD-store write after RINEX ingestion already
     succeeded — dev/todo_later.md §43) is silently never revisited. This

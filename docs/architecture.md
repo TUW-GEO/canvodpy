@@ -231,7 +231,7 @@ flowchart TD
 
     subgraph INIT["Site Initialization"]
         SITE["Site(name)"]
-        RINEX_STORE["GNSS Icechunk Store"]
+        GNSS_STORE["GNSS Icechunk Store"]
         VOD_STORE["VOD Icechunk Store"]
     end
 
@@ -281,7 +281,7 @@ flowchart TD
     end
 
     YAML --> PYDANTIC --> SITE
-    SITE --> RINEX_STORE & VOD_STORE
+    SITE --> GNSS_STORE & VOD_STORE
 
     PYDANTIC --> MAPPER --> VALIDATOR --> SCHEDULE
 
@@ -291,9 +291,9 @@ flowchart TD
     AUX_ZARR --> SPHERICAL
 
     SPHERICAL -.-> AGG -.-> KDTREE -.-> DEDUP
-    SPHERICAL --> DEDUP --> APPEND --> RINEX_STORE
+    SPHERICAL --> DEDUP --> APPEND --> GNSS_STORE
 
-    RINEX_STORE --> DELTA --> TAU
+    GNSS_STORE --> DELTA --> TAU
     TAU --> VOD_STORE
 ```
 
@@ -308,7 +308,7 @@ flowchart TD
 | **Optional preprocessing** | Only if `processing.preprocessing` is set: temporal aggregation and grid assignment before the store write, in every run | Off by default; each write records the preprocessing in the stores' log books, and a store group never mixes data preprocessed differently |
 | **Storage** | Datasets are appended to an Icechunk store; three deduplication layers (file-hash match, temporal overlap vs. store metadata, intra-batch overlap) guard every write; with the default write strategy one commit holds all receivers of a day | Duplicate epochs would corrupt the canopy/reference alignment. Each commit is an immutable, citable snapshot of the archive |
 | **Grid assignment** | For analysis (or as optional preprocessing), a hemispheric grid is built and each observation is assigned to the cell that contains it (`canvod.grids.add_cell_ids_to_ds_fast`) | Canopy structure varies with direction; gridding lets VOD be resolved per sky sector rather than smeared over the hemisphere |
-| **VOD retrieval** | `VodComputer` reads canopy and reference from the observation store and aligns them by (epoch, sid); transmittance T follows from their SNR difference, and VOD = −ln(T)·cos(θ) (zeroth-order tau-omega model); results go to the VOD store, which checks the VOD dataset contract | This is the core measurement: canopy attenuation of L-band signals, a proxy for biomass and vegetation water content |
+| **VOD retrieval** | `VodComputer` reads canopy and reference from the GNSS store and aligns them by (epoch, sid); transmittance T follows from their SNR difference, and VOD = −ln(T)·cos(θ) (zeroth-order tau-omega model); results go to the VOD store, which checks the VOD dataset contract | This is the core measurement: canopy attenuation of L-band signals, a proxy for biomass and vegetation water content |
 
 ### Parallelism model
 

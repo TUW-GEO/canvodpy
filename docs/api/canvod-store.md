@@ -8,7 +8,7 @@ Versioned data storage using Icechunk.
     options:
       members:
         - MyIcechunkStore
-        - create_rinex_store
+        - create_gnss_store
         - create_vod_store
         - GnssResearchSite
         - IcechunkDataReader

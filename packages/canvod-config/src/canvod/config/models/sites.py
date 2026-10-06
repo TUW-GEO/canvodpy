@@ -129,7 +129,7 @@ class ReceiverConfig(_StrictModel):
 def reference_store_group(reference_receiver: str, canopy_receiver: str) -> str:
     """Icechunk store group name holding a reference receiver's paired data.
 
-    Reference receiver data is always written to the RINEX store under this
+    Reference receiver data is always written to the GNSS store under this
     paired name (see ``PipelineOrchestrator._group_by_date_and_receiver``),
     never under the bare receiver name -- one reference can be paired with
     several canopies, each getting its own group. This is the single place
