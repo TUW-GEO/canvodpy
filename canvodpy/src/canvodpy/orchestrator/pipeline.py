@@ -44,6 +44,7 @@ import structlog
 
 from canvod.utils.logging import get_run_id
 from canvod.utils.tools import deprecated
+from canvodpy.logging.logging_config import ensure_file_logging
 from canvodpy.orchestrator.discovery import (
     ReceiverDay,
     check_receivers,
@@ -237,6 +238,8 @@ class PipelineOrchestrator:
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
     ) -> None:
+        # The log location comes from the configuration of this run.
+        ensure_file_logging()
         # A new run sees files added since the previous one.
         clear_discovery_cache()
         check_receivers(

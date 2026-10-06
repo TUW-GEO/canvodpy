@@ -11,7 +11,10 @@ Get a logger:
     >>> log = structlog.get_logger(__name__)
     >>> log.info("processing_started", site="ExampleSite", date="2025001")
 
-Setup logging (optional, already configured by default):
+Importing canvodpy logs warnings and errors to the console only and reads
+no settings. File logging (the log tree under
+``processing.logging.get_log_file()``) starts when a pipeline is created.
+To start it yourself, for example before calling the functional API:
 
     >>> from canvodpy.logging import setup_logging
     >>> setup_logging()
@@ -34,7 +37,7 @@ from canvod.utils.logging import (
     timed_stage,
 )
 from canvod.utils.tools import deprecated
-from canvodpy.logging.logging_config import configure_logging
+from canvodpy.logging.logging_config import configure_logging, ensure_file_logging
 
 # Alias for API compatibility
 setup_logging = configure_logging
@@ -56,6 +59,7 @@ def get_logger(name: str | None = None) -> Any:
 __all__ = [
     "configure_logging",
     "emit_run_summary",
+    "ensure_file_logging",
     "get_logger",
     "get_run_id",
     "reset_run_id",

@@ -53,6 +53,15 @@ worker) gets its own per-PID-suffixed files (`agent.<pid>.json`, etc.) —
 processes, so rather than coordinate rotation, each process just gets its
 own file set.
 
+**When the files are written.** Importing canvodpy writes no log files and
+reads no settings; until a run starts, warnings and errors go to the console
+only. File logging starts when a pipeline is created (`canvodpy run`, or
+`Site.pipeline()` in Python) and in each worker process when it starts. The
+log location therefore comes from the configuration of that run, including
+`--config-dir` and `--config`. Invalid settings stop the run with an error.
+To get the log files without a pipeline, for example around the functional
+API, call `canvodpy.setup_logging()` yourself.
+
 ---
 
 ## `run_id`: correlating a single pipeline invocation

@@ -32,6 +32,9 @@ from canvod.config import load_config
 from canvod.utils.logging import get_run_id
 from canvod.utils.tools import deprecated
 
+# Log file that file logging currently writes to; None while console only.
+_active_log_file: Path | None = None
+
 
 def _process_log_suffix() -> str:
     """Return a filename suffix identifying the current OS process.
@@ -252,9 +255,9 @@ def _install_excepthook(logger: structlog.BoundLogger) -> None:
     full traceback) before chaining to the default hook, which still runs
     so console behavior for attended sessions is unchanged.
 
-    Idempotent: ``configure_logging()`` runs once per process in normal
-    operation (module-level ``LOGGER = configure_logging()``), but can run
-    more than once (tests, or a hypothetical re-configuration). Without
+    Idempotent: ``configure_logging()`` usually runs once per process
+    (through ``ensure_file_logging()``), but can run more than once (tests,
+    or a second run in the same process with another log location). Without
     this guard, each call would wrap the *previous* call's hook, growing an
     ever-longer chain that re-logs the same exception once per wrap. The
     marker lives on ``sys.excepthook`` itself (not separate module state),
@@ -290,6 +293,89 @@ def _install_excepthook(logger: structlog.BoundLogger) -> None:
     sys.excepthook = _excepthook
 
 
+def _shared_processors() -> list[Callable[..., Any]]:
+    """Return the processors every log record passes, on every output."""
+    return [
+        structlog.processors.TimeStamper(fmt="iso", utc=True),
+        structlog.processors.add_log_level,
+        _add_run_id,
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.UnicodeDecoder(),
+        structlog.processors.format_exc_info,
+    ]
+
+
+def _reset_root_logger() -> logging.Logger:
+    """Remove all handlers from the root logger and let it accept all levels."""
+    logging.basicConfig(level=logging.DEBUG, format="%(message)s")
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
+    root_logger.setLevel(logging.DEBUG)
+    return root_logger
+
+
+def _console_handler(shared_processors: list[Callable[..., Any]]) -> logging.Handler:
+    """Return the stdout handler: warnings and errors only."""
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.WARNING)
+    console_handler.setFormatter(
+        structlog.stdlib.ProcessorFormatter(
+            foreign_pre_chain=shared_processors,
+            processors=[
+                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                structlog.dev.ConsoleRenderer(),
+            ],
+        )
+    )
+    return console_handler
+
+
+def _configure_structlog(shared_processors: list[Callable[..., Any]]) -> None:
+    """Route structlog through the stdlib root logger's handlers."""
+    structlog.configure(
+        processors=[
+            *shared_processors,
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.make_filtering_bound_logger(logging.DEBUG),
+        cache_logger_on_first_use=True,
+    )
+    logging.getLogger("canvodpy").setLevel(logging.DEBUG)
+
+
+def configure_console_logging() -> None:
+    """Log warnings and errors to stdout only, without reading the settings.
+
+    Runs when canvodpy is imported. It writes no files: file logging starts
+    with :func:`configure_logging`, which a pipeline calls once the
+    configuration directory of the run is known.
+    """
+    global _active_log_file
+    shared_processors = _shared_processors()
+    _reset_root_logger().addHandler(_console_handler(shared_processors))
+    _configure_structlog(shared_processors)
+    _active_log_file = None
+
+
+def ensure_file_logging() -> None:
+    """Start file logging from the settings, unless it already writes there.
+
+    Called when a pipeline is created and when a worker process starts, so
+    the log location comes from the configuration of the run (for the CLI:
+    after ``--config-dir`` and ``--config`` are applied), not from whatever
+    configuration was found when canvodpy was imported.
+
+    Raises
+    ------
+    canvod.config.loader.ConfigValidationError
+        If the settings are invalid.
+    """
+    logfile = load_config().processing.logging.get_log_file()
+    if logfile != _active_log_file:
+        configure_logging(logfile)
+
+
 def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
     """Configure structlog with dual-output system.
 
@@ -303,20 +389,22 @@ def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
     Parameters
     ----------
     logfile : Path, optional
-        Legacy parameter for backwards compatibility. Now used to determine
-        base log directory. Defaults to LOG_FILE.
+        Log file whose directory holds the log tree. Defaults to
+        ``processing.logging.get_log_file()`` of the settings.
+
+    Raises
+    ------
+    canvod.config.loader.ConfigValidationError
+        If ``logfile`` is not given and the settings are invalid.
 
     Returns
     -------
     structlog.BoundLogger
         Configured structlog logger.
     """
+    global _active_log_file
     if logfile is None:
-        try:
-            logfile = load_config().processing.logging.get_log_file()
-        except Exception:
-            # Fallback when config system isn't available (e.g. CI, tests)
-            logfile = Path.cwd() / ".logs" / "canvodpy.log"
+        logfile = load_config().processing.logging.get_log_file()
 
     # Set up directory structure
     base_dir = logfile.parent
@@ -326,40 +414,10 @@ def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
     # concurrent processes never share a physical path (see _process_log_suffix).
     suffix = _process_log_suffix()
 
-    timestamper = structlog.processors.TimeStamper(fmt="iso", utc=True)
-
-    shared_processors = [
-        timestamper,
-        structlog.processors.add_log_level,
-        _add_run_id,
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.UnicodeDecoder(),
-        structlog.processors.format_exc_info,
-    ]
-
-    # Renderers
-    console_renderer = structlog.dev.ConsoleRenderer()
+    shared_processors = _shared_processors()
     json_renderer = structlog.processors.JSONRenderer()
-
-    # Reset root logger
-    logging.basicConfig(level=logging.DEBUG, format="%(message)s")
-    root_logger = logging.getLogger()
-    root_logger.handlers.clear()
-    root_logger.setLevel(logging.DEBUG)  # Ensure root accepts all levels
-
-    # ========================================================================
-    # HANDLER 1: Console (stdout) - Warnings and errors only
-    # ========================================================================
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.WARNING)
-    console_formatter = structlog.stdlib.ProcessorFormatter(
-        foreign_pre_chain=shared_processors,
-        processors=[
-            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-            console_renderer,
-        ],
-    )
-    console_handler.setFormatter(console_formatter)
+    root_logger = _reset_root_logger()
+    console_handler = _console_handler(shared_processors)
 
     # ========================================================================
     # HANDLER 2: Agent-diagnostic JSON - always-on DEBUG causal narrative
@@ -498,28 +556,17 @@ def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
     for handler in component_handlers:
         root_logger.addHandler(handler)
 
-    # Structlog config
-    structlog.configure(
-        processors=[
-            *shared_processors,
-            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
-        ],
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        wrapper_class=structlog.make_filtering_bound_logger(logging.DEBUG),
-        cache_logger_on_first_use=True,
-    )
-
+    _configure_structlog(shared_processors)
     logger = structlog.get_logger("canvodpy")
-    # Ensure the underlying stdlib logger accepts all levels
-    logging.getLogger("canvodpy").setLevel(logging.DEBUG)
-
     _install_excepthook(logger)
+    _active_log_file = logfile
 
     return logger
 
 
-# Global base logger
-LOGGER = configure_logging()
+# Importing canvodpy reads no settings and writes no log files.
+configure_console_logging()
+LOGGER = structlog.get_logger("canvodpy")
 
 
 @deprecated(

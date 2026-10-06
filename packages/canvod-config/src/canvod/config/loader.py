@@ -378,8 +378,8 @@ def load_config(
     the env vars inside the cached function itself (as this used to do)
     made the cache key blind to them: whichever call happened first in a
     process -- e.g. ``canvodpy.logging.logging_config``'s module-level
-    ``LOGGER = configure_logging()``, which calls ``load_config()`` bare at
-    import time, before a CLI's ``--config``/``CANVOD_CONFIG_FILE`` is ever
+    ``LOGGER = configure_logging()``, which called ``load_config()`` bare at
+    import time until 2026-10, before a CLI's ``--config``/``CANVOD_CONFIG_FILE`` is ever
     set -- would cache the config under the no-arg key, and every later
     bare ``load_config()`` call in that process (e.g. store-path/chunk-
     strategy resolution deep in ``canvod-store``) would silently get that

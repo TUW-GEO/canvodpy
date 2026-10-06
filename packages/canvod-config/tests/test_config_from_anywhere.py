@@ -198,8 +198,8 @@ class TestLoadConfigEnvCaching:
     resolving ``CANVOD_CONFIG_DIR``/``CANVOD_CONFIG_FILE`` from the
     environment *inside* the cached body. A bare ``load_config()`` call made
     before those env vars were set (e.g. ``canvodpy.logging.logging_config``'s
-    module-level ``LOGGER = configure_logging()``, which calls it at import
-    time) would cache the pre-overlay config under the no-arg key -- and
+    module-level ``LOGGER = configure_logging()``, which called it at import
+    time until 2026-10) would cache the pre-overlay config under the no-arg key -- and
     every later bare call in the same process, however much later, however
     many env vars had since been set, would silently get that stale config
     back. Confirmed against a real remote chunk-size sweep (dev/

@@ -71,6 +71,7 @@ from canvod.utils.tools import (
     get_version_from_pyproject,
     sanitize_directory,
 )
+from canvodpy.logging.logging_config import ensure_file_logging
 from canvodpy.orchestrator.discovery import (
     ReceiverDay,
     canonical_name_for,
@@ -98,6 +99,9 @@ def _worker_init_with_run_id(
     it -- see ``logging/run_context.py``.
     """
     _worker_init(nice, affinity)
+    # Workers inherit CANVOD_CONFIG_DIR/CANVOD_CONFIG_FILE from the parent, so
+    # they log under the run's log directory, in their own per-PID files.
+    ensure_file_logging()
     if run_id is not None:
         set_run_id(run_id)
 

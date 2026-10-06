@@ -244,3 +244,71 @@ class TestRunSummary:
         events = _read_jsonl(configured_logs["agent"])
         summaries = [e for e in events if e.get("event") == "run_summary"]
         assert summaries[-1]["stages"] == {}
+
+
+class TestFileLoggingStartsWithTheRun:
+    """Log files follow the configuration of the run, not of the import."""
+
+    @pytest.fixture(autouse=True)
+    def _back_to_console(self):
+        yield
+        from canvodpy.logging.logging_config import configure_console_logging
+
+        configure_console_logging()
+
+    @staticmethod
+    def _settings_logging_to(logfile):
+        from types import SimpleNamespace
+
+        logging_settings = SimpleNamespace(get_log_file=lambda: logfile)
+        return SimpleNamespace(processing=SimpleNamespace(logging=logging_settings))
+
+    def test_import_reads_no_settings(self, tmp_path):
+        """Even invalid settings must not matter when canvodpy is imported."""
+        import os
+        import subprocess
+
+        (tmp_path / "canvod-settings.yaml").write_text("processing: [not, valid]\n")
+        env = {**os.environ, "CANVOD_CONFIG_DIR": str(tmp_path)}
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-W",
+                "error",
+                "-c",
+                "import canvodpy, canvodpy.cli.run\n"
+                "from canvod.config import loader\n"
+                "assert loader._load_config_cached.cache_info().misses == 0\n",
+            ],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, result.stderr
+        assert not (tmp_path / ".logs").exists()
+
+    def test_follows_the_settings_of_each_run(self, tmp_path, monkeypatch):
+        from canvodpy.logging import logging_config
+
+        for run in ("first", "second"):
+            logfile = tmp_path / run / ".logs" / "canvodpy.log"
+            monkeypatch.setattr(
+                logging_config,
+                "load_config",
+                lambda logfile=logfile: self._settings_logging_to(logfile),
+            )
+            logging_config.ensure_file_logging()
+            structlog.get_logger("canvodpy.test").info("run_started", run=run)
+            agent = tmp_path / run / ".logs" / "machine" / "agent.json"
+            assert [r["run"] for r in _read_jsonl(agent)] == [run]
+
+    def test_invalid_settings_raise(self, monkeypatch):
+        from canvodpy.logging import logging_config
+
+        def _invalid():
+            raise ValueError("invalid settings")
+
+        monkeypatch.setattr(logging_config, "load_config", _invalid)
+        with pytest.raises(ValueError, match="invalid settings"):
+            logging_config.ensure_file_logging()
