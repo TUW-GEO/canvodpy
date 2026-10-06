@@ -44,11 +44,13 @@ def test_without_aggregation_glonass_ids_name_fdma_bands() -> None:
     assert any("|G1_FDMA|" in s for s in sids)
 
 
-@pytest.mark.parametrize(
-    ("reader", "fpath", "name"), [(SbfReader, SBF, "SBF"), (NmeaObs, NMEA, "NMEA")]
-)
-def test_aggregation_only_readers_refuse_it_off(reader, fpath, name) -> None:
+@pytest.mark.parametrize(("reader", "fpath"), [(SbfReader, SBF), (NmeaObs, NMEA)])
+def test_aggregation_only_readers_refuse_it_off(reader, fpath) -> None:
+    """Readers that do not declare per_channel_glonass refuse False."""
+    assert not reader.per_channel_glonass
     assert reader(fpath=fpath).aggregate_glonass_fdma is True
     assert reader(fpath=fpath, aggregate_glonass_fdma=True)
-    with pytest.raises(ValidationError, match=f"The {name} reader gives GLONASS"):
+    with pytest.raises(
+        ValidationError, match=f"The reader {reader.__name__} gives GLONASS"
+    ):
         reader(fpath=fpath, aggregate_glonass_fdma=False)

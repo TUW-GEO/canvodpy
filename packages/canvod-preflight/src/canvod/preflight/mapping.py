@@ -24,7 +24,13 @@ from natsort import natsorted
 from canvod.utils.tools import deprecated
 
 from .config_models import DirectoryLayout, ReceiverNamingConfig, SiteNamingConfig
-from .convention import CanVODFilename, FileType, ReceiverType, find_overlaps
+from .convention import (
+    CanVODFilename,
+    FileType,
+    ReceiverType,
+    find_overlaps,
+    known_file_types,
+)
 from .patterns import (
     BUILTIN_PATTERNS,
     auto_match_order,
@@ -68,8 +74,8 @@ _RNX2_OBS_CHARS = set("oOdD")
 _COMPRESSION_EXTS = {".zip", ".gz", ".bz2", ".zst", ".Z"}
 
 
-def _detect_file_type(path: Path) -> tuple[FileType, str | None]:
-    """Detect FileType and compression from a file path."""
+def _detect_file_type(path: Path) -> tuple[str, str | None]:
+    """Detect the file type and compression from a file path."""
     suffixes = path.suffixes
     compression = None
 
@@ -87,6 +93,9 @@ def _detect_file_type(path: Path) -> tuple[FileType, str | None]:
 
     if ext in _EXT_TO_FILETYPE:
         return _EXT_TO_FILETYPE[ext], compression
+
+    if ext[1:] in known_file_types():
+        return ext[1:], compression
 
     if len(ext) == 4 and ext[1:3].isdigit():
         type_char = ext[3]

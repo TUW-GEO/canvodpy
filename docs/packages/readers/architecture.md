@@ -17,6 +17,7 @@ The class is located in `canvod/readers/base.py`:
 ```python
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import ClassVar
 from pydantic import BaseModel, ConfigDict, field_validator
 import xarray as xr
 
@@ -32,7 +33,11 @@ class GNSSDataReader(BaseModel, ABC):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    file_type: ClassVar[str]  # TYPE field of the files' canVOD names, e.g. "rnx"
+    per_channel_glonass: ClassVar[bool] = False  # True: may give FDMA channels
+
     fpath: Path  # Validated at construction time
+    aggregate_glonass_fdma: bool = True  # False refused unless per_channel_glonass
 
     @field_validator("fpath")
     @classmethod

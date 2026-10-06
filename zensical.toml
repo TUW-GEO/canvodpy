@@ -43,6 +43,7 @@ nav = [
     { "Python Quickstart" = "users/python.md" },
     { "Configuration" = "guides/configuration.md" },
     { "Optional Extensions" = "guides/extensions.md" },
+    { "Your Own Readers and VOD Calculators" = "guides/plugins.md" },
     { "API Levels" = "guides/api-levels.md" },
     { "Parallel Processing" = "guides/parallel-processing.md" },
     { "Diagnostics & Monitoring" = "guides/diagnostics.md" },

@@ -15,7 +15,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Final
+from typing import ClassVar, Final
 
 import xarray as xr
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -190,9 +190,9 @@ def require_aggregated_glonass(reader: str, aggregate_glonass_fdma: bool) -> boo
     """
     if not aggregate_glonass_fdma:
         msg = (
-            f"The {reader} reader gives GLONASS FDMA signals as aggregated G1/G2 "
+            f"The reader {reader} gives GLONASS FDMA signals as aggregated G1/G2 "
             f"bands only. Set processing.params.aggregate_glonass_fdma to true "
-            f"for {reader} data."
+            f"for its data."
         )
         raise ValueError(msg)
     return aggregate_glonass_fdma
@@ -383,7 +383,25 @@ class GNSSDataReader(BaseModel, ABC):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    #: Canonical file type of the files the reader reads: the TYPE field of
+    #: a canVOD file name (``"rnx"``, ``"sbf"``, ``"nmea"``, or a new type
+    #: of a plugin reader). Every reader sets it.
+    file_type: ClassVar[str]
+
+    #: Whether the reader can give GLONASS FDMA signals per frequency
+    #: channel. Readers that cannot refuse ``aggregate_glonass_fdma=False``.
+    per_channel_glonass: ClassVar[bool] = False
+
     fpath: Path
+    aggregate_glonass_fdma: bool = True
+
+    @field_validator("aggregate_glonass_fdma")
+    @classmethod
+    def _glonass_channels_supported(cls, v: bool) -> bool:
+        """Refuse ``False`` unless the reader gives per-channel GLONASS."""
+        if cls.per_channel_glonass:
+            return v
+        return require_aggregated_glonass(cls.__name__, v)
 
     @field_validator("fpath")
     @classmethod

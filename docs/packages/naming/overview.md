@@ -31,7 +31,7 @@ Every canVOD-compatible GNSS file follows this naming format:
 | `PERIOD` | 3 | Batch duration: value + unit | `01D`, `15M` |
 | `SAMPLING` | 3 | Data frequency: value + unit | `05S`, `01S` |
 | `CONTENT` | 2 | User-defined content code | `AA` |
-| `TYPE` | 3--4 | File format, lowercase; runs read `rnx`, `sbf` and `nmea` | `rnx`, `sbf`, `nmea`, `ubx` |
+| `TYPE` | 2--8 | File format, lowercase; runs read `rnx`, `sbf` and `nmea`, and the type of each installed [reader plugin](../../guides/plugins.md) | `rnx`, `sbf`, `nmea`, `ubx` |
 | `COMPRESSION` | -- | Optional compression extension; runs do not read compressed files (warning `compressed_files_not_processed`), decompress them first | `zip`, `gz` |
 
 ### Duration codes

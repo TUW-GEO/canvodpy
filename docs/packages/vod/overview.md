@@ -146,6 +146,15 @@ flowchart TD
 
 ---
 
+## Your own VOD model
+
+A VOD calculator of your own inherits `VODCalculator` and implements
+`calculate_vod()`. Installed as a plugin package, it is a choice of
+`canvodpy run --vod-calculator`; see
+[Your Own Readers and VOD Calculators](../../guides/plugins.md).
+
+---
+
 ## References
 
 Humphrey, V. and Frankenberg, C. (2022). GNSS-transmissometry: A new approach for vegetation optical depth estimation. *Remote Sensing of Environment*.

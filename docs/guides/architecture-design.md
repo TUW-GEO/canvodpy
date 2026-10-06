@@ -109,6 +109,8 @@ flowchart TD
 ### Registration + Usage
 
 ```python
+from typing import ClassVar
+
 from pydantic import ConfigDict
 from canvodpy import ReaderFactory
 from canvod.readers import GNSSDataReader
@@ -119,9 +121,10 @@ class MyLabReader(GNSSDataReader):
 
     model_config = ConfigDict(frozen=True)
     # fpath is inherited from GNSSDataReader — no need to redeclare
+    file_type: ClassVar[str] = "mlb"  # TYPE field of the files' canVOD names
 
     def to_ds(self, keep_data_vars=None, **kwargs) -> xr.Dataset:
-        builder = DatasetBuilder(self)
+        builder = DatasetBuilder(self, time_system="GPS")
         for epoch in self.iter_epochs():
             ei = builder.add_epoch(epoch.timestamp)
             for obs in epoch.observations:
@@ -131,7 +134,8 @@ class MyLabReader(GNSSDataReader):
 
     # ... implement remaining abstract methods ...
 
-# Register once (at import time)
+# Register for this Python session; for canvodpy run, install it as a
+# plugin instead (guides/plugins.md)
 ReaderFactory.register("mylab_v1", MyLabReader)
 
 # Use anywhere

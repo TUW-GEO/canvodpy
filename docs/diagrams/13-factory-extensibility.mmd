@@ -3,7 +3,6 @@ flowchart TD
         READER_ABC["GNSSDataReader (read, to_ds, validate_output)"]
         GRID_ABC["BaseGridBuilder (_build_grid, build)"]
         VOD_ABC["VODCalculator (calculate_vod)"]
-        AUG_ABC["AugmentationStep (apply)<br/>no factory registry — subclassed directly"]
     end
 
     subgraph FACTORIES[Factory Registry]
@@ -13,16 +12,14 @@ flowchart TD
     end
 
     subgraph BUILTIN[Built-in Implementations]
-        RINEX3["Rnxv3Obs (RINEX v3.04)"]
-        EA["EqualAreaBuilder"]
-        HP["EqualAngleBuilder"]
-        GD["GeodesicBuilder"]
-        FB["FibonacciBuilder"]
+        RINEX3["Rnxv2Obs, Rnxv3Obs, Rnxv3StrippedObs,<br/>SbfReader, NmeaObs"]
+        EA["EqualArea, EqualAngle, Equirectangular,<br/>HTM, Geodesic, Fibonacci, HEALPix"]
         TO["TauOmegaZerothOrder"]
     end
 
     subgraph CUSTOM[User Extension]
         IMPL["Custom Implementation (inherits ABC)"]
+        PLUG["Installed plugin package<br/>(entry points canvodpy.readers,<br/>canvodpy.vod_calculators)"]
         REG["Factory.register( name, class)"]
         USE["Factory.create( name, **params)"]
     end
@@ -39,12 +36,11 @@ flowchart TD
 
     RINEX3 --> RF
     EA --> GF
-    HP --> GF
-    GD --> GF
-    FB --> GF
     TO --> VF
 
     IMPL --> REG
+    IMPL --> PLUG
+    PLUG -->|"at canvodpy import"| REG
     REG --> V1
     V1 --> V2
     V2 --> V3

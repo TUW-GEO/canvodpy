@@ -17,6 +17,9 @@ Background: `docs/packages/vod/overview.md`.
   receiver. This is a scientific guardrail.
 - Output passes `validate_vod_dataset` (canvod-readers); the VOD store
   refuses anything else.
+- Calculators in other packages reach `canvodpy run` as plugins (entry
+  point group `canvodpy.vod_calculators`, `docs/guides/plugins.md`). Like
+  `TauOmegaZerothOrder`, they keep the canopy's `cell_id_*` variables.
 - In a run, `VodComputer` (canvodpy) is the only caller: it picks the
   canopy/reference pairs and days and writes the VOD store. Don't build a
   second VOD path on `from_icechunkstore` or `from_datasets`.

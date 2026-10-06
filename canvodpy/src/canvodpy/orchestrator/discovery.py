@@ -209,8 +209,9 @@ def _load_recipe(recipe_path: Path) -> Any:
     return NamingRecipe.load(recipe_path)
 
 
-#: File types each reader format reads (``None``/``"auto"``: all of them).
-#: RINEX 2 and 3 share the canonical type ``rnx``; the header tells them apart.
+#: File types each built-in reader format reads (``None``/``"auto"``: all of
+#: them); a reader plugin reads its reader's ``file_type``. RINEX 2 and 3
+#: share the canonical type ``rnx``; the header tells them apart.
 _READER_FILE_TYPES: dict[str | None, frozenset[str]] = {
     "sbf": frozenset({"sbf"}),
     "rinex3": frozenset({"rnx"}),
@@ -319,7 +320,7 @@ def _canonical_file(path: Path, file_types: frozenset[str]) -> DiscoveredFile | 
         parsed = CanVODFilename.from_filename(path.name)
     except ValueError:
         return None
-    if parsed.compression is not None or parsed.file_type.value not in file_types:
+    if parsed.compression is not None or parsed.file_type not in file_types:
         return None
     return DiscoveredFile(path=path, canonical_name=parsed.name)
 
@@ -382,6 +383,8 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
         naming_recipe = _load_recipe(recipe) if recipe else None
     except (FileNotFoundError, ImportError) as exc:
         raise DiscoveryError(str(exc)) from exc
+    from canvod.preflight.convention import known_file_types
+
     found: list[DiscoveredFile] = []
     unrecognized: list[Path] = []
     compressed: list[Path] = []
@@ -398,7 +401,7 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
                 discovered = (
                     _recipe_file(path, naming_recipe)
                     if naming_recipe is not None
-                    else _canonical_file(path, _ALL_FILE_TYPES)
+                    else _canonical_file(path, known_file_types())
                 )
                 if discovered is not None:
                     found.append(discovered)
@@ -470,8 +473,19 @@ def _of_format(
 ) -> list[DiscoveredFile]:
     if recipe:  # the recipe's file_type already selects the files
         return list(files)
-    file_types = _READER_FILE_TYPES.get(reader_format, _ALL_FILE_TYPES)
+    file_types = _file_types(reader_format)
     return [f for f in files if Path(f.canonical_name).suffix[1:] in file_types]
+
+
+def _file_types(reader_format: str | None) -> frozenset[str]:
+    """File types ``reader_format`` reads; ``auto`` never picks a plugin."""
+    if reader_format in (None, "auto"):
+        return _ALL_FILE_TYPES
+    if reader_format in _READER_FILE_TYPES:
+        return _READER_FILE_TYPES[reader_format]
+    from canvodpy.factories import ReaderFactory
+
+    return frozenset({ReaderFactory.component_class(reader_format).file_type})
 
 
 def receiver_days(

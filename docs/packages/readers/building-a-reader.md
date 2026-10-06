@@ -2,7 +2,7 @@
 
 This guide walks you through building a new GNSS data format reader from scratch. It covers every aspect of the reader ecosystem: the abstract base class, Pydantic model configuration, signal identifiers, the DatasetBuilder, epoch iteration, file hashing, testing patterns, factory registration, and common pitfalls.
 
-By the end you will have a validated reader whose datasets canvod-store, canvod-auxiliary and canvod-vod accept. To use it in `canvodpy run`, it must also be wired into the runs (see [Step 11](#step-11-package-structure)).
+By the end you will have a validated reader whose datasets canvod-store, canvod-auxiliary and canvod-vod accept. To use it in `canvodpy run`, install it as a plugin (see [Your Own Readers and VOD Calculators](../../guides/plugins.md)), or, to add it to canvodpy itself, wire it into the runs (see [Step 11](#step-11-package-structure)).
 
 ---
 
@@ -54,7 +54,7 @@ graph TD
 Your reader only needs to:
 
 1. **Inherit** from `GNSSDataReader` (one parent — no need for separate `BaseModel`)
-2. **Implement** abstract methods (`to_ds`, `iter_epochs`, `file_hash`, `source_format`, `start_time`, `end_time`, `systems`, `num_satellites`)
+2. **Implement** abstract methods (`to_ds`, `iter_epochs`, `file_hash`, `source_format`, `start_time`, `end_time`, `systems`, `num_satellites`) and set the class attribute `file_type` (the TYPE field of the files' canVOD names, e.g. `"rnx"`)
 3. **Use `DatasetBuilder`** in your `to_ds()` method (recommended) — it handles all the tricky parts
 
 ---
@@ -870,8 +870,12 @@ packages/canvod-readers/
 
 ### Wire it into runs
 
-`canvodpy run` knows its formats by name. A new format needs all of these
-(they list the formats; keep them in step):
+This is for a reader added to canvodpy itself. A reader in its own package
+needs none of it: it is a plugin (see
+[Your Own Readers and VOD Calculators](../../guides/plugins.md)).
+
+`canvodpy run` knows its built-in formats by name. A new built-in format
+needs all of these (they list the formats; keep them in step):
 
 | Where | What |
 |---|---|

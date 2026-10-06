@@ -14,7 +14,7 @@ from collections.abc import Iterable, Iterator
 from datetime import UTC, datetime, timedelta
 from itertools import pairwise
 from pathlib import Path
-from typing import Any, Literal, Self, cast
+from typing import Any, ClassVar, Literal, Self, cast
 
 import georinex as gr
 import numpy as np
@@ -902,7 +902,8 @@ class Rnxv3Obs(GNSSDataReader):
     apply_overlap_filter: bool = False
     overlap_preferences: dict[str, str] | None = None
 
-    aggregate_glonass_fdma: bool = True
+    file_type: ClassVar[str] = "rnx"
+    per_channel_glonass: ClassVar[bool] = True
 
     # Pydantic exempts PrivateAttr fields from frozen=True immutability, but ty
     # doesn't model that and flags every assignment below as read-only.

@@ -22,7 +22,7 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, ClassVar, Final
 
 import numpy as np
 import xarray as xr
@@ -30,7 +30,6 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 from canvod.readers.base import (
     GNSSDataReader,
-    require_aggregated_glonass,
     validate_dataset,
 )
 from canvod.readers.gnss_specs.leap_seconds import utc_to_gps
@@ -394,13 +393,9 @@ class NmeaObs(GNSSDataReader, BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True, frozen=False)
 
-    fpath: Path
-    aggregate_glonass_fdma: bool = True
+    file_type: ClassVar[str] = "nmea"
 
-    @field_validator("aggregate_glonass_fdma")
-    @classmethod
-    def _aggregated_glonass_only(cls, v: bool) -> bool:
-        return require_aggregated_glonass("NMEA", v)
+    fpath: Path
 
     @field_validator("fpath")
     @classmethod

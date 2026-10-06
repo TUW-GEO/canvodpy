@@ -17,7 +17,7 @@ other package is a library this one composes.
 | `orchestrator/data_check.py` | `canvodpy config validate`: same discovery as a run |
 | `vod_computer.py` | `VodComputer`, the only VOD implementation (`site.vod`, `canvodpy run`, `canvodpy vod`, `vod-reconcile`) |
 | `workflows/tasks.py` | Airflow tasks; `check_day` and `process_day` run the code of `canvodpy run` |
-| `factories.py`, `__init__.py` | `ReaderFactory` and friends; built-in readers are registered in `_register_builtin_components` |
+| `factories.py`, `__init__.py` | `ReaderFactory` and friends; built-in readers are registered in `_register_builtin_components`, then installed plugins in `register_plugins` (`docs/guides/plugins.md`) |
 
 ## Invariants
 
@@ -37,6 +37,10 @@ other package is a library this one composes.
   set.
 - **The CLI never stops a long run for one bad file**: it warns and goes
   on. Library code raises.
+- **Plugins** (installed readers and VOD calculators) are registered when
+  canvodpy is imported; a broken plugin raises `PluginError` then. A
+  run uses them only when the settings or `--vod-calculator` name them;
+  `reader_format: auto` never picks one.
 - The CLI lives here only; canvod-utils has no CLI code.
 
 ## Before changing public API

@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from canvod.utils.tools import deprecated
 
@@ -50,19 +50,30 @@ class ReceiverConfig(_StrictModel):
             "Example keys: site_url, antenna_height, species."
         ),
     )
-    reader_format: Literal[
-        "auto", "rinex3", "rinex3_stripped", "rinex2", "sbf", "nmea"
-    ] = Field(
+    reader_format: str = Field(
         "auto",
         description=(
             "Reader for the receiver's files: 'rinex3' (RINEX 3), "
             "'rinex3_stripped' (RINEX 3 with signal strengths only, faster), "
-            "'rinex2' (RINEX 2.11), 'sbf' (Septentrio binary), 'nmea'. "
+            "'rinex2' (RINEX 2.11), 'sbf' (Septentrio binary), 'nmea', or the "
+            "name of an installed reader plugin. "
             "'auto': detected per day from the files (SBF and NMEA by file "
-            "type, RINEX 2 or 3 from the header); a day whose files need "
-            "different readers is an error."
+            "type, RINEX 2 or 3 from the header; never a plugin); a day whose "
+            "files need different readers is an error."
         ),
     )
+
+    @field_validator("reader_format")
+    @classmethod
+    def _known_reader_format(cls, v: str) -> str:
+        known = reader_formats()
+        if v not in known:
+            raise ValueError(
+                f"Unknown reader_format {v!r}. Known: {', '.join(known)}. A "
+                "reader plugin is known once its package is installed."
+            )
+        return v
+
     recipe: str | None = Field(
         None,
         description=(
@@ -143,6 +154,20 @@ def reference_store_group(reference_receiver: str, canopy_receiver: str) -> str:
 
 #: File format read by each reader format; ``rinex3_stripped`` reads RINEX 3.
 _FILE_FORMAT: dict[str, str] = {"rinex3_stripped": "rinex3"}
+
+#: Reader formats of canvodpy itself; plugins add more (:func:`reader_formats`).
+BUILT_IN_READER_FORMATS = ("auto", "rinex3", "rinex3_stripped", "rinex2", "sbf", "nmea")
+
+
+def reader_formats() -> list[str]:
+    """Values ``reader_format`` accepts: the built-in formats and plugins.
+
+    Plugin names come from the entry point group ``canvodpy.readers`` of
+    the installed packages, without importing them.
+    """
+    from canvod.utils.plugins import READER_GROUP, plugin_names
+
+    return [*BUILT_IN_READER_FORMATS, *plugin_names(READER_GROUP)]
 
 
 def mixed_format_error(

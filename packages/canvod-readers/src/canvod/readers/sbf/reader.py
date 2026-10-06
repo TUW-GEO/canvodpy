@@ -26,17 +26,16 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import cached_property
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, ClassVar, cast
 
 import numpy as np
 import structlog
 import xarray as xr
 from numpy.typing import NDArray
-from pydantic import ConfigDict, field_validator
+from pydantic import ConfigDict
 
 from canvod.readers.base import (
     GNSSDataReader,
-    require_aggregated_glonass,
     validate_dataset,
 )
 from canvod.readers.gnss_specs.constants import UREG
@@ -1384,12 +1383,7 @@ class SbfReader(GNSSDataReader):
 
     model_config = ConfigDict(extra="ignore")
 
-    aggregate_glonass_fdma: bool = True
-
-    @field_validator("aggregate_glonass_fdma")
-    @classmethod
-    def _aggregated_glonass_only(cls, v: bool) -> bool:
-        return require_aggregated_glonass("SBF", v)
+    file_type: ClassVar[str] = "sbf"
 
     @property
     def source_format(self) -> str:

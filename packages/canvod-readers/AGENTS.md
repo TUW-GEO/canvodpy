@@ -38,6 +38,13 @@ Background: `docs/packages/readers/architecture.md`,
   give the same dataset on valid files.
 - SBF: one decoder for observations and auxiliary blocks, paired by time
   of week. Epochs stay in GPS time; never subtract leap seconds.
+- Every reader sets the class attribute `file_type` (TYPE field of its
+  files' canVOD names). `aggregate_glonass_fdma` is declared on
+  `GNSSDataReader`; `False` is refused unless the reader sets
+  `per_channel_glonass = True` (the RINEX readers).
+- Readers in other packages reach `canvodpy run` as plugins (entry point
+  group `canvodpy.readers`, `docs/guides/plugins.md`); keep that page in
+  step with the `GNSSDataReader` contract.
 - Readers don't read the settings file. Options arrive as arguments;
   `keep_data_vars=None` keeps every variable.
 

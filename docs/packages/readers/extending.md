@@ -21,7 +21,9 @@ Add support for a new GNSS data format by implementing the `GNSSDataReader` abst
     ---
 
     `file_hash`, `source_format`, `to_ds()`, `iter_epochs()`, `start_time`,
-    `end_time`, `systems` and `num_satellites`. (`num_epochs` has a default that counts via
+    `end_time`, `systems` and `num_satellites`, and set the class attribute
+    `file_type` (the TYPE field of the files' canVOD names, e.g. `"rnx"`).
+    (`num_epochs` has a default that counts via
     `iter_epochs()` — override for O(1) if your format stores the count.)
 
 -   :fontawesome-solid-shield-halved: &nbsp; **3. Use `DatasetBuilder` (recommended)**
@@ -411,7 +413,6 @@ from the file content. Custom formats use the name-based API above.
 
 !!! note "Readers in runs"
     `canvodpy run` picks readers by the receiver's `reader_format`
-    setting, which accepts only the built-in formats (`auto`, `rinex3`,
-    `rinex3_stripped`, `rinex2`, `sbf`, `nmea`). A registered custom
-    reader works in your own scripts; to use a new format in runs, add
-    the reader to canvod-readers (see [Building a Reader](building-a-reader.md)).
+    setting. A reader registered in your own script does not reach it;
+    install the reader as a plugin instead (see
+    [Your Own Readers and VOD Calculators](../../guides/plugins.md)).

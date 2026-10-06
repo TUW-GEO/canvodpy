@@ -17,6 +17,8 @@ Background: `docs/principles.md` (convention), `docs/packages/naming/overview.md
 
 - One copy of the convention: here. canvod-filemap imports it; never copy
   it into another package.
+- TYPE is a built-in `FileType` or the `file_type` of an installed reader
+  plugin (`known_file_types`, which imports the plugins).
 - A change to `convention.py` changes which files every run finds. Check
   canvodpy's discovery tests and canvod-filemap with it.
 

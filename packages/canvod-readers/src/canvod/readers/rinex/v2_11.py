@@ -25,7 +25,7 @@ from collections import Counter
 from datetime import UTC, datetime
 from itertools import pairwise
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, ClassVar, Self
 
 import numpy as np
 import pint
@@ -653,8 +653,10 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
     """
 
     fpath: Path
+    file_type: ClassVar[str] = "rnx"
+    per_channel_glonass: ClassVar[bool] = True
+
     polarization: str = "RHCP"
-    aggregate_glonass_fdma: bool = True
     apply_overlap_filter: bool = False
     overlap_preferences: dict[str, str] | None = None
 

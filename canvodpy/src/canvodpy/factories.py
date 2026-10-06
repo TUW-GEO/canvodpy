@@ -133,15 +133,7 @@ class ComponentFactory[T: ABC]:
         ...     "equal_area", angular_resolution=5.0
         ... )
         """
-        if name not in cls._registry:
-            available = list(cls._registry.keys())
-            msg = (
-                f"Component '{name}' not registered in {cls.__name__}. "
-                f"Available: {available}"
-            )
-            raise ValueError(msg)
-
-        component_class = cls._registry[name]
+        component_class = cls.component_class(name)
         log.debug(
             "component_creating",
             factory=cls.__name__,
@@ -151,6 +143,25 @@ class ComponentFactory[T: ABC]:
 
         # Pydantic validation happens here
         return component_class(**kwargs)
+
+    @classmethod
+    def component_class(cls, name: str) -> type[T]:
+        """
+        Registered class of a component.
+
+        Raises
+        ------
+        ValueError
+            If component name not registered.
+        """
+        if name not in cls._registry:
+            available = list(cls._registry.keys())
+            msg = (
+                f"Component '{name}' not registered in {cls.__name__}. "
+                f"Available: {available}"
+            )
+            raise ValueError(msg)
+        return cls._registry[name]
 
     @classmethod
     def list_available(cls) -> list[str]:
@@ -455,3 +466,50 @@ class AugmentationFactory(ComponentFactory):
     def list_available(cls) -> list[str]:
         """Deprecated: augmentation steps are not used by ``canvodpy run``."""
         return super().list_available()
+
+
+def register_plugins() -> None:
+    """Register the reader and VOD calculator plugins of installed packages.
+
+    Plugins are declared as entry points (groups ``canvodpy.readers`` and
+    ``canvodpy.vod_calculators``, see :mod:`canvod.utils.plugins`) and
+    registered under their entry point name, after the built-in components.
+
+    Raises
+    ------
+    canvod.utils.plugins.PluginError
+        If a plugin cannot be imported, does not inherit the required base
+        class, takes the name of a built-in component, or (readers) sets no
+        valid ``file_type``. The message names the plugin's package.
+    """
+    from canvod.preflight.convention import known_file_types
+    from canvod.utils.plugins import (
+        READER_GROUP,
+        VOD_CALCULATOR_GROUP,
+        PluginError,
+        load_plugins,
+        plugin_package,
+    )
+
+    factories: tuple[tuple[str, type[ComponentFactory]], ...] = (
+        (READER_GROUP, ReaderFactory),
+        (VOD_CALCULATOR_GROUP, VODFactory),
+    )
+    for group, factory in factories:
+        taken = {*factory.list_available(), "auto"}
+        for name, plugin in load_plugins(group).items():
+            package = plugin_package(group, name)
+            if name in taken:
+                raise PluginError(
+                    f"The {group} plugin '{name}' of the package {package} "
+                    "takes the name of a built-in component. Rename the entry "
+                    f"point in {package}."
+                )
+            try:
+                factory.register(name, plugin)
+            except TypeError as exc:
+                raise PluginError(
+                    f"The {group} plugin '{name}' of the package {package} "
+                    f"cannot be used: {exc}."
+                ) from exc
+    known_file_types()

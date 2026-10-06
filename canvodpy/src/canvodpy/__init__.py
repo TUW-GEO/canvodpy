@@ -69,6 +69,7 @@ from canvodpy.factories import (
     GridFactory,
     ReaderFactory,
     VODFactory,
+    register_plugins,
 )
 
 # Fluent workflow API (deferred execution)
@@ -301,5 +302,6 @@ def _register_builtin_components() -> None:
     log.info("builtin_components_registered")
 
 
-# Auto-register on import
+# Auto-register on import; plugins after the built-ins, so a name clash fails
 _register_builtin_components()
+register_plugins()
