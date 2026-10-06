@@ -59,21 +59,27 @@ agent-written code: the agent building something other than what you
 meant, inventing its own words for things, leaving no record of why,
 writing code without tests, or ignoring the project's rules.
 
+Claude Code loads the skills when it is started in the canvodpy folder,
+and calls them only by their full name, `/mattpocock-skills:<skill>`; a
+short `/grill-with-docs` is an unknown command, and a short
+`/code-review` runs Claude Code's own review instead.
+
 | Situation | Start with | What happens |
 |---|---|---|
-| An idea or a change to design | `/grill-with-docs` | The agent asks you questions in rounds, each with its recommended answer, until every decision is settled. New terms go to the glossary, decisions that are hard to reverse to `docs/adr/`. |
-| A change too big for one session | `/to-spec`, then `/to-tickets` | The settled design becomes a GitHub issue (the spec), split into small tickets that each work on their own. |
-| One ticket, or a change that fits one session | `/implement` | Test first (`/tdd`): a failing test, then the code that makes it pass. It ends with `/code-review`. |
-| Review a branch or pull request | `/code-review` | Two separate reviews: against `CODING_STANDARDS.md`, and against the issue the change was made for. |
-| Something is broken | `/diagnosing-bugs` | First a command that shows the bug, then hypotheses, then the fix with a regression test. |
-| After a session that went wrong | `/retro` | Suggests checks and rules so the same mistake can't happen again. |
-| Not sure which | `/ask-matt` | Recommends the skill for your situation. |
+| An idea or a change to design | `/mattpocock-skills:grill-with-docs` | The agent asks you questions in rounds, each with its recommended answer, until every decision is settled. New terms go to the glossary, decisions that are hard to reverse to `docs/adr/`. |
+| A change too big for one session | `/mattpocock-skills:to-spec`, then `/mattpocock-skills:to-tickets` | The settled design becomes a GitHub issue (the spec), split into small tickets that each work on their own. |
+| One ticket, or a change that fits one session | `/mattpocock-skills:implement` | Test first (`/mattpocock-skills:tdd`): a failing test, then the code that makes it pass. It ends with `/mattpocock-skills:code-review`. |
+| Review a branch or pull request | `/mattpocock-skills:code-review` | Two separate reviews: against `CODING_STANDARDS.md`, and against the issue the change was made for. |
+| Something is broken | `/mattpocock-skills:diagnosing-bugs` | First a command that shows the bug, then hypotheses, then the fix with a regression test. |
+| After a session that went wrong | `/mattpocock-skills:retro` | Suggests checks and rules so the same mistake can't happen again. |
+| Not sure which | `/mattpocock-skills:ask-matt` | Recommends the skill for your situation. |
 
 The full flow is meant for real changes; a typo needs none of it. The
 domain guides of canVODpy (add a reader, deprecate code, store safety and
 the others) still apply inside any of these steps. Some skills run
-helper agents in parallel (`/code-review`, `/implement-spec`), which uses
-more of your agent's quota.
+helper agents in parallel (`/mattpocock-skills:code-review`,
+`/mattpocock-skills:implement-spec`), which uses more of your agent's
+quota.
 
 ---
 

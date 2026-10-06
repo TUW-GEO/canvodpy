@@ -11,9 +11,10 @@ alternatives: what was decided and why. Read the ones that touch your
 change before you start; if your change contradicts one, say so in the
 issue or pull request rather than working around it.
 
-New decisions are added while a change is designed (`/grill-with-docs`,
-see [Developing with coding agents](../guides/ai-development.md)), numbered
-in order. A decision that is reversed is not deleted: it gets a status
+New decisions are added while a change is designed
+(`/mattpocock-skills:grill-with-docs`, see
+[Developing with coding agents](../guides/ai-development.md)), numbered in
+order. A decision that is reversed is not deleted: it gets a status
 that names the decision replacing it.
 
 | | Decision |

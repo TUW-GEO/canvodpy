@@ -8,7 +8,9 @@ the repository root, to the file's directory, or to the source folder of
 the file's package (``src/canvod/<name>`` or ``src/canvodpy``), as the
 package tables write them; a ``just <recipe>`` must be
 a recipe of the root Justfile; a ``/<skill>`` must be a skill of
-``.claude/skills/`` or of the mattpocock-skills plugin. ``extensions:<path>`` names a path in the
+``.claude/skills/``, a ``/mattpocock-skills:<skill>`` a skill of the
+plugin (Claude Code calls plugin skills only by their full name).
+``extensions:<path>`` names a path in the
 canvodpy-extensions repository; it is checked at the canvod-filemap commit
 locked in ``uv.lock`` if a canvodpy-extensions git checkout is found
 (``$CANVODPY_EXTENSIONS_REPO``, or ``canvodpy-extensions`` next to this
@@ -48,8 +50,8 @@ UNCHECKED_PREFIXES = (
 OTHER_REPO_RECIPES = frozenset({"lock-canvodpy", "release-package"})
 
 #: Skills of the mattpocock-skills plugin (``just agent-skills``), version
-#: 1.3.1. A ``/name`` in the files must be one of these or a skill under
-#: ``.claude/skills/``; update this list when the plugin adds or renames one.
+#: 1.3.1. The files name them ``/mattpocock-skills:<name>``; update this
+#: list when the plugin adds or renames one.
 PLUGIN_SKILLS = frozenset({
     "ask-matt", "code-review", "codebase-design", "diagnosing-bugs",
     "domain-modeling", "grill-me", "grill-with-docs", "grilling", "handoff",
@@ -61,7 +63,8 @@ PLUGIN_SKILLS = frozenset({
 
 _CODE_SPAN = re.compile(r"`([^`\n]+)`")
 _FENCE = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
-_SKILL = re.compile(r"/([a-z][a-z0-9-]*)")
+PLUGIN = "mattpocock-skills"
+_SKILL = re.compile(r"/(?:(?P<plugin>[a-z][a-z0-9-]*):)?(?P<name>[a-z][a-z0-9-]*)")
 _JUST = re.compile(r"(?:^|[\s`(])just ([a-z][a-z0-9-]*)(?![\w=-])")
 _PATH_SUFFIXES = (".md", ".py", ".toml", ".yaml", ".yml", ".ini", ".lock", ".json")
 _PLACEHOLDER = re.compile(r"[<>*{}]|PKG|X\.Y\.Z")
@@ -80,10 +83,24 @@ def agent_files() -> list[Path]:
     ]
 
 
-def skill_names() -> frozenset[str]:
-    """The skills a ``/name`` may call: the plugin's and this repository's."""
-    own = {p.name for p in (ROOT / ".claude" / "skills").iterdir() if p.is_dir()}
-    return PLUGIN_SKILLS | own
+def own_skills() -> frozenset[str]:
+    """The skills of this repository, called as ``/name``."""
+    return frozenset(
+        p.name for p in (ROOT / ".claude" / "skills").iterdir() if p.is_dir()
+    )
+
+
+def skill_problem(span: str, plugin: str | None, name: str) -> str | None:
+    """Return why ``span`` does not call a skill, or None."""
+    if plugin is None:
+        if name in own_skills():
+            return None
+        if name in PLUGIN_SKILLS:
+            return f"`{span}` is a plugin skill; write `/{PLUGIN}:{name}`"
+        return f"`{span}` is not a skill"
+    if plugin != PLUGIN or name not in PLUGIN_SKILLS:
+        return f"`{span}` is not a skill"
+    return None
 
 
 def search_roots(file: Path) -> list[Path]:
@@ -158,8 +175,8 @@ def problems(
                     )
             continue
         if skill := _SKILL.fullmatch(span):
-            if skill.group(1) not in skill_names():
-                found.append(f"`{span}` is not a skill")
+            if reason := skill_problem(span, skill["plugin"], skill["name"]):
+                found.append(reason)
             continue
         if not is_path(span) or span.startswith(
             OTHER_REPO_PREFIXES + UNCHECKED_PREFIXES

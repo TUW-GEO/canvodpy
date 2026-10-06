@@ -124,21 +124,22 @@ Work on a branch, never on `main`; every change reaches `main` through a
 pull request. An agent may push its branch and open the pull request, but
 never merges, never pushes `main` or tags, never force-pushes and never
 bypasses a check (`CODING_STANDARDS.md`, Git and GitHub; enforced for
-Claude Code by `scripts/agent_git_guard.py`). Read `CODING_STANDARDS.md` before writing code: its rules
-and its checklist apply to every change, and `/code-review` checks
-against them. Read the `AGENTS.md` of every package you change, and the
-task guide if one fits.
+Claude Code by `scripts/agent_git_guard.py`). Read `CODING_STANDARDS.md`
+before writing code: its rules and its checklist apply to every change,
+and `/mattpocock-skills:code-review` checks against them. Read the
+`AGENTS.md` of every package you change, and the task guide if one fits.
 
 Changes go through the shared agent workflow (the mattpocock-skills
-plugin, `just agent-skills`; `docs/guides/ai-development.md`):
+plugin, `just agent-skills`; `docs/guides/ai-development.md`). Claude
+Code calls plugin skills only by their full name:
 
 | Situation | Start with |
 |---|---|
-| An idea or a change to design | `/grill-with-docs`: interview until every decision is settled; records terms in `GLOSSARY.md` and decisions in `docs/adr/` |
-| A change too big for one session | `/to-spec`, then `/to-tickets` (GitHub issues), then `/implement` per ticket |
-| A change that fits one session | `/implement` (test first with `/tdd`, then `/code-review`) |
-| Something is broken | `/diagnosing-bugs`: a command that shows the bug before any theory |
-| Not sure | `/ask-matt` |
+| An idea or a change to design | `/mattpocock-skills:grill-with-docs`: interview until every decision is settled; records terms in `GLOSSARY.md` and decisions in `docs/adr/` |
+| A change too big for one session | `/mattpocock-skills:to-spec`, then `/mattpocock-skills:to-tickets` (GitHub issues), then `/mattpocock-skills:implement` per ticket |
+| A change that fits one session | `/mattpocock-skills:implement` (test first with `/mattpocock-skills:tdd`, then `/mattpocock-skills:code-review`) |
+| Something is broken | `/mattpocock-skills:diagnosing-bugs`: a command that shows the bug before any theory |
+| Not sure | `/mattpocock-skills:ask-matt` |
 
 Running on real data or writing to a production store needs the
 maintainers' go-ahead first.

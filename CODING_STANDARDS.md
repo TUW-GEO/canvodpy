@@ -1,9 +1,10 @@
 # canVODpy coding standards
 
-Every change follows these. Read them before writing code; `/code-review`
-checks each change against them. The reasons behind them are in
-`docs/adr/`. Rules a tool can check (ruff, ty, `just check-agent-docs`,
-commitizen) are not repeated here: run `just check`.
+Every change follows these. Read them before writing code;
+`/mattpocock-skills:code-review` checks each change against them. The
+reasons behind them are in `docs/adr/`. Rules a tool can check (ruff, ty,
+`just check-agent-docs`, commitizen) are not repeated here: run
+`just check`.
 
 ## Rules
 
