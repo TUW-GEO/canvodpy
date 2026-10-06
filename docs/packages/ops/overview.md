@@ -78,6 +78,23 @@ epochs and θ changes little within a bin
 ([issue #192](https://github.com/nfb2021/canvodpy/issues/192)). The median is
 the same in dB and in linear power.
 
+Measured on one day of the Rosalia test data (5 s, 271 signals), against the
+mean of the per-epoch VOD (mean |VOD| 0.88):
+
+| Bin | θ change in a bin (p95) | VOD error from θ (mean / p95) | VOD error, receivers aggregated separately (mean / p95 / max) |
+|---|---|---|---|
+| 30 s | 0.20° | 0.0001 / 0.0005 | 0.0015 / 0.009 / 0.15 |
+| 1 min | 0.45° | 0.0003 / 0.0012 | 0.0017 / 0.009 / 0.44 |
+| 5 min | 2.4° | 0.0015 / 0.0048 | 0.0036 / 0.012 / 0.40 |
+| 15 min | 7.2° | 0.0041 / 0.013 | 0.013 / 0.066 / 0.59 |
+
+θ within a bin matters little up to a few minutes. The larger error comes
+from bins in which the canopy and the reference receiver have values at
+different epochs (e.g. a satellite tracked by one receiver for part of the
+bin): a run aggregates each receiver on its own, so such bins average
+different epochs. A bin also keeps no count of the epochs behind it, so a
+bin with one value weighs like a full one in later averages.
+
 ```python
 from canvod.ops import TemporalAggregate
 
@@ -88,7 +105,8 @@ ds_out, result = op(ds_in)
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `freq` | `"1min"` | Target frequency (pandas offset alias) |
-| `method` | `"mean"` | Aggregation: `"mean"` or `"median"` |
+| `method` | `"mean"` | Floating-point variables: `"mean"` or `"median"` |
+| `integer_method` | required | Integer variables: `"first"`, `"last"` or `"middle"` value of the bin |
 
 If every epoch already is the start of its own bin, the operation is a no-op:
 it returns the dataset unchanged and reports `"aggregated": false`. Data at the
