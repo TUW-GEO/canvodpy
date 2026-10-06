@@ -31,7 +31,20 @@ from canvod.auxiliary.position import (
 if TYPE_CHECKING:
     from canvod.auxiliary.pipeline import AuxDataPipeline
 
+_USE_OPS = "Write a `canvod.ops.Op` and run it in a `canvod.ops.Pipeline` instead."
+_USE_POSITION = (
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
+)
 
+
+def _left_over(name: str, replacement: str) -> str:
+    return (
+        f"`{name}` is left over from development and will be removed with "
+        f"the next major version. {replacement}"
+    )
+
+
+@deprecated(_left_over("AugmentationContext", _USE_OPS))
 class AugmentationContext:
     """Context object passed to augmentation steps.
 
@@ -108,6 +121,7 @@ class AugmentationContext:
         )
 
 
+@deprecated(_left_over("AugmentationStep", _USE_OPS))
 class AugmentationStep(ABC):
     """Abstract base class for augmentation steps.
 
@@ -170,6 +184,7 @@ class AugmentationStep(ABC):
         return f"{self.__class__.__name__}(name='{self.name}')"
 
 
+@deprecated(_left_over("SphericalCoordinateAugmentation", _USE_POSITION))
 class SphericalCoordinateAugmentation(AugmentationStep):
     """Compute spherical coordinates (phi, theta, r) in navigation convention.
 
@@ -226,6 +241,9 @@ class SphericalCoordinateAugmentation(AugmentationStep):
         return ds
 
 
+@deprecated(
+    _left_over("ClockCorrectionAugmentation", "It leaves the data unchanged; drop it.")
+)
 class ClockCorrectionAugmentation(AugmentationStep):
     """Apply satellite clock corrections (placeholder implementation).
 
@@ -299,6 +317,7 @@ class ClockCorrectionAugmentation(AugmentationStep):
         return ds
 
 
+@deprecated(_left_over("AuxDataAugmenter", _USE_POSITION))
 class AuxDataAugmenter:
     """Orchestrate multiple augmentation steps on RINEX datasets.
 
@@ -490,7 +509,8 @@ Demonstrates:
 
 @deprecated(
     "`example_basic_augmentation` is left over from development and will be "
-    "removed with the next major version. Use `AuxDataAugmenter` instead."
+    "removed with the next major version. "
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
 )
 def example_basic_augmentation():
     """Basic example: Augment a single RINEX dataset."""
@@ -534,7 +554,8 @@ def example_basic_augmentation():
 
 @deprecated(
     "`example_custom_augmentation_step` is left over from development and will be "
-    "removed with the next major version. Use `AuxDataAugmenter` instead."
+    "removed with the next major version. "
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
 )
 def example_custom_augmentation_step():
     """Example: Create a custom augmentation step."""
@@ -595,7 +616,8 @@ def example_custom_augmentation_step():
 
 @deprecated(
     "`example_augmentation_pipeline` is left over from development and will be "
-    "removed with the next major version. Use `AuxDataAugmenter` instead."
+    "removed with the next major version. "
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
 )
 def example_augmentation_pipeline():
     """Example: Complete augmentation pipeline for multiple files."""
@@ -655,7 +677,8 @@ def example_augmentation_pipeline():
 
 @deprecated(
     "`example_integration_with_icechunk` is left over from development and will be "
-    "removed with the next major version. Use `AuxDataAugmenter` instead."
+    "removed with the next major version. "
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
 )
 def example_integration_with_icechunk():
     """Example: Integration with parallel RINEX processing."""
@@ -718,7 +741,8 @@ In your parallel RINEX processing workflow:
 
 @deprecated(
     "`example_adding_custom_steps` is left over from development and will be "
-    "removed with the next major version. Use `AuxDataAugmenter` instead."
+    "removed with the next major version. "
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
 )
 def example_adding_custom_steps():
     """Example: Adding custom augmentation steps dynamically."""

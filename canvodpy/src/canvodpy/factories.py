@@ -39,6 +39,8 @@ from typing import Any, ClassVar, TypeVar
 
 import structlog
 
+from canvod.utils.tools import deprecated
+
 log = structlog.get_logger(__name__)
 
 T = TypeVar("T", bound=ABC)
@@ -405,6 +407,14 @@ class VODFactory(ComponentFactory):
             cls._abc_class = VODCalculator
 
 
+_AUGMENTATION_LEFT_OVER = (
+    "`AugmentationFactory` is left over from development and will be removed "
+    "with the next major version. Write a `canvod.ops.Op` and run it in a "
+    "`canvod.ops.Pipeline` instead."
+)
+
+
+@deprecated(_AUGMENTATION_LEFT_OVER)
 class AugmentationFactory(ComponentFactory):
     """
     Factory for data augmentation steps.
@@ -427,3 +437,21 @@ class AugmentationFactory(ComponentFactory):
             from canvod.auxiliary.augmentation import AugmentationStep
 
             cls._abc_class = AugmentationStep
+
+    @classmethod
+    @deprecated(_AUGMENTATION_LEFT_OVER)
+    def register(cls, name: str, component_class: type) -> None:
+        """Deprecated: augmentation steps are not used by ``canvodpy run``."""
+        super().register(name, component_class)
+
+    @classmethod
+    @deprecated(_AUGMENTATION_LEFT_OVER)
+    def create(cls, name: str, **kwargs: Any) -> Any:
+        """Deprecated: augmentation steps are not used by ``canvodpy run``."""
+        return super().create(name, **kwargs)
+
+    @classmethod
+    @deprecated(_AUGMENTATION_LEFT_OVER)
+    def list_available(cls) -> list[str]:
+        """Deprecated: augmentation steps are not used by ``canvodpy run``."""
+        return super().list_available()

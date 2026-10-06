@@ -174,3 +174,14 @@ class TestFactoryThreadSafety:
         built1 = grid1.build()
         built2 = grid2.build()
         assert built1.ncells != built2.ncells
+
+
+class TestAugmentationFactoryDeprecated:
+    """AugmentationFactory is left over from development and warns."""
+
+    @pytest.mark.filterwarnings("default::FutureWarning")
+    def test_list_available_warns(self):
+        from canvodpy.factories import AugmentationFactory
+
+        with pytest.warns(FutureWarning, match="canvod.ops.Op"):
+            AugmentationFactory.list_available()

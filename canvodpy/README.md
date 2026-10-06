@@ -57,7 +57,7 @@ result = (
 
 ```python
 from canvod.readers import Rnxv3Obs
-from canvod.auxiliary import AuxDataAugmenter
+from canvod.auxiliary import add_spherical_coords_to_dataset
 from canvod.grids import create_hemigrid
 from canvod.vod import TauOmegaZerothOrder
 from canvod.store import GnssResearchSite

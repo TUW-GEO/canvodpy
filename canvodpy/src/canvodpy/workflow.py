@@ -398,19 +398,10 @@ class VODWorkflow:
 
         Notes
         -----
-        Currently passes through. Will use AugmentationFactory
-        for preprocessing steps (filtering, interpolation, etc.)
+        Passes the data through unchanged. Preprocessing is done by
+        ``canvod.ops`` (``Op`` / ``Pipeline``) in ``canvodpy run``.
         """
         log.debug("augment_data_started")
-
-        # TODO: Use AugmentationFactory for preprocessing
-        # For now, pass through
-        # augmentations = [
-        #     AugmentationFactory.create("interpolate", method="linear"),
-        # ]
-        # for aug in augmentations:
-        #     ds = aug.apply(ds)
-
         log.debug("augment_data_complete")
         return ds
 
