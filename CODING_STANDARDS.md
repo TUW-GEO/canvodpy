@@ -57,8 +57,9 @@ These hold for every contributor's agent, whatever tool it is.
   change, fix the change or ask the maintainers.
 
 For Claude Code, `.claude/settings.json` enforces this with deny rules and
-a hook (`scripts/agent_git_guard.py`) that blocks such commands; GitHub's
-ruleset on `main` requires a pull request and passing checks for everyone.
+a hook (`scripts/agent_git_guard.py`) that blocks such commands. On
+GitHub, a ruleset on `main` requires a pull request and passing checks,
+and only maintainers can create, move or delete release tags (`v*`).
 
 ## Every change
 

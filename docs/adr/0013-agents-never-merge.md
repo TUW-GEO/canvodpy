@@ -8,8 +8,9 @@ A person reviews every change, merges it and is responsible for it. The
 rules are in `CODING_STANDARDS.md` (Git and GitHub) and hold for every
 contributor's agent.
 
-They are enforced in two places. GitHub's ruleset on `main` requires a
-pull request and passing checks; it is the only boundary that holds for
+They are enforced in two places. On GitHub, a ruleset on `main` requires
+a pull request and passing checks, and only maintainers can create, move
+or delete release tags (`v*`); this is the only boundary that holds for
 every tool. For Claude Code, `.claude/settings.json` adds deny rules and a
 hook, `scripts/agent_git_guard.py`, that blocks the forbidden commands
 before they run, also in modes that skip permission prompts.
