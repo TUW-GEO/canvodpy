@@ -4,13 +4,11 @@ repos:
       # Use uv-managed ruff so local hooks and CI always use the same version
       - id: ruff-check
         name: ruff lint
-        # --frozen: use uv.lock exactly as committed, never re-resolve/write
-        # it as a side effect of `uv run`. Without this, any yanked/stale
-        # package upstream (e.g. a yanked PyPI release) makes plain `uv run`
-        # silently rewrite uv.lock on every hook invocation -- pre-commit
-        # then sees uv.lock "modified by this hook" (misattributed to ruff,
-        # which never touched it) and aborts the commit.
-        entry: uv run --frozen ruff check --fix
+        # --locked: never write uv.lock, and fail loudly when it is out of
+        # date ("run `uv lock`"). A plain `uv run` would rewrite it as a side
+        # effect, and pre-commit would abort with uv.lock "modified by this
+        # hook"; --frozen would lint silently with a stale lock.
+        entry: uv run --locked ruff check --fix
         language: system
         types: [python]
         stages: [pre-commit]
@@ -21,7 +19,7 @@ repos:
         # for symmetry with the justfile/CI invocation, which does need it
         # (see pyproject.toml's [tool.ruff] exclude comment for why the
         # root config's `exclude` can't do this instead).
-        entry: uv run --frozen ruff format --exclude "*.md"
+        entry: uv run --locked ruff format --exclude "*.md"
         language: system
         types: [python]
         stages: [pre-commit]
@@ -73,7 +71,7 @@ repos:
         stages: [post-commit, post-merge, post-checkout]
       - id: ty-check
         name: ty type check
-        entry: uv run ty check
+        entry: uv run --locked ty check
         language: system
         pass_filenames: false
         stages: [pre-push]
