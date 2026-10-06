@@ -179,7 +179,6 @@ processing:
     # aux_data_dir: /path/to/aux_data
 
     gnss_store_strategy: skip      # skip, overwrite, append
-    vod_store_strategy: overwrite
 
   # ---------------------------------------------------------------------------
   # Logging

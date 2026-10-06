@@ -109,6 +109,16 @@ class TestGetTemplateDir:
             template_dir = loader_module.get_template_dir()
             assert template_dir.exists()
 
+    def test_settings_template_sets_no_deprecated_storage_key(self):
+        """A config copied from the template must not warn on every run."""
+        import yaml
+
+        text = (
+            loader_module.get_template_dir() / "canvod-settings.yaml.example"
+        ).read_text()
+        storage = yaml.safe_load(text)["processing"]["storage"]
+        assert "vod_store_strategy" not in storage
+
 
 class TestGetDefaultConfigDir:
     """XDG-first default, with dev-checkout convenience when available."""

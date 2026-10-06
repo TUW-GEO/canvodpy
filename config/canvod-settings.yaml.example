@@ -213,7 +213,6 @@ processing:
     #                   regardless of read-side protection. Avoid unless you
     #                   have a specific reason.
     gnss_store_strategy: skip
-    vod_store_strategy: overwrite
 
   # ---------------------------------------------------------------------------
   # Logging
