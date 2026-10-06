@@ -56,11 +56,14 @@ ROSR01TUW_R_20250010000_01D_05S_AA.rnx
 | `01` | Number | Receiver 01 |
 | `TUW` | Agency | TU Wien |
 | `2025001` | Date | 2025, DOY 001 |
-| `0000` | Start | 00:00 UTC |
+| `0000` | Start | 00:00 GPS time |
 | `01D` | Period | 1-day file |
 | `05S` | Sampling | 5-second intervals |
 | `AA` | Content | Default |
 | `rnx` | Type | RINEX observation |
+
+As in the RINEX 3 long names, the start time is in the time scale of the
+observations, which for canvodpy is GPS time.
 
 ---
 
