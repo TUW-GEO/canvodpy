@@ -24,6 +24,10 @@ class _StubReader(GNSSDataReader):
     def file_hash(self) -> str:
         return "abcdef1234567890"
 
+    @property
+    def source_format(self) -> str:
+        return "stub"
+
     def to_ds(self, keep_data_vars=None, **kwargs):
         raise NotImplementedError
 
@@ -63,6 +67,16 @@ def reader(stub_file: Path) -> _StubReader:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
+
+def test_reader_must_name_its_source_format(stub_file: Path) -> None:
+    """A reader without ``source_format`` cannot be created."""
+
+    class _NoFormat(_StubReader):
+        source_format = GNSSDataReader.source_format
+
+    with pytest.raises(TypeError, match="source_format"):
+        _NoFormat(fpath=stub_file)
 
 
 class TestDatasetBuilder:

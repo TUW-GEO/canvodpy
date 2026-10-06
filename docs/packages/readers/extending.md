@@ -20,9 +20,8 @@ Add support for a new GNSS data format by implementing the `GNSSDataReader` abst
 
     ---
 
-    `file_hash`, `to_ds()`, `iter_epochs()`, `start_time`, `end_time`,
-    `systems`, `num_satellites`, and override `source_format` (its default
-    is `"rinex3"`). (`num_epochs` has a default that counts via
+    `file_hash`, `source_format`, `to_ds()`, `iter_epochs()`, `start_time`,
+    `end_time`, `systems` and `num_satellites`. (`num_epochs` has a default that counts via
     `iter_epochs()` — override for O(1) if your format stores the count.)
 
 -   :fontawesome-solid-shield-halved: &nbsp; **3. Use `DatasetBuilder` (recommended)**
@@ -83,7 +82,7 @@ class MyFormatReader(GNSSDataReader):
 
     @property
     def source_format(self) -> str:
-        return "my_format"   # the default would say "rinex3"
+        return "my_format"
 ```
 
 ### Step 2 — File Hash

@@ -43,9 +43,9 @@ class GNSSDataReader(BaseModel, ABC):
         return v
 
     @property
+    @abstractmethod
     def source_format(self) -> str:
-        """Format identifier, e.g. "rinex3", "sbf". Override it."""
-        return "rinex3"
+        """Format identifier, e.g. "rinex3", "sbf"."""
 
     @property
     @abstractmethod
@@ -116,10 +116,11 @@ Any implementation of `GNSSDataReader` guarantees the following:
 5. **Metadata**: Properties provide time range, systems, and satellite counts.
 6. **Validation**: Output passes `validate_dataset()`. Every built-in reader calls it at the end of `to_ds()`; `DatasetBuilder.build()` calls it for readers built on the builder.
 
-!!! warning "Override `source_format`"
-    `source_format` is not abstract: a reader that does not override it
-    reports `"rinex3"`. Every built-in reader overrides it (`rinex3`,
-    `rinex3_stripped`, `rinex2`, `sbf`, `nmea`); a new reader must too.
+!!! note "`source_format` names the format"
+    `source_format` is abstract: a reader that does not define it cannot be
+    created. The built-in readers return `rinex3`, `rinex3_stripped`,
+    `rinex2`, `sbf` and `nmea`; the GNSS store records the value as its
+    `source_format` attribute.
 
 ## `SignalID` — Validated Signal Identifiers
 

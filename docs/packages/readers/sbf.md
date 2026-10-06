@@ -492,8 +492,8 @@ tuple[xr.Dataset, dict[str, xr.Dataset]]
 ## Source Format Identification
 
 Every reader exposes a `source_format` property used by the store and viewer
-to identify the data origin. The base class returns `"rinex3"` by default;
-`SbfReader` overrides it:
+to identify the data origin. Every reader must define it; `SbfReader`
+returns `"sbf"`:
 
 ```python
 reader = SbfReader(fpath=Path("station.25_"))

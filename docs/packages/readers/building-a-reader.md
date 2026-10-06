@@ -54,7 +54,7 @@ graph TD
 Your reader only needs to:
 
 1. **Inherit** from `GNSSDataReader` (one parent — no need for separate `BaseModel`)
-2. **Implement** abstract methods (`to_ds`, `iter_epochs`, `file_hash`, `start_time`, `end_time`, `systems`, `num_satellites`) and override `source_format` (its default is `"rinex3"`)
+2. **Implement** abstract methods (`to_ds`, `iter_epochs`, `file_hash`, `source_format`, `start_time`, `end_time`, `systems`, `num_satellites`)
 3. **Use `DatasetBuilder`** in your `to_ds()` method (recommended) — it handles all the tricky parts
 
 ---
@@ -86,7 +86,7 @@ class MyFormatReader(GNSSDataReader):
 
     @property
     def source_format(self) -> str:
-        return "my_format"   # the default would say "rinex3"
+        return "my_format"
 ```
 
 That's it for the class definition. Let's break down what you get for free:
@@ -101,7 +101,6 @@ Since `GNSSDataReader` inherits from `pydantic.BaseModel` and `abc.ABC`, your re
 | `_validate_fpath()` | `GNSSDataReader` | Checks `fpath.is_file()` — raises `FileNotFoundError` if missing |
 | `model_config` | `GNSSDataReader` | `arbitrary_types_allowed=True` — needed for `pint.Quantity`, etc. |
 | `_build_attrs()` | `GNSSDataReader` | Builds standard global attributes (Created, Software, Institution, File Hash); author and institution come from the settings file |
-| `source_format` | `GNSSDataReader` | Returns `"rinex3"` unless you override it — always override it |
 | `to_ds_and_auxiliary()` | `GNSSDataReader` | Default: calls `to_ds()` + returns empty aux dict |
 | `num_epochs` | `GNSSDataReader` | Default: `sum(1 for _ in self.iter_epochs())` |
 | `__repr__()` | `GNSSDataReader` | Returns `"MyFormatReader(file='filename.myf')"` |
@@ -948,7 +947,7 @@ class GnsdReader(GNSSDataReader):
 
     @property
     def source_format(self) -> str:
-        return "gnsd"  # the default would say "rinex3"
+        return "gnsd"
 
     @property
     def file_hash(self) -> str:

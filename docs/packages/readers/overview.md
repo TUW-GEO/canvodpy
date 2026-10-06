@@ -127,6 +127,7 @@ reader must provide:
 | `to_ds(**kwargs)` | The `(epoch × sid)` dataset |
 | `iter_epochs()` | The file's epochs one by one |
 | `file_hash` | First 16 hex digits of the file's SHA-256 (deduplication) |
+| `source_format` | Format identifier, e.g. `"rinex3"` or `"sbf"`, recorded in the GNSS store |
 | `start_time`, `end_time` | First and last epoch |
 | `systems`, `num_satellites` | Systems and number of satellites in the file |
 

@@ -395,9 +395,13 @@ class GNSSDataReader(BaseModel, ABC):
         return v
 
     @property
+    @abstractmethod
     def source_format(self) -> str:
-        """Return the format identifier for this reader (e.g. ``"rinex3"``, ``"sbf"``)."""
-        return "rinex3"
+        """Return the format identifier for this reader (e.g. ``"rinex3"``, ``"sbf"``).
+
+        The orchestrator writes it to the GNSS store as the ``source_format``
+        root attribute.
+        """
 
     @property
     @abstractmethod

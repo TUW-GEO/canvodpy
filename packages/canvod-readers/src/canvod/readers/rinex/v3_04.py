@@ -987,6 +987,10 @@ class Rnxv3Obs(GNSSDataReader):
         return self._lines
 
     @property
+    def source_format(self) -> str:
+        return "rinex3"
+
+    @property
     def file_hash(self) -> str:
         """Return cached SHA256 short hash of the file content.
 
