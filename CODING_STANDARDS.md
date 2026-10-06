@@ -38,6 +38,28 @@ commitizen) are not repeated here: run `just check`.
   (format specification, interface control document, paper), and
   `just test-fast` afterwards.
 
+## Git and GitHub
+
+These hold for every contributor's agent, whatever tool it is.
+
+- **Every change reaches `main` through a pull request.** Work on a
+  feature branch, never on `main`.
+- **An agent may push its feature branch and open a pull request.**
+  Nothing else: it never pushes `main` or a tag, never force-pushes,
+  never deletes a remote branch or tag.
+- **An agent never merges or approves a pull request.** A person reviews
+  and merges, and pushes tags for releases.
+- **No bypassing.** No `--no-verify` or `git commit -n`, no skipping,
+  redirecting or removing the git hooks (`SKIP=`, `core.hooksPath`,
+  `pre-commit uninstall`), no rewriting history that is already on
+  GitHub, no changes to branch protection, rulesets, repository settings,
+  CI or the agent settings to get a change through. If a check blocks a
+  change, fix the change or ask the maintainers.
+
+For Claude Code, `.claude/settings.json` enforces this with deny rules and
+a hook (`scripts/agent_git_guard.py`) that blocks such commands; GitHub's
+ruleset on `main` requires a pull request and passing checks for everyone.
+
 ## Every change
 
 1. **Before changing anything public**, list its callers
@@ -55,10 +77,12 @@ commitizen) are not repeated here: run `just check`.
    canvodpy-demo (the `demo` submodule), adapt it there.
 5. **Verify**: `just check`, then `just test-package <package>` for every
    package changed. Report failures; don't skip tests.
-6. **Commit** in conventional form, scope = package or area:
+6. **Commit** on a feature branch in conventional form, scope = package or area:
    `fix(readers): ...`, `feat(store): ...`, `refactor(orchestrator): ...`.
    Mark breaking changes (`feat!:` or a `BREAKING CHANGE:` footer).
    Substantial agent help is credited with a `Co-Authored-By:` line.
+   Push the branch and open a pull request; a person merges it
+   (Git and GitHub, above).
 7. **Real data and real stores**: running on real data or writing to a
    production store needs the maintainers' go-ahead first; see the
    `store-safety` guide.

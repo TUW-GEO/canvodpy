@@ -29,7 +29,7 @@ or an API key.
 | `GLOSSARY.md` | The project's words, and the words to avoid ([Glossary](../glossary.md)) |
 | `docs/adr/` | The decisions behind canVODpy and why they were made ([Decisions](../adr/index.md)) |
 | `docs/agents/` | How the workflow skills below use GitHub issues, triage labels and the glossary |
-| `.claude/settings.json` | Enables the workflow plugin for this repository |
+| `.claude/settings.json` | Enables the workflow plugin; blocks merging, pushing `main` or tags and bypassing checks (with `scripts/agent_git_guard.py`) |
 
 Claude Code loads the root file at the start of a session, a package's
 file when it works in that package, and a task guide when the task fits
@@ -134,7 +134,13 @@ the same skills.
    documents, the literature).
 4. **Attribution.** Commits with substantial agent help say so in a
    `Co-Authored-By:` line.
-5. **No secrets.** Never give an agent credentials or private data. Hosted
+5. **Agents don't merge.** An agent may push its feature branch and open
+   a pull request; it never merges or approves one, never pushes `main` or
+   tags, never force-pushes and never bypasses a check (`--no-verify`,
+   skipped hooks, changed settings). Claude Code blocks these through
+   `.claude/settings.json` and `scripts/agent_git_guard.py`; don't
+   turn that off. See `CODING_STANDARDS.md`, Git and GitHub.
+6. **No secrets.** Never give an agent credentials or private data. Hosted
    agents send what they read to their provider.
 
 ---

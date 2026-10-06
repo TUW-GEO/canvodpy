@@ -30,3 +30,4 @@ that names the decision replacing it.
 | [0010](0010-per-package-versions.md) | Each package has its own version; canvodpy pins the exact mix |
 | [0011](0011-free-tools-only.md) | Only free tools |
 | [0012](0012-agent-development-workflow.md) | Contributors develop with agents through one shared workflow |
+| [0013](0013-agents-never-merge.md) | Agents open pull requests; people merge |

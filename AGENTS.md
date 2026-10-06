@@ -121,7 +121,10 @@ other agents read the files directly.
 ## Development workflow
 
 Work on a branch, never on `main`; every change reaches `main` through a
-pull request. Read `CODING_STANDARDS.md` before writing code: its rules
+pull request. An agent may push its branch and open the pull request, but
+never merges, never pushes `main` or tags, never force-pushes and never
+bypasses a check (`CODING_STANDARDS.md`, Git and GitHub; enforced for
+Claude Code by `scripts/agent_git_guard.py`). Read `CODING_STANDARDS.md` before writing code: its rules
 and its checklist apply to every change, and `/code-review` checks
 against them. Read the `AGENTS.md` of every package you change, and the
 task guide if one fits.

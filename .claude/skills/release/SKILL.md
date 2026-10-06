@@ -27,11 +27,12 @@ before publishing to PyPI.
 
 1. On a release branch: `just release X.Y.Z`. It runs the tests, writes the
    changelog, bumps every package (`just bump`) and creates a local tag.
-   Follow the steps it prints: delete the local tag, open a PR for the
-   commit, merge it.
-2. On the merged `main`, recreate the annotated tag `vX.Y.Z` and push it
-   (after the user confirms). GitHub Actions drafts the GitHub Release;
-   the user publishes it.
+   Follow the steps it prints: delete the local tag, push the release
+   branch and open a PR for the commit. The user merges it; an agent never
+   merges (`CODING_STANDARDS.md`, Git and GitHub).
+2. On the merged `main`, the user recreates the annotated tag `vX.Y.Z`
+   and pushes it; an agent never pushes tags. GitHub Actions drafts the
+   GitHub Release; the user publishes it.
 3. PyPI is a separate, manual step the user triggers:
    `gh workflow run publish_pypi.yml --ref vX.Y.Z -f version=X.Y.Z`.
 4. Afterwards canvodpy-extensions takes the new version from PyPI (their

@@ -119,6 +119,7 @@ nav = [
       { "0010 Package versions" = "adr/0010-per-package-versions.md" },
       { "0011 Free tools only" = "adr/0011-free-tools-only.md" },
       { "0012 Agent workflow" = "adr/0012-agent-development-workflow.md" },
+      { "0013 Agents never merge" = "adr/0013-agents-never-merge.md" },
     ]},
     { "Glossary" = "glossary.md" },
     { "Agent workflow setup" = [
