@@ -10,7 +10,7 @@ from canvod.ops.temporal import TemporalAggregate, temporal_aggregate
 class TestTemporalAggregate:
     def test_basic_aggregation(self, sample_ds: xr.Dataset):
         """1-second data aggregated to 1-minute bins should reduce epochs."""
-        op = TemporalAggregate(freq="1min", method="mean")
+        op = TemporalAggregate(freq="1min", method="mean", integer_method="first")
         out, result = op(sample_ds)
 
         assert result.op_name == "temporal_aggregate"
@@ -22,7 +22,7 @@ class TestTemporalAggregate:
 
     def test_preserves_attrs(self, sample_ds: xr.Dataset):
         """Dataset attrs must survive aggregation."""
-        op = TemporalAggregate(freq="1min")
+        op = TemporalAggregate(freq="1min", integer_method="first")
         out, _ = op(sample_ds)
 
         assert out.attrs["File Hash"] == "abc123"
@@ -30,7 +30,7 @@ class TestTemporalAggregate:
 
     def test_preserves_sid_only_coords(self, sample_ds: xr.Dataset):
         """sid-only coords (like sv) must pass through unchanged."""
-        op = TemporalAggregate(freq="1min")
+        op = TemporalAggregate(freq="1min", integer_method="first")
         out, _ = op(sample_ds)
 
         assert "sv" in out.coords
@@ -41,7 +41,7 @@ class TestTemporalAggregate:
 
     def test_aggregates_phi_theta(self, sample_ds: xr.Dataset):
         """phi and theta (epoch, sid) coords should be aggregated too."""
-        op = TemporalAggregate(freq="1min")
+        op = TemporalAggregate(freq="1min", integer_method="first")
         out, _ = op(sample_ds)
 
         assert "phi" in out.coords
@@ -51,14 +51,14 @@ class TestTemporalAggregate:
 
     def test_early_exit_coarse_data(self, coarse_ds: xr.Dataset):
         """Data already on the bin starts is unchanged; the result says so."""
-        op = TemporalAggregate(freq="1min")
+        op = TemporalAggregate(freq="1min", integer_method="first")
         out, result = op(coarse_ds)
 
         assert "no-op" in result.notes
         xr.testing.assert_identical(out, coarse_ds)
         assert result.step() == {
             "op": "temporal_aggregate",
-            "settings": {"freq": "1min", "method": "mean"},
+            "settings": {"freq": "1min", "method": "mean", "integer_method": "first"},
             "result": {
                 "aggregated": False,
                 "input_sampling_s": 60.0,
@@ -68,7 +68,7 @@ class TestTemporalAggregate:
 
     def test_median_method(self, sample_ds: xr.Dataset):
         """median method should work without errors."""
-        op = TemporalAggregate(freq="1min", method="median")
+        op = TemporalAggregate(freq="1min", method="median", integer_method="first")
         out, result = op(sample_ds)
 
         assert out.sizes["epoch"] == 2
@@ -79,16 +79,16 @@ class TestTemporalAggregate:
         import pytest
 
         with pytest.raises(ValueError, match="Unsupported aggregation method"):
-            TemporalAggregate(freq="1min", method="sum")
+            TemporalAggregate(freq="1min", method="sum", integer_method="first")
 
     def test_convenience_function(self, sample_ds: xr.Dataset):
         """temporal_aggregate convenience wrapper should work."""
-        out = temporal_aggregate(sample_ds, freq="1min")
+        out = temporal_aggregate(sample_ds, freq="1min", integer_method="first")
         assert out.sizes["epoch"] == 2
 
     def test_result_shapes(self, sample_ds: xr.Dataset):
         """OpResult should record correct input/output shapes."""
-        op = TemporalAggregate(freq="1min")
+        op = TemporalAggregate(freq="1min", integer_method="first")
         _, result = op(sample_ds)
 
         assert result.input_shape["epoch"] == 120
@@ -117,14 +117,14 @@ class TestTemporalAggregateValues:
         snr[3] = np.nan
         ds = _five_second_ds(snr, np.ones_like(snr, dtype=float), "2025-01-01")
         for method, expected in (("mean", np.nanmean(snr)), ("median", 6.0)):
-            out, _ = TemporalAggregate("1min", method)(ds)
+            out, _ = TemporalAggregate("1min", method, integer_method="first")(ds)
             np.testing.assert_allclose(out["SNR"].values[0, 0], expected)
 
     def test_bin_without_values_stays_nan(self):
         snr = np.full((24, 1), np.nan, dtype=np.float32)
         snr[:12] = 30.0
         ds = _five_second_ds(snr, np.ones((24, 1)), "2025-01-01")
-        out, _ = TemporalAggregate("1min", "mean")(ds)
+        out, _ = TemporalAggregate("1min", "mean", integer_method="first")(ds)
         assert out["SNR"].values[0, 0] == 30.0
         assert np.isnan(out["SNR"].values[1, 0])
 
@@ -132,7 +132,7 @@ class TestTemporalAggregateValues:
         ds = _five_second_ds(
             np.ones((12, 1), dtype=np.float32), np.ones((12, 1)), "2025-01-01"
         )
-        out, _ = TemporalAggregate("1min", "mean")(ds)
+        out, _ = TemporalAggregate("1min", "mean", integer_method="first")(ds)
         assert out["SNR"].dtype == np.float32
         assert out["SNR"].attrs == {"units": "dB-Hz"}
 
@@ -141,13 +141,13 @@ class TestTemporalAggregateValues:
         phi = np.r_[np.full(6, 2 * np.pi - 0.1), np.full(6, 0.3)].reshape(12, 1)
         ds = _five_second_ds(np.ones((12, 1)), phi, "2025-01-01")
         for method in ("mean", "median"):
-            out, _ = TemporalAggregate("1min", method)(ds)
+            out, _ = TemporalAggregate("1min", method, integer_method="first")(ds)
             np.testing.assert_allclose(out["phi"].values[0, 0], 0.1)
 
     def test_bins_start_at_freq_multiples(self):
         """Epochs off the bin grid are labeled with their bin start."""
         ds = _five_second_ds(np.ones((24, 1)), np.ones((24, 1)), "2025-01-01T00:00:02")
-        out, _ = TemporalAggregate("1min", "mean")(ds)
+        out, _ = TemporalAggregate("1min", "mean", integer_method="first")(ds)
         np.testing.assert_array_equal(
             out["epoch"].values,
             np.array(["2025-01-01T00:00", "2025-01-01T00:01"], dtype="datetime64[ns]"),
@@ -162,7 +162,7 @@ class TestTemporalAggregateValues:
             {"SNR": (("epoch", "sid"), np.ones((3, 1)))},
             coords={"epoch": epochs, "sid": ["s0"]},
         )
-        out, result = TemporalAggregate("1min", "mean")(ds)
+        out, result = TemporalAggregate("1min", "mean", integer_method="first")(ds)
         assert "no-op" not in result.notes
         assert (out["epoch"].values.astype(np.int64) % 60_000_000_000 == 0).all()
 
@@ -201,7 +201,7 @@ class TestSignature:
     @pytest.mark.parametrize("method", ["mean", "median"])
     def test_same_signature_as_input(self, method):
         ds = _reader_like_ds()
-        out, result = TemporalAggregate("1min", method)(ds)
+        out, result = TemporalAggregate("1min", method, integer_method="first")(ds)
 
         assert list(out.data_vars) == list(ds.data_vars)
         assert list(out.coords) == list(ds.coords)
@@ -222,29 +222,66 @@ class TestSignature:
     @pytest.mark.parametrize("method", ["mean", "median"])
     def test_values_match_xarray_resample(self, method):
         ds = _reader_like_ds()
-        out, _ = TemporalAggregate("1min", method)(ds)
+        out, _ = TemporalAggregate("1min", method, integer_method="first")(ds)
         expected = getattr(ds[["SNR", "theta"]].resample(epoch="1min"), method)()
         # xarray sums float32 in float32; the operation sums in float64.
         np.testing.assert_allclose(out["SNR"].values, expected["SNR"].values, rtol=1e-6)
         np.testing.assert_allclose(out["theta"].values, expected["theta"].values)
 
-    @pytest.mark.parametrize("method", ["mean", "median"])
-    def test_integers_skip_missing_and_are_rounded(self, method):
+    @pytest.mark.parametrize("integer_method", ["first", "last", "middle"])
+    def test_integers_take_one_value_of_the_bin(self, integer_method):
         ds = _reader_like_ds()
-        out, _ = TemporalAggregate("1min", method)(ds)
-        valid = ds["LLI"].where(ds["LLI"] != -1)
-        expected = getattr(valid.resample(epoch="1min"), method)()
-        expected = np.rint(expected).fillna(-1).astype("int8")
-        np.testing.assert_array_equal(out["LLI"].values, expected.values)
+        out, _ = TemporalAggregate("1min", "mean", integer_method=integer_method)(ds)
+        lli = ds["LLI"].values
+        bins = np.arange(ds.sizes["epoch"]) // 12
+        for b in range(out.sizes["epoch"]):
+            for j in range(ds.sizes["sid"]):
+                values = [v for v in lli[bins == b, j] if v != -1]
+                index = {"first": 0, "last": -1, "middle": (len(values) - 1) // 2}
+                expected = values[index[integer_method]] if values else -1
+                assert out["LLI"].values[b, j] == expected
+
+    def test_middle_of_an_even_count_is_the_earlier(self):
+        ds = _five_second_ds(np.ones((12, 1)), np.ones((12, 1)), "2025-01-01")
+        ds["LLI"] = (
+            ("epoch", "sid"),
+            np.r_[-1, -1, 1, 2, 3, 4, *[-1] * 6].reshape(12, 1),
+        )
+        out, _ = TemporalAggregate("1min", "mean", integer_method="middle")(ds)
+        assert out["LLI"].values[0, 0] == 2
+
+    def test_integers_are_never_averaged(self):
+        """A bin of 0 and 4 gives one of them, never 2."""
+        ds = _five_second_ds(np.ones((12, 1)), np.ones((12, 1)), "2025-01-01")
+        ds["LLI"] = (("epoch", "sid"), np.r_[[0] * 6, [4] * 6].reshape(12, 1))
+        for integer_method, expected in (("first", 0), ("last", 4), ("middle", 0)):
+            out, _ = TemporalAggregate("1min", "median", integer_method=integer_method)(
+                ds
+            )
+            assert out["LLI"].values[0, 0] == expected
+
+    def test_integer_method_is_required(self):
+        with pytest.raises(TypeError, match="integer_method"):
+            TemporalAggregate("1min", "mean")  # ty: ignore[missing-argument]
+
+    def test_unknown_integer_method_raises(self):
+        with pytest.raises(ValueError, match="integer method"):
+            TemporalAggregate("1min", "mean", integer_method="mean")
+
+    def test_integer_method_is_recorded(self):
+        _, result = TemporalAggregate("1min", "mean", integer_method="last")(
+            _reader_like_ds()
+        )
+        assert result.step()["settings"]["integer_method"] == "last"
 
     def test_bin_without_integer_values_stays_missing(self):
         ds = _reader_like_ds()
         ds["LLI"][:12] = -1
-        out, _ = TemporalAggregate("1min", "mean")(ds)
+        out, _ = TemporalAggregate("1min", "mean", integer_method="first")(ds)
         assert (out["LLI"].values[0] == -1).all()
 
     def test_strings_along_epoch_are_refused(self):
         ds = _reader_like_ds()
         ds["label"] = (("epoch",), np.array(["a"] * ds.sizes["epoch"], dtype=object))
         with pytest.raises(TypeError, match="label"):
-            TemporalAggregate("1min", "mean")(ds)
+            TemporalAggregate("1min", "mean", integer_method="first")(ds)

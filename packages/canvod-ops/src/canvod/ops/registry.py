@@ -38,7 +38,13 @@ def build_default_pipeline(
 
     temporal = config.temporal_aggregation
     if temporal is not None and temporal.enabled:
-        pipeline.add(TemporalAggregate(freq=temporal.freq, method=temporal.method))
+        pipeline.add(
+            TemporalAggregate(
+                freq=temporal.freq,
+                method=temporal.method,
+                integer_method=temporal.integer_method,
+            )
+        )
 
     grid = config.grid_assignment
     if grid is not None and grid.enabled:

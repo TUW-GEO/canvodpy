@@ -11,7 +11,11 @@ from canvod.ops.base import software_versions
 
 CONFIG = PreprocessingConfig.model_validate(
     {
-        "temporal_aggregation": {"freq": "1min", "method": "median"},
+        "temporal_aggregation": {
+            "freq": "1min",
+            "method": "median",
+            "integer_method": "first",
+        },
         "grid_assignment": {"grid_type": "equal_area", "angular_resolution": 10.0},
     }
 )
@@ -75,7 +79,7 @@ def test_bin_spanning_two_files_uses_both():
         "epoch",
         join="outer",
     )
-    expected, _ = TemporalAggregate("1min", "median")(joined)
+    expected, _ = TemporalAggregate("1min", "median", integer_method="first")(joined)
     got = xr.concat([ds for _, ds in out], "epoch")
     np.testing.assert_array_equal(
         got["SNR"].values, expected["SNR"].sel(sid=got["sid"]).values
@@ -94,7 +98,7 @@ def test_each_file_keeps_its_attrs_and_records_the_operations():
     aggregate, grid = record["steps"]
     assert aggregate == {
         "op": "temporal_aggregate",
-        "settings": {"freq": "1min", "method": "median"},
+        "settings": {"freq": "1min", "method": "median", "integer_method": "first"},
         "result": {
             "aggregated": True,
             "input_sampling_s": 5.0,

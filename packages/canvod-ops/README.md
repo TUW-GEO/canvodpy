@@ -43,7 +43,7 @@ from canvod.ops import GridAssignment, Pipeline, TemporalAggregate
 
 pipeline = Pipeline(
     [
-        TemporalAggregate(freq="1min", method="mean"),
+        TemporalAggregate(freq="1min", method="mean", integer_method="first"),
         GridAssignment(grid_type="equal_area", angular_resolution=2.0),
     ]
 )

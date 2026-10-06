@@ -131,7 +131,8 @@ processing:
   # preprocessing:
   #   temporal_aggregation:
   #     freq: "1min"             # whole number + "s", "min" or "h"; divides one day
-  #     method: "median"         # "mean" or "median"
+  #     method: "median"         # "mean" or "median" (floating-point variables)
+  #     integer_method: "first"  # "first", "last" or "middle" (integer flags)
   #   grid_assignment:
   #     grid_type: "equal_area"
   #     angular_resolution: 2.0  # degrees (0 < value <= 90)

@@ -75,6 +75,31 @@ def _reduce(cube: np.ndarray, method: str) -> np.ndarray:
     return (lower[:, 0] + upper[:, 0]) / 2
 
 
+#: Which value of a bin an integer variable takes.
+INTEGER_METHODS = ("first", "last", "middle")
+
+
+def _pick(cube: np.ndarray, method: str) -> np.ndarray:
+    """First, last or middle value over axis 1 of a ``(bin, slot, signal)`` block.
+
+    Integer variables are flags and codes (LLI, SSI, receiver status), which
+    have no mean: each bin takes one of its values, in time order. Missing
+    values (NaN) are skipped; of an even number of values, ``"middle"`` takes
+    the earlier of the two middle ones. A bin without any value gives NaN.
+    """
+    valid = ~np.isnan(cube)
+    count = valid.sum(axis=1)
+    if method == "first":
+        rank = np.ones_like(count)
+    elif method == "last":
+        rank = count
+    else:
+        rank = (count - 1) // 2 + 1
+    position = np.argmax(valid & (np.cumsum(valid, axis=1) == rank[:, None]), axis=1)
+    picked = np.take_along_axis(cube, position[:, None], 1)[:, 0]
+    return np.where(count > 0, picked, np.nan)
+
+
 def _reduce_angle(cube: np.ndarray, method: str) -> np.ndarray:
     """Like :func:`_reduce` for an angle in radians, relative to the bin's first value."""
     first = np.argmax(~np.isnan(cube), axis=1)
@@ -90,7 +115,10 @@ class TemporalAggregate(Op):
     and is labeled with its start. Every variable along ``epoch`` is
     aggregated per signal; the others pass unchanged. Missing values (NaN,
     -1 for integers) are ignored; a bin without any value stays missing.
-    Integer variables are rounded to the nearest integer. The azimuth
+    Floating-point variables take the ``method`` of their values in the bin.
+    Integer variables (flags and codes such as LLI and SSI) cannot be
+    combined: they take one of their values in the bin, the first, last or
+    middle one in time order (``integer_method``). The azimuth
     ``phi`` (radians) is aggregated as an angle, so a satellite crossing
     north (0 rad) does not average to south: each value is taken relative
     to the first value of its bin.
@@ -106,15 +134,28 @@ class TemporalAggregate(Op):
     freq : str
         Bin length as a pandas offset alias (e.g. ``"1min"``, ``"30s"``).
     method : str
-        Aggregation method: ``"mean"`` or ``"median"``.
+        Aggregation method of floating-point variables: ``"mean"`` or
+        ``"median"``.
+    integer_method : str
+        Value of the bin integer variables take: ``"first"``, ``"last"`` or
+        ``"middle"``.
     """
 
-    def __init__(self, freq: str = "1min", method: str = "mean") -> None:
+    def __init__(
+        self, freq: str = "1min", method: str = "mean", *, integer_method: str
+    ) -> None:
         if method not in ("mean", "median"):
             msg = f"Unsupported aggregation method: {method!r}"
             raise ValueError(msg)
+        if integer_method not in INTEGER_METHODS:
+            msg = (
+                f"Unsupported integer method: {integer_method!r}; integer "
+                f"variables take one value of the bin, one of {INTEGER_METHODS}"
+            )
+            raise ValueError(msg)
         self._freq = freq
         self._method = method
+        self._integer_method = integer_method
 
     @property
     def name(self) -> str:
@@ -122,7 +163,11 @@ class TemporalAggregate(Op):
 
     def __call__(self, ds: xr.Dataset) -> tuple[xr.Dataset, OpResult]:
         t0 = time.perf_counter()
-        params: dict[str, Any] = {"freq": self._freq, "method": self._method}
+        params: dict[str, Any] = {
+            "freq": self._freq,
+            "method": self._method,
+            "integer_method": self._integer_method,
+        }
         input_shape = {str(k): int(v) for k, v in dict(ds.sizes).items()}
 
         freq_ns = int(pd.tseries.frequencies.to_offset(self._freq).nanos)
@@ -215,7 +260,11 @@ class TemporalAggregate(Op):
             msg = f"Variable {name!r} holds strings and cannot be aggregated"
             raise TypeError(msg)
         is_int = var.dtype.kind == "i"
-        reduce = _reduce_angle if name == "phi" else _reduce
+        if is_int:
+            reduce, method = _pick, self._integer_method
+        else:
+            reduce = _reduce_angle if name == "phi" else _reduce
+            method = self._method
 
         axis = var.dims.index("epoch")
         values = np.moveaxis(np.asarray(var.values), axis, 0)
@@ -235,10 +284,10 @@ class TemporalAggregate(Op):
                 block[values[e0:e1] == missing] = np.nan
             cube = np.full((b1 - b0, width, n_cols), np.nan)
             cube[bin_of[e0:e1] - b0, slot[e0:e1]] = block
-            reduced[b0:b1] = reduce(cube, self._method)
+            reduced[b0:b1] = reduce(cube, method)
 
         if is_int:
-            reduced = np.where(np.isnan(reduced), missing, np.rint(reduced))
+            reduced = np.where(np.isnan(reduced), missing, reduced)
         data = np.moveaxis(reduced.astype(var.dtype).reshape(n_bins, *rest), 0, axis)
         return xr.Variable(var.dims, data, var.attrs, var.encoding)
 
@@ -247,6 +296,8 @@ def temporal_aggregate(
     ds: xr.Dataset,
     freq: str = "1min",
     method: str = "mean",
+    *,
+    integer_method: str,
 ) -> xr.Dataset:
     """Convenience function: temporally aggregate a dataset.
 
@@ -257,13 +308,15 @@ def temporal_aggregate(
     freq : str
         Target frequency.
     method : str
-        ``"mean"`` or ``"median"``.
+        ``"mean"`` or ``"median"``, for floating-point variables.
+    integer_method : str
+        ``"first"``, ``"last"`` or ``"middle"``, for integer variables.
 
     Returns
     -------
     xr.Dataset
         Aggregated dataset.
     """
-    op = TemporalAggregate(freq=freq, method=method)
+    op = TemporalAggregate(freq=freq, method=method, integer_method=integer_method)
     out, _ = op(ds)
     return out

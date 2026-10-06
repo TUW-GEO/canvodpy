@@ -89,7 +89,8 @@ processing:
   # preprocessing:
   #   temporal_aggregation:
   #     freq: "1min"               # divides one day
-  #     method: median             # mean or median
+  #     method: median             # mean or median (floating-point variables)
+  #     integer_method: first      # first, last or middle (integer flags)
   #   grid_assignment:
   #     grid_type: equal_area
   #     angular_resolution: 2.0    # degrees

@@ -553,7 +553,14 @@ class TestProcessRinexPreprocessing:
 
     def test_aggregates_the_day_before_writing(self, tmp_path):
         written = self._run(
-            tmp_path, {"temporal_aggregation": {"freq": "1min", "method": "mean"}}
+            tmp_path,
+            {
+                "temporal_aggregation": {
+                    "freq": "1min",
+                    "method": "mean",
+                    "integer_method": "first",
+                }
+            },
         )
         assert [ds.attrs["File Hash"] for ds in written] == ["A", "B"]
         a, b = written

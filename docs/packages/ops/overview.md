@@ -22,7 +22,7 @@ a dataset through each operation and collects metadata about what happened:
 from canvod.ops import Pipeline, TemporalAggregate, GridAssignment
 
 pipeline = Pipeline([
-    TemporalAggregate(freq="1min", method="mean"),
+    TemporalAggregate(freq="1min", method="mean", integer_method="first"),
     GridAssignment(grid_type="equal_area", angular_resolution=2.0),
 ])
 
@@ -50,13 +50,16 @@ flowchart TD
 ### TemporalAggregate
 
 Aggregates observations into regular time bins. Reduces the number of epochs by
-grouping into frequency buckets and computing the mean or median. Bins start at
+grouping into frequency buckets and computing the mean or median of the
+floating-point variables. Bins start at
 multiples of `freq` counted from 00:00 and are labeled with their start.
 Missing values (NaN, and -1 in integer variables) are ignored; a bin without
-any value stays missing. Integer variables (e.g. `LLI`, `SSI`) are aggregated
-as numbers and rounded to the nearest integer, so a bit flag or an indicator
-can lose its meaning in a bin (a loss of lock in one epoch of a bin
-disappears). A bin keeps no count of the epochs behind it.
+any value stays missing. Integer variables (e.g. `LLI`, `SSI`) are flags and
+codes, which cannot be combined: each bin takes one of its values, the first,
+last or middle one in time order (`integer_method`, required; of an even
+number of values, `middle` takes the earlier of the two). The value of one
+epoch stands for the bin, so a loss of lock in another epoch of the bin is
+not seen. A bin keeps no count of the epochs behind it.
 
 The result has the same variables, dimensions, data types, attributes and
 encodings as the input, with fewer epochs, so aggregated data cannot be told
@@ -78,7 +81,7 @@ the same in dB and in linear power.
 ```python
 from canvod.ops import TemporalAggregate
 
-op = TemporalAggregate(freq="1min", method="mean")
+op = TemporalAggregate(freq="1min", method="mean", integer_method="first")
 ds_out, result = op(ds_in)
 ```
 
@@ -202,7 +205,8 @@ processing:
   preprocessing:
     temporal_aggregation:
       freq: "1min"      # whole number + "s", "min" or "h"; must divide one day
-      method: "median"  # "mean" or "median"
+      method: "median"  # "mean" or "median", floating-point variables
+      integer_method: "first"  # "first", "last" or "middle", integer variables
     grid_assignment:
       grid_type: "equal_area"
       angular_resolution: 2.0

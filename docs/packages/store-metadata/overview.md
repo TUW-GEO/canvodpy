@@ -211,7 +211,7 @@ to the GNSS store and after each VOD write:
 
 Each history line of a write names what was written, the canVODpy version and
 the preprocessing of every group written, e.g.
-`2026-10-05T12:00:00+00:00: Ingest 2025003: canopy_01(written=96) (canvodpy 1.0.0); preprocessing: canopy_01: temporal_aggregate(freq=1min, method=mean)`.
+`2026-10-05T12:00:00+00:00: Ingest 2025003: canopy_01(written=96) (canvodpy 1.0.0); preprocessing: canopy_01: temporal_aggregate(freq=1min, method=mean, integer_method=first)`.
 The full record of each file is in the group's log book (see
 [the preprocessing record](../ops/overview.md#the-preprocessing-record)).
 

@@ -82,7 +82,7 @@ class TestPipelineResult:
         assert d["preprocessing_total_seconds"] == 0.5
 
 
-TEMPORAL = {"freq": "1min", "method": "mean"}
+TEMPORAL = {"freq": "1min", "method": "mean", "integer_method": "first"}
 GRID = {"grid_type": "equal_area", "angular_resolution": 2.0}
 
 
@@ -120,7 +120,9 @@ class TestBuildDefaultPipeline:
     def test_custom_freq(self):
         """Custom freq from config should propagate to the op."""
         config = PreprocessingConfig(
-            temporal_aggregation=TemporalAggregationConfig(freq="5min", method="mean"),
+            temporal_aggregation=TemporalAggregationConfig(
+                freq="5min", method="mean", integer_method="first"
+            ),
         )
         pipe = build_default_pipeline(config)
         temporal_op = pipe._ops[0]

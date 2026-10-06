@@ -26,7 +26,15 @@ class TemporalAggregationConfig(_StrictModel):
         ),
     )
     method: Literal["mean", "median"] = Field(
-        ..., description="Statistic of the observations in each bin"
+        ...,
+        description="Statistic of the floating-point observations in each bin",
+    )
+    integer_method: Literal["first", "last", "middle"] = Field(
+        ...,
+        description=(
+            "Value of each bin integer variables (flags and codes such as LLI "
+            "and SSI) take, in time order; they cannot be combined"
+        ),
     )
 
     @field_validator("freq")

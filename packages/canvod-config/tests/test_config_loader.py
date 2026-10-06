@@ -199,7 +199,11 @@ class TestPreprocessingSetting:
             tmp_path,
             {
                 "preprocessing": {
-                    "temporal_aggregation": {"freq": "1min", "method": "median"}
+                    "temporal_aggregation": {
+                        "freq": "1min",
+                        "method": "median",
+                        "integer_method": "first",
+                    }
                 }
             },
         )
@@ -222,7 +226,11 @@ class TestPreprocessingSetting:
             tmp_path,
             {
                 "preprocessing": {
-                    "temporal_aggregation": {"freq": freq, "method": "mean"}
+                    "temporal_aggregation": {
+                        "freq": freq,
+                        "method": "mean",
+                        "integer_method": "first",
+                    }
                 }
             },
         )
@@ -234,6 +242,34 @@ class TestPreprocessingSetting:
             tmp_path, {"preprocessing": {"temporal_aggregation": {"freq": "1min"}}}
         )
         with pytest.raises(ConfigValidationError, match="method"):
+            ConfigLoader(config_dir=tmp_path).load()
+
+    def test_integer_method_is_required(self, tmp_path):
+        self._write_settings(
+            tmp_path,
+            {
+                "preprocessing": {
+                    "temporal_aggregation": {"freq": "1min", "method": "mean"}
+                }
+            },
+        )
+        with pytest.raises(ConfigValidationError, match="integer_method"):
+            ConfigLoader(config_dir=tmp_path).load()
+
+    def test_integers_cannot_be_averaged(self, tmp_path):
+        self._write_settings(
+            tmp_path,
+            {
+                "preprocessing": {
+                    "temporal_aggregation": {
+                        "freq": "1min",
+                        "method": "mean",
+                        "integer_method": "mean",
+                    }
+                }
+            },
+        )
+        with pytest.raises(ConfigValidationError, match="integer_method"):
             ConfigLoader(config_dir=tmp_path).load()
 
 
