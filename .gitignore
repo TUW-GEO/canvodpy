@@ -3,8 +3,10 @@
 # ============================================================================
 # AGENTS.md and CLAUDE.md files are tracked (agent instructions)
 # .claude/skills/ is tracked (task guides ship with the repo)
+# .claude/settings.json is tracked (enables the agent workflow plugin)
 .claude/*
 !.claude/skills/
+!.claude/settings.json
 
 # ============================================================================
 # Python

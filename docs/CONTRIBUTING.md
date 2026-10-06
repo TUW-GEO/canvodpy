@@ -87,6 +87,7 @@ cd canvodpy
 git submodule update --init --recursive
 uv sync
 just hooks
+just agent-skills   # if you develop with Claude Code: the shared agent workflow
 
 # 3. Create a feature branch
 git checkout -b feature/my-feature
@@ -197,6 +198,7 @@ The CI runs the **same checks as the pre-commit hooks**, so fixing hook failures
 
 !!! tip "Before opening a PR"
     1. `just test && just check` must pass with no errors.
+    1. The change follows `CODING_STANDARDS.md` (rules and per-change checklist); the reasons are in the [decisions](adr/index.md).
     2. Include tests for all new functionality.
     3. New code must not reduce test coverage. Aim to increase it.
     4. Update the Zensical documentation in `docs/` if adding or changing public API, behaviour, or configuration.

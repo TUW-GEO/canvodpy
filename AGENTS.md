@@ -120,27 +120,31 @@ other agents read the files directly.
 
 ## Development workflow
 
-1. Work on a branch, never on `main`. Every change reaches `main` through
-   a PR.
-2. Read the `AGENTS.md` of every package you change, and the task guide if
-   one fits.
-3. Change code and tests together. A bug fix gets a test that failed
-   before the fix.
-4. Same PR: the package docs under `docs/packages/<package>/` and the
-   `AGENTS.md` files, wherever the change makes them wrong.
-5. Verify: `just check`, then `just test-package <package>` (or
-   `just test-fast`, `just test`). Report failures; don't skip tests.
-6. Commit in conventional form, scope = package or area:
-   `fix(readers): ...`, `feat(store): ...`, `refactor(orchestrator): ...`.
-   Mark breaking changes (`feat!:` or a `BREAKING CHANGE:` footer).
+Work on a branch, never on `main`; every change reaches `main` through a
+pull request. Read `CODING_STANDARDS.md` before writing code: its rules
+and its checklist apply to every change, and `/code-review` checks
+against them. Read the `AGENTS.md` of every package you change, and the
+task guide if one fits.
 
-Running on real data or writing to a production store needs the user's
-go-ahead first.
+Changes go through the shared agent workflow (the mattpocock-skills
+plugin, `just agent-skills`; `docs/guides/ai-development.md`):
+
+| Situation | Start with |
+|---|---|
+| An idea or a change to design | `/grill-with-docs`: interview until every decision is settled; records terms in `GLOSSARY.md` and decisions in `docs/adr/` |
+| A change too big for one session | `/to-spec`, then `/to-tickets` (GitHub issues), then `/implement` per ticket |
+| A change that fits one session | `/implement` (test first with `/tdd`, then `/code-review`) |
+| Something is broken | `/diagnosing-bugs`: a command that shows the bug before any theory |
+| Not sure | `/ask-matt` |
+
+Running on real data or writing to a production store needs the
+maintainers' go-ahead first.
 
 ## Commands
 
 ```bash
 just sync                             # all packages, one .venv, git hooks
+just agent-skills                     # the agent workflow plugin (Claude Code)
 uv sync --group filemap               # plus canvod-filemap (naming recipes)
 just check                            # ruff lint + format, ty, agent docs
 just test-fast                        # tests without the integration marker
@@ -184,31 +188,10 @@ answers structural questions faster and more completely than grep.
 
 ## Rules
 
-- **Free tools only.** Nothing in this project may need a paid service or
-  API key: not for building, testing, docs or agent tooling. graphify can
-  call paid language models; use it only through the `just graph*`
-  recipes, never `graphify label`, `graphify cluster-only` (its output
-  suggests it), a full `graphify extract`, or its assistant skill.
-
-- **Explicit over implicit.** Fail loudly with a message that says what to
-  do. No silent fallback, no hidden default: a default in a signature or a
-  documented settings model is fine; library code reading the settings file
-  behind the caller's back, or `except Exception` falling back to a value,
-  is not. Entry points (CLI, `Site`) read the settings and pass them down.
-- **One implementation per job.** Before writing something, find the code
-  that already does it and reuse it. Two code paths that do the same job
-  drift apart and give different results.
-- **Composition over inheritance.** Pass collaborators in; inherit only
-  from pydantic models and from ABC interfaces. Interfaces are ABCs, not
-  duck typing.
-- **Deprecate, don't delete.** Public code that goes away gets the
-  deprecation decorator and stays until v2.0.0; see the `deprecate` guide.
-  Delete outright only when the user says so.
-- **Optional processing stays optional.** Preprocessing from
-  `processing.preprocessing` runs in every run when set and never by
-  default.
-- **Write for scientists.** Names, messages, CLI help and docs use clear,
-  unambiguous words.
+The rules every change follows (free tools only, explicit over implicit,
+one implementation per job, composition over inheritance, deprecate don't
+delete, optional processing stays optional, write for scientists) are in
+`CODING_STANDARDS.md`, with their reasons in `docs/adr/`.
 
 ## Guardrails
 
@@ -226,18 +209,34 @@ changing these, and run `just test-fast` afterwards.
 - Store dedup and write strategies: `packages/canvod-store/AGENTS.md`
 - File name convention: `packages/canvod-preflight/src/canvod/preflight/convention.py`
 
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in GitHub Issues of nfb2021/canvodpy (`gh`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` and `docs/adr/` at the root. See `docs/agents/domain.md`.
+
 ## Key documentation: the breadcrumb trail
 
 For more context than this file gives, read in this order:
 
-1. `docs/architecture.md`: packages, layers, the processing flow
-2. `docs/principles.md`: design principles, the file name convention
-3. `docs/guides/api-levels.md`: CLI and `Site.pipeline()`, deprecated surfaces
-4. `docs/guides/configuration.md`: the settings file
-5. `docs/guides/getting-started.md`: setup and a first run
-6. `docs/packages/naming/overview.md`: which files a run processes, naming recipes
-7. `docs/guides/extensions.md`: the optional packages
-8. `docs/packages/`: one folder per package, start at its overview page
+1. `GLOSSARY.md`: the project's words
+2. `docs/adr/index.md`: the decisions and why they were made
+3. `docs/architecture.md`: packages, layers, the processing flow
+4. `docs/principles.md`: design principles, the file name convention
+5. `docs/guides/api-levels.md`: CLI and `Site.pipeline()`, deprecated surfaces
+6. `docs/guides/configuration.md`: the settings file
+7. `docs/guides/getting-started.md`: setup and a first run
+8. `docs/packages/naming/overview.md`: which files a run processes, naming recipes
+9. `docs/guides/extensions.md`: the optional packages
+10. `docs/packages/`: one folder per package, start at its overview page
 
 When a user asks to explain the project, walk them through this trail.
 Before answering about an unfamiliar package, read its `AGENTS.md` and

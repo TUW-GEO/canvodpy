@@ -57,6 +57,27 @@ graph-explain NAME:
     @{{ graphify }} explain {{ quote(NAME) }} --graph {{ graph_file }}
 
 # ============================================================================
+# Agent workflow (mattpocock-skills, see docs/guides/ai-development.md)
+# ============================================================================
+
+# install or update the shared agent workflow skills (Claude Code plugin from GitHub mattpocock/skills, enabled in .claude/settings.json)
+agent-skills:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v claude >/dev/null 2>&1; then
+        echo "Claude Code ('claude') is not installed: https://code.claude.com/docs" >&2
+        echo "Other coding agents: npx skills@latest add mattpocock/skills" >&2
+        exit 1
+    fi
+    # the author's own marketplace (GitHub mattpocock/skills): its latest release,
+    # which the official Claude marketplace may lag behind
+    claude plugin marketplace add mattpocock/skills --scope project
+    claude plugin install mattpocock-skills@mattpocock --scope project
+    claude plugin marketplace update mattpocock
+    claude plugin update mattpocock-skills@mattpocock --scope project
+    echo "Done. Restart Claude Code in this repository; /ask-matt shows which skill fits a task."
+
+# ============================================================================
 # Code Quality (All Packages)
 # ============================================================================
 

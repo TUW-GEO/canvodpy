@@ -1,6 +1,6 @@
 ---
 title: Developing with coding agents
-description: The instructions canVODpy gives coding agents such as Claude Code, how they stay correct, and the free code graph
+description: The instructions canVODpy gives coding agents such as Claude Code, the shared development workflow, how they stay correct, and the free code graph
 ---
 
 # Developing with coding agents
@@ -21,10 +21,15 @@ or an API key.
 
 | File | What it holds |
 |---|---|
-| `AGENTS.md` (root) | Scientific context, packages, the one way to process data, data contracts, workflow, rules, guardrails, and the reading order of these docs |
+| `AGENTS.md` (root) | Scientific context, packages, the one way to process data, data contracts, the development workflow, guardrails, and the reading order of these docs |
 | `canvodpy/AGENTS.md`, `packages/<package>/AGENTS.md` | Per package: where things live, invariants and decisions, tests |
 | `.claude/skills/<task>/SKILL.md` | Step-by-step guides for recurring tasks: run the pipeline, add a reader or constellation, deprecate code, store safety, the icechunk 2 API, the link to canvodpy-extensions, releasing |
 | `CLAUDE.md` files | One line, `@AGENTS.md`: Claude Code reads `CLAUDE.md`, other agents read `AGENTS.md` |
+| `CODING_STANDARDS.md` | The rules every change follows and the checklist for each change; reviews check against it |
+| `GLOSSARY.md` | The project's words, and the words to avoid ([Glossary](../glossary.md)) |
+| `docs/adr/` | The decisions behind canVODpy and why they were made ([Decisions](../adr/index.md)) |
+| `docs/agents/` | How the workflow skills below use GitHub issues, triage labels and the glossary |
+| `.claude/settings.json` | Enables the workflow plugin for this repository |
 
 Claude Code loads the root file at the start of a session, a package's
 file when it works in that package, and a task guide when the task fits
@@ -42,6 +47,33 @@ pre-commit hook and in CI. Paths in canvodpy-extensions are written
 `extensions:<path>` and checked at the extensions commit canvodpy is
 locked to. A change that makes a statement wrong updates the file in the
 same pull request.
+
+---
+
+## The development workflow
+
+Contributors develop with one shared workflow: the open-source
+[mattpocock/skills](https://github.com/mattpocock/skills), a set of
+skills for Claude Code. Each step guards against a typical failure of
+agent-written code: the agent building something other than what you
+meant, inventing its own words for things, leaving no record of why,
+writing code without tests, or ignoring the project's rules.
+
+| Situation | Start with | What happens |
+|---|---|---|
+| An idea or a change to design | `/grill-with-docs` | The agent asks you questions in rounds, each with its recommended answer, until every decision is settled. New terms go to the glossary, decisions that are hard to reverse to `docs/adr/`. |
+| A change too big for one session | `/to-spec`, then `/to-tickets` | The settled design becomes a GitHub issue (the spec), split into small tickets that each work on their own. |
+| One ticket, or a change that fits one session | `/implement` | Test first (`/tdd`): a failing test, then the code that makes it pass. It ends with `/code-review`. |
+| Review a branch or pull request | `/code-review` | Two separate reviews: against `CODING_STANDARDS.md`, and against the issue the change was made for. |
+| Something is broken | `/diagnosing-bugs` | First a command that shows the bug, then hypotheses, then the fix with a regression test. |
+| After a session that went wrong | `/retro` | Suggests checks and rules so the same mistake can't happen again. |
+| Not sure which | `/ask-matt` | Recommends the skill for your situation. |
+
+The full flow is meant for real changes; a typo needs none of it. The
+domain guides of canVODpy (add a reader, deprecate code, store safety and
+the others) still apply inside any of these steps. Some skills run
+helper agents in parallel (`/code-review`, `/implement-spec`), which uses
+more of your agent's quota.
 
 ---
 
@@ -75,13 +107,19 @@ assistant skill.
 ## Getting started
 
 ```bash
-just sync      # dependencies and git hooks (including the graph rebuild)
-just graph     # first build of the code graph
-claude         # in the repository root
+just sync          # dependencies and git hooks (including the graph rebuild)
+just graph         # first build of the code graph
+just agent-skills  # the workflow skills (Claude Code plugin); rerun to update
+claude             # in the repository root
 ```
 
 Start the agent in the repository root: it reads its instructions from
-there.
+there. `.claude/settings.json` declares the plugin's marketplace and
+enables the plugin, so Claude Code takes it from there once you trust the
+repository folder; `just agent-skills` installs and updates it
+explicitly. For
+other coding agents, `npx skills@latest add mattpocock/skills` installs
+the same skills.
 
 ---
 

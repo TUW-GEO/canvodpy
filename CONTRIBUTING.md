@@ -67,6 +67,7 @@ File feature proposals at https://github.com/nfb2021/canvodpy/issues. Keep the s
    just check-dev-tools
    uv sync
    just hooks
+   just agent-skills   # if you develop with Claude Code: the shared agent workflow
    ```
 
 4. Create a feature branch:
@@ -141,7 +142,8 @@ all source files. Per-file license headers are not required.
 - **ty** for type checking
 - **pytest** for testing with coverage
 
-Run `just check` before committing.
+Run `just check` before committing. Every change follows `CODING_STANDARDS.md`
+(rules and per-change checklist); the reasons are in `docs/adr/`.
 
 ## Deploying
 

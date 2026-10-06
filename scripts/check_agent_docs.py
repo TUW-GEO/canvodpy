@@ -1,11 +1,14 @@
 """Check that the agent instructions name only paths and recipes that exist.
 
-Reads ``AGENTS.md``, ``canvodpy/AGENTS.md``, ``packages/*/AGENTS.md`` and
-``.claude/skills/*/SKILL.md``. A path in backticks must exist relative to
+Reads ``AGENTS.md``, ``canvodpy/AGENTS.md``, ``packages/*/AGENTS.md``,
+``.claude/skills/*/SKILL.md``, ``CODING_STANDARDS.md``, ``GLOSSARY.md``,
+``docs/agents/*.md`` and ``docs/adr/*.md`` (what the agent workflow
+reads). A path in backticks must exist relative to
 the repository root, to the file's directory, or to the source folder of
 the file's package (``src/canvod/<name>`` or ``src/canvodpy``), as the
 package tables write them; a ``just <recipe>`` must be
-a recipe of the root Justfile. ``extensions:<path>`` names a path in the
+a recipe of the root Justfile; a ``/<skill>`` must be a skill of
+``.claude/skills/`` or of the mattpocock-skills plugin. ``extensions:<path>`` names a path in the
 canvodpy-extensions repository; it is checked at the canvod-filemap commit
 locked in ``uv.lock`` if a canvodpy-extensions git checkout is found
 (``$CANVODPY_EXTENSIONS_REPO``, or ``canvodpy-extensions`` next to this
@@ -44,8 +47,21 @@ UNCHECKED_PREFIXES = (
 #: Recipes of the canvodpy-extensions Justfile, named in the guides.
 OTHER_REPO_RECIPES = frozenset({"lock-canvodpy", "release-package"})
 
+#: Skills of the mattpocock-skills plugin (``just agent-skills``), version
+#: 1.3.1. A ``/name`` in the files must be one of these or a skill under
+#: ``.claude/skills/``; update this list when the plugin adds or renames one.
+PLUGIN_SKILLS = frozenset({
+    "ask-matt", "code-review", "codebase-design", "diagnosing-bugs",
+    "domain-modeling", "grill-me", "grill-with-docs", "grilling", "handoff",
+    "implement", "implement-spec", "improve-codebase-architecture", "pr",
+    "prototype", "research", "retro", "setup-matt-pocock-skills", "tdd",
+    "teach", "to-questionnaire", "to-spec", "to-tickets", "triage",
+    "wait-what", "wayfinder", "wizard", "writing-for-agents",
+})  # fmt: skip
+
 _CODE_SPAN = re.compile(r"`([^`\n]+)`")
 _FENCE = re.compile(r"^```.*?^```", re.MULTILINE | re.DOTALL)
+_SKILL = re.compile(r"/([a-z][a-z0-9-]*)")
 _JUST = re.compile(r"(?:^|[\s`(])just ([a-z][a-z0-9-]*)(?![\w=-])")
 _PATH_SUFFIXES = (".md", ".py", ".toml", ".yaml", ".yml", ".ini", ".lock", ".json")
 _PLACEHOLDER = re.compile(r"[<>*{}]|PKG|X\.Y\.Z")
@@ -57,7 +73,17 @@ def agent_files() -> list[Path]:
         ROOT / "canvodpy" / "AGENTS.md",
         *sorted(ROOT.glob("packages/*/AGENTS.md")),
         *sorted(ROOT.glob(".claude/skills/*/SKILL.md")),
+        ROOT / "CODING_STANDARDS.md",
+        ROOT / "GLOSSARY.md",
+        *sorted(ROOT.glob("docs/agents/*.md")),
+        *sorted(ROOT.glob("docs/adr/*.md")),
     ]
+
+
+def skill_names() -> frozenset[str]:
+    """The skills a ``/name`` may call: the plugin's and this repository's."""
+    own = {p.name for p in (ROOT / ".claude" / "skills").iterdir() if p.is_dir()}
+    return PLUGIN_SKILLS | own
 
 
 def search_roots(file: Path) -> list[Path]:
@@ -130,6 +156,10 @@ def problems(
                     found.append(
                         f"path `{path}` does not exist in canvodpy-extensions at {ref}"
                     )
+            continue
+        if skill := _SKILL.fullmatch(span):
+            if skill.group(1) not in skill_names():
+                found.append(f"`{span}` is not a skill")
             continue
         if not is_path(span) or span.startswith(
             OTHER_REPO_PREFIXES + UNCHECKED_PREFIXES
