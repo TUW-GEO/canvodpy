@@ -94,10 +94,10 @@ download if the configured product does not exist or has no clocks while
     from canvod.auxiliary import get_product_spec
 
     spec = get_product_spec("COD", "final")
-    spec.prefix              # "COD0MGXFIN"
-    spec.sp3_samplings       # ["05M"], tried in this order
-    spec.clk_samplings       # ["30S"]; [] if the product has no clocks
-    spec.systems             # "GRECJ"
+    spec.prefix  # "COD0MGXFIN"
+    spec.sp3_samplings  # ["05M"], tried in this order
+    spec.clk_samplings  # ["30S"]; [] if the product has no clocks
+    spec.systems  # "GRECJ"
     spec.sp3_filenames("2025001")  # ["COD0MGXFIN_20250010000_01D_05M_ORB.SP3"]
     [s.url for s in spec.ftp_servers]  # ESA first, then NASA CDDIS
     ```

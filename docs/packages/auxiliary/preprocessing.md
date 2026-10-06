@@ -86,7 +86,7 @@ Pads the Dataset to include **all possible** Signal IDs across all supported con
 from canvod.auxiliary.preprocessing import pad_to_global_sid
 
 sp3_global = pad_to_global_sid(sp3_sid)
-sp3_global.sizes["sid"]   # 4429
+sp3_global.sizes["sid"]  # 4429
 ```
 
 Added SIDs are filled with `NaN`.
@@ -101,7 +101,7 @@ Converts the `sid` coordinate to `object` dtype for Zarr/Icechunk compatibility.
 from canvod.auxiliary.preprocessing import normalize_sid_dtype
 
 ds = normalize_sid_dtype(ds)
-ds["sid"].dtype   # dtype('O')
+ds["sid"].dtype  # dtype('O')
 ```
 
 ---

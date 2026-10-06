@@ -8,10 +8,10 @@ description: Implementation of Python implicit namespace packages in canVODpy
 canVODpy uses Python 3.3+ **implicit namespace packages** to let ten independent packages share the `canvod.*` import prefix — a unified API backed by separately installable wheels.
 
 ```python
-from canvod.readers   import Rnxv3Obs
+from canvod.readers import Rnxv3Obs
 from canvod.auxiliary import Sp3File
-from canvod.grids     import EqualAreaBuilder
-from canvod.store     import MyIcechunkStore
+from canvod.grids import EqualAreaBuilder
+from canvod.store import MyIcechunkStore
 ```
 
 ---
@@ -137,9 +137,11 @@ pip install canvodpy                  # everything
 
 ```python
 import canvod
-print(canvod.__file__)   # AttributeError — namespace packages have no __file__
+
+print(canvod.__file__)  # AttributeError — namespace packages have no __file__
 
 from canvod import readers
+
 print(readers.__file__)  # e.g. …/site-packages/canvod/readers/__init__.py
 ```
 

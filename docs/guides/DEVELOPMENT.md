@@ -140,6 +140,7 @@ directly from structlog:
 
 ```python
 import structlog
+
 log = structlog.get_logger(__name__)
 ```
 

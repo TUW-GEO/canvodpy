@@ -21,10 +21,12 @@ a dataset through each operation and collects metadata about what happened:
 ```python
 from canvod.ops import Pipeline, TemporalAggregate, GridAssignment
 
-pipeline = Pipeline([
-    TemporalAggregate(freq="1min", method="mean", integer_method="first"),
-    GridAssignment(grid_type="equal_area", angular_resolution=2.0),
-])
+pipeline = Pipeline(
+    [
+        TemporalAggregate(freq="1min", method="mean", integer_method="first"),
+        GridAssignment(grid_type="equal_area", angular_resolution=2.0),
+    ]
+)
 
 ds_out, result = pipeline(ds_in)
 
@@ -176,6 +178,7 @@ All operations inherit from the `Op` abstract base class:
 
 ```python
 from canvod.ops import Op, OpResult
+
 
 class MyOp(Op):
     @property

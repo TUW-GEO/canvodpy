@@ -49,9 +49,9 @@ calling icechunk directly.
 import icechunk
 
 storage = icechunk.local_filesystem_storage("/path/to/store")
-repo = icechunk.Repository.open(storage)            # or .create / .open_or_create
-icechunk.Repository.exists(storage)                 # is there a repository?
-repo.spec_version                                    # on-disk format: SpecVersion.v1 or .v2
+repo = icechunk.Repository.open(storage)  # or .create / .open_or_create
+icechunk.Repository.exists(storage)  # is there a repository?
+repo.spec_version  # on-disk format: SpecVersion.v1 or .v2
 ```
 
 `Repository.create(storage, config=..., spec_version=...)` creates spec
@@ -65,11 +65,11 @@ in the repository, `Repository.fetch_config(storage)` reads it back.
 
 ```python
 session = repo.writable_session("main")
-session = repo.readonly_session("main")                     # branch tip
-session = repo.readonly_session(tag="v1")                   # or snapshot_id=...
+session = repo.readonly_session("main")  # branch tip
+session = repo.readonly_session(tag="v1")  # or snapshot_id=...
 session = repo.readonly_session("main", as_of=some_datetime)  # branch at a time
-session.store                       # zarr store for xarray/zarr
-session.status()                    # Diff of uncommitted changes
+session.store  # zarr store for xarray/zarr
+session.status()  # Diff of uncommitted changes
 session.has_uncommitted_changes
 session.discard_changes()
 snapshot_id = session.commit("message", metadata={"key": "value"})
@@ -87,8 +87,8 @@ written to the branch.
 ### Parallel writes: fork and merge
 
 ```python
-session = repo.writable_session("main")      # must have no uncommitted changes
-forks = [session.fork() for _ in jobs]       # ForkSession objects, picklable
+session = repo.writable_session("main")  # must have no uncommitted changes
+forks = [session.fork() for _ in jobs]  # ForkSession objects, picklable
 # each worker writes into its own fork (to_icechunk(ds, fork, ...)) and returns it
 session.merge(*finished_forks)
 session.commit("one commit for all workers")
@@ -110,18 +110,23 @@ without copying data), then `commit`. `Session.shift_array` and
 ## Branches, tags, history
 
 ```python
-repo.list_branches(); repo.lookup_branch("main")         # tip snapshot id
+repo.list_branches()
+repo.lookup_branch("main")  # tip snapshot id
 repo.create_branch("try-fix", snapshot_id=repo.lookup_branch("main"))
 repo.reset_branch("main", snapshot_id, from_snapshot_id=expected_tip)
 repo.delete_branch("try-fix")
-repo.create_tag("v1", snapshot_id); repo.lookup_tag("v1"); repo.list_tags()
-repo.delete_tag("v1")                 # the name can never be used again
-for snap in repo.ancestry(branch="main"):   # SnapshotInfo: id, parent_id, written_at, message, metadata
+repo.create_tag("v1", snapshot_id)
+repo.lookup_tag("v1")
+repo.list_tags()
+repo.delete_tag("v1")  # the name can never be used again
+# SnapshotInfo: id, parent_id, written_at, message, metadata
+for snap in repo.ancestry(branch="main"):
     ...
 repo.lookup_snapshot(snapshot_id)
-repo.diff(from_snapshot_id=a, to_branch="main")   # Diff: new/updated/deleted arrays and groups, moved nodes
-repo.ancestry_graph()                 # printable history of all branches
-repo.ops_log()                        # administrative operations: resets, expiry, GC, ...
+# Diff: new/updated/deleted arrays and groups, moved nodes
+repo.diff(from_snapshot_id=a, to_branch="main")
+repo.ancestry_graph()  # printable history of all branches
+repo.ops_log()  # administrative operations: resets, expiry, GC, ...
 ```
 
 `reset_branch(..., from_snapshot_id=)` only resets if the tip is still

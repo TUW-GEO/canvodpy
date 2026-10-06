@@ -140,8 +140,15 @@ The full pipeline:
     for t_idx, record in enumerate(self._iter_validated_epochs(rejected)):
         for sat in record.data:
             for (obs_type, sid_suffix), obs in zip(lut[sat.sv[0]], sat.observations):
-                _store_observation(arrays, t_idx, sid_to_idx[sat.sv + sid_suffix],
-                                   obs_type, obs.value, obs.lli, obs.ssi)
+                _store_observation(
+                    arrays,
+                    t_idx,
+                    sid_to_idx[sat.sv + sid_suffix],
+                    obs_type,
+                    obs.value,
+                    obs.lli,
+                    obs.ssi,
+                )
     ```
 
     The opt-in `parser="unvalidated_fast"` fills the same arrays by slicing
@@ -152,7 +159,7 @@ The full pipeline:
     ```python
     # _assemble_dataset(): one coordinate per signal property,
     # precomputed from the header for every sid
-    coords["sv"]   = ("sid", np.array(sid_prop("sv"), dtype=object), ...)
+    coords["sv"] = ("sid", np.array(sid_prop("sv"), dtype=object), ...)
     coords["band"] = ("sid", np.array(sid_prop("band"), dtype=object), ...)
     for key in ("freq_center", "freq_min", "freq_max"):
         coords[key] = ("sid", np.asarray(sid_prop(key), dtype=np.float32), ...)
@@ -197,16 +204,21 @@ class Rnxv3Header(BaseModel):   # rinex/v3_04.py
 Pydantic dataclasses in `gnss_specs/models.py`:
 
 ```python
-class Rnxv3ObsEpochRecordLineModel:   # the "> ..." line
-    year: int; month: int; day: int; hour: int; minute: int
+class Rnxv3ObsEpochRecordLineModel:  # the "> ..." line
+    year: int
+    month: int
+    day: int
+    hour: int
+    minute: int
     seconds: float
     epoch_flag: int
     num_satellites: int
     receiver_clock_offset: float | None = None
 
+
 class Rnxv3ObsEpochRecord:
     info: Rnxv3ObsEpochRecordLineModel
-    data: list[Satellite]   # must hold num_satellites satellites
+    data: list[Satellite]  # must hold num_satellites satellites
 ```
 
 ### Observation and Satellite
@@ -215,11 +227,12 @@ class Rnxv3ObsEpochRecord:
 class Observation:
     obs_type: str | None
     value: float | None
-    lli: int | None   # Loss of Lock Indicator
-    ssi: int | None   # Signal Strength Indicator (1–9, 0 = unknown)
+    lli: int | None  # Loss of Lock Indicator
+    ssi: int | None  # Signal Strength Indicator (1–9, 0 = unknown)
+
 
 class Satellite:
-    sv: str                          # e.g. "G01"
+    sv: str  # e.g. "G01"
     observations: list[Observation]
 ```
 
@@ -300,8 +313,8 @@ The unit of the `S` observations is declared by the optional `SIGNAL STRENGTH UN
 exists for users who have checked their files otherwise:
 
 ```python
-ds = reader.to_ds()                              # validated (default)
-ds = reader.to_ds(parser="unvalidated_fast")     # DANGEROUS, see below
+ds = reader.to_ds()  # validated (default)
+ds = reader.to_ds(parser="unvalidated_fast")  # DANGEROUS, see below
 ```
 
 `to_ds()` itself always defaults to `validated`; a run passes the

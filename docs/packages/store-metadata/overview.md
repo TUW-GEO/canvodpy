@@ -117,10 +117,13 @@ if metadata_exists(store_path):
 from canvod.store_metadata import update_metadata
 
 # After ingesting new data, update timestamps and summaries
-update_metadata(store_path, {
-    "temporal.updated": "2026-03-09T12:00:00Z",
-    "temporal.collected_end": "2025-01-31T23:59:55",
-})
+update_metadata(
+    store_path,
+    {
+        "temporal.updated": "2026-03-09T12:00:00Z",
+        "temporal.collected_end": "2025-01-31T23:59:55",
+    },
+)
 ```
 
 ### Validation

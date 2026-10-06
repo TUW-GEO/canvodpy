@@ -77,10 +77,9 @@ target-version = "py314"
 # though that file has no [tool.ruff] section of its own (confirmed
 # empirically, not documented ruff behavior we could find). The same gap
 # applies to any workspace package under packages/*/, each of which has
-# its own [tool.ruff] section shadowing this one, and to the new default
-# where `ruff format` also reformats fenced Python code in Markdown.
+# its own [tool.ruff] section shadowing this one.
 # justfile's check-format/check-format-only recipes carry the actual
-# fix (`--exclude "demo"` / `--exclude "*.md"` on the CLI, which works
+# fix (`--exclude "demo"` on the CLI, which works
 # regardless of nested pyproject.toml resolution) -- this root `exclude`
 # is kept for `ruff check` and as a form of documentation, not as the
 # mechanism that keeps `ruff format` out of demo/.

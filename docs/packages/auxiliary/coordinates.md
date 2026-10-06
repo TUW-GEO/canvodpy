@@ -58,7 +58,7 @@ from canvod.auxiliary import GeodeticPosition
 geo = GeodeticPosition(lat=48.2, lon=16.4, alt=200.0)
 
 # Convert to ECEF for vector calculations
-ecef = geo.to_ecef()   # ECEFPosition
+ecef = geo.to_ecef()  # ECEFPosition
 ```
 
 ---
@@ -89,8 +89,11 @@ All three are NaN while the satellite is below the receiver's horizon.
 from canvod.auxiliary import compute_spherical_coordinates
 
 r, theta, phi = compute_spherical_coordinates(
-    sat_x, sat_y, sat_z,   # satellite ECEF positions, arrays of any shape
-    receiver_position,     # ECEFPosition
+    # satellite ECEF positions, arrays of any shape
+    sat_x,
+    sat_y,
+    sat_z,
+    receiver_position,  # ECEFPosition
 )
 ```
 

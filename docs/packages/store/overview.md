@@ -116,7 +116,7 @@ graph TD
     from canvodpy import Site
 
     site = Site("ExampleSite")
-    site.gnss_store.list_groups()          # ["canopy_01", "reference_01_canopy_01"]
+    site.gnss_store.list_groups()  # ["canopy_01", "reference_01_canopy_01"]
     site.gnss_store.get_group_info("canopy_01")
 
     # Read a group back as an xarray.Dataset
@@ -209,11 +209,11 @@ A file that fails a check counts as already stored: the default write strategy
 
 ```python
 # View ingest history
-store.get_ops_log(limit=20)      # Returns list of dicts
-store.print_ops_log(limit=50)    # Pretty-prints to console
+store.get_ops_log(limit=20)  # Returns list of dicts
+store.print_ops_log(limit=50)  # Pretty-prints to console
 
 # Visualise commit graph
-store.plot_commit_graph()        # Wraps repo.ancestry_graph()
+store.plot_commit_graph()  # Wraps repo.ancestry_graph()
 
 # Tag and compare snapshots
 store.create_release_tag("v1.0", snapshot_id="abc123")

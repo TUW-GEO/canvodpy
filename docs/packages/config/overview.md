@@ -150,8 +150,8 @@ from canvod.config import load_config
 config = load_config()
 
 # Access any section
-author  = config.processing.metadata.author
-agency  = config.processing.aux_data.agency
+author = config.processing.metadata.author
+agency = config.processing.aux_data.agency
 n_cores = config.processing.params.n_max_threads
 ```
 

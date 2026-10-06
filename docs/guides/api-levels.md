@@ -109,7 +109,9 @@ site = Site("ExampleSite")
 
 with site.pipeline(n_workers=8) as pipeline:
     for date_key, datasets in pipeline.process_range("2025001", "2025007"):
-        print(f"{date_key}: {sum(ds.sizes['epoch'] for ds in datasets.values())} epochs")
+        print(
+            f"{date_key}: {sum(ds.sizes['epoch'] for ds in datasets.values())} epochs"
+        )
 
         # Optional: compute VOD inline for a configured analysis pair
         site.vod.compute_day(datasets, "canopy_01_vs_reference_01")

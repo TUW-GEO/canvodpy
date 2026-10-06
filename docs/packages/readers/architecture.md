@@ -21,6 +21,7 @@ from typing import ClassVar
 from pydantic import BaseModel, ConfigDict, field_validator
 import xarray as xr
 
+
 class GNSSDataReader(BaseModel, ABC):
     """Abstract base for all GNSS data format readers.
 
@@ -58,11 +59,7 @@ class GNSSDataReader(BaseModel, ABC):
         """SHA256 hash of file for deduplication."""
 
     @abstractmethod
-    def to_ds(
-        self,
-        keep_data_vars: list[str] | None = None,
-        **kwargs
-    ) -> xr.Dataset:
+    def to_ds(self, keep_data_vars: list[str] | None = None, **kwargs) -> xr.Dataset:
         """Convert data to xarray.Dataset."""
 
     @abstractmethod
@@ -89,9 +86,7 @@ class GNSSDataReader(BaseModel, ABC):
     def num_satellites(self) -> int:
         """Number of unique satellites."""
 
-    def to_ds_and_auxiliary(
-        self, **kwargs
-    ) -> tuple[xr.Dataset, dict[str, xr.Dataset]]:
+    def to_ds_and_auxiliary(self, **kwargs) -> tuple[xr.Dataset, dict[str, xr.Dataset]]:
         """Obs dataset + any auxiliary datasets. Default: empty aux dict."""
         return self.to_ds(**kwargs), {}
 ```
@@ -136,9 +131,9 @@ from canvod.readers.base import SignalID
 
 # Create from components — validated immediately
 sig = SignalID(sv="G01", band="L1", code="C")
-sig.sid        # → "G01|L1|C"
-sig.system     # → "G"
-str(sig)       # → "G01|L1|C"
+sig.sid  # → "G01|L1|C"
+sig.system  # → "G"
+str(sig)  # → "G01|L1|C"
 
 # Parse from string
 sig2 = SignalID.from_string("E25|E5a|I")
@@ -355,6 +350,7 @@ Errors discovered during analysis are expensive to diagnose and correct. Validat
 ```python
 from pydantic import BaseModel, ConfigDict, field_validator
 
+
 class Rnxv3Header(BaseModel):
     """RINEX v3 header with automatic validation (simplified)."""
 
@@ -411,9 +407,11 @@ def _create_dataset_validated(self, keep_data_vars) -> xr.Dataset:
     """Default: epochs from iter_epochs() (Pydantic-validated) -> arrays."""
     ...
 
+
 def _create_dataset_unvalidated_fast(self, keep_data_vars) -> xr.Dataset:
     """Opt-in, DANGEROUS: fixed-column slicing without any validation."""
     ...
+
 
 def _assemble_dataset(self, timestamps, arrays, sorted_sids, sid_properties):
     """Shared: coordinates, attributes and variable order for both parsers."""
@@ -425,9 +423,9 @@ Generic processing is handled by shared helpers:
 ```python
 # In gnss_specs — band property lookups shared across readers
 mapper = SignalIDMapper()
-freq = mapper.get_band_frequency("L1")      # 1575.42
-bw   = mapper.get_band_bandwidth("L1")      # 30.69
-grp  = mapper.get_overlapping_group("L1")   # "group_1"
+freq = mapper.get_band_frequency("L1")  # 1575.42
+bw = mapper.get_band_bandwidth("L1")  # 30.69
+grp = mapper.get_overlapping_group("L1")  # "group_1"
 ```
 
 ### Explicit Configuration
@@ -500,7 +498,7 @@ reader = ReaderFactory.create("rinex3", fpath="station.25o")
 reader = ReaderFactory.create("sbf", fpath="station.25_")
 
 # Detect the reader from the file content
-ReaderFactory.detect_reader("station.25o")          # "rinex3"
+ReaderFactory.detect_reader("station.25o")  # "rinex3"
 reader = ReaderFactory.create_from_file("station.25o")
 
 # Register a custom reader

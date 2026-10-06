@@ -229,7 +229,7 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
     from canvod.readers import SignalID
 
     sig = SignalID(sv="G01", band="L1", code="C")
-    sig.sid     # → "G01|L1|C"
+    sig.sid  # → "G01|L1|C"
     sig.system  # → "G"
     ```
 
@@ -261,6 +261,7 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
 
     ```python
     from canvod.readers.gnss_specs.constellations import GPS
+
     gps = GPS()  # static SVs from IGS SINEX catalog
     gps.BANDS  # {'1': 'L1', '2': 'L2', '5': 'L5'}
     ```
@@ -275,8 +276,8 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
 
     ```python
     mapper = SignalIDMapper()
-    freq = mapper.get_band_frequency("L1")   # → 1575.42
-    bw   = mapper.get_band_bandwidth("L1")   # → 30.69
+    freq = mapper.get_band_frequency("L1")  # → 1575.42
+    bw = mapper.get_band_bandwidth("L1")  # → 30.69
     ```
 
 -   :fontawesome-solid-circle-check: &nbsp; **`validate_dataset()`**
@@ -292,6 +293,7 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
 
     ```python
     from canvod.readers.base import validate_dataset
+
     validate_dataset(ds)  # raises ValueError listing ALL violations
     ```
 

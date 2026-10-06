@@ -51,7 +51,7 @@ The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T
     from canvod.viz import HemisphereVisualizer
 
     grid = create_hemigrid("equal_area", angular_resolution=10.0)
-    viz  = HemisphereVisualizer(grid)
+    viz = HemisphereVisualizer(grid)
 
     # Publication-quality 2D
     fig_2d, ax_2d = viz.plot_2d(data=vod_data, title="VOD Distribution")
@@ -147,6 +147,7 @@ Arial/Helvetica fonts, 300 DPI, inward ticks, colorblind-friendly palette (Wong,
     ```python
     from canvod.viz import rse_style
 
+
     @rse_style
     def make_figure():
         fig, ax = plt.subplots()
@@ -158,6 +159,7 @@ Arial/Helvetica fonts, 300 DPI, inward ticks, colorblind-friendly palette (Wong,
 
     ```python
     from canvod.viz import apply_rse_style
+
     apply_rse_style()  # modifies plt.rcParams globally
     ```
 
@@ -169,8 +171,8 @@ Colormaps converted between matplotlib and Plotly:
 from canvod.viz import Colorscale
 
 cs = Colorscale.from_matplotlib("viridis", n_colors=64)
-plotly_cs = cs.to_plotly()     # [(0.0, 'rgb(...)'), ...]
-mpl_cmap  = cs.to_matplotlib() # LinearSegmentedColormap
+plotly_cs = cs.to_plotly()  # [(0.0, 'rgb(...)'), ...]
+mpl_cmap = cs.to_matplotlib()  # LinearSegmentedColormap
 
 cs2 = Colorscale.from_colors(["#0072B2", "#D55E00", "#009E73"])
 ```

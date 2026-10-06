@@ -116,6 +116,7 @@ from canvodpy import ReaderFactory
 from canvod.readers import GNSSDataReader
 from canvod.readers.builder import DatasetBuilder
 
+
 class MyLabReader(GNSSDataReader):
     """GNSSDataReader is a Pydantic BaseModel + ABC — one parent is enough."""
 
@@ -133,6 +134,7 @@ class MyLabReader(GNSSDataReader):
         return builder.build(keep_data_vars=keep_data_vars)
 
     # ... implement remaining abstract methods ...
+
 
 # Register for this Python session; for canvodpy run, install it as a
 # plugin instead (guides/plugins.md)
@@ -176,8 +178,8 @@ detail; `FluentWorkflow`, the flat `process_date()`/`calculate_vod()`/
 
     ```python
     from canvod.readers import Rnxv3Obs
-    from canvod.grids   import EqualAreaBuilder
-    from canvod.vod     import TauOmegaZerothOrder
+    from canvod.grids import EqualAreaBuilder
+    from canvod.vod import TauOmegaZerothOrder
 
     reader = Rnxv3Obs(fpath=Path("station.25o"))
     ds = reader.to_ds(keep_data_vars=["SNR"])

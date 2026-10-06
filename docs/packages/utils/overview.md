@@ -15,8 +15,8 @@ dependency and no CLI code of its own (it depends on `pydantic` and
 ```python
 from canvod.utils.tools import YYYYDOY, file_hash
 
-YYYYDOY.from_str("2025032").date   # datetime.date(2025, 2, 1)
-file_hash(path)                    # first 16 hex digits of the file's SHA-256
+YYYYDOY.from_str("2025032").date  # datetime.date(2025, 2, 1)
+file_hash(path)  # first 16 hex digits of the file's SHA-256
 ```
 
 | Function | Purpose |

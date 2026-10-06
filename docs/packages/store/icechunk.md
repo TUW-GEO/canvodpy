@@ -277,11 +277,12 @@ from `IcechunkConfig`. Once that is wired up, tune these knobs in order of impac
     from canvodpy import Site
 
     site = Site("ExampleSite")
-    site.gnss_store      # observations: <stores_root_dir>/ExampleSite/rinex
-    site.vod_store       # VOD:          <stores_root_dir>/ExampleSite/vod
+    site.gnss_store  # observations: <stores_root_dir>/ExampleSite/rinex
+    site.vod_store  # VOD:          <stores_root_dir>/ExampleSite/vod
 
     # Or open a store directly
     from canvod.store import create_gnss_store
+
     store = create_gnss_store("/data/stores/ExampleSite/rinex")
     ```
 
@@ -316,9 +317,7 @@ from `IcechunkConfig`. Once that is wired up, tune these knobs in order of impac
 
     # One day, or a time slice
     ds_day = store.read_group("canopy_01", date="2025001")
-    ds_range = store.read_group(
-        "canopy_01", time_slice=slice("2025-01-01", "2025-06-30")
-    )
+    ds_range = store.read_group("canopy_01", time_slice=slice("2025-01-01", "2025-06-30"))
     ```
 
     An earlier state of the store is read through a branch created at that

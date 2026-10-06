@@ -142,8 +142,8 @@ class MyFormatReader(GNSSDataReader):
     model_config = ConfigDict(frozen=True)
 
     # Reader-specific configuration
-    signal_type: str = "L1"     # default value
-    skip_header: bool = False   # optional flag
+    signal_type: str = "L1"  # default value
+    skip_header: bool = False  # optional flag
 
     # Private attributes (not part of the model schema)
     _cache: dict = PrivateAttr(default_factory=dict)  # from pydantic import PrivateAttr
@@ -168,6 +168,7 @@ The simplest approach uses the provided `file_hash()` utility:
 ```python
 from canvod.utils.tools import file_hash as compute_hash
 
+
 class MyFormatReader(GNSSDataReader):
     ...
 
@@ -188,6 +189,7 @@ The utility reads the file in 8 KB chunks and returns the first 16 characters of
     @property
     def file_hash(self) -> str:
         import hashlib
+
         h = hashlib.sha256()
         with self.fpath.open("rb") as f:
             f.seek(self._header_size)  # skip variable header
@@ -204,6 +206,7 @@ These properties provide summary metadata about the file without reading all obs
 
 ```python
 from datetime import UTC, datetime
+
 
 class MyFormatReader(GNSSDataReader):
     ...
@@ -239,6 +242,7 @@ class MyFormatReader(GNSSDataReader):
 
     ```python
     from functools import cached_property
+
 
     class MyFormatReader(GNSSDataReader):
         model_config = ConfigDict(frozen=False)  # needed for cached_property
@@ -282,6 +286,7 @@ The epoch iterator provides memory-bounded streaming access to observations. It 
 ```python
 from collections.abc import Iterator
 
+
 class MyFormatReader(GNSSDataReader):
     ...
 
@@ -310,6 +315,7 @@ The exact structure of yielded epochs is up to you. Common patterns:
     ```python
     from typing import NamedTuple
 
+
     class MyEpoch(NamedTuple):
         timestamp: datetime
         observations: list[tuple[str, str, str, dict[str, float]]]
@@ -321,12 +327,14 @@ The exact structure of yielded epochs is up to you. Common patterns:
     ```python
     from pydantic import BaseModel
 
+
     class MyObservation(BaseModel):
-        sv: str       # "G01"
-        band: str     # "L1"
-        code: str     # "C"
+        sv: str  # "G01"
+        band: str  # "L1"
+        code: str  # "C"
         snr: float
         pseudorange: float | None = None
+
 
     class MyEpoch(BaseModel):
         timestamp: datetime
@@ -337,6 +345,7 @@ The exact structure of yielded epochs is up to you. Common patterns:
 
     ```python
     from dataclasses import dataclass
+
 
     @dataclass
     class MyEpoch:
@@ -360,6 +369,7 @@ This is where everything comes together. The `DatasetBuilder` handles the tricky
 
 ```python
 from canvod.readers.builder import DatasetBuilder
+
 
 class MyFormatReader(GNSSDataReader):
     ...
@@ -494,16 +504,12 @@ def to_ds_and_auxiliary(
         meta_epochs.append(epoch.timestamp)
 
         for obs in epoch.observations:
-            sig = obs_builder.add_signal(
-                sv=obs.sv, band=obs.band, code=obs.code
-            )
+            sig = obs_builder.add_signal(sv=obs.sv, band=obs.band, code=obs.code)
             obs_builder.set_value(ei, sig, "SNR", obs.snr)
 
             # Collect metadata (e.g., elevation angle)
             if obs.elevation is not None:
-                meta_values.setdefault("theta", {})[
-                    (ei, str(sig))
-                ] = obs.elevation
+                meta_values.setdefault("theta", {})[(ei, str(sig))] = obs.elevation
 
     obs_ds = obs_builder.build(keep_data_vars=keep_data_vars)
 
@@ -530,12 +536,12 @@ from canvod.readers.base import SignalID
 sig = SignalID(sv="G01", band="L1", code="C")
 
 # Properties
-sig.sv       # "G01"
-sig.band     # "L1"
-sig.code     # "C"
-sig.system   # "G" (first letter of sv)
-sig.sid      # "G01|L1|C" (the SID string)
-str(sig)     # "G01|L1|C"
+sig.sv  # "G01"
+sig.band  # "L1"
+sig.code  # "C"
+sig.system  # "G" (first letter of sv)
+sig.sid  # "G01|L1|C" (the SID string)
+str(sig)  # "G01|L1|C"
 
 # Parse from SID string
 sig2 = SignalID.from_string("E25|E5a|I")
@@ -555,12 +561,12 @@ The `sv` field is validated against `SV_PATTERN` — a regex requiring:
 # Valid SVs
 SignalID(sv="G01", band="L1", code="C")  # GPS PRN 01
 SignalID(sv="E25", band="E5a", code="I")  # Galileo E25
-SignalID(sv="R12", band="G1", code="C")   # GLONASS R12
+SignalID(sv="R12", band="G1", code="C")  # GLONASS R12
 
 # Invalid SVs — raise ValueError at construction
-SignalID(sv="X01", band="L1", code="C")   # 'X' not a valid system
-SignalID(sv="G1",  band="L1", code="C")   # only 1 digit
-SignalID(sv="GPS", band="L1", code="C")   # not a valid SV format
+SignalID(sv="X01", band="L1", code="C")  # 'X' not a valid system
+SignalID(sv="G1", band="L1", code="C")  # only 1 digit
+SignalID(sv="GPS", band="L1", code="C")  # not a valid SV format
 ```
 
 ### Band and code naming
@@ -614,9 +620,9 @@ The default required variable is `SNR`. If your format provides additional obser
 
 ```python
 # The keep_data_vars parameter lets users select which to include
-ds = reader.to_ds(keep_data_vars=["SNR"])               # just SNR
-ds = reader.to_ds(keep_data_vars=["SNR", "Phase"])       # SNR + Phase
-ds = reader.to_ds()                                       # all available
+ds = reader.to_ds(keep_data_vars=["SNR"])  # just SNR
+ds = reader.to_ds(keep_data_vars=["SNR", "Phase"])  # SNR + Phase
+ds = reader.to_ds()  # all available
 ```
 
 ### Required global attributes
@@ -1004,9 +1010,7 @@ class GnsdReader(GNSSDataReader):
         for epoch in self.iter_epochs():
             ei = builder.add_epoch(utc_to_gps(epoch.timestamp))
             for obs in epoch.observations:
-                sig = builder.add_signal(
-                    sv=obs.sv, band=obs.band, code=obs.code
-                )
+                sig = builder.add_signal(sv=obs.sv, band=obs.band, code=obs.code)
                 builder.set_value(ei, sig, "SNR", obs.snr)
 
         return builder.build(
@@ -1071,6 +1075,7 @@ def to_ds(self, **kwargs) -> xr.Dataset:
     ds = self._build_dataset_manually()
     return ds  # ← nobody checks this
 
+
 # CORRECT — DatasetBuilder.build() validates automatically
 def to_ds(self, **kwargs) -> xr.Dataset:
     builder = DatasetBuilder(self, time_system="GPS")
@@ -1097,6 +1102,7 @@ data_vars = {"SNR": (("epoch", "sid"), data)}
 class MyReader(GNSSDataReader):
     fpath: Path  # ← DON'T DO THIS
 
+
 # CORRECT — fpath is inherited
 class MyReader(GNSSDataReader):
     model_config = ConfigDict(frozen=True)
@@ -1107,12 +1113,11 @@ class MyReader(GNSSDataReader):
 
 ```python
 # WRONG — redundant, causes MRO complexity
-class MyReader(GNSSDataReader, BaseModel):
-    ...
+class MyReader(GNSSDataReader, BaseModel): ...
+
 
 # CORRECT — GNSSDataReader IS a BaseModel
-class MyReader(GNSSDataReader):
-    ...
+class MyReader(GNSSDataReader): ...
 ```
 
 ### 6. Forgetting `arbitrary_types_allowed`
@@ -1122,6 +1127,7 @@ class MyReader(GNSSDataReader):
 class MyReader(GNSSDataReader):
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=False)
     some_quantity: pint.Quantity  # ← will fail validation
+
 
 # CORRECT — base class already provides arbitrary_types_allowed=True
 class MyReader(GNSSDataReader):
@@ -1154,6 +1160,7 @@ builder.add_epoch(datetime(2025, 1, 1, 1, 0, tzinfo=ZoneInfo("Europe/Vienna")))
 
 # CORRECT: to UTC, then add the leap seconds of the date
 from canvod.readers.gnss_specs.leap_seconds import utc_to_gps
+
 builder.add_epoch(utc_to_gps(local_ts.astimezone(UTC)))
 ```
 
@@ -1165,9 +1172,9 @@ These are importable from `canvod.readers.base` and are the **single source of t
 
 ```python
 from canvod.readers.base import (
-    REQUIRED_DIMS,          # ("epoch", "sid")
-    REQUIRED_COORDS,        # {name: dtype, ...}
-    REQUIRED_ATTRS,         # {"Created", "Software", "Institution", "File Hash"}
+    REQUIRED_DIMS,  # ("epoch", "sid")
+    REQUIRED_COORDS,  # {name: dtype, ...}
+    REQUIRED_ATTRS,  # {"Created", "Software", "Institution", "File Hash"}
     DEFAULT_REQUIRED_VARS,  # ["SNR"]
 )
 ```
@@ -1203,7 +1210,13 @@ from canvod.readers.gnss_specs.metadata import (
 
 # Constellation definitions
 from canvod.readers.gnss_specs.constellations import (
-    GPS, GALILEO, GLONASS, BEIDOU, QZSS, SBAS, IRNSS,
+    GPS,
+    GALILEO,
+    GLONASS,
+    BEIDOU,
+    QZSS,
+    SBAS,
+    IRNSS,
     SV_PATTERN,
 )
 ```

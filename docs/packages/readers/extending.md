@@ -52,9 +52,9 @@ The output Dataset contract is defined by importable constants in
 
 ```python
 from canvod.readers.base import (
-    REQUIRED_DIMS,       # ("epoch", "sid")
-    REQUIRED_COORDS,     # {name: dtype, ...}
-    REQUIRED_ATTRS,      # {"Created", "Software", "Institution", "File Hash"}
+    REQUIRED_DIMS,  # ("epoch", "sid")
+    REQUIRED_COORDS,  # {name: dtype, ...}
+    REQUIRED_ATTRS,  # {"Created", "Software", "Institution", "File Hash"}
     DEFAULT_REQUIRED_VARS,  # ["SNR"]
 )
 ```
@@ -76,10 +76,11 @@ validation built in. You only need to set reader-specific config:
 from pydantic import ConfigDict
 from canvod.readers.base import GNSSDataReader
 
+
 class MyFormatReader(GNSSDataReader):
     """Reader for My Custom Format."""
 
-    model_config = ConfigDict(frozen=True)   # no arbitrary_types needed
+    model_config = ConfigDict(frozen=True)  # no arbitrary_types needed
     # no fpath field needed — inherited from GNSSDataReader
 
     @property
@@ -91,6 +92,7 @@ class MyFormatReader(GNSSDataReader):
 
 ```python
 from canvod.utils.tools import file_hash
+
 
 class MyFormatReader(GNSSDataReader):
     ...
@@ -117,7 +119,7 @@ class MyFormatReader(GNSSDataReader):
 
     @property
     def systems(self) -> list[str]:
-        return self._parse_systems()   # e.g. ["G", "E"]
+        return self._parse_systems()  # e.g. ["G", "E"]
 
     # num_epochs has a default (iterates via iter_epochs);
     # override for O(1) if your format stores the count in the header.
@@ -131,6 +133,7 @@ class MyFormatReader(GNSSDataReader):
 
 ```python
 from collections.abc import Iterator
+
 
 class MyFormatReader(GNSSDataReader):
     ...
@@ -151,6 +154,7 @@ dtype enforcement, and validation — so your `to_ds()` stays simple:
 ```python
 from canvod.readers.builder import DatasetBuilder
 
+
 class MyFormatReader(GNSSDataReader):
     ...
 
@@ -164,9 +168,7 @@ class MyFormatReader(GNSSDataReader):
         for epoch in self.iter_epochs():
             ei = builder.add_epoch(epoch.timestamp)
             for obs in epoch.observations:
-                sig = builder.add_signal(
-                    sv=obs.sv, band=obs.band, code=obs.code
-                )
+                sig = builder.add_signal(sv=obs.sv, band=obs.band, code=obs.code)
                 builder.set_value(ei, sig, "SNR", obs.snr_value)
         return builder.build(
             keep_data_vars=keep_data_vars,
@@ -190,6 +192,7 @@ class MyFormatReader(GNSSDataReader):
         epoch_coord_attrs,
     )
     from canvod.readers.base import validate_dataset
+
 
     class MyFormatReader(GNSSDataReader):
         ...
@@ -229,7 +232,7 @@ def to_ds_and_auxiliary(
     keep_data_vars: list[str] | None = None,
     **kwargs,
 ) -> tuple[xr.Dataset, dict[str, xr.Dataset]]:
-    obs_ds = ...   # build obs dataset
+    obs_ds = ...  # build obs dataset
     meta_ds = ...  # build metadata dataset
     return obs_ds, {"my_format_meta": meta_ds}
 ```
@@ -244,7 +247,7 @@ The default implementation calls `to_ds()` and returns an empty dict.
 
     ```python
     assert "epoch" in ds.dims
-    assert "sid"   in ds.dims
+    assert "sid" in ds.dims
     ```
 
 === "Coordinates"
@@ -301,8 +304,8 @@ The default implementation calls `to_ds()` and returns an empty dict.
     from pathlib import Path
     from my_package.readers import MyFormatReader
 
-    class TestMyFormatReader:
 
+    class TestMyFormatReader:
         def test_file_hash_is_deterministic(self, tmp_path):
             f = tmp_path / "test.dat"
             f.write_bytes(b"content")
@@ -313,7 +316,7 @@ The default implementation calls `to_ds()` and returns an empty dict.
         def test_dataset_dimensions(self, real_test_file):
             ds = MyFormatReader(fpath=real_test_file).to_ds()
             assert "epoch" in ds.dims
-            assert "sid"   in ds.dims
+            assert "sid" in ds.dims
 
         def test_dataset_variables(self, real_test_file):
             ds = MyFormatReader(fpath=real_test_file).to_ds()
@@ -350,11 +353,12 @@ The default implementation calls `to_ds()` and returns an empty dict.
     ```python
     from canvod.readers.base import validate_dataset
 
+
     def test_validation_passes(real_test_file):
         ds = MyFormatReader(fpath=real_test_file).to_ds()
         # validate_dataset() is already called inside to_ds() —
         # this test verifies it didn't raise
-        validate_dataset(ds)   # should not raise
+        validate_dataset(ds)  # should not raise
     ```
 
 ---
@@ -375,7 +379,8 @@ The default implementation calls `to_ds()` and returns an empty dict.
     # WRONG — missing mandatory validation
     def to_ds(self, **kwargs) -> xr.Dataset:
         ds = self._build_dataset()
-        return ds   # ← will silently produce invalid datasets downstream
+        return ds  # ← will silently produce invalid datasets downstream
+
 
     # CORRECT — DatasetBuilder.build() calls validate_dataset() for you
     def to_ds(self, **kwargs) -> xr.Dataset:
@@ -387,10 +392,10 @@ The default implementation calls `to_ds()` and returns an empty dict.
 !!! failure "Wrong dimension names"
     ```python
     # WRONG
-    data_vars={"SNR": (("time", "signal"), data)}
+    data_vars = {"SNR": (("time", "signal"), data)}
 
     # CORRECT — DatasetBuilder uses the right names automatically
-    data_vars={"SNR": (("epoch", "sid"), data)}
+    data_vars = {"SNR": (("epoch", "sid"), data)}
     ```
 
 ---

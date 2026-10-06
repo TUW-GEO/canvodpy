@@ -121,7 +121,7 @@ somewhat more (geodesic 1.01 to 1.05 × 2π, HEALPix 1.01 to 1.08 × 2π at
     from canvod.grids import create_hemigrid
 
     grid = create_hemigrid("equal_area", angular_resolution=5.0)
-    print(grid.ncells)           # 1051
+    print(grid.ncells)  # 1051
     print(len(grid.theta_lims))  # 19 θ bands
     ```
 
@@ -263,7 +263,7 @@ storage = AnalysisStorage("/path/to/store")
 storage.store_percell_timeseries(percell_ds, system="G", band="L1", code="C")
 
 # List and load
-storage.list_percell_datasets()          # ['C_B2b_I', 'E_E1_C', 'G_L1_C', ...]
+storage.list_percell_datasets()  # ['C_B2b_I', 'E_E1_C', 'G_L1_C', ...]
 ds = storage.load_percell_timeseries(system="G", band="L1", code="C")
 ```
 

@@ -146,9 +146,9 @@ from canvod.utils.logging import stage_timer, timed_stage, emit_run_summary
 with stage_timer("icechunk.write", group=group_name, size_mb=12.4):
     to_icechunk(dataset, session, group=group_name)
 
+
 @timed_stage("rinex.process_file")
-def process_one(path):
-    ...
+def process_one(path): ...
 ```
 
 Emits exactly one event, `stage_timing`, on both success and failure

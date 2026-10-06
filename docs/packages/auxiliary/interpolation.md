@@ -50,7 +50,7 @@ epochs get central differences too.
 from canvod.auxiliary.interpolation import Sp3Config, Sp3InterpolationStrategy
 
 config = Sp3Config(
-    use_velocities=True,       # Hermite spline with Vx, Vy, Vz
+    use_velocities=True,  # Hermite spline with Vx, Vy, Vz
     fallback_method="linear",  # used when the dataset has no velocities
 )
 
@@ -107,8 +107,8 @@ neighbouring CLK epochs, split at each jump, avoids fitting across one.
 from canvod.auxiliary.interpolation import ClockConfig, ClockInterpolationStrategy
 
 config = ClockConfig(
-    window_size=9,          # epochs averaged on each side of a candidate jump
-    jump_threshold=1e-6,    # jump detection threshold (seconds)
+    window_size=9,  # epochs averaged on each side of a candidate jump
+    jump_threshold=1e-6,  # jump detection threshold (seconds)
 )
 
 interpolator = ClockInterpolationStrategy(config=config)
@@ -148,6 +148,7 @@ Subclass `Interpolator` to write your own interpolation:
 import numpy as np
 import xarray as xr
 from canvod.auxiliary.interpolation import Interpolator
+
 
 class CustomStrategy(Interpolator):
     """Example: Lagrange polynomial interpolation."""

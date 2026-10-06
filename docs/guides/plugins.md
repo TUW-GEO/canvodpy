@@ -87,7 +87,8 @@ class MyFormatReader(GNSSDataReader):
         return file_hash(self.fpath)
 
     def iter_epochs(self) -> Iterator:
-        ...  # yours: parse the file, yield one epoch at a time
+        # yours: parse the file, yield one epoch at a time
+        ...
 
     def to_ds(self, keep_data_vars=None, **kwargs) -> xr.Dataset:
         builder = DatasetBuilder(self, time_system="GPS")
@@ -99,20 +100,16 @@ class MyFormatReader(GNSSDataReader):
         return builder.build(keep_data_vars=keep_data_vars)
 
     @property
-    def start_time(self) -> datetime:
-        ...  # yours: first epoch
+    def start_time(self) -> datetime: ...  # yours: first epoch
 
     @property
-    def end_time(self) -> datetime:
-        ...  # yours: last epoch
+    def end_time(self) -> datetime: ...  # yours: last epoch
 
     @property
-    def systems(self) -> list[str]:
-        ...  # yours: e.g. ["G", "E"]
+    def systems(self) -> list[str]: ...  # yours: e.g. ["G", "E"]
 
     @property
-    def num_satellites(self) -> int:
-        ...  # yours
+    def num_satellites(self) -> int: ...  # yours
 ```
 
 What the reader must do:
@@ -231,7 +228,9 @@ from canvodpy import ReaderFactory, VODFactory
 
 ReaderFactory.register("my_format", MyFormatReader)
 VODFactory.register("my_model", MyModel)
-reader = ReaderFactory.create("my_format", fpath="ROSA01TUW_R_20250010000_15M_05S_AA.myf")
+reader = ReaderFactory.create(
+    "my_format", fpath="ROSA01TUW_R_20250010000_15M_05S_AA.myf"
+)
 ```
 
 This does not reach `canvodpy run`, which starts its own Python process;

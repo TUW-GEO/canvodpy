@@ -265,11 +265,11 @@ Source: RefGuide-4.14.0, ReceiverStatus, field RxError, p.398.
     ```python
     import numpy as np
 
-    rx_error = meta_ds["rx_error"].values          # int32 array (epoch,)
+    rx_error = meta_ds["rx_error"].values  # int32 array (epoch,)
 
-    software     = (rx_error & 8)   != 0            # bit 3
-    antenna      = (rx_error & 32)  != 0            # bit 5
-    cpu_overload = (rx_error & 512) != 0            # bit 9
+    software = (rx_error & 8) != 0  # bit 3
+    antenna = (rx_error & 32) != 0  # bit 5
+    cpu_overload = (rx_error & 512) != 0  # bit 9
 
     print(f"Epochs with software errors: {software.sum()}")
     print(f"Epochs with antenna issues:  {antenna.sum()}")
@@ -396,10 +396,10 @@ interoperability and scientific reproducibility.
     reader = SbfReader(fpath=Path("rref001a00.25_"))
 
     # Inspect header
-    print(reader.header.rx_name)       # receiver name from ReceiverSetup
-    print(reader.header.rx_version)    # e.g. "4.14.4"
-    print(reader.num_epochs)           # number of MeasEpoch blocks
-    print(reader.systems)              # ["E", "G", "R", ...]
+    print(reader.header.rx_name)  # receiver name from ReceiverSetup
+    print(reader.header.rx_version)  # e.g. "4.14.4"
+    print(reader.num_epochs)  # number of MeasEpoch blocks
+    print(reader.systems)  # ["E", "G", "R", ...]
 
     # Observations only
     obs_ds = reader.to_ds(keep_data_vars=["SNR", "Pseudorange", "Phase", "Doppler"])
@@ -432,7 +432,7 @@ interoperability and scientific reproducibility.
         obs_list.append(obs)
         meta_list.append(aux["sbf_obs"])
 
-    daily_obs  = xr.concat(obs_list,  dim="epoch", join="outer").sortby("epoch")
+    daily_obs = xr.concat(obs_list, dim="epoch", join="outer").sortby("epoch")
     daily_meta = xr.concat(meta_list, dim="epoch", join="outer").sortby("epoch")
     ```
 
@@ -445,8 +445,9 @@ interoperability and scientific reproducibility.
     gps = daily_obs.sel(sid=[s for s in daily_obs.sid.values if s.startswith("G")])
 
     # GPS L1 C/A only
-    l1c = daily_obs.sel(sid=(daily_obs.system == "G") & (daily_obs.band == "L1")
-                            & (daily_obs.code == "C"))
+    l1c = daily_obs.sel(
+        sid=(daily_obs.system == "G") & (daily_obs.band == "L1") & (daily_obs.code == "C")
+    )
 
     # Polar angle filter: elevation ≥ 20° → theta ≤ 70°
     theta_mask = daily_meta["broadcast_theta"] <= np.deg2rad(70)
@@ -531,7 +532,7 @@ sbf_obs = aux["sbf_obs"]
 # keep the ephemeris-based angles only, as SbfBroadcastProvider does
 from_ephemeris = sbf_obs["broadcast_angle_source"] == 2
 theta = sbf_obs["broadcast_theta"].where(from_ephemeris)  # polar angle (rad)
-phi = sbf_obs["broadcast_phi"].where(from_ephemeris)      # geographic azimuth (rad)
+phi = sbf_obs["broadcast_phi"].where(from_ephemeris)  # geographic azimuth (rad)
 ```
 
 !!! tip "When to use broadcast vs agency final"
