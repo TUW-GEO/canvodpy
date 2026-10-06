@@ -243,7 +243,9 @@ just check          # lint + format + type-check (run before committing)
 ## Deploying (Maintainers)
 
 ```bash
-just bump minor     # bump version in all pyproject.toml files
-git push
-git push --tags     # triggers GitHub Actions → publish to PyPI
+just release X.Y.Z   # tests, version bump, release commit on release/vX.Y.Z
 ```
+
+Then open a pull request for the release branch; after it is merged, a
+maintainer tags the merged commit and starts the PyPI publish. The full
+steps are in `docs/RELEASING.md`.

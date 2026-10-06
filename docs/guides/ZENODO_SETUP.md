@@ -58,8 +58,9 @@ You link your GitHub repo to Zenodo:
 ### 2. Every Release
 
 ```bash
-just release 0.1.0
-git push && git push --tags
+just release 0.1.0   # release commit on release/v0.1.0: open a PR, merge it
+# then, on the merged main:
+git tag -a v0.1.0 -m "Release v0.1.0" && git push origin v0.1.0
 ```
 
 **Automatic workflow:**
@@ -123,8 +124,8 @@ Zenodo. https://doi.org/10.5281/zenodo.XXXXX
 ### Option A: Test with Beta Release
 
 ```bash
-git tag v0.1.0-beta.2 -m "Test Zenodo DOI creation"
-git push --tags
+git tag -a v0.1.0-beta.2 -m "Test Zenodo DOI creation"
+git push origin v0.1.0-beta.2
 ```
 
 - Creates TestPyPI release
@@ -134,8 +135,9 @@ git push --tags
 ### Option B: Production Release
 
 ```bash
-just release 0.1.0
-git push && git push --tags
+just release 0.1.0   # release commit on release/v0.1.0: open a PR, merge it
+# then, on the merged main:
+git tag -a v0.1.0 -m "Release v0.1.0" && git push origin v0.1.0
 ```
 
 - Creates production PyPI release

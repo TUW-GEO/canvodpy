@@ -121,7 +121,8 @@ Issues     = "https://github.com/nfb2021/canvodpy/issues"
 
 === "Automated (CI/CD)"
 
-    The `just release` command handles version bump + publish for all packages.
+    `just release` prepares the release commit for all packages; a
+    maintainer tags the merged commit and starts the PyPI publish.
     See [`docs/RELEASING.md`](../RELEASING.md) for the full release workflow.
 
 ---
@@ -138,9 +139,13 @@ just bump major    # 0.1.0 → 1.0.0  (breaking change)
 
 A version bump:
 
-1. Updates `version` in all `pyproject.toml` files.
-2. Creates a git commit `chore: bump version to x.y.z`.
-3. Creates a git tag `vx.y.z`.
+1. Updates `version` (and the pins between the packages) in all
+   `pyproject.toml` files.
+2. Writes the new section of `CHANGELOG.md`.
+3. Updates `uv.lock`.
+
+It makes no commit and no tag; `just release` commits these files on a
+release branch.
 
 ---
 

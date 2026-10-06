@@ -188,10 +188,10 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
       - repo: local
         hooks:
           - id: ruff-check
-            entry: uv run ruff check --fix
+            entry: uv run --locked ruff check --fix
             stages: [pre-commit]
           - id: ruff-format
-            entry: uv run ruff format
+            entry: uv run --locked ruff format
             stages: [pre-commit]
       - repo: https://github.com/astral-sh/uv-pre-commit
         hooks:
@@ -210,18 +210,16 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
       - repo: local
         hooks:
           - id: ty-check
-            entry: uv run ty check
+            entry: uv run --locked ty check
             stages: [pre-push]
-          - id: update-submodules
-            entry: just update-submodules
-            stages: [post-merge]
     ```
 
     Ruff, uv-lock, and file hygiene hooks run at the `pre-commit` stage and
     block the commit on failure. Commitizen validates the message at `commit-msg`.
     `ty-check` runs at the **`pre-push` stage** (not on every commit), so type
     errors surface before reaching the remote but without slowing down local commits.
-    `update-submodules` runs at `post-merge`.
+    The tools run with `uv run --locked`: they never rewrite `uv.lock`, and
+    fail when it is out of date (run `uv lock`).
 
 === "Conventional Commits"
 

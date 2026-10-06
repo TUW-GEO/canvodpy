@@ -19,19 +19,20 @@ before publishing to PyPI.
 - canvod-filemap is taken from a tag or commit of canvodpy-extensions, not
   a branch (root `pyproject.toml`, see the `extensions-dependency` guide).
 - Deprecated code stays in every 1.x release; v2.0.0 removes it.
-- `just check` and `just test` pass on the release branch.
-- The working tree is clean (`git status`): `just release` commits with
-  `git add .`, so stray changes would land in the release commit.
+- `just check` and `just test` pass.
+- The release files (`pyproject.toml` files, `uv.lock`, `CHANGELOG.md`)
+  have no uncommitted changes; `just release` refuses otherwise and commits
+  only those files.
 
 ## Steps
 
-1. On a release branch: `just release X.Y.Z`. It runs the tests, writes the
-   changelog, bumps every package (`just bump`) and creates a local tag.
-   Follow the steps it prints: delete the local tag, push the release
-   branch and open a PR for the commit. The user merges it; an agent never
-   merges (`CODING_STANDARDS.md`, Git and GitHub).
-2. On the merged `main`, the user recreates the annotated tag `vX.Y.Z`
-   and pushes it; an agent never pushes tags. GitHub Actions drafts the
+1. `just release X.Y.Z`. It runs the tests, bumps every package (`just
+   bump`: version files, `CHANGELOG.md`, `uv.lock`) and commits exactly
+   those files on the new branch `release/vX.Y.Z`; it creates no tag.
+   Push that branch and open a PR for the commit. The user merges it; an
+   agent never merges (`CODING_STANDARDS.md`, Git and GitHub).
+2. On the merged `main`, the user creates the annotated tag `vX.Y.Z` and
+   pushes it; an agent never pushes tags. GitHub Actions drafts the
    GitHub Release; the user publishes it.
 3. PyPI is a separate, manual step the user triggers:
    `gh workflow run publish_pypi.yml --ref vX.Y.Z -f version=X.Y.Z`.

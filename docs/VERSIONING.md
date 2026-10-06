@@ -59,15 +59,18 @@ just release 0.1.1    # patch release
 just release 1.0.0    # major release
 ```
 
-Or by bump type:
+`just release` runs the tests, bumps the version of all packages and
+writes `CHANGELOG.md` and `uv.lock` (`just bump`), and commits exactly
+those files on a new branch `release/vX.Y.Z`. It creates no tag: a
+maintainer tags the merged commit on `main` ([Releasing](RELEASING.md)).
+
+`just bump` alone changes the files only, by version or by bump type:
 
 ```bash
 just bump minor       # 0.1.0 → 0.2.0
 just bump patch       # 0.1.0 → 0.1.1
 just bump major       # 0.1.0 → 1.0.0
 ```
-
-`just release` runs tests → generates CHANGELOG → bumps version in all packages → creates a git tag.
 
 ---
 

@@ -17,8 +17,9 @@ This page documents the complete release automation chain — from commit messag
 
     ---
 
-    `git-changelog` reads commit history and produces
-    `CHANGELOG.md` automatically on every release.
+    `commitizen` writes the new section of `CHANGELOG.md` from the
+    commit history on every version bump; `git-changelog` writes the
+    release notes of the GitHub Release.
 
     [:octicons-arrow-right-24: Details](#2-git-changelog-generator)
 
@@ -26,8 +27,9 @@ This page documents the complete release automation chain — from commit messag
 
     ---
 
-    `commitizen` bumps `version` in all 8 `pyproject.toml` files
-    simultaneously, creates a git tag, and commits.
+    `commitizen` bumps `version` in all `pyproject.toml` files at once;
+    `just release` commits them on a release branch. A maintainer tags
+    the merged commit.
 
     [:octicons-arrow-right-24: Details](#3-version-management-with-commitizen)
 
@@ -44,8 +46,8 @@ This page documents the complete release automation chain — from commit messag
 
     ---
 
-    Two workflows: `publish_testpypi.yml` (beta/alpha tags) and
-    `publish_pypi.yml` (stable tags). Triggered by publishing the release.
+    Two workflows: `publish_testpypi.yml` (runs on alpha, beta and rc
+    tags) and `publish_pypi.yml` (started by hand, never by a tag).
 
     [:octicons-arrow-right-24: Details](#5-pypi-publishing-setup)
 
@@ -83,7 +85,7 @@ A specification for writing commit messages with a structured format that machin
 
 **Step 1: Developer writes a commit**
 ```bash
-git add .
+git add packages/canvod-readers/
 git commit -m "feat(readers): add RINEX 4.0 support"
 ```
 
@@ -237,7 +239,7 @@ version_files = [
     "canvodpy/pyproject.toml:version",
     "packages/canvod-readers/pyproject.toml:version",
     "packages/canvod-auxiliary/pyproject.toml:version",
-    # ... all 8 packages
+    # ... every package
 ]
 
 tag_format = "v$version"  # Creates tags like v0.2.0
@@ -252,36 +254,18 @@ just bump 0.2.0
 
 **What happens:**
 
-1. **Read current version** from `pyproject.toml`
-   - Current: `0.1.0`
+1. **Read current version** from `pyproject.toml` (`[tool.commitizen]`)
+2. **Calculate new version**: `0.2.0`, or `minor`, `patch`, `major`
+3. **Update all version_files**: `version` and the pins between the
+   packages in every `pyproject.toml` (`cz bump --files-only`)
+4. **Write the new section of `CHANGELOG.md`** from the commits since the
+   last tag
+5. **Update uv.lock** (`uv lock`)
 
-2. **Calculate new version**
-   - Target: `0.2.0`
-   - Can also use: `minor`, `patch`, `major`
-
-3. **Update all version_files** (8 packages!)
-   ```
-   canvodpy/pyproject.toml:     version = "0.2.0"
-   packages/canvod-readers/...: version = "0.2.0"
-   packages/canvod-auxiliary/...:     version = "0.2.0"
-   # ... all packages updated
-   ```
-
-4. **Update uv.lock**
-   ```bash
-   uv lock  # Sync lockfile with new versions
-   ```
-
-5. **Commit changes**
-   ```bash
-   git add .
-   git commit -m "chore: bump version to 0.2.0"
-   ```
-
-6. **Create git tag**
-   ```bash
-   git tag -a "v0.2.0" -m "Release v0.2.0"
-   ```
+`just bump` makes no commit and no tag. `just release 0.2.0` runs the
+tests, calls `just bump`, and commits exactly these files on the new
+branch `release/v0.2.0`. The tag is created after the pull request is
+merged, on `main` ([Releasing](../RELEASING.md)).
 
 ### Why Unified Versioning
 
@@ -317,7 +301,7 @@ on:
 **Steps:**
 
 1. **Detect tag push**
-   - You run: `git push --tags`
+   - A maintainer runs: `git push origin v0.2.0` (on the merged `main`)
    - GitHub sees: new tag `v0.2.0`
    - Workflow starts
 
@@ -358,10 +342,10 @@ on:
 ```
 Developer                    GitHub Actions                 GitHub
     |                               |                          |
-    | just release 0.2.0           |                          |
+    | just release 0.2.0, PR, merge |                         |
     |----------------------------->|                          |
     |                               |                          |
-    | git push --tags              |                          |
+    | git push origin v0.2.0       |                          |
     |------------------------------------------------------------>
     |                               |                          |
     |                               | Detect v0.2.0 tag        |
@@ -501,7 +485,7 @@ GitHub identity proves it's really you
    Owner:                 nfb2021
    Repository name:       canvodpy
    Workflow name:         publish_pypi.yml
-   Environment name:      release
+   Environment name:      pypi
    ```
 
 4. **Click "Add"**
@@ -550,7 +534,7 @@ jobs:
 1. **Go to your GitHub repo:**
    - Settings → Environments → New environment
 
-2. **Name it:** `release` (must match workflow!)
+2. **Name it:** `pypi` (must match the workflow's `environment`)
 
 3. **Add protection rules (optional but recommended):**
    - Required reviewers: Add yourself
@@ -561,15 +545,17 @@ jobs:
 ### The Complete Publishing Flow
 
 ```
-1. Developer creates release
-   ├─> just release 0.2.0
-   ├─> git push --tags
+1. Maintainer creates the release
+   ├─> just release 0.2.0   (commit on release/v0.2.0)
+   ├─> pull request, merged into main
+   ├─> git tag -a v0.2.0 on main, git push origin v0.2.0
    └─> GitHub Actions creates draft release
 
-2. Developer publishes release on GitHub
+2. Maintainer publishes the release on GitHub
    └─> Click "Publish Release" button
 
-3. Publish workflow triggers
+3. Maintainer starts the publish workflow
+   ├─> gh workflow run publish_pypi.yml --ref v0.2.0 -f version=0.2.0
    ├─> GitHub generates OIDC JWT
    ├─> Workflow builds package
    └─> Sends package + JWT to PyPI
@@ -620,9 +606,10 @@ jobs:
 
 3. **Test the whole flow:**
    ```bash
-   # Create test release
+   # Create test release: release commit, pull request, merge, then on main
    just release 0.1.0-beta.1
-   git push --tags
+   git tag -a v0.1.0-beta.1 -m "Release v0.1.0-beta.1"
+   git push origin v0.1.0-beta.1   # pre-release tags publish to TestPyPI
 
    # Publish draft release
    # Workflow uploads to TestPyPI
@@ -638,66 +625,53 @@ jobs:
 ### Scenario: You're creating version 0.2.0
 
 **Step 1: Development**
-```bash
-# Make your changes
-git add .
-git commit -m "feat(readers): add RINEX 4.0 support"
-git commit -m "fix(vod): correct tau calculation"
 
-# Push to main
-git push origin main
-```
+Changes reach `main` through pull requests, each with conventional
+commits (`feat(readers): add RINEX 4.0 support`).
 
-**Step 2: Create Release**
+**Step 2: Prepare the release**
 ```bash
-# Run release command
+git switch main && git pull origin main
 just release 0.2.0
-
-# Output:
-Tests passed
-CHANGELOG.md updated
-Version bumped to 0.2.0
-Tag v0.2.0 created
-Release ready
-
-Next: git push && git push --tags
+# tests, version bump, CHANGELOG.md, uv.lock;
+# commit "bump: version 0.1.0 → 0.2.0" on release/v0.2.0
 ```
 
-**Step 3: Push to GitHub**
+**Step 3: Pull request**
 ```bash
-git push origin main
-git push origin --tags
+git push -u origin release/v0.2.0
+gh pr create --title "bump: version 0.1.0 → 0.2.0" --body "..."
+# merge once CI passes
 ```
 
-**Step 4: GitHub Actions (automatic)**
+**Step 4: Tag the merged commit (maintainer)**
+```bash
+git switch main && git pull origin main
+git tag -a v0.2.0 -m "Release v0.2.0"
+git push origin v0.2.0
+```
+
+**Step 5: GitHub Actions (automatic)**
 ```
 → release.yml workflow triggers
 → Generates release notes
 → Creates draft release on GitHub
-  (Takes ~1-2 minutes)
 ```
 
-**Step 5: Review & Publish**
+**Step 6: Review & Publish**
 ```
 → Go to: https://github.com/nfb2021/canvodpy/releases
-→ See draft release v0.2.0
-→ Review release notes
-→ Click "Publish Release"
+→ Review the draft release v0.2.0, click "Publish Release"
 ```
 
-**Step 6: PyPI Publishing (automatic)**
-```
-→ publish_pypi.yml workflow triggers
-→ Builds package with uv
-→ Authenticates with OIDC (no password!)
-→ Uploads to PyPI
-  (Takes ~2-3 minutes)
+**Step 7: PyPI (manual)**
+```bash
+gh workflow run publish_pypi.yml --ref v0.2.0 -f version=0.2.0
 ```
 
-**Step 7: Users Install**
+**Step 8: Users Install**
 ```bash
 pip install canvodpy==0.2.0
-# Works
 ```
 
 ---
@@ -735,7 +709,7 @@ git commit --amend -m "fix(vod): correct tau calculation"
 **Error:** `Error: The workflow is not configured for publishing`
 
 **Fix:**
-1. Check environment name matches: `release`
+1. Check environment name matches: `pypi`
 2. Verify PyPI publisher settings (repo, workflow name)
 3. Ensure workflow has `id-token: write` permission
 
@@ -744,7 +718,8 @@ git commit --amend -m "fix(vod): correct tau calculation"
 **Error:** `cz bump` fails
 
 **Causes:**
-1. Uncommitted changes: `git status` → commit first
+1. Release files already changed: `just release` refuses; commit or
+   discard the changes to `pyproject.toml`, `uv.lock` or `CHANGELOG.md`
 2. No conventional commits: Can't determine bump type
 3. Version format wrong: Must be `0.2.0` not `v0.2.0`
 
@@ -755,15 +730,14 @@ git commit --amend -m "fix(vod): correct tau calculation"
 You now have a **production-grade release system**:
 
 1. **Conventional commits** enforce standard format
-2. **Git-changelog** auto-generates CHANGELOG.md
-3. **Commitizen** manages unified versioning
+2. **Commitizen** manages unified versioning and writes CHANGELOG.md
+3. **Git-changelog** writes the release notes
 4. **GitHub Actions** automates releases
 5. **OIDC** enables secure PyPI publishing
 
-**Result:** One command creates a professional release!
+**Result:** one command prepares the release commit; a pull request, a
+tag on `main` and a manual PyPI publish complete it.
 
 ```bash
 just release 0.2.0
 ```
-
-That's it.

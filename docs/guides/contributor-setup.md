@@ -619,9 +619,9 @@ The following checks execute automatically in sequence. If any one fails, the co
 
 After a commit, merge or checkout, the **code graph** hook rebuilds the
 code graph in the background (`.graphify/`, log in `.graphify/build.log`).
-After a merge, the **update submodules** hook runs
-`just update-submodules`: it pulls the latest `demo` and test-data commits
-and commits the new submodule pointers.
+To move `demo` and the test data to their latest commits, run
+`just update-submodules` on a feature branch; it commits the new pointers
+there, and they reach `main` through a pull request.
 
 ### How to fix a rejected commit
 

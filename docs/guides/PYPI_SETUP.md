@@ -51,11 +51,11 @@ just publish-testpypi
 # Manual publish to PyPI (requires credentials)
 just publish-pypi
 
-# Automated publish (beta) - triggers workflow
-git tag v0.1.0-beta.1 && git push --tags
+# Automated publish (pre-release tag) - triggers publish_testpypi.yml
+git tag -a v0.1.0-beta.1 -m "Release v0.1.0-beta.1" && git push origin v0.1.0-beta.1
 
-# Automated publish (production) - triggers workflow
-git tag v0.1.0 && git push --tags
+# Production publish - started by hand, never by a tag
+gh workflow run publish_pypi.yml --ref v0.1.0 -f version=0.1.0
 ```
 
 ---
@@ -114,8 +114,8 @@ On each page:
 **3.3: Test OIDC Publishing**
 
 ```bash
-git tag v0.1.0-beta.1 -m "Test OIDC"
-git push --tags
+git tag -a v0.1.0-beta.1 -m "Test OIDC"
+git push origin v0.1.0-beta.1
 cd /path/to/canvodpy
 uv build
 ```
@@ -240,9 +240,9 @@ jobs:
 
 **Create a beta release:**
 ```bash
-just release 0.1.0-beta.1
-git push origin main
-git push origin --tags
+just release 0.1.0-beta.1   # release commit on release/v0.1.0-beta.1: open a PR, merge it
+# then, on the merged main:
+git tag -a v0.1.0-beta.1 -m "Release v0.1.0-beta.1" && git push origin v0.1.0-beta.1
 ```
 
 **Publish the draft release:**
@@ -402,9 +402,9 @@ jobs:
 
 ```bash
 # Create release
-just release 0.1.0
-git push origin main
-git push origin --tags
+just release 0.1.0   # release commit on release/v0.1.0: open a PR, merge it
+# then, on the merged main:
+git tag -a v0.1.0 -m "Release v0.1.0" && git push origin v0.1.0
 ```
 
 **Publish:**
@@ -433,16 +433,17 @@ python -c "import canvodpy; print(canvodpy.__version__)"
 === "Beta / test releases"
 
     ```bash
-    just release 0.2.0-beta.1
-    git push --tags
+    just release 0.2.0-beta.1   # then PR, merge, and on main:
+    git tag -a v0.2.0-beta.1 -m "Release v0.2.0-beta.1" && git push origin v0.2.0-beta.1
     # → publishes to TestPyPI automatically
     ```
 
 === "Stable releases"
 
     ```bash
-    just release 0.2.0
-    git push --tags
+    just release 0.2.0   # then PR, merge, and on main:
+    git tag -a v0.2.0 -m "Release v0.2.0" && git push origin v0.2.0
+    gh workflow run publish_pypi.yml --ref v0.2.0 -f version=0.2.0
     # → publishes to real PyPI (after environment approval)
     ```
 

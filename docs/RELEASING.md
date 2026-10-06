@@ -12,9 +12,11 @@ Before starting a release:
 - [ ] All CI checks passing on `main`
 - [ ] `main` branch is stable
 - [ ] All changes committed and pushed
-- [ ] You have push access to the repository (`main` requires a PR — see step 4 —
-      but tagging in step 5 is a direct push)
-- [ ] The working tree is clean: `just release` stages everything with `git add .`
+- [ ] You are a maintainer: `main` requires a PR (step 4), and only
+      maintainers can create release tags (step 5)
+- [ ] The release files (`pyproject.toml` files, `uv.lock`, `CHANGELOG.md`)
+      have no uncommitted changes; `just release` refuses otherwise. Other
+      changes in the working tree stay out of the release commit.
 
 ---
 
@@ -47,44 +49,37 @@ just release 0.2.0
 This command:
 
 1. Runs all tests (`just test`)
-2. Generates `CHANGELOG.md` from conventional commits and commits it
-3. Bumps the version of all packages (`cz bump`), runs `uv lock`, and
-   commits everything changed (`git add .`)
-4. Tags the last commit `v0.2.0`
+2. Bumps the version of all packages (`just bump`: `cz bump --files-only`,
+   which also writes the new section of `CHANGELOG.md`, then `uv lock`)
+3. Creates the branch `release/v0.2.0` and commits exactly the release
+   files: `bump: version X.Y.Z → 0.2.0`
+
+It creates no tag: the tag belongs on the merged commit on `main` (step 5).
 
 ### 3. Review
 
 ```bash
-git log --oneline -5   # verify the two commits (changelog, version bump)
-git tag | tail -1      # verify tag
+git show --stat     # the version files, uv.lock and CHANGELOG.md, nothing else
 ```
 
 ### 4. Open a PR for the release commit
 
-`main` requires a PR (branch protection: `required_pull_request_reviews`,
-0 approvals needed but a PR is mandatory — `enforce_admins` is off, so an
-admin bypass with a direct push is *possible*, but don't: see
-`canvodpy-test-data`'s #8/#9 for what happened the one time this was tried
-elsewhere in this project).
-
-**Don't push the tag yet.** A PR merge can produce a different commit SHA
-than what you tagged locally (a "Merge pull request" commit, or a
-squash/rebase merge) — the tag would end up pointing at an orphaned,
-unreachable commit. Drop the local tag before pushing the branch:
+`main` requires a PR. Push the branch and open one:
 
 ```bash
-git tag -d v0.2.0
-git checkout -b chore/release-v0.2.0
-git push -u origin chore/release-v0.2.0
+git push -u origin release/v0.2.0
 gh pr create --title "bump: version X.Y.Z → 0.2.0" --body "..."
 ```
 
 Merge the PR once CI passes.
 
-### 5. Pull the merged commit, recreate the tag
+### 5. Tag the merged commit
+
+A merge can give the release a different commit than the one on the
+branch, so the tag is created only now, on `main`:
 
 ```bash
-git checkout main
+git switch main
 git pull origin main
 git tag -a "v0.2.0" -m "Release v0.2.0"
 git push origin v0.2.0
@@ -123,6 +118,11 @@ tag existing is not a promise that PyPI has it.
 ??? failure "Tests fail during release"
     Fix the failing tests on `main` before retrying `just release`.
 
+??? failure "Release files have uncommitted changes"
+    `just release` refuses when a `pyproject.toml`, `uv.lock` or
+    `CHANGELOG.md` already has changes, so they cannot slip into the
+    release commit. Commit them in their own pull request, or discard them.
+
 ??? failure "Version bump fails"
     Use an explicit `X.Y.Z` format (no `v` prefix):
     ```bash
@@ -131,11 +131,9 @@ tag existing is not a promise that PyPI has it.
     ```
 
 ??? failure "Tag already exists"
-    ```bash
-    git tag -d v0.2.0             # delete local tag
-    git push origin :v0.2.0       # delete remote tag (if already pushed)
-    just release 0.2.0            # recreate
-    ```
+    A pushed release tag is not moved: release the next patch version
+    instead. A tag that exists only locally can be deleted with
+    `git tag -d v0.2.0`.
 
 ??? failure "Draft release did not appear"
     Verify the tag matches the pattern `v*.*.*` at

@@ -347,15 +347,16 @@ venv-upgrade:
 changelog VERSION="auto":
     uvx git-changelog -Tio CHANGELOG.md -B="{{VERSION}}" -c angular
 
-# bump version across all packages (major, minor, patch, or explicit like 0.2.0)
+# bump the version of all packages in the files only (major, minor, patch, or explicit like 0.2.0):
+# version files, CHANGELOG.md and uv.lock; no commit, no tag (see `just release`)
 bump VERSION:
     @echo "{{GREEN}}{{BOLD}}Bumping all packages to {{VERSION}}{{NORMAL}}"
     @case "{{VERSION}}" in \
-        major|minor|patch|MAJOR|MINOR|PATCH) uv run cz bump --increment "$(echo {{VERSION}} | tr '[:lower:]' '[:upper:]')" --yes ;; \
-        *) uv run cz bump {{VERSION}} --yes ;; \
+        major|minor|patch|MAJOR|MINOR|PATCH) uv run --locked cz bump --increment "$(echo {{VERSION}} | tr '[:lower:]' '[:upper:]')" --yes --files-only ;; \
+        *) uv run --locked cz bump {{VERSION}} --yes --files-only ;; \
     esac
     uv lock
-    @echo "{{GREEN}}Version bumped to $(uv version --short){{NORMAL}}"
+    @echo "{{GREEN}}Version bumped to $(uv run --locked cz version --project){{NORMAL}}"
 
 # bump a single package version (for testing/development only)
 [private]
@@ -365,26 +366,35 @@ bump-package PKG VERSION:
     uv lock
     @echo "{{GREEN}}{{PKG}} bumped to {{VERSION}}{{NORMAL}}"
 
-# create a new release (runs tests, updates changelog, bumps version, tags)
+# prepare a release: run the tests, bump all packages (`just bump`) and commit
+# exactly the release files on a new branch release/v<version>; no tag, a
+# maintainer tags the merged commit on main (docs/RELEASING.md)
 release VERSION: test
-    @echo "{{GREEN}}{{BOLD}}Creating release {{VERSION}}{{NORMAL}}"
-    @just changelog "v{{VERSION}}"
-    git add CHANGELOG.md
-    git commit -m "chore: update changelog for v{{VERSION}}"
-    @just bump {{VERSION}}
-    git add .
-    git commit -m "chore: bump version to {{VERSION}}"
-    git tag -a "v{{VERSION}}" -m "Release v{{VERSION}}"
-    @echo ""
-    @echo "{{GREEN}}{{BOLD}}✅ Release v{{VERSION}} created!{{NORMAL}}"
-    @echo ""
-    @echo "Next steps (main requires a PR -- see docs/RELEASING.md):"
-    @echo "  1. Review the commit; drop the local tag for now: git tag -d v{{VERSION}}"
-    @echo "  2. Push a branch + open a PR for the commit, merge it"
-    @echo "  3. Pull main, recreate the tag there, push it:"
-    @echo "       git pull origin main && git tag -a v{{VERSION}} -m 'Release v{{VERSION}}' && git push origin v{{VERSION}}"
-    @echo "  4. GitHub Actions will create the release draft"
-    @echo "  5. PyPI publish is separate + manual: gh workflow run publish_pypi.yml --ref v{{VERSION}} -f version={{VERSION}}"
+    #!/usr/bin/env bash
+    set -euo pipefail
+    files=(pyproject.toml uv.lock CHANGELOG.md canvodpy/pyproject.toml packages/*/pyproject.toml)
+    if ! git diff --quiet HEAD -- "${files[@]}"; then
+        echo "Release files have uncommitted changes; commit or discard them first:" >&2
+        git diff --name-only HEAD -- "${files[@]}" >&2
+        exit 1
+    fi
+    old="$(uv run --locked cz version --project)"
+    just bump {{VERSION}}
+    new="$(uv run --locked cz version --project)"
+    git switch -c "release/v${new}"
+    git add -- "${files[@]}"
+    git commit -m "bump: version ${old} → ${new}"
+    echo ""
+    echo "Release v${new} prepared on branch release/v${new}"
+    echo ""
+    echo "Next steps (docs/RELEASING.md):"
+    echo "  1. Review the commit: git show --stat"
+    echo "  2. Push the branch and open a pull request; a maintainer merges it"
+    echo "  3. A maintainer tags the merged commit on main and pushes the tag:"
+    echo "       git switch main && git pull origin main"
+    echo "       git tag -a v${new} -m 'Release v${new}' && git push origin v${new}"
+    echo "  4. GitHub Actions creates the release draft"
+    echo "  5. PyPI publish is separate and manual: gh workflow run publish_pypi.yml --ref v${new} -f version=${new}"
 
 # ============================================================================
 # Build & Publish Recipes
@@ -467,12 +477,14 @@ sync:
     uv sync
     uv run pre-commit install --hook-type pre-commit --hook-type commit-msg --hook-type pre-push --hook-type post-merge --hook-type post-commit --hook-type post-checkout
 
-# update all git submodules (demo + test_data) to their latest remote commits and record the new pointers
+# update the submodules (demo + test_data) to their latest remote commits and commit the new
+# pointers on the current feature branch (refused on main: pointers reach main through a PR)
 update-submodules:
+    @if [ "$(git branch --show-current)" = "main" ]; then echo "On main: switch to a feature branch first" >&2; exit 1; fi
     git submodule update --remote --merge demo
     git submodule update --remote --merge packages/canvod-readers/tests/test_data
     git add demo packages/canvod-readers/tests/test_data
-    git diff --cached --quiet || git commit -m "chore: update submodule pointers (demo + test_data)"
+    git diff --cached --quiet -- demo packages/canvod-readers/tests/test_data || git commit -m "chore: update submodule pointers (demo + test_data)" -- demo packages/canvod-readers/tests/test_data
 
 # ============================================================================
 # Version Management

@@ -150,9 +150,9 @@ Run `just check` before committing. Every change follows `CODING_STANDARDS.md`
 For maintainers:
 
 ```bash
-just bump minor
-git push
-git push --tags
+just release X.Y.Z   # tests, version bump, release commit on release/vX.Y.Z
 ```
 
-GitHub Actions publishes to PyPI when a new tag is pushed.
+Then open a pull request for the release branch; after it is merged, a
+maintainer tags the merged commit and starts the PyPI publish. The full
+steps are in `docs/RELEASING.md`.
