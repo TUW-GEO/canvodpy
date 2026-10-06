@@ -60,5 +60,14 @@ class Op(ABC):
     @abstractmethod
     def name(self) -> str: ...
 
+    @property
+    @abstractmethod
+    def settings(self) -> dict[str, Any]:
+        """The configured parameters, as the preprocessing record holds them.
+
+        Known before the operation runs, so a run can compare them with the
+        records of a store before it processes any data.
+        """
+
     @abstractmethod
     def __call__(self, ds: xr.Dataset) -> tuple[xr.Dataset, OpResult]: ...

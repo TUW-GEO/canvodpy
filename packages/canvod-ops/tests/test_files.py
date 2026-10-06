@@ -139,3 +139,23 @@ def test_file_inside_an_earlier_bin_is_left_out():
     short = _file("2025-01-01T00:00:30", 3, ["G01|L1", "G02|L1"], "S", 2)
     out = preprocess_files([("a", FILE_A), ("s", short)], CONFIG)
     assert [key for key, _ in out] == ["a"]
+
+
+def test_planned_settings_are_the_recorded_settings():
+    """A run compares its planned settings with stored records before it runs."""
+    from canvod.config.models import preprocessing_settings
+    from canvod.ops import planned_settings
+
+    out = preprocess_files([("a", FILE_A), ("b", FILE_B)], CONFIG)
+    recorded = preprocessing_settings(out[0][1].attrs["Preprocessing"])
+    assert planned_settings(CONFIG) == recorded
+    assert [step["op"] for step in recorded] == ["temporal_aggregate", "grid_assign"]
+
+
+def test_nothing_set_plans_nothing():
+    from canvod.config.models import preprocessing_settings
+    from canvod.ops import planned_settings
+
+    out = preprocess_files([("a", FILE_A)], None)
+    assert planned_settings(None) == []
+    assert preprocessing_settings(out[0][1].attrs["Preprocessing"]) == []

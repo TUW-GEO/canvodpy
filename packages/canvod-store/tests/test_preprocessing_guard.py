@@ -159,3 +159,26 @@ class TestVodRecord:
             vod_preprocessing_record(
                 {"canopy_01": [AGGREGATED], "reference_01": [NONE]}
             )
+
+
+class TestCheckSettingsMatch:
+    """The check a run makes before it processes any data."""
+
+    def test_new_group_accepts_any(self, tmp_store):
+        tmp_store.check_settings_match(GROUP, [])
+
+    def test_same_settings_pass_other_settings_refused(self, tmp_store):
+        tmp_store.write_or_append_group(_with_record(0, AGGREGATED), group_name=GROUP)
+        same = [{"op": AGGREGATE["op"], "settings": AGGREGATE["settings"]}]
+        tmp_store.check_settings_match(GROUP, same)
+
+        other = [
+            {
+                "op": "temporal_aggregate",
+                "settings": {"freq": "30s", "method": "median"},
+            }
+        ]
+        with pytest.raises(PreprocessingMismatchError, match="this run has .*freq=30s"):
+            tmp_store.check_settings_match(GROUP, other)
+        with pytest.raises(PreprocessingMismatchError, match="this run has none"):
+            tmp_store.check_settings_match(GROUP, [])

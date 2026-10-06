@@ -451,6 +451,10 @@ def _main_impl(args: SimpleNamespace) -> int:
                             )
 
                 vod_computer = VodComputer(site, calculator=args.vod_calculator)
+                # Before any processing: a VOD group fed by data preprocessed
+                # differently would refuse every day at the write.
+                stage = "preprocessing_check"
+                vod_computer.check_preprocessing(list(vod_analyses))
 
                 def _on_group_written(
                     group_name: str, _site_name: str = site_name

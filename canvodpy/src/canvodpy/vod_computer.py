@@ -188,6 +188,31 @@ class VodComputer:
         """Registered name of the VOD calculator in use."""
         return self._calculator_name
 
+    def check_preprocessing(self, analysis_names: list[str]) -> None:
+        """Refuse a run before processing if a VOD group holds other preprocessing.
+
+        Compares ``processing.preprocessing`` with the GNSS preprocessing
+        behind the results in each analysis's VOD store group
+        (``{calculator}/{analysis}``). :meth:`write_day` compares again at
+        write time; this check stops a run before it processes any data,
+        e.g. when a new GNSS store with other settings would feed an
+        existing VOD store.
+
+        Raises
+        ------
+        PreprocessingMismatchError
+            If a group holds results of data preprocessed differently.
+        """
+        from canvod.config import load_config
+        from canvod.ops import planned_settings
+
+        settings = planned_settings(load_config().processing.preprocessing)
+        vod_store = self._site._site.vod_store
+        for analysis_name in analysis_names:
+            vod_store.check_settings_match(
+                f"{self._calculator_name}/{analysis_name}", settings
+            )
+
     def compute_day(
         self,
         datasets: dict[str, xr.Dataset],

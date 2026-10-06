@@ -1080,22 +1080,58 @@ class MyIcechunkStore:
             If the group holds data preprocessed differently.
         """
         _, new = split_preprocessing(dataset.attrs)
-        settings_of = (
-            vod_preprocessing_settings
-            if self.store_type == "vod_store"
-            else preprocessing_settings
+        self.check_settings_match(
+            group_name, self._settings_of(new), "the new data have", branch
         )
-        new_settings = settings_of(new)
+
+    def check_settings_match(
+        self,
+        group_name: str,
+        settings: list[dict[str, Any]],
+        source: str = "this run has",
+        branch: str = "main",
+    ) -> None:
+        """Refuse preprocessing settings unlike those of the data in ``group_name``.
+
+        Lets a run compare its configured preprocessing (see
+        ``canvod.ops.planned_settings``) with a group before it processes
+        any data; :meth:`check_preprocessing_matches` applies the same
+        comparison to a dataset at write time. A group that does not exist
+        yet accepts any settings.
+
+        Parameters
+        ----------
+        group_name : str
+            Store group the data will be written to.
+        settings : list[dict]
+            Operations and settings, as
+            ``canvod.config.models.preprocessing_settings`` gives them.
+        source : str, default "this run has"
+            Names the new data in the error message.
+        branch : str, default "main"
+            Repository branch to examine.
+
+        Raises
+        ------
+        PreprocessingMismatchError
+            If the group holds data preprocessed differently.
+        """
         for stored in self.preprocessing_records(group_name, branch=branch):
-            if settings_of(stored) != new_settings:
+            if self._settings_of(stored) != settings:
                 msg = (
-                    f"Group '{group_name}' holds data with preprocessing "
-                    f"{_describe(stored, settings_of)}, but the new data have "
-                    f"{_describe(new, settings_of)}. One group must not mix "
-                    "both: restore the previous processing.preprocessing "
-                    "setting, or write to a new store."
+                    f"Group '{group_name}' in {self.store_path} holds data "
+                    f"with preprocessing {_describe(stored, self._settings_of)}, "
+                    f"but {source} {describe_settings(settings)}. One group "
+                    "must not mix both: restore the previous "
+                    "processing.preprocessing setting, or write to a new store."
                 )
                 raise PreprocessingMismatchError(msg)
+
+    def _settings_of(self, record: str) -> list[dict[str, Any]]:
+        """Operations and settings of a record of this store's type."""
+        if self.store_type == "vod_store":
+            return vod_preprocessing_settings(record)
+        return preprocessing_settings(record)
 
     def add_group_variables(
         self,

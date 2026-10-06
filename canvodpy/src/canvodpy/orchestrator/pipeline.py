@@ -26,7 +26,7 @@ import xarray as xr
 
 from canvod.config import load_config
 from canvod.config.models import mixed_format_error, reference_store_group
-from canvod.ops import preprocess_files
+from canvod.ops import planned_settings, preprocess_files
 from canvod.readers import MatchedDirs
 from canvod.readers.gnss_specs.constants import UREG
 from canvod.store import GnssResearchSite
@@ -1325,6 +1325,28 @@ class PipelineOrchestrator:
             expected_counts.clear()
             gc.collect()
 
+    def _check_preprocessing_before_run(
+        self,
+        dates: list[
+            tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]
+        ],
+    ) -> None:
+        """Refuse the run before processing if a group holds other preprocessing.
+
+        Compares ``processing.preprocessing`` with the log books of every
+        GNSS store group the run writes. The same comparison runs again on
+        each dataset at write time; this one stops a run before it spends
+        time on data that would be refused.
+
+        Raises
+        ------
+        PreprocessingMismatchError
+            If a group holds data preprocessed differently.
+        """
+        settings = planned_settings(load_config().processing.preprocessing)
+        for group in sorted({group for _, receivers in dates for group in receivers}):
+            self.site.gnss_store.check_settings_match(group, settings)
+
     def process_by_date(
         self,
         keep_vars: list[str] | None = None,
@@ -1367,6 +1389,8 @@ class PipelineOrchestrator:
                 "no_dates_in_range", start_from=start_from, end_at=end_at
             )
             return
+
+        self._check_preprocessing_before_run(filtered_dates)
 
         self._logger.info(
             "process_by_date_started",

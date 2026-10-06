@@ -294,6 +294,14 @@ mismatch, the write raises `PreprocessingMismatchError` and `canvodpy run`
 stops with exit code 1, since every later day would be refused the same way:
 keep the setting for the life of a store, or start a new store.
 
+`canvodpy run` makes the same comparison before it processes any data: the
+configured `processing.preprocessing` against every GNSS group the run writes
+and every VOD analysis group of the selected calculator. A mismatch therefore
+stops the run at once, also when a new GNSS store would feed an existing VOD
+store. `canvod.ops.planned_settings(config)` gives the settings a
+configuration records, and `MyIcechunkStore.check_settings_match` compares
+them with a group.
+
 ### Adding grid cells to stored data
 
 Data written without `grid_assignment` can get their cells afterwards, for a

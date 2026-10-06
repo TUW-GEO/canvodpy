@@ -45,6 +45,14 @@ class Pipeline:
         """Number of operations."""
         return len(self._ops)
 
+    def settings(self) -> list[dict[str, Any]]:
+        """Operations and settings this pipeline records, before it runs.
+
+        Same layout as ``canvod.config.models.preprocessing_settings`` gives
+        for a stored record: ``[{"op", "settings"}, ...]`` in run order.
+        """
+        return [{"op": op.name, "settings": op.settings} for op in self._ops]
+
     def add(self, op: Op) -> Pipeline:
         """Append an operation and return self for chaining."""
         self._ops.append(op)

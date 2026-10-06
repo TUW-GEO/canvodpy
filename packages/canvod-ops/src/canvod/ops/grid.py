@@ -50,12 +50,16 @@ class GridAssignment(Op):
             )
         return self._grid
 
-    def __call__(self, ds: xr.Dataset) -> tuple[xr.Dataset, OpResult]:
-        t0 = time.perf_counter()
-        params: dict[str, Any] = {
+    @property
+    def settings(self) -> dict[str, Any]:
+        return {
             "grid_type": self._grid_type,
             "angular_resolution": self._angular_resolution,
         }
+
+    def __call__(self, ds: xr.Dataset) -> tuple[xr.Dataset, OpResult]:
+        t0 = time.perf_counter()
+        params = self.settings
         input_shape = {str(k): int(v) for k, v in dict(ds.sizes).items()}
 
         # Prerequisite check: phi/theta as data variables (as the runs write

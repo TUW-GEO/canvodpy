@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from canvod.config.models import PreprocessingConfig
 from canvod.ops.grid import GridAssignment
 from canvod.ops.pipeline import Pipeline
@@ -56,3 +58,16 @@ def build_default_pipeline(
         )
 
     return pipeline
+
+
+def planned_settings(config: PreprocessingConfig | None) -> list[dict[str, Any]]:
+    """Operations and settings a run with ``config`` records, before it runs.
+
+    Compare with ``canvod.config.models.preprocessing_settings`` of the
+    records in a store to find a mismatch before any data are processed.
+    ``None`` (no ``processing.preprocessing``) gives no operations, as
+    :func:`canvod.ops.preprocess_files` records then.
+    """
+    if config is None:
+        return []
+    return build_default_pipeline(config).settings()

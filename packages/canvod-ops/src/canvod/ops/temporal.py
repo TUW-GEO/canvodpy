@@ -161,13 +161,17 @@ class TemporalAggregate(Op):
     def name(self) -> str:
         return "temporal_aggregate"
 
-    def __call__(self, ds: xr.Dataset) -> tuple[xr.Dataset, OpResult]:
-        t0 = time.perf_counter()
-        params: dict[str, Any] = {
+    @property
+    def settings(self) -> dict[str, Any]:
+        return {
             "freq": self._freq,
             "method": self._method,
             "integer_method": self._integer_method,
         }
+
+    def __call__(self, ds: xr.Dataset) -> tuple[xr.Dataset, OpResult]:
+        t0 = time.perf_counter()
+        params = self.settings
         input_shape = {str(k): int(v) for k, v in dict(ds.sizes).items()}
 
         freq_ns = int(pd.tseries.frequencies.to_offset(self._freq).nanos)

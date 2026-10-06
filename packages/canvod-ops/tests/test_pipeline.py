@@ -20,6 +20,10 @@ class _NoOp(Op):
     def name(self) -> str:
         return "noop"
 
+    @property
+    def settings(self) -> dict:
+        return {}
+
     def __call__(self, ds: xr.Dataset) -> tuple[xr.Dataset, OpResult]:
         return ds, OpResult(
             op_name=self.name,
