@@ -312,17 +312,22 @@ flowchart TD
 
 ### Parallelism model
 
-- **Reading is parallel.** The files of a batch of days (`days_per_batch`) are
-  read in a pool of worker processes ([loky](https://github.com/joblib/loky),
-  reused across batches), one task per file, so parsing uses all cores.
-  `--workers` or the settings set the pool size.
-- **Writing is serial.** Results are written as soon as all files of a
-  receiver-day are read, by one process. On a local or network file system
-  Icechunk cannot detect two commits at once, so there is exactly one writer:
-  with the default write strategy (`skip`) the receivers of a day are written
-  into forks of one session, merged and committed once; with `overwrite`,
-  one commit per receiver. The deduplication checks therefore always see a
-  consistent store.
+- **Preparing is per day.** Before its files are read, each day of a batch
+  of days (`days_per_batch`) gets its orbit and clock interpolation and the
+  receiver positions, one thread per day.
+- **Reading is parallel.** The files of the batch are read in a pool of
+  worker processes ([loky](https://github.com/joblib/loky), reused across
+  batches), one task per file, so parsing uses all cores. `--workers` or the
+  settings set the pool size.
+- **Writing is serial.** As soon as all files of a receiver-day are read, one
+  process applies the preprocessing (if set) and writes the receiver-day: one
+  commit for the data (with `overwrite` on a temporary branch, then
+  promoted) and one for the store metadata. On a local or network file
+  system Icechunk cannot detect two commits at once, so there is exactly one
+  writer, and the deduplication checks always see a consistent store.
+- **VOD follows each batch.** When a batch is written, VOD is computed day by
+  day, each day written with one commit for the results and one for the store
+  metadata; then the next batch starts.
 
 ### Hemispheric grids
 

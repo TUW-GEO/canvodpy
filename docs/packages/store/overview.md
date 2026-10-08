@@ -169,9 +169,9 @@ per-file ingest registry used by the deduplication guardrails.
 5. **VOD** — `VodComputer` reads canopy and reference groups and writes the VOD store
 
 Icechunk on a local or network file system cannot detect two commits at the same
-time, so a run has exactly one writer. With the default write strategy (`skip`) the
-receivers of a day are written into forks of one session and committed once; with
-`overwrite`, one commit per receiver.
+time, so a run has exactly one writer. Each receiver-day is written with one commit
+for its data (with `overwrite` on a temporary branch, then promoted) and one for the
+store metadata.
 
 ---
 

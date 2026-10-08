@@ -591,6 +591,9 @@ class PipelineOrchestrator:
     ) -> tuple[str, dict[str, xr.Dataset], dict[str, float]] | None:
         """Process all receivers for a single date (one DOY).
 
+        Used only when loky is not installed; the normal path is
+        ``_process_multi_day_batches``.
+
         Parameters
         ----------
         date_key : str
@@ -792,16 +795,23 @@ class PipelineOrchestrator:
         ],
         keep_vars: list[str] | None,
     ) -> Generator[tuple[str, dict[str, xr.Dataset], dict[str, float]]]:
-        """Process dates in multi-day batches (days_per_batch > 1).
+        """Process dates in batches of ``days_per_batch`` days (1 or more).
 
-        When ``days_per_batch > 1`` and loky is available, RINEX files from
-        ALL DOYs in a batch are submitted to loky's reusable executor as
-        one flat pool (Phase 2). Auxiliary data and receiver positions are
-        prepared sequentially per DOY first (Phase 1), and Icechunk writes
-        happen sequentially afterwards (Phase 3).
+        With loky installed (a dependency of canvodpy, so the normal case),
+        each batch runs in three phases:
 
-        When ``days_per_batch == 1`` or loky is not installed, falls back
-        to sequential ``_process_single_date()`` calls.
+        1. Prepare, one thread per date: auxiliary data (SP3/CLK
+           interpolation or cache), receiver positions, one task per file.
+        2. Process the files of all dates of the batch in loky's reusable
+           process pool, at most twice the worker count in flight.
+        3. Write, in this process, as soon as all files of a receiver-day
+           are back: ``processing.preprocessing`` (if set), then
+           ``_append_to_icechunk`` (one commit for the data, one for the
+           store metadata). The pool keeps working meanwhile.
+
+        Dates are yielded after the batch is written; the caller computes
+        VOD before the next batch starts. Without loky, every date goes
+        through ``_process_single_date()`` instead.
 
         Parameters
         ----------
@@ -1356,8 +1366,8 @@ class PipelineOrchestrator:
         """Process all receivers grouped by date.
 
         Each unique receiver is processed once per day with its actual name
-        as the Icechunk group name. Dispatches to multi-day or sub-day batch
-        strategies based on ``days_per_batch``.
+        as the Icechunk group name. Dates are processed in batches of
+        ``days_per_batch`` days (``_process_multi_day_batches``).
 
         Parameters
         ----------

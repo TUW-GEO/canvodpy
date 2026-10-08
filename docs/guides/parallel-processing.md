@@ -11,31 +11,50 @@ canVODpy distributes that work and how to configure resource limits for your mac
 
 canVODpy reads files in a **persistent [loky](https://loky.readthedocs.io/)
 process pool** — no external scheduler required — and writes from a single
-process:
+process. A run works through the days in batches of `days_per_batch` days:
 
 ```
  days of one batch (days_per_batch)
  ┌───────────────────────────────────────────────┐
- │ files of all receivers, in date order,        │
- │ round-robin across receivers                  │
+ │ per day, one thread each: orbit/clock         │  ← preparing
+ │ interpolation, receiver positions             │
  └───────────────────────┬───────────────────────┘
+                         ▼
+ files of all receivers, in date order, round-robin across receivers
                          ▼
         loky process pool (one task per file)       ← parallel reading
                          │
                          ▼  as soon as all files of a receiver-day are read
-        one writer: dedup checks, Icechunk write     ← serial writing
+        one writer: preprocessing (if set),          ← serial writing
+        dedup checks, Icechunk write
+                         │
+                         ▼  when the batch is written
+        VOD per day                                  ← serial VOD
 ```
 
-**Reading**: all files of a batch of days are submitted to the shared pool, one
-task per file, in date order and round-robin across receivers, so every receiver
-makes progress and results of one day arrive together.
+**Preparing**: each day of the batch first gets its orbit and clock
+interpolation (or takes it from the cache) and the receiver positions, one
+thread per day.
 
-**Writing**: a receiver-day is written as soon as all its files are read. One
-process writes: Icechunk on a local or network file system cannot detect two
-commits at the same time. With the default write strategy (`skip`) the receivers
-of a day are written into forks of one session and committed once; with
-`overwrite`, one commit per receiver. This is a hard constraint of the local
-storage model and keeps the deduplication checks consistent.
+**Reading**: all files of the batch are submitted to the shared pool, one
+task per file, in date order and round-robin across receivers, so every receiver
+makes progress and results of one day arrive together. At most twice as many
+tasks as workers are in flight at a time.
+
+**Writing**: a receiver-day is written as soon as all its files are read, while
+the pool keeps reading. One process writes: it applies the preprocessing (if
+set), runs the deduplication checks and writes the receiver-day with one commit
+for its data (with `overwrite` on a temporary branch, then promoted) and one for
+the store metadata. Icechunk on a local or network file system cannot detect two
+commits at the same time, so this is a hard constraint of the local storage
+model, and it keeps the deduplication checks consistent.
+
+**VOD**: when all receiver-days of the batch are written, VOD is computed day by
+day in the same process, and each day is written with one commit for the results
+and one for the store metadata. The next batch starts after that, so the pool
+waits while a batch is prepared and while its VOD is computed. The days of a
+batch are prepared at the same time, so a larger `days_per_batch` shortens the
+preparing wait per day; the VOD wait grows with the number of days either way.
 
 ### Why loky instead of standard ProcessPoolExecutor?
 
@@ -127,8 +146,8 @@ can be inspected to diagnose out-of-memory failures on constrained machines.
 
 ## Write granularity and data integrity
 
-Writes are per day (see above). Before every write, the three-layer deduplication
-guard runs:
+Writes are per receiver-day (see above). Before every write, the three-layer
+deduplication guard runs:
 
 1. **Hash match** — identical file content is never written twice
 2. **Temporal overlap** — a file overlapping already-stored epochs is not written
