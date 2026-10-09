@@ -138,7 +138,7 @@ instantiated.
 
 Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel` import, no `fpath` field, no file validation boilerplate.
 
-[:octicons-arrow-right-24: Full architecture](architecture.md)
+[:octicons-arrow-right-24: The reader contract](building-a-reader.md#the-reader-contract)
 
 ---
 

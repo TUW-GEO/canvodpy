@@ -17,8 +17,8 @@ other package and canvodpy-extensions check against.
 | `gnss_specs/` | Constellations, bands, signals, satellite catalog |
 | `matching/` | Deprecated directory matchers; discovery lives in `canvodpy.orchestrator.discovery` |
 
-Background: `docs/packages/readers/architecture.md`,
-`docs/packages/readers/extending.md`, `docs/packages/readers/rinex-format.md`,
+Background: `docs/packages/readers/building-a-reader.md`,
+`docs/packages/readers/rinex-format.md`,
 `docs/packages/readers/sbf-decoding.md`.
 
 ## Invariants

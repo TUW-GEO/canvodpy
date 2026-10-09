@@ -92,7 +92,6 @@ nav = [
     { "Architecture" = [
       { "Monorepo structure" = "architecture.md" },
       { "Design patterns" = "guides/architecture-design.md" },
-      { "Reader internals" = "packages/readers/architecture.md" },
       { "Namespace packages" = "namespace-packages.md" },
       { "Package dependencies" = "dependencies.md" },
     ]},

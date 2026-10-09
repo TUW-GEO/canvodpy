@@ -31,3 +31,4 @@ molab
 Plotly
 Dependabot
 dtype
+hashable

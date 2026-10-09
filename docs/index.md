@@ -41,7 +41,7 @@ signal-to-noise ratio observations.
 
     Supports RINEX v2.11, RINEX v3.04, Stripped RINEX v3.05, NMEA v4 and Septentrio SBF. Every supported GNSS reader produces a structurally identical, run-time-validated xarray Dataset. Downstream code is reader-agnostic.
 
-    [:octicons-arrow-right-24: Reader Architecture](packages/readers/architecture.md)
+    [:octicons-arrow-right-24: Reading GNSS files](packages/readers/overview.md)
 
 -   :fontawesome-solid-database: &nbsp; **Versioned, performant storage, ready for the cloud**
 
