@@ -795,16 +795,17 @@ body{
   letter-spacing: 0.01em;
 }
 
-.hero .md-button.md-button--primary,
-.hero .md-button.md-button--primary:visited,
-.md-typeset .hero .md-button.md-button--primary{
+/* Primary buttons on every page, not only the hero: the generic button
+   rule above sets the text to the link color, which is unreadable on the
+   link-colored background. */
+.md-typeset .md-button.md-button--primary,
+.md-typeset .md-button.md-button--primary:visited{
   background: var(--link);
   color: var(--bg) !important;
   text-decoration: none !important;
 }
 
-.hero .md-button.md-button--primary:hover,
-.md-typeset .hero .md-button.md-button--primary:hover{
+.md-typeset .md-button.md-button--primary:hover{
   background: var(--link-hover);
   border-color: var(--link-hover);
   color: var(--bg) !important;

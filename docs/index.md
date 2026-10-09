@@ -12,9 +12,11 @@ hide:
 
 **An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrievals**
 
-canVODpy derives canopy Vegetation Optical Depth (VOD) from the
-signal-to-noise ratio of [GNSS](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"}
-signals, recorded by one receiver below the canopy and one above it.
+canVODpy aims to be the central community-driven software suite for
+deriving canopy Vegetation Optical Depth (VOD) from the signal-to-noise
+ratio of the same [GNSS](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"}
+signal, received at the same time by one receiver below the canopy and one
+with an unobstructed view of the sky.
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19445061.svg)](https://doi.org/10.5281/zenodo.19445061)
 [![PyPI](https://img.shields.io/pypi/v/canvodpy)](https://pypi.org/project/canvodpy/)
