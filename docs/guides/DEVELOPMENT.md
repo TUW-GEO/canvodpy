@@ -370,6 +370,8 @@ just store-list          # list every site's gnss/vod stores + status
 just store-info SITE     # branches/groups/stats for one site's store
 just store-log SITE      # commit history graph for one site's store
 just docs                # preview documentation (opens the browser)
+just docs-lint           # language check of the docs (Vale, Google style)
+just docs-links          # link check of the built docs (lychee)
 just build-all           # build all packages
 just deps-report         # dependency metrics report
 just deps-mermaid        # mermaid dependency graph

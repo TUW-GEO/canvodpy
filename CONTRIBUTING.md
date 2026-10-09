@@ -120,6 +120,8 @@ just test-coverage             # With coverage report
 just test-package canvod-grids # Specific package
 just check                     # Lint + format + type-check
 just docs                      # Preview documentation
+just docs-lint                 # Language check of the docs (Vale)
+just docs-links                # Link check of the built docs (lychee)
 ```
 
 ## Pull Request Guidelines

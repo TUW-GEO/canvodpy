@@ -546,6 +546,16 @@ docs:
 docs-build:
     uv run zensical build
 
+# check the language of the docs pages (Vale, Google style)
+docs-lint *FILES="docs":
+    uvx --from vale vale sync
+    uvx --from vale vale {{ FILES }}
+
+# check every link of the built docs site (lychee; brew install lychee)
+docs-links: docs-build
+    @command -v lychee >/dev/null || { echo "lychee is not installed: brew install lychee" >&2; exit 1; }
+    lychee --root-dir "$(pwd)/site" 'site/**/*.html'
+
 # export demo notebooks for embedding in the docs site (live WASM + static HTML)
 docs-export-notebooks:
     @echo "{{ GREEN }}{{ BOLD }}Exporting demo notebooks into docs/notebooks/_build...{{ NORMAL }}"

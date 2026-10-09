@@ -778,6 +778,8 @@ just test-coverage
     | `just config-show`                | Show the resolved configuration                |
     | `just config-check-data <site>`   | Check a site's data files as a run reads them  |
     | `just docs`                       | Preview documentation locally                  |
+    | `just docs-lint`                  | Check the language of the docs (Vale)          |
+    | `just docs-links`                 | Check every link of the built docs (lychee)    |
     | `just test-coverage`              | Run tests with coverage report                 |
     | `just clean`                      | Remove build artifacts and caches              |
     | `uv sync`                         | Install/update Python dependencies             |

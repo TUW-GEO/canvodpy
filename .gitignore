@@ -372,3 +372,9 @@ packages/*/config/
 
 # Code graph (just graph): built locally, never committed
 .graphify/
+
+# Vale packages (downloaded by `vale sync`); our vocabulary is tracked
+.vale/styles/*
+!.vale/styles/config/
+# lychee cache
+.lycheecache

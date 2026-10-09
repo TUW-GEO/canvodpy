@@ -156,6 +156,8 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     just hooks            # Install pre-commit hooks
     just docs             # Preview documentation locally
     just docs-build       # Build static documentation
+    just docs-lint        # Check the language of the docs
+    just docs-links       # Check every link of the built docs
     just config-init      # Scaffold canvod-settings.yaml from template
     just config-validate  # Validate config files
     just --list           # Show all available commands
@@ -248,6 +250,18 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     just docs          # Preview locally (wraps uv run zensical serve --open)
     just docs-build    # Build static site (wraps uv run zensical build)
     ```
+
+    Two checks keep the pages correct:
+
+    - `just docs-lint` checks the language with
+      [Vale](https://vale.sh/) and its Google style package (`.vale.ini`).
+      Project words that are spelled correctly go in
+      `.vale/styles/config/vocabularies/canvodpy/accept.txt`. Pass a path
+      to check a single page: `just docs-lint docs/users/cli.md`.
+    - `just docs-links` builds the site and checks every link with
+      [lychee](https://lychee.cli.rs/) (`lychee.toml`): links between
+      pages, anchors, and links to other sites. Install lychee once with
+      `brew install lychee`.
 
     Mermaid diagram sources live in `docs/diagrams/` as `.mmd` files.
     Render them to SVG/PNG using beautiful-mermaid:

@@ -155,6 +155,8 @@ just test-fast                        # tests without the integration marker
 just test                             # all tests
 just test-package canvod-readers      # one package
 just docs                             # preview the docs site
+just docs-lint                        # language check of the docs (Vale)
+just docs-links                       # link check of the built docs (lychee)
 just doctor                           # version, environment, settings found
 just config-validate                  # check the settings file
 ```
