@@ -30,6 +30,7 @@ dependencies = [
     "requests>=2.31.0",
     "pint>=0.23",
     "pymap3d>=3.0.0",
+    "rich>=13.0",
     "structlog>=24.1.0",
     "tqdm>=4.67.1",
 ]
