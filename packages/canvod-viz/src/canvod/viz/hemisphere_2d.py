@@ -394,7 +394,7 @@ class HemisphereVisualizer2D:
         except ImportError as e:
             raise ImportError(
                 "healpy is required for HEALPix 2D visualization. "
-                "Install with: pip install healpy"
+                "Install with: uv add healpy"
             ) from e
 
         patches = []

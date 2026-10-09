@@ -202,7 +202,7 @@ class FibonacciBuilder(BaseGridBuilder):
 
         except ImportError as e:
             raise ImportError(
-                "scipy required for Fibonacci grid. Install: pip install scipy"
+                "scipy required for Fibonacci grid. Install: uv add scipy"
             ) from e
 
         mask = theta_full <= (np.pi / 2 - self.cutoff_theta_rad)

@@ -133,7 +133,7 @@ class HEALPixBuilder(BaseGridBuilder):
             self.hp = hp
         except ImportError as e:
             raise ImportError(
-                "healpy is required for HEALPix grid. Install with: pip install healpy"
+                "healpy is required for HEALPix grid. Install with: uv add healpy"
             ) from e
 
         pixel_size_arcmin = self.hp.nside2resol(self.nside, arcmin=True)

@@ -95,7 +95,7 @@ class SolarPositionCalculator:
             except ImportError:
                 logger.warning(
                     "pvlib not available, falling back to built-in formulas. "
-                    "Install pvlib for higher accuracy: pip install pvlib"
+                    "Install pvlib for higher accuracy: uv add pvlib"
                 )
                 self.use_pvlib = False
 

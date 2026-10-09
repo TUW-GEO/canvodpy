@@ -190,8 +190,8 @@ class ReaderFactory(ComponentFactory):
     Supports two creation modes:
 
     - **By name:** ``ReaderFactory.create("rinex3", fpath=path)``
-    - **By file:** ``ReaderFactory.create_from_file(path)`` — auto-detects
-      RINEX v2/v3 from the file header.
+    - **By file:** ``ReaderFactory.create_from_file(path)`` — detects
+      RINEX v2, RINEX v3 and NMEA from the file's content (not SBF).
 
     Examples
     --------
@@ -223,8 +223,11 @@ class ReaderFactory(ComponentFactory):
     def create_from_file(cls, fpath: str | Any, **kwargs: Any) -> Any:
         """Auto-detect the file format and create the appropriate reader.
 
-        Inspects the first line of the file to determine the RINEX version.
-        Currently detects RINEX v2 and v3.
+        Detects NMEA (a ``.nmea`` extension or a first line starting with
+        ``$``), and otherwise RINEX v2 or v3 from the version in the first
+        header line; a RINEX v3 file with signal-strength observables only
+        gets the stripped RINEX v3 reader. SBF files are not detected: create
+        their reader by name.
 
         Parameters
         ----------
@@ -252,8 +255,9 @@ class ReaderFactory(ComponentFactory):
     def detect_reader(cls, fpath: str | Any) -> str:
         """Name of the registered reader for the file at *fpath*.
 
-        Decided from the file's content: the RINEX version in the first
-        header line, NMEA by its sentences.
+        Decided as in :meth:`create_from_file`: NMEA by its ``.nmea``
+        extension or its sentences, RINEX by the version in the first
+        header line.
 
         Raises
         ------
@@ -290,7 +294,7 @@ class ReaderFactory(ComponentFactory):
 
     @staticmethod
     def _detect_format(fpath: Any) -> str:
-        """Detect file format from the first line of the file.
+        """Detect the file format from the extension and the file header.
 
         Parameters
         ----------
@@ -300,7 +304,8 @@ class ReaderFactory(ComponentFactory):
         Returns
         -------
         str
-            Format identifier (e.g. ``"rinex_v3"``, ``"rinex_v2"``).
+            Format identifier: ``"nmea"``, ``"rinex_v2"``, ``"rinex_v3"`` or
+            ``"rinex_v3_stripped"``.
         """
         from pathlib import Path
 

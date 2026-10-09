@@ -729,7 +729,7 @@ class GnssResearchSite:
             except ImportError as e:
                 raise ImportError(
                     "canvod-vod package required for VOD calculation. "
-                    "Install with: pip install canvod-vod"
+                    "Install with: uv add canvod-vod"
                 ) from e
 
         canopy_ds, reference_ds = self.prepare_vod_input_data(analysis_name, time_range)
