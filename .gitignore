@@ -261,7 +261,7 @@ temp/
 # Custom plotting outputs
 .vod_plotly_plots/
 *.html
-!docs/overrides/*.html
+!docs/overrides/**/*.html
 !docs/diagrams/*.html
 !docs/diagrams/poster/*.html
 

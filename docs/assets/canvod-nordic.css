@@ -192,6 +192,16 @@ main{
   border-bottom-color: var(--g1);
 }
 
+/* Site title links home (docs/overrides/partials/header.html) */
+.md-header__home,
+.md-header__home:visited,
+.md-header__home:hover{
+  display: block;
+  height: 100%;          /* the title texts inside are positioned absolutely */
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
 /* Search shortcut hint (the "⌘K" after the search button) */
 .md-search__button::after{
   color: var(--g1) !important;
