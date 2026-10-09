@@ -617,6 +617,12 @@ The following checks execute automatically in sequence. If any one fails, the co
 | **commitizen**              | `commit-msg` (after you write the message) | Validates that your commit message follows the [Conventional Commits](https://www.conventionalcommits.org/) specification | Your message does not match the `type(scope): subject` format           |
 | **ty type check**           | `pre-push` (before `git push`)             | Type checking of the whole workspace with ty                                                                              | A type error; the push is aborted                                       |
 
+CI also runs `just check-package-imports` (too slow for a hook, about two
+minutes): it installs each package with only the dependencies its own
+`pyproject.toml` declares and imports every module. It fails when a
+package imports a library it does not declare, which the shared `.venv`
+hides. Run it after you add an import of a new library to a package.
+
 After a commit, merge or checkout, the **code graph** hook rebuilds the
 code graph in the background (`.graphify/`, log in `.graphify/build.log`).
 To move `demo` and the test data to their latest commits, run

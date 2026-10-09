@@ -20,7 +20,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "canvod-grids>=0.4.0",
     "canvod-utils>=0.4.0",
     "canvod-config>=0.4.0",
     "canvod-store-metadata>=0.4.0",
@@ -37,6 +36,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "canvod-grids>=0.4.0",
     "pytest>=8.0",
     "pytest-cov>=5.0",
     "ruff>=0.14",

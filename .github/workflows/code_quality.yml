@@ -64,6 +64,19 @@ jobs:
             - name: Type check with ty
               run: just check-types
 
+    package_imports:
+        runs-on: ubuntu-latest
+        needs: [lock_file]
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: ./.github/actions/setup
+            - name: Install just
+              uses: taiki-e/install-action@9983c65e42da123ff25d1f78505eb6de315aa172 # v2.87.20
+              with:
+                  tool: just
+            - name: Import each package with only its declared dependencies
+              run: just check-package-imports
+
     agent_docs:
         runs-on: ubuntu-latest
         steps:

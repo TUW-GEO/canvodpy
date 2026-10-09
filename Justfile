@@ -121,6 +121,10 @@ check-types:
 check-agent-docs:
     uv run --no-sync python scripts/check_agent_docs.py
 
+# check that each package imports with only its own declared dependencies
+check-package-imports *PACKAGES:
+    uv run --no-sync python scripts/check_package_imports.py {{PACKAGES}}
+
 # lint, format and type-check (all packages), check the agent docs
 check: check-lint check-format check-types check-agent-docs
 

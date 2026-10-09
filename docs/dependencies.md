@@ -14,38 +14,42 @@ picture.
 
 ```mermaid
 graph TD
-    subgraph FOUNDATION["Foundation Layer (0 inter-package deps)"]
-        VOD["canvod-vod"]
-        CONFIG["canvod-config"]
+    subgraph FOUNDATION["Foundation (no inter-package dependencies)"]
         UTILS["canvod-utils"]
     end
 
-    subgraph CONSUMERS["Consumer Layer"]
+    subgraph CONSUMERS["Consumers"]
+        CONFIG["canvod-config"]
+        VOD["canvod-vod"]
         READERS["canvod-readers"]
-        AUX["canvod-auxiliary"]
-        GRIDS["canvod-grids"]
-        STORE["canvod-store"]
         STOREMETA["canvod-store-metadata"]
-        VIZ["canvod-viz"]
+        AUX["canvod-auxiliary"]
+        STORE["canvod-store"]
+        GRIDS["canvod-grids"]
         OPS["canvod-ops"]
+        VIZ["canvod-viz"]
     end
 
+    CONFIG --> UTILS
+    VOD --> UTILS
     READERS --> CONFIG & UTILS
-    AUX --> CONFIG & READERS & UTILS
-    GRIDS --> STORE
-    STORE --> AUX & CONFIG & GRIDS & READERS & UTILS & VOD
     STOREMETA --> CONFIG
+    AUX --> CONFIG & READERS & UTILS
+    STORE --> AUX & CONFIG & READERS & STOREMETA & UTILS & VOD
+    GRIDS --> STORE & STOREMETA & UTILS
+    OPS --> CONFIG & GRIDS & STORE
     VIZ --> GRIDS
-    OPS --> CONFIG & GRIDS
 ```
 
-!!! warning "canvod-grids ↔ canvod-store is circular"
-    `canvod-store` depends on `canvod-grids` for grid assignment, and
-    `canvod-grids` depends on `canvod-store` for its `AnalysisStorage`
-    store-integration adapter (see `canvod-grids/CLAUDE.md`). This is
-    intentional, not a bug — but it means the dependency graph is not a
-    strict DAG, and "layer" below means "closer to zero-Ce", not a strict
-    topological level.
+The graph has no cycle: every package depends only on packages above it
+in this order: utils; config, vod; readers, store-metadata; auxiliary;
+store; grids; ops, viz. `canvod-grids` depends on `canvod-store` for its
+`AnalysisStorage` adapter; `canvod-store` does not import `canvod-grids`
+(its tests do, so it is in canvod-store's `dev` group).
+
+`just check-package-imports` installs each package with only its declared
+dependencies and imports every module, so a dependency a package uses but
+does not declare fails in CI.
 
 ---
 
@@ -53,16 +57,16 @@ graph TD
 
 | Package | Ce (deps) | Ca (dependents) | Instability | Independence |
 |---------|:---------:|:---------------:|:-----------:|:------------:|
-| canvod-vod | 0 | 1 | 0.00 | 1.00 |
-| canvod-config | 0 | 5 | 0.00 | 1.00 |
-| canvod-utils | 0 | 3 | 0.00 | 1.00 |
-| canvod-grids | 1 | 3 | 0.25 | 0.90 |
-| canvod-store-metadata | 1 | 0 | 1.00 | 0.90 |
+| canvod-utils | 0 | 6 | 0.00 | 1.00 |
+| canvod-config | 1 | 5 | 0.17 | 0.90 |
+| canvod-store-metadata | 1 | 2 | 0.33 | 0.90 |
+| canvod-vod | 1 | 1 | 0.50 | 0.90 |
 | canvod-viz | 1 | 0 | 1.00 | 0.90 |
 | canvod-readers | 2 | 2 | 0.50 | 0.80 |
-| canvod-ops | 2 | 0 | 1.00 | 0.80 |
 | canvod-auxiliary | 3 | 1 | 0.75 | 0.70 |
-| canvod-store | 6 | 1 | 0.86 | 0.40 |
+| canvod-grids | 3 | 2 | 0.60 | 0.70 |
+| canvod-ops | 3 | 0 | 1.00 | 0.70 |
+| canvod-store | 6 | 2 | 0.75 | 0.40 |
 
 ??? note "Metric definitions"
     - **Ce (efferent coupling)** — packages this package depends on. Lower = more independent.
@@ -74,47 +78,38 @@ graph TD
 
 ## Architecture Summary
 
-!!! warning "One circular dependency"
-    - **canvod-grids ↔ canvod-store** — intentional (workflow adapters), see above
-    - 3 of 10 packages (30 %) have zero inter-package dependencies: `canvod-vod`, `canvod-config`, `canvod-utils`
-    - 16 total internal dependency edges
-    - `canvod-config` and `canvod-utils` are the most depended-on packages (Ca = 5 and 3) — changes there have the widest blast radius
+- No circular dependencies.
+- `canvod-utils` is the only package without inter-package dependencies.
+- 21 internal dependency edges.
+- `canvod-utils` and `canvod-config` are the most depended-on packages
+  (Ca = 6 and 5): changes there have the widest blast radius.
 
 ---
 
 ## Extractability
 
-Most packages can be extracted to independent repositories with zero or minimal changes:
+Each package can be extracted to its own repository once the packages it
+depends on are on PyPI:
 
-=== "Foundation packages"
+=== "Foundation"
 
     ```bash
-    # Extract directly — no internal dependencies
-    packages/canvod-vod/     → independent repo
-    packages/canvod-config/  → independent repo
-    packages/canvod-utils/   → independent repo
+    packages/canvod-utils/           → independent repo
     ```
 
-=== "Consumer packages"
+=== "Consumers"
 
     ```bash
-    # Extract + add PyPI dependencies
-    packages/canvod-readers/         → independent repo (+ canvod-config, canvod-utils on PyPI)
-    packages/canvod-auxiliary/       → independent repo (+ canvod-config, canvod-readers, canvod-utils on PyPI)
-    packages/canvod-store-metadata/  → independent repo (+ canvod-config on PyPI)
-    packages/canvod-viz/             → independent repo (+ canvod-grids on PyPI)
-    packages/canvod-ops/             → independent repo (+ canvod-config, canvod-grids on PyPI)
-    ```
-
-=== "Circular pair"
-
-    ```bash
-    # canvod-grids and canvod-store depend on each other — extract together,
-    # or break the cycle first by moving AnalysisStorage out of canvod-grids
-    packages/canvod-grids/  ─┐
-    packages/canvod-store/  ─┘→ independent repo(s) (+ canvod-auxiliary,
-                                 canvod-config, canvod-readers, canvod-utils,
-                                 canvod-vod on PyPI)
+    packages/canvod-config/          → independent repo (+ canvod-utils)
+    packages/canvod-vod/             → independent repo (+ canvod-utils)
+    packages/canvod-readers/         → independent repo (+ canvod-config, canvod-utils)
+    packages/canvod-store-metadata/  → independent repo (+ canvod-config)
+    packages/canvod-auxiliary/       → independent repo (+ canvod-config, canvod-readers, canvod-utils)
+    packages/canvod-store/           → independent repo (+ canvod-auxiliary, canvod-config,
+                                         canvod-readers, canvod-store-metadata, canvod-utils, canvod-vod)
+    packages/canvod-grids/           → independent repo (+ canvod-store, canvod-store-metadata, canvod-utils)
+    packages/canvod-ops/             → independent repo (+ canvod-config, canvod-grids, canvod-store)
+    packages/canvod-viz/             → independent repo (+ canvod-grids)
     ```
 
 ---

@@ -450,7 +450,6 @@ source = { editable = "packages/canvod-store" }
 dependencies = [
     { name = "canvod-auxiliary" },
     { name = "canvod-config" },
-    { name = "canvod-grids" },
     { name = "canvod-readers" },
     { name = "canvod-store-metadata" },
     { name = "canvod-utils" },
@@ -465,6 +464,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "canvod-grids" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -475,7 +475,6 @@ dev = [
 requires-dist = [
     { name = "canvod-auxiliary", editable = "packages/canvod-auxiliary" },
     { name = "canvod-config", editable = "packages/canvod-config" },
-    { name = "canvod-grids", editable = "packages/canvod-grids" },
     { name = "canvod-readers", editable = "packages/canvod-readers" },
     { name = "canvod-store-metadata", editable = "packages/canvod-store-metadata" },
     { name = "canvod-utils", editable = "packages/canvod-utils" },
@@ -490,6 +489,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "canvod-grids", editable = "packages/canvod-grids" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
     { name = "ruff", specifier = ">=0.14" },
