@@ -6,10 +6,6 @@
 # Serve locally with: just docs
 # Build with:         just docs-build
 #
-# Root-level files (CONTRIBUTING.md, VERSIONING.md, RELEASING.md) are
-# copied into docs/ so zensical can serve them from the default docs_dir.
-# Keep them in sync: cp CONTRIBUTING.md VERSIONING.md RELEASING.md docs/
-#
 # ==========================================================================
 
 [project]

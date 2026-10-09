@@ -138,9 +138,9 @@ GNSS-T programs). See [Extensions](guides/extensions.md).
     Install only what you need:
 
     ```bash
-    pip install canvod-readers          # Readers only
-    pip install canvod-grids canvod-vod # Grid + VOD
-    pip install canvodpy                # Everything
+    uv add canvod-readers           # Readers only
+    uv add canvod-grids canvod-vod  # Grid + VOD
+    uv add canvodpy                 # Everything
     ```
 
 -   :fontawesome-solid-sitemap: &nbsp; **Layered Dependency Graph**

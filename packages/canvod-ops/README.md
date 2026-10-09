@@ -22,7 +22,7 @@ steps to GNSS datasets. Operations are composable and chainable via `Pipeline`.
 ## Installation
 
 ```bash
-uv pip install canvod-ops
+uv add canvod-ops
 ```
 
 ## Configuration

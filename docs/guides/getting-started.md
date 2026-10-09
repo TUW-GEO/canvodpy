@@ -8,7 +8,7 @@ This guide walks you through everything you need, from creating a GitHub account
     [Users guide](../users/index.md) instead of this page.
 
     ```bash
-    uv add canvodpy    # or: pip install canvodpy
+    uv add canvodpy
     ```
 
     (`uv` is a fast Python package manager — see [step 6](#6-install-development-tools).

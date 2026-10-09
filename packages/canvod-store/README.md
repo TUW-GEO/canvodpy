@@ -14,7 +14,7 @@ This package provides versioned storage for GNSS data using Icechunk, managing:
 ## Installation
 
 ```bash
-uv pip install canvod-store
+uv add canvod-store
 ```
 
 ## Configuration (optional)

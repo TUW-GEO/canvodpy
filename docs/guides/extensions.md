@@ -41,7 +41,7 @@ uv sync --group filemap
 
 installs that release on any machine, no sibling checkout required. The
 group exists only in this repository: it is not part of the `canvodpy`
-package on PyPI, so `pip install "canvodpy[filemap]"` does not exist.
+package on PyPI, so `canvodpy[filemap]` does not exist.
 Elsewhere, install the package from its tag:
 
 ```bash

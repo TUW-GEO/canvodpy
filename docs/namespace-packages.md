@@ -126,9 +126,9 @@ When Python processes `from canvod.readers import Rnxv3Obs`:
 Because each sub-package is self-contained, users install only what they need:
 
 ```bash
-pip install canvod-readers            # readers only
-pip install canvod-readers canvod-store   # subset
-pip install canvodpy                  # everything
+uv add canvod-readers                # readers only
+uv add canvod-readers canvod-store   # subset
+uv add canvodpy                      # everything
 ```
 
 ---

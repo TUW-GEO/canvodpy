@@ -173,7 +173,7 @@ assignment (`processing.preprocessing`) added.
 Install the plugin into the environment canvodpy runs in:
 
 ```bash
-uv pip install -e ./my-canvod-plugin
+uv add --editable ./my-canvod-plugin
 ```
 
 Name the reader in the receivers that record that format (canopy and

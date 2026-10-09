@@ -114,7 +114,7 @@ signal-to-noise ratio observations.
 ## Quick Start
 
 ```bash
-pip install canvodpy
+uv add canvodpy
 ```
 
 === "CLI — running the pipeline"

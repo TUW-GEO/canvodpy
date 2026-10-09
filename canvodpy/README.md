@@ -24,7 +24,7 @@ Four API levels are available to match your workflow:
 
 ```bash
 # Installs canvodpy + all 11 sub-packages
-uv pip install canvodpy
+uv add canvodpy
 ```
 
 ## Quick Start

@@ -108,8 +108,10 @@ Issues     = "https://github.com/nfb2021/canvodpy/issues"
     uv build
     uv publish --repository testpypi
 
-    # Verify installation
-    pip install --index-url https://test.pypi.org/simple/ canvod-readers
+    # Verify installation (dependencies come from PyPI)
+    uv run --isolated --no-project --with canvod-readers \
+      --index https://test.pypi.org/simple/ --index-strategy unsafe-best-match \
+      python -c "import canvod.readers"
     ```
 
 === "Production PyPI"

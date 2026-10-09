@@ -27,12 +27,7 @@ ical data.
 ## Installation
 
 ```bash
-# From workspace root
-uv pip install canvod-viz
-
-# Or install in development mode
-cd packages/canvod-viz
-uv pip install -e .
+uv add canvod-viz
 ```
 
 ## Quick Start

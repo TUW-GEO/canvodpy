@@ -24,14 +24,14 @@ for the per-type tradeoffs).
 ## Installation
 
 ```bash
-uv pip install canvod-grids
+uv add canvod-grids
 ```
 
 `healpix` additionally requires [`healpy`](https://healpy.readthedocs.io/),
 which is **not** installed by the above (no Windows wheels on PyPI, so it
-isn't a hard dependency of this package): `pip install healpy` /
-`uv pip install healpy` separately. `create_hemigrid("healpix", ...)` raises
-`ImportError` with the same instructions if it's missing.
+isn't a hard dependency of this package): install it separately with
+`uv add healpy`. `create_hemigrid("healpix", ...)` raises `ImportError` if
+it's missing.
 
 ## Quick Start
 

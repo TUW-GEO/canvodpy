@@ -15,7 +15,7 @@ chain with zero real callers anywhere in the pipeline.
 ## Installation
 
 ```bash
-uv pip install -e packages/canvod-utils
+uv add canvod-utils
 ```
 
 ## Quick Start

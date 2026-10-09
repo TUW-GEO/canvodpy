@@ -225,8 +225,8 @@ git push origin v1.1.0 canvod-grids-v1.0.1 canvod-store-v1.1.0
 gh workflow run publish_pypi.yml --ref v1.1.0
 ```
 
-Users then install `pip install canvodpy==1.1.0` (the whole tested mix) or
-`pip install canvod-store==1.1.0` on its own.
+Users then install `uv add canvodpy==1.1.0` (the whole tested mix) or
+`uv add canvod-store==1.1.0` on its own.
 
 ---
 

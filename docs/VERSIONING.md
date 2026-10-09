@@ -23,7 +23,7 @@ canvodpy version names exactly the mix of packages it installs.
 
     ---
 
-    `pip install canvodpy==1.1.0` installs exactly the mix of packages that
+    `uv add canvodpy==1.1.0` installs exactly the mix of packages that
     was tested together, so one version is enough to cite in a paper.
 
 </div>

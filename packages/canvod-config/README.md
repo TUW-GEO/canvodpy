@@ -12,7 +12,7 @@ Configuration models and YAML loading for canvodpy.
 ## Installation
 
 ```bash
-uv pip install -e packages/canvod-config
+uv add canvod-config
 ```
 
 ## Quick Start
@@ -150,8 +150,8 @@ just config-edit
 
 ## Resolving the settings file location
 
-Outside a canvodpy monorepo checkout (e.g. a standalone `pip install
-canvod-config`), there's no `.git` to find, so `load_config()` falls back to
+Outside a canvodpy monorepo checkout (for example, canvod-config
+installed on its own), there's no `.git` to find, so `load_config()` falls back to
 XDG: `$XDG_CONFIG_HOME/canvodpy`, or `~/.config/canvodpy` if that isn't set.
 Two environment variables override this:
 

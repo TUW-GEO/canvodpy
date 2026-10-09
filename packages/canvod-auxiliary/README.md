@@ -39,7 +39,7 @@ Part of the [canVODpy](https://github.com/nfb2021/canvodpy) ecosystem.
 ## Installation
 
 ```bash
-uv pip install canvod-auxiliary
+uv add canvod-auxiliary
 ```
 
 ## Configuration (optional)

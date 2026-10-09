@@ -16,7 +16,7 @@ This monorepo publishes **8 separate packages** to PyPI:
 
 **User experience:**
 ```bash
-pip install canvodpy  # Gets all 8 packages automatically
+uv add canvodpy  # Gets all packages automatically
 ```
 
 <div class="grid cards" markdown>
@@ -33,7 +33,7 @@ pip install canvodpy  # Gets all 8 packages automatically
     ---
 
     Production account · Environment protection · Stable releases only.
-    `pip install canvodpy` serves users from here.
+    `uv add canvodpy` serves users from here.
 
 </div>
 
@@ -263,15 +263,11 @@ just tag-release && git push origin v0.1.0b1
 
 **Test installation:**
 ```bash
-# Create test environment
-uv venv test-env
-source test-env/bin/activate  # or test-env\Scripts\activate on Windows
-
-# Install from TestPyPI
-pip install --index-url https://test.pypi.org/simple/ canvodpy
-
-# Test it works
-python -c "import canvodpy; print(canvodpy.__version__)"
+# Install from TestPyPI into a throwaway environment and print the version
+# (dependencies come from PyPI)
+uv run --isolated --no-project --with canvodpy \
+  --index https://test.pypi.org/simple/ --index-strategy unsafe-best-match \
+  python -c "import canvodpy; print(canvodpy.__version__)"
 # Should print: 0.1.0b1
 
 # Clean up
@@ -420,8 +416,8 @@ just tag-release && git push origin v0.1.0 canvod-readers-v0.1.0 ...
 
 **Verify:**
 ```bash
-pip install canvodpy
-python -c "import canvodpy; print(canvodpy.__version__)"
+uv run --isolated --no-project --with canvodpy \
+  python -c "import canvodpy; print(canvodpy.__version__)"
 # Should print: 0.1.0
 ```
 
@@ -451,8 +447,8 @@ python -c "import canvodpy; print(canvodpy.__version__)"
 === "User installation"
 
     ```bash
-    pip install canvodpy          # latest stable
-    pip install canvodpy==0.2.0   # specific version
+    uv add canvodpy          # latest stable
+    uv add canvodpy==0.2.0   # specific version
     ```
 
 ---
@@ -461,7 +457,7 @@ python -c "import canvodpy; print(canvodpy.__version__)"
 
 !!! tip "Test on TestPyPI first"
     Use `-beta.X` or `-alpha.X` version suffixes to publish to TestPyPI.
-    Verify `pip install --index-url https://test.pypi.org/simple/ canvodpy` works
+    Verify that the TestPyPI install works (see Test installation)
     before creating a stable release.
 
 !!! warning "Version numbers are permanent"

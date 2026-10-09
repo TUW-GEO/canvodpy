@@ -14,7 +14,7 @@ GNSS data format readers for canVODpy.
 ## Installation
 
 ```bash
-uv pip install canvod-readers
+uv add canvod-readers
 ```
 
 ## Configuration (optional)

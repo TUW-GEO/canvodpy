@@ -72,10 +72,10 @@ rm ~/.local/bin/canvodpy
     ln -sf "$(pwd)/.venv/bin/canvodpy" ~/.local/bin/canvodpy
     ```
 
-### One-off use, no persistent install
+### Inside your own uv project
 
 ```bash
-uv add canvodpy    # or: pip install canvodpy
+uv add canvodpy
 ```
 
 adds it to a project's own environment — only invocable via `uv run canvodpy`

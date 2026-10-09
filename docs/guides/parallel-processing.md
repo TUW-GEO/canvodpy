@@ -63,7 +63,7 @@ For a pipeline that processes hundreds of files across many days, the cost of
 importing Python and all scientific dependencies (numpy, xarray, icechunk, …) into
 fresh processes on every batch dominates wall time.
 
-**loky** (`pip install loky`, also the backend behind [joblib](https://joblib.readthedocs.io/))
+**loky** (a canvodpy dependency, also the backend behind [joblib](https://joblib.readthedocs.io/))
 provides a **reusable process pool** that stays alive between batches:
 
 - Workers are started once at pipeline launch and reused across all tasks.

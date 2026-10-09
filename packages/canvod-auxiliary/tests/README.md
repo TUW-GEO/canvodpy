@@ -232,8 +232,8 @@ CI configuration: `.github/workflows/test.yml`
 
 ### Import Errors
 ```bash
-# Install package in development mode
-uv pip install -e .
+# Install the workspace packages (editable) from the repository root
+uv sync
 ```
 
 ### Missing Dependencies

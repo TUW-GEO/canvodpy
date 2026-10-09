@@ -14,7 +14,7 @@ description: Drive canVODpy from Python with Site.pipeline() for scripted runs.
 ## Installation
 
 ```bash
-uv add canvodpy    # or: pip install canvodpy
+uv add canvodpy
 ```
 
 This adds canVODpy to your project's own environment.

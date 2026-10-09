@@ -13,7 +13,7 @@ This package provides VOD (Vegetation Optical Depth) calculation algorithms base
 ## Installation
 
 ```bash
-uv pip install canvod-vod
+uv add canvod-vod
 ```
 
 ## Quick Start
