@@ -263,14 +263,8 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
       pages, anchors, and links to other sites. Install lychee once with
       `brew install lychee`.
 
-    Mermaid diagram sources live in `docs/diagrams/` as `.mmd` files.
-    Render them to SVG/PNG using beautiful-mermaid:
-
-    ```bash
-    npx beautiful-mermaid render docs/diagrams/<file.mmd>
-    ```
-
-    Do not commit generated images (`*.png`, `*.svg`).
+    Write diagrams as Mermaid code blocks inside the page; the browser
+    renders them. `docs/diagrams/` holds only files that a page embeds.
 
 ---
 

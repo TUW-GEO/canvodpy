@@ -263,7 +263,6 @@ temp/
 *.html
 !overrides/**/*.html
 !docs/diagrams/*.html
-!docs/diagrams/poster/*.html
 
 # Documentation builds
 site/
