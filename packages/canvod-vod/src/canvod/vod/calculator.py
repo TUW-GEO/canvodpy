@@ -1,7 +1,6 @@
 """VOD calculators based on Tau-Omega model variants."""
 
 import time
-import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -9,7 +8,7 @@ from typing import Any
 import numpy as np
 import structlog
 import xarray as xr
-from canvod.utils.tools import deprecated
+from canvod.utils.tools import deprecated, deprecated_argument
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 log = structlog.get_logger(__name__)
@@ -122,7 +121,7 @@ class VODCalculator(ABC, BaseModel):
         except ImportError as e:
             raise ImportError(
                 "canvod-store package required for from_icechunkstore(). "
-                "Install with: pip install canvod-store"
+                "Install with: uv add canvod-store"
             ) from e
 
         store = MyIcechunkStore(icechunk_store_pth)
@@ -134,6 +133,14 @@ class VODCalculator(ABC, BaseModel):
         return cls.from_datasets(canopy_ds=canopy_ds, sky_ds=sky_ds)
 
     @classmethod
+    @deprecated_argument(
+        "align",
+        "The 'align' argument of from_datasets() is left over from "
+        "development and will be removed with the next major "
+        "version. It is ignored: the calculator always aligns both "
+        "datasets on their shared epochs and signals. Remove the "
+        "argument.",
+    )
     def from_datasets(
         cls,
         canopy_ds: xr.Dataset,
@@ -148,26 +155,12 @@ class VODCalculator(ABC, BaseModel):
             Canopy receiver dataset.
         sky_ds : xr.Dataset
             Sky/reference receiver dataset.
-        align : bool, optional
-            Deprecated and ignored: the calculator always aligns both
-            datasets on their shared coordinates.
 
         Returns
         -------
         xr.Dataset
             VOD dataset.
         """
-        if align is not None:
-            warnings.warn(
-                "The 'align' argument of from_datasets() is left over from "
-                "development and will be removed with the next major "
-                "version. It is ignored: the calculator always aligns both "
-                "datasets on their shared epochs and signals. Remove the "
-                "argument.",
-                FutureWarning,
-                stacklevel=2,
-            )
-
         calculator = cls(canopy_ds=canopy_ds, sky_ds=sky_ds)
         return calculator.calculate_vod()
 

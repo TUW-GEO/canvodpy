@@ -1,4 +1,4 @@
-"""Shared deprecation-warning decorator for canVODpy packages."""
+"""Shared deprecation-warning decorators for canVODpy packages."""
 
 from __future__ import annotations
 
@@ -34,6 +34,32 @@ def deprecated(message: str) -> Callable[[Any], Any]:
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             warnings.warn(message, FutureWarning, stacklevel=2)
             return obj(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def deprecated_argument(name: str, message: str) -> Callable[[Any], Any]:
+    """Emit a ``FutureWarning`` when the argument *name* is passed.
+
+    For an argument that is left over from development while the function
+    itself stays. The warning fires whether the argument is passed by
+    position or by keyword, also with its default value. Leave the
+    argument out of the docstring: the API reference hides it.
+    """
+
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        signature = inspect.signature(func)
+        if name not in signature.parameters:
+            msg = f"{func.__qualname__}() has no argument {name!r}"
+            raise TypeError(msg)
+
+        @functools.wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            if name in signature.bind_partial(*args, **kwargs).arguments:
+                warnings.warn(message, FutureWarning, stacklevel=2)
+            return func(*args, **kwargs)
 
         return wrapper
 

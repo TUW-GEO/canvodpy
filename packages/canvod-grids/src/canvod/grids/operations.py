@@ -15,7 +15,6 @@ Vertex / grid conversion
 
 from __future__ import annotations
 
-import warnings
 from importlib.metadata import version
 from typing import TYPE_CHECKING, Any
 
@@ -25,7 +24,7 @@ import xarray as xr
 
 from canvod.grids._internal.cell_lookup import cell_lookup
 from canvod.store_metadata.io import commit_with_rebase
-from canvod.utils.tools import deprecated
+from canvod.utils.tools import deprecated, deprecated_argument
 
 if TYPE_CHECKING:
     from canvod.grids.core import GridData
@@ -66,6 +65,12 @@ _RESOLUTION_DESCRIPTIONS: dict[str, str] = {
 # ==============================================================================
 
 
+@deprecated_argument(
+    "data_var",
+    "The data_var argument of add_cell_ids_to_ds_fast() is left over "
+    "from development and will be removed with the next major version. "
+    "Use add_cell_ids_to_ds_fast(ds, grid, grid_name) instead.",
+)
 def add_cell_ids_to_ds_fast(
     ds: xr.Dataset,
     grid: GridData,
@@ -102,8 +107,6 @@ def add_cell_ids_to_ds_fast(
         geometry the lookup needs (ValueError).
     grid_name : str
         Grid identifier; the output variable is ``cell_id_<grid_name>``.
-    data_var : str | None
-        Not used. Passing it is deprecated.
 
     Returns
     -------
@@ -113,15 +116,6 @@ def add_cell_ids_to_ds_fast(
         observation lies outside the grid.
     """
     import dask.array as da
-
-    if data_var is not None:
-        warnings.warn(
-            "The data_var argument of add_cell_ids_to_ds_fast() is left over "
-            "from development and will be removed with the next major version. "
-            "Use add_cell_ids_to_ds_fast(ds, grid, grid_name) instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
 
     lookup = cell_lookup(grid)
 

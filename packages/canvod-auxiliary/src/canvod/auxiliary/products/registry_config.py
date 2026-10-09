@@ -7,6 +7,7 @@ import warnings
 from pathlib import Path
 from typing import Literal
 
+from canvod.utils.tools import deprecated
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 #: Every registry product file covers one day.
@@ -152,27 +153,23 @@ class ProductSpec(BaseModel):
         return ["SP3", "CLK"] if self.has_clock else ["SP3"]
 
     @property
+    @deprecated(
+        "ProductSpec.sampling_rate is left over from development and will "
+        "be removed with the next major version. Use "
+        "ProductSpec.sp3_samplings instead."
+    )
     def sampling_rate(self) -> str:
-        """First SP3 sampling (deprecated)."""
-        warnings.warn(
-            "ProductSpec.sampling_rate is left over from development and will "
-            "be removed with the next major version. Use "
-            "ProductSpec.sp3_samplings instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
+        """First SP3 sampling."""
         return self.sp3_samplings[0]
 
     @property
+    @deprecated(
+        "ProductSpec.duration is left over from development and will be "
+        "removed with the next major version. Every registry product "
+        "file covers one day ('01D')."
+    )
     def duration(self) -> str:
-        """File duration, always one day (deprecated)."""
-        warnings.warn(
-            "ProductSpec.duration is left over from development and will be "
-            "removed with the next major version. Every registry product "
-            "file covers one day ('01D').",
-            FutureWarning,
-            stacklevel=2,
-        )
+        """File duration, always one day."""
         return FILE_DURATION
 
     def sp3_filenames(self, yyyydoy: str) -> list[str]:

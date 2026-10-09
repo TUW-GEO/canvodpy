@@ -20,7 +20,7 @@ nothing in a run may still call deprecated code.
 
 ## 2. Mark it
 
-Use the one decorator, `deprecated` from
+Use the decorator `deprecated` from
 `packages/canvod-utils/src/canvod/utils/tools/deprecation.py`
 (`from canvod.utils.tools import deprecated`). It emits `FutureWarning`,
 which Python shows by default. A package that uses it lists canvod-utils
@@ -40,13 +40,27 @@ The message says three things, in words a scientist understands:
 2. it will be removed with the next major version,
 3. what to use instead.
 
-A deprecated argument warns inside the function when it is passed. A
-deprecated module says so in its docstring and warns on use.
+A deprecated argument gets `deprecated_argument` (same module), which
+warns when the argument is passed, with a message of the same three
+parts:
+
+```python
+@deprecated_argument(
+    "align",
+    "The 'align' argument of from_datasets() is left over from development "
+    "and will be removed with the next major version. Remove the argument.",
+)
+```
+
+Leave the argument out of the docstring. A deprecated module says so in
+its docstring and warns on use.
 
 ## 3. Same PR
 
 - A test that the warning fires and that the old name still works
   (delegating to the replacement where possible).
-- Docs: mark it deprecated where it is described, teach the replacement.
+- Docs: remove it from the guides and examples, teach the replacement.
+  The API reference hides it on its own (`scripts/griffe_hide_deprecated.py`
+  reads both decorators).
 - The `AGENTS.md` of the package, if it names the code.
 - Commit: `refactor(<scope>): deprecate <name>, use <replacement>`.

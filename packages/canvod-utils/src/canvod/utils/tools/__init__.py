@@ -32,7 +32,7 @@ Examples
 """
 
 from .date_utils import YYDOY, YYYYDOY, get_gps_week_from_filename
-from .deprecation import deprecated
+from .deprecation import deprecated, deprecated_argument
 from .hashing import bytes_hash, file_hash
 from .sanitize import sanitize_directory
 from .validation import isfloat
@@ -49,6 +49,7 @@ __all__ = [
     "_worker_init",
     "bytes_hash",
     "deprecated",
+    "deprecated_argument",
     "file_hash",
     "get_gps_week_from_filename",
     "get_version_from_pyproject",

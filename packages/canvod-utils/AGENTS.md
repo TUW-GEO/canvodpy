@@ -9,7 +9,7 @@ deprecation decorator, the logging run context. No CLI, no settings.
 |---|---|
 | `tools/date_utils.py` | `YYYYDOY` and friends |
 | `tools/hashing.py` | File hash (the `"File Hash"` attribute) |
-| `tools/deprecation.py` | `deprecated`: the one deprecation decorator (`FutureWarning`) |
+| `tools/deprecation.py` | `deprecated` for code, `deprecated_argument` for one argument (both `FutureWarning`) |
 | `logging/` | `run_context`, `stage_timer` |
 | `plugins.py` | Entry point groups `canvodpy.readers` / `canvodpy.vod_calculators`, `load_plugins`, `PluginError`: the one place plugins are found |
 

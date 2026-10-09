@@ -27,9 +27,8 @@ canopy_ds = xr.open_dataset("canopy.nc")
 sky_ds = xr.open_dataset("sky.nc")
 
 # Calculate VOD
-vod_ds = TauOmegaZerothOrder.from_datasets(
-    canopy_ds=canopy_ds, sky_ds=sky_ds, align=True
-)
+# The calculator aligns both datasets on their shared epochs and signals
+vod_ds = TauOmegaZerothOrder.from_datasets(canopy_ds=canopy_ds, sky_ds=sky_ds)
 ```
 
 ## Features

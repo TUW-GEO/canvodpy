@@ -4,6 +4,8 @@ Code marked with the ``deprecated`` decorator of canvod-utils still ships
 until the next major version, but the docs describe only the code to use.
 The extension removes every class, function, method and property that
 carries the decorator, and every re-export of one, from the loaded API.
+It also removes each argument named by a ``deprecated_argument`` decorator
+from its function's signature.
 
 Configured in ``zensical.toml`` (mkdocstrings handler option ``extensions``).
 """
@@ -27,6 +29,21 @@ def _decorated_deprecated(node: Any) -> bool:
         if name == "deprecated" or name.endswith(".deprecated"):
             return True
     return False
+
+
+def _deprecated_arguments(node: Any) -> list[str]:
+    # ``deprecated_argument("name", "message")``, bare or as an attribute.
+    names = []
+    for decorator in getattr(node, "decorator_list", []):
+        if not isinstance(decorator, ast.Call) or not decorator.args:
+            continue
+        name = ast.unparse(decorator.func)
+        first = decorator.args[0]
+        if (
+            name == "deprecated_argument" or name.endswith(".deprecated_argument")
+        ) and isinstance(first, ast.Constant):
+            names.append(first.value)
+    return names
 
 
 def _drop_aliases(obj: griffe.Object, removed: set[str]) -> None:
@@ -55,6 +72,8 @@ class HideDeprecated(griffe.Extension):
         self, *, node: Any, func: griffe.Function, **kwargs: Any
     ) -> None:
         self._check(node, func)
+        for name in _deprecated_arguments(node):
+            del func.parameters[name]
 
     def on_attribute_instance(
         self, *, node: Any, attr: griffe.Attribute, **kwargs: Any

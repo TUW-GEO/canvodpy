@@ -28,6 +28,7 @@ file_hash(path)  # first 16 hex digits of the file's SHA-256
 | `isfloat` | Safe float-parsing check |
 | `get_version_from_pyproject` | Read a package version directly from `pyproject.toml` |
 | `deprecated` | Decorator that marks code left over from development: warns on use and names the replacement |
+| `deprecated_argument` | Decorator that marks one argument as left over from development: warns when it is passed |
 | `sanitize_directory` | Remove files the OS drops into data folders (e.g. `.DS_Store`) |
 
 ---

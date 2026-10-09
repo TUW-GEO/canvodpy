@@ -46,15 +46,15 @@ analyses.
     vod_result = calculator.calculate_vod()
     ```
 
-=== "From aligned datasets"
+=== "From two datasets"
 
     ```python
     from canvod.vod import TauOmegaZerothOrder
 
+    # Aligns both datasets on their shared epochs and signals
     vod_result = TauOmegaZerothOrder.from_datasets(
         canopy_ds=canopy_ds,
         sky_ds=sky_ds,
-        align=True,  # auto-align epochs before differencing
     )
     ```
 

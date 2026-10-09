@@ -73,8 +73,8 @@ All three find files through `canvodpy/src/canvodpy/orchestrator/discovery.py`
 and compute VOD with `VodComputer` (`canvodpy/src/canvodpy/vod_computer.py`).
 Deprecated, still working until v2.0.0, never recommended: `FluentWorkflow`,
 `process_date()`/`calculate_vod()`/`preview_processing()`, `VODWorkflow`,
-`canvodpy.functional`, the per-format Airflow tasks. Details in
-`docs/guides/api-levels.md`.
+`canvodpy.functional`, the per-format Airflow tasks. Each one's warning
+names its replacement; the docs leave them out.
 
 ### Data contracts
 
@@ -237,7 +237,7 @@ For more context than this file gives, read in this order:
 2. `docs/adr/index.md`: the decisions and why they were made
 3. `docs/architecture.md`: packages, layers, the processing flow
 4. `docs/principles.md`: design principles, the file name convention
-5. `docs/guides/api-levels.md`: CLI and `Site.pipeline()`, deprecated surfaces
+5. `docs/guides/api-levels.md`: CLI and `Site.pipeline()`
 6. `docs/guides/configuration.md`: the settings file
 7. `docs/guides/getting-started.md`: setup and a first run
 8. `docs/packages/naming/overview.md`: which files a run processes, naming recipes
