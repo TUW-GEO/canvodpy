@@ -305,4 +305,4 @@ retrieval, and the result is written to the site's VOD store (pass
 
 ---
 
-**Next in the trail:** [Configuration](configuration.md) · [Users guide](../users/index.md) · [Architecture](../architecture.md)
+**Next in the trail:** [Configuration](configuration.md) · [Retrieve VOD](../users/index.md) · [Architecture](../architecture.md)

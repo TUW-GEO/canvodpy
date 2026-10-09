@@ -239,7 +239,7 @@ For more context than this file gives, read in this order:
 4. `docs/principles.md`: design principles, the file name convention
 5. `docs/guides/api-levels.md`: CLI and `Site.pipeline()`
 6. `docs/guides/configuration.md`: the settings file
-7. `docs/guides/getting-started.md`: setup and a first run
+7. `docs/guides/contributor-setup.md`: setup and a first run
 8. `docs/packages/naming/overview.md`: which files a run processes, naming recipes
 9. `docs/guides/extensions.md`: the optional packages
 10. `docs/packages/`: one folder per package, start at its overview page

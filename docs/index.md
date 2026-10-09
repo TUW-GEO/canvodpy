@@ -24,8 +24,8 @@ signal-to-noise ratio observations.
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/nfb2021/canvodpy/badge)](https://securityscorecards.dev/viewer/?uri=github.com/nfb2021/canvodpy)
 [![VODnet](https://img.shields.io/badge/-VODnet-2d6a4f?labelColor=555555&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAHhlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAA6gAwAEAAAAAQAAAA4AAAAAjn8NzQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAflJREFUKBWtUEtoE1EUPe+9SczHiam/aixtqi1E7aai4kK0CAVBDFZwrQs3xp2KIriYtiKuav3QRVxYKIjFVihWrCBIaaWioKidQBsxi3SwYmMmkxidYWaemYEEKUgRPHDhXu4575x3gf+NKfVD3UQ2u/Zv7wrLF8mPfV2ZH1ZCNIM7xUCAHHjyfN6wQ8mZo3vvE4Av57tzOjfd/WZpivfJSW5wkzvomnzFe2SFTyyU+iFJtCpk1eaRfOIw84TuRsN7kEkVMDzyEjPvUtga2YiDTRFM5+m+F8XYHMZuzDqaWlQf8yVMpmJ0/DUu9g6hVNQAy8au3W04NHAV85oFRulZS+LDkIjtWmcyHT6vQHYoXwrouTWKkv4LLOAHE4N4K6dxZ2AISl4DpawVDVrYcXSFZtTPGSV8IatjUVErJ+Cwbdstx3Vw8CG+pmQIHg+HUVlWo7aSp/qz9Kn3W5p5S/x4DJ8/lfGt4kAow7bmBpQ9fuQ3RUFtM4Uz61Qk/vijbpLbgtc61n05zjQ1hCvXHmB9fT3OnT8NOWfi+uxP0IJxE4S4jrXzxrffm1xlb75Aud/cEFmD9vYW6KaNUoUmCpS3BblUPNk45sR0UBM6Qzx2qd9LVnfqujGS+64puaX8olEuj4uMHHnc2dTrcFZGtCOMxv11KxP/kfEbTTzNcyb5ar0AAAAASUVORK5CYII=&logoColor=white)](https://www.gfz.de/en/section/remote-sensing-and-geoinformatics/projects/vodnet)
 
-[Get started retrieving VOD :fontawesome-solid-arrow-right:](users/index.md){ .md-button .md-button--primary }
-[Get started contributing to the ecosystem :fontawesome-solid-arrow-right:](CONTRIBUTING.md){ .md-button }
+[Retrieve VOD from your GNSS data :fontawesome-solid-arrow-right:](users/index.md){ .md-button .md-button--primary }
+[Contribute to canVODpy :fontawesome-solid-arrow-right:](CONTRIBUTING.md){ .md-button }
 
 </div>
 
@@ -218,8 +218,8 @@ flowchart TD
 
     ---
 
-    Pre-flight validation of data directories against the canVOD
-    naming convention. Hard gate before ingestion.
+    The canVOD file name convention: parses and builds canonical
+    names, finds files whose time spans overlap.
 
 -   :fontawesome-solid-wand-magic-sparkles: &nbsp; **canvod-ops**
 
@@ -239,7 +239,8 @@ flowchart TD
 
     ---
 
-    Umbrella package — CLI, `Site.pipeline()`, functional API, factory system.
+    Umbrella package — CLI, `Site.pipeline()`, the factories for readers,
+    grids and VOD calculators.
 
 </div>
 

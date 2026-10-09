@@ -286,7 +286,7 @@ Full documentation is available at **[nfb2021.github.io/canvodpy](https://nfb202
 
 Key pages:
 
-- [Getting Started](https://nfb2021.github.io/canvodpy/guides/getting-started/)
+- [Contributor Setup](https://nfb2021.github.io/canvodpy/guides/contributor-setup/)
 - [Architecture & Design Patterns](https://nfb2021.github.io/canvodpy/guides/architecture-design/)
 - [API Levels](https://nfb2021.github.io/canvodpy/guides/api-levels/)
 - [Configuration Guide](https://nfb2021.github.io/canvodpy/guides/configuration/)

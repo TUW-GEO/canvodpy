@@ -4,7 +4,7 @@ This guide walks you through everything you need, from creating a GitHub account
 
 !!! tip "Just want to *use* canVODpy, not contribute?"
 
-    See the [Users guide](../users/index.md) instead.
+    See [Retrieve VOD](../users/index.md) instead.
 
 <div class="grid cards" markdown>
 
@@ -342,7 +342,7 @@ just graph
 
 ## 10. Configure and run
 
-Follow the [Users guide](../users/index.md) to initialize `canvod-settings.yaml`, validate it, and process your first day of GNSS data.
+Follow [Retrieve VOD](../users/index.md) to initialize `canvod-settings.yaml`, validate it, and process your first day of GNSS data.
 
 ---
 

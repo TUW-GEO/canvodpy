@@ -1,9 +1,9 @@
 ---
-title: Get Started — Users
+title: Retrieve VOD
 description: Retrieve GNSS-T VOD with canVODpy, from the command line or from Python.
 ---
 
-# Get Started Retrieving VOD
+# Retrieve VOD from your GNSS data
 
 **The CLI is the main way to use canVODpy** — a complete, terminal-first
 entrypoint designed to run unattended: cron jobs, HPC/remote machines,
@@ -42,7 +42,6 @@ configuration file — see whichever guide you pick for the full walkthrough.
 
 ---
 
-Looking to contribute to canVODpy itself, not just use it? See
-[Get Started Contributing](../guides/getting-started.md) instead — it
-covers everything here plus the development environment, tests, and PR
-workflow.
+To work on canVODpy itself, see
+[Contributor setup](../guides/contributor-setup.md): the development
+environment, tests and the pull request workflow.

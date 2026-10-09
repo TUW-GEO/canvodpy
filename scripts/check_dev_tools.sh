@@ -16,7 +16,7 @@ done
 
 echo ""
 if [ "$errors" -gt 0 ]; then
-    echo "$errors tool(s) missing. See docs/guides/getting-started.md for install instructions."
+    echo "$errors tool(s) missing. See docs/guides/contributor-setup.md for install instructions."
     exit 1
 else
     echo "All development tools are installed."
