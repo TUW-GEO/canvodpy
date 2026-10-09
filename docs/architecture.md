@@ -94,11 +94,8 @@ graph TD
 | **Quality Assurance** | canvod-preflight | The canonical file name convention: parsing, building, overlap detection |
 | **Foundation** | canvod-config, canvod-utils | Settings models and loading; dates, file hashes, the deprecation decorator, logging context |
 
-Three more packages are optional and live in
-[canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions), installed
-from GitHub: `canvod-filemap` (naming recipes for other file names),
-`canvod-airflow` (Airflow DAGs) and `canvod-adapters` (data exchange with other
-GNSS-T programs). See [Extensions](guides/extensions.md).
+Optional packages live in a separate repository; see
+[Optional extensions](guides/extensions.md).
 
 ---
 
@@ -350,12 +347,9 @@ One supported surface, plus the CLI on top of it:
 |-------|-------------|----------|
 | CLI | `canvodpy run --site ...` | Running the pipeline — recommended |
 | `Site.pipeline()` (L3) | `Site(name).pipeline()` | Python-native configured pipeline runs — what the CLI wraps |
-| Airflow tasks | `canvodpy.workflows.tasks.check_day`, `process_day` | Scheduled daily runs (canvod-airflow); the same code as the CLI |
+| Airflow tasks | `canvodpy.workflows.tasks.check_day`, `process_day` | Scheduled daily runs, for example from Airflow (see [Optional extensions](guides/extensions.md)); the same code as the CLI |
 
-`FluentWorkflow` (L2), the flat `process_date()`/`calculate_vod()`/`preview_processing()`
-functions (L1), `VODWorkflow`, and the single-step functions of `canvodpy.functional` (L4)
-are deprecated — see [API Levels](guides/api-levels.md)
-for details and migration notes.
+See [API Levels](guides/api-levels.md) for details.
 
 ---
 

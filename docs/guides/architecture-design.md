@@ -46,8 +46,7 @@ canVODpy applies the engineering concept of *Sollbruchstellen* (predetermined br
 
 ```
 Foundation (0 inter-package dependencies):
-  canvod-readers, canvod-grids, canvod-vod, canvod-utils,
-  canvod-filemap
+  canvod-readers, canvod-grids, canvod-vod, canvod-utils
 
 Consumer (1–2 dependencies each):
   canvod-auxiliary      → canvod-readers
@@ -151,8 +150,7 @@ ds = reader.to_ds()
 
 canvodpy exposes two supported surfaces, plus the CLI on top of one of them —
 all backed by the same packages. See [API Levels](api-levels.md) for full
-detail; `FluentWorkflow`, the flat `process_date()`/`calculate_vod()`/
-`preview_processing()` functions, and `VODWorkflow` are deprecated.
+detail.
 
 === "CLI — Running the Pipeline"
 
@@ -246,7 +244,8 @@ Every dataset produced by canVODpy is fully traceable:
 
 ## Airflow / Distributed Execution
 
-The optional `canvod-airflow` extension builds its DAGs on
+An optional Airflow extension (see
+[Optional extensions](extensions.md)) builds its DAGs on
 `canvodpy.workflows.tasks`, which uses the same file discovery and processing
 code as `canvodpy run`.
 

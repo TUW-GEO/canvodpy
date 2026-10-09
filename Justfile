@@ -552,8 +552,9 @@ docs-lint *FILES="docs":
     uvx --from vale vale {{ FILES }}
 
 # check every link of the built docs site (lychee; brew install lychee)
-docs-links: docs-build
+docs-links:
     @command -v lychee >/dev/null || { echo "lychee is not installed: brew install lychee" >&2; exit 1; }
+    uv run zensical build --clean
     lychee --root-dir "$(pwd)/site" 'site/**/*.html'
 
 

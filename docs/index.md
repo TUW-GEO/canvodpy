@@ -221,24 +221,6 @@ flowchart TD
     Pre-flight validation of data directories against the canVOD
     naming convention. Hard gate before ingestion.
 
--   :fontawesome-solid-tag: &nbsp; **canvod-filemap** *(optional)*
-
-    ---
-
-    Virtual renaming engine for non-standard receiver filenames
-    (Septentrio SBF, RINEX v2 short names). Lives in the separate
-    [canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions)
-    repo — see [Optional Extensions](guides/extensions.md).
-
--   :fontawesome-solid-wind: &nbsp; **canvod-airflow** *(optional)*
-
-    ---
-
-    Airflow DAG definitions (daily SBF/RINEX/SBF-agency + backfill) for
-    canvodpy pipelines. Also lives in
-    [canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions) —
-    see [Optional Extensions](guides/extensions.md).
-
 -   :fontawesome-solid-wand-magic-sparkles: &nbsp; **canvod-ops**
 
     ---

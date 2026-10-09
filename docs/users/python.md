@@ -68,14 +68,6 @@ vod = site.vod.compute_day_all(data)  # every configured analysis
 `pipeline.process_range(start, end)` and options like `n_workers` on
 `.pipeline()` are also available — see the [API Levels guide](../guides/api-levels.md).
 
-!!! warning "Deprecated: `canvodpy.functional`"
-
-    The single-step functions of `canvodpy.functional` (`read_rinex()`,
-    `augment_with_ephemeris()`, ...) are left over from development and will
-    be removed with the next major version. They are no longer maintained and
-    give different results than `canvodpy run`; see the
-    [API Levels guide](../guides/api-levels.md#deprecated-canvodpyfunctional).
-
 ### Dates: the `YYYYDDD` format
 
 canVODpy identifies days by **year + Day of Year (DOY)**: a 7-digit string

@@ -144,7 +144,7 @@ import structlog
 log = structlog.get_logger(__name__)
 ```
 
-`canvodpy.logging.get_logger` is deprecated. Only canvodpy configures
+Only canvodpy configures
 logging; the canvod-* packages never do. `configure_logging()` installs
 structlog's processor chain *globally*, so **any** `structlog.get_logger()`
 call anywhere in the process — regardless of which package it's in —

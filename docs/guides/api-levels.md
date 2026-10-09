@@ -13,17 +13,6 @@ description: Running the pipeline via the CLI or from Python with Site.pipeline(
 
 Both produce the same results.
 
-!!! warning "Deprecated surfaces"
-
-    `FluentWorkflow` (L2), the flat convenience functions `process_date()` /
-    `calculate_vod()` / `preview_processing()` (L1), `VODWorkflow`, and the
-    single-step functions of `canvodpy.functional` (L4) are all deprecated
-    (`FutureWarning` on use). They are left over from development, still work,
-    and will be removed with the next major version. `VODWorkflow` in
-    particular has a broken augmentation step (`_augment_data` is a no-op
-    stub) and should not be used regardless. See the sections below if you're
-    migrating code that still uses them.
-
 ---
 
 ## Quick Comparison
@@ -33,7 +22,7 @@ Both produce the same results.
 | **Pattern** | `canvodpy run --site ... --start ... --end ...` | `site.pipeline().process_date(...)` |
 | **Ephemeris** | Automatic (from config) | Automatic (from config) |
 | **Store writes** | Automatic (Icechunk) | Automatic (Icechunk) |
-| **File discovery** | Naming recipe (`canvod-filemap`) if configured, else canonical canVOD names only | Same as CLI |
+| **File discovery** | Canonical canVOD names, or the receiver's naming recipe if it sets one | Same as CLI |
 | **Parallel workers** | Yes | Yes |
 | **Deduplication** | 3-layer | 3-layer |
 | **Best for** | Daily cron jobs, production runs | Multi-day batch runs from Python |
@@ -87,15 +76,6 @@ section for the exact same thing from Python.
 
 ---
 
-## Deprecated: `FluentWorkflow` and flat convenience functions
-
-`FluentWorkflow` (`canvodpy.workflow("ExampleSite").read(...).augment(...)...`) and
-the flat `process_date()` / `calculate_vod()` / `preview_processing()` functions
-are deprecated (`FutureWarning` on use): left over from development, removed with
-the next major version. Use the CLI or `Site.pipeline()` (next section) instead.
-
----
-
 ## Site and Pipeline Objects
 
 Object-oriented API for batch processing. A `Pipeline` keeps its pool of
@@ -134,38 +114,8 @@ anything the CLI's flags don't expose yet.
 
 `Pipeline` exposes `process_date(date)`, `process_range(start, end)` (a
 generator yielding `(date_key, datasets)`), `preview()`, and `close()`; it is
-also a context manager, as shown above. `Pipeline.calculate_vod()` is
-deprecated; use `site.vod` (see [VOD Computation](#vod-computation)).
-
-!!! warning "Deprecated: `VODWorkflow`"
-
-    `VODWorkflow` was a factory-based alternative to `Site` + `Pipeline`. It is
-    deprecated — its augmentation step (`_augment_data`) is a no-op stub that
-    never applies ephemeris augmentation, so VOD computed through it uses
-    un-augmented angles. Use `Site.pipeline()` above.
-
----
-
-## Deprecated: `canvodpy.functional`
-
-!!! warning "Deprecated: `canvodpy.functional`"
-
-    The single-step functions `read_rinex()`, `augment_with_ephemeris()`,
-    `create_grid()`, `assign_grid_cells()`, `calculate_vod()` and their
-    `*_to_file` twins are left over from development and will be removed with
-    the next major version. They are no longer maintained, and some give
-    different results than `canvodpy run`:
-
-    - `read_rinex()` reads without the configured observables and signals.
-    - `calculate_vod()` skips the configured VOD output options.
-
-    Use `canvodpy run` or `Site.pipeline()` to process data, and `site.vod`
-    to compute VOD. For grids, use `canvod.grids.create_hemigrid()` and
-    `canvod.grids.add_cell_ids_to_ds_fast()`.
-
-    Note that `from canvodpy import calculate_vod` is a different deprecated
-    function (it reads from and writes to the stores); use
-    `Site(site).vod.compute_bulk(...)` instead.
+also a context manager, as shown above. To compute VOD, use `site.vod` (see
+[VOD Computation](#vod-computation)).
 
 ---
 
@@ -239,7 +189,7 @@ flowchart TD
     end
 
     subgraph Discovery["File Discovery"]
-        FM["Naming recipe (canvod-filemap) if configured,<br/>else canonical canVOD names only"]
+        FM["Canonical canVOD names, or the<br/>receiver's naming recipe if set"]
     end
 
     subgraph Reading["Parsing"]
@@ -345,11 +295,9 @@ retrieval, and the result is written to the site's VOD store (pass
 
 ??? question "I want to integrate with Airflow"
 
-    Use the canvod-airflow extension. Its DAGs call `check_day` and
-    `process_day` from `canvodpy.workflows.tasks`, which run the code of
-    `canvodpy run` for one site and day (see [Optional Extensions](extensions.md)).
-    The older per-format tasks (`process_rinex`, `process_sbf`, ...) are
-    deprecated.
+    Call `check_day` and `process_day` from `canvodpy.workflows.tasks`. They
+    run the code of `canvodpy run` for one site and day. Ready-made Airflow
+    DAGs are an optional extension; see [Optional extensions](extensions.md).
 
 ??? question "I want to read a single file quickly"
 

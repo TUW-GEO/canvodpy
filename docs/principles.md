@@ -156,7 +156,8 @@ Which canopy receiver is paired with which reference receiver is set in the
 settings (`vod_analyses`), not derived from names.
 
 **How:** The convention lives in `canvod-preflight` (`CanVODFilename`). Files with
-other names are processed through a naming recipe (`canvod-filemap`): physical
+other names are processed through a naming recipe (an optional extension, see
+[Optional extensions](guides/extensions.md)): physical
 files are never renamed, the recipe attaches a canonical name to each physical
 path. All downstream processing uses the canonical name; the physical path is
 retained only for opening the file.

@@ -171,7 +171,10 @@ nav = [
 [project.plugins.mkdocstrings.handlers.python]
 [project.plugins.mkdocstrings.handlers.python.options]
 docstring_style = "numpy"
-show_source = true
+# Deprecated code still ships until the next major version, but the docs
+# leave it out (scripts/griffe_hide_deprecated.py).
+extensions = ["scripts/griffe_hide_deprecated.py:HideDeprecated"]
+show_source = false
 show_bases = true
 members_order = "source"
 

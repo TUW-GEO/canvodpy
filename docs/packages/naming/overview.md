@@ -101,74 +101,22 @@ also lists the files a run would pass over:
 just config-check-data <site>   # canvodpy config validate --site <site>
 ```
 
-!!! note "Deprecated"
-    The `canvod-preflight` command and the mapping and validation classes of this
-    package (`FilenameMapper`, `DataDirectoryValidator`, `SiteNamingConfig`,
-    `ReceiverNamingConfig`) are left over from development and will be removed with the
-    next major version. Use `canvodpy config validate` and naming recipes instead.
-
 ---
 
 ## Files that don't follow the convention
 
-If your GNSS receiver outputs files in a proprietary or legacy format (RINEX v2
-short names, Septentrio binary, etc.), the optional
-[`canvod-filemap`](https://github.com/nfb2021/canvodpy-extensions) package provides
-a **recipe-based mapping layer** that virtualises physical filenames to canonical names
-without renaming anything on disk.
-
-In a canvodpy checkout, install it with `uv sync --group filemap`; elsewhere from
-GitHub (see [Optional Extensions](../../guides/extensions.md)).
-
-Then reference a recipe from `canvod-settings.yaml`:
+A run processes only files with canonical names. For files with other names,
+for example RINEX v2 short names or the names a receiver's firmware gives its
+SBF files, set a naming recipe on the receiver:
 
 ```yaml
 sites:
   my_site:
     receivers:
       reference_01:
-        recipe: my_site_reference   # → <config dir>/recipes/my_site/my_site_reference.yaml
+        recipe: my_site_reference
 ```
 
-### NamingRecipe YAML format
-
-A recipe tells canvodpy how to extract canonical fields from a physical filename:
-
-```yaml
-name: examplesite_reference
-description: Septentrio RINEX v2 files from ExampleSite reference receiver
-site: ROS
-agency: TUW
-receiver_number: 1
-receiver_type: reference
-sampling: "05S"
-period: "15M"
-content: "AA"
-file_type: rnx
-glob: "*.??o"
-fields:
-  - skip: 4          # "rref"
-  - doy: 3           # "001"
-  - hour_letter: 1   # "a"
-  - minute: 2        # "15"
-  - skip: 1          # "."
-  - yy: 2            # "25"
-  - skip: 1          # "o"
-```
-
-| Field key | Description |
-|-----------|-------------|
-| `year` | 4-digit year |
-| `yy` | 2-digit year (80--99 = 19xx, 00--79 = 20xx) |
-| `doy` | Day of year |
-| `month` / `day` | Month + day of month (converted to DOY) |
-| `hour` | Hour (0--23) |
-| `hour_letter` | RINEX v2 session letter (a--x = hours 0--23; `0` = daily file, its period becomes `01D`) |
-| `minute` | Minute (0--59) |
-| `skip` | Ignore N characters |
-
-Recipe files are kept per site, in `<config dir>/recipes/<site>/<recipe>.yaml`.
-`just naming-init my_site my_site_reference` creates one from the template that
-ships with canvod-filemap. See the
-[canvod-filemap documentation](https://github.com/nfb2021/canvodpy-extensions)
-for the full recipe API.
+The recipe gives each file a canonical name without renaming it on disk.
+Naming recipes need an optional extension; see
+[Optional extensions](../../guides/extensions.md).

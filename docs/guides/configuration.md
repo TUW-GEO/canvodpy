@@ -308,7 +308,7 @@ with the parallel processing architecture, see
     whenever this strategy is set, and `VodComputer.compute_bulk()` unconditionally
     deduplicates every read via `_dedup_sort()` regardless of strategy. But
     `MyIcechunkStore.read_group()` itself — the low-level API used directly by custom
-    scripts/notebooks, and by the deprecated L1 `Pipeline.calculate_vod()` — has no such
+    scripts — has no such
     guard: `.sel()` on a duplicated label can raise or silently return multiple matches,
     and aligning two datasets that both carry the duplicate (e.g. canopy vs. reference)
     produces a cartesian product at those epochs. The duplication is also physical, not
@@ -371,7 +371,7 @@ sites:
 | `type`            | --      | `reference` or `canopy`.                                                                                                                                                                                                                           |
 | `directory`       | --      | Subdirectory under `gnss_site_data_root` holding this receiver's files.                                                                                                                                                                            |
 | `reader_format`   | `auto`  | Reader for the receiver's files: `rinex3`, `rinex3_stripped` (signal strengths only, faster), `rinex2`, `sbf`, `nmea`, or the name of an installed reader plugin ([Your Own Readers and VOD Calculators](plugins.md)). `auto` detects it per day, never choosing a plugin: SBF and NMEA by file type, RINEX 2 or 3 from the header. A day whose files need different readers stops the run with an error; then set the reader, or keep each format in its own directory. A canopy receiver and its reference must record the same file format (`rinex3` and `rinex3_stripped` both read RINEX 3); mixed formats are rejected when the settings load, or, with `auto`, by `canvodpy config validate` and at the start of a run. |
-| `paired_canopies` | --      | Which canopy receivers this reference is paired with: `all` or a list of canopy receiver names. Required for reference receivers, must not be set for canopy receivers. (The old name `scs_from` is deprecated and still accepted with a warning.) |
+| `paired_canopies` | --      | Which canopy receivers this reference is paired with: `all` or a list of canopy receiver names. Required for reference receivers, must not be set for canopy receivers. |
 
 ---
 
@@ -459,39 +459,19 @@ just config-check-data <site>
 
 ## Optional: non-canonical filenames
 
-!!! warning "This deviates from the community-agreed GNSS-T file naming convention"
-    The standard pipeline expects every GNSS data file to follow the
-    [community-agreed  filename convention](../packages/naming/overview.md),
-    and processes only files that follow it.
-
-    If your receiver outputs files in a proprietary or legacy format —
-    Septentrio SBF with firmware-generated names, RINEX v2 short names,
-    or a custom directory layout — the optional
-    [`canvod-filemap`](https://github.com/nfb2021/canvodpy-extensions) package
-    provides a recipe-based mapping layer that translates physical filenames to
-    canonical names **without renaming anything on disk**.
-
-    Recipes are an escape hatch for non-conforming data, not the intended workflow.
-    Where possible, rename files to the canonical convention using `gfzrnx` as a
-    one-time per-site step.
-
-In a canvodpy checkout, install it with `uv sync --group filemap`. Elsewhere,
-install it from the [canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions)
-repository on GitHub; see [Optional Extensions](extensions.md).
-
-Reference a recipe from `canvod-settings.yaml` on the receiver whose files use non-canonical names:
+A run processes only files that follow the
+[file naming convention](../packages/naming/overview.md). For a receiver
+whose files have other names, set a naming recipe:
 
 ```yaml
 sites:
   my_site:
     receivers:
       reference_01:
-        recipe: my_site_reference   # → <config dir>/recipes/my_site/my_site_reference.yaml
+        recipe: my_site_reference
 ```
 
-Recipe files are kept per site, in `<config dir>/recipes/<site>/<recipe>.yaml`.
-`just naming-init my_site my_site_reference` creates one from the template that
-ships with canvod-filemap. A recipe saved directly in `<config dir>/recipes/` is
-not used; the error message says where to move it. Recipes are user data and are
-not part of the canvodpy repository. The full recipe format and API are documented in the
-[canvod-filemap repository](https://github.com/nfb2021/canvodpy-extensions).
+The recipe is read from `<config dir>/recipes/<site>/<recipe>.yaml` and gives
+each file a canonical name without renaming it on disk. Naming recipes need an
+optional extension; see [Optional extensions](extensions.md). Where you can,
+rename the files to the convention instead.

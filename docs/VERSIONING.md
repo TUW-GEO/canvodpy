@@ -101,7 +101,10 @@ just tag-release                                  # on the merged commit on main
 
 Superseded public code is deprecated with the `deprecated` decorator of
 canvod-utils and removed only with the next major version
-([ADR 0005](adr/0005-deprecate-until-next-major.md)).
+([ADR 0005](adr/0005-deprecate-until-next-major.md)). The documentation
+describes only the code to use: guides and examples leave deprecated code
+out, and the API reference hides everything that carries the decorator
+(`scripts/griffe_hide_deprecated.py`).
 
 ---
 

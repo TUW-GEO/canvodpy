@@ -10,9 +10,7 @@ under `processing.storage.gnss_store_strategy`.
     skipped when the VOD store already holds one computed from the same
     source files, or one whose epoch range overlaps it; the log book records
     `skip`. To recompute VOD for days already in the store, write to a new
-    VOD store (set another `processing.storage.vod_store_name`). The
-    setting `processing.storage.vod_store_strategy` is deprecated: it has
-    no effect, and setting it gives a warning.
+    VOD store (set another `processing.storage.vod_store_name`).
 
 <div class="grid cards" markdown>
 
@@ -92,7 +90,7 @@ The strategy comes from the settings file; `MyIcechunkStore()` has no
     whenever this strategy is set, and `VodComputer.compute_bulk()` unconditionally
     deduplicates every read via `_dedup_sort()` regardless of strategy. But
     `MyIcechunkStore.read_group()` itself — the low-level API used directly by custom
-    scripts/notebooks, and by the deprecated L1 `Pipeline.calculate_vod()` — has **no**
+    scripts — has **no**
     such guard: `.sel()` on a duplicated label can raise or silently return multiple
     matches, and aligning two datasets that both carry the duplicate (e.g. canopy vs.
     reference) produces a cartesian product at those epochs, corrupting results without

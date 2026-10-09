@@ -4,8 +4,10 @@ This package provides readers for various GNSS data formats, all implementing
 a common interface for seamless integration with processing pipelines.
 
 Supported formats:
-- RINEX v3.04 (GNSS observations)
-- More formats coming soon...
+- RINEX v3.04 observations (``Rnxv3Obs``)
+- RINEX v2.11 observations (``Rnxv2Obs``)
+- Septentrio Binary Format, SBF (``SbfReader``)
+- NMEA (``NmeaObs``)
 
 Quick Start
 -----------
@@ -17,24 +19,13 @@ reader = Rnxv3Obs(fpath="station.24o")
 dataset = reader.to_ds()
 ```
 
-Or use the canvodpy factory for automatic format detection:
+Or use the canvodpy factory, which picks the reader from the file's content
+(RINEX v2, RINEX v3 or NMEA):
 ```python
 from canvodpy import ReaderFactory
 
-# Auto-detects format from file header
 reader = ReaderFactory.create_from_file("station.24o")
 dataset = reader.to_ds()
-```
-
-Directory Matching:
-```python
-from canvod.readers import DataDirMatcher
-
-# Find dates with RINEX files in both receivers
-matcher = DataDirMatcher(root=Path("/data/01_ExampleSite"))
-for matched_dirs in matcher:
-    print(matched_dirs.yyyydoy)
-    # Load RINEX files from matched_dirs.canopy_data_dir
 ```
 """
 

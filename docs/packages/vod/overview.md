@@ -58,15 +58,19 @@ analyses.
     )
     ```
 
-=== "From Icechunk store"
+=== "From the GNSS store"
 
     ```python
-    from canvod.vod import TauOmegaZerothOrder
+    from datetime import datetime
 
-    vod_result = TauOmegaZerothOrder.from_icechunkstore(
-        icechunk_store_pth="path/to/store",
-        canopy_group="canopy_01",
-        sky_group="reference_01_canopy_01",  # reference data paired with canopy_01
+    from canvodpy import Site
+
+    # Reads the pair from the site's GNSS store and writes the VOD store
+    # (pass write=False to skip the write)
+    vod_result = Site("ExampleSite").vod.compute_bulk(
+        "canopy_01_vs_reference_01",
+        start=datetime(2025, 1, 1),
+        end=datetime(2025, 1, 31),
     )
     ```
 

@@ -487,8 +487,7 @@ The function checks:
 
 The `canvodpy.ReaderFactory` lives in the umbrella package and provides
 name-based reader creation plus RINEX auto-detection.  It is part of the
-generic `ComponentFactory` family (alongside `GridFactory` and `VODFactory`;
-`AugmentationFactory` is deprecated).
+generic `ComponentFactory` family (alongside `GridFactory` and `VODFactory`).
 
 ```python
 from canvodpy import ReaderFactory
