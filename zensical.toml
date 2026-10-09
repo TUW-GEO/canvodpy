@@ -175,7 +175,7 @@ nav = [
 # --------------------------------------------------------------------------
 [project.plugins.mkdocstrings.handlers.python]
 [project.plugins.mkdocstrings.handlers.python.options]
-docstring_style = "google"
+docstring_style = "numpy"
 show_source = true
 show_bases = true
 members_order = "source"
@@ -249,15 +249,16 @@ features = [
 [project.theme.icon]
 repo = "fontawesome/brands/github"
 
-[[project.theme.palette]]
-scheme = "default"
-toggle.icon = "lucide/sun"
-toggle.name = "Switch to dark mode"
-
+# The first palette is the default: dark mode.
 [[project.theme.palette]]
 scheme = "slate"
 toggle.icon = "lucide/moon"
 toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
 
 # --------------------------------------------------------------------------
 # Social links (footer)

@@ -180,10 +180,22 @@ main{
 }
 .md-tabs__link{
   color: var(--g2) !important;
+  text-decoration: none !important;
 }
-.md-tabs__link--active,
+/* Zensical marks the active tab on the item (.md-tabs__item--active),
+   not on the link as Material does (.md-tabs__link--active). */
+.md-tabs__item--active .md-tabs__link,
 .md-tabs__link:hover{
   color: var(--g1) !important;
+}
+.md-tabs__item--active{
+  border-bottom-color: var(--g1);
+}
+
+/* Search shortcut hint (the "⌘K" after the search button) */
+.md-search__button::after{
+  color: var(--g1) !important;
+  background: color-mix(in srgb, var(--g5) 60%, transparent) !important;
 }
 
 /* Footer */
@@ -828,6 +840,16 @@ body{
 /* Section dividers: generous breathing room */
 .md-typeset hr{
   margin: 2.4rem 0 !important;
+}
+/* ...but not the divider between a card's title and its text */
+.md-typeset .grid.cards hr{
+  margin: 0.5rem 0 !important;
+}
+
+/* Desktop first: a wider page than the theme's default 61rem, so text,
+   tables and diagrams get room on computer screens. */
+.md-grid{
+  max-width: 80rem;
 }
 
 /* =========================================================
