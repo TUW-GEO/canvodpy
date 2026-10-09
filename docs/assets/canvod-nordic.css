@@ -293,15 +293,11 @@ small, figcaption,
 .md-typeset .md-caption,
 .md-typeset .admonition-title,
 .md-nav__title,
-/* GitHub repo info — visible in header bar on desktop */
-@media screen and (min-width: 76.25em){
-  .md-header__source{
-    display: block !important;
-    max-width: 13rem;
-    width: auto;
-    margin-left: auto;
-  }
+.md-source__facts,
+.md-footer__direction{
+  color: var(--muted) !important;
 }
+
 .md-source{
   color: var(--g1) !important;
 }
@@ -424,7 +420,7 @@ nav a:hover{
 }
 
 @media screen and (min-width: 960px){
-  .md-sidebar--secondary{
+  .md-sidebar--secondary:not([hidden]){
     display: block !important;
     height: auto !important;
   }

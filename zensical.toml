@@ -229,6 +229,7 @@ custom_dir = "docs/overrides"
 features = [
   "content.code.copy",
   "content.code.annotate",
+  "content.footnote.tooltips",
   "content.tooltips",
   "content.tabs.link",
   "navigation.footer",
@@ -239,10 +240,10 @@ features = [
   "navigation.path",
   "navigation.sections",
   "navigation.tabs",
+  "navigation.tabs.sticky",
   "navigation.top",
   "navigation.tracking",
   "search.highlight",
-  "search.suggest",
   "toc.follow",
 ]
 

@@ -1,6 +1,9 @@
 ---
 title: canVODpy
 description: An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrievals
+hide:
+  - navigation
+  - toc
 ---
 
 <div class="hero" markdown>
