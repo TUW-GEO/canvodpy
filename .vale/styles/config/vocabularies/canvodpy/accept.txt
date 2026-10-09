@@ -32,3 +32,5 @@ Plotly
 Dependabot
 dtype
 hashable
+VODnet
+Geoinformation
