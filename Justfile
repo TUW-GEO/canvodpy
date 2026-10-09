@@ -344,58 +344,24 @@ venv-upgrade:
 # Release Management
 # ============================================================================
 
-# generate CHANGELOG.md from git commits (VERSION can be "auto" or specific like "v0.2.0")
-changelog VERSION="auto":
-    uvx git-changelog -Tio CHANGELOG.md -B="{{VERSION}}" -c angular
+# Lists the commits since each package's last release tag that touched its
+# folder, to choose the versions of a release.
+# show each package's version, last tag and commits since
+release-status:
+    uv run --no-sync python scripts/release.py status
 
-# bump the version of all packages in the files only (major, minor, patch, or explicit like 0.2.0):
-# version files, CHANGELOG.md and uv.lock; no commit, no tag (see `just release`)
-bump VERSION:
-    @echo "{{GREEN}}{{BOLD}}Bumping all packages to {{VERSION}}{{NORMAL}}"
-    @case "{{VERSION}}" in \
-        major|minor|patch|MAJOR|MINOR|PATCH) uv run --locked cz bump --increment "$(echo {{VERSION}} | tr '[:lower:]' '[:upper:]')" --yes --files-only ;; \
-        *) uv run --locked cz bump {{VERSION}} --yes --files-only ;; \
-    esac
-    uv lock
-    @echo "{{GREEN}}Version bumped to $(uv run --locked cz version --project){{NORMAL}}"
+# Runs the tests, checks the choice (canvodpy always included, its
+# increment at least the largest, ranges admit the new versions), writes the
+# versions, canvodpy's pins, the changelogs and uv.lock, and commits them on
+# release/v<canvodpy version>; no tag (docs/RELEASING.md).
+# prepare a release: just release canvod-store=1.1.0 canvodpy=1.1.0
+release +VERSIONS: test
+    uv run --no-sync python scripts/release.py prepare {{VERSIONS}}
 
-# bump a single package version (for testing/development only)
-[private]
-bump-package PKG VERSION:
-    @echo "{{GREEN}}Bumping {{PKG}} to {{VERSION}}{{NORMAL}}"
-    cd packages/{{PKG}} && uv version {{VERSION}}
-    uv lock
-    @echo "{{GREEN}}{{PKG}} bumped to {{VERSION}}{{NORMAL}}"
-
-# prepare a release: run the tests, bump all packages (`just bump`) and commit
-# exactly the release files on a new branch release/v<version>; no tag, a
-# maintainer tags the merged commit on main (docs/RELEASING.md)
-release VERSION: test
-    #!/usr/bin/env bash
-    set -euo pipefail
-    files=(pyproject.toml uv.lock CHANGELOG.md canvodpy/pyproject.toml packages/*/pyproject.toml)
-    if ! git diff --quiet HEAD -- "${files[@]}"; then
-        echo "Release files have uncommitted changes; commit or discard them first:" >&2
-        git diff --name-only HEAD -- "${files[@]}" >&2
-        exit 1
-    fi
-    old="$(uv run --locked cz version --project)"
-    just bump {{VERSION}}
-    new="$(uv run --locked cz version --project)"
-    git switch -c "release/v${new}"
-    git add -- "${files[@]}"
-    git commit -m "bump: version ${old} → ${new}"
-    echo ""
-    echo "Release v${new} prepared on branch release/v${new}"
-    echo ""
-    echo "Next steps (docs/RELEASING.md):"
-    echo "  1. Review the commit: git show --stat"
-    echo "  2. Push the branch and open a pull request; a maintainer merges it"
-    echo "  3. A maintainer tags the merged commit on main and pushes the tag:"
-    echo "       git switch main && git pull origin main"
-    echo "       git tag -a v${new} -m 'Release v${new}' && git push origin v${new}"
-    echo "  4. GitHub Actions creates the release draft"
-    echo "  5. PyPI publish is separate and manual: gh workflow run publish_pypi.yml --ref v${new} -f version=${new}"
+# Run on the merged release commit on main; does not push.
+# tag every package version without a tag (canvod-store-v1.1.0, v1.1.0)
+tag-release:
+    uv run --no-sync python scripts/release.py tag
 
 # ============================================================================
 # Build & Publish Recipes

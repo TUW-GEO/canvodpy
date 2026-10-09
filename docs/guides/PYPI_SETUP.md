@@ -42,7 +42,7 @@ pip install canvodpy  # Gets all 8 packages automatically
 ## Quick Commands
 
 ```bash
-# Build all 8 packages locally
+# Build all packages locally
 just build-all
 
 # Manual publish to TestPyPI (requires credentials)
@@ -51,11 +51,12 @@ just publish-testpypi
 # Manual publish to PyPI (requires credentials)
 just publish-pypi
 
-# Automated publish (pre-release tag) - triggers publish_testpypi.yml
-git tag -a v0.1.0-beta.1 -m "Release v0.1.0-beta.1" && git push origin v0.1.0-beta.1
+# Automated publish (canvodpy pre-release tag) - triggers publish_testpypi.yml
+# for the packages whose release tag points at that commit
+just tag-release && git push origin v1.1.0rc1 canvod-store-v1.1.0rc1
 
-# Production publish - started by hand, never by a tag
-gh workflow run publish_pypi.yml --ref v0.1.0 -f version=0.1.0
+# Production publish - started by hand on the canvodpy tag, never by a tag push
+gh workflow run publish_pypi.yml --ref v1.1.0
 ```
 
 ---
@@ -114,8 +115,8 @@ On each page:
 **3.3: Test OIDC Publishing**
 
 ```bash
-git tag -a v0.1.0-beta.1 -m "Test OIDC"
-git push origin v0.1.0-beta.1
+git tag -a v0.1.0b1 -m "Test OIDC"
+git push origin v0.1.0b1
 cd /path/to/canvodpy
 uv build
 ```
@@ -240,14 +241,14 @@ jobs:
 
 **Create a beta release:**
 ```bash
-just release 0.1.0-beta.1   # release commit on release/v0.1.0-beta.1: open a PR, merge it
+just release canvodpy=0.1.0b1   # release commit on release/v0.1.0b1: open a PR, merge it
 # then, on the merged main:
-git tag -a v0.1.0-beta.1 -m "Release v0.1.0-beta.1" && git push origin v0.1.0-beta.1
+just tag-release && git push origin v0.1.0b1
 ```
 
 **Publish the draft release:**
 1. Go to: https://github.com/nfb2021/canvodpy/releases
-2. Find draft for `v0.1.0-beta.1`
+2. Find draft for `v0.1.0b1`
 3. Click "Publish release"
 
 **Watch the workflow:**
@@ -401,10 +402,10 @@ jobs:
 **When ready for v0.1.0:**
 
 ```bash
-# Create release
-just release 0.1.0   # release commit on release/v0.1.0: open a PR, merge it
+# Create release (all packages at once for the first release)
+just release canvodpy=0.1.0 canvod-readers=0.1.0 ...   # open a PR, merge it
 # then, on the merged main:
-git tag -a v0.1.0 -m "Release v0.1.0" && git push origin v0.1.0
+just tag-release && git push origin v0.1.0 canvod-readers-v0.1.0 ...
 ```
 
 **Publish:**
@@ -412,10 +413,10 @@ git tag -a v0.1.0 -m "Release v0.1.0" && git push origin v0.1.0
 2. Find draft v0.1.0
 3. **Review carefully!**
 4. Click "Publish release"
-5. Approve the workflow when prompted
-6. Wait 5 minutes (your wait timer)
-7. Workflow runs
-8. Package published to PyPI!
+5. Start the PyPI workflow: `gh workflow run publish_pypi.yml --ref v0.1.0`
+6. Approve the workflow when prompted
+7. Wait 5 minutes (your wait timer)
+8. The packages tagged at that commit are published to PyPI!
 
 **Verify:**
 ```bash
@@ -433,18 +434,18 @@ python -c "import canvodpy; print(canvodpy.__version__)"
 === "Beta / test releases"
 
     ```bash
-    just release 0.2.0-beta.1   # then PR, merge, and on main:
-    git tag -a v0.2.0-beta.1 -m "Release v0.2.0-beta.1" && git push origin v0.2.0-beta.1
-    # → publishes to TestPyPI automatically
+    just release canvod-store=1.1.0rc1 canvodpy=1.1.0rc1   # then PR, merge, and on main:
+    just tag-release && git push origin v1.1.0rc1 canvod-store-v1.1.0rc1
+    # → publishes the tagged packages to TestPyPI automatically
     ```
 
 === "Stable releases"
 
     ```bash
-    just release 0.2.0   # then PR, merge, and on main:
-    git tag -a v0.2.0 -m "Release v0.2.0" && git push origin v0.2.0
-    gh workflow run publish_pypi.yml --ref v0.2.0 -f version=0.2.0
-    # → publishes to real PyPI (after environment approval)
+    just release canvod-store=1.1.0 canvodpy=1.1.0   # then PR, merge, and on main:
+    just tag-release && git push origin v1.1.0 canvod-store-v1.1.0
+    gh workflow run publish_pypi.yml --ref v1.1.0
+    # → publishes the tagged packages to real PyPI (after environment approval)
     ```
 
 === "User installation"
@@ -482,10 +483,8 @@ python -c "import canvodpy; print(canvodpy.__version__)"
     4. Confirm 2FA is enabled on your PyPI account
 
 ??? failure "`Package already exists`"
-    Cannot upload the same version twice. Bump and retry:
-    ```bash
-    just bump patch   # 0.1.0 → 0.1.1
-    ```
+    Cannot upload the same version twice. Release the next patch version
+    of that package (`just release <package>=X.Y.Z canvodpy=X.Y.Z`).
 
 ??? failure "`Build failed`"
     Test locally first:

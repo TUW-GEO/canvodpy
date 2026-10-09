@@ -1,33 +1,30 @@
 # Versioning Strategy
 
-canVODpy uses **unified semantic versioning** across all packages in the monorepo — one version number covers all twelve packages, released together.
-
-!!! info "Planned: a version per package"
-    Each package will get its own version, so that a package used on its own
-    (e.g. canvod-readers) changes its version only when its code changes. A
-    `canvodpy` version will then name the exact version of every package it
-    installs. Until then, all packages share one version.
+Each canVODpy package has its own version
+([ADR 0010](adr/0010-per-package-versions.md)). A package used on its own
+(e.g. canvod-readers) changes its version only when its code changes. The
+umbrella package `canvodpy` pins every package to an exact version, so a
+canvodpy version names exactly the mix of packages it installs.
 
 ---
 
-## Why Unified Versioning?
+## Why a version per package, and one umbrella?
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-microscope: &nbsp; **Scientific Reproducibility**
+-   :fontawesome-solid-cubes: &nbsp; **Reusable packages**
 
     ---
 
-    A single version number enables unambiguous citation in papers.
-    `pip install canvodpy==0.2.0` recreates a known-compatible environment.
-    Supports FAIR principles for scientific software.
+    A tool that needs only canvod-readers depends on canvod-readers, and
+    its version says what changed in the readers, not elsewhere.
 
--   :fontawesome-solid-layer-group: &nbsp; **Sollbruchstellen**
+-   :fontawesome-solid-microscope: &nbsp; **Scientific reproducibility**
 
     ---
 
-    Independent during development; coherent at release time.
-    Develop and test packages independently, release them together with one tag.
+    `pip install canvodpy==1.1.0` installs exactly the mix of packages that
+    was tested together, so one version is enough to cite in a paper.
 
 </div>
 
@@ -35,80 +32,76 @@ canVODpy uses **unified semantic versioning** across all packages in the monorep
 
 ## Semantic Versioning
 
-Following [Semantic Versioning 2.0.0](https://semver.org/):
-
-```
-MAJOR.MINOR.PATCH
-```
+Following [Semantic Versioning 2.0.0](https://semver.org/), for each
+package on its own:
 
 | Increment | Trigger | Example |
 |-----------|---------|---------|
-| `MAJOR` | Breaking API changes | 0.9.0 → 1.0.0 |
-| `MINOR` | New features, backwards compatible | 0.1.0 → 0.2.0 |
-| `PATCH` | Bug fixes, backwards compatible | 0.1.0 → 0.1.1 |
+| `MAJOR` | Breaking API changes | 1.4.2 → 2.0.0 |
+| `MINOR` | New features, backwards compatible | 1.1.0 → 1.2.0 |
+| `PATCH` | Bug fixes, backwards compatible | 1.1.0 → 1.1.1 |
 
-Pre-release identifiers: `0.2.0-alpha.1` · `0.2.0-beta.1` · `0.2.0-rc.1`
+Versions are written as Python writes them (PEP 440); a pre-release is
+`1.2.0rc1`, `1.2.0b1` or `1.2.0a1`.
+
+canvodpy's increment is at least the largest increment of the packages
+released with it: a minor release of canvod-store comes with at least a
+minor release of canvodpy.
+
+---
+
+## Requirements between packages
+
+- `canvodpy` requires each package at exactly one version
+  (`canvod-store==1.1.0`): its pins are the log of which mix a canvodpy
+  version is.
+- A package requires another canVODpy package with a range up to the next
+  major version (`canvod-config>=1.0.0,<2`). The lower bound is the
+  version that has what the package uses; raise it by hand when the package
+  starts to use something newer.
+- A major release of a package (e.g. canvod-config 2.0.0) is outside the
+  ranges of the packages that require it: the release is refused until
+  each of them is checked against the new version and its range widened by
+  hand.
+- `__version__` of each package is read from the installed package
+  (`importlib.metadata`), never written into the code.
+
+---
+
+## Tags
+
+| Package | Tag | GitHub release |
+|---------|-----|----------------|
+| canvodpy | `vX.Y.Z` (e.g. `v1.1.0`) | yes, drafted from `CHANGELOG.md` |
+| any other package | `<package>-vX.Y.Z` (e.g. `canvod-store-v1.1.0`) | no |
+
+Every package has its own `CHANGELOG.md` in its folder; canvodpy's is the
+one at the repository root, and each of its sections lists the package
+versions it pins.
+
+Before per-package versions (up to 0.4.0), all packages shared one version
+and the tag `vX.Y.Z`.
 
 ---
 
 ## Creating Releases
 
-```bash
-just release 0.2.0    # minor release
-just release 0.1.1    # patch release
-just release 1.0.0    # major release
-```
-
-`just release` runs the tests, bumps the version of all packages and
-writes `CHANGELOG.md` and `uv.lock` (`just bump`), and commits exactly
-those files on a new branch `release/vX.Y.Z`. It creates no tag: a
-maintainer tags the merged commit on `main` ([Releasing](RELEASING.md)).
-
-`just bump` alone changes the files only, by version or by bump type:
+The maintainer chooses the packages and versions;
+[Releasing](RELEASING.md) has the steps.
 
 ```bash
-just bump minor       # 0.1.0 → 0.2.0
-just bump patch       # 0.1.0 → 0.1.1
-just bump major       # 0.1.0 → 1.0.0
+just release-status                               # commits per package since its last tag
+just release canvod-store=1.1.0 canvodpy=1.1.0    # prepare the release commit
+just tag-release                                  # on the merged commit on main
 ```
-
----
-
-## Version Files
-
-commitizen keeps every `pyproject.toml` in sync. For each package it updates
-the package's own `version` and its requirements on other canVODpy packages:
-
-```toml
-[tool.commitizen]
-version = "0.4.0"
-version_files = [
-    "canvodpy/pyproject.toml:version",
-    "canvodpy/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-readers/pyproject.toml:version",
-    "packages/canvod-readers/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    # ... the same two lines for every package
-]
-```
-
-- `canvodpy` requires each package at exactly the version released with it
-  (`canvod-store==0.4.0`), so `pip install canvodpy==0.4.0` always installs
-  the mix of packages that was tested together.
-- A package requires the other canVODpy packages at least at its own version
-  (`canvod-config>=0.4.0`), so it never runs with an older package that lacks
-  code it uses.
-- `__version__` of each package is read from the installed package
-  (`importlib.metadata`), never written into the code.
-
-Git tags follow `vMAJOR.MINOR.PATCH` — e.g. `v0.1.0`, `v1.0.0`, `v0.2.0-beta.1`.
 
 ---
 
 ## Deprecation Policy
 
-1. **Version N** — Feature deprecated with `DeprecationWarning`
-2. **Version N+1** — Louder warning, migration guide in docs
-3. **Version N+2** — Feature removed, MAJOR version bump
+Superseded public code is deprecated with the `deprecated` decorator of
+canvod-utils and removed only with the next major version
+([ADR 0005](adr/0005-deprecate-until-next-major.md)).
 
 ---
 
@@ -118,14 +111,16 @@ Git tags follow `vMAJOR.MINOR.PATCH` — e.g. `v0.1.0`, `v1.0.0`, `v0.2.0-beta.1
 @software{canvodpy2026,
   author  = {Bader, Nicolas and Contributors},
   title   = {canvodpy: GNSS Vegetation Optical Depth Analysis},
-  version = {0.2.0},
+  version = {1.0.0},
   year    = {2026},
   url     = {https://github.com/nfb2021/canvodpy},
   doi     = {10.5281/zenodo.XXXXXXX}
 }
 ```
 
-> "Analysis was performed using canvodpy v0.2.0 (Bader et al., 2026)."
+> "Analysis was performed using canvodpy v1.0.0 (Bader et al., 2026)."
+
+Cite the canvodpy version: it fixes the version of every package.
 
 ---
 

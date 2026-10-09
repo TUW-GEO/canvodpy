@@ -243,9 +243,12 @@ just check          # lint + format + type-check (run before committing)
 ## Deploying (Maintainers)
 
 ```bash
-just release X.Y.Z   # tests, version bump, release commit on release/vX.Y.Z
+just release-status                              # commits per package since its last tag
+just release canvod-store=1.1.0 canvodpy=1.1.0   # tests, versions, release commit on release/v1.1.0
 ```
 
-Then open a pull request for the release branch; after it is merged, a
-maintainer tags the merged commit and starts the PyPI publish. The full
+Each package has its own version; the maintainer chooses them, and canvodpy
+is part of every release. Then open a pull request for the release branch;
+after it is merged, a maintainer runs `just tag-release` on `main`, pushes
+the tags and starts the PyPI publish. The full
 steps are in `docs/RELEASING.md`.

@@ -58,10 +58,13 @@ You link your GitHub repo to Zenodo:
 ### 2. Every Release
 
 ```bash
-just release 0.1.0   # release commit on release/v0.1.0: open a PR, merge it
+just release canvod-store=1.1.0 canvodpy=1.1.0   # release commit on release/v1.1.0: open a PR, merge it
 # then, on the merged main:
-git tag -a v0.1.0 -m "Release v0.1.0" && git push origin v0.1.0
+just tag-release && git push origin v1.1.0 canvod-store-v1.1.0
 ```
+
+Only the canvodpy tag (`v1.1.0`) creates a GitHub release, so Zenodo
+archives one version per canvodpy release; package tags get none.
 
 **Automatic workflow:**
 1. GitHub creates release v0.1.0
@@ -124,8 +127,8 @@ Zenodo. https://doi.org/10.5281/zenodo.XXXXX
 ### Option A: Test with Beta Release
 
 ```bash
-git tag -a v0.1.0-beta.2 -m "Test Zenodo DOI creation"
-git push origin v0.1.0-beta.2
+git tag -a v0.1.0b2 -m "Test Zenodo DOI creation"
+git push origin v0.1.0b2
 ```
 
 - Creates TestPyPI release
@@ -135,12 +138,12 @@ git push origin v0.1.0-beta.2
 ### Option B: Production Release
 
 ```bash
-just release 0.1.0   # release commit on release/v0.1.0: open a PR, merge it
+just release canvodpy=0.1.0 canvod-readers=0.1.0 ...   # open a PR, merge it
 # then, on the merged main:
-git tag -a v0.1.0 -m "Release v0.1.0" && git push origin v0.1.0
+just tag-release && git push origin v0.1.0 canvod-readers-v0.1.0 ...
 ```
 
-- Creates production PyPI release
+- Creates the GitHub release; PyPI follows with `gh workflow run publish_pypi.yml --ref v0.1.0`
 - Zenodo creates DOI
 - This is the "real" first citable version
 

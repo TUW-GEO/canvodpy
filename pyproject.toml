@@ -214,38 +214,10 @@ source = [
 # ============================================================================
 
 [tool.commitizen]
+# commitizen only checks commit messages (commit-msg hook). Versions are
+# per package and chosen by hand: `just release-status`, `just release`
+# (scripts/release.py, docs/VERSIONING.md).
 name = "cz_conventional_commits"
-version = "0.4.0"
-version_files = [
-    "canvodpy/pyproject.toml:version",
-    "canvodpy/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-readers/pyproject.toml:version",
-    "packages/canvod-readers/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-auxiliary/pyproject.toml:version",
-    "packages/canvod-auxiliary/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-config/pyproject.toml:version",
-    "packages/canvod-config/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-grids/pyproject.toml:version",
-    "packages/canvod-grids/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-preflight/pyproject.toml:version",
-    "packages/canvod-preflight/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-vod/pyproject.toml:version",
-    "packages/canvod-vod/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-store/pyproject.toml:version",
-    "packages/canvod-store/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-store-metadata/pyproject.toml:version",
-    "packages/canvod-store-metadata/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-viz/pyproject.toml:version",
-    "packages/canvod-viz/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-utils/pyproject.toml:version",
-    "packages/canvod-utils/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-    "packages/canvod-ops/pyproject.toml:version",
-    "packages/canvod-ops/pyproject.toml:\"canvod-[a-z-]+[=>]=",
-]
-tag_format = "v$version"
-update_changelog_on_bump = true
-changelog_incremental = true
-annotated_tag = true
 
 [tool.commitizen.customize]
 # Monorepo scopes for canvodpy

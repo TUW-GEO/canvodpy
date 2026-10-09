@@ -20,9 +20,9 @@ classifiers = [
 ]
 
 dependencies = [
-    "canvod-readers>=0.4.0",
-    "canvod-utils>=0.4.0",
-    "canvod-config>=0.4.0",
+    "canvod-readers>=0.4.0,<2",
+    "canvod-utils>=0.4.0,<2",
+    "canvod-config>=0.4.0,<2",
     "scipy>=1.15.0",
     "numpy>=1.24.0",
     "xarray>=2023.12.0",

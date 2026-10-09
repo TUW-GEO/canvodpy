@@ -121,31 +121,27 @@ Issues     = "https://github.com/nfb2021/canvodpy/issues"
 
 === "Automated (CI/CD)"
 
-    `just release` prepares the release commit for all packages; a
-    maintainer tags the merged commit and starts the PyPI publish.
+    `just release` prepares the release commit for the packages the
+    maintainer chose; a maintainer tags the merged commit and starts the
+    PyPI publish of the packages tagged there.
     See [`docs/RELEASING.md`](../RELEASING.md) for the full release workflow.
 
 ---
 
 ## Version Management
 
-All packages follow [Semantic Versioning](https://semver.org/) with unified version numbers across the monorepo.
+Each package has its own version, following
+[Semantic Versioning](https://semver.org/); `canvodpy` pins every package
+exactly ([Versioning](VERSIONING.md)). The maintainer chooses the versions:
 
 ```bash
-just bump patch    # 0.1.0 → 0.1.1  (bug fix)
-just bump minor    # 0.1.0 → 0.2.0  (new feature, backwards compatible)
-just bump major    # 0.1.0 → 1.0.0  (breaking change)
+just release-status                               # commits per package since its last tag
+just release canvod-store=1.1.0 canvodpy=1.1.0    # versions, pins, changelogs, uv.lock
 ```
 
-A version bump:
-
-1. Updates `version` (and the pins between the packages) in all
-   `pyproject.toml` files.
-2. Writes the new section of `CHANGELOG.md`.
-3. Updates `uv.lock`.
-
-It makes no commit and no tag; `just release` commits these files on a
-release branch.
+`just release` updates `version` of each released package, canvodpy's pins,
+the `CHANGELOG.md` files and `uv.lock`, and commits them on a release
+branch; it makes no tag (`just tag-release` on the merged commit).
 
 ---
 

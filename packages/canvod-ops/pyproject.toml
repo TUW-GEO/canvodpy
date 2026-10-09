@@ -21,9 +21,9 @@ dependencies = [
     "xarray>=2024.1.0",
     "numpy>=1.26.0",
     "pandas>=2.1.0",
-    "canvod-config>=0.4.0",
-    "canvod-grids>=0.4.0",
-    "canvod-store>=0.4.0",
+    "canvod-config>=0.4.0,<2",
+    "canvod-grids>=0.4.0,<2",
+    "canvod-store>=0.4.0,<2",
     "structlog>=24.1.0",
 ]
 

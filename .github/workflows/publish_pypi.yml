@@ -1,16 +1,14 @@
 name: Publish to PyPI
 
-# Manual only -- deliberately not triggered by tag push. Tagging/versioning
-# (cz bump + git push --tags) creates the GitHub tag and draft release
-# (see release.yml) independently of a PyPI release; publishing to PyPI is a
-# separate, explicit decision made at whatever point via this dispatch.
+# Manual only -- deliberately not triggered by tag push. Tagging creates the
+# GitHub tags and the draft release of canvodpy (see release.yml)
+# independently of a PyPI release; publishing to PyPI is a separate,
+# explicit decision made at whatever point via this dispatch. Run it on the
+# canvodpy tag of the release:
+#   gh workflow run publish_pypi.yml --ref v1.1.0
+# It publishes the packages whose release tag points at that commit.
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (e.g., 0.1.0)'
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -25,6 +23,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0  # all tags, to find the packages released here
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -36,27 +36,17 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Build all packages
+      - name: Build the packages released at this commit
         run: |
+          # Each package has its own version and tag (canvod-store-v1.1.0,
+          # v1.1.0 for canvodpy); build exactly those whose release tag
+          # points at this commit (scripts/release.py tagged).
+          packages="$(uv run --no-project --with packaging python scripts/release.py tagged)"
           rm -rf dist/
           mkdir -p dist/
-
-          # Build each package, collecting output into root dist/
-          for pkg in \
-            packages/canvod-readers \
-            packages/canvod-auxiliary \
-            packages/canvod-config \
-            packages/canvod-grids \
-            packages/canvod-store \
-            packages/canvod-store-metadata \
-            packages/canvod-utils \
-            packages/canvod-viz \
-            packages/canvod-vod \
-            packages/canvod-ops \
-            packages/canvod-preflight \
-            canvodpy; do
+          for pkg in $packages; do
             echo "Building $pkg..."
-            uv build --package "$(basename $pkg)" --out-dir dist/
+            uv build --package "$pkg" --out-dir dist/
           done
 
           echo "Built packages:"

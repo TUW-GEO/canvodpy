@@ -21,7 +21,7 @@ dependencies = [
     "matplotlib>=3.8.0",
     "plotly>=5.18.0",
     "numpy>=1.26.0",
-    "canvod-grids>=0.4.0",
+    "canvod-grids>=0.4.0,<2",
 ]
 
 [tool.uv.sources]
