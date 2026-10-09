@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The `canvod-auxiliary` package provides auxiliary data management for [GNSS Transmissometry](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"} (GNSS-T) analysis. It handles downloading, parsing, preprocessing, and interpolating [SP3 ephemerides](https://gssc.esa.int/navipedia/index.php/SP3){:target="_blank"} to augment RINEX observation data with precise satellite positions. By default it also fetches CLK [clock corrections](https://gssc.esa.int/navipedia/index.php/Precise_Satellite_Clocks){:target="_blank"}, though these are unused by the VOD formula and can be skipped via `aux_data.fetch_clock: false`.
+The `canvod-auxiliary` package provides auxiliary data management for [GNSS Transmissometry](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"} (GNSS-T) analysis. It handles downloading, parsing, preprocessing, and interpolating [SP3 ephemerides](https://igs.org/formats-and-standards/){:target="_blank"} to augment RINEX observation data with precise satellite positions. By default it also fetches CLK [clock corrections](https://gssc.esa.int/navipedia/index.php/Precise_GNSS_Satellite_Coordinates_Computation){:target="_blank"}, though these are unused by the VOD formula and can be skipped via `aux_data.fetch_clock: false`.
 
 ---
 
@@ -120,7 +120,7 @@ Different data types require different methods based on the underlying physics:
 
     `GeodeticPosition` — [WGS84](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"} latitude, longitude, altitude
 
-    [Spherical coordinates](https://gssc.esa.int/navipedia/index.php/Satellite_Elevation,_Azimuth_and_Visible_Satellites){:target="_blank"} (r, θ, φ) relative to receiver position
+    [Spherical coordinates](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates){:target="_blank"} (r, θ, φ) relative to receiver position
 
 -   :fontawesome-solid-cloud-arrow-down: &nbsp; **FTP Download**
 

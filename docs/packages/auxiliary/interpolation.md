@@ -164,9 +164,3 @@ class CustomStrategy(Interpolator):
 
 `canvodpy run` always uses `Sp3InterpolationStrategy` and
 `ClockInterpolationStrategy`; a custom strategy is for your own scripts.
-
----
-
-!!! example "Try it"
-    [05 — Ephemeris & Coordinates](../../notebooks/_build/05_ephemeris_coordinates.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/05_ephemeris_coordinates.py)

@@ -340,10 +340,3 @@ is already stored is not written with the default write strategy (`skip`); see
 !!! info "Hash source"
     The `"File Hash"` attribute is set from the reader's `file_hash` (every
     reader has one) — the first 16 characters of the SHA-256 of the raw file.
-
----
-
-!!! example "Try it"
-    [08 — Icechunk Store](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/08_icechunk_store.py)
-    (source link only for now — rendered snapshot pending a test-data
-    fixture fix, see `dev/notebook_docs_integration_plan.md`)

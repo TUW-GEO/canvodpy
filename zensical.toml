@@ -47,7 +47,6 @@ nav = [
     { "API Levels" = "guides/api-levels.md" },
     { "Parallel Processing" = "guides/parallel-processing.md" },
     { "Diagnostics & Monitoring" = "guides/diagnostics.md" },
-    { "Notebooks" = "notebooks/index.md" },
     { "Packages" = [
       { "canvod-readers" = [
         { "Overview" = "packages/readers/overview.md" },
@@ -208,7 +207,8 @@ emoji_index = "zensical.extensions.emoji.twemoji"
 [project.markdown_extensions.pymdownx.mark]
 [project.markdown_extensions.pymdownx.smartsymbols]
 [project.markdown_extensions.pymdownx.snippets]
-auto_append = ["docs/includes/abbreviations.md"]
+# Outside docs/ so it is not published as a page of its own.
+auto_append = ["includes/abbreviations.md"]
 [project.markdown_extensions.pymdownx.superfences]
 custom_fences = [
   { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
@@ -224,7 +224,8 @@ custom_checkbox = true
 # --------------------------------------------------------------------------
 [project.theme]
 language = "en"
-custom_dir = "docs/overrides"
+# Template overrides; outside docs/ so they are not published as pages.
+custom_dir = "overrides"
 
 features = [
   "content.code.copy",

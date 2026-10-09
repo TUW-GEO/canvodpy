@@ -202,9 +202,3 @@ Want to drive this from Python instead — for scripting, notebooks, or a
 custom pipeline? See the [Python Quickstart](python.md).
 
 **Next steps:** [Configuration Guide](../guides/configuration.md) · [API Levels](../guides/api-levels.md)
-
----
-
-!!! example "Try it"
-    [13 — CLI Pipeline](../notebooks/_build/13_cli_pipeline.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/13_cli_pipeline.py)

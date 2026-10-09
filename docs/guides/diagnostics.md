@@ -219,9 +219,3 @@ grep '"event": "run_summary"' .logs/machine/agent.json
 
 Each line is a self-contained JSON object — pipe through `jq` for
 formatting, or hand the whole grep'd slice to an LLM for triage.
-
----
-
-!!! example "Try it"
-    [11 — Configuration](../notebooks/_build/11_configuration.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/11_configuration.py)

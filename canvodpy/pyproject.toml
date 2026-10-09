@@ -90,5 +90,4 @@ canvod-preflight = { workspace = true }
 [tool.ty.src]
 exclude = [
     "**/docs/*.ipynb",
-    "**/docs/notebooks/*.py",
 ]

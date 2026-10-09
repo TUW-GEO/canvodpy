@@ -124,7 +124,7 @@ Issues     = "https://github.com/nfb2021/canvodpy/issues"
     `just release` prepares the release commit for the packages the
     maintainer chose; a maintainer tags the merged commit and starts the
     PyPI publish of the packages tagged there.
-    See [`docs/RELEASING.md`](../RELEASING.md) for the full release workflow.
+    See [Release process](RELEASING.md) for the full release workflow.
 
 ---
 

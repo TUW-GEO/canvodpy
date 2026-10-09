@@ -205,9 +205,3 @@ just open-notebook 19_grid_exploration.py
     - **canvod-grids** — grid geometry, installed with `canvod-viz`
     - **anywidget** — only for the interactive hemisphere selectors in the
       marimo notebooks; not a dependency of `canvod-viz`
-
----
-
-!!! example "Try it"
-    [10 — Visualization](../../notebooks/_build/10_visualization.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/10_visualization.py)

@@ -172,9 +172,3 @@ Recipe files are kept per site, in `<config dir>/recipes/<site>/<recipe>.yaml`.
 ships with canvod-filemap. See the
 [canvod-filemap documentation](https://github.com/nfb2021/canvodpy-extensions)
 for the full recipe API.
-
----
-
-!!! example "Try it"
-    [01 — Naming Convention](../../notebooks/_build/01_naming_convention.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/01_naming_convention.py)

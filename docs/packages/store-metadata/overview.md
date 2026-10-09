@@ -260,9 +260,3 @@ sites:
       canopy_01:
         # ...
 ```
-
----
-
-!!! example "Try it"
-    [09 — Store Metadata](../../notebooks/_build/09_store_metadata.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/09_store_metadata.py)

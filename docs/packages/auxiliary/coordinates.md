@@ -122,9 +122,3 @@ augmented_ds = add_spherical_coords_to_dataset(rinex_ds, r, theta, phi)
 
 A run keeps `r` only when `processing.params.store_radial_distance` is
 `true` (default `false`).
-
----
-
-!!! example "Try it"
-    [05 — Ephemeris & Coordinates](../../notebooks/_build/05_ephemeris_coordinates.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/05_ephemeris_coordinates.py)

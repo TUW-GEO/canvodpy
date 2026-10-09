@@ -13,7 +13,7 @@ hide:
 **An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrievals**
 
 canVODpy aims to be the central community-driven software suite for deriving
-and analyzing canopy [Vegetation Optical Depth](https://gsics.nesdis.noaa.gov/wiki/Development/ReferenceDocuments){:target="_blank"} (VOD) from [GNSS](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"}
+and analyzing canopy Vegetation Optical Depth (VOD) from [GNSS](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"}
 signal-to-noise ratio observations.
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19445061.svg)](https://doi.org/10.5281/zenodo.19445061)
@@ -87,14 +87,6 @@ signal-to-noise ratio observations.
 
 ---
 
-<div class="hero" markdown>
-
-[Browse interactive notebooks :fontawesome-solid-play:](notebooks/index.md){ .md-button .md-button--primary }
-
-</div>
-
----
-
 ## Supported receiver formats
 
 <div class="grid" markdown>
@@ -102,14 +94,14 @@ signal-to-noise ratio observations.
 !!! success "RINEX v3.04"
 
     Text-based standard format from all manufacturers.
-    Satellite geometry computed from precise [SP3](https://gssc.esa.int/navipedia/index.php/SP3){:target="_blank"} [ephemerides](https://gssc.esa.int/navipedia/index.php/Precise_GNSS_Orbits){:target="_blank"} (CLK clock corrections fetched too, by default — optional).
+    Satellite geometry computed from precise [SP3](https://igs.org/formats-and-standards/){:target="_blank"} [ephemerides](https://gssc.esa.int/navipedia/index.php/Precise_GNSS_Satellite_Coordinates_Computation){:target="_blank"} (CLK clock corrections fetched too, by default — optional).
 
     **Reader:** `Rnxv3Obs` — all GNSS constellations, all bands
 
 !!! success "Septentrio Binary Format (SBF)"
 
     Binary format from [Septentrio](https://www.septentrio.com){:target="_blank"} receivers. Includes satellite azimuth and elevation that the receiver computes from
-    [broadcast ephemerides](https://gssc.esa.int/navipedia/index.php/Broadcast_Orbits){:target="_blank"}
+    [broadcast ephemerides](https://gssc.esa.int/navipedia/index.php/GNSS_Broadcast_Orbits){:target="_blank"}
     (SatVisibility block; almanac-based angles are not used) for standalone
     satellite geometry — no SP3/CLK download required.
 
@@ -289,7 +281,7 @@ flowchart TD
 
 !!! abstract "Documentation"
 
-    `Zensical` · `beautiful-mermaid` · `marimo` notebooks
+    `Zensical` · `beautiful-mermaid`
 
 !!! abstract "AI-assisted development"
 

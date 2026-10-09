@@ -8,10 +8,11 @@ timeout = 20
 accept = ["200..=299", "429"]
 # site/ and its HTML are git-ignored; lychee skips ignored files otherwise.
 no_ignore = true
+# Pages are folders with an index.html (users/cli/ -> users/cli/index.html).
+index_files = ["index.html"]
 exclude_path = [
   # Links from the 404 page carry the deployed path prefix (/canvodpy/).
   "site/404\\.html$",
-  "site/notebooks/_build",
 ]
 exclude = [
   # The published site itself (canonical links): checked locally instead.

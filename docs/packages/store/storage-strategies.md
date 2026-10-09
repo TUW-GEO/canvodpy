@@ -119,9 +119,3 @@ The strategy comes from the settings file; `MyIcechunkStore()` has no
     up. `unsafe_append`'s duplicate chunks are unaffected by GC in the same way, since
     they're still referenced by the current snapshot — GC only reclaims chunks that
     nothing references anymore.
-
----
-
-!!! example "Try it"
-    [18 — Store Operations](../../notebooks/_build/18_workflow_store_operations.html){target=_blank}
-    ([source](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/18_workflow_store_operations.py))

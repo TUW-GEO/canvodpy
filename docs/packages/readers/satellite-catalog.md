@@ -32,7 +32,7 @@ your own analysis (e.g. `enrich_dataset` on data read from a store).
 ## Overview
 
 The `SatelliteCatalog` class parses the IGS `igs_satellite_metadata.snx` SINEX file —
-a single authoritative source of satellite metadata maintained by the [IGS](https://gssc.esa.int/navipedia/index.php/International_GNSS_Service_(IGS)){:target="_blank"}. It provides time-aware queries for all GNSS constellations:
+a single authoritative source of satellite metadata maintained by the [IGS](https://igs.org/){:target="_blank"}. It provides time-aware queries for all GNSS constellations:
 GPS, GLONASS, Galileo, BeiDou, QZSS, and IRNSS. SBAS satellites are not in the
 SINEX file; their SV list (`S01`–`S99`, `nn` = PRN − 100) comes from the RINEX
 specification.
@@ -329,9 +329,3 @@ print(catalog.summary())
 - [IGS Satellite Metadata SINEX](https://files.igs.org/pub/station/general/igs_satellite_metadata.snx)
 - Steigenberger, P., Thoelert, S., Montenbruck, O. (2018). "GNSS satellite transmit power and its impact on orbit determination." *Journal of Geodesy*, 92(6), 609–624. doi:10.1007/s00190-017-1082-2
 - IGS SINEX format specification v2.02
-
----
-
-!!! example "Try it"
-    [03 — Satellite Catalog](../../notebooks/_build/03_satellite_catalog.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_satellite_catalog.py)

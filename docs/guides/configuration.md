@@ -429,7 +429,7 @@ Three modes are available:
     ```
 
 The `default` preset is reviewed and updated at every release to reflect satellite launches,
-decommissions, and orbit reclassifications. See the [release procedure](../../RELEASING.md)
+decommissions, and orbit reclassifications. See the [release procedure](../RELEASING.md)
 for details.
 
 ---
@@ -495,9 +495,3 @@ ships with canvod-filemap. A recipe saved directly in `<config dir>/recipes/` is
 not used; the error message says where to move it. Recipes are user data and are
 not part of the canvodpy repository. The full recipe format and API are documented in the
 [canvod-filemap repository](https://github.com/nfb2021/canvodpy-extensions).
-
----
-
-!!! example "Try it"
-    [11 — Configuration](../notebooks/_build/11_configuration.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/11_configuration.py)

@@ -378,9 +378,3 @@ Page references: DOP block p.348, PVTGeodetic pp.337–339, ReceiverStatus pp.39
 - Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide
 - Septentrio AsteRx SB3 ProBase Firmware v4.15.1 Reference Guide
 - RINEX 3.04 signal nomenclature — used verbatim for SID code strings
-
----
-
-!!! example "Try it"
-    [04 — SBF Reading](../../notebooks/_build/04_sbf_reading.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/04_sbf_reading.py)

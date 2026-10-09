@@ -251,9 +251,3 @@ target epoch — not simply the first record found.
     - The receivers write SBF (the geometry is embedded in the file)
     - Processing recent data, before final products are published
     - Working offline
-
----
-
-!!! example "Try it"
-    [05 — Ephemeris & Coordinates](../../notebooks/_build/05_ephemeris_coordinates.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/05_ephemeris_coordinates.py)

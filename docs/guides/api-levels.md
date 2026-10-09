@@ -358,13 +358,3 @@ retrieval, and the result is written to the site's VOD store (pass
 ---
 
 **Next in the trail:** [Configuration](configuration.md) · [Users guide](../users/index.md) · [Architecture](../architecture.md)
-
----
-
-!!! example "Try it"
-    [12 — API Overview](../notebooks/_build/12_api_overview.html){target=_blank}
-    ([source](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/12_api_overview.py))
-    · [14 — Site Pipeline](../notebooks/_build/14_site_pipeline.html){target=_blank}
-    ([source](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/14_site_pipeline.py))
-    · [16 — Single-Day Workflow](../notebooks/_build/16_workflow_single_day.html){target=_blank}
-    ([source](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/16_workflow_single_day.py))

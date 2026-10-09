@@ -192,7 +192,7 @@ main{
   border-bottom-color: var(--g1);
 }
 
-/* Site title links home (docs/overrides/partials/header.html) */
+/* Site title links home (overrides/partials/header.html) */
 .md-header__home,
 .md-header__home:visited,
 .md-header__home:hover{

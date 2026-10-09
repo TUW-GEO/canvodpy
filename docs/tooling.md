@@ -243,7 +243,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 === "Zensical + beautiful-mermaid"
 
-    Documentation is built with [Zensical](https://zensical.dev/), a
+    Documentation is built with [Zensical](https://zensical.org/), a
     Rust+Python wrapper around MkDocs Material:
 
     ```bash
