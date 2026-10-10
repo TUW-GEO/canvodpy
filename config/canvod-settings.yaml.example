@@ -266,7 +266,7 @@ sites:
         paired_canopies: all         # 'all' or list of canopy receiver names
         description: null
         # recipe: my_site_reference  # → <config dir>/recipes/my_site/my_site_reference.yaml
-        #                            #   (requires canvod-virtualiconvname)
+        #                            #   (requires canvod-filemap)
 
       canopy_01:
         type: canopy
