@@ -257,7 +257,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
       [Vale](https://vale.sh/) and its Google style package (`.vale.ini`).
       Project words that are spelled correctly go in
       `.vale/styles/config/vocabularies/canvodpy/accept.txt`. Pass a path
-      to check a single page: `just docs-lint docs/users/cli.md`.
+      to check a single page: `just docs-lint docs/users/index.md`.
     - `just docs-links` builds the site and checks every link with
       [lychee](https://lychee.cli.rs/) (`lychee.toml`): links between
       pages, anchors, and links to other sites. Install lychee once with

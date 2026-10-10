@@ -35,8 +35,6 @@ nav = [
 
   { "Retrieve VOD" = [
     { "Start here" = "users/index.md" },
-    { "CLI quickstart" = "users/cli.md" },
-    { "Python quickstart" = "users/python.md" },
     { "Configure" = [
       { "Settings file" = "guides/configuration.md" },
       { "Settings models" = "packages/config/overview.md" },
