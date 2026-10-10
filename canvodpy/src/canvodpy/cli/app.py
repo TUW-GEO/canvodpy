@@ -14,7 +14,7 @@ import typer
 
 main_app = typer.Typer(
     name="canvodpy",
-    help="canvodpy CLI tools",
+    help="Process GNSS observations into VOD and inspect the stores.",
     no_args_is_help=True,
 )
 
@@ -31,14 +31,15 @@ main_app.add_typer(store_app, name="store")
 main_app.command("run")(run_command)
 main_app.command(
     "vod",
-    help="Compute VOD in bulk from an existing GNSS store (backfill/reprocessing).",
+    help="Compute VOD for a range of dates from the GNSS store of a site.",
 )(vod_command)
 main_app.command(
     "vod-reconcile",
-    help="Find (and optionally backfill) RINEX-ingested-but-VOD-missing dates.",
+    help="List the dates that have observations but no VOD, and compute it with --execute.",
 )(vod_reconcile_command)
 main_app.command(
-    "doctor", help="Report canvodpy's version, environment, and config resolution."
+    "doctor",
+    help="Report canvodpy's version, its environment, and its configuration directory.",
 )(doctor_command)
 main_app.command(
     "dashboard", help="Launch the marimo performance dashboard for the pipeline's logs."
@@ -66,7 +67,7 @@ def _main_callback(
         ),
     ] = False,
 ) -> None:
-    """canvodpy CLI tools"""
+    """Process GNSS observations into VOD and inspect the stores."""
 
 
 def main() -> None:

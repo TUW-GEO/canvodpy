@@ -38,7 +38,7 @@ description: Every canvodpy command and option, with the text of its --help.
 
 INTRO = """\
 The `canvodpy` command runs canVODpy from the command line. This page
-lists every command and option; `canvodpy COMMAND --help` prints the same
+lists every command and option, and `canvodpy COMMAND --help` prints the same
 text in the terminal. For a walk through a first run, see
 [Retrieve VOD](../users/index.md).
 

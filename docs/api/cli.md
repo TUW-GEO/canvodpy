@@ -9,11 +9,11 @@ description: Every canvodpy command and option, with the text of its --help.
 # Command line
 
 The `canvodpy` command runs canVODpy from the command line. This page
-lists every command and option; `canvodpy COMMAND --help` prints the same
+lists every command and option, and `canvodpy COMMAND --help` prints the same
 text in the terminal. For a walk through a first run, see
 [Retrieve VOD](../users/index.md).
 
-canvodpy CLI tools
+Process GNSS observations into VOD and inspect the stores.
 
 **Usage**:
 
@@ -31,12 +31,12 @@ $ canvodpy [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `run`: Process GNSS observations into Icechunk...
-* `vod`: Compute VOD in bulk from an existing GNSS...
-* `vod-reconcile`: Find (and optionally backfill)...
-* `doctor`: Report canvodpy's version, environment,...
+* `vod`: Compute VOD for a range of dates from the...
+* `vod-reconcile`: List the dates that have observations but...
+* `doctor`: Report canvodpy's version, its...
 * `dashboard`: Launch the marimo performance dashboard...
-* `config`: Configuration management
-* `store`: Inspect Icechunk stores: list sites, show...
+* `config`: Create, check, show, and edit...
+* `store`: Inspect the Icechunk stores of the sites...
 
 ## `canvodpy run`
 
@@ -50,25 +50,25 @@ $ canvodpy run [OPTIONS]
 
 **Options**:
 
-* `--site <str>`: Site name, as defined under sites: in canvod-settings.yaml, for example ExampleSite. Repeat the option for several sites; they are processed one after the other.  [required]
+* `--site <str>`: Site name, as defined under sites: in canvod-settings.yaml, for example ExampleSite. Repeat the option for several sites, which run one after the other.  [required]
 * `--start <str>`: Start date in YYYYDOY format, for example 2025001. If omitted, resumes from the last processed date in the store.
 * `--end <str>`: End date in YYYYDOY format, for example 2025007. If omitted, processes up to today.
-* `--no-vod / --vod`: Skip VOD calculation (only ingest observations).  [default: vod]
+* `--no-vod / --vod`: Skip the VOD calculation: only write the observations to the GNSS store.  [default: vod]
 * `--dry-run / --no-dry-run`: Preview processing plan without executing.  [default: no-dry-run]
-* `--workers <int>`: Number of loky worker processes (default: from config).
-* `--days-per-batch <int>`: Number of DOYs per loky wave (default: from config).
+* `--workers <int>`: Number of worker processes. Default: from the resource settings in canvod-settings.yaml.
+* `--days-per-batch <int>`: Number of days that the workers process together. Default: processing.params.days_per_batch in canvod-settings.yaml.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
-* `--config <str>`: Overlay config YAML applied on top of the main canvod-settings.yaml.
-* `--ephemeris-source <final|broadcast>`: Override the configured ephemeris source ('final' = agency SP3/CLK, 'broadcast' = SBF SatVisibility). Default: from canvod-settings.yaml.
+* `--config <str>`: Settings file whose values replace those of canvod-settings.yaml.
+* `--ephemeris-source <final|broadcast>`: Where the satellite orbits and clocks come from: final uses the SP3 and CLK products of an analysis center, broadcast uses the SatVisibility blocks of the SBF files. Default: from canvod-settings.yaml.
 * `--vod-calculator <tau_omega>`: VOD calculator to use.  [default: tau_omega]
-* `--dashboard`: Launch the marimo performance dashboard alongside this run, as a detached subprocess (its startup banner is redirected to a log file, not printed here).
+* `--dashboard`: Start the marimo performance dashboard next to this run, in a process of its own. Its startup messages go to a log file, not to this terminal.
 * `--dashboard-host <str>`: Host for --dashboard to bind to.  [default: 127.0.0.1]
-* `--dashboard-port <int>`: Port for --dashboard to bind to (default: an OS-assigned free port).
+* `--dashboard-port <int>`: Port for --dashboard to bind to. Default: a free port that the operating system picks.
 * `--help`: Show this message and exit.
 
 ## `canvodpy vod`
 
-Compute VOD in bulk from an existing GNSS store (backfill/reprocessing).
+Compute VOD for a range of dates from the GNSS store of a site.
 
 **Usage**:
 
@@ -88,7 +88,7 @@ $ canvodpy vod [OPTIONS]
 
 ## `canvodpy vod-reconcile`
 
-Find (and optionally backfill) RINEX-ingested-but-VOD-missing dates.
+List the dates that have observations but no VOD, and compute it with --execute.
 
 **Usage**:
 
@@ -101,13 +101,13 @@ $ canvodpy vod-reconcile [OPTIONS]
 * `--site <str>`: Site name, as defined under sites: in canvod-settings.yaml  [required]
 * `--analysis <str>`: VOD analysis name, as defined in site.vod_analyses  [required]
 * `--calculator <str>`: VOD calculator to use.  [default: tau_omega]
-* `--execute`: Backfill the gaps found. Default is a dry-run report only.
+* `--execute`: Compute the VOD of the dates found. Without this flag, the command only reports them.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 
 ## `canvodpy doctor`
 
-Report canvodpy's version, environment, and config resolution.
+Report canvodpy's version, its environment, and its configuration directory.
 
 **Usage**:
 
@@ -132,15 +132,15 @@ $ canvodpy dashboard [OPTIONS]
 
 **Options**:
 
-* `--logs-dir <str>`: Directory containing the machine/performance*.json files (default: processing.logging.log_dir of canvod-settings.yaml).
+* `--logs-dir <str>`: Log folder of the runs to show. Default: processing.logging.log_dir in canvod-settings.yaml.
 * `--edit / --run`: Open in marimo's editor instead of the read-only app view.  [default: run]
-* `--host <str>`: Host to attach to (default: marimo's 127.0.0.1).
-* `-p, --port <int>`: Port to attach to (default: marimo picks one).
+* `--host <str>`: Host to bind to. Default: the marimo default, 127.0.0.1.
+* `-p, --port <int>`: Port to bind to. Default: a port that marimo picks.
 * `--help`: Show this message and exit.
 
 ## `canvodpy config`
 
-Configuration management
+Create, check, show, and edit canvod-settings.yaml.
 
 **Usage**:
 
@@ -150,21 +150,21 @@ $ canvodpy config [OPTIONS] COMMAND [ARGS]...
 
 **Options**:
 
-* `--config <path>`: Overlay config file applied on top of the main canvod-settings.yaml
+* `--config <path>`: Settings file whose values replace those of canvod-settings.yaml.
 * `--help`: Show this message and exit.
 
 **Commands**:
 
 * `init`: Create canvod-settings.yaml from its...
 * `validate`: Validate the configuration and the...
-* `show`: Display current configuration.
+* `show`: Show the settings that canvodpy uses.
 * `edit`: Open canvod-settings.yaml in $EDITOR.
 
 ### `canvodpy config init`
 
 Create canvod-settings.yaml from its template.
 
-The file goes into the configuration directory (see --config-dir).
+The file goes into the configuration directory that --config-dir sets.
 Create a naming recipe for each receiver with
 just naming-init SITE NAME.
 
@@ -185,8 +185,8 @@ $ canvodpy config init [OPTIONS]
 
 Validate the configuration and the receiver data it points to.
 
-The data are checked with the same file discovery as ``canvodpy run``:
-every error reported here would stop a run or make its results wrong.
+It finds the data files the same way as canvodpy run, so every error
+it reports would stop a run or make its results wrong.
 
 **Usage**:
 
@@ -203,7 +203,7 @@ $ canvodpy config validate [OPTIONS]
 
 ### `canvodpy config show`
 
-Display current configuration.
+Show the settings that canvodpy uses.
 
 **Usage**:
 
@@ -214,7 +214,7 @@ $ canvodpy config show [OPTIONS]
 **Options**:
 
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
-* `-s, --section <str>`: Show specific section (processing, sites, sids)
+* `-s, --section processing|sites|sids`: Show this section only. Default: all sections.
 * `--help`: Show this message and exit.
 
 ### `canvodpy config edit`
@@ -234,7 +234,7 @@ $ canvodpy config edit [OPTIONS]
 
 ## `canvodpy store`
 
-Inspect Icechunk stores: list sites, show tree/stats, view commit history.
+Inspect the Icechunk stores of the sites and maintain them.
 
 **Usage**:
 
@@ -250,9 +250,9 @@ $ canvodpy store [OPTIONS] COMMAND [ARGS]...
 
 * `list`: List every configured site's GNSS and VOD...
 * `info`: Show branches, groups, and stats for one...
-* `log`: Show commit history as a graph (or the ops...
+* `log`: Show the commit history as a graph, or the...
 * `maintain`: Expire old snapshots of one site's store...
-* `maintain-due`: Run only the store maintenance that is...
+* `maintain-due`: Run only the store maintenance that's due,...
 
 ### `canvodpy store list`
 
@@ -285,15 +285,15 @@ $ canvodpy store info [OPTIONS] {site}
 
 **Options**:
 
-* `--store <str>`: Which store: gnss or vod  [default: gnss]
+* `--store gnss|vod`: Store to open.  [default: gnss]
 * `--branch <str>`: Branch to inspect  [default: main]
-* `--group <str>`: Drill into one group's full content (dataset + metadata table)
+* `--group <str>`: Show the full content of one group: its dataset and its metadata table.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 
 ### `canvodpy store log`
 
-Show commit history as a graph (or the ops audit trail with --ops).
+Show the commit history as a graph, or the store operations with --ops.
 
 **Usage**:
 
@@ -307,10 +307,10 @@ $ canvodpy store log [OPTIONS] {site}
 
 **Options**:
 
-* `--store <str>`: Which store: gnss or vod  [default: gnss]
-* `--branch <str>`: Restrict to one branch's linear history (default: all)
-* `--ops`: Show the operations audit trail instead of the commit graph
-* `--limit <int>`: Max entries for --ops  [default: 50]
+* `--store gnss|vod`: Store to open.  [default: gnss]
+* `--branch <str>`: Show the history of this branch only. Default: all branches.
+* `--ops`: Show the operations on the store instead of the commit graph.
+* `--limit <int>`: Number of operations that --ops shows.  [default: 50]
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 
@@ -321,8 +321,8 @@ Expire old snapshots of one site's store and collect garbage.
 Without --execute, this is a dry run: it reports what garbage
 collection would delete and how many snapshots of the main branch are
 older than the cutoff, and changes nothing. With --execute, it asks
-for confirmation, expires the old snapshots and, unless --no-gc is
-given, collects garbage.
+for confirmation, expires the old snapshots and, unless you pass
+--no-gc, collects garbage.
 
 Don't run it while a canvodpy run writes to the same store.
 
@@ -338,16 +338,16 @@ $ canvodpy store maintain [OPTIONS] {site}
 
 **Options**:
 
-* `--store <str>`: Which store: gnss or vod  [default: gnss]
+* `--store gnss|vod`: Store to open.  [default: gnss]
 * `--expire-days <int>`: Keep the snapshots of this many past days. Use weeks to months, not hours.  [default: 90]
 * `--gc / --no-gc`: Run garbage collection  [default: gc]
-* `--execute`: Expire snapshots and collect garbage, after you confirm. Without this flag, only a dry-run report is shown and nothing is deleted or expired.
+* `--execute`: Expire snapshots and collect garbage, after you confirm. Without this flag, the command only reports and changes nothing.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 
 ### `canvodpy store maintain-due`
 
-Run only the store maintenance that is due, without prompting.
+Run only the store maintenance that's due, without prompting.
 
 Use this command, not maintain, in scheduled jobs such as cron: it
 never asks for confirmation, and it exits with status 0 when nothing
@@ -368,8 +368,8 @@ expiry. maintenance.manifests_enabled allows manifest compaction,
 which is due when the store holds at least
 maintenance.manifest_count_threshold manifest files.
 
-While maintenance.dry_run_until_confirmed is true, which is the
-default, a store that is due is only reported, not changed. Set it to
+While maintenance.dry_run_until_confirmed is true, the default, a
+store that's due is only reported, not changed. Set it to
 false once the reports look right.
 
 **Usage**:
@@ -384,7 +384,7 @@ $ canvodpy store maintain-due [OPTIONS] [site]
 
 **Options**:
 
-* `--all-sites`: Run for every site in canvod-settings.yaml
-* `--store <str>`: Which store(s): gnss, vod, or both  [default: both]
+* `--all-sites`: Run for every site in canvod-settings.yaml.
+* `--store gnss|vod|both`: Store to maintain.  [default: both]
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.

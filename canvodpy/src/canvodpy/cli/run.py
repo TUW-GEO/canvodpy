@@ -601,7 +601,7 @@ def run(
             help=(
                 "Site name, as defined under sites: in canvod-settings.yaml, "
                 "for example ExampleSite. Repeat the option for several "
-                "sites; they are processed one after the other."
+                "sites, which run one after the other."
             ),
         ),
     ],
@@ -626,7 +626,7 @@ def run(
         bool,
         typer.Option(
             "--no-vod/--vod",
-            help="Skip VOD calculation (only ingest observations).",
+            help="Skip the VOD calculation: only write the observations to the GNSS store.",
         ),
     ] = False,
     dry_run: Annotated[
@@ -639,14 +639,21 @@ def run(
     workers: Annotated[
         int | None,
         typer.Option(
-            "--workers", help="Number of loky worker processes (default: from config)."
+            "--workers",
+            help=(
+                "Number of worker processes. Default: from the resource "
+                "settings in canvod-settings.yaml."
+            ),
         ),
     ] = None,
     days_per_batch: Annotated[
         int | None,
         typer.Option(
             "--days-per-batch",
-            help="Number of DOYs per loky wave (default: from config).",
+            help=(
+                "Number of days that the workers process together. Default: "
+                "processing.params.days_per_batch in canvod-settings.yaml."
+            ),
         ),
     ] = None,
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
@@ -654,7 +661,7 @@ def run(
         str | None,
         typer.Option(
             "--config",
-            help="Overlay config YAML applied on top of the main canvod-settings.yaml.",
+            help="Settings file whose values replace those of canvod-settings.yaml.",
         ),
     ] = None,
     ephemeris_source: Annotated[
@@ -662,9 +669,10 @@ def run(
         typer.Option(
             "--ephemeris-source",
             help=(
-                "Override the configured ephemeris source ('final' = agency "
-                "SP3/CLK, 'broadcast' = SBF SatVisibility). Default: from "
-                "canvod-settings.yaml."
+                "Where the satellite orbits and clocks come from: final "
+                "uses the SP3 and CLK products of an analysis center, "
+                "broadcast uses the SatVisibility blocks of the SBF files. "
+                "Default: from canvod-settings.yaml."
             ),
         ),
     ] = None,
@@ -677,9 +685,9 @@ def run(
         typer.Option(
             "--dashboard",
             help=(
-                "Launch the marimo performance dashboard alongside this run, "
-                "as a detached subprocess (its startup banner is redirected "
-                "to a log file, not printed here)."
+                "Start the marimo performance dashboard next to this run, "
+                "in a process of its own. Its startup messages go to a log "
+                "file, not to this terminal."
             ),
         ),
     ] = False,
@@ -691,7 +699,7 @@ def run(
         int | None,
         typer.Option(
             "--dashboard-port",
-            help="Port for --dashboard to bind to (default: an OS-assigned free port).",
+            help="Port for --dashboard to bind to. Default: a free port that the operating system picks.",
         ),
     ] = None,
 ) -> None:

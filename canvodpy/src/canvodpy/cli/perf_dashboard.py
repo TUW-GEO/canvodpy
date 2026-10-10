@@ -25,8 +25,8 @@ def dashboard(
         typer.Option(
             "--logs-dir",
             help=(
-                "Directory containing the machine/performance*.json files "
-                "(default: processing.logging.log_dir of canvod-settings.yaml)."
+                "Log folder of the runs to show. Default: "
+                "processing.logging.log_dir in canvod-settings.yaml."
             ),
         ),
     ] = None,
@@ -39,12 +39,14 @@ def dashboard(
     ] = False,
     host: Annotated[
         str | None,
-        typer.Option("--host", help="Host to attach to (default: marimo's 127.0.0.1)."),
+        typer.Option(
+            "--host", help="Host to bind to. Default: the marimo default, 127.0.0.1."
+        ),
     ] = None,
     port: Annotated[
         int | None,
         typer.Option(
-            "--port", "-p", help="Port to attach to (default: marimo picks one)."
+            "--port", "-p", help="Port to bind to. Default: a port that marimo picks."
         ),
     ] = None,
 ) -> None:

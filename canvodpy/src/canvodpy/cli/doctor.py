@@ -61,7 +61,7 @@ def _is_checkout_config(config_dir: Path) -> bool:
 def doctor(
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Report canvodpy's version, environment, and config resolution."""
+    """Report canvodpy's version, its environment, and its configuration directory."""
     from canvod.config.loader import (
         ConfigValidationError,
         format_validation_error,

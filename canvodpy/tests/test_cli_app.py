@@ -25,7 +25,7 @@ class TestVersion:
     def test_no_args_shows_help_not_error(self):
         result = runner.invoke(main_app, [])
 
-        assert "canvodpy CLI tools" in result.output
+        assert "Process GNSS observations into VOD" in result.output
         assert "Commands" in result.output
 
 

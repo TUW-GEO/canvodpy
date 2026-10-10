@@ -112,21 +112,19 @@ def vod_reconcile(
         bool,
         typer.Option(
             "--execute",
-            help="Backfill the gaps found. Default is a dry-run report only.",
+            help="Compute the VOD of the dates found. Without this flag, the command only reports them.",
         ),
     ] = False,
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Find (and optionally backfill) RINEX-ingested-but-VOD-missing dates.
+    """List the dates that have observations but no VOD, and compute it with --execute.
 
-    ``canvodpy run`` only resumes from the GNSS store's latest date, so a
-    date that got RINEX-ingested but never got its VOD computed (e.g. a
-    run that crashed on the VOD-store write after RINEX ingestion already
-    succeeded — dev/todo_later.md §43) is silently never revisited. This
-    finds that gap and, with ``--execute``, backfills it via
-    ``VodComputer.compute_bulk()`` — the same mechanism ``canvodpy vod``
-    uses. Dry-run by default: never writes anything unless ``--execute``
-    is passed.
+    canvodpy run continues after the last date in the GNSS store. A date
+    whose observations reached the GNSS store but whose VOD was never
+    written, for example because a run stopped while it wrote the VOD
+    store, is therefore never processed again. This command lists those
+    dates. With --execute, it computes their VOD the same way as
+    canvodpy vod. Without --execute, it only reports and writes nothing.
     """
     from canvodpy.api import Site
     from canvodpy.orchestrator.vod_reconcile import (

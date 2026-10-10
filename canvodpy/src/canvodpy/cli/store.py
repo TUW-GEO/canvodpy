@@ -22,7 +22,7 @@ from canvodpy.cli.options import CONFIG_DIR_OPTION
 
 store_app = typer.Typer(
     name="store",
-    help="Inspect Icechunk stores: list sites, show tree/stats, view commit history.",
+    help="Inspect the Icechunk stores of the sites and maintain them.",
     no_args_is_help=True,
 )
 
@@ -113,14 +113,14 @@ def info(
         ),
     ],
     store: Annotated[
-        str, typer.Option("--store", help="Which store: gnss or vod")
+        str, typer.Option("--store", metavar="gnss|vod", help="Store to open.")
     ] = "gnss",
     branch: Annotated[str, typer.Option("--branch", help="Branch to inspect")] = "main",
     group: Annotated[
         str | None,
         typer.Option(
             "--group",
-            help="Drill into one group's full content (dataset + metadata table)",
+            help="Show the full content of one group: its dataset and its metadata table.",
         ),
     ] = None,
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
@@ -184,24 +184,28 @@ def log(
         ),
     ],
     store: Annotated[
-        str, typer.Option("--store", help="Which store: gnss or vod")
+        str, typer.Option("--store", metavar="gnss|vod", help="Store to open.")
     ] = "gnss",
     branch: Annotated[
         str | None,
         typer.Option(
-            "--branch", help="Restrict to one branch's linear history (default: all)"
+            "--branch",
+            help="Show the history of this branch only. Default: all branches.",
         ),
     ] = None,
     ops: Annotated[
         bool,
         typer.Option(
-            "--ops", help="Show the operations audit trail instead of the commit graph"
+            "--ops",
+            help="Show the operations on the store instead of the commit graph.",
         ),
     ] = False,
-    limit: Annotated[int, typer.Option("--limit", help="Max entries for --ops")] = 50,
+    limit: Annotated[
+        int, typer.Option("--limit", help="Number of operations that --ops shows.")
+    ] = 50,
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Show commit history as a graph (or the ops audit trail with --ops)."""
+    """Show the commit history as a graph, or the store operations with --ops."""
     if store not in _STORE_KINDS:
         console.print(
             f"[red]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/red]"
@@ -225,7 +229,7 @@ def maintain(
         ),
     ],
     store: Annotated[
-        str, typer.Option("--store", help="Which store: gnss or vod")
+        str, typer.Option("--store", metavar="gnss|vod", help="Store to open.")
     ] = "gnss",
     expire_days: Annotated[
         int,
@@ -243,8 +247,8 @@ def maintain(
             "--execute",
             help=(
                 "Expire snapshots and collect garbage, after you confirm. "
-                "Without this flag, only a dry-run report is shown and nothing "
-                "is deleted or expired."
+                "Without this flag, the command only reports and changes "
+                "nothing."
             ),
         ),
     ] = False,
@@ -255,8 +259,8 @@ def maintain(
     Without --execute, this is a dry run: it reports what garbage
     collection would delete and how many snapshots of the main branch are
     older than the cutoff, and changes nothing. With --execute, it asks
-    for confirmation, expires the old snapshots and, unless --no-gc is
-    given, collects garbage.
+    for confirmation, expires the old snapshots and, unless you pass
+    --no-gc, collects garbage.
 
     Don't run it while a canvodpy run writes to the same store.
     """
@@ -333,15 +337,15 @@ def maintain_due(
     ] = None,
     all_sites: Annotated[
         bool,
-        typer.Option("--all-sites", help="Run for every site in canvod-settings.yaml"),
+        typer.Option("--all-sites", help="Run for every site in canvod-settings.yaml."),
     ] = False,
     store: Annotated[
         str,
-        typer.Option("--store", help="Which store(s): gnss, vod, or both"),
+        typer.Option("--store", metavar="gnss|vod|both", help="Store to maintain."),
     ] = "both",
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Run only the store maintenance that is due, without prompting.
+    """Run only the store maintenance that's due, without prompting.
 
     Use this command, not maintain, in scheduled jobs such as cron: it
     never asks for confirmation, and it exits with status 0 when nothing
@@ -363,8 +367,8 @@ def maintain_due(
     which is due when the store holds at least
     maintenance.manifest_count_threshold manifest files.
 
-    While maintenance.dry_run_until_confirmed is true, which is the
-    default, a store that is due is only reported, not changed. Set it to
+    While maintenance.dry_run_until_confirmed is true, the default, a
+    store that's due is only reported, not changed. Set it to
     false once the reports look right.
     """
     if store == "both":

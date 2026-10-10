@@ -37,7 +37,7 @@ from canvodpy.cli.options import CONFIG_DIR_OPTION
 # Config subcommand
 config_app = typer.Typer(
     name="config",
-    help="Configuration management",
+    help="Create, check, show, and edit canvod-settings.yaml.",
     no_args_is_help=True,
 )
 
@@ -50,7 +50,7 @@ def config_callback(
         Path | None,
         typer.Option(
             "--config",
-            help="Overlay config file applied on top of the main canvod-settings.yaml",
+            help="Settings file whose values replace those of canvod-settings.yaml.",
             show_default=False,
         ),
     ] = None,
@@ -150,7 +150,7 @@ def init(
 ) -> None:
     """Create canvod-settings.yaml from its template.
 
-    The file goes into the configuration directory (see --config-dir).
+    The file goes into the configuration directory that --config-dir sets.
     Create a naming recipe for each receiver with
     just naming-init SITE NAME.
 
@@ -329,8 +329,8 @@ def validate(
 ) -> None:
     """Validate the configuration and the receiver data it points to.
 
-    The data are checked with the same file discovery as ``canvodpy run``:
-    every error reported here would stop a run or make its results wrong.
+    It finds the data files the same way as canvodpy run, so every error
+    it reports would stop a run or make its results wrong.
 
     \f
     Parameters
@@ -427,10 +427,11 @@ def show(
         None,
         "--section",
         "-s",
-        help="Show specific section (processing, sites, sids)",
+        metavar="processing|sites|sids",
+        help="Show this section only. Default: all sections.",
     ),
 ) -> None:
-    """Display current configuration.
+    """Show the settings that canvodpy uses.
 
     \f
     Parameters
