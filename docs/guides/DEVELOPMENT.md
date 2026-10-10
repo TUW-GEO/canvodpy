@@ -18,10 +18,10 @@ just test                                  # verify everything works
 !!! info "Submodules"
     Two data repositories are pulled as submodules:
 
-    - **`packages/canvod-readers/tests/test_data`** — falsified/corrupted RINEX files for validation tests
-    - **`demo`** — clean real-world data for demos and documentation
+    - **`packages/canvod-readers/tests/test_data`**: falsified/corrupted RINEX files for validation tests
+    - **`demo`**: clean real-world data for demos and documentation
 
-    Tests that depend on these datasets are automatically skipped if submodules are not initialised.
+    Tests that depend on these datasets are automatically skipped if submodules are not initialized.
 
 ---
 
@@ -48,9 +48,9 @@ canVODpy uses three YAML files in `config/`:
 
 | Section | Purpose |
 |---------|---------|
-| `processing:` | Processing parameters, NASA Earthdata credentials, storage strategies, Icechunk config |
+| `processing:` | Processing parameters, NASA Earthdata credentials, storage strategies, Icechunk settings |
 | `sites:` | Research sites, receiver definitions, data root paths, VOD analysis pairs |
-| `sids:` | Signal ID filtering — `all`, a named `preset`, or `custom` list |
+| `sids:` | Signal ID filtering: `all`, a named `preset`, or a `custom` list |
 
 All three sections live in a single `config/canvod-settings.yaml`. Template: `config/canvod-settings.yaml.example`.
 
@@ -102,13 +102,13 @@ just check-format   # ruff formatting only
 
 ### Type checking (ty)
 
-`ty check` must pass with zero diagnostics — it blocks `git push` (local
+`ty check` must pass with zero diagnostics. It blocks `git push` (local
 pre-push hook) and runs again in CI (`type_consistency` job). There's no
 budget or ratchet; if you introduce a diagnostic, fix it before pushing.
 
-Most real diagnostics mean the annotation is actually wrong — fix the
+Most real diagnostics mean the annotation is actually wrong: fix the
 annotation, not the checker. Suppress with a targeted comment only when the
-code is correct and ty's limitation is the real issue (e.g. a runtime-built
+code is correct and a limitation of ty is the real issue (for example, a runtime-built
 `enum.StrEnum`, a deliberately dynamic attribute set on a function object, a
 third-party stub that's too strict for a legitimately partial dict):
 
@@ -117,22 +117,22 @@ _excepthook._logger_holder = logger_holder  # ty: ignore[unresolved-attribute]
 ```
 
 Always include the specific rule name in brackets (`uv run ty check` prints
-it in the diagnostic, e.g. `error[invalid-return-type]`) — a bare `# type:
+it in the diagnostic, for example `error[invalid-return-type]`). A bare `# type:
 ignore` (mypy syntax) does not suppress ty diagnostics, since ty matches on
 its own rule codes.
 
 ---
 
-## Logging — add it generously
+## Logging: add it generously
 
 canvodpy runs unattended on remote machines. When something goes wrong
-there, whatever you logged is the *only* evidence that will ever exist —
+there, whatever you logged is the *only* evidence that will ever exist:
 there's no attaching a debugger to a cron job after the fact. Log more than
 feels necessary, especially around: file I/O, external calls (downloads,
 Icechunk writes), anything with a fallback/degraded path, and any place a
 silent skip could hide data loss. See `docs/guides/diagnostics.md` for the
 full picture (the log files, `run_id`, the failure events, `stage_timer`,
-the performance dashboard) — this section is the short "how do I add a log
+the performance dashboard). This section is the short "how do I add a log
 line" version.
 
 **Which logger to use:** every module, in every package, gets its logger
@@ -147,12 +147,12 @@ log = structlog.get_logger(__name__)
 Only canvodpy configures
 logging; the canvod-* packages never do. `configure_logging()` installs
 structlog's processor chain *globally*, so **any** `structlog.get_logger()`
-call anywhere in the process — regardless of which package it's in —
+call anywhere in the process, regardless of which package it's in,
 automatically gets routed through the two-track logging setup (human/agent
 files) with `run_id` injected, with zero per-call-site wiring. Never
-reach for `print()` or stdlib `logging` directly.
+reach for `print()` or the standard library `logging` directly.
 
-**Event style:** first positional arg is a short `snake_case` event name,
+**Event style:** first positional argument is a short `snake_case` event name,
 everything else is a structured keyword, not string interpolation:
 
 ```python
@@ -160,12 +160,12 @@ everything else is a structured keyword, not string interpolation:
 log.info("rinex_preprocessing_started", file=str(rnx_file.name), site=site_name)
 log.warning("sids_dropped_no_ephemeris", count=len(dropped), sids=sorted(dropped))
 
-# Avoid — loses structure, can't be grepped/filtered on a field
+# Avoid: loses structure, can't be grepped/filtered on a field
 log.info(f"Started preprocessing {rnx_file.name} for {site_name}")
 ```
 
 **Timing:** use `stage_timer()`/`timed_stage()` from `canvod.utils.logging`
-rather than hand-rolling `t0 = time.perf_counter(); ...; duration = ...` —
+rather than hand-rolling `t0 = time.perf_counter(); ...; duration = ...`:
 it emits the canonical `stage_timing` event the performance dashboard
 reads, and still emits (with `status="error"`) if the block raises.
 
@@ -216,7 +216,7 @@ git remote add upstream git@github.com:nfb2021/canvodpy.git
 
 ## Pre-Commit Hooks
 
-`just hooks` installs Git hooks that run **automatically on every commit**. If any hook fails, the commit is rejected — your changes stay staged but no commit is created.
+`just hooks` installs Git hooks that run **automatically on every commit**. If any hook fails, the commit is rejected: your changes stay staged but no commit is created.
 
 ### What runs
 
@@ -290,7 +290,7 @@ just test-coverage    # generates HTML report
 ## Private or Local Add-on Packages
 
 You may want to develop an add-on package alongside canVODpy that is not part
-of the public repository — for example, a private algorithm, a site-specific
+of the public repository, for example a private algorithm, a site-specific
 extension, or an experimental module you are not yet ready to publish.
 
 The recommended pattern keeps the public workspace and lock file clean while
@@ -332,7 +332,7 @@ without your local copy.
 uv pip install -e packages/canvod-myprivatepackage/
 ```
 
-`uv pip install` is a direct venv install — it does **not** modify
+`uv pip install` installs directly into the virtual environment. It does **not** modify
 `pyproject.toml` or `uv.lock`.
 After a fresh `uv sync`, re-run the command to restore your local install.
 
@@ -349,9 +349,9 @@ It becomes a first-class workspace member and appears in the lock for everyone.
 ### Why not git submodules?
 
 You could also host the private package in its own repository and add it as a
-git submodule.  `actions/checkout@v4` does not initialise submodules by
-default, so CI would still see an empty directory.  The trade-off is that the
-`uv.lock` would diverge between users who have initialised the submodule and
+git submodule. `actions/checkout@v4` does not initialize submodules by
+default, so CI would still see an empty directory. The trade-off is that the
+`uv.lock` would diverge between users who have initialized the submodule and
 those who have not, requiring everyone to keep the `exclude` in place anyway.
 For a single-developer private add-on the simpler approach above is preferred.
 
@@ -397,9 +397,9 @@ just deps-mermaid        # mermaid dependency graph
     uv sync --all-extras
     ```
 
-??? failure "`uv.lock` needs to be updated — CI fails but local works"
+??? failure "`uv.lock` needs to be updated: CI fails but local works"
     An untracked directory inside `packages/` is being picked up by the
-    `packages/*` workspace glob and included in the lock.  CI does not have
+    `packages/*` workspace glob and included in the lock. CI does not have
     the directory and therefore resolves fewer packages, causing a mismatch.
 
     Identify the culprit:
@@ -410,6 +410,6 @@ just deps-mermaid        # mermaid dependency graph
     ```
 
     Any directory present locally but absent from the `git ls-tree` output is
-    the source of the divergence.  Follow the
+    the source of the divergence. Follow the
     [Private or Local Add-on Packages](#private-or-local-add-on-packages)
     pattern to exclude it and regenerate the lock.

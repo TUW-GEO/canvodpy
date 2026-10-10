@@ -43,3 +43,9 @@ SID
 [Tt]racebacks?
 jq
 structlog
+ty
+mypy
+isort
+[Uu]ntracked
+Makefile
+[Rr]ebas(e|ing)
