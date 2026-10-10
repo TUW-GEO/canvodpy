@@ -2,8 +2,8 @@
 
 `canvod-preflight` defines the canVOD filename convention: `CanVODFilename` parses and
 builds canonical names, and `find_overlaps` finds files whose named time spans overlap.
-A run uses both to decide which files it processes, from the command line and from
-Python alike.
+Runs from the command line and from Python use both to decide which files they
+process.
 
 ---
 
@@ -84,8 +84,8 @@ the convention are processed. A run stops before reading any data if
 3. two files cover the same time, for example a daily file next to the 15-minute files
    of the same day.
 
-With `reader_format: auto`, the reader is detected per day: SBF and NMEA by file type,
-RINEX 2 or 3 from the file header. A day whose files need different readers stops the
+With `reader_format: auto`, the reader is detected per day: SBF and NMEA by file type, and
+RINEX 2 or 3 by the file header. A day whose files need different readers stops the
 run; set `reader_format`, or keep each format in its own directory.
 
 Files a run does not process (names that neither the recipe nor the convention
@@ -94,7 +94,7 @@ The run processes the other files and logs one warning per receiver,
 `files_not_processed`, with the number of such files per file type and an example.
 
 Compressed files are never processed, with or without a recipe: general compression
-(`.gz`, `.Z`, `.zip`, `.bz2`, `.xz`, `.zst`, ...) and Hatanaka-compressed RINEX (`.crx`,
+and archives (`.gz`, `.Z`, `.zip`, `.bz2`, `.xz`, `.zst`, `.7z`, `.tgz`, `.tar`, and `.rar`) and Hatanaka-compressed RINEX (`.crx`,
 RINEX 2 `.yyd`). They get a warning of their own, `compressed_files_not_processed`.
 Decompress them first (for Hatanaka, `crx2rnx`). A receiver directory holding only
 compressed files fails the check below.

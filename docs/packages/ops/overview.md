@@ -7,7 +7,7 @@ datasets. `canvodpy run`, the Python API and Airflow apply it before writing to
 the GNSS store if the `processing.preprocessing` setting is set (see
 [Preprocessing during a run](#preprocessing-during-a-run)); without that setting
 the store holds the observations at the receiver's sampling interval. You can
-also apply the operations yourself, e.g. to datasets read from a store.
+also apply the operations yourself, for example to datasets read from a store.
 Operations are applied as a chain: each operation receives a dataset,
 transforms it, and passes the result to the next.
 
@@ -56,7 +56,7 @@ grouping into frequency buckets and computing the mean or median of the
 floating-point variables. Bins start at
 multiples of `freq` counted from 00:00 and are labeled with their start.
 Missing values (NaN, and -1 in integer variables) are ignored; a bin without
-any value stays missing. Integer variables (e.g. `LLI`, `SSI`) are flags and
+any value stays missing. Integer variables (for example `LLI` and `SSI`) are flags and
 codes, which cannot be combined: each bin takes one of its values, the first,
 last or middle one in time order (`integer_method`, required; of an even
 number of values, `middle` takes the earlier of the two). The value of one
@@ -66,16 +66,16 @@ not seen. A bin keeps no count of the epochs behind it.
 The result has the same variables, dimensions, data types, attributes and
 encodings as the input, with fewer epochs, so aggregated data cannot be told
 apart from unaggregated data by their structure. What was done is reported in
-the `result` of the returned `OpResult` instead, e.g.
+the `result` of the returned `OpResult` instead, for example
 `{"aggregated": true, "input_sampling_s": 5.0, "output_sampling_s": 60.0}`,
 and kept in the stores' log books (see
 [The preprocessing record](#the-preprocessing-record)). The aggregation runs on
-numpy arrays in blocks of bins of bounded size; a day of 1 s data with 300
+NumPy arrays in blocks of bins of bounded size; a day of 1 s data with 300
 signals takes about one second.
 
 `SNR` is averaged as stored, in dB-Hz, not as linear power. Because VOD is
 linear in the SNR difference in dB, the mean of the dB values gives the mean of
-the per-epoch VOD, provided the canopy and reference bins average the same
+the per-epoch VOD if the canopy and reference bins average the same
 epochs and θ changes little within a bin
 ([issue #192](https://github.com/nfb2021/canvodpy/issues/192)). The median is
 the same in dB and in linear power.
@@ -92,7 +92,7 @@ mean of the per-epoch VOD (mean |VOD| 0.88):
 
 θ within a bin matters little up to a few minutes. The larger error comes
 from bins in which the canopy and the reference receiver have values at
-different epochs (e.g. a satellite tracked by one receiver for part of the
+different epochs (for example a satellite tracked by one receiver for part of the
 bin): a run aggregates each receiver on its own, so such bins average
 different epochs. A bin also keeps no count of the epochs behind it, so a
 bin with one value weighs like a full one in later averages.
@@ -112,7 +112,7 @@ ds_out, result = op(ds_in)
 
 If every epoch already is the start of its own bin, the operation is a no-op:
 it returns the dataset unchanged and reports `"aggregated": false`. Data at the
-target interval but off the bin starts (e.g. epochs at `:02`) are relabeled to
+target interval but off the bin starts (for example epochs at `:02`) are relabeled to
 the bin starts.
 
 #### Per-SID independence
@@ -121,7 +121,7 @@ the bin starts.
 This is critical because each SID (satellite + band + code) observes the canopy
 from a different sky position (θ, φ). Mixing VOD or SNR values across satellites
 within a time bin conflates spatial variability (different view angles) with
-temporal variability — producing a physically meaningless average.
+temporal variability, which gives a physically meaningless average.
 
 Geometry (θ, φ) is aggregated per SID with the same method, so it describes
 where the aggregated value came from; `.first()` would instead assign a single
@@ -136,13 +136,13 @@ Coordinate handling:
 | Data variables | `VOD`, `SNR` | Mean or median per `(time_bin, sid)` |
 | Geometry | `theta` | Mean or median per `(time_bin, sid)` |
 | Azimuth | `phi` | Mean or median as an angle per `(time_bin, sid)` |
-| SID-only coords | `sv`, `band`, `code` | Preserved unchanged |
+| SID-only coordinates | `sv`, `band`, `code` | Preserved unchanged |
 
 !!! warning "Anti-pattern: naive xarray resampling"
     A plain `ds.resample(epoch="1D").mean()` preserves the `sid` dimension
     (xarray resamples along `epoch` only), so per-SID independence is maintained.
     However, it does not distinguish between data variables and geometry
-    coordinates, and does not handle sid-only coords explicitly.
+    coordinates, and does not handle SID-only coordinates explicitly.
     For production use, prefer `TemporalAggregate`.
 
 ### `GridAssignment`
@@ -199,10 +199,10 @@ class MyOp(Op):
 Each `OpResult` records:
 
 - Operation name and parameters (the settings)
-- `result`: what the operation measured or derived (e.g. the input sampling)
+- `result`: what the operation measured or derived (for example the input sampling)
 - Input/output dataset dimensions
 - Execution time
-- Optional notes (e.g., "no-op: data already at target frequency")
+- Optional notes (for example "no-op: data already at target frequency")
 
 `OpResult.step()` gives the operation's entry in the preprocessing record,
 `{"op", "settings", "result"}`, and `PipelineResult.record()` the record of
@@ -235,10 +235,10 @@ processing:
 
 The temporal aggregation runs first, then the grid cell assignment. Both run on
 all files of one receiver and day together (`preprocess_files`), after azimuth
-and elevation are computed and before the data are written to the GNSS store.
+and elevation are computed and before the data goes to the GNSS store.
 A time bin that spans two files is therefore aggregated from the observations of
 both; it is stored with the file that holds its first observation. Each
-stored file keeps its own attributes (e.g. the file hash) and all `sid`
+stored file keeps its own attributes (for example the file hash) and all `sid`
 coordinates. VOD is then
 computed from the aggregated data and carries the `cell_id_*` variables along.
 
@@ -283,14 +283,14 @@ data have exactly the variables and attributes of data without preprocessing.
   the record of each file, written in the same commit as the file's data.
 - **VOD store**: the `preprocessing` column of the analysis group's log book
   holds, per receiver, the records of the GNSS data the result was computed
-  from, e.g. `{"canopy_01": [record], "reference_01": [record]}`.
+  from, for example `{"canopy_01": [record], "reference_01": [record]}`.
 - **Store history**: each entry (`summaries.history` of the store metadata,
   shown by `canvod.store_metadata.show_metadata`) names the preprocessing of
   every group written and the canVODpy version.
 
 A store group never mixes data preprocessed with different operations or
 settings. Before each write, the store compares the settings of the new data
-with every record in the group's log book; the results may differ (e.g. data
+with every record in the group's log book; the results may differ (for example data
 at 1 s and at 5 s, both aggregated to 1 min). A VOD result is computed only
 from canopy and reference data preprocessed with the same settings. On a
 mismatch, the write raises `PreprocessingMismatchError` and `canvodpy run`
@@ -332,7 +332,7 @@ preprocessed with that step as well:
   grid assignment: assign the cells to the receiver groups too, or compute the
   VOD again from them.
 
-An append whose variables differ from the group's (e.g. data without the
+An append whose variables differ from the group's (for example data without the
 `cell_id_*` variable of the group) is refused in any case
 (`GroupVariablesMismatchError`, which also stops a run): the variable would no
 longer be as long as the others, and the group could no longer be opened.

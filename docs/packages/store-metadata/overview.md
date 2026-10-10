@@ -51,7 +51,7 @@ The `StoreMetadata` model has a `metadata_version` and 11 sections:
 | `references` | `References` | Repository, documentation, publications, funding |
 | `summaries` | `Summaries` | Number of epochs and signals, constellations, variables, number of files, store size, history |
 
-The field names follow three metadata standards: DataCite 4.5, the
+The field names follow three metadata standards: the DataCite Metadata Schema 4.5, the
 Attribute Convention for Data Discovery (ACDD) 1.3, and the SpatioTemporal
 Asset Catalog (STAC) 1.1.
 
@@ -65,10 +65,10 @@ and after each VOD write:
    sections from the settings and the environment, `summarize_store()`
    adds the coverage and summaries of the stored data, and
    `write_metadata()` writes them, with the first history line.
-1. At every later write, `update_metadata()` sets `temporal.updated`, adds
-   a line to `summaries.history`, computes coverage and summaries again
-   from the stored data, and replaces the settings snapshot if the
-   settings changed. The history line then names the old and new hash of
+1. At every later write, `update_metadata()` sets `temporal.updated` and
+   adds a line to `summaries.history`. It computes the coverage and
+   summaries again from the stored data and replaces the settings snapshot
+   if the settings changed. The history line then names the old and new hash of
    the settings.
 
 A history line names what was written, the canVODpy version, and the

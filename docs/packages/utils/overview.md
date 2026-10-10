@@ -33,7 +33,7 @@ file_hash(path)  # first 16 hex digits of the file's SHA-256
 | Name | Purpose |
 |---|---|
 | `YYYYDOY`, `YYDOY` | Parse and format a date given as year and day of year, for example `2025032` or `25032` |
-| `get_gps_week_from_filename` | Read the GPS week from the file name of an orbit or clock product |
+| `get_gps_week_from_filename` | Read the GPS week from the filename of an orbit or clock product |
 | `gpsweekday` | GPS week and day of the week of a date; a date given as a string must be `dd-mm-yyyy` |
 | `file_hash` | First 16 hex digits of a file's SHA-256; the store uses it to recognize files it already holds |
 | `bytes_hash` | The same hash for file content that is already in memory |

@@ -42,7 +42,7 @@ the file:
 | Attribute | Model | Holds |
 |-----------|-------|-------|
 | `config.processing` | `ProcessingConfig` | metadata, credentials, ephemeris products, processing parameters, compression, storage, logging, preprocessing |
-| `config.sites.sites` | `dict[str, SiteConfig]` | one entry per site, with its receivers and VOD analyses |
+| `config.sites.sites` | `dict[str, SiteConfig]` | one entry per site with its receivers and VOD analyses |
 | `config.sids` | `SidsConfig` | the signals to keep: `all`, a `preset`, or a `custom` list |
 
 The [API reference](../../api/canvod-config.md) lists every field, its

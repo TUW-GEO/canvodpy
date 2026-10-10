@@ -23,15 +23,15 @@ GNSS-T analysis requires combining two data sources with fundamentally different
     - Low temporal resolution: 5–15 min
     - Satellite-level indexing by SV: `"G01"`
     - Dimensions: `(epoch: 96, sv: 32)`
-    - CLK is optional (`aux_data.fetch_clock`, default `true`) — SP3 is always required
+    - CLK is optional (`aux_data.fetch_clock`, default `true`); SP3 is always required
 
 </div>
 
 Combining these requires:
 
-1. **Dimension conversion** — sv (32 satellites) → sid (384 signal IDs)
-2. **Temporal interpolation** — 15 min → the observations' sampling interval, on a grid from 00:00
-3. **Coordinate transform** — ECEF → geodetic → spherical (r, θ, φ)
+1. **Dimension conversion** from `sv` (32 satellites) to `sid` (384 signal IDs)
+2. **Temporal interpolation** from 15 min to the observations' sampling interval, on a grid from 00:00
+3. **Coordinate transform** from ECEF to geodetic to spherical (r, θ, φ)
 4. **Physically correct interpolation** per data type
 
 ```mermaid
@@ -56,20 +56,20 @@ Different data types require different methods based on the underlying physics:
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-circle-nodes: &nbsp; **SP3 — Hermite Cubic Splines**
+-   :fontawesome-solid-circle-nodes: &nbsp; **SP3 (Hermite cubic splines)**
 
     ---
 
     Satellite orbital motion is smooth and predictable.
     Hermite splines exploit available velocity data for C1-continuity
-    and sub-millimetre interpolation accuracy.
+    and sub-millimeter interpolation accuracy.
 
     ```python
     config = Sp3Config(use_velocities=True, fallback="linear")
     strategy = Sp3InterpolationStrategy(config=config)
     ```
 
--   :fontawesome-solid-clock: &nbsp; **CLK — Piecewise Linear**
+-   :fontawesome-solid-clock: &nbsp; **CLK (piecewise linear)**
 
     ---
 
@@ -94,18 +94,18 @@ Different data types require different methods based on the underlying physics:
 
     ---
 
-    `Sp3File` — SP3a/c/d format: positions (X, Y, Z) + velocities (VX, VY, VZ)
+    `Sp3File` reads SP3a/c/d files: positions (X, Y, Z) and velocities (VX, VY, VZ)
 
-    `ClkFile` — RINEX clock format: satellite clock biases
+    `ClkFile` reads RINEX clock files: satellite clock biases
 
-    `ProductSpec` — Declarative config for URLs, latency, and auth
+    `ProductSpec` describes a product: its URLs, latency, and authentication
 
 -   :fontawesome-solid-arrows-rotate: &nbsp; **Preprocessing**
 
     ---
 
-    `prep_aux_ds()` — Full 4-step pipeline: sv→sid mapping, pad to global SID,
-    normalise dtype, strip `_FillValue`
+    `prep_aux_ds()` runs four steps: map `sv` to `sid`, pad to the global SIDs,
+    normalize the dtype, strip `_FillValue`
 
     ```python
     sp3_sid = prep_aux_ds(sp3_raw)
@@ -116,9 +116,9 @@ Different data types require different methods based on the underlying physics:
 
     ---
 
-    `ECEFPosition` — [Earth-Centred Earth-Fixed](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"} (X, Y, Z)
+    `ECEFPosition` holds [Earth-Centered Earth-Fixed](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"} (X, Y, Z)
 
-    `GeodeticPosition` — [WGS84](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"} latitude, longitude, altitude
+    `GeodeticPosition` holds [WGS84](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"} latitude, longitude, and altitude
 
     [Spherical coordinates](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates){:target="_blank"} (r, θ, φ) relative to receiver position
 
@@ -126,9 +126,9 @@ Different data types require different methods based on the underlying physics:
 
     ---
 
-    Without a NASA Earthdata account: ESA GSSC only
+    Without a NASA Earthdata account, from ESA GSSC only
 
-    With one: NASA CDDIS first, ESA GSSC if that fails
+    With one, from NASA CDDIS first and from ESA GSSC if that fails
 
     Per-DOY caching prevents redundant downloads
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T grids, SNR data, and VOD results. It wraps matplotlib (publication-quality polar plots) and plotly (interactive 3D hemispheres) behind a unified API.
+The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T grids, SNR data, and VOD results. It wraps Matplotlib (publication-quality polar plots) and Plotly (interactive 3D hemispheres) behind a unified API.
 
 ---
 
@@ -35,7 +35,7 @@ The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T
 
     ---
 
-    `add_tissot_indicatrix` — overlay angular distortion circles on 2D
+    `add_tissot_indicatrix` overlays angular distortion circles on 2D
     plots to evaluate grid cell shape fidelity.
 
 </div>
@@ -111,9 +111,9 @@ The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T
     `plot_3d_mesh` draws HTM grids one triangle at a time and every other
     grid like `plot_3d`.
 
-`add_spherical_overlays(fig, elevation_rings=...)` takes elevations above
-the horizon (0 = horizon, 90 = zenith); the default draws rings at 0, 15,
-30, 45, 60 and 75 degrees.
+`add_spherical_overlays(fig, elevation_rings=...)` takes elevation
+angles in degrees (0 = horizon, 90 = zenith); the default draws rings at 0,
+15, 30, 45, 60, and 75 degrees.
 
 ---
 
@@ -129,8 +129,8 @@ Each returns a `PlotStyle`, passed to `viz.set_style()`; `PlotStyle.to_polar_sty
 
 ### RSE journal style
 
-Publication-quality styling matching *Remote Sensing of Environment* guidelines:
-Arial/Helvetica fonts, 300 DPI, inward ticks, colorblind-friendly palette (Wong, 2011).
+Publication-quality styling matching *Remote Sensing of Environment* guidelines,
+with Arial or Helvetica fonts, 300 DPI, inward ticks, colorblind-friendly palette (Wong, 2011).
 
 === "Context manager"
 
@@ -165,7 +165,7 @@ Arial/Helvetica fonts, 300 DPI, inward ticks, colorblind-friendly palette (Wong,
 
 ### Colorscale
 
-Colormaps converted between matplotlib and Plotly:
+Colormaps converted between Matplotlib and Plotly:
 
 ```python
 from canvod.viz import Colorscale
@@ -186,10 +186,10 @@ exploration of per-cell VOD on the hemispheric grid, with synthetic data
 (real per-cell time series come from
 `canvod.store.AnalysisStorage.load_percell_timeseries()`):
 
-- **3D view** — Plotly Scatter3d with click-to-select cells (anywidget)
-- **2D view** — Canvas polar projection with hover tooltips (anywidget)
-- **Reactive stats** — selected cells display in a table with mean, std, count, coverage
-- **Timeseries** — per-cell VOD timeseries plotted for selected cells
+- **3D view**: Plotly Scatter3d with click-to-select cells (anywidget)
+- **2D view**: canvas polar projection with hover tooltips (anywidget)
+- **Reactive stats**: selected cells display in a table with mean, std, count, and coverage
+- **Time series**: per-cell VOD time series plotted for selected cells
 
 ```bash
 just open-notebook 19_grid_exploration.py
@@ -201,7 +201,7 @@ just open-notebook 19_grid_exploration.py
 
 !!! info "Backends"
 
-    - **matplotlib** (2D) and **plotly** (3D) — installed with `canvod-viz`
-    - **canvod-grids** — grid geometry, installed with `canvod-viz`
-    - **anywidget** — only for the interactive hemisphere selectors in the
+    - **Matplotlib** (2D) and **Plotly** (3D), installed with `canvod-viz`
+    - **canvod-grids**: grid geometry, installed with `canvod-viz`
+    - **anywidget**: only for the interactive hemisphere selectors in the
       marimo notebooks; not a dependency of `canvod-viz`

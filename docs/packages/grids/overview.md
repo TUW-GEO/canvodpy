@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The `canvod-grids` package provides spatial grid implementations for hemispheric GNSS signal analysis. It discretizes the hemisphere visible from a ground-based receiver into cells — a prerequisite for spatially resolved VOD estimation.
+The `canvod-grids` package provides spatial grid implementations for hemispheric GNSS signal analysis. It discretizes the hemisphere visible from a ground-based receiver into cells, a prerequisite for spatially resolved VOD estimation.
 
 ---
 
@@ -12,53 +12,53 @@ Seven implementations are available, all inheriting from `BaseGridBuilder`:
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-border-all: &nbsp; **EqualAreaBuilder** *(recommended)*
+-   :fontawesome-solid-border-all: &nbsp; **`EqualAreaBuilder`** *(recommended)*
 
     ---
 
     Cells of approximately equal solid angle. Ensures uniform spatial
     sampling across the hemisphere, avoiding zenith over-weighting.
 
--   :fontawesome-solid-table-cells: &nbsp; **EqualAngleBuilder**
+-   :fontawesome-solid-table-cells: &nbsp; **`EqualAngleBuilder`**
 
     ---
 
-    Regular angular spacing in θ and φ. Cells near zenith are smaller —
-    appropriate when you want uniform angular resolution.
+    Regular angular spacing in θ and φ. Cells near zenith are smaller.
+    Use it when you want uniform angular resolution.
 
--   :fontawesome-solid-grip: &nbsp; **EquirectangularBuilder**
+-   :fontawesome-solid-grip: &nbsp; **`EquirectangularBuilder`**
 
     ---
 
     The same number of azimuth sectors in every θ band, no zenith cap.
     Fast to compute; cells shrink strongly toward the zenith.
 
--   :fontawesome-solid-dice-d20: &nbsp; **GeodesicBuilder**
+-   :fontawesome-solid-dice-d20: &nbsp; **`GeodesicBuilder`**
 
     ---
 
     Icosahedron subdivision. Near-uniform cell area with triangular
     cell boundaries.
 
--   :fontawesome-solid-seedling: &nbsp; **FibonacciBuilder**
+-   :fontawesome-solid-seedling: &nbsp; **`FibonacciBuilder`**
 
     ---
 
     Fibonacci-sphere sampling: nearly uniform points, each the center
     of its Voronoi cell.
 
--   :fontawesome-solid-globe: &nbsp; **HEALPixBuilder**
+-   :fontawesome-solid-globe: &nbsp; **`HEALPixBuilder`**
 
     ---
 
     Hierarchical Equal Area isoLatitude Pixelization. All pixels of the
     full sphere have the same area; the hemisphere keeps the pixels
-    whose center lies at or above the outer edge.
-    Requires the optional `healpy` dependency — not installed by
+    whose center is at least as high as the outer edge.
+    Requires the optional `healpy` dependency, which is not installed by
     default (see [Optional dependencies](#optional-dependencies)
     below).
 
--   :fontawesome-solid-triangle-exclamation: &nbsp; **HTMBuilder**
+-   :fontawesome-solid-triangle-exclamation: &nbsp; **`HTMBuilder`**
 
     ---
 
@@ -77,9 +77,9 @@ Where a grid ends depends on its type:
 | Grid type | Outer edge | Observations near the horizon |
 |---|---|---|
 | `equal_area`, `equal_angle`, `equirectangular` | exactly θ = 90° − `cutoff_theta`; the last band is narrower when the band width does not divide the range (half a band for `equal_area` and `equal_angle` at a cutoff that is a multiple of the resolution) | all get a cell up to the outer edge, none beyond |
-| `htm`, `geodesic` | the triangles whose center lies above the outer edge; some extend below it | all get a cell above the horizon (with `cutoff_theta = 0`) |
-| `healpix` | the pixels whose center lies at or above the outer edge; some extend below it | all get a cell above the horizon (with `cutoff_theta = 0`) |
-| `fibonacci` | the Voronoi cells whose lattice point lies above the outer edge | some low observations get no cell: up to about 1°, 3° and 6° elevation at 2°, 5° and 10° resolution |
+| `htm`, `geodesic` | the triangles whose center is higher than the outer edge; some extend below it | all observations higher than the horizon get a cell (with `cutoff_theta = 0`) |
+| `healpix` | the pixels whose center is at least as high as the outer edge; some extend below it | all observations higher than the horizon get a cell (with `cutoff_theta = 0`) |
+| `fibonacci` | the Voronoi cells whose lattice point is higher than the outer edge | some low observations get no cell: up to about 1°, 3° and 6° elevation at 2°, 5° and 10° resolution |
 
 So the solid angles of the ring grids add up to the hemisphere (2π sr
 with `cutoff_theta = 0`); those of the triangle and pixel grids add up to
@@ -92,7 +92,7 @@ somewhat more (geodesic 1.01 to 1.05 × 2π, HEALPix 1.01 to 1.08 × 2π at
 
     `HEALPixBuilder` delegates pixel geometry entirely to
     [`healpy`](https://healpy.readthedocs.io/), which is **not** installed
-    by `uv sync --dev` — it's declared in `canvod-grids`' own `optional`
+    by `uv sync --dev`, because it's declared in `canvod-grids`' own `optional`
     dependency group, not the workspace's `dev` group. Install it with:
 
     ```bash
@@ -101,7 +101,7 @@ somewhat more (geodesic 1.01 to 1.05 × 2π, HEALPix 1.01 to 1.08 × 2π at
 
     `healpy` publishes no Windows wheels on PyPI (Linux and macOS only),
     which is the main reason it's kept optional rather than a hard
-    dependency — every other grid type only needs `numpy`/`scipy`, which
+    dependency. Every other grid type only needs `numpy`/`scipy`, which
     install everywhere. Calling `create_hemigrid("healpix", ...)` without
     `healpy` installed raises `ImportError` with the same install
     instructions.
@@ -155,14 +155,14 @@ The `GridData` object returned by all builders provides:
 
 | Attribute | Type | Description |
 | --------- | ---- | ----------- |
-| `grid` | `polars.DataFrame` | One row per cell: centre (`phi`, `theta`), bounds (`phi_min`, `phi_max`, `theta_min`, `theta_max`), `cell_id` |
+| `grid` | `polars.DataFrame` | One row per cell: center (`phi`, `theta`), bounds (`phi_min`, `phi_max`, `theta_min`, `theta_max`), `cell_id` |
 | `ncells` | `int` | Total number of grid cells |
-| `grid_type` | `str` | Grid type, e.g. `"equal_area"` |
+| `grid_type` | `str` | Grid type, for example `"equal_area"` |
 | `theta_lims`, `phi_lims`, `cell_ids` | arrays | Band edges, azimuth edges and cell ids per θ band |
 | `get_solid_angles()` | `np.ndarray` | Solid angle of each cell (sr) |
 | `get_grid_stats()` | `dict` | Summary: cell count, solid-angle statistics |
 
-For the Fibonacci, geodesic, HEALPix and HTM grids the bounds are
+For the Fibonacci, geodesic, HEALPix, and HTM grids the bounds are
 bounding boxes, not the true (curved or triangular) cell boundaries.
 
 ---
@@ -177,11 +177,11 @@ bounding boxes, not the true (curved or triangular) cell boundaries.
 
     ---
 
-    `add_cell_ids_to_ds_fast` — assigns each observation to the cell that
-    contains it, eagerly or lazily for dask arrays: by band and sector
+    `add_cell_ids_to_ds_fast` assigns each observation to the cell that
+    contains it, eagerly or lazily for Dask arrays: by band and sector
     edges for the ring grids, by spherical triangle for HTM and geodesic,
     by pixel for HEALPix, by Voronoi cell for Fibonacci. Observations
-    outside the grid get NaN (see the table above). The nearest cell
+    outside the grid get NaN (see the table in [Grid types](#grid-types)). The nearest cell
     center is not used: near a cell's corner it often belongs to a
     neighboring cell. `canvodpy run` uses the same function when grid
     assignment is set. The lookup needs the grid's full geometry, so use
@@ -192,7 +192,7 @@ bounding boxes, not the true (curved or triangular) cell boundaries.
 
     ---
 
-    `grid_to_dataset` — Convert `GridData` to xarray Dataset.
+    `grid_to_dataset` converts `GridData` to an xarray Dataset.
 
     To save a grid in a store and read it back, use `store_grid` and
     `load_grid` from [canvod-store](../store/overview.md#grids-and-analysis-results).
@@ -203,14 +203,15 @@ bounding boxes, not the true (curved or triangular) cell boundaries.
 
     In `canvod.grids.aggregation` (also importable from `canvod.grids`):
 
-    `aggregate_data_to_grid` — One statistic per cell.
+    `aggregate_data_to_grid` computes one statistic per cell.
 
-    `compute_percell_timeseries` — Per-cell time series (cell × time).
+    `compute_percell_timeseries` computes per-cell time series (cell × time).
 
-    `compute_hemisphere_percell` — Daily per-cell time series, full
-    hemisphere.
+    `compute_hemisphere_percell` computes daily per-cell time series of
+    the full hemisphere.
 
-    `compute_zenith_percell` — Daily per-cell time series, θ ≤ 30°.
+    `compute_zenith_percell` computes daily per-cell time series for
+    θ ≤ 30°.
 
 </div>
 
@@ -223,7 +224,7 @@ bounding boxes, not the true (curved or triangular) cell boundaries.
 | Module | Purpose |
 | ------ | ------- |
 | `filtering` | Global IQR, Z-score, SID pattern filters |
-| `per_cell_filtering` | Per-cell variants of the above |
+| `per_cell_filtering` | Per-cell variants of the `filtering` filters |
 | `masking` | Spatial and temporal mask construction |
 | `weighting` | Per-cell weight calculators |
 | `solar` | Solar geometry (elevation, azimuth) |
@@ -233,7 +234,7 @@ bounding boxes, not the true (curved or triangular) cell boundaries.
 ### SIDPatternFilter
 
 `SIDPatternFilter` selects observations by GNSS system, frequency band, and tracking code.
-It operates on the `sid` dimension where SIDs have the format `SV|Band|Code` (e.g. `G01|L1|C`).
+It operates on the `sid` dimension where SIDs have the format `SV|Band|Code` (for example `G01|L1|C`).
 
 === "Slice (drop non-matching SIDs)"
 
@@ -268,7 +269,7 @@ store, use `AnalysisStorage` from
     - **phi** (φ): azimuth 0 → 2π · 0 = North · π/2 = East · clockwise
     - **theta** (θ): polar angle from zenith · 0 = zenith · π/2 = horizon
 
-    This matches the canvod-auxiliary coordinate output — no conversion needed.
+    This matches the coordinate output of canvod-auxiliary, so no conversion is needed.
 
 ---
 
