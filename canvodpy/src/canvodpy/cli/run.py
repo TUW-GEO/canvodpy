@@ -408,7 +408,7 @@ def _main_impl(args: SimpleNamespace) -> int:
                 # First-run/remote-machine visibility: worker-pool startup,
                 # the satellite catalog, and store opening all happen here,
                 # silently, before the first per-day progress line -- without
-                # this it looks hung (see dev/todo_later.md §33).
+                # this it looks hung.
                 reporter.log(
                     "  Initializing (worker pool, satellite catalog, store) "
                     "-- may take a while on a cold cache or first run..."
@@ -420,8 +420,7 @@ def _main_impl(args: SimpleNamespace) -> int:
                 if vod_analyses:
                     reporter.log(f"  VOD analyses: {list(vod_analyses.keys())}")
 
-                    # Loud, read-only, non-blocking gap check (dev/todo_
-                    # later.md §43): a prior run's RINEX ingestion can
+                    # Loud, read-only, non-blocking gap check: a prior run's RINEX ingestion can
                     # complete cleanly while its VOD-store write fails
                     # afterward, and resume logic only looks at the RINEX
                     # store, so that gap is otherwise silently permanent.

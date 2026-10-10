@@ -2,8 +2,7 @@
 
 ``icechunk.IcechunkError`` wraps object-store errors -- including transient
 network drops on shared/mounted storage (os error 103 ECONNABORTED, seen in
-production against an NFS-style share; dev/perf_degradation_findings_2026_
-07_15.md) -- but is not a subclass of OSError/RuntimeError/ValueError, so it
+production against an NFS-style share) -- but is not a subclass of OSError/RuntimeError/ValueError, so it
 escapes a plain ``except (OSError, RuntimeError, ValueError)`` uncaught.
 Used by both the RINEX ingest path (``orchestrator/pipeline.py``) and the
 VOD store write path (``cli/run.py``) -- both hit the same store, over the

@@ -100,8 +100,7 @@ class ResourceSampler:
     ``interval_seconds`` for the whole run (including time spent outside
     batch boundaries, e.g. aux data fetch/interpolation), so a wall-clock
     slowdown seen in stage_timing events can be correlated against actual
-    resource pressure instead of assumed (dev/todo_later.md
-    perf-degradation investigation, 2026-07-14).
+    resource pressure instead of assumed.
 
     Parameters
     ----------

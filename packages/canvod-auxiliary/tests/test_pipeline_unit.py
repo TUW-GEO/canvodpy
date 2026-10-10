@@ -286,7 +286,7 @@ class TestAuxDataPipeline:
 
 
 class TestCreateStandardFetchClock:
-    """create_standard()'s clock-fetching gate (§28, dev/todo_later.md)."""
+    """create_standard()'s clock-fetching gate."""
 
     @staticmethod
     def _make_config(fetch_clock: bool):

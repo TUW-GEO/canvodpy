@@ -297,8 +297,8 @@ class GnssResearchSite:
 
         The VOD store nests results as ``{model}/{analysis_name}`` (one
         model per registered ``VODFactory`` calculator, disambiguating
-        results from different calculators over the same analysis pair —
-        see dev/todo_later.md §29). Top-level ``list_groups()`` only
+        results from different calculators over the same analysis pair).
+        Top-level ``list_groups()`` only
         returns model names, so this walks one level deeper.
 
         Returns
@@ -465,8 +465,7 @@ class GnssResearchSite:
         Store VOD analysis results under ``{calculator_name}/{analysis_name}``.
 
         The model layer disambiguates results from different VOD
-        calculators computed over the same analysis pair (see
-        dev/todo_later.md §29).
+        calculators computed over the same analysis pair.
 
         Parameters
         ----------

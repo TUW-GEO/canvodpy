@@ -3,10 +3,9 @@
 icechunk.RepositoryConfig object built by MyIcechunkStore.__init__.
 
 Both knobs were previously left entirely at icechunk's hardcoded internal
-defaults -- never exposed as config at all (dev/perf_fable_vetting_2026_07_20.md,
-dev/perf_degradation_findings_2026_07_15.md flagged them as perf-relevant but
-unwired). They must remain fully inert (icechunk's own defaults, i.e. None on
-RepositoryConfig) when unset, matching this project's established opt-in-knob
+defaults -- never exposed as config at all, although they matter for
+performance. They must remain fully inert (icechunk's own defaults, i.e. None
+on RepositoryConfig) when unset, matching this project's established opt-in-knob
 convention (see zarr_async_concurrency).
 """
 

@@ -1,6 +1,6 @@
 """Tests for MyIcechunkStore's retention/maintenance capability.
 
-dev/perf_degradation_findings_2026_07_15.md, Problem B: two bugs fixed
+Two bugs fixed
 before shipping (expire_old_snapshots overriding safe upstream defaults to
 True/True; maintenance() running garbage_collect() twice per call), plus
 a new tag-based keeper scheme (create_keeper_tag). These are regression
@@ -219,7 +219,7 @@ class TestMaintenanceConfigDefaults:
 
 
 class TestMaintenanceDue:
-    """dev/todo_later.md's icechunk-maintenance-scheduling gap, 2026-07-21:
+    """Icechunk maintenance scheduling:
     nothing ever calls expire_old_snapshots()/garbage_collect() on its own.
     maintenance_due() uses the store's own ops log (Icechunk-written,
     can't drift like a separate marker file) as the source of truth for
@@ -302,7 +302,7 @@ class TestMaintenanceDue:
 
 
 class TestManifestCompaction:
-    """dev/todo_later.md's manifest-fragmentation gap, 2026-07-21:
+    """Manifest fragmentation:
     canvodpy's one-to_icechunk()-call-per-file write pattern creates one
     new manifest per flush; rewrite_manifests() was documented but never
     invoked anywhere. Unlike expire/GC, due-ness here is measured

@@ -1,4 +1,4 @@
-"""Shared zarr async-concurrency scoping (dev/todo_later.md §44).
+"""Shared zarr async-concurrency scoping.
 
 Zarr v3's async codec pipeline issues chunk writes/reads for a single array
 as a concurrent ``asyncio.gather`` burst, sized by ``zarr.config``'s

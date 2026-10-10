@@ -1,6 +1,6 @@
 """Find RINEX-ingested-but-VOD-missing dates for a VOD analysis pair.
 
-dev/todo_later.md §43 -- a run can complete RINEX ingestion for a date
+A run can complete RINEX ingestion for a date
 range cleanly, then fail before (or during) the corresponding VOD-store
 write, leaving those dates permanently un-backfilled: the pipeline's
 resume logic (``_last_processed_date()``, ``cli/run.py``) only looks at

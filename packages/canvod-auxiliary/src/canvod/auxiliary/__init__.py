@@ -7,7 +7,7 @@ clock corrections for GNSS satellite data processing.
 
 from importlib.metadata import version as _version
 
-# Aux cache fingerprinting (dev/todo_later.md §44)
+# Aux cache fingerprinting
 from canvod.readers.preprocessing import (
     add_future_datavars,
     create_sv_to_sid_mapping,

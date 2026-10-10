@@ -76,8 +76,7 @@ def ensure_vod_store_metadata(
     section at whatever was true on the very first write). Best-effort:
     swallows failures so a metadata problem never blocks the actual VOD
     write, but logs them as warnings. Call it after the data write, so the
-    coverage and summaries describe the data just written. See
-    dev/todo_later.md §29 item 4.
+    coverage and summaries describe the data just written.
     """
     log = structlog.get_logger(__name__).bind(
         site=site.name, calculator=calculator_name

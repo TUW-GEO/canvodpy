@@ -189,8 +189,7 @@ class TestClockCorrectionAugmentation:
 
     def test_required_aux_files(self):
         """Empty on purpose: clock is optional (fetch_clock config flag),
-        and augment() already handles its absence gracefully — see §28,
-        dev/todo_later.md."""
+        and augment() already handles its absence gracefully."""
         step = ClockCorrectionAugmentation()
         assert step.get_required_aux_files() == []
 

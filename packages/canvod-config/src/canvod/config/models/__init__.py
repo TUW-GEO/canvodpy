@@ -7,7 +7,7 @@ These models provide:
 - API-ready data transfer objects
 - IDE autocomplete and type hints
 
-Split across focused submodules by config section (dev/todo_later.md §4) —
+Split across focused submodules by config section —
 this ``__init__.py`` re-exports everything, so ``from canvod.config.models
 import X`` keeps working exactly as it did when this was a single file.
 """

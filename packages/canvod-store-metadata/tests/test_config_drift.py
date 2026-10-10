@@ -1,4 +1,4 @@
-"""Tests for config-drift detection on repeat ingests (dev/todo_later.md §4).
+"""Tests for config-drift detection on repeat ingests.
 
 Exercises the same read -> re-snapshot -> compare -> merge-history pattern
 used by processor.py's STEP 5b, at the canvod-store-metadata level (a full

@@ -1,4 +1,4 @@
-"""Tests for the network-wide aux cache fingerprint (dev/todo_later.md §44)."""
+"""Tests for the network-wide aux cache fingerprint."""
 
 from __future__ import annotations
 

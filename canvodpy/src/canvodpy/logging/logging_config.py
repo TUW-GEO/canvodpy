@@ -507,7 +507,7 @@ def configure_logging(
         # run was already gone. 150 (~15GB, ~7 days at this rate) is a
         # stopgap sized for "don't lose crash forensics within about a
         # week," not a durable fix -- same caveat as performance.json's
-        # backupCount bump (see dev/todo_later.md §37): the real answer is
+        # backupCount bump: the real answer is
         # exporting before rotation can touch it.
         backupCount=150,
         encoding="utf-8",
@@ -585,8 +585,7 @@ def configure_logging(
         # short for the "runs may take days, or are triggered daily and run
         # forever" case. 60 (~3GB/~31 days) is a stopgap, not a fix: the
         # durable answer is exporting machine/performance*.json into a
-        # persistent store before rotation can touch it (dev/todo_later.md
-        # §34 Tier 1, not yet built).
+        # persistent store before rotation can touch it (not yet built).
         backupCount=60,
         encoding="utf-8",
         # Opens the file at the first record: a worker that logs nothing

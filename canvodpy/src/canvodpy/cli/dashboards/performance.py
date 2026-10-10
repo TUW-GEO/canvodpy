@@ -67,7 +67,7 @@ def _(mo):
     # on the chosen interval, so the dashboard tracks a live run without
     # a manual click. The widget also exposes a manual refresh action.
     # Long options (30m-24h) matter for the "runs may take days or run
-    # forever" case (dev/todo_later.md §37) -- a dashboard left open
+    # forever" case -- a dashboard left open
     # against an unattended multi-day backfill shouldn't have to poll
     # every few seconds to eventually catch up.
     refresh = mo.ui.refresh(

@@ -1,6 +1,6 @@
 """Fingerprinting for the network-wide aux (SP3/CLK Hermite) cache.
 
-See dev/todo_later.md §44. The aux cache is keyed by a fingerprint that is
+The aux cache is keyed by a fingerprint that is
 deliberately site-independent -- ephemeris products are satellite-based, not
 site-based, so the same fingerprint should hit for every site sharing the
 same agency/product/ephemeris-source config on the same date, regardless of
