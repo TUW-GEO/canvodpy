@@ -21,6 +21,25 @@ class TestCollectors:
         assert isinstance(versions, dict)
         assert "pydantic" in versions
 
+    def test_collect_software_versions_has_every_canvod_package(self):
+        # Every package of the repository is installed in its environment.
+        versions = collect_software_versions()
+        for pkg in [
+            "canvodpy",
+            "canvod-utils",
+            "canvod-config",
+            "canvod-readers",
+            "canvod-auxiliary",
+            "canvod-preflight",
+            "canvod-vod",
+            "canvod-grids",
+            "canvod-ops",
+            "canvod-store-metadata",
+            "canvod-store",
+            "canvod-viz",
+        ]:
+            assert pkg in versions
+
     def test_collect_python_info(self):
         info = collect_python_info()
         assert "3." in info

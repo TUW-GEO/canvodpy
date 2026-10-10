@@ -45,7 +45,7 @@ The `StoreMetadata` model has a `metadata_version` and 11 sections:
 | `temporal` | `TemporalExtent` | Created, updated, first and last stored epoch, duration, resolution |
 | `spatial` | `SpatialExtent` | Site name and country, latitude, longitude, altitude (WGS84), bounding box |
 | `instruments` | `Instruments` | Platform; per receiver: type, directory, reader format, epochs, signals, variables |
-| `processing` | `ProcessingProvenance` | Versions of canvodpy, canvod-readers, canvod-ops, canvod-grids, canvod-store, canvod-store-metadata, canvod-utils, and the main libraries (Icechunk, Zarr, xarray, Dask, NumPy, Polars, Pydantic); Python and uv versions; processing level; lineage |
+| `processing` | `ProcessingProvenance` | Versions of canvodpy and of the 11 `canvod-*` packages it installs, and of the main libraries (Icechunk, Zarr, xarray, Dask, NumPy, Polars, Pydantic); Python and uv versions; processing level; lineage |
 | `environment` | `Environment` | Host name, operating system, architecture, CPUs, memory, free disk space, the hash and text of `uv.lock`, and the text of `pyproject.toml` |
 | `config` | `ConfigSnapshot` | The processing, preprocessing, auxiliary data, compression, Icechunk, and signal settings, and their hash |
 | `references` | `References` | Repository, documentation, publications, funding |
