@@ -58,7 +58,7 @@ The `canvod-readers` package provides validated parsers for [GNSS](https://gssc.
 
 ---
 
-## Supported Formats at a Glance
+## Supported formats at a glance
 
 | Feature | `Rnxv3Obs` | `Rnxv2Obs` | `SbfReader` | `NmeaObs` |
 | ------- | ---------- | ---------- | ----------- | --------- |
@@ -116,7 +116,7 @@ graph TD
     E --> F
 ```
 
-### Contract-Based Design
+### Contract-based design
 
 All readers implement the `GNSSDataReader` base class, a Pydantic `BaseModel`
 and ABC. It holds the validated file path `fpath` and declares what every
@@ -142,7 +142,7 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
 
 ---
 
-## Usage Examples
+## Usage examples
 
 === "RINEX — VOD pipeline"
 
@@ -212,7 +212,7 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
 
 ---
 
-## Key Components
+## Key components
 
 <div class="grid cards" markdown>
 

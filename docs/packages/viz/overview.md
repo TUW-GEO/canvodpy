@@ -127,7 +127,7 @@ the horizon (0 = horizon, 90 = zenith); the default draws rings at 0, 15,
 
 Each returns a `PlotStyle`, passed to `viz.set_style()`; `PlotStyle.to_polar_style()` gives the `PolarPlotStyle` the 2D functions take.
 
-### RSE Journal Style
+### RSE journal style
 
 Publication-quality styling matching *Remote Sensing of Environment* guidelines:
 Arial/Helvetica fonts, 300 DPI, inward ticks, colorblind-friendly palette (Wong, 2011).
@@ -179,7 +179,7 @@ cs2 = Colorscale.from_colors(["#0072B2", "#D55E00", "#009E73"])
 
 ---
 
-## Interactive Grid Exploration
+## Interactive grid exploration
 
 The `demo/19_grid_exploration.py` marimo notebook shows interactive
 exploration of per-cell VOD on the hemispheric grid, with synthetic data

@@ -57,3 +57,4 @@ Zstandard
 [Ee]quirectangular
 CPUs
 canvod(-[a-z]+)+
+RSE

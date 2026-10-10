@@ -47,9 +47,9 @@ flowchart TD
 
 ---
 
-## Built-in Operations
+## Built-in operations
 
-### TemporalAggregate
+### `TemporalAggregate`
 
 Aggregates observations into regular time bins. Reduces the number of epochs by
 grouping into frequency buckets and computing the mean or median of the
@@ -145,7 +145,7 @@ Coordinate handling:
     coordinates, and does not handle sid-only coords explicitly.
     For production use, prefer `TemporalAggregate`.
 
-### GridAssignment
+### `GridAssignment`
 
 Assigns each observation to the grid cell that contains its direction
 (`phi`, `theta`); an observation outside every cell gets NaN. The grid is built
@@ -172,7 +172,7 @@ with a warning.
 
 ---
 
-## Op and OpResult
+## `Op` and `OpResult`
 
 All operations inherit from the `Op` abstract base class:
 

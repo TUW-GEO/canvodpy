@@ -6,7 +6,7 @@ The `canvod-auxiliary` package provides auxiliary data management for [GNSS Tran
 
 ---
 
-## The Dimension Alignment Problem
+## The dimension alignment problem
 
 GNSS-T analysis requires combining two data sources with fundamentally different indexing:
 
@@ -50,7 +50,7 @@ graph TD
 
 ---
 
-## Interpolation Strategies
+## Interpolation strategies
 
 Different data types require different methods based on the underlying physics:
 
@@ -86,7 +86,7 @@ Different data types require different methods based on the underlying physics:
 
 ---
 
-## Key Components
+## Key components
 
 <div class="grid cards" markdown>
 

@@ -6,7 +6,7 @@ The `canvod-vod` package implements vegetation optical depth (VOD) estimation fr
 
 ---
 
-## Physical Background
+## Physical background
 
 !!! abstract "Tau-Omega Radiative Transfer Model"
 

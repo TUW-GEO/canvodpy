@@ -6,7 +6,7 @@ The `canvod-grids` package provides spatial grid implementations for hemispheric
 
 ---
 
-## Grid Types
+## Grid types
 
 Seven implementations are available, all inheriting from `BaseGridBuilder`:
 
@@ -149,7 +149,7 @@ the builder of each grid type from one table, `canvod.grids.GRID_BUILDERS`.
 
 ---
 
-## GridData
+## `GridData`
 
 The `GridData` object returned by all builders provides:
 
@@ -167,7 +167,7 @@ bounding boxes, not the true (curved or triangular) cell boundaries.
 
 ---
 
-## Grid Operations
+## Grid operations
 
 `canvod.grids.operations` handles the interface between grids and xarray Datasets:
 
@@ -216,7 +216,7 @@ bounding boxes, not the true (curved or triangular) cell boundaries.
 
 ---
 
-## Analysis Subpackage
+## Analysis subpackage
 
 `canvod.grids.analysis` provides filtering, weighting, and pattern analysis:
 
@@ -259,7 +259,7 @@ store, use `AnalysisStorage` from
 
 ---
 
-## Coordinate Convention
+## Coordinate convention
 
 !!! note "Angles"
 
