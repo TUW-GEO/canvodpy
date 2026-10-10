@@ -49,3 +49,4 @@ isort
 [Uu]ntracked
 Makefile
 [Rr]ebas(e|ing)
+[Tt]ransmissivity

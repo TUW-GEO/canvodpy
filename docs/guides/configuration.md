@@ -249,9 +249,9 @@ processing:
 ### Ephemeris data sources
 
 canVODpy downloads SP3 and CLK products from **ESA GSSC**, which needs
-no account. Setting `credentials.nasa_earthdata_acc_mail` to the email address of a
-(free) NASA Earthdata account adds **NASA CDDIS** as a fallback, used when ESA GSSC
-fails.
+no account. If you set `credentials.nasa_earthdata_acc_mail` to the email
+address of a (free) NASA Earthdata account, canVODpy downloads from
+**NASA CDDIS** first and falls back to ESA GSSC when that download fails.
 
 `aux_data.agency` and `aux_data.product_type` must name a product of the
 [product registry](../packages/auxiliary/products.md), which also lists the

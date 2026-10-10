@@ -108,7 +108,7 @@ on that snapshot:
 
 The packages form layers: foundation, data input, computation, persistence,
 presentation, and orchestration. A package imports only from packages in its own layer or
-below. [Architecture](architecture.md#package-layers) lists which package
+below. [Architecture](architecture.md#packages-and-layers) lists which package
 sits in which layer.
 
 This lets you use one part on its own. For example, you can run the VOD

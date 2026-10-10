@@ -126,9 +126,9 @@ Different data types require different methods based on the underlying physics:
 
     ---
 
-    Primary: ESA/CODE FTP server
+    Without a NASA Earthdata account: ESA GSSC only
 
-    Fallback: NASA CDDIS (requires Earthdata account)
+    With one: NASA CDDIS first, ESA GSSC if that fails
 
     Per-DOY caching prevents redundant downloads
 

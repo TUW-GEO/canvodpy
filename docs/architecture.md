@@ -1,41 +1,47 @@
 ---
 title: Architecture
-description: Architecture of the canVODpy monorepo — package organization and end-to-end data flow
+description: The canVODpy packages, how they depend on each other, and what a processing run does with your files.
 ---
 
 # Architecture
 
-## Overview
-
-canVODpy is organized as a monorepo of eleven Python packages plus the umbrella package `canvodpy`, for GNSS vegetation optical depth analysis. All packages reside in a single repository while maintaining technical independence: each can be developed, tested, and published separately.
-
-!!! info "Core technologies, in plain language"
-
-    canVODpy is built on three open-source foundations. If you are new to them:
-
-    - **xarray** — labeled N-dimensional arrays. Think of a NumPy array where every
-      dimension has a name and coordinates: instead of `data[3812, 47]` you write
-      `data.sel(epoch="2025-01-01T12:00", sid="G01|L1|C")`. All canVODpy datasets
-      carry two dimensions: `epoch` (observation timestamps) and `sid` (signal
-      identifier, `SV|Band|Code`, e.g. `G01|L1|C` — satellite G01, band L1, tracking code C).
-    - **Zarr** — chunked, compressed array storage for datasets too large for memory.
-      Conceptually similar to HDF5/NetCDF, but designed for cloud object storage and
-      parallel access.
-    - **Icechunk** — a transactional, versioned layer on top of Zarr. Every write ends
-      with a **commit**: an immutable snapshot of the entire store, exactly like a git
-      commit. You can list the history, check out any past snapshot, and branch —
-      so a processing mistake never destroys data, and every published result can
-      cite the precise store version it was computed from. canVODpy uses the
-      Icechunk v2 API (`repo.writable_session()` → write → `session.commit()`).
+This page describes how canVODpy is built: the packages, the layers they
+form, and the path your files take through a processing run.
+[Design principles](principles.md) explains the rules behind these
+choices.
 
 ---
 
-## Package Layers
+## Packages and layers
+
+canVODpy consists of eleven packages and the `canvodpy` package, which
+brings them together. Each package has its own `pyproject.toml` and can
+be installed on its own. The packages form six layers, and a package
+depends only on packages in its own layer or in the layers below it.
+
+| Layer | Packages | What they do |
+|---|---|---|
+| Orchestration | `canvodpy` | The `canvodpy` command, `Site` and `Site.pipeline()`, the processing run, VOD computation for a site (`VodComputer`), and the tasks for Airflow |
+| Presentation | `canvod-viz` | Hemisphere plots in 2D and 3D |
+| Persistence | `canvod-store`, `canvod-store-metadata` | The Icechunk stores and their log books; the description of a store, with the metadata of the DataCite, ACDD, and STAC conventions |
+| Computation | `canvod-vod`, `canvod-grids`, `canvod-ops` | VOD retrieval, hemisphere grids and the assignment of observations to their cells, and the optional preprocessing |
+| Data input | `canvod-readers`, `canvod-auxiliary`, `canvod-preflight` | Readers for RINEX 2 and 3, SBF, and NMEA; orbits and clocks, and the angles of each satellite seen from the receiver; the canonical filename convention |
+| Foundation | `canvod-config`, `canvod-utils` | The settings and how they're loaded; dates, file hashes, the deprecation decorators, the plugin loader, and the run identifier |
+
+The arrows point from a package to the packages it declares as
+dependencies. `canvodpy` depends on all eleven.
 
 ```mermaid
 graph TD
-    subgraph ORCHESTRATION["Orchestration"]
-        CANVODPY["canvodpy"]
+    CANVODPY["canvodpy"]
+
+    subgraph PRESENT["Presentation"]
+        VIZ["canvod-viz"]
+    end
+
+    subgraph PERSIST["Persistence"]
+        STORE["canvod-store"]
+        STOREMETA["canvod-store-metadata"]
     end
 
     subgraph COMPUTE["Computation"]
@@ -44,21 +50,9 @@ graph TD
         OPS["canvod-ops"]
     end
 
-    subgraph STORE_LAYER["Persistence"]
-        STORE["canvod-store"]
-        STOREMETA["canvod-store-metadata"]
-    end
-
-    subgraph DATAIO["Data I/O"]
+    subgraph INPUT["Data input"]
         READERS["canvod-readers"]
         AUX["canvod-auxiliary"]
-    end
-
-    subgraph PRESENT["Presentation"]
-        VIZ["canvod-viz"]
-    end
-
-    subgraph QA["Quality Assurance"]
         PREFLIGHT["canvod-preflight"]
     end
 
@@ -67,306 +61,150 @@ graph TD
         UTILS["canvod-utils"]
     end
 
-    CANVODPY --> READERS & AUX
-    CANVODPY --> STORE & STOREMETA
-    CANVODPY --> VOD & GRIDS & OPS & VIZ
-    CANVODPY --> CONFIG & PREFLIGHT & UTILS
+    CANVODPY --> PRESENT & PERSIST & COMPUTE & INPUT & FOUNDATION
 
-    READERS -.-> CONFIG & UTILS
-    AUX -.-> CONFIG & READERS & UTILS
-    STORE -.-> AUX & CONFIG & GRIDS & READERS & UTILS & VOD
-    GRIDS -.-> STORE & UTILS
-    OPS -.-> CONFIG & GRIDS
-    VIZ -.-> GRIDS
-    STOREMETA -.-> CONFIG
-    VOD -.-> UTILS
-    PREFLIGHT -.-> UTILS
-    CONFIG -.-> UTILS
+    VIZ --> GRIDS
+    STORE --> STOREMETA & VOD & GRIDS & READERS & AUX & CONFIG & UTILS
+    STOREMETA --> CONFIG
+    OPS --> GRIDS & CONFIG
+    GRIDS --> UTILS
+    VOD --> UTILS
+    AUX --> READERS & CONFIG & UTILS
+    READERS --> CONFIG & UTILS
+    PREFLIGHT --> UTILS
+    CONFIG --> UTILS
 ```
 
-| Layer | Packages | Role |
-|-------|----------|------|
-| **Orchestration** | canvodpy | CLI (`canvodpy run`), `Site`/`Pipeline`, the orchestrator, Airflow tasks, VOD computation (`VodComputer`) |
-| **Computation** | canvod-vod, canvod-grids, canvod-ops | VOD retrieval (tau-omega model), hemispheric grids, optional preprocessing |
-| **Persistence** | canvod-store, canvod-store-metadata | Icechunk versioned storage, three-layer deduplication, provenance metadata (DataCite/ACDD/STAC) |
-| **Data I/O** | canvod-readers, canvod-auxiliary | RINEX 2/3, SBF and NMEA readers and the dataset contracts; orbits and clocks (SP3/CLK or broadcast), θ/φ |
-| **Presentation** | canvod-viz | 2D polar projections, 3D interactive surfaces, store viewer |
-| **Quality Assurance** | canvod-preflight | The canonical file name convention: parsing, building, overlap detection |
-| **Foundation** | canvod-config, canvod-utils | Settings models and loading; dates, file hashes, the deprecation decorator, logging context |
-
-Optional packages live in a separate repository; see
+[Package dependencies](dependencies.md) lists the same dependencies with
+a few numbers on how independent each package is. Optional packages, for
+example the Airflow integration, live in a separate repository; see
 [Optional extensions](guides/extensions.md).
 
 ---
 
-## Key Design Decisions
+## One repository, many packages
 
-<div class="grid cards" markdown>
+All packages live in one repository, under `packages/`, and share the
+namespace `canvod`:
 
--   :fontawesome-solid-cubes: &nbsp; **Namespace Packages**
-
-    ---
-
-    All packages share the `canvod.*` namespace — a coherent import API
-    backed by separate installable packages:
-
-    ```python
-    from canvod.readers import Rnxv3Obs
-    from canvod.readers.sbf import SbfReader
-    from canvod.grids import EqualAreaBuilder
-    from canvod.vod import TauOmegaZerothOrder
-    ```
-
-    [:octicons-arrow-right-24: Namespace details](namespace-packages.md)
-
--   :fontawesome-solid-lock: &nbsp; **Workspace Architecture**
-
-    ---
-
-    One `uv sync` installs all packages in editable mode with a shared lockfile.
-    Dependencies are resolved together — no version conflicts possible.
-
-    Each package keeps its own `pyproject.toml` for independent PyPI publishing.
-
--   :fontawesome-solid-plug: &nbsp; **Independent Install**
-
-    ---
-
-    Install only what you need:
-
-    ```bash
-    uv add canvod-readers           # Readers only
-    uv add canvod-grids canvod-vod  # Grid + VOD
-    uv add canvodpy                 # Everything
-    ```
-
--   :fontawesome-solid-sitemap: &nbsp; **Layered Dependency Graph**
-
-    ---
-
-    `canvod-utils` has no inter-package dependency; `canvod-config`,
-    `canvod-vod` and `canvod-preflight` depend on it only. The remaining
-    packages build on them in shallow layers; only the umbrella package
-    depends on everything. No package imports the umbrella package.
-
-</div>
-
----
-
-## Directory Structure
-
+```python
+from canvod.readers import Rnxv3Obs
+from canvod.grids import create_hemigrid
+from canvod.vod import TauOmegaZerothOrder
+from canvod.store import create_gnss_store
 ```
-canvodpy/                           # Repository root
-  packages/                         # Independent packages
-    canvod-readers/
-      src/
-        canvod/                     # Namespace root (no __init__.py)
-          readers/                  # Package code
-            __init__.py
 
-      tests/
-      pyproject.toml
-    canvod-auxiliary/               # Same structure
-    canvod-grids/
-    canvod-vod/
-    canvod-store/
-    canvod-store-metadata/
-    canvod-viz/
-    canvod-config/
-    canvod-utils/
-    canvod-ops/
-    canvod-preflight/
-  canvodpy/                         # Umbrella package
-    src/
-      canvodpy/
-        __init__.py                 # Re-exports all subpackages
-  docs/                             # Centralized documentation
-  pyproject.toml                    # uv workspace config
-  uv.lock                           # Shared lockfile
-  Justfile                          # Task runner
+[Namespace packages](namespace-packages.md) explains how separate
+packages share one namespace.
+
+The repository is a uv workspace. One `uv sync` installs every package in
+editable mode, from one lock file, so all packages are developed and tested
+against the same versions of their dependencies. Each package is
+published to PyPI on its own, all of them except `canvod-preflight` so
+far, so you can install only the parts you need:
+
+```bash
+uv add canvod-readers   # the readers only
+uv add canvodpy         # everything
 ```
 
 ---
 
-## Dependency Graph
+## What a run does
 
-Inter-package dependencies as declared in each package's `pyproject.toml`:
-
-```
-canvod-utils            ──── no inter-package deps
-canvod-config           ──── depends on canvod-utils
-canvod-preflight        ──── depends on canvod-utils
-canvod-vod              ──── depends on canvod-utils
-canvod-readers          ──── depends on canvod-config, canvod-utils
-canvod-auxiliary        ──── depends on canvod-config, canvod-readers, canvod-utils
-canvod-grids            ──── depends on canvod-store, canvod-utils (and canvod-store on
-                              canvod-grids: a cycle, to be removed)
-canvod-store            ──── depends on canvod-auxiliary, canvod-config, canvod-grids,
-                              canvod-readers, canvod-utils, canvod-vod
-canvod-store-metadata   ──── depends on canvod-config
-canvod-viz              ──── depends on canvod-grids
-canvod-ops              ──── depends on canvod-config, canvod-grids
-canvodpy                ──── depends on all core packages
-```
-
----
-
-## Complete Processing Flow
-
-The pipeline turns raw GNSS receiver files into gridded vegetation optical
-depth. Each stage exists for a scientific reason, summarized below the diagram.
+`canvodpy run`, `Site.pipeline()`, and the Airflow task `process_day` all
+run the same code. A run goes through these steps.
 
 ```mermaid
 flowchart TD
-    subgraph CFG["Configuration"]
-        YAML["`**canvod-settings.yaml**
-        unified config file`"]
-        PYDANTIC["`**Pydantic Validation**
-        CanvodConfig`"]
-    end
-
-    subgraph INIT["Site Initialization"]
-        SITE["Site(name)"]
-        GNSS_STORE["GNSS Icechunk Store"]
-        VOD_STORE["VOD Icechunk Store"]
-    end
-
-    subgraph DISCOVERY["Data Discovery"]
-        MAPPER["`**File discovery**
-        canonical names or recipe`"]
-        VALIDATOR["`**Receiver checks**
-        no duplicates or overlaps`"]
-        SCHEDULE["Processing Schedule"]
-    end
-
-    subgraph AUX["Auxiliary Pipeline (agency ephemeris)"]
-        FTP["`**FTP Download**
-        ESA primary / NASA CDDIS fallback`"]
-        HERMITE["`**Hermite Interpolation**
-        SP3 orbits`"]
-        LINEAR["`**Piecewise Linear**
-        CLK corrections`"]
-        AUX_ZARR["Auxiliary Zarr Cache"]
-    end
-
-    subgraph PARALLEL["Parallel Processing"]
-        READ_R["`**Read GNSS files**
-        one task per file, process pool`"]
-        SPHERICAL["`**Spherical Coords**
-        ECEF to r, theta, phi
-        or SBF embedded geometry`"]
-    end
-
-    subgraph WRITE["Icechunk Storage (sequential)"]
-        DEDUP["`**Three-Layer Dedup**
-        hash / temporal / intra-batch`"]
-        APPEND["`**Append + Commit**
-        one writer, commits per day`"]
-    end
-
-    subgraph PREP["Optional preprocessing (only if set)"]
-        AGG["`**Temporal aggregation**
-        time bins from 00:00`"]
-        KDTREE["`**Grid assignment**
-        cell containing each observation`"]
-    end
-
-    subgraph VOD["VOD Retrieval (VodComputer)"]
-        DELTA["delta SNR canopy - ref"]
-        TAU["VOD = -ln(T) cos(theta)"]
-    end
-
-    YAML --> PYDANTIC --> SITE
-    SITE --> GNSS_STORE & VOD_STORE
-
-    PYDANTIC --> MAPPER --> VALIDATOR --> SCHEDULE
-
-    SCHEDULE --> FTP --> HERMITE & LINEAR --> AUX_ZARR
-
-    SCHEDULE --> READ_R --> SPHERICAL
-    AUX_ZARR --> SPHERICAL
-
-    SPHERICAL -.-> AGG -.-> KDTREE -.-> DEDUP
-    SPHERICAL --> DEDUP --> APPEND --> GNSS_STORE
-
-    GNSS_STORE --> DELTA --> TAU
-    TAU --> VOD_STORE
+    SETTINGS["Settings<br/>canvod-settings.yaml"] --> FIND
+    FIND["Find and check the files<br/>of every receiver"] --> PREP
+    PREP["Prepare each day<br/>orbits, clocks, receiver positions"] --> READ
+    READ["Read the files<br/>in parallel worker processes"] --> ANGLES
+    ANGLES["Add the angles<br/>theta and phi of each satellite"] --> PRE
+    PRE["Preprocessing<br/>only if set"] --> WRITE
+    WRITE["Write to the GNSS store<br/>after the duplicate checks"] --> VODSTEP
+    VODSTEP["Compute VOD<br/>and write it to the VOD store"]
 ```
 
-### Why each stage exists
-
-| Stage | What it does | Why it matters scientifically |
-|-------|--------------|-------------------------------|
-| **Configuration** | A single `canvod-settings.yaml` is validated by `CanvodConfig`, a Pydantic `BaseSettings` model; unknown keys are errors | Every run is fully described by one validated document — a prerequisite for reproducible processing |
-| **Data discovery** | Each receiver directory is scanned in any folder layout; files are selected by their canonical names or mapped to them by a naming recipe; the reader comes from `reader_format` or is detected per day; runs with duplicate or temporally overlapping files, or with files of two receivers in one directory, are stopped; files a run does not process are reported | Overlapping input files would double-count observations and bias SNR statistics; the gate makes this impossible |
-| **Auxiliary pipeline** | Downloads agency orbit (SP3) and, by default, clock (CLK) products from public data centers (ESA; NASA CDDIS as fallback once a free NASA Earthdata account is configured), then interpolates them once per day onto the epoch grid (00:00 plus multiples of the sampling interval): Hermite splines for orbits, piecewise linear for clocks | Satellite positions are needed to compute where each signal pierced the canopy (θ, φ); receivers only record *what* they saw, not *where from*. Alternatively, SBF files carry broadcast ephemeris, avoiding the download. Clock is orbit-independent and unused by the VOD formula — disable with `aux_data.fetch_clock: false` to skip its download/interpolation entirely |
-| **Reading & transform** | RINEX 2/3, SBF or NMEA files are parsed into `xarray.Dataset(epoch, sid)`; satellite ECEF positions become receiver-relative spherical coordinates (r, θ, φ), relative to the receiver position read from the data | The polar angle θ enters the VOD formula directly; azimuth φ locates the observation on the hemisphere for gridding |
-| **Optional preprocessing** | Only if `processing.preprocessing` is set: temporal aggregation and grid assignment before the store write, in every run | Off by default; each write records the preprocessing in the stores' log books, and a store group never mixes data preprocessed differently |
-| **Storage** | Datasets are appended to an Icechunk store; three deduplication layers (file-hash match, temporal overlap vs. store metadata, intra-batch overlap) guard every write; with the default write strategy one commit holds all receivers of a day | Duplicate epochs would corrupt the canopy/reference alignment. Each commit is an immutable, citable snapshot of the archive |
-| **Grid assignment** | For analysis (or as optional preprocessing), a hemispheric grid is built and each observation is assigned to the cell that contains it (`canvod.grids.add_cell_ids_to_ds_fast`) | Canopy structure varies with direction; gridding lets VOD be resolved per sky sector rather than smeared over the hemisphere |
-| **VOD retrieval** | `VodComputer` reads canopy and reference from the GNSS store and aligns them by (epoch, sid); transmittance T follows from their SNR difference, and VOD = −ln(T)·cos(θ) (zeroth-order tau-omega model); results go to the VOD store, which checks the VOD dataset contract | This is the core measurement: canopy attenuation of L-band signals, a proxy for biomass and vegetation water content |
-
-### Parallelism model
-
-- **Preparing is per day.** Before its files are read, each day of a batch
-  of days (`days_per_batch`) gets its orbit and clock interpolation and the
-  receiver positions, one thread per day.
-- **Reading is parallel.** The files of the batch are read in a pool of
-  worker processes ([loky](https://github.com/joblib/loky), reused across
-  batches), one task per file, so parsing uses all cores. `--workers` or the
-  settings set the pool size.
-- **Writing is serial.** As soon as all files of a receiver-day are read, one
-  process applies the preprocessing (if set) and writes the receiver-day: one
-  commit for the data (with `overwrite` on a temporary branch, then
-  promoted) and one for the store metadata. On a local or network file
-  system Icechunk cannot detect two commits at once, so there is exactly one
-  writer, and the deduplication checks always see a consistent store.
-- **VOD follows each batch.** When a batch is written, VOD is computed day by
-  day, each day written with one commit for the results and one for the store
-  metadata; then the next batch starts.
-
-### Hemispheric grids
-
-`canvod-grids` provides several grid tessellations for hemispheric VOD
-analysis. **Equal-area** (ring-based, equal solid angle; the default) and
-**equal-angle** (regular θ/φ spacing) are verified correct and safe to use
-for analysis. The remaining tessellations (geodesic, HTM, Fibonacci,
-equirectangular, HEALPix) are implemented but not yet verified against a
-reference and should be treated as experimental pending that check.
-HEALPix needs the optional `healpy` package. Equal-area cells
-matter because a fixed solid angle per cell means each cell receives a
-comparable observation density, avoiding polar oversampling artifacts in
-VOD maps.
-
-### API levels
-
-One supported surface, plus the CLI on top of it:
-
-| Surface | Entry point | Use case |
-|-------|-------------|----------|
-| CLI | `canvodpy run --site ...` | Running the pipeline — recommended |
-| `Site.pipeline()` (L3) | `Site(name).pipeline()` | Python-native configured pipeline runs — what the CLI wraps |
-| Airflow tasks | `canvodpy.workflows.tasks.check_day`, `process_day` | Scheduled daily runs, for example from Airflow (see [Optional extensions](guides/extensions.md)); the same code as the CLI |
-
-See [API Levels](guides/api-levels.md) for details.
+1. **Read the settings.** `canvod-settings.yaml` is checked against the
+   settings models of `canvod-config`. An unknown key or a wrong value
+   stops the run with a message that names it. See
+   [Configuration](guides/configuration.md).
+2. **Find and check the files.** The run finds the files of every
+   receiver in any folder layout. It recognizes them by their canonical
+   names or through a naming recipe. It stops before it reads anything if two files have the
+   same canonical name, if files overlap in time, or if one folder holds
+   the files of more than one receiver. The reader comes from
+   `reader_format` in the settings of the receiver, or is detected from the
+   files.
+3. **Prepare each day.** For each day, the run gets the satellite orbits
+   (SP3) and, unless `aux_data.fetch_clock` is `false`, the satellite
+   clocks (CLK), and interpolates them onto the epochs of the day: orbits
+   with cubic Hermite splines, clocks piecewise linearly. Without a NASA
+   Earthdata account in the settings, the files come from ESA; with one,
+   from NASA CDDIS first and from ESA if that fails. For SBF files, the
+   setting `ephemeris_source: broadcast` uses the satellite angles that the
+   receiver recorded in the files instead, and skips the download.
+4. **Read the files.** Each file becomes an `xarray.Dataset` with the
+   dimensions `epoch` and `sid`. The files of a batch of days are read in
+   parallel, one task per file.
+5. **Add the angles.** From the satellite positions and the receiver
+   position, the run computes the polar angle `theta` and the azimuth
+   `phi` of each observation.
+6. **Preprocessing.** Only if `processing.preprocessing` is set: temporal
+   aggregation and assignment of each observation to its grid cell. The
+   stores' log books record the preprocessing, and a store group never
+   mixes data that was preprocessed differently. See
+   [`canvod-ops`](packages/ops/overview.md).
+7. **Write to the GNSS store.** The run checks each file against the store
+   and against the other files of the batch, and then writes what is new.
+   See [Design principles](principles.md#the-same-data-is-never-written-twice-by-default).
+8. **Compute VOD.** For each VOD analysis in the settings, `VodComputer`
+   reads the canopy and the reference receiver from the GNSS store, keeps
+   the epochs and signals both have, and computes VOD with the selected
+   calculator. The zeroth-order tau-omega calculator computes the
+   transmissivity `T` from the difference of the two SNR values in
+   decibels, and `VOD = -ln(T) cos(theta)`. The result goes to the VOD
+   store, which checks it before it writes. See
+   [`canvod-vod`](packages/vod/overview.md).
 
 ---
 
-## Trade-offs
+## Parallel work
 
-!!! success "Advantages"
+- **Preparing.** Each day of a batch of days (`days_per_batch`) is
+  prepared in its own thread.
+- **Reading.** The files are read in a pool of worker processes
+  ([loky](https://github.com/joblib/loky)), which stays up from one batch
+  to the next. `--workers`, or the resource settings, set the number of
+  workers.
+- **Writing.** Only one process writes. As soon as all files of a receiver
+  and day are read, it writes them with one commit for the data and its
+  log-book rows. With the `overwrite` strategy, it writes on a temporary
+  branch first and then moves `main` to it. On a local or network file
+  system, Icechunk can't detect two commits at the same time, so one
+  writer is what keeps the store and its duplicate checks consistent.
+- **VOD.** After a batch is written, the run computes the VOD day by day
+  and writes all analyses of a day with one commit, before the next batch
+  starts.
 
-    - Clear separation of concerns between packages
-    - Users install only the components they need
-    - Independent testing and development per package
-    - Smaller dependency trees for individual packages
-
-!!! warning "Costs"
-
-    - Additional `pyproject.toml` per package
-    - Developers must understand the namespace package mechanism
-    - Coordinated releases required for consistent versioning
+See [Parallel processing](guides/parallel-processing.md) for the settings.
 
 ---
 
-**Next in the trail:** [Design Principles](principles.md) · [API Levels](guides/api-levels.md) · [Contributor Setup](guides/contributor-setup.md) · [Developing with coding agents](guides/ai-development.md)
+## Entry points
+
+| Entry point | Use it to |
+|---|---|
+| `canvodpy run --site ...` | Process a period from the command line |
+| `Site(name).pipeline()` | Process a period from Python, with the same code |
+| `canvodpy.workflows.tasks` (`check_day`, `process_day`) | Run single days from a scheduler such as Airflow |
+
+[Command line and Python](guides/api-levels.md) lists the options.
+
+---
+
+**Next:** [Design principles](principles.md) ·
+[Package dependencies](dependencies.md) ·
+[Contributor setup](guides/contributor-setup.md)
