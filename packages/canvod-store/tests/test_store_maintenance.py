@@ -31,9 +31,10 @@ class TestExpireOldSnapshotsDefaults:
         assert sig.parameters["delete_expired_branches"].default is False
         assert sig.parameters["delete_expired_tags"].default is False
 
-    def test_default_days_is_90(self):
+    def test_default_days_is_90(self, tmp_path: Path):
         """90 days (weeks-to-months cadence), not the aggressive old default."""
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store.repo = Mock()
         store.repo.expire_snapshots.return_value = set()
         store._logger = Mock()
@@ -47,11 +48,12 @@ class TestExpireOldSnapshotsDefaults:
         expected = datetime.now(called_cutoff.tzinfo) - timedelta(days=90)
         assert abs((called_cutoff - expected).total_seconds()) < 5
 
-    def test_does_not_call_garbage_collect(self):
+    def test_does_not_call_garbage_collect(self, tmp_path: Path):
         """expire_old_snapshots must be expire-only; GC ownership moved to
         garbage_collect()/maintenance() so it runs exactly once per
         maintenance() call, not twice (the second bug)."""
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store.repo = Mock()
         store.repo.expire_snapshots.return_value = set()
         store._logger = Mock()
@@ -73,8 +75,9 @@ class TestMaintenanceRunsGcExactlyOnce:
         )
         assert sig.parameters["expire_days"].default == 90
 
-    def test_gc_called_exactly_once(self):
+    def test_gc_called_exactly_once(self, tmp_path: Path):
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store._logger = Mock()
         store.store_type = "gnss_store"
         store.expire_old_snapshots = Mock(return_value=set())
@@ -101,8 +104,9 @@ class TestMaintenanceRunsGcExactlyOnce:
         assert store.garbage_collect.call_args.kwargs["days"] == 30
         assert results["gc_summary"] is not None
 
-    def test_dry_run_gc_passed_through(self):
+    def test_dry_run_gc_passed_through(self, tmp_path: Path):
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store._logger = Mock()
         store.store_type = "gnss_store"
         store.expire_old_snapshots = Mock(return_value=set())
@@ -115,8 +119,9 @@ class TestMaintenanceRunsGcExactlyOnce:
 
         assert store.garbage_collect.call_args.kwargs["dry_run"] is True
 
-    def test_expire_delete_flags_passed_through(self):
+    def test_expire_delete_flags_passed_through(self, tmp_path: Path):
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store._logger = Mock()
         store.store_type = "gnss_store"
         store.expire_old_snapshots = Mock(return_value=set())
@@ -135,8 +140,9 @@ class TestMaintenanceRunsGcExactlyOnce:
 
 
 class TestGarbageCollectWrapper:
-    def test_dry_run_passed_to_repo(self):
+    def test_dry_run_passed_to_repo(self, tmp_path: Path):
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store._logger = Mock()
         store.repo = Mock()
         store.repo.garbage_collect.return_value = Mock(

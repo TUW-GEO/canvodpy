@@ -64,7 +64,9 @@ def store_grid(
         from icechunk.xarray import to_icechunk
 
         to_icechunk(ds_grid, session, group=group_path, mode="w")
-        snapshot_id = commit_with_rebase(session, f"Stored {grid_name} grid structure")
+        snapshot_id = commit_with_rebase(
+            session, f"Stored {grid_name} grid structure", store_path=store.store_path
+        )
 
     logger.info(
         "grid_stored",

@@ -28,7 +28,7 @@ from canvod.config.models import (
     vod_preprocessing_settings,
 )
 from canvod.readers.base import validate_vod_dataset
-from canvod.store_metadata.io import commit_with_rebase
+from canvod.store_metadata.io import commit_lock, commit_with_rebase
 from canvod.utils.logging import get_run_id, stage_timer
 from canvod.utils.tools import get_version_from_pyproject, sanitize_directory
 from icechunk.session import ForkSession
@@ -789,7 +789,7 @@ class MyIcechunkStore:
         except zarr.errors.GroupNotFoundError:
             root = zarr.open_group(session.store, mode="w")
         root.attrs.update(attrs)
-        return commit_with_rebase(session, message)
+        return commit_with_rebase(session, message, store_path=self.store_path)
 
     def get_root_attrs(self, branch: str = "main") -> dict[str, Any]:
         """Read root-level Zarr attributes from the store.
@@ -1245,7 +1245,7 @@ class MyIcechunkStore:
                 "variables": new_names,
             },
         )
-        commit_with_rebase(session, commit_message)
+        commit_with_rebase(session, commit_message, store_path=self.store_path)
         new_tip = self.promote_branch(temp_branch, branch, tip)
         self.repo.delete_branch(temp_branch)
         return new_tip
@@ -1521,7 +1521,9 @@ class MyIcechunkStore:
                 commit_msg=commit_message,
                 dataset_attrs=dataset.attrs,
             )
-            commit_with_rebase(session, _with_run_id(commit_message))
+            commit_with_rebase(
+                session, _with_run_id(commit_message), store_path=self.store_path
+            )
 
         self._logger.info(
             f"Created group '{group_name}' with {len(dataset.epoch)} epochs, "
@@ -1789,7 +1791,7 @@ class MyIcechunkStore:
                 commit_msg=commit_message,
                 dataset_attrs=dataset.attrs,
             )
-            commit_with_rebase(session, commit_message)
+            commit_with_rebase(session, commit_message, store_path=self.store_path)
 
     def get_group_info(self, group_name: str, branch: str = "main") -> dict[str, Any]:
         """
@@ -1885,7 +1887,9 @@ class MyIcechunkStore:
         with self.writable_session(branch) as session:
             self._to_icechunk_throttled(ds, session, group=path, mode="w")
             return commit_with_rebase(
-                session, _with_run_id(f"[v{version}] metadata/{name} for {group_name}")
+                session,
+                _with_run_id(f"[v{version}] metadata/{name} for {group_name}"),
+                store_path=self.store_path,
             )
 
     def write_metadata_parts(
@@ -1976,6 +1980,7 @@ class MyIcechunkStore:
                     f"[v{version}] metadata/{name} for {group_name} "
                     f"({total_epochs} epochs)"
                 ),
+                store_path=self.store_path,
             )
 
     def read_metadata_dataset(
@@ -2205,7 +2210,9 @@ class MyIcechunkStore:
                 commit_msg=commit_message,
                 dataset_attrs=dataset.attrs,
             )
-            commit_with_rebase(session, _with_run_id(commit_message))
+            commit_with_rebase(
+                session, _with_run_id(commit_message), store_path=self.store_path
+            )
 
         if action == "append":
             self._logger.info(
@@ -2311,7 +2318,7 @@ class MyIcechunkStore:
                 self._log_group_write(
                     session, group_name, dataset, "append", commit_message
                 )
-                commit_with_rebase(session, commit_message)
+                commit_with_rebase(session, commit_message, store_path=self.store_path)
             self._logger.info(
                 f"Appended {len(dataset.epoch)} epochs to group '{group_name}'"
             )
@@ -2328,7 +2335,7 @@ class MyIcechunkStore:
                 self._log_group_write(
                     session, group_name, dataset, "write", commit_message
                 )
-                commit_with_rebase(session, commit_message)
+                commit_with_rebase(session, commit_message, store_path=self.store_path)
             self._logger.info(
                 f"Created group '{group_name}' with {len(dataset.epoch)} epochs"
             )
@@ -2462,7 +2469,7 @@ class MyIcechunkStore:
             canonical_name=canonical_name,
             physical_path=physical_path,
         )
-        commit_with_rebase(session, message)
+        commit_with_rebase(session, message, store_path=self.store_path)
 
         self._logger.info(
             f"Metadata appended for group '{group_name}': "
@@ -2543,7 +2550,9 @@ class MyIcechunkStore:
             with self.writable_session() as sess:
                 _do_append(sess)
                 commit_with_rebase(
-                    sess, _with_run_id(f"Bulk metadata append for {group_name}")
+                    sess,
+                    _with_run_id(f"Bulk metadata append for {group_name}"),
+                    store_path=self.store_path,
                 )
 
     # ------------------------------------------------------------------
@@ -2876,7 +2885,7 @@ class MyIcechunkStore:
                 calculator_name=calculator_name,
                 dataset_attrs=dict(dataset.attrs),
             )
-            commit_with_rebase(session, commit_message)
+            commit_with_rebase(session, commit_message, store_path=self.store_path)
 
         self._logger.info(
             f"{action.capitalize()}d VOD group '{group_name}' "
@@ -3112,7 +3121,10 @@ class MyIcechunkStore:
 
                 if summary_parts:
                     prepass_snapshot_id = commit_with_rebase(
-                        prepass_session, prepass_msg, metadata=prepass_metadata
+                        prepass_session,
+                        prepass_msg,
+                        metadata=prepass_metadata,
+                        store_path=self.store_path,
                     )
                     for name in summary_parts:
                         results[name].snapshot_id = prepass_snapshot_id
@@ -3146,7 +3158,10 @@ class MyIcechunkStore:
 
                 base_session.merge(*forks.values())
                 batch_snapshot_id = commit_with_rebase(
-                    base_session, commit_msg, metadata=agg_metadata
+                    base_session,
+                    commit_msg,
+                    metadata=agg_metadata,
+                    store_path=self.store_path,
                 )
                 for name, result in completed.items():
                     result.snapshot_id = batch_snapshot_id
@@ -3667,11 +3682,12 @@ class MyIcechunkStore:
         )
 
         # Expire snapshots older than cutoff
-        expired_ids = self.repo.expire_snapshots(
-            older_than=cutoff,
-            delete_expired_branches=delete_expired_branches,
-            delete_expired_tags=delete_expired_tags,
-        )
+        with commit_lock(self.store_path):
+            expired_ids = self.repo.expire_snapshots(
+                older_than=cutoff,
+                delete_expired_branches=delete_expired_branches,
+                delete_expired_tags=delete_expired_tags,
+            )
 
         if expired_ids:
             self._logger.info(
@@ -3715,9 +3731,10 @@ class MyIcechunkStore:
             Summary of (would-be-)deleted objects.
         """
         cutoff = datetime.now(UTC) - timedelta(days=days)
-        summary = self.repo.garbage_collect(
-            delete_object_older_than=cutoff, dry_run=dry_run
-        )
+        with commit_lock(self.store_path):
+            summary = self.repo.garbage_collect(
+                delete_object_older_than=cutoff, dry_run=dry_run
+            )
         self._logger.info(
             "garbage_collect_complete",
             dry_run=dry_run,
@@ -3989,11 +4006,12 @@ class MyIcechunkStore:
         self._logger.info(
             f"Compacting manifests on store '{self.store_type}' (branch '{branch}')"
         )
-        new_snapshot = self.repo.rewrite_manifests(
-            f"Compact manifests ({self.store_type})",
-            branch=branch,
-            commit_method="new_commit",
-        )
+        with commit_lock(self.store_path):
+            new_snapshot = self.repo.rewrite_manifests(
+                f"Compact manifests ({self.store_type})",
+                branch=branch,
+                commit_method="new_commit",
+            )
         self._logger.info(f"Manifest compaction complete: snapshot {new_snapshot}")
         return new_snapshot
 
@@ -4228,6 +4246,7 @@ class MyIcechunkStore:
                     f"Rechunked {group_name} with chunks={chunks} "
                     f"({subgroup_count} subgroups restored)"
                 ),
+                store_path=self.store_path,
             )
 
         self._logger.info(
@@ -4279,9 +4298,10 @@ class MyIcechunkStore:
         """
         new_tip = self.repo.lookup_branch(temp_branch)
         try:
-            self.repo.reset_branch(
-                target_branch, new_tip, from_snapshot_id=expected_tip
-            )
+            with commit_lock(self.store_path):
+                self.repo.reset_branch(
+                    target_branch, new_tip, from_snapshot_id=expected_tip
+                )
         except icechunk.IcechunkError as e:
             current_tip = self.repo.lookup_branch(target_branch)
             if current_tip == expected_tip:

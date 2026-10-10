@@ -17,7 +17,9 @@ from .inventory import (
     write_stac_collection,
 )
 from .io import (
+    COMMIT_LOCK_NAME,
     apply_updates,
+    commit_lock,
     commit_with_rebase,
     metadata_exists,
     read_metadata,
@@ -30,10 +32,12 @@ from .summary import summarize_store
 from .validate import validate_all, validate_datacite, validate_fair
 
 __all__ = [
+    "COMMIT_LOCK_NAME",
     "StoreMetadata",
     "apply_updates",
     "collect_config_snapshot",
     "collect_metadata",
+    "commit_lock",
     "commit_with_rebase",
     "extract_env",
     "format_metadata",

@@ -166,7 +166,9 @@ class AnalysisStorage:
             mode = "w" if overwrite else "w-"
             to_icechunk(ds_weights, session, group=group_path, mode=mode)
             snapshot_id: str = commit_with_rebase(
-                session, f"Stored weights for {dataset_name}/{grid_name}"
+                session,
+                f"Stored weights for {dataset_name}/{grid_name}",
+                store_path=self.store_path,
             )
 
         logger.info("Weights stored (snapshot: %s)", snapshot_id[:8])
@@ -301,7 +303,9 @@ class AnalysisStorage:
 
             logger.info("Committing")
             snapshot_id = commit_with_rebase(
-                session, f"Stored filter masks for {dataset_name}/{grid_name}"
+                session,
+                f"Stored filter masks for {dataset_name}/{grid_name}",
+                store_path=self.store_path,
             )
 
         logger.info("Filter masks stored (snapshot: %s)", snapshot_id[:8])
@@ -502,7 +506,9 @@ class AnalysisStorage:
             mode = "w" if overwrite else "w-"
             to_icechunk(ds_masks, session, group=group_path, mode=mode)
             snapshot_id = commit_with_rebase(
-                session, f"Stored spatial masks for {dataset_name}/{grid_name}"
+                session,
+                f"Stored spatial masks for {dataset_name}/{grid_name}",
+                store_path=self.store_path,
             )
 
         logger.info("Spatial masks stored (snapshot: %s)", snapshot_id[:8])
@@ -671,7 +677,9 @@ class AnalysisStorage:
             mode = "w" if overwrite else "w-"
             to_icechunk(ds_stats, session, group=group_path, mode=mode)
             snapshot_id = commit_with_rebase(
-                session, f"Stored statistics for {dataset_name}/{grid_name}"
+                session,
+                f"Stored statistics for {dataset_name}/{grid_name}",
+                store_path=self.store_path,
             )
 
         logger.info("Statistics stored (snapshot: %s)", snapshot_id[:8])
@@ -830,7 +838,9 @@ class AnalysisStorage:
             store: Any = zarr.open(session.store, mode="r+")
             if group_path in store:
                 del store[group_path]
-                snapshot_id = commit_with_rebase(session, f"Deleted {label}")
+                snapshot_id = commit_with_rebase(
+                    session, f"Deleted {label}", store_path=self.store_path
+                )
                 logger.info("%s deleted (snapshot: %s)", label, snapshot_id[:8])
                 return snapshot_id
             raise ValueError(f"Group {group_path} does not exist")
@@ -948,7 +958,9 @@ class AnalysisStorage:
             with dask.config.set(scheduler="threads", num_workers=4):
                 to_icechunk(ds, session, group=group_name, mode="w")
             snapshot_id: str = commit_with_rebase(
-                session, f"Stored per-cell timeseries for {group_name}"
+                session,
+                f"Stored per-cell timeseries for {group_name}",
+                store_path=self.store_path,
             )
 
         logger.info("Per-cell timeseries stored (snapshot: %s)", snapshot_id[:8])
@@ -1064,6 +1076,7 @@ class AnalysisStorage:
                 snapshot_id = commit_with_rebase(
                     session,
                     f"Deleted weight '{weight_name}' for {dataset_name}/{grid_name}",
+                    store_path=self.store_path,
                 )
                 logger.info(
                     "Weight '%s' deleted (snapshot: %s)",
@@ -1107,7 +1120,9 @@ class AnalysisStorage:
                     f"Deleted filter mask '{filter_type}' for "
                     f"{dataset_name}/{grid_name}"
                 )
-                snapshot_id = commit_with_rebase(session, commit_msg)
+                snapshot_id = commit_with_rebase(
+                    session, commit_msg, store_path=self.store_path
+                )
                 logger.info(
                     "Filter mask '%s' deleted (snapshot: %s)",
                     filter_type,

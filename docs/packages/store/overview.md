@@ -73,8 +73,14 @@ Every value in it is text, JSON, or a time.
 ## How a run writes
 
 `canvodpy run` writes to both stores; in your own code, read from them.
-A run is the only writer of a store while it runs: Icechunk can't detect
-two commits at the same time on a local or network file system.
+
+On a file system, Icechunk can't detect two commits at the same time: both
+can report success while Icechunk loses one of them
+([Icechunk: storage](https://icechunk.io/en/stable/guides/storage/)). So
+every commit to a store first takes the store's commit lock, the file
+`.canvodpy-commit.lock` in the store directory. A commit from another
+thread or process, for example a second run or a scheduler task, waits
+until the lock is free. Write a store from one computer only.
 
 For each receiver and day, a run does the following:
 

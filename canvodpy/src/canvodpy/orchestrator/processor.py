@@ -2776,7 +2776,9 @@ class RinexDataProcessor:
                             session=prepass_session,
                         )
                     prepass_snapshot_id = commit_with_rebase(
-                        prepass_session, prepass_msg
+                        prepass_session,
+                        prepass_msg,
+                        store_path=self.site.gnss_store.store_path,
                     )
                     log.info(
                         "Committed pre-pass %s (snapshot: %s...)",
@@ -2894,7 +2896,10 @@ class RinexDataProcessor:
                     agg_metadata[f"group__{name}"] = json.dumps(group_meta)
 
                 batch_snapshot_id = commit_with_rebase(
-                    base_session, commit_msg, metadata=agg_metadata
+                    base_session,
+                    commit_msg,
+                    metadata=agg_metadata,
+                    store_path=self.site.gnss_store.store_path,
                 )
                 log.info(
                     "Committed batch %s (snapshot: %s...)",
@@ -3476,7 +3481,10 @@ class RinexDataProcessor:
                         if r.get("canonical_name")
                     )
                 snapshot_id = commit_with_rebase(
-                    session, commit_msg, metadata=_commit_meta
+                    session,
+                    commit_msg,
+                    metadata=_commit_meta,
+                    store_path=self.site.gnss_store.store_path,
                 )
                 t8 = time.time()
                 log.info(
@@ -4933,7 +4941,9 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             mode="w",
         )
         commit_with_rebase(
-            session, _with_run_id(f"Initialize {receiver_name} structure")
+            session,
+            _with_run_id(f"Initialize {receiver_name} structure"),
+            store_path=self.site.gnss_store.store_path,
         )
 
         # STEP 2: Now do cooperative distributed writes
@@ -5004,7 +5014,9 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
         # Merge all remote sessions
         session.merge(*remote_sessions)
         _snapshot_id = commit_with_rebase(
-            session, _with_run_id(f"[v{version}] Cooperative write for {receiver_name}")
+            session,
+            _with_run_id(f"[v{version}] Cooperative write for {receiver_name}"),
+            store_path=self.site.gnss_store.store_path,
         )
 
         return [f.name for f in rinex_files_sorted]  # ty: ignore[invalid-return-type]

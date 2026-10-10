@@ -1,10 +1,18 @@
 """Test metadata I/O with temp Icechunk stores."""
 
+import subprocess
+import sys
+import textwrap
+import time
+
 import icechunk
 import pytest
 import zarr
+from structlog.testing import capture_logs
 
 from canvod.store_metadata.io import (
+    COMMIT_LOCK_NAME,
+    commit_lock,
     commit_with_rebase,
     metadata_exists,
     read_metadata,
@@ -109,8 +117,8 @@ class TestCommitWithRebase:
         self._write_group(first, "reference_01", 1)
         self._write_group(second, "canopy_01", 2)
 
-        commit_with_rebase(first, "first")
-        commit_with_rebase(second, "second")
+        commit_with_rebase(first, "first", store_path=tmp_path / "store")
+        commit_with_rebase(second, "second", store_path=tmp_path / "store")
 
         root = zarr.open_group(repo.readonly_session("main").store, mode="r")
         assert root["reference_01/x"][:].tolist() == [1, 1]
@@ -125,6 +133,99 @@ class TestCommitWithRebase:
         self._write_group(first, "reference_01", 1)
         self._write_group(second, "reference_01", 2)
 
-        commit_with_rebase(first, "first")
+        commit_with_rebase(first, "first", store_path=tmp_path / "store")
         with pytest.raises(icechunk.RebaseFailedError):
-            commit_with_rebase(second, "second")
+            commit_with_rebase(second, "second", store_path=tmp_path / "store")
+
+
+def _commit_script(store_path, body: str) -> str:
+    """Return a Python script that opens the store and runs ``body``."""
+    return textwrap.dedent(f"""
+        import sys, time
+        import icechunk, zarr
+        from filelock import FileLock
+        from canvod.store_metadata.io import commit_with_rebase
+        store_path = {str(store_path)!r}
+        repo = icechunk.Repository.open(
+            icechunk.local_filesystem_storage(store_path)
+        )
+    """) + textwrap.dedent(body)
+
+
+class TestCommitLock:
+    """Commits to one store run one after the other, also across processes."""
+
+    def test_commit_waits_for_another_process(self, tmp_path):
+        store_path = _create_store(tmp_path / "store")
+        holder = subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                _commit_script(
+                    store_path,
+                    f"""
+                    with FileLock(f"{{store_path}}/{COMMIT_LOCK_NAME}"):
+                        print("locked", flush=True)
+                        time.sleep(2)
+                    """,
+                ),
+            ],
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            assert holder.stdout.readline().strip() == "locked"
+            repo = icechunk.Repository.open(
+                icechunk.local_filesystem_storage(str(store_path))
+            )
+            session = repo.writable_session("main")
+            zarr.open_group(session.store, mode="a").attrs["x"] = 1
+            start = time.monotonic()
+            with capture_logs() as logs:
+                commit_with_rebase(session, "waits", store_path=store_path)
+            assert time.monotonic() - start > 1
+            assert logs[0]["event"] == "waiting_for_commit_lock"
+        finally:
+            holder.wait(timeout=30)
+
+    def test_concurrent_processes_lose_no_commit(self, tmp_path):
+        store_path = _create_store(tmp_path / "store")
+        n_processes, n_commits = 4, 5
+        workers = [
+            subprocess.Popen(
+                [
+                    sys.executable,
+                    "-c",
+                    _commit_script(
+                        store_path,
+                        f"""
+                        for i in range({n_commits}):
+                            session = repo.writable_session("main")
+                            root = zarr.open_group(session.store, mode="a")
+                            root.require_group("p{p}_" + str(i))
+                            commit_with_rebase(
+                                session, "p{p} " + str(i), store_path=store_path
+                            )
+                        """,
+                    ),
+                ]
+            )
+            for p in range(n_processes)
+        ]
+        assert [w.wait(timeout=120) for w in workers] == [0] * n_processes
+
+        repo = icechunk.Repository.open(
+            icechunk.local_filesystem_storage(str(store_path))
+        )
+        root = zarr.open_group(repo.readonly_session("main").store, mode="r")
+        assert len(list(root.group_keys())) == n_processes * n_commits
+        # Every commit is on the branch: the n_processes * n_commits commits,
+        # the "init" commit and the commit that created the repository.
+        ancestry = list(repo.ancestry(branch="main"))
+        assert len(ancestry) == n_processes * n_commits + 2
+
+    def test_reentrant_in_one_thread(self, tmp_path):
+        store_path = _create_store(tmp_path / "store")
+        with commit_lock(store_path), commit_lock(store_path):
+            pass
+        assert (store_path / COMMIT_LOCK_NAME).exists()

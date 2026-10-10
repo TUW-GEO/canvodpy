@@ -176,9 +176,10 @@ flowchart TD
 - **Writing.** Only one process writes. As soon as all files of a receiver
   and day are read, it writes them with one commit for the data and its
   log-book rows. With the `overwrite` strategy, it writes on a temporary
-  branch first and then moves `main` to it. On a local or network file
-  system, Icechunk can't detect two commits at the same time, so one
-  writer is what keeps the store and its duplicate checks consistent.
+  branch first and then moves `main` to it. On a file system, Icechunk
+  can't detect two commits at the same time, so every commit takes the
+  store's commit lock. A commit from another process waits for it (see
+  [How a run writes](packages/store/overview.md#how-a-run-writes)).
 - **VOD.** After a batch is written, the run computes the VOD day by day
   and writes all analyses of a day with one commit, before the next batch
   starts.

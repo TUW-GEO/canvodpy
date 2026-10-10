@@ -846,7 +846,9 @@ class GnssResearchSite:
 
             version = importlib.metadata.version("canvod-store")
             commit_msg = f"[v{version}] VOD for {analysis_name}"
-            snapshot_id = commit_with_rebase(session, commit_msg)
+            snapshot_id = commit_with_rebase(
+                session, commit_msg, store_path=self.vod_store.store_path
+            )
 
         self.vod_store.append_metadata(
             group_name=analysis_name,
