@@ -21,9 +21,32 @@ class TestFactoryRegistration:
         assert "rinex3" in available
 
     def test_builtin_grids_registered(self):
-        """Built-in grids should be auto-registered."""
-        available = GridFactory.list_available()
-        assert "equal_area" in available
+        """Every grid type of canvod-grids is registered under its GridType value."""
+        from canvod.grids import GridType
+
+        assert set(GridFactory.list_available()) == {t.value for t in GridType}
+
+    @pytest.mark.parametrize(
+        "grid_type",
+        [
+            "equal_area",
+            "equal_angle",
+            "equirectangular",
+            "htm",
+            "geodesic",
+            "fibonacci",
+            "healpix",
+        ],
+    )
+    def test_factory_grid_matches_create_hemigrid(self, grid_type):
+        """The factory builds the same grid as create_hemigrid."""
+        from canvod.grids import create_hemigrid
+
+        if grid_type == "healpix":
+            pytest.importorskip("healpy")
+        built = GridFactory.create(grid_type, angular_resolution=10.0).build()
+        expected = create_hemigrid(grid_type, angular_resolution=10.0)
+        assert built.grid.equals(expected.grid)
 
     def test_builtin_vod_registered(self):
         """Built-in VOD calculators should be auto-registered."""

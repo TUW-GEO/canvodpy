@@ -24,7 +24,7 @@ imported, and the plugins after them.
 |---|---|---|---|
 | `ReaderFactory` | `canvod.readers.base.GNSSDataReader` | `rinex3`, `rinex3_stripped`, `rinex2`, `sbf`, `nmea` | `reader_format` of a receiver |
 | `VODFactory` | `canvod.vod.calculator.VODCalculator` | `tau_omega` | `canvodpy run --vod-calculator` |
-| `GridFactory` | `canvod.grids.core.grid_builder.BaseGridBuilder` | `equal_area` | your own scripts only |
+| `GridFactory` | `canvod.grids.core.grid_builder.BaseGridBuilder` | `equal_area`, `equal_angle`, `equirectangular`, `htm`, `geodesic`, `healpix`, `fibonacci` | your own scripts only |
 
 All three are importable from `canvodpy` and share these methods:
 

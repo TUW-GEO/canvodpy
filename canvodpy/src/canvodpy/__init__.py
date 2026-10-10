@@ -234,7 +234,9 @@ def _register_builtin_components() -> None:
 
     Called automatically on package import. Registers the readers
     ``rinex3``, ``rinex3_stripped``, ``rinex2``, ``sbf`` and ``nmea``, the
-    grid builder ``equal_area`` and the VOD calculator ``tau_omega``. All
+    grid builders ``equal_area``, ``equal_angle``, ``equirectangular``,
+    ``htm``, ``geodesic``, ``healpix`` and ``fibonacci`` (the values of
+    :class:`canvod.grids.GridType`) and the VOD calculator ``tau_omega``. All
     of them come from declared dependencies of canvodpy, so a failed
     import raises instead of leaving a component unregistered.
     """
@@ -246,7 +248,16 @@ def _register_builtin_components() -> None:
     VODFactory._set_abc_class()
     AugmentationFactory._set_abc_class()
 
-    from canvod.grids import EqualAreaBuilder
+    from canvod.grids import (
+        EqualAngleBuilder,
+        EqualAreaBuilder,
+        EquirectangularBuilder,
+        FibonacciBuilder,
+        GeodesicBuilder,
+        GridType,
+        HEALPixBuilder,
+        HTMBuilder,
+    )
     from canvod.readers import Rnxv3Obs
     from canvod.readers.nmea import NmeaObs
     from canvod.readers.rinex import Rnxv2Obs, Rnxv3StrippedObs
@@ -258,7 +269,13 @@ def _register_builtin_components() -> None:
     ReaderFactory.register("sbf", SbfReader)
     ReaderFactory.register("rinex2", Rnxv2Obs)
     ReaderFactory.register("nmea", NmeaObs)
-    GridFactory.register("equal_area", EqualAreaBuilder)
+    GridFactory.register(GridType.EQUAL_AREA.value, EqualAreaBuilder)
+    GridFactory.register(GridType.EQUAL_ANGLE.value, EqualAngleBuilder)
+    GridFactory.register(GridType.EQUIRECTANGULAR.value, EquirectangularBuilder)
+    GridFactory.register(GridType.HTM.value, HTMBuilder)
+    GridFactory.register(GridType.GEODESIC.value, GeodesicBuilder)
+    GridFactory.register(GridType.HEALPIX.value, HEALPixBuilder)
+    GridFactory.register(GridType.FIBONACCI.value, FibonacciBuilder)
     VODFactory.register("tau_omega", TauOmegaZerothOrder)
 
     log.info("builtin_components_registered")
