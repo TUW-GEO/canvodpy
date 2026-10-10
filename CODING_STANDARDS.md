@@ -72,9 +72,13 @@ and only maintainers can create, move or delete release tags (`v*`).
    the specification, measured data), never recomputed the way the code
    does it.
 3. **Docs in the same pull request**: the pages under `docs/` and the
-   `AGENTS.md` files, wherever the change makes them wrong. A new decision
-   that is hard to reverse gets an ADR in `docs/adr/`; a new term gets a
-   `GLOSSARY.md` entry.
+   `AGENTS.md` files, wherever the change makes them wrong. A pull request
+   that changes behavior (new logic, new code, changed code) without docs
+   to match is declined. A new decision that is hard to reverse gets an
+   ADR in `docs/adr/`; a new term gets a `GLOSSARY.md` entry. Every docs
+   page the pull request changes passes Vale (`just docs-lint-changed`),
+   and the built site passes the link check (`just docs-links`); CI runs
+   both (`.github/workflows/docs_quality.yml`).
 4. **Demo notebooks**: if the change breaks or outdates a notebook of
    canvodpy-demo (the `demo` submodule), adapt it there.
 5. **Verify**: `just check`, then `just test-package <package>` for every

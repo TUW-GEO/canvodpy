@@ -736,6 +736,7 @@ Every push to a branch and every pull request triggers automated checks on GitHu
 | **Code Quality**       | Every push and PR, weekly  | Checks lockfile consistency, runs ruff linting, checks formatting, runs type checking with ty, checks the agent instruction files       |
 | **Test with Coverage** | Push to `main`, all PRs, weekly | Runs `uv run pytest` (coverage is on by default in `pyproject.toml`), uploads results to Coveralls, posts a coverage summary comment on the PR |
 | **Platform Tests**     | Every push and PR, weekly  | Runs the test suite on Linux, macOS and Windows with Python 3.14                                                                       |
+| **Docs Quality**       | Push to `main`, every pull request, weekly | Checks the language of the docs pages a pull request changes with Vale, and every link of the built site with lychee |
 | **Deploy Docs**        | A published release, or started by hand | Builds and deploys the documentation site                                                                                |
 
 The test runs in CI check out the test-data submodule
@@ -779,6 +780,7 @@ just test-coverage
     | `just config-check-data <site>`   | Check a site's data files as a run reads them  |
     | `just docs`                       | Preview documentation locally                  |
     | `just docs-lint`                  | Check the language of the docs (Vale)          |
+    | `just docs-lint-changed`          | Vale on the pages changed since `origin/main`  |
     | `just docs-links`                 | Check every link of the built docs (lychee)    |
     | `just test-coverage`              | Run tests with coverage report                 |
     | `just clean`                      | Remove build artifacts and caches              |

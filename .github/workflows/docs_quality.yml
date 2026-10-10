@@ -1,0 +1,45 @@
+name: Docs Quality
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+    schedule:
+        - cron: '0 6 * * 1' # Weekly on Monday at 06:00 UTC: links go stale without a change here
+
+permissions: read-all
+
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+    language:
+        # Vale (Google style) on the docs pages the pull request changes.
+        if: github.event_name == 'pull_request'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0 # the diff against the base branch
+            - uses: ./.github/actions/setup
+            - name: Install just
+              uses: taiki-e/install-action@9983c65e42da123ff25d1f78505eb6de315aa172 # v2.87.20
+              with:
+                  tool: just
+            - name: Check the language of the changed docs pages
+              run: just docs-lint-changed "origin/${{ github.base_ref }}"
+
+    links:
+        # lychee on the built site: links between our pages, their anchors,
+        # and external links (settings in lychee.toml).
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: ./.github/actions/setup
+            - name: Build the docs site
+              run: uv run zensical build --clean
+            - name: Check every link of the built site
+              uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+              with:
+                  args: --root-dir "${{ github.workspace }}/site" 'site/**/*.html'
+                  fail: true

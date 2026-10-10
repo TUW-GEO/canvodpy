@@ -121,13 +121,14 @@ just test-package canvod-grids # Specific package
 just check                     # Lint + format + type-check
 just docs                      # Preview documentation
 just docs-lint                 # Language check of the docs (Vale)
+just docs-lint-changed         # Vale on the pages changed since origin/main
 just docs-links                # Link check of the built docs (lychee)
 ```
 
 ## Pull Request Guidelines
 
 1. Include tests for new functionality — new code must not reduce test coverage.
-2. Update the Zensical documentation in `docs/` if adding or changing public API, behaviour, or configuration.
+2. Update the Zensical documentation in `docs/` with every change of behavior (new logic, new code, changed code), public API, or configuration. A pull request without docs to match is declined. The changed pages must pass Vale (`just docs-lint-changed`) and the built site the link check (`just docs-links`); CI runs both.
 3. Ensure compatibility with Python 3.14+.
 4. Add yourself to `CONTRIBUTORS.md` if this is your first contribution.
 
