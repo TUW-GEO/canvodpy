@@ -12,6 +12,8 @@ Zenodo
 Pydantic
 Septentrio
 Hatanaka
+[Cc]ron
+DAGs?
 Navipedia
 (?i)pseudoranges?
 (?i)ephemerides

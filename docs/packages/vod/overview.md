@@ -70,7 +70,7 @@ analyses.
     vod_result = Site("ExampleSite").vod.compute_bulk(
         "canopy_01_vs_reference_01",
         start=datetime(2025, 1, 1),
-        end=datetime(2025, 1, 31),
+        end=datetime(2025, 1, 31, 23, 59, 59),
     )
     ```
 
