@@ -40,12 +40,21 @@ from canvod.store.time_encoding import with_time_units
 from canvod.store.viewer import add_rich_display_to_store
 from canvod.store.zarr_concurrency import scoped_zarr_concurrency
 
-# Icechunk warns, on every store opened, that the local file system is not
-# safe for concurrent commits. canVODpy runs every commit under
-# ``commit_lock``, so only this warning is hidden; every other Icechunk
-# warning is shown. ``ICECHUNK_LOG``, when set, replaces this filter.
+# Two Icechunk warnings that don't apply to canVODpy's stores are hidden;
+# every other Icechunk warning is shown. ``ICECHUNK_LOG``, when set,
+# replaces this filter.
+# - icechunk_arrow_object_store, on every store opened: the local file system
+#   is not safe for concurrent commits. canVODpy runs every commit under
+#   ``commit_lock``.
+# - icechunk_storage::readback, once per process: without
+#   ``unsafe_use_metadata``, a lost reply to a conditional write may surface
+#   as a spurious conflict. Icechunk's local file system storage can't store
+#   that metadata (it refuses ``unsafe_use_metadata=True``) and makes one try
+#   per write, so no reply is lost and retried.
 if "ICECHUNK_LOG" not in os.environ:
-    icechunk.set_logs_filter("warn,icechunk_arrow_object_store=error")
+    icechunk.set_logs_filter(
+        "warn,icechunk_arrow_object_store=error,icechunk_storage::readback=error"
+    )
 
 if TYPE_CHECKING:
     from icechunk import AncestryGraph

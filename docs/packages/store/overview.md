@@ -82,6 +82,14 @@ every commit to a store first takes the store's commit lock, the file
 thread or process, for example a second run or a scheduler task, waits
 until the lock is free. Write a store from one computer only.
 
+Two Icechunk warnings don't apply to these stores, so canVODpy hides them:
+that the file system is not safe for concurrent commits (the commit lock
+covers this), and that a lost reply to a write may show up as a conflict
+(Icechunk's file system storage makes one try per write and keeps no
+write metadata). Every other Icechunk warning is shown. To set your own
+filter, set the environment variable `ICECHUNK_LOG`, for example
+`ICECHUNK_LOG=icechunk=debug`.
+
 For each receiver and day, a run does the following:
 
 1. Reads the files and computes the satellite angles.
