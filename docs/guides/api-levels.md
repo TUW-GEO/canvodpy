@@ -111,16 +111,14 @@ Both stores are [Icechunk](https://icechunk.io/) repositories; see
 ## The `Pipeline` object
 
 A `Pipeline` reads the files, adds the satellite angles, and writes the
-GNSS store. Its worker processes stay alive until you close it, so
-processing many days in one `Pipeline` sets them up only once. Use it in
-a `with` block, which closes it at the end.
+GNSS store. Use it in a `with` block, which closes it at the end.
 
 | Method | What it does |
 |---|---|
 | `process_date(date)` | Processes one day. Returns one dataset per receiver. |
 | `process_range(start, end)` | Processes the days from `start` to `end`. Yields `(date, datasets)` for one day at a time. |
 | `preview(start=None, end=None)` | Returns the days, receivers and files a run would process. Without dates, it covers every day it finds data for. |
-| `close()` | Stops the worker processes. The `with` block calls it for you. |
+| `close()` | Ends the pipeline. The `with` block calls it for you. The worker processes stay for reuse; see [Parallel processing](parallel-processing.md#the-worker-processes). |
 
 The datasets are [xarray](https://docs.xarray.dev/) Datasets, keyed by
 store group: `canopy_01` for a canopy receiver, and
@@ -135,14 +133,12 @@ automatic choice of `resource_mode: auto`:
 |---|---|
 | `n_workers` | Number of worker processes |
 | `days_per_batch` | Number of days the workers process together |
-| `max_memory_gb` | Memory for all workers together, in GB |
-| `threads_per_worker` | Threads per worker process |
-| `cpu_affinity` | CPU cores the workers run on (Linux only) |
-| `nice_priority` | Priority of the workers, from 0 (normal) to 19 (lowest) |
+| `threads_per_worker` | Threads that numerical libraries use in each worker |
 | `keep_vars` | Observation variables to keep, such as `["SNR"]` |
 
-[Parallel processing](parallel-processing.md) explains how these limits
-work together.
+The arguments `max_memory_gb`, `cpu_affinity` and `nice_priority` have
+no effect yet; [Parallel processing](parallel-processing.md#settings)
+explains the matching settings.
 
 ---
 

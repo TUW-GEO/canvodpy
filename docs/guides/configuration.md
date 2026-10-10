@@ -168,9 +168,8 @@ processing:
     # --- Resource management ---
     resource_mode: auto            # auto or manual
     # n_max_threads: 4             # required if manual
-    # max_memory_gb: 16            # soft RAM limit (manual only)
-    # cpu_affinity: [0, 1, 2, 3]  # pin to CPU cores (Linux)
-    # nice_priority: 10            # 0=normal, 19=lowest priority
+    # cpu_affinity: [0, 1, 2, 3]  # CPU cores (manual only; not on macOS)
+    # nice_priority: 10            # manual only; 0=normal, 19=lowest priority
 
   # Optional; nothing is applied unless set (see Preprocessing)
   # preprocessing:
@@ -220,9 +219,8 @@ processing:
 | `params.store_sbf_metadata`     | `true`, `false`          | SBF only: store the per-file metadata dataset `sbf_obs` (SatVisibility geometry, MeasExtra, PVT, DOP, receiver status) under `{group}/metadata/sbf_obs`, in the same commit as the observations. Default `true`. |
 | `storage.gnss_store_strategy`   | `skip`, `overwrite`, `unsafe_append` | What to do when a file already exists in the store. `skip` (default) is the normal case. See warning below before ever using `unsafe_append`.                              |
 
-For a full explanation of how `resource_mode`, `days_per_batch`, and `n_max_threads` interact
-with the parallel processing architecture, see
-[Parallel Processing](parallel-processing.md).
+[Parallel processing](parallel-processing.md) explains `resource_mode`,
+`days_per_batch`, `n_max_threads` and the other resource settings.
 
 !!! warning "`gnss_store_strategy: unsafe_append` writes duplicate epochs"
 

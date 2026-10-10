@@ -1,99 +1,88 @@
-# Parallel Processing & Resource Management
+---
+title: Parallel processing
+description: How a run spreads the files over worker processes, and the settings that limit its CPU use
+---
 
-canVODpy processes many GNSS observation files per site — one per receiver per day,
-sometimes split into sub-daily intervals. Running these sequentially on a single
-core would be prohibitively slow for multi-year datasets. This page explains how
-canVODpy distributes that work and how to configure resource limits for your machine.
+# Parallel processing
+
+A run reads many files: one or more per receiver and day. canVODpy reads
+them in parallel worker processes and writes the results from one
+process. This page explains how a run divides the work and which
+settings limit its use of the machine.
 
 ---
 
-## The parallelism model
+## How a run divides the work
 
-canVODpy reads files in a **persistent [loky](https://loky.readthedocs.io/)
-process pool** — no external scheduler required — and writes from a single
-process. A run works through the days in batches of `days_per_batch` days:
+A run works through the days in batches of `days_per_batch` days. Each
+batch goes through three steps:
 
-```
- days of one batch (days_per_batch)
- ┌───────────────────────────────────────────────┐
- │ per day, one thread each: orbit/clock         │  ← preparing
- │ interpolation, receiver positions             │
- └───────────────────────┬───────────────────────┘
-                         ▼
- files of all receivers, in date order, round-robin across receivers
-                         ▼
-        loky process pool (one task per file)       ← parallel reading
-                         │
-                         ▼  as soon as all files of a receiver-day are read
-        one writer: preprocessing (if set),          ← serial writing
-        dedup checks, Icechunk write
-                         │
-                         ▼  when the batch is written
-        VOD per day                                  ← serial VOD
+```text
+ days of one batch
+        │
+        ▼   one thread per day
+ 1. Prepare: orbit and clock data, receiver positions
+        │
+        ▼   one task per file, in date order
+ 2. Read: worker processes read the files
+        │
+        ▼   as soon as all files of a receiver and day are read
+ 3. Write: one process writes the GNSS store
+        │
+        ▼   when the whole batch is written
+ the days go to VOD (canvodpy run) or to your loop (Python)
 ```
 
-**Preparing**: each day of the batch first gets its orbit and clock
-interpolation (or takes it from the cache) and the receiver positions, one
-thread per day.
+1. **Prepare.** Each day of the batch gets its orbit and clock data,
+   downloaded and interpolated or taken from the cache, and the receiver
+   positions. The days of a batch are prepared at the same time, one
+   thread per day.
+2. **Read.** Each file is one task for the worker processes. The tasks
+   go out in date order and alternate between the receivers, so all
+   receivers of a day finish at about the same time. At most twice as
+   many tasks as workers wait at a time.
+3. **Write.** As soon as all files of one receiver and day are read, the
+   main process applies the [preprocessing](configuration.md) (if set),
+   checks for data that is already in the store, and writes the day. The
+   workers keep reading meanwhile. Only one process writes, so the checks
+   for duplicate data always see the current store; the
+   [Storage](../packages/store/overview.md) page describes these checks.
 
-**Reading**: all files of the batch are submitted to the shared pool, one
-task per file, in date order and round-robin across receivers, so every receiver
-makes progress and results of one day arrive together. At most twice as many
-tasks as workers are in flight at a time.
+When the whole batch is written, `canvodpy run` computes the VOD of its
+days; in Python, `process_range` hands the days to your loop. The next
+batch starts after that, so the workers wait while a batch is prepared
+and while its VOD is computed.
 
-**Writing**: a receiver-day is written as soon as all its files are read, while
-the pool keeps reading. One process writes: it applies the preprocessing (if
-set), runs the deduplication checks and writes the receiver-day with one commit
-for its data (with `overwrite` on a temporary branch, then promoted) and one for
-the store metadata. Icechunk on a local or network file system cannot detect two
-commits at the same time, so this is a hard constraint of the local storage
-model, and it keeps the deduplication checks consistent.
-
-**VOD**: when all receiver-days of the batch are written, VOD is computed day by
-day in the same process, and each day is written with one commit for the results
-and one for the store metadata. The next batch starts after that, so the pool
-waits while a batch is prepared and while its VOD is computed. The days of a
-batch are prepared at the same time, so a larger `days_per_batch` shortens the
-preparing wait per day; the VOD wait grows with the number of days either way.
-
-### Why loky instead of standard ProcessPoolExecutor?
-
-Python's built-in `ProcessPoolExecutor` re-spawns a fresh worker pool on each call.
-For a pipeline that processes hundreds of files across many days, the cost of
-importing Python and all scientific dependencies (numpy, xarray, icechunk, …) into
-fresh processes on every batch dominates wall time.
-
-**loky** (a canvodpy dependency, also the backend behind [joblib](https://joblib.readthedocs.io/))
-provides a **reusable process pool** that stays alive between batches:
-
-- Workers are started once at pipeline launch and reused across all tasks.
-- Module imports pay their cost exactly once per worker, not once per day.
-- The pool is shared across the run, not created and destroyed per receiver-day.
-
-This makes the overhead of spawning scale with the number of workers (a one-time cost),
-not with the number of files or days being processed.
-
-!!! note "The first minute or two of a run can look idle"
-    A run's initial "warm-up" — before the first files start visibly
-    processing — can take a minute or more on a cold start. Besides the
-    scientific-dependency imports above, this window also covers one-time
-    setup work (e.g. database/index creation) that only happens once per
-    worker lifetime, not per file or per day. This is expected, not a hang —
-    give it a couple of minutes before assuming something is stuck.
-
-!!! note "Reading from the store is always fast"
-    `xarray.open_zarr()` loads only the array chunks you actually access — the
-    full dataset is never read into memory at once.
+A larger `days_per_batch` prepares more days at the same time, so the
+workers wait less per day. It also downloads the orbit and clock files
+of all these days at the same time, which can cause connection problems
+with the download server.
 
 ---
 
-## Configuration
+## The worker processes
 
-Resource limits are set under `processing.params` in your `canvod-settings.yaml`:
+The workers are a reusable process pool of
+[loky](https://loky.readthedocs.io/), a dependency of canVODpy. They start
+with the first batch and stay for the next batches, so Python and the
+scientific libraries are loaded once per worker, not once per day.
 
-=== "Automatic (local machine)"
+Before the first file is read, the run prepares the first batch. On a
+first run this includes downloading the orbit and clock files, so the
+first minutes of a run can look idle.
 
-    canVODpy detects available cores and memory automatically:
+The workers are shared by all pipelines in one Python session, and
+`Pipeline.close()` leaves them running. They stop after 15 minutes
+without work, or when Python exits.
+
+---
+
+## Settings
+
+The settings are under `processing.params` in `canvod-settings.yaml`.
+`resource_mode` decides which of them a run uses.
+
+=== "Automatic"
 
     ```yaml
     processing:
@@ -102,58 +91,59 @@ Resource limits are set under `processing.params` in your `canvod-settings.yaml`
         days_per_batch: 1
     ```
 
-=== "Manual (shared server / HPC)"
+    The run starts one worker per CPU core, minus two for the operating
+    system, and at least one. With `auto_uncapped: true` it uses all
+    cores; use that only on a machine nobody else uses.
 
-    Hard caps prevent the pipeline from monopolising shared resources:
+=== "Manual, for shared servers"
 
     ```yaml
     processing:
       params:
         resource_mode: manual
-        n_max_threads: 4          # number of worker processes
-        max_memory_gb: 16         # soft RAM limit across all workers
-        cpu_affinity: [0, 1, 2, 3]  # pin to specific CPU cores (Linux only)
-        nice_priority: 10         # lower process priority (0=normal, 19=lowest)
-        days_per_batch: 1         # days whose files are read together
+        n_max_threads: 4            # number of worker processes
+        cpu_affinity: [0, 1, 2, 3]  # CPU cores the workers run on
+        nice_priority: 10           # lower priority than other programs
+        days_per_batch: 1
     ```
 
-### Configuration reference
+| Setting | Default | Meaning |
+|---|---|---|
+| `resource_mode` | `auto` | `auto` chooses the number of workers; `manual` uses the settings below. |
+| `n_max_threads` | none | Number of worker processes, 1 to 100. Required with `manual`; `auto` ignores it and warns. |
+| `auto_uncapped` | `false` | With `auto`: use all CPU cores instead of all but two. |
+| `days_per_batch` | `1` | Days per batch, 1 to 30. |
+| `threads_per_worker` | none (1) | Threads that numerical libraries such as OpenBLAS and MKL use in each worker, 1 to 8. If you set `OMP_NUM_THREADS` or a similar variable yourself, your value applies. |
+| `cpu_affinity` | none | With `manual`: the CPU cores the workers run on. Works on Linux and Windows; macOS ignores it. |
+| `nice_priority` | `-5` | With `manual`: the [nice value](https://en.wikipedia.org/wiki/Nice_(Unix)) added to the workers' priority, from -20 (highest) to 19 (lowest). Only an administrator can set a negative value; for other users the workers keep the normal priority. With `auto`, the run always tries -5. |
+| `max_memory_gb` | none | Has no effect yet: canVODpy writes it to the log but doesn't limit memory. |
 
-| Field | Default | Description |
-|-------|---------|-------------|
-| `resource_mode` | `auto` | `auto` (detect cores/memory) or `manual` (hard caps) |
-| `n_max_threads` | — | Worker process count. Required when `resource_mode=manual` |
-| `max_memory_gb` | — | Soft RAM limit in GB. Manual mode only |
-| `days_per_batch` | `1` | Days whose files are submitted to the worker pool together (1–30) |
-| `cpu_affinity` | — | CPU core IDs to pin workers to (Linux only) |
-| `nice_priority` | `0` | Process priority: 0 = normal, 19 = lowest |
+On a server you share with others, use `manual` with at most half of the
+CPU cores and a positive `nice_priority`, such as 10, so the run gives way
+to other programs.
 
-!!! tip "Shared servers"
-    On a machine shared with colleagues, set `resource_mode: manual` with
-    `n_max_threads` ≤ half the available cores and `nice_priority: 10`.
-    This ensures interactive work on the same server is not disrupted.
+### From the command line and from Python
+
+`canvodpy run --workers` and `--days-per-batch` override the settings for
+one run. In Python, `site.pipeline()` takes `n_workers`, `days_per_batch`
+and `threads_per_worker`. Setting the number of workers this way replaces
+the choice of `resource_mode: auto`. The workers' CPU cores and priority
+always come from the settings file: the `cpu_affinity` and
+`nice_priority` arguments of `site.pipeline()` have no effect yet.
 
 ---
 
-## Memory monitoring
+## Memory use
 
-`MemoryMonitor` logs system memory usage at key points during a pipeline run.
-It does not enforce limits — that is handled by the OS and the `max_memory_gb`
-cap on worker processes. Logs are written to the configured logging output and
-can be inspected to diagnose out-of-memory failures on constrained machines.
+canVODpy doesn't limit memory. Each worker holds the files it reads, and
+the main process holds the days it writes. To lower the memory a run
+needs, use fewer workers or a smaller `days_per_batch`.
+
+The run writes the memory use of the machine to the log before each
+batch (`memory_stats`). `canvodpy run` also writes memory, CPU, and disk
+use every 30 seconds (`resource_sample`). [Diagnostics](diagnostics.md)
+describes the logs.
 
 ---
 
-## Write granularity and data integrity
-
-Writes are per receiver-day (see above). Before every write, the three-layer
-deduplication guard runs:
-
-1. **Hash match** — identical file content is never written twice
-2. **Temporal overlap** — a file overlapping already-stored epochs is not written
-   (default `skip`) or replaces them (`overwrite`)
-3. **Intra-batch overlap** — two files of one batch covering the same time are caught before writing
-
-These checks run before every write, regardless of parallelism settings. A failed
-write leaves the store unchanged — Icechunk's snapshot model means partial writes
-are never committed.
+**Next in the trail:** [Diagnostics](diagnostics.md) · [Configuration](configuration.md) · [Architecture](../architecture.md)
