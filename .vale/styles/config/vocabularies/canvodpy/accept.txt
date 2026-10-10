@@ -34,3 +34,5 @@ dtype
 hashable
 VODnet
 Geoinformation
+SIDs
+SID
