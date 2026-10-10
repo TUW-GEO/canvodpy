@@ -9,6 +9,10 @@ calculator a choice of `--vod-calculator`. You change nothing in canvodpy.
 This page shows a complete plugin package. Copy it and replace the parts
 marked as yours.
 
+!!! example "Try it in a notebook"
+
+    Open [Your Own VOD Calculator](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/21_plugins.py?mode=edit) in molab, the online notebook service of marimo.
+
 ## Base classes and factories
 
 Each kind of component has an abstract base class, which lists the methods
