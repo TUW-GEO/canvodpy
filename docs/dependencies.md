@@ -37,7 +37,7 @@ graph TD
     AUX --> CONFIG & READERS & UTILS
     STORE --> AUX & CONFIG & GRIDS & READERS & STOREMETA & UTILS & VOD
     GRIDS --> UTILS
-    OPS --> CONFIG & GRIDS & STORE
+    OPS --> CONFIG & GRIDS
     VIZ --> GRIDS
 ```
 
@@ -65,9 +65,9 @@ does not declare fails in CI.
 | canvod-vod | 1 | 1 | 0.50 | 0.90 |
 | canvod-viz | 1 | 0 | 1.00 | 0.90 |
 | canvod-readers | 2 | 2 | 0.50 | 0.80 |
+| canvod-ops | 2 | 0 | 1.00 | 0.80 |
 | canvod-auxiliary | 3 | 1 | 0.75 | 0.70 |
-| canvod-ops | 3 | 0 | 1.00 | 0.70 |
-| canvod-store | 7 | 1 | 0.88 | 0.30 |
+| canvod-store | 7 | 0 | 1.00 | 0.30 |
 
 ??? note "Metric definitions"
     - **Ce (efferent coupling)** — packages this package depends on. Lower = more independent.
@@ -109,7 +109,7 @@ depends on are on PyPI:
     packages/canvod-auxiliary/       → independent repo (+ canvod-config, canvod-readers, canvod-utils)
     packages/canvod-store/           → independent repo (+ canvod-auxiliary, canvod-config, canvod-grids,
                                          canvod-readers, canvod-store-metadata, canvod-utils, canvod-vod)
-    packages/canvod-ops/             → independent repo (+ canvod-config, canvod-grids, canvod-store)
+    packages/canvod-ops/             → independent repo (+ canvod-config, canvod-grids)
     packages/canvod-viz/             → independent repo (+ canvod-grids)
     ```
 

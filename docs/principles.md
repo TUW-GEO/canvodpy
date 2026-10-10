@@ -107,7 +107,7 @@ on that snapshot:
 ## Packages depend only on the layers below them
 
 The packages form layers: foundation, data input, computation, persistence,
-and orchestration. A package imports only from packages in its own layer or
+presentation, and orchestration. A package imports only from packages in its own layer or
 below. [Architecture](architecture.md#package-layers) lists which package
 sits in which layer.
 
