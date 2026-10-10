@@ -11,6 +11,9 @@ Versioned data storage using Icechunk.
         - create_gnss_store
         - create_vod_store
         - GnssResearchSite
+        - store_grid
+        - load_grid
+        - AnalysisStorage
 
 ## Store Manager
 
@@ -19,6 +22,14 @@ Versioned data storage using Icechunk.
 ## Data Store
 
 ::: canvod.store.store
+
+## Grid Storage
+
+::: canvod.store.grid_storage
+
+## Analysis Storage
+
+::: canvod.store.analysis_storage
 
 ## Preprocessing
 

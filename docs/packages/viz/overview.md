@@ -184,7 +184,7 @@ cs2 = Colorscale.from_colors(["#0072B2", "#D55E00", "#009E73"])
 The `demo/19_grid_exploration.py` marimo notebook shows interactive
 exploration of per-cell VOD on the hemispheric grid, with synthetic data
 (real per-cell time series come from
-`AnalysisStorage.load_percell_timeseries()`):
+`canvod.store.AnalysisStorage.load_percell_timeseries()`):
 
 - **3D view** — Plotly Scatter3d with click-to-select cells (anywidget)
 - **2D view** — Canvas polar projection with hover tooltips (anywidget)

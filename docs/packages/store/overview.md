@@ -126,6 +126,36 @@ graph TD
     ds_subset = ds.sel(epoch=slice("2025-01-01", "2025-01-15"))
     ```
 
+### Grids and analysis results
+
+`store_grid` writes a hemisphere grid to the `grids/{grid_name}` group of
+a store, and `load_grid` reads it back. A grid read back works for cell
+assignment only if it is an equal-area, equal-angle, or equirectangular
+grid; for the other types, build the grid again with `create_hemigrid`.
+
+```python
+from canvod.grids import create_hemigrid
+from canvod.store import load_grid, store_grid
+
+grid = create_hemigrid("equal_area", angular_resolution=4.0)
+store_grid(grid, store, "equal_area_4deg")
+grid = load_grid(store, "equal_area_4deg")
+```
+
+`AnalysisStorage` stores the results of an analysis on a grid in a VOD
+store: weights, masks, statistics, and per-cell time series. The
+per-cell time series go to their own branch, one dataset per system,
+band, and code:
+
+```python
+from canvod.store import AnalysisStorage
+
+storage = AnalysisStorage("/path/to/vod_store")
+storage.store_percell_timeseries(percell_ds, system="G", band="L1", code="C")
+storage.list_percell_datasets()  # ['C_B2b_I', 'E_E1_C', 'G_L1_C', ...]
+ds = storage.load_percell_timeseries(system="G", band="L1", code="C")
+```
+
 ---
 
 ## Storage Layout

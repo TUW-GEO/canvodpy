@@ -120,12 +120,13 @@ Each package declares its dependencies in its `pyproject.toml`.
 imports the `canvodpy` umbrella package. `canvod-utils` depends on no other
 canVODpy package.
 
-Two exceptions remain, both in the computation layer:
-
-- `canvod-grids` declares a dependency on `canvod-store`, for
-  `AnalysisStorage`;
-- `canvod-vod` imports `canvod-store` in
-  `VODCalculator.from_icechunkstore()`, without declaring it.
+One exception remains: `VODCalculator.from_icechunkstore()` in
+`canvod-vod` imports `canvod-store`, which `canvod-vod` doesn't declare.
+The method is left over from development and will be removed with the
+next major version. The old names `store_grid`, `load_grid`, and
+`AnalysisStorage` in `canvod-grids` also import `canvod-store`; they
+moved to `canvod-store` and will be removed with the next major version
+as well.
 
 ---
 

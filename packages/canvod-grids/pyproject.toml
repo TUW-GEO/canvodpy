@@ -28,8 +28,6 @@ dependencies = [
     "tqdm>=4.66.0",
     "scipy>=1.11.0",
     "structlog>=24.1.0",
-    "canvod-store>=0.4.0,<2",
-    "canvod-store-metadata>=0.4.0,<2",
     "canvod-utils>=0.4.0,<2",
 ]
 
@@ -58,8 +56,6 @@ exclude = [
 ]
 
 [tool.uv.sources]
-canvod-store-metadata = { workspace = true }
-canvod-store = { workspace = true }
 canvod-utils = { workspace = true }
 
 [tool.uv.build-backend]

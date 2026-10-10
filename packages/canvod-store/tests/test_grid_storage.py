@@ -1,7 +1,7 @@
 """Tests for grid storage and loading operations.
 
-Tests the recently added store_grid() and load_grid() functions
-that persist GridData structures to Icechunk stores.
+Tests store_grid() and load_grid(), which persist GridData structures to
+Icechunk stores, and the old canvod.grids names of both.
 
 Tests cover:
 - Storing equal-area grids
@@ -21,9 +21,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
-from canvod.grids import create_hemigrid, load_grid, store_grid
+from canvod.grids import create_hemigrid
 
-from canvod.store import create_vod_store
+from canvod.store import create_vod_store, load_grid, store_grid
 
 
 @pytest.fixture
@@ -334,3 +334,27 @@ class TestConcurrentAccess:
         # Both should be valid and equal
         assert grid1.ncells == grid2.ncells
         assert grid1.grid_type == grid2.grid_type
+
+
+class TestOldGridsNames:
+    """The canvod.grids names are left over from development."""
+
+    def test_store_and_load_warn_and_delegate(
+        self, vod_store, small_equal_area_grid
+    ) -> None:
+        import canvod.grids
+
+        with pytest.warns(FutureWarning, match="canvod.store.store_grid"):
+            canvod.grids.store_grid(small_equal_area_grid, vod_store, "old_name")
+        with pytest.warns(FutureWarning, match="canvod.store.load_grid"):
+            grid = canvod.grids.load_grid(vod_store, "old_name")
+        assert grid.ncells == small_equal_area_grid.ncells
+
+    def test_analysis_storage_warns_and_returns_store_class(self, vod_store) -> None:
+        from canvod.grids.analysis import AnalysisStorage as OldAnalysisStorage
+
+        from canvod.store import AnalysisStorage
+
+        with pytest.warns(FutureWarning, match="canvod.store.AnalysisStorage"):
+            storage = OldAnalysisStorage(vod_store.store_path)
+        assert isinstance(storage, AnalysisStorage)

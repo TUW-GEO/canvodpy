@@ -26,6 +26,7 @@ dependencies = [
     "canvod-vod>=0.4.0,<2",
     "canvod-auxiliary>=0.4.0,<2",
     "canvod-readers>=0.4.0,<2",
+    "canvod-grids>=0.4.0,<2",
     "icechunk>=2.0.0",
     "zarr>=3.1.2",
     "xarray>=2023.12.0",
@@ -36,7 +37,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "canvod-grids>=0.4.0,<2",
     "pytest>=8.0",
     "pytest-cov>=5.0",
     "ruff>=0.14",

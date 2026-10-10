@@ -24,6 +24,10 @@ Background: `docs/packages/grids/overview.md`.
   variants are deprecated; don't add a new one.
 - Outlier filtering (Hampel and similar) was removed on purpose; it does
   not belong in canvodpy.
+- canvod-grids does not import canvod-store. Storing grids and analysis
+  results lives in canvod-store (`store_grid`, `load_grid`,
+  `AnalysisStorage`); the names of the same functions here are deprecated
+  wrappers.
 
 ## Tests
 

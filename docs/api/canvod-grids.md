@@ -97,7 +97,3 @@ Hemispheric grid implementations and spatial analysis tools.
 ### Per-Cell VOD Analysis
 
 ::: canvod.grids.analysis.per_cell_analysis
-
-### Analysis Storage
-
-::: canvod.grids.analysis.analysis_storage

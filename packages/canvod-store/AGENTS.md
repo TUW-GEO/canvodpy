@@ -51,6 +51,9 @@ Background: `docs/packages/store/overview.md`,
   cannot detect concurrent commits; the second silently wins. Parallel
   writes go through fork/merge into one session and one `commit()`.
 - canvod-store does not import `canvodpy`.
+- Grids and the analysis results on them are stored by `grid_storage.py`
+  and `analysis_storage.py`; canvod-store depends on canvod-grids, never
+  the other way round.
 
 ## Store layout
 

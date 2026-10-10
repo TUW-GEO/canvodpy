@@ -182,17 +182,17 @@ bounding boxes, not the true (curved or triangular) cell boundaries.
     center is not used: near a cell's corner it often belongs to a
     neighboring cell. `canvodpy run` uses the same function when grid
     assignment is set. The lookup needs the grid's full geometry, so use
-    a grid built with `create_hemigrid`; a grid read back with `load_grid`
-    works for the ring grids only.
+    a grid built with `create_hemigrid`; a grid read back with
+    `canvod.store.load_grid` works for the ring grids only.
 
 -   :fontawesome-solid-floppy-disk: &nbsp; **Grid Persistence**
 
     ---
 
-    `store_grid` / `load_grid` — Save and reload grid definitions
-    as Zarr/NetCDF for reproducible workflows.
-
     `grid_to_dataset` — Convert `GridData` to xarray Dataset.
+
+    To save a grid in a store and read it back, use `store_grid` and
+    `load_grid` from [canvod-store](../store/overview.md#grids-and-analysis-results).
 
 -   :fontawesome-solid-chart-pie: &nbsp; **Aggregation**
 
@@ -226,7 +226,6 @@ bounding boxes, not the true (curved or triangular) cell boundaries.
 | `solar` | Solar geometry (elevation, azimuth) |
 | `temporal` | Diurnal aggregation and analysis |
 | `spatial` | Per-cell spatial statistics |
-| `analysis_storage` | Persistent Icechunk storage for weights, masks, statistics, and per-cell timeseries |
 
 ### SIDPatternFilter
 
@@ -249,23 +248,11 @@ It operates on the `sid` dimension where SIDs have the format `SV|Band|Code` (e.
     ds_masked = filt.apply(ds, "SNR", output_suffix="galileo")
     ```
 
-### Per-Cell Timeseries Storage
+### Storing analysis results
 
-`AnalysisStorage` manages persistent Icechunk storage of analysis results.
-Per-cell timeseries are stored on a dedicated branch, keyed by `system_band_code`:
-
-```python
-from canvod.grids.analysis import AnalysisStorage
-
-storage = AnalysisStorage("/path/to/store")
-
-# Store
-storage.store_percell_timeseries(percell_ds, system="G", band="L1", code="C")
-
-# List and load
-storage.list_percell_datasets()  # ['C_B2b_I', 'E_E1_C', 'G_L1_C', ...]
-ds = storage.load_percell_timeseries(system="G", band="L1", code="C")
-```
+To store weights, masks, statistics, and per-cell time series in a VOD
+store, use `AnalysisStorage` from
+[canvod-store](../store/overview.md#grids-and-analysis-results).
 
 ---
 
