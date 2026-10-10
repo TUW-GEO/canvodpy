@@ -1,7 +1,7 @@
 """``IcechunkDataReader`` is deprecated (left over from development).
 
 The warnings fire before any work is done, so neither a site nor data is
-needed to check them.
+needed to check them. ``parsed_rinex_data_gen_v2`` raises right away.
 """
 
 import re
@@ -32,17 +32,21 @@ def test_instantiation_is_deprecated(monkeypatch):
         IcechunkDataReader(matched_dirs=None)
 
 
-@pytest.mark.parametrize(
-    ("method", "extra"),
-    [
-        ("parsed_rinex_data_gen", ""),
-        ("parsed_rinex_data_gen_v2", "does not run"),
-    ],
-)
-def test_generators_are_deprecated(method, extra):
+def test_generator_is_deprecated():
     # Calling the generator function warns; the body only runs on iteration.
+    method = "parsed_rinex_data_gen"
     with pytest.warns(FutureWarning, match=f"{method}.*{LEFT_OVER}") as record:
         getattr(IcechunkDataReader, method)(object())
+    assert re.search(REPLACEMENT, str(record[0].message))
+
+
+def test_generator_v2_raises():
+    method = "parsed_rinex_data_gen_v2"
+    with (
+        pytest.warns(FutureWarning, match=f"{method}.*{LEFT_OVER}") as record,
+        pytest.raises(RuntimeError, match=f"does not run.*{REPLACEMENT}"),
+    ):
+        getattr(IcechunkDataReader, method)(object())
     message = str(record[0].message)
-    assert extra in message
+    assert "does not run" in message
     assert re.search(REPLACEMENT, message)
