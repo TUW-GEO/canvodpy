@@ -115,8 +115,9 @@ def test_pipeline_rows_are_json(tmp_store):
     """Rows of a run (``dataset_attrs`` as a dict) are stored as JSON."""
     tmp_store.write_or_append_group(_with_record(0, AGGREGATED), group_name=GROUP)
     ds = _with_record(1, AGGREGATED)
+    fname = Path("/data/b.rnx")
     row = {
-        "fname": Path("/data/b.rnx"),
+        "fname": fname,
         "rinex_hash": "b",
         "start": ds.epoch.values[0],
         "end": ds.epoch.values[-1],
@@ -130,7 +131,9 @@ def test_pipeline_rows_are_json(tmp_store):
         k: v for k, v in ds.attrs.items() if k != PREPROCESSING_ATTR
     }
     assert _log_column(tmp_store, GROUP, "preprocessing")[-1] == AGGREGATED
-    assert _log_column(tmp_store, GROUP, "fname")[-1] == "/data/b.rnx"
+    # The path is stored as text in the form of the operating system
+    # (\data\b.rnx on Windows).
+    assert _log_column(tmp_store, GROUP, "fname")[-1] == str(fname)
 
 
 def test_records_of_a_time_range(tmp_store):
