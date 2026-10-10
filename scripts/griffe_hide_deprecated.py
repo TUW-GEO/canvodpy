@@ -48,7 +48,7 @@ def _deprecated_arguments(node: Any) -> list[str]:
 
 def _drop_aliases(obj: griffe.Object, removed: set[str]) -> None:
     for name, member in list(obj.members.items()):
-        if member.is_alias:
+        if isinstance(member, griffe.Alias):
             if member.target_path in removed:
                 obj.del_member(name)
         elif member.is_module or member.is_class:

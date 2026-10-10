@@ -21,7 +21,7 @@ import structlog
 import xarray as xr
 import zarr
 import zarr.errors
-from icechunk.session import ForkSession
+from icechunk.session import ForkSession, Session
 from icechunk.xarray import to_icechunk
 from pydantic import ValidationError
 from rich.progress import (
@@ -2013,7 +2013,7 @@ class RinexDataProcessor:
 
     def _check_store_vars_consistency(
         self,
-        session: ForkSession,
+        session: Session,
         receiver_name: str,
         augmented_datasets: list[tuple[Path, xr.Dataset]],
         append_dim: str = "epoch",
@@ -2084,7 +2084,7 @@ class RinexDataProcessor:
 
     def _prepare_store_for_overwrite(
         self,
-        session: ForkSession,
+        session: Session,
         receiver_name: str,
         augmented_datasets: list[tuple[Path, xr.Dataset]],
         existing_hashes: set[str],

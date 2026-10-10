@@ -85,3 +85,8 @@ def test_argument_must_exist():
         @deprecated_argument("exact", "old")
         def add(a, b):
             return a + b
+
+
+def test_argument_needs_a_function():
+    with pytest.raises(TypeError, match="decorates functions"):
+        deprecated_argument("exact", "old")(staticmethod(lambda exact=None: None))

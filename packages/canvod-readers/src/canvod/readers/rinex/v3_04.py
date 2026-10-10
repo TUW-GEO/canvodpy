@@ -1530,12 +1530,12 @@ class Rnxv3Obs(GNSSDataReader):
             sampling_interval = inferred
         # normalize to pint
         elif not isinstance(sampling_interval, pint.Quantity):
-            sampling_interval = UREG.Quantity(sampling_interval).to(UREG.seconds)  # ty: ignore[invalid-assignment]
+            sampling_interval = UREG.Quantity(sampling_interval).to(UREG.seconds)
 
         # Normalize/Infer dump interval
         if dump_interval is None:
             inferred_dump = self.infer_dump_interval(
-                sampling_interval=sampling_interval  # ty: ignore[invalid-argument-type]
+                sampling_interval=sampling_interval
             )
             if inferred_dump is None:
                 msg = "Could not infer dump interval from file"
@@ -1543,7 +1543,7 @@ class Rnxv3Obs(GNSSDataReader):
             dump_interval = inferred_dump
         elif not isinstance(dump_interval, pint.Quantity):
             # Accept '15 min', '1h', etc.
-            dump_interval = UREG.Quantity(dump_interval).to(UREG.seconds)  # ty: ignore[invalid-assignment]
+            dump_interval = UREG.Quantity(dump_interval).to(UREG.seconds)
 
         # Build inputs for the validator model
         epoch_indices = self.get_epoch_record_batches()

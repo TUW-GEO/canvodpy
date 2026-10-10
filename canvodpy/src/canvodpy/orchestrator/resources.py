@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import threading
 import time
+import types
 from collections.abc import Callable
 from pathlib import Path
 
@@ -34,6 +35,9 @@ _NO_EFFECT_ARGUMENTS = {
 
 def deprecate_no_effect_arguments[F: Callable[..., object]](func: F) -> F:
     """Deprecate the resource arguments that have no effect on *func*."""
+    if not isinstance(func, types.FunctionType):
+        msg = f"deprecate_no_effect_arguments decorates functions, not {func!r}"
+        raise TypeError(msg)
     caller = func.__qualname__.removesuffix(".__init__")
     for name, reason in _NO_EFFECT_ARGUMENTS.items():
         func = deprecated_argument(

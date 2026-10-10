@@ -24,12 +24,12 @@ file_hash(path)  # first 16 hex digits of the file's SHA-256
 | `YYYYDOY` / `YYDOY` | Year + Day-of-Year date parsing/formatting (the GNSS-standard date convention) |
 | `get_gps_week_from_filename` | Extract GPS week from a standard product filename |
 | `gpsweekday` | GPS week and day of week of a date (a string must be `dd-mm-yyyy`) |
-| `file_hash` | First 16 hex digits of a file's SHA-256, used by the store's dedup guardrails |
+| `file_hash` | First 16 hex digits of a file's SHA-256, used by the store's deduplication guardrails |
 | `isfloat` | Safe float-parsing check |
 | `get_version_from_pyproject` | Read a package version directly from `pyproject.toml` |
 | `deprecated` | Decorator that marks code left over from development: warns on use and names the replacement |
-| `deprecated_argument` | Decorator that marks one argument as left over from development: warns when it is passed |
-| `sanitize_directory` | Remove files the OS drops into data folders (e.g. `.DS_Store`) |
+| `deprecated_argument` | Decorator that marks one argument of a function as left over from development: warns when it is passed |
+| `sanitize_directory` | Remove files the OS drops into data folders (for example `.DS_Store`) |
 
 ---
 
@@ -38,7 +38,7 @@ file_hash(path)  # first 16 hex digits of the file's SHA-256
 `canvod.utils.logging` holds the run identifier (`get_run_id`, `set_run_id`,
 `reset_run_id`, `new_run_id`) and the stage timing (`stage_timer`,
 `timed_stage`, `record_stage_timing`, `emit_run_summary`,
-`reset_run_stats`), so that every canvod package can use them without
+`reset_run_stats`), so that every canVODpy package can use them without
 depending on canvodpy. The log output is configured by
 `canvodpy.logging.configure_logging`. See [Diagnostics](../../guides/diagnostics.md).
 
@@ -48,7 +48,7 @@ depending on canvodpy. The log output is configured by
 
 canVODpy's CLI lives entirely in the `canvodpy` package (see
 [canvod-config](../config/overview.md) for `config`/`doctor`, and
-[canvod-store](../store/overview.md) for `store`) — collected here for a
+[canvod-store](../store/overview.md) for `store`). They are collected here for a
 one-stop reference:
 
 === "Setup"

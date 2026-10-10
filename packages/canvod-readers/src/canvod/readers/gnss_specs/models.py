@@ -272,7 +272,7 @@ class Quantity(pint.Quantity):
             if isinstance(value, pint.Quantity):
                 return value
             try:
-                return UREG.Quantity(value)  # ty: ignore[invalid-return-type]
+                return UREG.Quantity(value)
             except pint.errors.UndefinedUnitError:
                 msg = f"Invalid unit for {value}"
                 _raise_value_error(msg)

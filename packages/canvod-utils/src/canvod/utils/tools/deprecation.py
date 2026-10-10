@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import functools
 import inspect
+import types
 import warnings
 from collections.abc import Callable
 from typing import Any
@@ -47,9 +48,15 @@ def deprecated_argument(name: str, message: str) -> Callable[[Any], Any]:
     itself stays. The warning fires whether the argument is passed by
     position or by keyword, also with its default value. Leave the
     argument out of the docstring: the API reference hides it.
+
+    Decorates functions only; on a method, put it below ``@classmethod``
+    or ``@staticmethod``. Anything else raises ``TypeError``.
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        if not isinstance(func, types.FunctionType):
+            msg = f"deprecated_argument decorates functions, not {func!r}"
+            raise TypeError(msg)
         signature = inspect.signature(func)
         if name not in signature.parameters:
             msg = f"{func.__qualname__}() has no argument {name!r}"

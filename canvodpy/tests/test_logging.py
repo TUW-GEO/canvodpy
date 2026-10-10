@@ -6,6 +6,7 @@ and the stage_timer performance tracker (see docs/guides/diagnostics.md).
 """
 
 import json
+import logging
 import sys
 
 import pytest
@@ -97,7 +98,9 @@ class TestAgentTrackAndRunId:
 
 
 class TestExcepthook:
-    def test_uncaught_exception_logged_and_chains_to_default(self, configured_logs):
+    def test_uncaught_exception_logged_and_chains_to_default(
+        self, configured_logs, monkeypatch
+    ):
         # _install_excepthook is idempotent (see its docstring) -- by the
         # time the fixture ran, the process-wide hook may already be
         # installed from an earlier test/import, so its captured
@@ -107,16 +110,16 @@ class TestExcepthook:
         from canvodpy.logging.logging_config import _install_excepthook
 
         chained_calls = []
-        sys.excepthook = lambda *args: chained_calls.append(args)
+        monkeypatch.setattr(sys, "excepthook", lambda *args: chained_calls.append(args))
         _install_excepthook(structlog.get_logger("test_excepthook"))
         installed_hook = sys.excepthook
 
         try:
             raise ValueError("boom")
-        except ValueError:
-            exc_info = sys.exc_info()
+        except ValueError as error:
+            exc = error
 
-        installed_hook(*exc_info)  # must not itself raise
+        installed_hook(type(exc), exc, exc.__traceback__)  # must not itself raise
 
         events = _read_jsonl(configured_logs["agent"])
         matches = [e for e in events if e.get("event") == "uncaught_exception"]
@@ -126,26 +129,25 @@ class TestExcepthook:
         assert "ValueError: boom" in matches[0]["traceback"]
         assert len(chained_calls) == 1  # default hook still ran
 
-    def test_keyboard_interrupt_not_logged(self, configured_logs):
+    def test_keyboard_interrupt_not_logged(self, configured_logs, monkeypatch):
         installed_hook = sys.excepthook
-        sys.__excepthook__ = lambda *args: None  # suppress stderr traceback dump
+        # suppress stderr traceback dump
+        monkeypatch.setattr(sys, "__excepthook__", lambda *args: None)
 
         try:
             raise KeyboardInterrupt
-        except KeyboardInterrupt:
-            exc_info = sys.exc_info()
+        except KeyboardInterrupt as error:
+            exc = error
 
-        installed_hook(*exc_info)
+        installed_hook(type(exc), exc, exc.__traceback__)
 
         events = _read_jsonl(configured_logs["agent"])
         assert not [e for e in events if e.get("event") == "uncaught_exception"]
 
 
 class TestPerformanceFilter:
-    def _record(self, msg: dict):
-        record = type("Record", (), {})()
-        record.msg = msg
-        return record
+    def _record(self, msg: dict) -> logging.LogRecord:
+        return logging.LogRecord("test", logging.INFO, __file__, 0, msg, None, None)
 
     def test_matches_stage_timing_event(self):
         f = PerformanceFilter()

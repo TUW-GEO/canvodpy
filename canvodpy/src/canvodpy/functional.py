@@ -40,7 +40,7 @@ Airflow DAG:
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -55,7 +55,7 @@ log = structlog.get_logger(__name__)
 
 
 @contextmanager
-def _nested_deprecation_silenced() -> Iterator[None]:
+def _nested_deprecation_silenced() -> Generator[None]:
     """Warn once per call: the *_to_file versions call deprecated functions."""
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", ".*left over from development", FutureWarning)

@@ -16,7 +16,7 @@ fix that originally shipped this -- can use the exact same mechanism.
 from __future__ import annotations
 
 import threading
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 
 import zarr
@@ -34,7 +34,7 @@ _zarr_config_scope_lock = threading.RLock()
 
 
 @contextmanager
-def scoped_zarr_concurrency(concurrency: int | None) -> Iterator[None]:
+def scoped_zarr_concurrency(concurrency: int | None) -> Generator[None]:
     """Scope zarr's async chunk write/read concurrency for the enclosed block.
 
     ``concurrency=None`` is a no-op (zarr's own default applies, unchanged).
