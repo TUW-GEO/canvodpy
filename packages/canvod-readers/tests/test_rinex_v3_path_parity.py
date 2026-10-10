@@ -107,13 +107,19 @@ def test_parsers_identical_on_valid_files(reader_cls, fpath):
 )
 def test_validated_keeps_only_valid_epochs(fpath):
     """Corrupted files: the dataset holds exactly the validated epochs."""
+    # Skip after the except blocks, not inside them: inside, pytest keeps
+    # the caught exception and its frames until the test run ends.
     try:
         obs = Rnxv3Obs(fpath=fpath, completeness_mode="off")
     except Exception:
+        obs = None
+    if obs is None:
         pytest.skip("header rejected")
     try:
         validated = obs._create_dataset(None, "validated")
     except ValueError:
+        validated = None
+    if validated is None:
         pytest.skip("invalid calendar epoch, the file is rejected as a whole")
     records = list(obs.iter_epochs())
     expected = np.array(
