@@ -236,7 +236,9 @@ def _register_builtin_components() -> None:
     ``rinex3``, ``rinex3_stripped``, ``rinex2``, ``sbf`` and ``nmea``, the
     grid builders ``equal_area``, ``equal_angle``, ``equirectangular``,
     ``htm``, ``geodesic``, ``healpix`` and ``fibonacci`` (the values of
-    :class:`canvod.grids.GridType`) and the VOD calculator ``tau_omega``. All
+    :class:`canvod.grids.GridType`, with the builders of
+    :data:`canvod.grids.GRID_BUILDERS`, which ``create_hemigrid`` also uses)
+    and the VOD calculator ``tau_omega``. All
     of them come from declared dependencies of canvodpy, so a failed
     import raises instead of leaving a component unregistered.
     """
@@ -248,16 +250,7 @@ def _register_builtin_components() -> None:
     VODFactory._set_abc_class()
     AugmentationFactory._set_abc_class()
 
-    from canvod.grids import (
-        EqualAngleBuilder,
-        EqualAreaBuilder,
-        EquirectangularBuilder,
-        FibonacciBuilder,
-        GeodesicBuilder,
-        GridType,
-        HEALPixBuilder,
-        HTMBuilder,
-    )
+    from canvod.grids import GRID_BUILDERS
     from canvod.readers import Rnxv3Obs
     from canvod.readers.nmea import NmeaObs
     from canvod.readers.rinex import Rnxv2Obs, Rnxv3StrippedObs
@@ -269,13 +262,9 @@ def _register_builtin_components() -> None:
     ReaderFactory.register("sbf", SbfReader)
     ReaderFactory.register("rinex2", Rnxv2Obs)
     ReaderFactory.register("nmea", NmeaObs)
-    GridFactory.register(GridType.EQUAL_AREA.value, EqualAreaBuilder)
-    GridFactory.register(GridType.EQUAL_ANGLE.value, EqualAngleBuilder)
-    GridFactory.register(GridType.EQUIRECTANGULAR.value, EquirectangularBuilder)
-    GridFactory.register(GridType.HTM.value, HTMBuilder)
-    GridFactory.register(GridType.GEODESIC.value, GeodesicBuilder)
-    GridFactory.register(GridType.HEALPIX.value, HEALPixBuilder)
-    GridFactory.register(GridType.FIBONACCI.value, FibonacciBuilder)
+    # The same builders create_hemigrid uses, under the values of GridType
+    for grid_type, builder in GRID_BUILDERS.items():
+        GridFactory.register(grid_type.value, builder)
     VODFactory.register("tau_omega", TauOmegaZerothOrder)
 
     log.info("builtin_components_registered")

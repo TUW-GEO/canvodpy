@@ -26,6 +26,13 @@ class TestFactoryRegistration:
 
         assert set(GridFactory.list_available()) == {t.value for t in GridType}
 
+    def test_grid_factory_registers_the_grid_builders_table(self):
+        """GridFactory and create_hemigrid take the builders from one table."""
+        from canvod.grids import GRID_BUILDERS
+
+        for grid_type, builder in GRID_BUILDERS.items():
+            assert GridFactory._registry[grid_type.value] is builder
+
     @pytest.mark.parametrize(
         "grid_type",
         [

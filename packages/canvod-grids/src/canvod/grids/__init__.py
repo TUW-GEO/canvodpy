@@ -41,6 +41,7 @@ from canvod.grids.operations import (
 __version__ = _version("canvod-grids")
 
 __all__ = [
+    "GRID_BUILDERS",
     # Core
     "BaseGridBuilder",
     # Aggregation
@@ -76,6 +77,18 @@ __all__ = [
     "store_dataset_with_cell_ids",
     "store_grid",
 ]
+
+#: The builder of each grid type. :func:`create_hemigrid` and canvodpy's
+#: ``GridFactory`` both take the builders from here.
+GRID_BUILDERS: dict[GridType, type[BaseGridBuilder]] = {
+    GridType.EQUAL_AREA: EqualAreaBuilder,
+    GridType.EQUAL_ANGLE: EqualAngleBuilder,
+    GridType.EQUIRECTANGULAR: EquirectangularBuilder,
+    GridType.HTM: HTMBuilder,
+    GridType.GEODESIC: GeodesicBuilder,
+    GridType.HEALPIX: HEALPixBuilder,
+    GridType.FIBONACCI: FibonacciBuilder,
+}
 
 
 def create_hemigrid(
@@ -142,48 +155,18 @@ def create_hemigrid(
     - theta: polar angle from zenith, 0 to π/2 (0 = zenith, π/2 = horizon)
 
     """
-    grid_type_lower = grid_type.lower()
-
-    if grid_type_lower == "equal_area":
-        builder = EqualAreaBuilder(
-            angular_resolution=angular_resolution,
-            **kwargs,
-        )
-    elif grid_type_lower == "equal_angle":
-        builder = EqualAngleBuilder(
-            angular_resolution=angular_resolution,
-            **kwargs,
-        )
-    elif grid_type_lower in ["rectangular", "equirectangular"]:
-        builder = EquirectangularBuilder(
-            angular_resolution=angular_resolution,
-            **kwargs,
-        )
-    elif grid_type_lower == "htm":
-        builder = HTMBuilder(
-            angular_resolution=angular_resolution,
-            **kwargs,
-        )
-    elif grid_type_lower == "geodesic":
-        builder = GeodesicBuilder(
-            angular_resolution=angular_resolution,
-            **kwargs,
-        )
-    elif grid_type_lower == "healpix":
-        builder = HEALPixBuilder(
-            angular_resolution=angular_resolution,
-            **kwargs,
-        )
-    elif grid_type_lower == "fibonacci":
-        builder = FibonacciBuilder(
-            angular_resolution=angular_resolution,
-            **kwargs,
-        )
-    else:
-        raise ValueError(
+    name = grid_type.lower()
+    if name == "rectangular":
+        name = GridType.EQUIRECTANGULAR.value
+    try:
+        builder_class = GRID_BUILDERS[GridType(name)]
+    except ValueError:
+        available = ", ".join(t.value for t in GRID_BUILDERS)
+        msg = (
             f"Unknown grid type: {grid_type}. "
-            f"Available types: equal_area, equal_angle, rectangular, "
-            f"equirectangular, HTM, geodesic, healpix, fibonacci"
+            f"Available types: {available} (and rectangular for equirectangular)"
         )
+        raise ValueError(msg) from None
+    builder = builder_class(angular_resolution=angular_resolution, **kwargs)
 
     return builder.build()

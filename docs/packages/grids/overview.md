@@ -144,6 +144,9 @@ somewhat more (geodesic 1.01 to 1.05 × 2π, HEALPix 1.01 to 1.08 × 2π at
     print(grid.grid.head())  # Polars DataFrame with cell geometry
     ```
 
+All three build the same grid. `create_hemigrid` and `GridFactory` take
+the builder of each grid type from one table, `canvod.grids.GRID_BUILDERS`.
+
 ---
 
 ## GridData

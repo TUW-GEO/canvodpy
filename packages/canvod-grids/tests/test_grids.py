@@ -5,11 +5,45 @@ import polars as pl
 import pytest
 
 from canvod.grids import (
+    GRID_BUILDERS,
     EqualAreaBuilder,
     GridData,
+    GridType,
     HTMBuilder,
     create_hemigrid,
 )
+
+
+class TestGridBuilders:
+    """``GRID_BUILDERS`` is the one table of grid types and their builders."""
+
+    def test_every_grid_type_has_a_builder(self):
+        assert set(GRID_BUILDERS) == set(GridType)
+
+    def test_create_hemigrid_uses_the_table(self, monkeypatch):
+        monkeypatch.setitem(GRID_BUILDERS, GridType.HTM, EqualAreaBuilder)
+        grid = create_hemigrid("htm", angular_resolution=10.0)
+        expected = EqualAreaBuilder(angular_resolution=10.0).build()
+        assert grid.grid.equals(expected.grid)
+
+    @pytest.mark.parametrize(
+        ("name", "grid_type"),
+        [
+            ("HTM", GridType.HTM),
+            ("Equal_Area", GridType.EQUAL_AREA),
+            ("rectangular", GridType.EQUIRECTANGULAR),
+        ],
+    )
+    def test_names_are_case_insensitive_and_rectangular_is_equirectangular(
+        self, name, grid_type
+    ):
+        grid = create_hemigrid(name, angular_resolution=10.0)
+        expected = GRID_BUILDERS[grid_type](angular_resolution=10.0).build()
+        assert grid.grid.equals(expected.grid)
+
+    def test_unknown_type_lists_the_types(self):
+        with pytest.raises(ValueError, match=r"Unknown grid type: hex.*fibonacci"):
+            create_hemigrid("hex")
 
 
 class TestGridCreation:
