@@ -66,7 +66,7 @@ canopy_01/
 ```
 
 The log book (`metadata/table`) records each stored file: its hash, start,
-end, file name, the dataset attributes, and the preprocessing record (see
+end, filename, the dataset attributes, and the preprocessing record (see
 [Preprocessing during a run](../ops/overview.md#the-preprocessing-record)).
 Every value in it is text, JSON, or a time.
 
@@ -127,7 +127,7 @@ book, in three ways:
 | Check | What it finds | Where |
 |---|---|---|
 | Hash | The same file, already stored (SHA-256 of the file) | The orchestrator, and again in `append_to_group()` |
-| Time span | A file whose time span overlaps stored data, even under another name or split differently | The orchestrator, and again in `append_to_group()` |
+| Time span | A file whose time span overlaps stored data, also when it has another name or other start and end times | The orchestrator, and again in `append_to_group()` |
 | Batch | Two files of one batch that cover the same time | The orchestrator |
 
 A file that fails a check counts as already stored. The default write
@@ -196,7 +196,7 @@ canvodpy store maintain ExampleSite                 # what expiry and garbage co
 
 `--store vod` opens the VOD store instead of the GNSS store, and `--branch`
 selects a branch other than `main`. For every option, see the
-[CLI reference](../../api/cli.md).
+[command-line reference](../../api/cli.md).
 
 ## Grids and analysis results
 
