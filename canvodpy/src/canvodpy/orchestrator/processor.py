@@ -2205,10 +2205,10 @@ class RinexDataProcessor:
         valid_hashes = [h for h in file_hash_map.values() if h]
 
         # Load the metadata table once and share it with both checks below
-        # instead of each doing its own full-table read (dev/todo_later.md
-        # §34 -- confirmed 2026-07-15 that batch_check duration tracks
-        # metadata_rows almost exactly, so halving the reads halves that
-        # cost directly). `None` means fresh store / no metadata yet.
+        # instead of each doing its own full-table read: the time of the
+        # batch check grows with the number of metadata rows, so one read
+        # instead of two halves that cost. `None` means fresh store / no
+        # metadata yet.
         metadata_df = self.site.gnss_store.load_metadata_for_dedup(receiver_name)
         if metadata_df is None:
             existing_hashes: set[str] = set()

@@ -177,7 +177,7 @@ processing:
     # If not set, uses system temp directory.
     # aux_data_dir: /path/to/aux_data
 
-    gnss_store_strategy: skip      # skip, overwrite, append
+    gnss_store_strategy: skip      # skip, overwrite, unsafe_append
 
   # ---------------------------------------------------------------------------
   # Logging

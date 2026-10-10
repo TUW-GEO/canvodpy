@@ -15,13 +15,11 @@ from .base import _StrictModel
 class MaintenanceConfig(_StrictModel):
     """Scheduled Icechunk maintenance (expiration + garbage collection).
 
-    Completes the retention scheme from dev/perf_degradation_findings_
-    2026_07_15.md (Problem B): expire_old_snapshots()/garbage_collect()
-    already exist on MyIcechunkStore and work correctly, but nothing has
-    ever triggered them automatically -- this is the config surface for
-    `canvodpy store maintain-due`, a non-interactive, cron-safe entry
-    point (the existing `canvodpy store maintain` command requires an
-    interactive typer.confirm, so it cannot itself run unattended).
+    Settings for `canvodpy store maintain-due`, which expires old
+    snapshots, collects garbage and compacts manifests when they are due.
+    It asks nothing, so a scheduled job (for example cron) can run it.
+    `canvodpy store maintain` does the same work but asks for confirmation
+    before it deletes anything, so it can't run unattended.
 
     Notes
     -----
@@ -32,11 +30,8 @@ class MaintenanceConfig(_StrictModel):
         False,
         description=(
             "Master switch for `canvodpy store maintain-due`. Off by "
-            "default -- mirrors keeper_tags' precedent of shipping inert "
-            "until validated against a real store (see "
-            "dev/perf_degradation_findings_2026_07_15.md, open question 4: "
-            "garbage_collect(dry_run=True) should be checked against the "
-            "real store before this is ever enabled for real)."
+            "default. Before you turn it on, run garbage_collect(dry_run="
+            "True) against your store and check what it would delete."
         ),
     )
     dry_run_until_confirmed: bool = Field(
@@ -154,7 +149,7 @@ class StorageConfig(_StrictModel):
         None,
         description=(
             "Network-wide, fingerprint-keyed aux (SP3/CLK Hermite) cache "
-            "root (dev/todo_later.md §44). None (default) = disabled, falls "
+            "root. None (default) = disabled, falls "
             "back to per-site aux_data_dir/aux_{date}.zarr, rebuilt every "
             "run. Ephemeris products are satellite-based, not site-based, "
             "so pointing multiple sites at the same path lets them share "
@@ -209,9 +204,8 @@ class StorageConfig(_StrictModel):
         description=(
             "Tag every (receiver, date) Icechunk commit as "
             "keep/{receiver}/{yyyydoy} so a future retention job can expire "
-            "everything else. Default off until create_tag() cost at scale "
-            "is confirmed (dev/perf_degradation_findings_2026_07_15.md, "
-            "open question 8)."
+            "everything else. Off by default: the cost of create_tag() "
+            "on large stores hasn't been measured yet."
         ),
     )
     maintenance: MaintenanceConfig = Field(default_factory=MaintenanceConfig)
