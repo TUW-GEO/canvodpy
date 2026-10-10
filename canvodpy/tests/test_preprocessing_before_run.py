@@ -47,13 +47,14 @@ def _settings(monkeypatch, module):
 
 
 def test_orchestrator_checks_every_group_it_writes(monkeypatch):
-    from canvodpy.orchestrator import pipeline as pipeline_module
     from canvodpy.orchestrator.pipeline import PipelineOrchestrator
 
-    _settings(monkeypatch, pipeline_module)
     store = _Store()
     orchestrator = PipelineOrchestrator.__new__(PipelineOrchestrator)
     orchestrator.site = SimpleNamespace(gnss_store=store)
+    orchestrator._config = SimpleNamespace(
+        processing=SimpleNamespace(preprocessing=CONFIG)
+    )
     dates = [
         ("2025001", {"canopy_01": (), "reference_01_canopy_01": ()}),
         ("2025002", {"canopy_01": ()}),

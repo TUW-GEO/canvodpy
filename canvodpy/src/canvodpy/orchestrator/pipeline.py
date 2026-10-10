@@ -5,6 +5,7 @@ from __future__ import annotations
 import gc
 import os
 import time as _time
+import warnings
 from collections import defaultdict
 from collections.abc import Callable, Generator, Sequence
 from concurrent.futures import (
@@ -22,28 +23,18 @@ from pathlib import Path
 from typing import TypeVar
 
 import pint
+import structlog
 import xarray as xr
+from loky import get_reusable_executor as _loky_reusable
 
-from canvod.config import load_config
+from canvod.config import CanvodConfig, load_config
 from canvod.config.models import mixed_format_error, reference_store_group
 from canvod.ops import planned_settings, preprocess_files
 from canvod.readers import MatchedDirs
 from canvod.readers.gnss_specs.constants import UREG
 from canvod.store import GnssResearchSite
-from canvod.utils.tools import YYYYDOY
-
-try:
-    from loky import get_reusable_executor as _loky_reusable
-
-    _HAS_LOKY = True
-except ImportError:
-    _HAS_LOKY = False
-    _loky_reusable = None
-
-import structlog
-
 from canvod.utils.logging import get_run_id, new_run_id, reset_run_id, set_run_id
-from canvod.utils.tools import deprecated
+from canvod.utils.tools import YYYYDOY, deprecated
 from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
 from canvodpy.orchestrator.discovery import (
     ReceiverDay,
@@ -87,13 +78,11 @@ def _windowed_completions(  # noqa: UP047 -- see TypeVar comment above
     whole batch upfront and draining via ``as_completed()``, this bounds
     how many workers can be concurrently active while a caller is busy
     handling a completed result (e.g. writing to Icechunk) -- a full-batch
-    submission let the write path race a still-fully-loaded worker pool
-    (dev/perf_degradation_findings_2026_07_15.md, Problem A).
+    submission let the write path race a still-fully-loaded worker pool.
 
     Never calls ``future.result()`` itself -- the caller owns exception
     handling. Each future is popped from the in-flight mapping before being
-    yielded, so a consumed future's retained result isn't held here
-    (dev/perf_degradation_findings_2026_07_15.md, Problem C).
+    yielded, so a consumed future's retained result isn't held here.
 
     If ``submit`` itself raises ``BrokenProcessPool`` (e.g. a worker was
     OOM-killed), that used to only ever surface via a pre-submitted
@@ -146,7 +135,7 @@ def _interleave_by_receiver(task_descriptors: list[tuple]) -> list[tuple]:
     15-min cadence) typically exceeds ``window``, so the window stays
     saturated on one receiver until its group nearly drains before the next
     receiver's tasks even enter it -- groups then complete in near-strict
-    submission order instead of interleaved (dev/todo_later.md §42).
+    submission order instead of interleaved.
     Round-robining here means the window always spans multiple receivers'
     groups regardless of group size; uneven group sizes just mean the
     shorter receiver's tail drops out of rotation first, not an error.
@@ -172,8 +161,8 @@ def _build_ordered_tasks(
     ``as_completed()``, whose order is completion order, not submission
     order -- inserting straight into the flat task list from there let
     whichever date's prep happened to finish first jump ahead of
-    chronologically-earlier dates, scrambling the write/dashboard order
-    (dev/todo_later.md §42 addendum). Iterating ``ordered_date_keys``
+    chronologically-earlier dates, scrambling the write/dashboard order.
+    Iterating ``ordered_date_keys``
     (the original, already-chronological batch list) instead restores
     that order regardless of prep completion order. Each date's own
     tasks are further round-robined across receivers via
@@ -211,6 +200,9 @@ class PipelineOrchestrator:
     threads_per_worker : int | None
         Threads per worker process (used to cap BLAS thread env vars).
         None defaults to 1.
+    config : CanvodConfig
+        The settings of this run, for example from
+        ``canvod.config.load_config()``.
     on_group_written : Callable[[str], None] | None
         Called with the receiver-group name (e.g. ``"canopy_01"``,
         ``"reference_01_canopy_02"``) each time a group's data for one day
@@ -235,7 +227,18 @@ class PipelineOrchestrator:
         nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
+        config: CanvodConfig | None = None,
     ) -> None:
+        if config is None:
+            warnings.warn(
+                "Creating PipelineOrchestrator without config= is left over "
+                "from development and will be removed with the next major "
+                "version. Pass config=canvod.config.load_config() instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            config = load_config()
+        self._config = config
         # The log location comes from the configuration of this run.
         ensure_file_logging()
         # A new run sees files added since the previous one.
@@ -586,124 +589,6 @@ class PipelineOrchestrator:
             filtered.append((date_key, receivers))
         return filtered
 
-    def _process_single_date(
-        self,
-        date_key: str,
-        receivers: dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]],
-        keep_vars: list[str] | None,
-    ) -> tuple[str, dict[str, xr.Dataset], dict[str, float]] | None:
-        """Process all receivers for a single date (one DOY).
-
-        Used only when loky is not installed; the normal path is
-        ``_process_multi_day_batches``.
-
-        Parameters
-        ----------
-        date_key : str
-            YYYYDOY string.
-        receivers : dict
-            ``{store_group: (data_dir, receiver_type, position_data_dir, reader_format)}``.
-        keep_vars : list[str] | None
-            Variables to keep in datasets.
-
-        Returns
-        -------
-        tuple or None
-            ``(date_key, datasets, timings)`` or None if processing failed.
-
-        """
-        date_start = _time.monotonic()
-
-        self._logger.info(
-            "date_processing_started",
-            date=date_key,
-            receivers=len(receivers),
-            receiver_names=sorted(receivers.keys()),
-        )
-
-        receiver_configs = [
-            (receiver_name, receiver_type, data_dir, position_data_dir, reader_format)
-            for receiver_name, (
-                data_dir,
-                receiver_type,
-                position_data_dir,
-                reader_format,
-            ) in sorted(receivers.items())
-        ]
-
-        first_data_dir = receiver_configs[0][2]
-        matched_dirs = MatchedDirs(
-            canopy_data_dir=first_data_dir.directory,
-            reference_data_dir=first_data_dir.directory,
-            yyyydoy=YYYYDOY.from_str(date_key),
-        )
-
-        t_init_start = _time.perf_counter()
-        try:
-            processor = RinexDataProcessor(
-                matched_data_dirs=matched_dirs,
-                site=self.site,
-                n_max_workers=self.n_max_workers,
-            )
-        except RuntimeError as e:
-            if "Failed to download" in str(e):
-                self._logger.warning(
-                    "auxiliary_download_failed",
-                    date=date_key,
-                    error=str(e),
-                    exception=type(e).__name__,
-                    elapsed_seconds=round(_time.monotonic() - date_start, 2),
-                )
-                return None
-            raise
-        t_init_end = _time.perf_counter()
-        self._logger.info(
-            "processor_init_complete",
-            date=date_key,
-            init_seconds=round(t_init_end - t_init_start, 2),
-        )
-
-        datasets: dict[str, xr.Dataset] = {}
-        timings: dict[str, float] = {}
-        t_gen_start = _time.perf_counter()
-        try:
-            for receiver_name, ds, proc_time in processor.parsed_rinex_data_gen(
-                keep_vars=keep_vars, receiver_configs=receiver_configs
-            ):
-                datasets[receiver_name] = ds
-                timings[receiver_name] = proc_time
-                self._logger.debug(
-                    "receiver_result_collected",
-                    date=date_key,
-                    receiver=receiver_name,
-                    dataset_dims=dict(ds.sizes) if hasattr(ds, "sizes") else {},
-                    proc_time_seconds=round(proc_time, 2),
-                )
-        except (OSError, RuntimeError, ValueError) as e:
-            self._logger.error(
-                "rinex_processing_failed",
-                date=date_key,
-                error=str(e),
-                exception=type(e).__name__,
-                elapsed_seconds=round(_time.monotonic() - date_start, 2),
-            )
-            return None
-
-        t_gen_end = _time.perf_counter()
-        date_elapsed = _time.monotonic() - date_start
-        self._logger.info(
-            "date_processing_complete",
-            date=date_key,
-            receivers_processed=len(datasets),
-            receiver_names=sorted(datasets.keys()),
-            total_seconds=round(date_elapsed, 2),
-            init_seconds=round(t_init_end - t_init_start, 2),
-            gen_seconds=round(t_gen_end - t_gen_start, 2),
-            per_receiver_seconds={k: round(v, 2) for k, v in timings.items()},
-        )
-
-        return date_key, datasets, timings
-
     @staticmethod
     def _build_receiver_configs(
         receivers: dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]],
@@ -756,6 +641,7 @@ class PipelineOrchestrator:
             matched_data_dirs=matched_dirs,
             site=self.site,
             n_max_workers=self.n_max_workers,
+            config=self._config,
         )
 
     def _prepare_single_date(
@@ -800,8 +686,7 @@ class PipelineOrchestrator:
     ) -> Generator[tuple[str, dict[str, xr.Dataset], dict[str, float]]]:
         """Process dates in batches of ``days_per_batch`` days (1 or more).
 
-        With loky installed (a dependency of canvodpy, so the normal case),
-        each batch runs in three phases:
+        Each batch runs in three phases:
 
         1. Prepare, one thread per date: auxiliary data (SP3/CLK
            interpolation or cache), receiver positions, one task per file.
@@ -813,8 +698,7 @@ class PipelineOrchestrator:
            store metadata). The pool keeps working meanwhile.
 
         Dates are yielded after the batch is written; the caller computes
-        VOD before the next batch starts. Without loky, every date goes
-        through ``_process_single_date()`` instead.
+        VOD before the next batch starts.
 
         Parameters
         ----------
@@ -831,16 +715,11 @@ class PipelineOrchestrator:
         """
         days_per_batch = self.days_per_batch
         total_batches = (len(filtered_dates) + days_per_batch - 1) // days_per_batch
-        # Use loky flat-LPT (S2) when loky is installed. Persistent pool
-        # eliminates per-receiver-day spawn overhead (~17s/call on macOS).
-        use_flat_loky = _HAS_LOKY
-
         self._logger.info(
             "multi_day_batch_strategy",
             days_per_batch=days_per_batch,
             total_dates=len(filtered_dates),
             total_batches=total_batches,
-            flat_loky=use_flat_loky,
         )
 
         # Partition dates into batches
@@ -862,30 +741,6 @@ class PipelineOrchestrator:
             self._memory_monitor.log_memory_stats(
                 context=f"before_batch_{batch_idx + 1}"
             )
-
-            if not use_flat_loky:
-                # Fallback: sequential _process_single_date (loky not installed)
-                doys_succeeded = 0
-                doys_failed = 0
-                for date_key, receivers in batch:
-                    result = self._process_single_date(date_key, receivers, keep_vars)
-                    if result is not None:
-                        doys_succeeded += 1
-                        yield result
-                    else:
-                        doys_failed += 1
-
-                batch_elapsed = _time.monotonic() - batch_start_time
-                self._logger.info(
-                    "batch_complete",
-                    batch_index=batch_idx + 1,
-                    total_batches=total_batches,
-                    batch_dates=batch_date_keys,
-                    doys_succeeded=doys_succeeded,
-                    doys_failed=doys_failed,
-                    batch_seconds=round(batch_elapsed, 2),
-                )
-                continue
 
             # ── Phase 1: Prepare (concurrent across dates) ────────────
             t_phase1_start = _time.monotonic()
@@ -1006,10 +861,9 @@ class PipelineOrchestrator:
                 if _var not in os.environ:
                     os.environ[_var] = _thread_str
 
-            assert _loky_reusable is not None
             t_submit_start = _time.monotonic()
             n_wrk = self.n_max_workers or os.cpu_count() or 4
-            _res = load_config().processing.params.resolve_resources()
+            _res = self._config.processing.params.resolve_resources()
             _pool = _loky_reusable(
                 max_workers=n_wrk,
                 # loky's own default idle timeout is 10s -- Phase 1 date-prep
@@ -1030,7 +884,7 @@ class PipelineOrchestrator:
 
             def _submit_task(task: tuple[str, tuple], *, _pool=_pool) -> Future:
                 task_args = task[1]
-                # Trailing element marks a §47 reference fan-out task (dict
+                # Trailing element marks a reference fan-out task (dict
                 # result, one canopy_positions arg instead of a single
                 # receiver_position/receiver_name pair) vs. the normal
                 # one-file-one-receiver shape -- see prepare_batch_tasks.
@@ -1043,8 +897,7 @@ class PipelineOrchestrator:
             # Windowed submission (~2x worker count in flight), not the whole
             # batch upfront: submitting all ~n_days*n_receivers*n_files tasks
             # before draining left the write path racing a fully-loaded pool
-            # for the earliest-completing groups (dev/perf_degradation_
-            # findings_2026_07_15.md, Problem A). Streaming-write behavior
+            # for the earliest-completing groups. Streaming-write behavior
             # (write the moment a group completes) is unchanged.
             window = max(1, 2 * n_wrk)
             t_setup_end = _time.monotonic()
@@ -1097,7 +950,7 @@ class PipelineOrchestrator:
                     date_key, task_args = task
                     is_fanout = bool(task_args[-1])
                     lane_key = task_args[4]
-                    # A §47 fan-out task's pairing names are known from its
+                    # A reference fan-out task's pairing names are known from its
                     # submitted args (canopy_positions' keys), independent of
                     # whether the call below succeeds or fails.
                     pairing_names = (
@@ -1331,8 +1184,7 @@ class PipelineOrchestrator:
             # an explicit gc.collect() bounds any reference-cycle garbage
             # (xarray/Dask objects are known to form cycles refcounting
             # alone can't clear) that would otherwise accumulate for the
-            # rest of the run (dev/perf_degradation_findings_2026_07_15.md,
-            # Problem C).
+            # rest of the run.
             pending_results.clear()
             pending_aux.clear()
             completed_counts.clear()
@@ -1361,7 +1213,7 @@ class PipelineOrchestrator:
         PreprocessingMismatchError
             If a group holds data preprocessed differently.
         """
-        settings = planned_settings(load_config().processing.preprocessing)
+        settings = planned_settings(self._config.processing.preprocessing)
         for group in sorted({group for _, receivers in dates for group in receivers}):
             self.site.gnss_store.check_settings_match(group, settings)
 
@@ -1536,6 +1388,7 @@ if __name__ == "__main__":
         dry_run=False,
         n_max_workers=resources["n_workers"],
         days_per_batch=proc.days_per_batch,
+        config=cfg,
     ) as orchestrator:
         for date_key, datasets, _timings in orchestrator.process_by_date(
             keep_vars=keep_vars

@@ -99,7 +99,8 @@ class FtpDownloader(FileDownloader):
                 self.alt_servers = []
                 print("ℹ Using ESA FTP exclusively")
                 print(
-                    "  To enable NASA CDDIS fallback, set "
+                    "  To download from NASA CDDIS first, with ESA as the "
+                    "fallback, set "
                     "CANVOD__PROCESSING__CREDENTIALS__NASA_EARTHDATA_ACC_MAIL "
                     "in config/.env or as an environment variable"
                 )

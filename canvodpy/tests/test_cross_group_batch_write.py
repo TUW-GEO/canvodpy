@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -97,7 +98,9 @@ class _TestProcessor(RinexDataProcessor):
         self._icechunk_log = structlog.get_logger(__name__)
         self._gnss_store_strategy = strategy
         self._keeper_tags_enabled = False
-        self._config = None  # STEP 8 (rich metadata) no-ops via `except Exception`
+        # No site in the settings: STEP 8 (store metadata) has nothing to
+        # describe and writes nothing.
+        self._config = SimpleNamespace(sites=SimpleNamespace(sites={}))
         self._reader_name = "rinex3"
 
 
@@ -316,11 +319,12 @@ def test_case_c_fail_fast_no_partial_merge(
 
 
 class _SbfConfig:
-    """Just the processing.params.store_sbf_metadata switch."""
+    """The processing.params.store_sbf_metadata switch, and no site."""
 
     def __init__(self, store_sbf_metadata: bool) -> None:
         params = type("P", (), {"store_sbf_metadata": store_sbf_metadata})()
         self.processing = type("C", (), {"params": params})()
+        self.sites = SimpleNamespace(sites={})
 
 
 def _sbf_obs_for(ds: xr.Dataset) -> xr.Dataset:

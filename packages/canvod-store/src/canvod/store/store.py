@@ -734,14 +734,11 @@ class MyIcechunkStore:
             if ds[name].dtype.kind in ("U", "T"):
                 ds[name] = ds[name].astype(object)
         # Eagerly compute any remaining Dask-backed object data variables
-        try:
-            import dask.array as da_mod
+        import dask.array as da_mod
 
-            for name in list(ds.data_vars):
-                if ds[name].dtype == object and isinstance(ds[name].data, da_mod.Array):
-                    ds[name] = ds[name].compute()
-        except ImportError:
-            pass
+        for name in list(ds.data_vars):
+            if ds[name].dtype == object and isinstance(ds[name].data, da_mod.Array):
+                ds[name] = ds[name].compute()
         return ds
 
     def _ensure_store_exists(self) -> None:
@@ -2571,7 +2568,7 @@ class MyIcechunkStore:
     # guardrail pattern, but keyed on a combined per-receiver hash dict
     # instead of one flat rinex_hash column, and with a ledger schema that
     # also records calculator_name and per-receiver provenance
-    # (source_gnss_stores). See dev/todo_later.md §29.
+    # (source_gnss_stores).
 
     def _append_vod_metadata_row(
         self,
@@ -3455,7 +3452,7 @@ class MyIcechunkStore:
 
         ``batch_check_existing``/``check_temporal_overlaps`` each used to call
         ``load_metadata()`` independently -- two full-table reads per batch,
-        growing with store size (dev/todo_later.md §34; confirmed 2026-07-15
+        growing with store size (confirmed
         against a real backfill: ``batch_check`` duration tracked
         ``metadata_rows`` almost exactly, ~5x over 41,597 rows). Callers
         needing both checks should load once here and pass the result to
@@ -3595,7 +3592,7 @@ class MyIcechunkStore:
         t_loop = time.perf_counter()
         # Vectorized interval-overlap join replaces one .filter() scan per
         # incoming interval (O(intervals x rows) Python loop) with a single
-        # sort-merge join (dev/todo_later.md §34).
+        # sort-merge join.
         hits = incoming.join_where(
             df.select(["rinex_hash", "start", "end"]),
             pl.col("incoming_start") <= pl.col("end"),
@@ -3639,8 +3636,8 @@ class MyIcechunkStore:
         Metadata-only "soft delete": rewrites ancestry so expired snapshots
         become unreachable from any surviving branch/tag. No objects
         (manifests, chunks, snapshot files) are deleted at this stage —
-        call ``garbage_collect()`` separately to reclaim storage
-        (dev/perf_degradation_findings_2026_07_15.md, Problem B). Keeping
+        call ``garbage_collect()`` separately to reclaim storage.
+        Keeping
         this expire-only (previously it also ran GC internally) is what
         lets a caller run GC exactly once via ``maintenance()`` instead of
         twice per call.
@@ -3655,8 +3652,7 @@ class MyIcechunkStore:
         ----------
         days : int | None, optional
             Number of days to retain snapshots. Defaults to 90 (weeks-to-
-            months cadence; see dev/perf_degradation_findings_2026_07_15.md
-            for the operational guidance behind this default).
+            months cadence).
         branch : str, default "main"
             Branch to apply expiration on.
         delete_expired_branches : bool, default False
@@ -3706,8 +3702,7 @@ class MyIcechunkStore:
         anything. Always run with ``dry_run=True`` first on a store that
         hasn't been GC'd before, especially one with a large accumulated
         backlog: there's no documented cost model for GC time/memory at
-        scale, so a first-ever run's duration is unknown until measured
-        (dev/perf_degradation_findings_2026_07_15.md, open question 4).
+        scale, so a first-ever run's duration is unknown until measured.
 
         **Not safe to run casually alongside active writes** — the cutoff
         must predate the start of any concurrently-running write session,
@@ -4386,8 +4381,7 @@ class MyIcechunkStore:
         """
         Tag a per-(receiver, date) commit as a permanent retention keeper.
 
-        Part of the tag-based retention scheme in
-        dev/perf_degradation_findings_2026_07_15.md (Problem B): tagging
+        Part of the tag-based retention scheme: tagging
         ``keep/{receiver}/{yyyydoy}`` after each commit means a later
         ``expire_old_snapshots(delete_expired_tags=False)`` run can safely
         prune everything else while these specific snapshots stay
@@ -4580,8 +4574,7 @@ class MyIcechunkStore:
         job — never from the pipeline's own run path, and never on an
         automatic schedule until ``garbage_collect(dry_run=True)`` has been
         checked against the real store and, if using keeper tags,
-        ``create_tag()`` cost at scale has been confirmed
-        (dev/perf_degradation_findings_2026_07_15.md, open questions 4, 8).
+        ``create_tag()`` cost at scale has been confirmed.
         Not safe during active writes — see ``expire_old_snapshots``/
         ``garbage_collect`` docstrings for the concurrency caveats.
 
@@ -4626,8 +4619,7 @@ class MyIcechunkStore:
             results["deleted_branches"] = deleted_branches
 
         # Garbage collection — runs exactly once here (previously ran once
-        # inside expire_old_snapshots() too, a double-GC-per-call bug; see
-        # dev/perf_degradation_findings_2026_07_15.md, Problem B).
+        # inside expire_old_snapshots() too, a double-GC-per-call bug).
         if run_gc:
             results["gc_summary"] = self.garbage_collect(
                 days=expire_days, dry_run=dry_run_gc

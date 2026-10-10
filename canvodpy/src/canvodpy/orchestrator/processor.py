@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import time
+import warnings
 from collections.abc import Generator, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
@@ -50,7 +51,7 @@ from canvod.auxiliary.position import (
     compute_spherical_coordinates,
 )
 from canvod.auxiliary.products import check_product
-from canvod.config import load_config
+from canvod.config import CanvodConfig, load_config
 from canvod.config.models import (
     PREPROCESSING_ATTR,
     describe_preprocessing,
@@ -556,7 +557,7 @@ def preprocess_with_hermite_aux(
         Reader format for the canopy file (e.g. "sbf").
     aux_group : str | None, default None
         Zarr group within ``aux_zarr_path`` to read this day's aux data
-        from (§44 shared-cache mode). ``None`` reads the store root,
+        from (shared-cache mode). ``None`` reads the store root,
         matching legacy per-site aux Zarr layout.
     rinex_v3_parser : {"validated", "unvalidated_fast"}, default "validated"
         Parser of RINEX v3 files (``processing.params.rinex_v3_parser``);
@@ -652,7 +653,7 @@ def preprocess_reference_with_hermite_aux_fanout(
         ECEFPosition(...), "reference_01_canopy_02": ECEFPosition(...)}``).
     aux_group : str | None, default None
         Zarr group within ``aux_zarr_path`` to read this day's aux data
-        from (§44 shared-cache mode). ``None`` reads the store root.
+        from (shared-cache mode). ``None`` reads the store root.
 
     Other parameters are those of ``preprocess_with_hermite_aux``.
 
@@ -905,7 +906,7 @@ def worker_task_with_region_auto(
 
 
 # ============================================================================
-# Cross-group fork/merge batch writes (dev/cross_group_fork_merge_plan.md)
+# Cross-group fork/merge batch writes
 # ============================================================================
 
 
@@ -992,6 +993,7 @@ class RinexDataProcessor:
         n_max_workers: int | None = None,
         reader_name: str = "rinex3",
         use_sbf_geometry: bool = False,
+        config: CanvodConfig | None = None,
     ) -> None:
         t_init_start = time.perf_counter()
 
@@ -1017,8 +1019,16 @@ class RinexDataProcessor:
         )
 
         t_config_start = time.perf_counter()
-        config = load_config()
-        self._config = config  # cache to avoid re-reading YAML in methods
+        if config is None:
+            warnings.warn(
+                "Creating RinexDataProcessor without config= is left over from development "
+                "and will be removed with the next major version. Pass "
+                "config=canvod.config.load_config() instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            config = load_config()
+        self._config = config
         # Physical path -> canonical canVOD filename, filled by
         # _get_rinex_files and read when building log-book rows.
         self._canonical_names: dict[Path, str] = {}
@@ -1173,11 +1183,11 @@ class RinexDataProcessor:
         Parameters
         ----------
         group : str | None
-            Zarr group to write under (e.g. a §44 shared-cache fingerprint
+            Zarr group to write under (e.g. a shared-cache fingerprint
             path). ``None`` (default) writes to the store root, unchanged
             legacy behavior.
         grid_seconds : float | None
-            When set (§44 shared-cache mode), build the target epoch grid
+            When set (shared-cache mode), build the target epoch grid
             from this fixed interval instead of the detected
             ``sampling_interval`` -- a site-independent grid is required
             for the cache entry to be safely shared across sites with
@@ -1590,8 +1600,7 @@ class RinexDataProcessor:
     ) -> tuple[Path, str | None]:
         """Ensure auxiliary data is preprocessed and available.
 
-        When ``StorageConfig.shared_aux_cache_dir`` is set (dev/todo_later.md
-        §44), checks a network-wide, fingerprint-keyed cache before
+        When ``StorageConfig.shared_aux_cache_dir`` is set, checks a network-wide, fingerprint-keyed cache before
         rebuilding -- ephemeris products are satellite-based, not
         site-based, so multiple sites sharing the same agency/product/date
         can reuse one cache entry instead of each rebuilding it. Falls back
@@ -1693,7 +1702,7 @@ class RinexDataProcessor:
         shared_cache_dir: Path,
         reader_format: str | None = None,
     ) -> tuple[Path, str]:
-        """§44 shared-cache lookup/populate, called when the cache is enabled.
+        """Shared-cache lookup/populate, called when the cache is enabled.
 
         On a miss, writes to a per-attempt temp group and renames it into
         place only on success, rather than writing directly to the final
@@ -1825,8 +1834,8 @@ class RinexDataProcessor:
         pool_workers : int | None
             Override for worker count. When None, uses ``self.n_max_workers``.
         aux_group : str | None
-            Zarr group within ``aux_zarr_path`` to read aux data from (§44
-            shared-cache mode). None reads the store root.
+            Zarr group within ``aux_zarr_path`` to read aux data from
+            (shared-cache mode). None reads the store root.
 
         Returns
         -------
@@ -2271,7 +2280,7 @@ class RinexDataProcessor:
 
     # ── Cross-group fork/merge batch writes (skip/unsafe_append only) ──────
     #
-    # dev/cross_group_fork_merge_plan.md. Parallelizes PHASE 3's per-group
+    # Parallelizes PHASE 3's per-group
     # writes across receiver groups (e.g. reference + N canopies) using
     # Icechunk's fork/merge primitive instead of one sequential commit per
     # group. Scope: only the "skip" and "unsafe_append" gnss_store_strategy
@@ -2955,18 +2964,13 @@ class RinexDataProcessor:
         if results and self.site.gnss_store.source_format is None:
             first_result = next(iter(results.values()))
             reader_fmt = first_result.reader_format or self._reader_name
-            try:
-                self.site.gnss_store.set_root_attrs(
-                    {"source_format": reader_fmt}, branch="main"
-                )
-                log.info("Set store source_format='%s'", reader_fmt)
-            except Exception:
-                log.warning("Failed to set source_format root attr")
+            self.site.gnss_store.set_root_attrs(
+                {"source_format": reader_fmt}, branch="main"
+            )
+            log.info("Set store source_format='%s'", reader_fmt)
 
-        # STEP 8: rich store metadata, once per batch (real behavior change
-        # vs. today's once-per-group: see dev/cross_group_fork_merge_plan.md
-        # §7 -- was already non-idempotent per-group, this consolidates it
-        # to one history entry per ingest event instead of one per group).
+        # STEP 8: rich store metadata, once per batch (one history
+        # entry per ingest event, not one per group).
         try:
             from canvod.store_metadata import (
                 apply_updates,
@@ -3063,14 +3067,14 @@ class RinexDataProcessor:
                         "Updated store metadata%s",
                         " (config drift detected)" if drifted else "",
                     )
-        except Exception:
-            # The data is already committed; the run goes on, but the
-            # store metadata no longer describes it.
-            log.warning(
+        except Exception as exc:
+            # The data is already committed, but the store metadata no
+            # longer describes it: stop instead of going on with it stale.
+            msg = (
                 "Store metadata write failed; the data is committed, but its "
-                "metadata (coverage, summaries, history, config) is stale",
-                exc_info=True,
+                "metadata (coverage, summaries, history, config) is stale"
             )
+            raise RuntimeError(msg) from exc
 
         return results
 
@@ -3139,8 +3143,7 @@ class RinexDataProcessor:
             total=len(augmented_datasets),
             # Metadata-table row count at check time -- lets a future run
             # correlate batch_check duration against store growth directly
-            # instead of assuming O(rows) scaling (dev/todo_later.md
-            # perf-degradation investigation, 2026-07-14).
+            # instead of assuming O(rows) scaling.
             metadata_rows=self.site.gnss_store.metadata_row_count(receiver_name),
         )
         log.info(
@@ -3155,8 +3158,7 @@ class RinexDataProcessor:
         temp_branch = None
         current_snapshot = ""
 
-        # Timing for perf-degradation investigation (dev/perf_degradation_
-        # findings_2026_07_15.md follow-up, 2026-07-18): batch_write_complete's
+        # Timing for the write-performance investigation: batch_write_complete's
         # `timings` dict left several calls unaccounted for, so its residual
         # (duration_seconds - sum(timings)) grew 12x over a 63-min local-store
         # run and correlated r=0.95 with manifest/snapshot count without
@@ -3392,8 +3394,7 @@ class RinexDataProcessor:
                         if action in ("initial", "written", "appended", "overwritten"):
                             written_fnames.append(fname)
 
-                        # Per-file append timing (dev/todo_later.md perf-degradation
-                        # investigation, 2026-07-14): breaks open the "process_data"
+                        # Per-file append timing: breaks open the "process_data"
                         # aggregate below into per-file numbers so a future run can
                         # tell whether cost grows uniformly within a batch (session/
                         # manifest state) or is concentrated in specific files.
@@ -3442,14 +3443,13 @@ class RinexDataProcessor:
                     len(metadata_records),
                 )
                 t9 = time.time()
-                try:
-                    self.site.gnss_store.append_metadata_bulk(
-                        group_name=receiver_name,
-                        rows=metadata_records,
-                        session=session,
-                    )
-                except (OSError, RuntimeError, ValueError):  # fmt: skip
-                    log.warning("Metadata write failed, committing data only")
+                # No commit without the log-book rows: a file stored without
+                # its row is not recognized as stored by the next run.
+                self.site.gnss_store.append_metadata_bulk(
+                    group_name=receiver_name,
+                    rows=metadata_records,
+                    session=session,
+                )
                 t10 = time.time()
                 log.info("Metadata write complete in %.2fs", t10 - t9)
 
@@ -3485,8 +3485,7 @@ class RinexDataProcessor:
                     snapshot_id[:8],
                 )
 
-                # Retention keeper tag (dev/perf_degradation_findings_2026_
-                # 07_15.md, Problem B) -- additive, inert, off by default.
+                # Retention keeper tag -- additive, inert, off by default.
                 # Never fails the write: create_keeper_tag() swallows tag
                 # name collisions itself.
                 t_keeper_tag = 0.0
@@ -3503,8 +3502,7 @@ class RinexDataProcessor:
                 # transaction directory entry counts) sampled once per
                 # batch -- a directional proxy for Icechunk-internal growth,
                 # to test whether the write-side slowdown tracks manifest
-                # count (dev/todo_later.md perf-degradation investigation,
-                # 2026-07-14). Deliberately skips chunks/ (unbounded).
+                # count. Deliberately skips chunks/ (unbounded).
                 t_stats = time.perf_counter()
                 dir_counts = self.site.gnss_store.dir_entry_counts()
                 t_store_stats = time.perf_counter() - t_stats
@@ -3589,18 +3587,15 @@ class RinexDataProcessor:
         # STEP 5: Set source_format root attr (once, idempotent)
         if self.site.gnss_store.source_format is None:
             reader_fmt = reader_format or self._reader_name
-            try:
-                self.site.gnss_store.set_root_attrs(
-                    {"source_format": reader_fmt}, branch=branch
-                )
-                log.info("Set store source_format='%s'", reader_fmt)
-            except Exception:
-                log.warning("Failed to set source_format root attr")
+            self.site.gnss_store.set_root_attrs(
+                {"source_format": reader_fmt}, branch=branch
+            )
+            log.info("Set store source_format='%s'", reader_fmt)
 
         # STEP 5b: Write rich store metadata (once, on first ingest); on
         # subsequent ingests, re-snapshot the config and record any drift —
         # otherwise a store's config section silently freezes at whatever
-        # was true on the very first ingest, forever (dev/todo_later.md §4).
+        # was true on the very first ingest, forever.
         try:
             from canvod.store_metadata import (
                 apply_updates,
@@ -3709,14 +3704,14 @@ class RinexDataProcessor:
                         "Updated store metadata%s",
                         " (config drift detected)" if drifted else "",
                     )
-        except Exception:
-            # The data is already committed; the run goes on, but the
-            # store metadata no longer describes it.
-            log.warning(
+        except Exception as exc:
+            # The data is already committed, but the store metadata no
+            # longer describes it: stop instead of going on with it stale.
+            msg = (
                 "Store metadata write failed; the data is committed, but its "
-                "metadata (coverage, summaries, history, config) is stale",
-                exc_info=True,
+                "metadata (coverage, summaries, history, config) is stale"
             )
+            raise RuntimeError(msg) from exc
 
         # Promote temp branch to main after successful commit. Refused with
         # BranchMovedError if main moved since the temp branch was created
@@ -3805,7 +3800,7 @@ class RinexDataProcessor:
             receiver_types = ["canopy", "reference"]
 
         if keep_vars is None:
-            keep_vars = load_config().processing.params.keep_gnss_observables
+            keep_vars = self._config.processing.params.keep_gnss_observables
 
         self._logger.info(
             "Starting RINEX processing pipeline for: %s",
@@ -3821,8 +3816,7 @@ class RinexDataProcessor:
 
         # ====================================================================
         # STEP 1: Preprocess aux data ONCE per day with Hermite splines
-        # (routes through _ensure_aux_data_preprocessed, dev/todo_later.md
-        # §44 -- this call site used to duplicate the rmtree+rebuild logic
+        # (routes through _ensure_aux_data_preprocessed -- this call site used to duplicate the rmtree+rebuild logic
         # inline, bypassing the shared-cache lookup entirely)
         # ====================================================================
         self._logger.info("Preprocessing aux data with Hermite splines (once per day)")
@@ -3962,8 +3956,8 @@ class RinexDataProcessor:
             ``preprocess_reference_with_hermite_aux_fanout`` args -- one per
             physical reference file, bundling every paired canopy's position
             into a single ``canopy_positions`` dict so the file is only
-            parsed once regardless of how many canopies it's paired against
-            (dev/todo_later.md §47). Element 4 is always a lane key (either
+            parsed once regardless of how many canopies it's paired against.
+            Element 4 is always a lane key (either
             the receiver/pairing name or a per-reference-file lane key) for
             ``_interleave_by_receiver``.
         receiver_file_map : list[tuple[str, list[Path]]]
@@ -4045,7 +4039,7 @@ class RinexDataProcessor:
         # Reference receivers paired against multiple canopies share the same
         # physical file set (same data_dir/reader_format) -- group them so
         # each file gets one fan-out task instead of one task per (file,
-        # pairing) below (dev/todo_later.md §47). Only applies to the
+        # pairing) below. Only applies to the
         # Hermite-aux path: use_sbf_geometry pairs a reference with its own
         # SBF geometry per canopy via broadcast_canopy_file, a separate
         # mechanism left untouched.
@@ -4302,7 +4296,7 @@ class RinexDataProcessor:
                 normalized_configs.append(cfg)
 
         if keep_vars is None:
-            keep_vars = load_config().processing.params.keep_gnss_observables
+            keep_vars = self._config.processing.params.keep_gnss_observables
 
         pipeline_start = time.perf_counter()
         self._logger.info(
@@ -4544,8 +4538,8 @@ class RinexDataProcessor:
         # ====================================================================
         # "overwrite" keeps the sequential per-group loop: each receiver is
         # staged on a temp branch and promoted with
-        # `MyIcechunkStore.promote_branch` (refused if main moved meanwhile;
-        # see dev/cross_group_fork_merge_plan.md). "skip"/"unsafe_append" go
+        # `MyIcechunkStore.promote_branch` (refused if main moved meanwhile).
+        # "skip"/"unsafe_append" go
         # through the cross-group fork/merge batch write instead: one
         # ThreadPoolExecutor dispatch + one shared commit for the whole
         # batch, rather than one sequential commit per group.
@@ -5053,7 +5047,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             receiver_types = ["canopy", "reference"]
 
         if keep_vars is None:
-            keep_vars = load_config().processing.params.keep_gnss_observables
+            keep_vars = self._config.processing.params.keep_gnss_observables
 
         self._logger.info(
             "Starting RINEX processing pipeline for: %s",
@@ -5072,7 +5066,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
         # ====================================================================
         import shutil as _shutil
 
-        _aux_base_dir = load_config().processing.storage.get_aux_data_dir()
+        _aux_base_dir = self._config.processing.storage.get_aux_data_dir()
         aux_zarr_path = _aux_base_dir / (
             f"aux_{self.matched_data_dirs.yyyydoy.to_str()}.zarr"
         )
@@ -5184,6 +5178,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
 
 if __name__ == "__main__":
     print(f"stared main block at {datetime.now(UTC)}")
+    cfg = load_config()
 
     matcher = DataDirMatcher(
         root=Path("."),
@@ -5205,7 +5200,7 @@ if __name__ == "__main__":
             print(f"instantiating processor for {yyyydoy_str}: {datetime.now(UTC)}")
             # Create processor first to check completeness
             processor = RinexDataProcessor(
-                matched_data_dirs=md, site=site, n_max_workers=12
+                matched_data_dirs=md, site=site, n_max_workers=12, config=cfg
             )
 
             # Check if should skip

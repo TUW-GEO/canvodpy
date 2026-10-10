@@ -330,6 +330,7 @@ class Pipeline:
             days_per_batch=days_per_batch,
             threads_per_worker=threads_per_worker,
             on_group_written=on_group_written,
+            config=config,
         )
 
         self.log.info(

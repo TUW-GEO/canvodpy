@@ -232,14 +232,11 @@ def _register_builtin_components() -> None:
     """
     Register built-in component implementations.
 
-    Called automatically on package import. Registers:
-    - Rnxv3Obs reader (rinex3)
-    - EqualAreaGridBuilder (equal_area)
-    - TauOmegaZerothOrder calculator (tau_omega)
-
-    Notes
-    -----
-    Uses lazy imports to avoid loading heavy dependencies unless needed.
+    Called automatically on package import. Registers the readers
+    ``rinex3``, ``rinex3_stripped``, ``rinex2``, ``sbf`` and ``nmea``, the
+    grid builder ``equal_area`` and the VOD calculator ``tau_omega``. All
+    of them come from declared dependencies of canvodpy, so a failed
+    import raises instead of leaving a component unregistered.
     """
     log = structlog.get_logger(__name__)
 
@@ -249,55 +246,20 @@ def _register_builtin_components() -> None:
     VODFactory._set_abc_class()
     AugmentationFactory._set_abc_class()
 
-    try:
-        from canvod.readers import Rnxv3Obs
+    from canvod.grids import EqualAreaBuilder
+    from canvod.readers import Rnxv3Obs
+    from canvod.readers.nmea import NmeaObs
+    from canvod.readers.rinex import Rnxv2Obs, Rnxv3StrippedObs
+    from canvod.readers.sbf import SbfReader
+    from canvod.vod.calculator import TauOmegaZerothOrder
 
-        ReaderFactory.register("rinex3", Rnxv3Obs)
-    except ImportError:
-        log.debug("canvod-readers not available, skipping reader registration")
-
-    try:
-        from canvod.readers.rinex import Rnxv3StrippedObs
-
-        ReaderFactory.register("rinex3_stripped", Rnxv3StrippedObs)
-    except ImportError:
-        log.debug("Rnxv3StrippedObs not available, skipping registration")
-
-    try:
-        from canvod.readers.sbf import SbfReader
-
-        ReaderFactory.register("sbf", SbfReader)
-    except ImportError:
-        log.debug("SbfReader not available, skipping sbf reader registration")
-
-    try:
-        # register rinex2
-        from canvod.readers.rinex import Rnxv2Obs
-
-        ReaderFactory.register("rinex2", Rnxv2Obs)
-    except ImportError:
-        log.debug("Rnxv2Obs reader not available, skipping rinex2 reader registration")
-
-    try:
-        from canvod.readers.nmea import NmeaObs
-
-        ReaderFactory.register("nmea", NmeaObs)
-    except ImportError:
-        log.debug("NmeaObs reader not available, skipping nmea reader registration")
-
-    try:
-        from canvod.grids import EqualAreaBuilder
-
-        GridFactory.register("equal_area", EqualAreaBuilder)
-    except ImportError:
-        log.debug("canvod-grids not available, skipping grid registration")
-
-    try:
-        from canvod.vod.calculator import TauOmegaZerothOrder
-
-        VODFactory.register("tau_omega", TauOmegaZerothOrder)
-    except ImportError:
-        log.debug("canvod-vod not available, skipping VOD registration")
+    ReaderFactory.register("rinex3", Rnxv3Obs)
+    ReaderFactory.register("rinex3_stripped", Rnxv3StrippedObs)
+    ReaderFactory.register("sbf", SbfReader)
+    ReaderFactory.register("rinex2", Rnxv2Obs)
+    ReaderFactory.register("nmea", NmeaObs)
+    GridFactory.register("equal_area", EqualAreaBuilder)
+    VODFactory.register("tau_omega", TauOmegaZerothOrder)
 
     log.info("builtin_components_registered")
 
