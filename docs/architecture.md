@@ -23,60 +23,54 @@ depends only on packages in its own layer or in the layers below it.
 |---|---|---|
 | Orchestration | `canvodpy` | The `canvodpy` command, `Site` and `Site.pipeline()`, the processing run, VOD computation for a site (`VodComputer`), and the tasks for Airflow |
 | Presentation | `canvod-viz` | Hemisphere plots in 2D and 3D |
-| Persistence | `canvod-store`, `canvod-store-metadata` | The Icechunk stores and their log books; the description of a store, with the metadata of the DataCite, ACDD, and STAC conventions |
+| Persistence | `canvod-store`, `canvod-store-metadata` | The Icechunk stores and their log books; the description of a store, with field names that follow DataCite, ACDD, and STAC |
 | Computation | `canvod-vod`, `canvod-grids`, `canvod-ops` | VOD retrieval, hemisphere grids and the assignment of observations to their cells, and the optional preprocessing |
 | Data input | `canvod-readers`, `canvod-auxiliary`, `canvod-preflight` | Readers for RINEX 2 and 3, SBF, and NMEA; orbits and clocks, and the angles of each satellite seen from the receiver; the canonical filename convention |
 | Foundation | `canvod-config`, `canvod-utils` | The settings and how they're loaded; dates, file hashes, the deprecation decorators, the plugin loader, and the run identifier |
 
 The arrows point from a package to the packages it declares as
-dependencies. `canvodpy` depends on all eleven.
+dependencies. `canvodpy` depends on all eleven and isn't drawn, nor is a
+dependency that another path already implies.
 
 ```mermaid
 graph TD
-    CANVODPY["canvodpy"]
-
-    subgraph PRESENT["Presentation"]
+    subgraph PRESENTATION["Presentation"]
         VIZ["canvod-viz"]
     end
-
-    subgraph PERSIST["Persistence"]
+    subgraph PERSISTENCE["Persistence"]
+        STORE_METADATA["canvod-store-metadata"]
         STORE["canvod-store"]
-        STOREMETA["canvod-store-metadata"]
     end
-
-    subgraph COMPUTE["Computation"]
+    subgraph COMPUTATION["Computation"]
         VOD["canvod-vod"]
         GRIDS["canvod-grids"]
         OPS["canvod-ops"]
     end
-
-    subgraph INPUT["Data input"]
+    subgraph DATA_INPUT["Data input"]
         READERS["canvod-readers"]
-        AUX["canvod-auxiliary"]
+        AUXILIARY["canvod-auxiliary"]
         PREFLIGHT["canvod-preflight"]
     end
-
     subgraph FOUNDATION["Foundation"]
-        CONFIG["canvod-config"]
         UTILS["canvod-utils"]
+        CONFIG["canvod-config"]
     end
 
-    CANVODPY --> PRESENT & PERSIST & COMPUTE & INPUT & FOUNDATION
-
     VIZ --> GRIDS
-    STORE --> STOREMETA & VOD & GRIDS & READERS & AUX & CONFIG & UTILS
-    STOREMETA --> CONFIG
-    OPS --> GRIDS & CONFIG
-    GRIDS --> UTILS
+    STORE_METADATA --> CONFIG
+    STORE --> AUXILIARY & GRIDS & STORE_METADATA & VOD
     VOD --> UTILS
-    AUX --> READERS & CONFIG & UTILS
-    READERS --> CONFIG & UTILS
+    GRIDS --> UTILS
+    OPS --> CONFIG & GRIDS
+    READERS --> CONFIG
+    AUXILIARY --> READERS
     PREFLIGHT --> UTILS
     CONFIG --> UTILS
 ```
 
-[Package dependencies](dependencies.md) lists the same dependencies with
-a few numbers on how independent each package is. Optional packages, for
+[Package dependencies](dependencies.md) lists the same dependencies, how
+many packages each one depends on and is depended on by, and what each
+package needs when you install it on its own. Optional packages, for
 example the Airflow integration, live in a separate repository; see
 [Optional extensions](guides/extensions.md).
 

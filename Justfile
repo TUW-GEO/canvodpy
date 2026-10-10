@@ -583,34 +583,13 @@ docs-deploy:
 # Dependency Analysis
 # ============================================================================
 
-# generate ALL dependency graphs (per-package + cross-package + API) using pydeps
-deps-all:
-    @echo "{{ GREEN }}{{ BOLD }}Generating comprehensive dependency graphs...{{ NORMAL }}"
-    @python3 scripts/generate_all_graphs.py --type all --open
-    @echo "{{ GREEN }}{{ BOLD }}✨ Open dependency-graphs/index.html to view all graphs{{ NORMAL }}"
-
-# generate internal dependency graph for specific package
-deps-package PACKAGE:
-    @python3 scripts/generate_all_graphs.py --type internal --package {{PACKAGE}}
-    @echo "{{ GREEN }}{{ BOLD }}✅ Created dependency-graphs/{{PACKAGE}}-internal.svg{{ NORMAL }}"
-
-# generate cross-package dependency graph
-deps-cross:
-    @python3 scripts/generate_all_graphs.py --type cross-package
-    @echo "{{ GREEN }}{{ BOLD }}✅ Created dependency-graphs/cross-package-dependencies.svg{{ NORMAL }}"
-
-# generate API orchestration graph (how umbrella uses everything)
-deps-api:
-    @python3 scripts/generate_all_graphs.py --type api
-    @echo "{{ GREEN }}{{ BOLD }}✅ Created dependency-graphs/api-orchestration.svg{{ NORMAL }}"
-
-# quick dependency overview (package-level metrics)
+# dependencies between the packages, coupling per package (Markdown; fails on a dependency on a higher layer)
 deps-report:
-    @python3 scripts/analyze_dependencies.py --format report
+    @uv run --no-sync python scripts/analyze_dependencies.py --format report
 
-# generate dependency graph (Mermaid format)
+# dependency graph of the packages, grouped by layer (Mermaid)
 deps-mermaid:
-    python3 scripts/analyze_dependencies.py --format mermaid
+    @uv run --no-sync python scripts/analyze_dependencies.py --format mermaid
 
 # ============================================================================
 # Initialization

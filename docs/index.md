@@ -103,12 +103,18 @@ with an unobstructed view of the sky.
 ```mermaid
 flowchart LR
     FILES["RINEX, SBF or NMEA files"] --> READ["Read"]
-    ORBITS["SP3 orbits, CLK clocks"] --> READ
-    READ --> STORE["Icechunk store"]
-    STORE --> VOD["VOD retrieval"]
-    VOD --> GRID["Hemispheric grid"]
-    GRID --> PLOT["Plots"]
+    READ --> ANGLES["Satellite angles"]
+    ORBITS["SP3 orbits"] --> ANGLES
+    ANGLES --> GSTORE["GNSS store"]
+    GSTORE --> VOD["VOD retrieval"]
+    VOD --> VSTORE["VOD store"]
+    VSTORE --> PLOT["Hemispheric grids and plots"]
 ```
+
+For SBF files, the satellite angles can also come from the files
+themselves (`processing.params.ephemeris_source: broadcast`). For every
+step of a run, see
+[What a run does](architecture.md#what-a-run-does).
 
 ---
 
