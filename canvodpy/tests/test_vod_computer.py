@@ -417,3 +417,19 @@ class TestAirflowVodTask:
             "std_vod": pytest.approx(np.std([1.0, 3.0, 2.0])),
             "n_epochs": 2,
         }
+
+
+class TestVodStoreMetadata:
+    def test_failed_metadata_write_raises(self, monkeypatch):
+        """The VOD data is committed by then; a stale description must not pass."""
+        from canvodpy.vod_computer import ensure_vod_store_metadata
+
+        import canvod.config
+
+        def _fail():
+            raise OSError("disk full")
+
+        monkeypatch.setattr(canvod.config, "load_config", _fail)
+        with pytest.raises(RuntimeError, match="metadata write failed") as info:
+            ensure_vod_store_metadata(_make_site(), "tau_omega", {})
+        assert isinstance(info.value.__cause__, OSError)

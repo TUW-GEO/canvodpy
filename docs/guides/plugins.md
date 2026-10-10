@@ -25,7 +25,9 @@ imported, and the plugins after them.
 All three are importable from `canvodpy` and share these methods:
 
 - `register(name, cls)` adds a class. It raises a `TypeError` if the class
-  doesn't inherit the factory's base class.
+  doesn't inherit the factory's base class, and a `ValueError` if the name
+  is already registered. To replace a registered class, pass
+  `replace=True`.
 - `create(name, **kwargs)` creates an instance. It raises a `ValueError`
   that lists the registered names if `name` isn't one of them.
 - `list_available()` returns the registered names.

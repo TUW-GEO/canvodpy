@@ -97,6 +97,31 @@ class TestFactoryABCValidation:
         if "test_builder" in GridFactory._registry:
             del GridFactory._registry["test_builder"]
 
+    def test_register_taken_name_fails(self):
+        """A name that is taken is not replaced silently."""
+        from canvod.vod.calculator import TauOmegaZerothOrder
+
+        class OtherCalculator(TauOmegaZerothOrder):
+            """Another calculator."""
+
+        with pytest.raises(ValueError, match="already registered"):
+            VODFactory.register("tau_omega", OtherCalculator)
+        assert VODFactory.component_class("tau_omega") is TauOmegaZerothOrder
+
+    def test_register_replace(self):
+        """replace=True replaces the registered class."""
+        from canvod.vod.calculator import TauOmegaZerothOrder
+
+        class OtherCalculator(TauOmegaZerothOrder):
+            """Another calculator."""
+
+        VODFactory.register("test_replace", TauOmegaZerothOrder)
+        try:
+            VODFactory.register("test_replace", OtherCalculator, replace=True)
+            assert VODFactory.component_class("test_replace") is OtherCalculator
+        finally:
+            del VODFactory._registry["test_replace"]
+
 
 class TestFactoryPydanticValidation:
     """Test Pydantic validation in component creation."""

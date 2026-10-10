@@ -690,43 +690,32 @@ class MyIcechunkStore:
                 numpy_coords[name] = da
 
         # Batch-compute all dask-backed string coords in ONE scheduler pass
+        # (a coord that cannot be computed raises: dropping it would write
+        # the dataset without it)
         if dask_coords:
-            try:
-                import dask
+            import dask
 
-                computed = dask.compute(*dask_coords.values())
-                for name, computed_da in zip(dask_coords.keys(), computed):
-                    raw = (
-                        computed_da.values
-                        if hasattr(computed_da, "values")
-                        else np.asarray(computed_da)
-                    )
-                    if raw.dtype != object:
-                        raw = np.array(raw, dtype=object)
-                    str_coords[name] = (
-                        dask_coords[name].dims,
-                        raw,
-                        dask_coords[name].attrs,
-                    )
-            except Exception:
-                for name, da in dask_coords.items():
-                    try:
-                        raw = da.compute().values
-                        if raw.dtype != object:
-                            raw = np.array(raw, dtype=object)
-                        str_coords[name] = (da.dims, raw, da.attrs)
-                    except Exception:
-                        continue
+            computed = dask.compute(*dask_coords.values())
+            for name, computed_da in zip(dask_coords.keys(), computed):
+                raw = (
+                    computed_da.values
+                    if hasattr(computed_da, "values")
+                    else np.asarray(computed_da)
+                )
+                if raw.dtype != object:
+                    raw = np.array(raw, dtype=object)
+                str_coords[name] = (
+                    dask_coords[name].dims,
+                    raw,
+                    dask_coords[name].attrs,
+                )
 
         # Numpy-backed non-object coords (StringDType, unicode kind 'U')
         for name, da in numpy_coords.items():
-            try:
-                raw = da.values
-                if raw.dtype != object:
-                    raw = np.array(raw, dtype=object)
-                str_coords[name] = (da.dims, raw, da.attrs)
-            except Exception:
-                continue
+            raw = da.values
+            if raw.dtype != object:
+                raw = np.array(raw, dtype=object)
+            str_coords[name] = (da.dims, raw, da.attrs)
 
         if str_coords:
             ds = ds.assign_coords(str_coords)

@@ -67,7 +67,9 @@ class ComponentFactory[T: ABC]:
     _abc_class: ClassVar[type[ABC] | None] = None
 
     @classmethod
-    def register(cls, name: str, component_class: type[T]) -> None:
+    def register(
+        cls, name: str, component_class: type[T], *, replace: bool = False
+    ) -> None:
         """
         Register a component implementation.
 
@@ -77,11 +79,16 @@ class ComponentFactory[T: ABC]:
             Unique identifier for this component (e.g., "rinex3").
         component_class : type[T]
             Component class that inherits from the required ABC.
+        replace : bool, default False
+            Replace the class already registered under ``name``. Without
+            it, a name that is taken is an error.
 
         Raises
         ------
         TypeError
             If component_class doesn't inherit from the required ABC.
+        ValueError
+            If ``name`` is already registered and ``replace`` is False.
 
         Examples
         --------
@@ -93,6 +100,13 @@ class ComponentFactory[T: ABC]:
                 f"{cls._abc_class.__name__}"
             )
             raise TypeError(msg)
+        if name in cls._registry and not replace:
+            msg = (
+                f"'{name}' is already registered in {cls.__name__} as "
+                f"{cls._registry[name].__name__}. Choose another name, or "
+                "pass replace=True to replace it."
+            )
+            raise ValueError(msg)
 
         cls._registry[name] = component_class
         log.info(

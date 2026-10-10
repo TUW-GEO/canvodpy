@@ -73,10 +73,15 @@ def ensure_vod_store_metadata(
     ``canvod.store_metadata``). Wired the same way ``processor.py`` does
     for GNSS stores (write once on first use; on later calls, re-snapshot
     the config and record drift rather than silently freezing the config
-    section at whatever was true on the very first write). Best-effort:
-    swallows failures so a metadata problem never blocks the actual VOD
-    write, but logs them as warnings. Call it after the data write, so the
-    coverage and summaries describe the data just written.
+    section at whatever was true on the very first write). Call it after
+    the data write, so the coverage and summaries describe the data just
+    written.
+
+    Raises
+    ------
+    RuntimeError
+        If the metadata cannot be written. The VOD data is committed by
+        then; the error says that its metadata is stale.
     """
     log = structlog.get_logger(__name__).bind(
         site=site.name, calculator=calculator_name
@@ -150,8 +155,14 @@ def ensure_vod_store_metadata(
             updates.update(summarize_store(store_path))
             update_metadata(store_path, updates)
             log.info("vod_store_metadata_updated", config_drift_detected=drifted)
-    except Exception:
-        log.warning("vod_store_metadata_write_failed", exc_info=True)
+    except Exception as exc:
+        # The VOD data is already committed, but the store metadata no
+        # longer describes it: stop instead of going on with it stale.
+        msg = (
+            "VOD store metadata write failed; the VOD data is committed, but "
+            "its metadata (coverage, summaries, history, config) is stale"
+        )
+        raise RuntimeError(msg) from exc
 
 
 class VodComputer:

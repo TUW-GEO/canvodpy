@@ -219,10 +219,11 @@ The full record of each file is in the group's log book (see
 [the preprocessing record](../ops/overview.md#the-preprocessing-record)).
 
 No user action is required: every run (`canvodpy run`, `Site.pipeline()`,
-Airflow) goes through this code. A failed metadata write does not stop the
-run and is logged as a warning. The data of that write is committed
-anyway (the metadata goes in a separate commit), so after such a warning
-the metadata no longer describes all of the stored data.
+Airflow) goes through this code. A failed metadata write stops the run with
+an error. The data of that write is committed by then (the metadata goes in
+a separate commit), so the error says that the metadata no longer describes
+all of the stored data. The next successful write recomputes coverage and
+summaries from the stored data.
 
 ---
 
