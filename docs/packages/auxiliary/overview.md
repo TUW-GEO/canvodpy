@@ -31,7 +31,7 @@ Combining these requires:
 
 1. **Dimension conversion** from `sv` (32 satellites) to `sid` (384 signal IDs)
 2. **Temporal interpolation** from 15 min to the observations' sampling interval, on a grid from 00:00
-3. **Coordinate transform** from ECEF to geodetic to spherical (r, θ, φ)
+3. **Coordinate transform** from ECEF to geodetic to spherical $(r, \theta, \varphi)$
 4. **Physically correct interpolation** per data type
 
 ```mermaid
@@ -120,7 +120,7 @@ Different data types require different methods based on the underlying physics:
 
     `GeodeticPosition` holds [WGS84](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"} latitude, longitude, and altitude
 
-    [Spherical coordinates](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates){:target="_blank"} (r, θ, φ) relative to receiver position
+    [Spherical coordinates](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates){:target="_blank"} $(r, \theta, \varphi)$ relative to receiver position
 
 -   :fontawesome-solid-cloud-arrow-down: &nbsp; **FTP Download**
 
@@ -161,7 +161,7 @@ Different data types require different methods based on the underlying physics:
     `augment_dataset` interpolates the day once onto the epoch grid (00:00 plus
     multiples of the dataset's sampling interval,
     `canvod.auxiliary.interpolation.day_grid`), caches it, gives each observation
-    the nearest grid epoch and converts ECEF positions to θ, φ relative to the
+    the nearest grid epoch and converts ECEF positions to $\theta$, $\varphi$ relative to the
     receiver position from the data.
 
 === "Data flow"

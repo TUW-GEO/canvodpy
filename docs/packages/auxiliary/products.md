@@ -1,6 +1,6 @@
 # Product Registry
 
-The product registry provides declarative configuration for 23 final and rapid SP3/CLK products from 14 analysis centres (agency codes). Products are defined in TOML — no hardcoded URLs in the processing code. Every product was checked against the file listings of ESA GSSC and NASA CDDIS (2025-001 and 2026-244, checked 2026-10-05); `just check-products` repeats the check (see [Checking the registry](#checking-the-registry)).
+The product registry provides declarative configuration for 23 final and rapid SP3/CLK products from 14 analysis centers (agency codes). Products are defined in TOML; no hardcoded URLs in the processing code. Every product was checked against the file listings of ESA GSSC and NASA CDDIS (2025-001 and 2026-244, checked 2026-10-05); `just check-products` repeats the check (see [Checking the registry](#checking-the-registry)).
 
 ---
 

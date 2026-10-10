@@ -276,7 +276,7 @@ Every push and PR triggers GitHub Actions workflows:
 | Workflow | Checks |
 |----------|--------|
 | **Code Quality** | ruff lint, ruff format, ty type-check, lockfile consistency |
-| **Test with Coverage** | pytest → coverage.lcov → [Coveralls](https://coveralls.io/github/nfb2021/canvodpy) |
+| **Test with Coverage** | pytest $\rightarrow$ coverage.lcov $\rightarrow$ [Coveralls](https://coveralls.io/github/nfb2021/canvodpy) |
 | **Platform Tests** | Multi-OS, multi-Python-version test matrix |
 
 Coverage reports are posted as PR comments and tracked on Coveralls over time. To run coverage locally:

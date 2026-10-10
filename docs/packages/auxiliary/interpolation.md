@@ -89,12 +89,12 @@ rest; the angle is the largest direction error seen from the ground:
 
 | Orbit sampling | Largest position error | Largest angle error |
 |---|---|---|
-| 10 min (positions at the 5-min epochs in between) | 81 m | 0.0002° |
-| 15 min | 1.1 km | 0.004° |
+| 10 min (positions at the 5-min epochs in between) | 81 m | $0.0002^\circ$ |
+| 15 min | 1.1 km | $0.004^\circ$ |
 
 With the day's file alone (before the neighbors were loaded), the first
-and last interval of the day were off by up to 37 km (0.11°), and a
-15-minute file ending at 23:45 was extrapolated by up to 990 km (2.9°).
+and last interval of the day were off by up to 37 km ($0.11^\circ$), and a
+15-minute file ending at 23:45 was extrapolated by up to 990 km ($2.9^\circ$).
 
 ---
 

@@ -1,4 +1,4 @@
-# SBF Reader — Septentrio Binary Format
+# SBF Reader (Septentrio Binary Format)
 
 ## Overview
 
@@ -17,7 +17,7 @@ the observations of that same epoch. One decoder serves `iter_epochs()`,
 
     The SBF reader differs from `Rnxv3Obs` (RINEX) in one fundamental respect:
     **satellite geometry is embedded in the binary stream**.
-    No SP3 ephemeris download is required for quick-look analysis —
+    No SP3 ephemeris download is required for quick-look analysis:
     the receiver firmware reports azimuth and elevation for every satellite
     it has an almanac or broadcast ephemeris for.
 
@@ -52,7 +52,7 @@ the observations of that same epoch. One decoder serves `iter_epochs()`,
 
     ---
 
-    Per-epoch GNSS observations: C/N₀ (SNR), pseudorange, carrier phase, Doppler.
+    Per-epoch GNSS observations: $C/N_0$ (SNR), pseudorange, carrier phase, Doppler.
     Primary source for the observations dataset.
 
 -   :fontawesome-solid-map-pin: &nbsp; **PVTGeodetic**
@@ -66,7 +66,7 @@ the observations of that same epoch. One decoder serves `iter_epochs()`,
 
     ---
 
-    Dilution of Precision — PDOP, HDOP, VDOP per epoch.
+    Dilution of Precision (PDOP, HDOP, VDOP) per epoch.
 
 -   :fontawesome-solid-microchip: &nbsp; **ReceiverStatus**
 
@@ -80,7 +80,7 @@ the observations of that same epoch. One decoder serves `iter_epochs()`,
 
     Per-satellite azimuth and elevation for each satellite above the
     horizon with an almanac or broadcast ephemeris, and which of the two
-    the receiver used. Converted to geographic azimuth φ and polar angle θ.
+    the receiver used. Converted to geographic azimuth $\varphi$ and polar angle $\theta$.
 
 -   :fontawesome-solid-wave-square: &nbsp; **MeasExtra**
 
@@ -94,7 +94,7 @@ the observations of that same epoch. One decoder serves `iter_epochs()`,
     ---
 
     Receiver quality scores (0-10): overall, GNSS signals, RF power,
-    CPU headroom, scintillation (firmware ≥ 4.15.1).
+    CPU headroom, scintillation (firmware $\geq$ 4.15.1).
 
 -   :fontawesome-solid-shield-halved: &nbsp; **RFStatus**
 
@@ -108,9 +108,9 @@ the observations of that same epoch. One decoder serves `iter_epochs()`,
 
 ## Output Datasets
 
-### Observations dataset — `to_ds()`
+### Observations dataset: `to_ds()`
 
-Identical structure to `Rnxv3Obs.to_ds()` — a drop-in replacement:
+Identical structure to `Rnxv3Obs.to_ds()`, a drop-in replacement:
 
 | Property | Value |
 | -------- | ----- |
@@ -137,7 +137,7 @@ leaves them out, and `to_ds()` never includes them. A run passes
     several such satellites would share one identifier, so its observations
     are not stored.
 
-### Metadata dataset — `sbf_obs`
+### Metadata dataset: `sbf_obs`
 
 The second dataset returned by `to_ds_and_auxiliary()`, under the key
 `"sbf_obs"`. It has the same `epoch` and `sid` coordinates as the
@@ -159,7 +159,7 @@ geometry still works, since it uses `sbf_obs` in memory.
 | `vdop` | DOP block | `1` | Vertical DOP |
 | `n_sv` | PVTGeodetic | `1` | Number of SVs used in fix |
 | `h_accuracy_m` | PVTGeodetic | `m` | 2DRMS horizontal accuracy (~95 %) |
-| `v_accuracy_m` | PVTGeodetic | `m` | 2σ vertical accuracy (~95 %) |
+| `v_accuracy_m` | PVTGeodetic | `m` | $2\sigma$ vertical accuracy (~95 %) |
 | `pvt_mode` | PVTGeodetic | `1` | Fix type (see flag table) |
 | `mean_corr_age_s` | PVTGeodetic | `s` | Age of differential corrections |
 | `cpu_load` | ReceiverStatus | `percent` | Receiver CPU utilisation |
@@ -169,7 +169,7 @@ geometry still works, since it uses `sbf_obs` in memory.
 | `qual_gnss_main` | QualityInd | `1` | GNSS signals, main antenna |
 | `qual_rf_main` | QualityInd | `1` | RF power level, main antenna |
 | `qual_cpu` | QualityInd | `1` | CPU headroom |
-| `qual_scintillation` | QualityInd | `1` | Scintillation score (firmware ≥ 4.15.1) |
+| `qual_scintillation` | QualityInd | `1` | Scintillation score (firmware $\geq$ 4.15.1) |
 | `spoofing_flag` | RFStatus | `1` | 1 = signals may not be authentic |
 | `nma_fail_flag` | RFStatus | `1` | 1 = non-authentic navigation message detected (NMA) |
 
@@ -177,16 +177,16 @@ geometry still works, since it uses `sbf_obs` in memory.
 
 | Variable | SBF Source | CF `units` | Description |
 | -------- | ---------- | ---------- | ----------- |
-| `broadcast_theta` | SatVisibility | `rad` | Polar angle θ (0 = overhead, π/2 = horizon) |
-| `broadcast_phi` | SatVisibility | `rad` | Geographic azimuth φ (0 = North, clockwise) |
-| `broadcast_angle_source` | SatVisibility | `1` | Orbit data behind θ/φ: 1 = almanac, 2 = ephemeris, -1 unknown |
+| `broadcast_theta` | SatVisibility | `rad` | Polar angle $\theta$ (0 = overhead, $\pi/2$ = horizon) |
+| `broadcast_phi` | SatVisibility | `rad` | Geographic azimuth $\varphi$ (0 = North, clockwise) |
+| `broadcast_angle_source` | SatVisibility | `1` | Orbit data behind $\theta$ and $\varphi$: 1 = almanac, 2 = ephemeris, -1 unknown |
 | `rise_set` | SatVisibility | `1` | 1 = rising, 0 = setting |
 | `mp_correction_m` | MeasExtra | `m` | Pseudorange multipath correction |
 | `smoothing_corr_m` | MeasExtra | `m` | Hatch-filter smoothing correction on pseudorange |
 | `code_var` | MeasExtra | `m^2` | Code-phase noise variance |
 | `carrier_var` | MeasExtra | `mcycles^2` | Carrier-phase noise variance |
 | `lock_time_s` | MeasExtra | `s` | Continuous carrier tracking duration (reset at slip) |
-| `cum_loss_cont` | MeasExtra | `1` | Cycle-slip counter (modulo 256; Δ ≠ 0 → slip) |
+| `cum_loss_cont` | MeasExtra | `1` | Cycle-slip counter (modulo 256; $\Delta \neq 0 \rightarrow$ slip) |
 | `car_mp_corr_cycles` | MeasExtra | `cycles` | Carrier-phase multipath correction |
 | `cn0_highres_correction` | MeasExtra | `dB-Hz` | CN0HighRes sub-quantisation correction (applied to SNR automatically) |
 | `tracking_status_raw` | ChannelStatus | `1` | Tracking status bit field, 2 bits per signal (main antenna) |
@@ -195,7 +195,7 @@ geometry still works, since it uses `sbf_obs` in memory.
 !!! tip "Field decoding formulas"
 
     All transformations from raw SBF integers to physical units are documented
-    in detail — including the signal-dependent C/N₀ formula, the 40-bit
+    in detail, including the signal-dependent $C/N_0$ formula, the 40-bit
     pseudorange reconstruction, and the carrier-phase wavelength conversion:
 
     [:octicons-arrow-right-24: SBF Field Decoding Reference](sbf-decoding.md)
@@ -204,14 +204,14 @@ geometry still works, since it uses `sbf_obs` in memory.
 
 ## PVT mode flags
 
-`pvt_mode` uses CF `flag_values` / `flag_meanings` attributes — a fixed set of mutually exclusive values:
+`pvt_mode` uses CF `flag_values` / `flag_meanings` attributes, a fixed set of mutually exclusive values:
 
 <div class="grid" markdown>
 
 | Value | Fix type |
 | ----- | -------- |
 | `0` | No solution |
-| `1` | StandAlone — autonomous from broadcast ephemeris |
+| `1` | StandAlone: autonomous from broadcast ephemeris |
 | `2` | Differential GNSS (DGNSS) |
 | `3` | Fixed location |
 | `4` | RTK with fixed ambiguities |
@@ -244,7 +244,7 @@ geometry still works, since it uses `sbf_obs` in memory.
 
 ## `rx_error` bitmask
 
-`rx_error` is a **bit field** — multiple flags may be set simultaneously.
+`rx_error` is a **bit field**: multiple flags may be set simultaneously.
 Test a specific flag with `(rx_error & flag_mask) != 0`.
 
 | Bit mask | Flag meaning |
@@ -283,22 +283,22 @@ Source: RefGuide-4.14.0, ReceiverStatus, field RxError, p.398.
 
 ### Polar angle θ (theta)
 
-$$\theta = 90° - \text{elevation}$$
+$$\theta = 90^\circ - \text{elevation}$$
 
 `broadcast_theta` and `broadcast_phi` are stored in radians; the tables
 below give degrees for readability.
 
 <div class="grid" markdown>
 
-| θ | Meaning |
+| $\theta$ | Meaning |
 | - | ------- |
-| `0°` | Satellite directly overhead (zenith) |
-| `90°` | Satellite at the horizon |
+| $0^\circ$ | Satellite directly overhead (zenith) |
+| $90^\circ$ | Satellite at the horizon |
 
 !!! warning "Elevation mask"
 
-    A typical 5–10° elevation mask corresponds to `θ < 80–85°`.
-    VOD analyses commonly restrict to `θ ≤ 70°` (elevation ≥ 20°) to limit multipath.
+    A typical elevation mask of $5^\circ$ to $10^\circ$ corresponds to $\theta < 80^\circ$ to $85^\circ$.
+    VOD analyses commonly restrict to $\theta \leq 70^\circ$ (elevation $\geq 20^\circ$) to limit multipath.
 
 </div>
 
@@ -306,15 +306,15 @@ below give degrees for readability.
 
 The stored value is the **geographic (compass) azimuth**:
 
-- 0° = North · 90° = East · 180° = South · 270° = West *(clockwise)*
-- The SBF `Azimuth` field (steps of 0.01°), converted to radians
+- $0^\circ$ = North · $90^\circ$ = East · $180^\circ$ = South · $270^\circ$ = West *(clockwise)*
+- The SBF `Azimuth` field (steps of $0.01^\circ$), converted to radians
 
 !!! note "Mathematical convention"
 
     This is **NOT** the spherical-coordinate azimuthal angle, which is measured
     counterclockwise from East. To convert:
 
-    $$\phi_\text{spherical} = (90° - \phi_\text{stored}) \bmod 360°$$
+    $$\varphi_\text{spherical} = (90^\circ - \varphi_\text{stored}) \bmod 360^\circ$$
 
 ---
 
@@ -456,7 +456,7 @@ interoperability and scientific reproducibility.
 
 ---
 
-## Combined Scan API — `to_ds_and_auxiliary()`
+## Combined Scan API: `to_ds_and_auxiliary()`
 
 !!! info "Why a combined scan?"
 
@@ -512,7 +512,7 @@ detect whether `sbf_obs` metadata is available.
 The SBF `SatVisibility` block provides satellite azimuth and elevation computed
 by the receiver firmware, per satellite either from its almanac or from its
 broadcast ephemeris (`broadcast_angle_source`). This makes SBF files a
-**self-contained ephemeris source** — no SP3/CLK download needed.
+**self-contained ephemeris source**: no SP3/CLK download needed.
 
 The `SbfBroadcastProvider` (an `EphemerisProvider` implementation) extracts
 theta/phi from the `sbf_obs` auxiliary dataset and aligns them to observation
@@ -528,7 +528,7 @@ raises an error:
 obs_ds, aux = reader.to_ds_and_auxiliary(keep_data_vars=["SNR"])
 sbf_obs = aux["sbf_obs"]
 
-# theta/phi are already in sbf_obs — no coordinate transform needed;
+# theta/phi are already in sbf_obs; no coordinate transform needed;
 # keep the ephemeris-based angles only, as SbfBroadcastProvider does
 from_ephemeris = sbf_obs["broadcast_angle_source"] == 2
 theta = sbf_obs["broadcast_theta"].where(from_ephemeris)  # polar angle (rad)
@@ -537,10 +537,10 @@ phi = sbf_obs["broadcast_phi"].where(from_ephemeris)  # geographic azimuth (rad)
 
 !!! tip "When to use broadcast vs agency final"
 
-    The receiver reports the angles in steps of 0.01°. Almanac-based angles
+    The receiver reports the angles in steps of $0.01^\circ$. Almanac-based angles
     are not used: on the 2025-001 test data they differed from the
-    ephemeris-based angles by at most 0.03° for GPS and Galileo, but by up to
-    0.26° for GLONASS and up to 104° for BeiDou. Use
+    ephemeris-based angles by at most $0.03^\circ$ for GPS and Galileo, but by up to
+    $0.26^\circ$ for GLONASS and up to $104^\circ$ for BeiDou. Use
     `ephemeris_source: "broadcast"` for immediate processing without internet.
     See [:octicons-arrow-right-24: Ephemeris Sources](ephemeris-sources.md) for details.
 
@@ -597,7 +597,7 @@ See [:octicons-arrow-right-24: Satellite Catalog](satellite-catalog.md) for the 
 | Format | Plain text | Binary |
 | File extension | `.rnx` | `.sbf` |
 | Header | Structured text | `ReceiverSetup` block |
-| Geometry (θ, φ) | Requires SP3 download | **Embedded in file** |
+| Geometry ($\theta$, $\varphi$) | Requires SP3 download | **Embedded in file** |
 | Metadata | Header only | Full PVT + quality monitoring |
 | `source_format` | `"rinex3"` | `"sbf"` |
 | `to_ds()` | ✓ | ✓ |
@@ -626,9 +626,9 @@ where GPS epoch = 1980-01-06 00:00:00. A file named for a GPS day starts at
 
 ## GLONASS FDMA Frequencies
 
-GLONASS signals use Frequency Division Multiple Access (FDMA). The centre
-frequency depends on the frequency number K = FreqNr − 8
-(RefGuide-4.14.0: K ∈ {−7, …, +13}; RefGuide-4.15.1: K ∈ {−7, …, +6}):
+GLONASS signals use Frequency Division Multiple Access (FDMA). The center
+frequency depends on the frequency number $K = \text{FreqNr} - 8$
+(RefGuide-4.14.0: $K \in \{-7, \dots, +13\}$; RefGuide-4.15.1: $K \in \{-7, \dots, +6\}$):
 
 $$f_{L1} = 1602 \text{ MHz} + K \times 0.5625 \text{ MHz}$$
 $$f_{L2} = 1246 \text{ MHz} + K \times 0.4375 \text{ MHz}$$
@@ -644,6 +644,6 @@ file on. Type2 sub-blocks take it from their Type1 sub-block.
 
 - Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide
 - Septentrio AsteRx SB3 ProBase Firmware v4.15.1 Reference Guide
-- CF Conventions v1.11 — `flag_masks`, `flag_meanings`, `flag_values`
+- CF Conventions v1.11: `flag_masks`, `flag_meanings`, `flag_values`
 - RINEX 3.04 signal nomenclature (used verbatim for SID strings)
-- [:octicons-arrow-right-24: SBF Field Decoding Reference](sbf-decoding.md) — all formulas with firmware page citations
+- [:octicons-arrow-right-24: SBF Field Decoding Reference](sbf-decoding.md): all formulas with firmware page citations

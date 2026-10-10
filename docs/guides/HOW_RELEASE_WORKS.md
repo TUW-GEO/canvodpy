@@ -78,8 +78,8 @@ runs commitizen's check and rejects other messages (`fixed bug`, `WIP`).
 The `[tool.commitizen]` section of the root `pyproject.toml` configures
 only this check; commitizen does not bump versions here.
 
-The types sort the changelog lines (`feat` → Feat, `fix` → Fix, `perf`,
-`refactor`, everything else → Other; `type!:` → BREAKING CHANGES). They do
+The types sort the changelog lines (`feat` $\rightarrow$ Feat, `fix` $\rightarrow$ Fix, `perf`,
+`refactor`, everything else $\rightarrow$ Other; `type!:` $\rightarrow$ BREAKING CHANGES). They do
 not decide the version: the maintainer does.
 
 ---
@@ -195,7 +195,7 @@ Workflow name:     publish_pypi.yml   (publish_testpypi.yml on TestPyPI)
 Environment name:  pypi               (testpypi on TestPyPI)
 ```
 
-The GitHub environments `pypi` and `testpypi` (Settings → Environments)
+The GitHub environments `pypi` and `testpypi` (Settings $\rightarrow$ Environments)
 can require a reviewer and a wait timer before the upload runs.
 
 **Why OIDC:** no secret to store or rotate, the token is valid for minutes

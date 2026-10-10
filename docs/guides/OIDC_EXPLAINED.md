@@ -173,8 +173,8 @@ PyPI receives the request and validates:
 ✓ Does the publisher have permission for this package?
 ```
 
-**All pass?** → Package published.
-**Any fail?** → `403 Forbidden` with detailed error
+**All pass?** $\rightarrow$ Package published.
+**Any fail?** $\rightarrow$ `403 Forbidden` with detailed error
 
 ---
 
@@ -292,8 +292,8 @@ environment: testpypi  # ← Why this matters
 **4. OIDC Scoping**
 - JWT includes environment name in claims
 - Different environments = different publishers
-- Example: `testpypi` environment → test.pypi.org
-           `pypi` environment → pypi.org
+- Example: `testpypi` environment $\rightarrow$ test.pypi.org
+           `pypi` environment $\rightarrow$ pypi.org
 
 ---
 

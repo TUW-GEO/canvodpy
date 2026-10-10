@@ -76,21 +76,21 @@ signals takes about one second.
 `SNR` is averaged as stored, in dB-Hz, not as linear power. Because VOD is
 linear in the SNR difference in dB, the mean of the dB values gives the mean of
 the per-epoch VOD if the canopy and reference bins average the same
-epochs and θ changes little within a bin
+epochs and $\theta$ changes little within a bin
 ([issue #192](https://github.com/nfb2021/canvodpy/issues/192)). The median is
 the same in dB and in linear power.
 
 Measured on one day of the Rosalia test data (5 s, 271 signals), against the
 mean of the per-epoch VOD (mean |VOD| 0.88):
 
-| Bin | θ change in a bin (p95) | VOD error from θ (mean / p95) | VOD error, receivers aggregated separately (mean / p95 / max) |
+| Bin | $\theta$ change in a bin (p95) | VOD error from $\theta$ (mean / p95) | VOD error, receivers aggregated separately (mean / p95 / max) |
 |---|---|---|---|
-| 30 s | 0.20° | 0.0001 / 0.0005 | 0.0015 / 0.009 / 0.15 |
-| 1 min | 0.45° | 0.0003 / 0.0012 | 0.0017 / 0.009 / 0.44 |
-| 5 min | 2.4° | 0.0015 / 0.0048 | 0.0036 / 0.012 / 0.40 |
-| 15 min | 7.2° | 0.0041 / 0.013 | 0.013 / 0.066 / 0.59 |
+| 30 s | $0.20^\circ$ | 0.0001 / 0.0005 | 0.0015 / 0.009 / 0.15 |
+| 1 min | $0.45^\circ$ | 0.0003 / 0.0012 | 0.0017 / 0.009 / 0.44 |
+| 5 min | $2.4^\circ$ | 0.0015 / 0.0048 | 0.0036 / 0.012 / 0.40 |
+| 15 min | $7.2^\circ$ | 0.0041 / 0.013 | 0.013 / 0.066 / 0.59 |
 
-θ within a bin matters little up to a few minutes. The larger error comes
+$\theta$ within a bin matters little up to a few minutes. The larger error comes
 from bins in which the canopy and the reference receiver have values at
 different epochs (for example a satellite tracked by one receiver for part of the
 bin): a run aggregates each receiver on its own, so such bins average
@@ -119,15 +119,15 @@ the bin starts.
 
 `TemporalAggregate` groups by `(time_bin, sid)` before computing the aggregate.
 This is critical because each SID (satellite + band + code) observes the canopy
-from a different sky position (θ, φ). Mixing VOD or SNR values across satellites
+from a different sky position ($\theta$, $\varphi$). Mixing VOD or SNR values across satellites
 within a time bin conflates spatial variability (different view angles) with
 temporal variability, which gives a physically meaningless average.
 
-Geometry (θ, φ) is aggregated per SID with the same method, so it describes
+Geometry ($\theta$, $\varphi$) is aggregated per SID with the same method, so it describes
 where the aggregated value came from; `.first()` would instead assign a single
-observation's geometry to it. The azimuth φ is aggregated as an angle: each
+observation's geometry to it. The azimuth $\varphi$ is aggregated as an angle: each
 value is taken relative to the first value of its bin, so a satellite crossing
-north (φ = 0) yields north, not south.
+north ($\varphi = 0$) yields north, not south.
 
 Coordinate handling:
 

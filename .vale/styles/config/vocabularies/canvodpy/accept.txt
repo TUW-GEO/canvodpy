@@ -80,3 +80,4 @@ anywidget
 [Cc]olormaps?
 Arial
 Helvetica
+mcycles?

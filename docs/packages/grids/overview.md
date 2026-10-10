@@ -23,14 +23,14 @@ Seven implementations are available, all inheriting from `BaseGridBuilder`:
 
     ---
 
-    Regular angular spacing in θ and φ. Cells near zenith are smaller.
+    Regular angular spacing in $\theta$ and $\varphi$. Cells near zenith are smaller.
     Use it when you want uniform angular resolution.
 
 -   :fontawesome-solid-grip: &nbsp; **`EquirectangularBuilder`**
 
     ---
 
-    The same number of azimuth sectors in every θ band, no zenith cap.
+    The same number of azimuth sectors in every $\theta$ band, no zenith cap.
     Fast to compute; cells shrink strongly toward the zenith.
 
 -   :fontawesome-solid-dice-d20: &nbsp; **`GeodesicBuilder`**
@@ -76,15 +76,15 @@ Where a grid ends depends on its type:
 
 | Grid type | Outer edge | Observations near the horizon |
 |---|---|---|
-| `equal_area`, `equal_angle`, `equirectangular` | exactly θ = 90° − `cutoff_theta`; the last band is narrower when the band width does not divide the range (half a band for `equal_area` and `equal_angle` at a cutoff that is a multiple of the resolution) | all get a cell up to the outer edge, none beyond |
+| `equal_area`, `equal_angle`, `equirectangular` | exactly $\theta = 90^\circ -$ `cutoff_theta`; the last band is narrower when the band width does not divide the range (half a band for `equal_area` and `equal_angle` at a cutoff that is a multiple of the resolution) | all get a cell up to the outer edge, none beyond |
 | `htm`, `geodesic` | the triangles whose center is higher than the outer edge; some extend below it | all observations higher than the horizon get a cell (with `cutoff_theta = 0`) |
 | `healpix` | the pixels whose center is at least as high as the outer edge; some extend below it | all observations higher than the horizon get a cell (with `cutoff_theta = 0`) |
-| `fibonacci` | the Voronoi cells whose lattice point is higher than the outer edge | some low observations get no cell: up to about 1°, 3° and 6° elevation at 2°, 5° and 10° resolution |
+| `fibonacci` | the Voronoi cells whose lattice point is higher than the outer edge | some low observations get no cell: up to about $1^\circ$, $3^\circ$ and $6^\circ$ elevation at $2^\circ$, $5^\circ$ and $10^\circ$ resolution |
 
-So the solid angles of the ring grids add up to the hemisphere (2π sr
+So the solid angles of the ring grids add up to the hemisphere ($2\pi$ sr
 with `cutoff_theta = 0`); those of the triangle and pixel grids add up to
-somewhat more (geodesic 1.01 to 1.05 × 2π, HEALPix 1.01 to 1.08 × 2π at
-2° to 10°).
+somewhat more (geodesic $1.01 \times 2\pi$ to $1.05 \times 2\pi$, HEALPix $1.01 \times 2\pi$ to $1.08 \times 2\pi$ at
+$2^\circ$ to $10^\circ$).
 
 ### Optional dependencies
 
@@ -158,7 +158,7 @@ The `GridData` object returned by all builders provides:
 | `grid` | `polars.DataFrame` | One row per cell: center (`phi`, `theta`), bounds (`phi_min`, `phi_max`, `theta_min`, `theta_max`), `cell_id` |
 | `ncells` | `int` | Total number of grid cells |
 | `grid_type` | `str` | Grid type, for example `"equal_area"` |
-| `theta_lims`, `phi_lims`, `cell_ids` | arrays | Band edges, azimuth edges and cell ids per θ band |
+| `theta_lims`, `phi_lims`, `cell_ids` | arrays | Band edges, azimuth edges and cell ids per $\theta$ band |
 | `get_solid_angles()` | `np.ndarray` | Solid angle of each cell (sr) |
 | `get_grid_stats()` | `dict` | Summary: cell count, solid-angle statistics |
 
@@ -205,13 +205,13 @@ bounding boxes, not the true (curved or triangular) cell boundaries.
 
     `aggregate_data_to_grid` computes one statistic per cell.
 
-    `compute_percell_timeseries` computes per-cell time series (cell × time).
+    `compute_percell_timeseries` computes per-cell time series ($\text{cell} \times \text{time}$).
 
     `compute_hemisphere_percell` computes daily per-cell time series of
     the full hemisphere.
 
     `compute_zenith_percell` computes daily per-cell time series for
-    θ ≤ 30°.
+    $\theta \leq 30^\circ$.
 
 </div>
 
@@ -266,14 +266,14 @@ store, use `AnalysisStorage` from
 
     All grids use standard spherical coordinates:
 
-    - **phi** (φ): azimuth 0 → 2π · 0 = North · π/2 = East · clockwise
-    - **theta** (θ): polar angle from zenith · 0 = zenith · π/2 = horizon
+    - **phi** ($\varphi$): azimuth from 0 to $2\pi$ · 0 = North · $\pi/2$ = East · clockwise
+    - **theta** ($\theta$): polar angle from zenith · 0 = zenith · $\pi/2$ = horizon
 
     This matches the coordinate output of canvod-auxiliary, so no conversion is needed.
 
 ---
 
-## Role in the VOD Pipeline
+## Role in the VOD pipeline
 
 ```mermaid
 flowchart TD

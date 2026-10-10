@@ -82,9 +82,9 @@ Zenodo. https://doi.org/10.5281/zenodo.XXXXX
 ```
 
 **Version-specific DOIs:**
-- v0.1.0 → DOI: 10.5281/zenodo.12345
-- v0.2.0 → DOI: 10.5281/zenodo.12346
-- Concept DOI → DOI: 10.5281/zenodo.12344 (always latest)
+- v0.1.0 $\rightarrow$ DOI: 10.5281/zenodo.12345
+- v0.2.0 $\rightarrow$ DOI: 10.5281/zenodo.12346
+- Concept DOI $\rightarrow$ DOI: 10.5281/zenodo.12344 (always latest)
 
 ---
 
@@ -214,7 +214,7 @@ BibTeX:
 
 **From Zenodo:**
 1. Visit Zenodo DOI link
-2. Click "Export" → Choose format
+2. Click "Export" $\rightarrow$ Choose format
 3. Copy citation
 
 ### For Papers

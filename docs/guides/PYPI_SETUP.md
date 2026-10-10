@@ -176,7 +176,7 @@ Uploading canvodpy-0.1.0-py3-none-any.whl
 1. **Go to your repo:**
    - https://github.com/nfb2021/canvodpy
 
-2. **Settings → Environments**
+2. **Settings $\rightarrow$ Environments**
 
 3. **New environment:**
    - Name: `test-release`
@@ -336,7 +336,7 @@ password: your_pypi_password
 !!! tip "Enable 2FA first"
     PyPI requires 2FA to add trusted publishers. Enable it at [pypi.org/manage/account/](https://pypi.org/manage/account/) before proceeding.
 
-1. **Settings → Environments → New**
+1. **Settings $\rightarrow$ Environments $\rightarrow$ New**
 2. **Name:** `release`
 3. **Protection rules (IMPORTANT!):**
    - Required reviewers: Add all maintainers
@@ -492,7 +492,7 @@ uv run --isolated --no-project --with canvodpy \
 
 ??? failure "Environment approval stuck"
     Check the `release` environment's protection rules at
-    Settings → Environments → release. Approve pending deployments manually.
+    Settings $\rightarrow$ Environments $\rightarrow$ release. Approve pending deployments manually.
 
 ---
 

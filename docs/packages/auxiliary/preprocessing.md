@@ -18,7 +18,7 @@ In a run, `AuxDataPipeline` calls `prep_aux_ds()` with the signal IDs kept by th
     # {'epoch': 96, 'sv': 32}
     ```
 
-    GPS G01 has one entry — one position per epoch.
+    GPS G01 has one entry: one position per epoch.
 
 !!! note "RINEX obs Dataset"
     Index by **signal ID** (sid):
@@ -32,7 +32,7 @@ In a run, `AuxDataPipeline` calls `prep_aux_ds()` with the signal IDs kept by th
 
 </div>
 
-Satellite **position** is frequency-independent (all signals leave the same antenna), so the sv → sid mapping simply **replicates** each position across all signal IDs for that satellite.
+Satellite **position** is frequency-independent (all signals leave the same antenna), so the sv $\rightarrow$ sid mapping simply **replicates** each position across all signal IDs for that satellite.
 
 ---
 
@@ -42,14 +42,14 @@ Satellite **position** is frequency-independent (all signals leave the same ante
 |----------|---------|-----------|-------------|
 | `preprocess_aux_for_interpolation()` | Minimal prep for interpolation | sv: 32 | sid: 896 |
 | `prep_aux_ds()` | Steps 1-4; with `keep_sids`, only those signals (used by runs) | sv: 32 | sid: 4429 |
-| `map_aux_sv_to_sid()` | Step 1: expand sv → sid | sv: 32 | sid: 896 |
+| `map_aux_sv_to_sid()` | Step 1: expand sv $\rightarrow$ sid | sv: 32 | sid: 896 |
 | `pad_to_global_sid()` | Step 2: pad to all constellations | sid: 896 | sid: 4429 |
-| `normalize_sid_dtype()` | Step 3: convert to object dtype | — | dtype fixed |
-| `strip_fillvalue()` | Step 4: remove `_FillValue` attrs | — | attrs cleaned |
+| `normalize_sid_dtype()` | Step 3: convert to object dtype | Any | dtype fixed |
+| `strip_fillvalue()` | Step 4: remove `_FillValue` attrs | Any | attrs cleaned |
 
 ---
 
-## Step 1 — `map_aux_sv_to_sid()`
+## Step 1: `map_aux_sv_to_sid()`
 
 Each satellite position is **replicated** across all its signal IDs:
 
@@ -74,13 +74,13 @@ G01|L2|W  G01|L2|X  G01|L2|Y  G01|L2|l  G01|L2|p  G01|L2|u
 G01|L5|I  G01|L5|Q  G01|L5|X  G01|L5|u
 ```
 
-Signal ID format: `"{SV}|{BAND}|{CODE}"` — e.g. `"G01|L1|C"`, `"E08|E5a|Q"`. Uppercase codes are RINEX 3 attributes; the lowercase codes are the [RINEX 2 tracking-code markers](../readers/rinex-v2-format.md#lowercase-tracking-code-markers) for signals whose code RINEX 2 does not record.
+Signal ID format: `"{SV}|{BAND}|{CODE}"`, for example `"G01|L1|C"`, `"E08|E5a|Q"`. Uppercase codes are RINEX 3 attributes; the lowercase codes are the [RINEX 2 tracking-code markers](../readers/rinex-v2-format.md#lowercase-tracking-code-markers) for signals whose code RINEX 2 does not record.
 
 ---
 
-## Step 2 — `pad_to_global_sid()`
+## Step 2: `pad_to_global_sid()`
 
-Pads the Dataset to include **all possible** Signal IDs across all supported constellations — every SV × band × code in the constellation `BAND_CODES` (4 429 at the time of writing). Signal IDs outside that set are dropped. Required for Icechunk storage, where sequentially appended datasets must share the same coordinate space.
+Pads the Dataset to include **all possible** Signal IDs across all supported constellations: every $\text{SV} \times \text{band} \times \text{code}$ in the constellation `BAND_CODES` (4 429 at the time of writing). Signal IDs outside that set are dropped. Required for Icechunk storage, where sequentially appended datasets must share the same coordinate space.
 
 ```python
 from canvod.auxiliary.preprocessing import pad_to_global_sid
@@ -93,7 +93,7 @@ Added SIDs are filled with `NaN`.
 
 ---
 
-## Step 3 — `normalize_sid_dtype()`
+## Step 3: `normalize_sid_dtype()`
 
 Converts the `sid` coordinate to `object` dtype for Zarr/Icechunk compatibility. Fixed-length Unicode string types (`<U12`, etc.) cause dtype conflicts when datasets from different files are concatenated and appended.
 
@@ -106,7 +106,7 @@ ds["sid"].dtype  # dtype('O')
 
 ---
 
-## Step 4 — `strip_fillvalue()`
+## Step 4: `strip_fillvalue()`
 
 Removes `_FillValue` attributes that conflict with Icechunk's internal missing-data handling. NaN is the standard missing-value marker throughout the pipeline.
 
@@ -124,9 +124,9 @@ ds = strip_fillvalue(ds)
 Replicating satellite positions across signal IDs is scientifically valid:
 
 !!! success "One position per satellite is enough for the angles"
-    SP3 positions refer to the satellite's centre of mass. The antenna
-    phase centres of the signals sit up to a few metres from it and differ
+    SP3 positions refer to the satellite's center of mass. The antenna
+    phase centers of the signals sit up to a few meters from it and differ
     slightly between frequencies. Seen from a receiver about 20 000 km
-    away, a few metres change θ and φ by about 10⁻⁷ rad, far below
+    away, a few meters change $\theta$ and $\varphi$ by about $10^{-7}$ rad, far below
     anything VOD can resolve, so every signal of a satellite can use the
     same position.

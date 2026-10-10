@@ -28,9 +28,9 @@ increment of each package you release:
 
 | Type | Version Bump | Example | When to use |
 |------|-------------|---------|-------------|
-| Patch | `1.1.X` | 1.1.0 → 1.1.1 | Bug fixes only, fully backwards compatible |
-| Minor | `1.X.0` | 1.1.0 → 1.2.0 | New features, backwards compatible |
-| Major | `X.0.0` | 1.4.0 → 2.0.0 | Breaking changes — requires migration guide |
+| Patch | `1.1.X` | 1.1.0 $\rightarrow$ 1.1.1 | Bug fixes only, fully backwards compatible |
+| Minor | `1.X.0` | 1.1.0 $\rightarrow$ 1.2.0 | New features, backwards compatible |
+| Major | `X.0.0` | 1.4.0 $\rightarrow$ 2.0.0 | Breaking changes; requires a migration guide |
 
 canvodpy is part of every release, and its increment is at least the
 largest of the packages released with it.
@@ -122,7 +122,7 @@ The `.github/workflows/release.yml` workflow detects the canvodpy tag
 GitHub release of their own. Review and publish at
 [github.com/nfb2021/canvodpy/releases](https://github.com/nfb2021/canvodpy/releases).
 
-Pushing the tags does **not** publish to PyPI — tagging and PyPI
+Pushing the tags does **not** publish to PyPI: tagging and PyPI
 publishing are deliberately decoupled (see step 8).
 
 ### 8. Publish to PyPI (separate, manual, whenever you decide)
@@ -138,7 +138,7 @@ gh workflow run publish_pypi.yml --ref v1.1.0
 
 It builds and uploads exactly the packages whose release tag points at that
 commit (`scripts/release.py tagged`), here canvodpy, canvod-store and
-canvod-grids. You can create several releases before ever running this — a
+canvod-grids. You can create several releases before ever running this: a
 tag existing is not a promise that PyPI has it.
 
 ### 9. Post-release
@@ -183,4 +183,4 @@ tag existing is not a promise that PyPI has it.
     Verify the canvodpy tag matches the pattern `v*.*.*` at
     [github.com/nfb2021/canvodpy/actions](https://github.com/nfb2021/canvodpy/actions),
     and that `CHANGELOG.md` has a section `## v1.1.0 (...)`.
-    (PyPI publishing never triggers from a tag push at all — see step 7.)
+    (PyPI publishing never triggers from a tag push at all; see step 7.)

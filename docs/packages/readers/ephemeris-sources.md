@@ -19,12 +19,12 @@ is at each observation epoch. canvodpy supports two ephemeris sources; a third
 
     ---
 
-    Precise orbits (and, by default, clocks) from analysis centres (CODE,
+    Precise orbits (and, by default, clocks) from analysis centers (CODE,
     ESA, IGS). Downloaded via FTP. Final products are published about two
     weeks after observation.
 
-    **Input:** SP3 (+ CLK, optional — `aux_data.fetch_clock`) files (downloaded)
-    **Output:** ECEF XYZ → theta, phi, r
+    **Input:** SP3 (+ CLK, optional, see `aux_data.fetch_clock`) files (downloaded)
+    **Output:** ECEF XYZ $\rightarrow$ $\theta$, $\varphi$, $r$
 
 -   :fontawesome-solid-satellite: &nbsp; **SBF Broadcast (SatVisibility)**
 
@@ -46,7 +46,7 @@ is at each observation epoch. canvodpy supports two ephemeris sources; a third
     or RK4 integration (GLONASS state vectors). Immediate, no internet.
 
     **Input:** `.YYp` / `.YYn` / `.YYg` nav files
-    **Output:** ECEF XYZ → theta, phi, r
+    **Output:** ECEF XYZ $\rightarrow$ $\theta$, $\varphi$, $r$
 
 </div>
 
@@ -54,9 +54,9 @@ is at each observation epoch. canvodpy supports two ephemeris sources; a third
 
 ## Accuracy
 
-The SBF angles are stored by the receiver with a resolution of 0.01°
+The SBF angles are stored by the receiver with a resolution of $0.01^\circ$
 (SatVisibility block), so they cannot be more precise than that. The SP3
-path computes θ and φ from interpolated satellite positions and the
+path computes $\theta$ and $\varphi$ from interpolated satellite positions and the
 receiver position. canvodpy has not quantified the difference between the
 two sources on its test data; until then, do not mix them in one analysis.
 
@@ -80,8 +80,8 @@ The default path of `canvodpy run` (`ephemeris_source: final`).
 7. Output: ds["theta"], ds["phi"], ds["r"]
 ```
 
-CLK is not consumed by the VOD formula (`VOD = -ln(T) · cos(θ)` — only
-transmittance and polar angle). Set `aux_data.fetch_clock: false` to skip
+CLK is not used by the VOD formula, $\text{VOD} = -\ln(T) \cdot \cos\theta$, which needs only
+transmittance and polar angle. Set `aux_data.fetch_clock: false` to skip
 step 1's clock download and step 4 entirely.
 
 ### Configuration
@@ -106,7 +106,7 @@ processing:
 | FTP with fallback | canvod-auxiliary | `core/downloader.py` |
 | Hermite interpolation | canvod-auxiliary | `interpolation/interpolator.py` |
 | Clock interpolation (optional, `aux_data.fetch_clock`) | canvod-auxiliary | `interpolation/interpolator.py` |
-| ECEF → theta/phi/r | canvod-auxiliary | `position/spherical_coords.py` |
+| ECEF $\rightarrow$ $\theta$, $\varphi$, $r$ | canvod-auxiliary | `position/spherical_coords.py` |
 
 ---
 
@@ -136,8 +136,8 @@ satellite's almanac or broadcast ephemeris and embeds them in the
 !!! info "Theta and phi convention"
 
     SBF SatVisibility provides elevation and geographic azimuth
-    (0° = North, clockwise). The reader converts elevation to the polar
-    angle (theta = 90° - elevation) and both angles to radians, the
+    ($0^\circ$ = North, clockwise). The reader converts elevation to the polar
+    angle ($\theta = 90^\circ - \text{elevation}$) and both angles to radians, the
     convention used throughout canvodpy.
 
 ### Configuration
@@ -152,9 +152,9 @@ processing:
 ### Limitations
 
 - Only available for SBF receivers (Septentrio)
-- Theta/phi are tied to the receiver's computed position — if the receiver
+- Theta/phi are tied to the receiver's computed position: if the receiver
   position is inaccurate (poor fix), geometry is slightly affected
-- No satellite distance (r) — only angles
+- No satellite distance ($r$), only angles
 
 ---
 
@@ -209,7 +209,7 @@ numerical integration.
 
 Broadcast ephemerides are valid for ~2-4 hours around their reference epoch
 (toe). The propagator must select the closest valid ephemeris set for each
-target epoch — not simply the first record found.
+target epoch, not simply the first record found.
 
 ---
 
@@ -217,12 +217,12 @@ target epoch — not simply the first record found.
 
 | Extension | Format | Observations | Broadcast ephemeris | Use in canvodpy |
 |-----------|--------|:---:|:---:|---|
-| `.YYo` / `.rnx` | RINEX 3 OBS | :fontawesome-solid-check: | — | Primary observation data |
+| `.YYo` / `.rnx` | RINEX 3 OBS | :fontawesome-solid-check: | No | Primary observation data |
 | `.YY_` / `.sbf` | SBF binary | :fontawesome-solid-check: | :fontawesome-solid-check: | Observations + broadcast geometry |
-| `.YYp` | RINEX 3 NAV (mixed) | — | :fontawesome-solid-check: | Not read (planned) |
-| `.YYn` | RINEX 2 NAV (GPS) | — | :fontawesome-solid-check: | Not read (planned) |
-| `.YYg` | RINEX NAV (GLONASS) | — | :fontawesome-solid-check: | Not read (planned) |
-| `.nmea` | NMEA 0183 | SNR only | — | Observations (`NmeaObs`); geometry from SP3 |
+| `.YYp` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Not read (planned) |
+| `.YYn` | RINEX 2 NAV (GPS) | No | :fontawesome-solid-check: | Not read (planned) |
+| `.YYg` | RINEX NAV (GLONASS) | No | :fontawesome-solid-check: | Not read (planned) |
+| `.nmea` | NMEA 0183 | SNR only | No | Observations (`NmeaObs`); geometry from SP3 |
 | `.ubx` | u-blox binary | :fontawesome-solid-check: | :fontawesome-solid-check: | Not supported |
 
 !!! warning "NMEA is not an ephemeris source"

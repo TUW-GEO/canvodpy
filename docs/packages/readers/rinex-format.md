@@ -1,6 +1,6 @@
 # RINEX v3.04 Parsing
 
-`Rnxv3Obs` implements a full [RINEX v3.04](https://igs.org/formats-and-standards/){:target="_blank"} observation file parser — from raw text to a validated `xarray.Dataset` in a single `to_ds()` call.
+`Rnxv3Obs` implements a full [RINEX v3.04](https://igs.org/formats-and-standards/){:target="_blank"} observation file parser, from raw text to a validated `xarray.Dataset` in a single `to_ds()` call.
 
 ---
 
@@ -68,7 +68,7 @@ classDiagram
 
 ## Parsing Pipeline
 
-### Step 1 — Initialization
+### Step 1: initialization
 
 ```python
 from pathlib import Path
@@ -104,7 +104,7 @@ What happens on construction:
     (`15M_05S`: 180 epochs). A file with fewer epochs is kept and logged
     as `epoch_count_differs_from_name`.
 
-### Step 2 — Epoch Iteration
+### Step 2: epoch iteration
 
 ```python
 for epoch in reader.iter_epochs():
@@ -113,7 +113,7 @@ for epoch in reader.iter_epochs():
 
 The generator scans the file's lines (already in memory) from `END OF HEADER`, yielding one validated `Rnxv3ObsEpochRecord` per `>` epoch marker; epochs that fail validation are skipped.
 
-### Step 3 — Dataset Construction
+### Step 3: dataset construction
 
 ```python
 ds = reader.to_ds(keep_data_vars=["SNR", "Phase"])
@@ -264,13 +264,13 @@ SignalIDMapper().SYSTEM_BANDS == {
 
 ### Satellites
 
-Satellite numbers follow RINEX 3.04 section 8.4. SBAS satellites are `Snn` with `nn` = PRN − 100 (PRN 120 → `S20`, EGNOS PRN 148 → `S48`); the reader recognises `S01`–`S99`. The satellite lists of the other systems come from the [constellation models](satellite-catalog.md#integration-with-constellations).
+Satellite numbers follow RINEX 3.04 section 8.4. SBAS satellites are `Snn` with $nn = \text{PRN} - 100$ (PRN 120 $\rightarrow$ `S20`, EGNOS PRN 148 $\rightarrow$ `S48`); the reader recognizes `S01`–`S99`. The satellite lists of the other systems come from the [constellation models](satellite-catalog.md#integration-with-constellations).
 
 ---
 
 ## Loss of Lock and Signal Strength Indicators
 
-Pseudorange, phase, Doppler, and SNR of one signal share one sid (`S1C`, `L1C`, `C1C`, `D1C` → `G01|L1|C`), but each observation field carries its own LLI and SSI digit. The reader stores one LLI and one SSI per sid, following RINEX 3.04 Table A3 notes 1–3:
+Pseudorange, phase, Doppler, and SNR of one signal share one sid (`S1C`, `L1C`, `C1C`, `D1C` $\rightarrow$ `G01|L1|C`), but each observation field carries its own LLI and SSI digit. The reader stores one LLI and one SSI per sid, following RINEX 3.04 Table A3 notes 1–3:
 
 - **LLI** is taken from the **phase** observation only ("should only be associated with the phase observation"). Flags on the other observables are ignored.
 - **SSI** is taken from the **phase**; if the signal has no phase (e.g. `C1W`/`S1W`), from the **pseudorange**. SSI on Doppler or SNR fields is ignored.
@@ -287,7 +287,7 @@ The result does not depend on the order of observables in the header.
 
 ## Signal strength unit
 
-The unit of the `S` observations is declared by the optional `SIGNAL STRENGTH UNIT` header record (RINEX 3.04 sect. 5.7), which defines only `DBHZ`. With `DBHZ`, `SNR` is labelled as C/N0 in dB-Hz. Without it, the unit is not declared and `SNR` is labelled dB.
+The unit of the `S` observations is declared by the optional `SIGNAL STRENGTH UNIT` header record (RINEX 3.04 sect. 5.7), which defines only `DBHZ`. With `DBHZ`, `SNR` is labeled as C/N0 in dB-Hz. Without it, the unit is not declared and `SNR` is labeled dB.
 
 ---
 

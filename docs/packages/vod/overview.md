@@ -14,7 +14,7 @@ The `canvod-vod` package implements vegetation optical depth (VOD) estimation fr
     following [Humphrey & Frankenberg (2022)](https://doi.org/10.1016/j.rse.2022.113208){:target="_blank"}.
 
     A reference receiver in open sky and a canopy receiver beneath vegetation observe
-    the same satellite at [polar angle](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates){:target="_blank"} θ. The SNR difference encodes the two-way
+    the same satellite at [polar angle](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates){:target="_blank"} $\theta$. The SNR difference encodes the two-way
     canopy attenuation:
 
     $$\Delta\text{SNR} = \text{SNR}_\text{canopy} - \text{SNR}_\text{reference}$$

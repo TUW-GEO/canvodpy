@@ -109,5 +109,5 @@ canvodpy imports `canvod-filemap` only for a receiver whose settings set
 names only, whether or not the package is installed. A receiver with a
 recipe but without `canvod-filemap` installed stops the run with an error
 that says how to install it — it never falls back to guessing file names.
-See [Configuration → Optional: non-canonical
+See [Configuration $\rightarrow$ Optional: non-canonical
 filenames](configuration.md#optional-non-canonical-filenames).

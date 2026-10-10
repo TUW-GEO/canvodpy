@@ -37,9 +37,9 @@ package on its own:
 
 | Increment | Trigger | Example |
 |-----------|---------|---------|
-| `MAJOR` | Breaking API changes | 1.4.2 → 2.0.0 |
-| `MINOR` | New features, backwards compatible | 1.1.0 → 1.2.0 |
-| `PATCH` | Bug fixes, backwards compatible | 1.1.0 → 1.1.1 |
+| `MAJOR` | Breaking API changes | 1.4.2 $\rightarrow$ 2.0.0 |
+| `MINOR` | New features, backwards compatible | 1.1.0 $\rightarrow$ 1.2.0 |
+| `PATCH` | Bug fixes, backwards compatible | 1.1.0 $\rightarrow$ 1.1.1 |
 
 Versions are written as Python writes them (PEP 440); a pre-release is
 `1.2.0rc1`, `1.2.0b1` or `1.2.0a1`.

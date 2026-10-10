@@ -3,7 +3,7 @@ title: Satellite Catalog (IGS SINEX)
 description: Time-aware GNSS satellite metadata from the IGS igs_satellite_metadata.snx file
 ---
 
-# Satellite Catalog — IGS SINEX Metadata
+# Satellite Catalog (IGS SINEX Metadata)
 
 ## Why satellite metadata matters for GNSS-T
 
@@ -11,17 +11,17 @@ GNSS-Transmissometry derives vegetation properties from the **attenuation** of
 satellite signals passing through a canopy. Several satellite-level properties
 directly affect signal interpretation:
 
-- **Transmit power (TX)** — different satellite generations broadcast at different
-  power levels (in the IGS file e.g. GPS-IIF: 240 W, GPS-IIIA: 300 W). When computing transmittance
-  as the ratio of canopy-to-reference SNR, the absolute power cancels — but mixed
+- **Transmit power (TX)**: different satellite generations broadcast at different
+  power levels (in the IGS file, for example GPS-IIF: 240 W, GPS-IIIA: 300 W). When computing transmittance
+  as the ratio of canopy-to-reference SNR, the absolute power cancels, but mixed
   constellations and satellite replacements can introduce systematic biases if not
   accounted for.
-- **PRN reassignments** — a PRN code (e.g. `G01`) is not permanently bound to one
+- **PRN reassignments**: a PRN code (for example `G01`) is not permanently bound to one
   satellite vehicle. When a satellite is decommissioned and its PRN reassigned to a
   new vehicle, the TX power, antenna pattern, and orbital characteristics change.
   A long time series that spans a reassignment can show a step that is not in the
   vegetation; `reassignments_in_range` finds them.
-- **Orbital plane and slot** — the satellite's position in the constellation
+- **Orbital plane and slot**: the satellite's position in the constellation
   determines its sky track over the receiver site, which affects the polar angle
   distribution and therefore the VOD sampling geometry.
 
@@ -31,10 +31,10 @@ your own analysis (e.g. `enrich_dataset` on data read from a store).
 
 ## Overview
 
-The `SatelliteCatalog` class parses the IGS `igs_satellite_metadata.snx` SINEX file —
+The `SatelliteCatalog` class parses the IGS `igs_satellite_metadata.snx` SINEX file:
 a single authoritative source of satellite metadata maintained by the [IGS](https://igs.org/){:target="_blank"}. It provides time-aware queries for all GNSS constellations:
 GPS, GLONASS, Galileo, BeiDou, QZSS, and IRNSS. SBAS satellites are not in the
-SINEX file; their SV list (`S01`–`S99`, `nn` = PRN − 100) comes from the RINEX
+SINEX file; their SV list (`S01`–`S99`, $nn = \text{PRN} - 100$) comes from the RINEX
 specification.
 
 !!! tip "Offline-first design"
@@ -52,7 +52,7 @@ The file has eight `SATELLITE/` blocks; the catalog reads the six below (not `CO
 | SINEX Block | Data | Example |
 |-------------|------|---------|
 | `SATELLITE/IDENTIFIER` | SVN, COSPAR ID, NORAD catalog number, block type, launch date | `G063`, `2011-036A`, `GPS-IIF` |
-| `SATELLITE/PRN` | PRN ↔ SVN assignments with validity periods | G01 → G080 from 2024-12-17 to open |
+| `SATELLITE/PRN` | PRN $\leftrightarrow$ SVN assignments with validity periods | G01 $\rightarrow$ G080 from 2024-12-17 to open |
 | `SATELLITE/TX_POWER` | Transmit power (Watts) per SVN | G063: 240 W |
 | `SATELLITE/MASS` | Satellite mass (kg) per SVN | G063: 1633.0 kg |
 | `SATELLITE/FREQUENCY_CHANNEL` | GLONASS FDMA channel numbers per SVN | R730: channel 1 |
@@ -116,7 +116,7 @@ All time-varying queries take an `on_date` parameter to resolve validity periods
 
 ### PRN ↔ SVN mapping
 
-PRN codes (e.g. `G01`) are **not permanent** — they can be reassigned to different
+PRN codes (for example `G01`) are **not permanent**; they can be reassigned to different
 satellite vehicles over time. The catalog tracks the full assignment history.
 
 ```python
@@ -148,7 +148,7 @@ for r in changes:
 !!! warning "Why reassignments matter"
 
     If a PRN is reassigned during your observation period, the satellite
-    behind that PRN changed — with different transmit power, antenna pattern,
+    behind that PRN changed, with different transmit power, antenna pattern,
     and orbital characteristics. Time series continuity assumptions break.
 
 ### Active PRNs per constellation
@@ -315,7 +315,7 @@ print(catalog.summary())
 | Class | Fields | Description |
 |-------|--------|-------------|
 | `SatelliteIdentity` | svn, cospar_id, satcat, block, comment | Static satellite info |
-| `PrnAssignment` | svn, prn, start, end | PRN ↔ SVN with validity period |
+| `PrnAssignment` | svn, prn, start, end | PRN $\leftrightarrow$ SVN with validity period |
 | `TxPowerRecord` | svn, power_watts, start, end, comment | TX power with validity |
 | `MassRecord` | svn, mass_kg, start, end, comment | Mass with validity |
 | `FrequencyChannel` | svn, channel, start, end, comment | GLONASS FDMA channel |

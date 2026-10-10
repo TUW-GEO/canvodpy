@@ -24,7 +24,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ---
 
     Linter + formatter in one tool. Implements 700+ rules from flake8,
-    pylint, black, and isort at 10–100× their speed.
+    pylint, black, and isort at $10\times$ to $100\times$ their speed.
 
     [:octicons-arrow-right-24: astral.sh/ruff](https://docs.astral.sh/ruff/)
 
@@ -337,7 +337,7 @@ All quality checks run automatically:
 | Workflow | Runs On | Purpose |
 |----------|---------|---------|
 | `test_platforms.yml` | Push, PR | Multi-platform tests (Linux/macOS on Apple silicon/Windows) |
-| `test_coverage.yml` | Push, PR | Coverage tracking → Coveralls |
+| `test_coverage.yml` | Push, PR | Coverage tracking $\rightarrow$ Coveralls |
 | `code_quality.yml` | Push | Linting, formatting, type checking |
 | `codeql.yml` | Push, PR, Weekly | CodeQL security analysis |
 | `fair-software.yml` | Push, PR | FAIR compliance checks |
