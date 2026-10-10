@@ -177,8 +177,7 @@ Python finds the file the same way: `Site("ExampleSite")` reads the site
 from the file that `canvodpy doctor` names.
 
 The [Configuration guide](../guides/configuration.md) describes every
-setting, how to override settings with environment variables, and how
-to keep machine-specific settings in a separate file.
+setting and how to keep machine-specific settings in a separate file.
 
 !!! example "Try it in a notebook"
 

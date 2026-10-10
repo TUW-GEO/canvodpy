@@ -30,9 +30,7 @@ To load a file from another folder, pass the folder:
 [overlay file](../../guides/configuration.md#overlay-file), pass
 `config_file=`.
 
-Fields you leave out of the file take their defaults, and
-[environment variables](../../guides/configuration.md#environment-variable-overrides)
-that start with `CANVOD__` override the file.
+Fields you leave out of the file take their defaults.
 
 ---
 

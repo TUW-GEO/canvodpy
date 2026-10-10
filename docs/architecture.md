@@ -222,8 +222,7 @@ flowchart TD
         YAML["`**canvod-settings.yaml**
         unified config file`"]
         PYDANTIC["`**Pydantic Validation**
-        CanvodConfig (BaseSettings)
-        CANVOD__ env overrides`"]
+        CanvodConfig`"]
     end
 
     subgraph INIT["Site Initialization"]
@@ -298,7 +297,7 @@ flowchart TD
 
 | Stage | What it does | Why it matters scientifically |
 |-------|--------------|-------------------------------|
-| **Configuration** | A single `canvod-settings.yaml` is validated by `CanvodConfig`, a Pydantic `BaseSettings` model; unknown keys are errors; any field can be overridden via `CANVOD__`-prefixed environment variables | Every run is fully described by one validated document — a prerequisite for reproducible processing |
+| **Configuration** | A single `canvod-settings.yaml` is validated by `CanvodConfig`, a Pydantic `BaseSettings` model; unknown keys are errors | Every run is fully described by one validated document — a prerequisite for reproducible processing |
 | **Data discovery** | Each receiver directory is scanned in any folder layout; files are selected by their canonical names or mapped to them by a naming recipe; the reader comes from `reader_format` or is detected per day; runs with duplicate or temporally overlapping files, or with files of two receivers in one directory, are stopped; files a run does not process are reported | Overlapping input files would double-count observations and bias SNR statistics; the gate makes this impossible |
 | **Auxiliary pipeline** | Downloads agency orbit (SP3) and, by default, clock (CLK) products from public data centers (ESA; NASA CDDIS as fallback once a free NASA Earthdata account is configured), then interpolates them once per day onto the epoch grid (00:00 plus multiples of the sampling interval): Hermite splines for orbits, piecewise linear for clocks | Satellite positions are needed to compute where each signal pierced the canopy (θ, φ); receivers only record *what* they saw, not *where from*. Alternatively, SBF files carry broadcast ephemeris, avoiding the download. Clock is orbit-independent and unused by the VOD formula — disable with `aux_data.fetch_clock: false` to skip its download/interpolation entirely |
 | **Reading & transform** | RINEX 2/3, SBF or NMEA files are parsed into `xarray.Dataset(epoch, sid)`; satellite ECEF positions become receiver-relative spherical coordinates (r, θ, φ), relative to the receiver position read from the data | The polar angle θ enters the VOD formula directly; azimuth φ locates the observation on the hemisphere for gridding |

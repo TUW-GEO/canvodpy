@@ -29,10 +29,9 @@ canvodpy config show        # print the settings canVODpy uses
 canvodpy doctor             # show which settings file canVODpy found
 ```
 
-`canvodpy config show` prints the settings after all overrides are
-applied, so a value set by an
-[environment variable](#environment-variable-overrides) appears instead
-of the value in the file.
+`canvodpy config show` prints the settings after the
+[overlay file](#overlay-file) is applied, so a value set there appears
+instead of the value in `canvod-settings.yaml`.
 
 ---
 
@@ -87,8 +86,7 @@ The same folder holds the naming recipes, in `recipes/`.
 `CANVOD_CONFIG_FILE` names an overlay file, like `--config`.
 
 Settings come from these sources, the first one wins:
-environment variable, overlay file, `canvod-settings.yaml`, package
-default. Write only the fields you want to change.
+overlay file, `canvod-settings.yaml`, package default. Write only the fields you want to change.
 
 canVODpy rejects unknown field names. The error names the closest
 allowed field and lists all allowed fields; canVODpy never corrects a
@@ -98,59 +96,6 @@ name by itself:
 processing.icechunk.chunk_strategies.vod_stores
   Unknown key 'vod_stores'. Did you mean 'vod_store'? Allowed keys: gnss_store, vod_store
 ```
-
----
-
-## Environment variable overrides
-
-An environment variable that starts with `CANVOD__` overrides one
-setting. Double underscores (`__`) separate the levels of the setting.
-This helps on clusters, where limits change from job to job but the
-settings file stays the same:
-
-```bash
-CANVOD__PROCESSING__PARAMS__N_MAX_THREADS=4 \
-    uv run canvodpy run --site mysite
-CANVOD__PROCESSING__PARAMS__DAYS_PER_BATCH=7 \
-    uv run canvodpy run --site mysite
-```
-
-!!! warning "Keep the variable and the command in one shell command"
-
-    `VAR=value` on a line of its own, without `export`, sets the variable
-    only in your shell; `canvodpy` never sees it. The `\` above continues
-    the line, so the variable and the command stay one shell command.
-
-    Two ways that work:
-
-    ```bash
-    # inline, one line, no backslash needed:
-    CANVOD__PROCESSING__PARAMS__DAYS_PER_BATCH=7 uv run canvodpy run --site mysite
-
-    # or export it once, then reuse it across multiple commands:
-    export CANVOD__PROCESSING__PARAMS__DAYS_PER_BATCH=7
-    canvodpy config show   # shows the override
-    uv run canvodpy run --site mysite
-    ```
-
-Write text, numbers, `true`, and `false` as they are. Write lists as JSON:
-
-```bash
-CANVOD__PROCESSING__PARAMS__KEEP_GNSS_OBSERVABLES='["SNR","Pseudorange"]' \
-    uv run canvodpy run --site mysite
-```
-
-Every setting has a variable. Some examples:
-
-| Variable                                                   | Overrides                                        |
-| ---------------------------------------------------------- | ------------------------------------------------ |
-| `CANVOD__PROCESSING__STORAGE__STORES_ROOT_DIR`             | `processing.storage.stores_root_dir`             |
-| `CANVOD__PROCESSING__CREDENTIALS__NASA_EARTHDATA_ACC_MAIL` | `processing.credentials.nasa_earthdata_acc_mail` |
-| `CANVOD__PROCESSING__PARAMS__N_MAX_THREADS`                | `processing.params.n_max_threads`                |
-
-To see the value canVODpy uses, run `canvodpy config show`. With
-`CANVOD__PROCESSING__PARAMS__N_MAX_THREADS=4` set, it shows
-`n_max_threads: 4`, whatever the file says.
 
 ---
 
@@ -204,7 +149,7 @@ processing:
     # website, license, publisher, publisher_url, naming_authority
 
   credentials:
-    nasa_earthdata_acc_mail: null  # or set the environment variable, see above
+    nasa_earthdata_acc_mail: null
 
   aux_data:
     agency: COD          # SP3/CLK analysis center code
@@ -254,7 +199,7 @@ processing:
         sid: -1
 
   storage:
-    stores_root_dir: /path/to/stores  # or CANVOD__PROCESSING__STORAGE__STORES_ROOT_DIR
+    stores_root_dir: /path/to/stores
     gnss_store_strategy: skip         # skip, overwrite, or unsafe_append; see the warning below
 ```
 
