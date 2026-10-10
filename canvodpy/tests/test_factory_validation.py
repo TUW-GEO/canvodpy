@@ -210,3 +210,26 @@ class TestAugmentationFactoryDeprecated:
 
         with pytest.warns(FutureWarning, match="canvod.ops.Op"):
             AugmentationFactory.list_available()
+
+    @pytest.mark.filterwarnings("ignore::FutureWarning")
+    def test_register_replace(self):
+        from canvodpy.factories import AugmentationFactory
+
+        from canvod.auxiliary.augmentation import AugmentationStep
+
+        class _First(AugmentationStep):
+            def augment(self, ds, aux_data, **kwargs):
+                return ds
+
+        class _Second(_First):
+            pass
+
+        name = "_test_replace"
+        try:
+            AugmentationFactory.register(name, _First)
+            with pytest.raises(ValueError, match="already registered"):
+                AugmentationFactory.register(name, _Second)
+            AugmentationFactory.register(name, _Second, replace=True)
+            assert AugmentationFactory._registry[name] is _Second
+        finally:
+            AugmentationFactory._registry.pop(name, None)

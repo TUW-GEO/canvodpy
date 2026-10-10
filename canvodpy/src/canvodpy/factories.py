@@ -470,9 +470,11 @@ class AugmentationFactory(ComponentFactory):
 
     @classmethod
     @deprecated(_AUGMENTATION_LEFT_OVER)
-    def register(cls, name: str, component_class: type) -> None:
+    def register(
+        cls, name: str, component_class: type, *, replace: bool = False
+    ) -> None:
         """Deprecated: augmentation steps are not used by ``canvodpy run``."""
-        super().register(name, component_class)
+        super().register(name, component_class, replace=replace)
 
     @classmethod
     @deprecated(_AUGMENTATION_LEFT_OVER)
