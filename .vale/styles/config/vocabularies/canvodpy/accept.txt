@@ -48,5 +48,11 @@ mypy
 isort
 [Uu]ntracked
 Makefile
-[Rr]ebas(e|ing)
+[Rr]ebas(e|es|ed|ing)
 [Tt]ransmissivity
+Dask
+Polars
+[Rr]echunk(s|ed|ing)?
+Zstandard
+[Ee]quirectangular
+CPUs

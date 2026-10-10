@@ -1,7 +1,7 @@
 """Pydantic models for store metadata (11 sections, ~90 fields).
 
-Aligns with FAIR data principles, DataCite 4.5, ACDD 1.3, STAC 1.1,
-and W3C PROV.
+Field names follow DataCite 4.5, ACDD 1.3, and STAC 1.1; ``validate.py``
+checks the fields against them and the FAIR principles.
 """
 
 from __future__ import annotations

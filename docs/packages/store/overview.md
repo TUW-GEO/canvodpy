@@ -1,137 +1,196 @@
+---
+title: canvod-store
+description: The GNSS store and the VOD store of a site, how runs write to them, and how to read them.
+---
+
 # canvod-store
 
-## Purpose
+`canvod-store` keeps the data of a site in two
+[Icechunk](https://icechunk.io/) stores: the **GNSS store** holds the
+observations of every receiver, and the **VOD store** holds the VOD
+results. Icechunk stores Zarr arrays and records every write as a commit,
+so earlier states of a store stay readable.
 
-The `canvod-store` package provides versioned storage management for GNSS vegetation optical depth data using **Icechunk** — a cloud-native transactional format for multidimensional arrays built on Zarr v3.
+This page describes what the stores hold, how a run writes to them, and how
+to read them in your own code.
 
-<div class="grid cards" markdown>
+## The two stores of a site
 
--   :fontawesome-solid-code-branch: &nbsp; **Git-like versioning**
+Each site has its own GNSS store and VOD store, both under
+`processing.storage.stores_root_dir`:
 
-    ---
+```text
+<stores_root_dir>/
+└── ExampleSite/
+    ├── rinex/   # GNSS store (processing.storage.gnss_store_name)
+    └── vod/     # VOD store (processing.storage.vod_store_name)
+```
 
-    Every write produces an Icechunk snapshot with a hash-addressable ID.
-    Roll back to any earlier state, audit every append, and reproduce any
-    result published from the store.
-
--   :fontawesome-solid-cloud: &nbsp; **Cloud-native format**
-
-    ---
-
-    Icechunk supports S3-compatible object stores (AWS, MinIO, Cloudflare R2).
-    canvod-store currently writes to local filesystem; the underlying library
-    is cloud-ready.
-
--   :fontawesome-solid-gauge-high: &nbsp; **Chunked time-series access**
-
-    ---
-
-    Default chunks: `epoch: 17280, sid: -1` — one receiver-day (17280 epochs
-    ≈ 24 h at 5 s sampling). Zstd compression, O(1) epoch-range reads.
-
--   :fontawesome-solid-fingerprint: &nbsp; **Three-layer deduplication**
-
-    ---
-
-    Hash, temporal overlap, and intra-batch guards prevent any data from
-    being written twice — safe to re-run pipelines at any time.
-
-</div>
-
----
-
-## Why versioned storage?
-
-**Zarr** is chunked, compressed N-dimensional array storage — cloud-native
-and parallel-read-friendly. Think HDF5 without the file-locking.
-
-**Icechunk** adds git-like version control on top of Zarr: every
-`session.commit()` creates an immutable snapshot with a hash-addressable ID.
-This gives the store three properties that matter for reproducible science:
-
-- **ACID commits** — a write either fully lands or it doesn't. No
-  half-written stores after a crash or interrupted ingest.
-- **Reproducibility** — cite a snapshot ID in a paper and always recover
-  the exact dataset state used for that analysis.
-- **Auditability** — `store.get_ops_log()` shows what was written, when,
-  and by whom; `store.plot_commit_graph()` visualises the full history.
-- **Overlapping writers** — if another commit lands while a write is in
-  progress, canVODpy rebases the write onto it when the two touched
-  different groups (e.g. two receivers). If both changed the same data, the
-  later commit fails with `icechunk.RebaseFailedError` and writes nothing.
-  On a local or network disk, two processes must still not commit at the
-  same moment: Icechunk cannot detect that race there.
-
----
-
-## Architecture
-
-`GnssResearchSite` coordinates **two separate Icechunk repositories per site**, not one — a GNSS store (RINEX, SBF or NMEA data) and a VOD store for retrieval results:
+The GNSS store holds data from every reader format (RINEX, SBF, and NMEA),
+although its default directory name is `rinex`.
 
 ```mermaid
 graph TD
-    A1["`**GNSS Data (RINEX / SBF)**
-    epoch x sid`"]
-    A1 --> B["`**Preprocessing**
-    encoding, padding`"]
-    B --> C["RINEX/SBF Icechunk Repository"]
-    C --> D1["`**receiver group**
-    canopy_01/, reference_01_canopy_01/
-    epoch x sid`"]
-    D1 --> E["VOD Calculation"]
-    E --> F["VOD Icechunk Repository"]
-    F --> G["`**calculator/analysis group**
-    {calculator}/{analysis}
-    epoch x sid`"]
+    A["GNSS files of a receiver"] --> B["Reader"]
+    B --> C["GNSS store<br/>canopy_01, reference_01_canopy_01, ..."]
+    C --> D["VOD calculator"]
+    D --> E["VOD store<br/>tau_omega/canopy_01_vs_reference_01, ..."]
 ```
 
----
+## Groups
 
-## Core Components
+A store holds one group per receiver, or per VOD analysis.
 
-=== "Storage Manager"
+In the GNSS store:
 
-    ```python
-    from canvod.store import create_gnss_store, create_vod_store
+- A canopy receiver has one group, named after the receiver, for example
+  `canopy_01`.
+- A reference receiver has one group per canopy receiver it is paired with,
+  named `{reference}_{canopy}`, for example `reference_01_canopy_01`.
 
-    # Create or open a GNSS store
-    store = create_gnss_store(store_path)
+In the VOD store, a group is named `{calculator}/{analysis}`, for example
+`tau_omega/canopy_01_vs_reference_01`.
 
-    # Write a new group (first ingest for this receiver)
-    store.write_initial_group(dataset, group_name="canopy_01")
+The data variables of a GNSS store group (for example `SNR`, `Phase`,
+`Pseudorange`, and `Doppler`, depending on the reader) have the dimensions
+`epoch` and `sid` and sit directly in the group:
 
-    # Append subsequent days
-    store.append_to_group(dataset, group_name="canopy_01")
+```text
+canopy_01/
+├── SNR
+├── Phase
+├── ...
+└── metadata/
+    ├── table     # log book: one row per stored file
+    └── sbf_obs   # SBF receivers only: receiver metadata per file
+```
 
-    # Or let the store decide automatically
-    store.write_or_append_group(dataset, group_name="canopy_01")
+The log book (`metadata/table`) records each stored file: its hash, start,
+end, file name, the dataset attributes, and the preprocessing record (see
+[Preprocessing during a run](../ops/overview.md#the-preprocessing-record)).
+Every value in it is text, JSON, or a time.
 
-    # Runs write through the orchestrator, which runs the deduplication
-    # checks first; write directly only in your own scripts.
-    ```
+## How a run writes
 
-=== "Site Interface"
+`canvodpy run` writes to both stores; in your own code, read from them.
+A run is the only writer of a store while it runs: Icechunk can't detect
+two commits at the same time on a local or network file system.
 
-    ```python
-    from canvodpy import Site
+For each receiver and day, a run does the following:
 
-    site = Site("ExampleSite")
-    site.gnss_store.list_groups()  # ["canopy_01", "reference_01_canopy_01"]
-    site.gnss_store.get_group_info("canopy_01")
+1. Reads the files and computes the satellite angles.
+1. Applies the preprocessing in `processing.preprocessing`, if set.
+1. Checks each file against the group's log book (see
+   [Duplicate checks](#duplicate-checks)).
+1. Writes the new data with one commit, and the store metadata with a
+   second commit (see [canvod-store-metadata](../store-metadata/overview.md)).
 
-    # Read a group back as an xarray.Dataset
-    ds = site.gnss_store.read_group("canopy_01")
+An append must match the group. A run stops with an error if:
 
-    # Time-range selection is done with xarray after loading
-    ds_subset = ds.sel(epoch=slice("2025-01-01", "2025-01-15"))
-    ```
+- the data has other variables than the group
+  (`GroupVariablesMismatchError`);
+- the data has other `sid` labels than the group
+  (`GroupCoordinatesMismatchError`). The labels are stored once per group,
+  so an append with other labels, for example after you change
+  `processing.params.aggregate_glonass_fdma`, would relabel the stored
+  data;
+- the epochs aren't in GPS time, or the group doesn't record its time
+  scale (`EpochTimeSystemError`). Every stored epoch is GPS time
+  (`epoch.attrs["time_system"] == "GPS"`). Groups written by canVODpy
+  before it stored every epoch in GPS time have no record (their SBF and
+  NMEA epochs were UTC, 18 s earlier); write to a new store.
 
-### Grids and analysis results
+If another commit lands while a write is in progress, canVODpy rebases the
+write onto it when the two changed different groups. If both changed the
+same data, the later commit fails with `icechunk.RebaseFailedError` and
+writes nothing.
 
-`store_grid` writes a hemisphere grid to the `grids/{grid_name}` group of
-a store, and `load_grid` reads it back. A grid read back works for cell
-assignment only if it is an equal-area, equal-angle, or equirectangular
-grid; for the other types, build the grid again with `create_hemigrid`.
+## Duplicate checks
+
+Before a run writes a file, it checks the file against the group's log
+book, in three ways:
+
+| Check | What it finds | Where |
+|---|---|---|
+| Hash | The same file, already stored (SHA-256 of the file) | The orchestrator, and again in `append_to_group()` |
+| Time span | A file whose time span overlaps stored data, even under another name or split differently | The orchestrator, and again in `append_to_group()` |
+| Batch | Two files of one batch that cover the same time | The orchestrator |
+
+A file that fails a check counts as already stored. The default write
+strategy, `skip`, doesn't write it; `overwrite` replaces its time range.
+For details, see [Write strategies](storage-strategies.md).
+
+## Read a store
+
+Open the stores of a configured site with `Site`:
+
+```python
+from canvodpy import Site
+
+site = Site("ExampleSite")
+site.gnss_store.list_groups()  # ["canopy_01", "reference_01_canopy_01"]
+site.gnss_store.get_group_info("canopy_01")
+
+ds = site.gnss_store.read_group("canopy_01")
+ds_day = site.gnss_store.read_group("canopy_01", date="2025001")
+ds_range = site.gnss_store.read_group(
+    "canopy_01", time_slice=slice("2025-01-01", "2025-01-15")
+)
+```
+
+`read_group()` returns an `xarray.Dataset` that reads its data only when a
+value is needed. For more about reading, chunks, and earlier states of a
+store, see [Versioning with Icechunk](icechunk.md).
+
+To open a store by its path, use `create_gnss_store()` or
+`create_vod_store()`:
+
+```python
+from canvod.store import create_gnss_store
+
+store = create_gnss_store("/data/stores/ExampleSite/rinex")
+```
+
+## History
+
+Each store keeps its commits and the operations on it:
+
+```python
+store = site.gnss_store
+
+store.print_history(limit=20)  # commits on main, newest first
+store.plot_commit_graph()  # commit graph: SVG in a notebook, text in a terminal
+store.print_ops_log(limit=30)  # commits, branch operations, expiry, garbage collection
+
+store.create_release_tag("v1.0")  # tag the latest commit on main
+store.list_tags()
+store.compare_snapshots(snapshot_id_1, snapshot_id_2)
+```
+
+## Command line
+
+`canvodpy store` shows the stores of a configured site:
+
+```bash
+canvodpy store list                                 # GNSS and VOD store paths of every site
+canvodpy store info ExampleSite                     # branches, groups, and statistics
+canvodpy store info ExampleSite --group canopy_01   # the dataset and log book of one group
+canvodpy store log ExampleSite                      # commit graph
+canvodpy store log ExampleSite --ops                # operations on the store
+canvodpy store maintain ExampleSite                 # what expiry and garbage collection would delete
+```
+
+`--store vod` opens the VOD store instead of the GNSS store, and `--branch`
+selects a branch other than `main`. For every option, see the
+[CLI reference](../../api/cli.md).
+
+## Grids and analysis results
+
+`store_grid()` writes a hemispherical grid to the `grids/{grid_name}` group
+of a store, and `load_grid()` reads it back. A grid read back works for
+cell assignment only if it's an equal-area, equal-angle, or equirectangular
+grid; for the other grid types, build the grid again with
+`create_hemigrid()`.
 
 ```python
 from canvod.grids import create_hemigrid
@@ -143,9 +202,9 @@ grid = load_grid(store, "equal_area_4deg")
 ```
 
 `AnalysisStorage` stores the results of an analysis on a grid in a VOD
-store: weights, masks, statistics, and per-cell time series. The
-per-cell time series go to their own branch, one dataset per system,
-band, and code:
+store: weights, masks, statistics, and time series per cell. The time
+series per cell go to the `per_cell` branch, one dataset per system, band,
+and code:
 
 ```python
 from canvod.store import AnalysisStorage
@@ -156,126 +215,11 @@ storage.list_percell_datasets()  # ['C_B2b_I', 'E_E1_C', 'G_L1_C', ...]
 ds = storage.load_percell_timeseries(system="G", band="L1", code="C")
 ```
 
----
+## Next steps
 
-## Storage Layout
-
-```
-{store_root}/
-└── {group}/                    # canopy receiver: "canopy_01"; reference
-    │                           # receiver, per paired canopy: "reference_01_canopy_01"
-    ├── SNR                     # Data variables (epoch × sid), at group root
-    ├── Phase
-    ├── Pseudorange
-    ├── Doppler
-    └── metadata/
-        ├── table               # Per-file ingest ledger (hash, start, end, path, preprocessing record)
-        └── sbf_obs             # SBF only: per-file receiver metadata (geometry, PVT, DOP, ...)
-```
-
-Variables are written directly at the receiver group root — there is no
-intermediate `obs/` subgroup. The `metadata/table` sub-path holds the
-per-file ingest registry used by the deduplication guardrails.
-
----
-
-## Data Flow
-
-1. **Ingest** — Raw GNSS data (RINEX, SBF or NMEA readers) + satellite geometry
-2. **Preprocess** — Normalise encodings, pad to global SID, strip fill values; the
-   optional preprocessing (`processing.preprocessing`) only if set
-3. **Store observations** — Append to `{group}/` with three-layer deduplication.
-   An append must have the variables and the `sid` labels of the group: the
-   labels are stored once per group, so other labels (e.g. after switching
-   `processing.params.aggregate_glonass_fdma`) would relabel the stored data.
-   Such an append stops the run (`GroupVariablesMismatchError`,
-   `GroupCoordinatesMismatchError`). Every stored epoch is GPS time
-   (`epoch.attrs["time_system"] == "GPS"`); epochs in another time scale, and
-   groups that do not record theirs, stop the run too (`EpochTimeSystemError`).
-   Groups written by canVODpy before it stored every epoch in GPS time have no
-   record (their SBF and NMEA epochs were UTC, 18 s earlier): write to a new
-   store.
-4. **Query** — Retrieve by time range, signal, or group name
-5. **VOD** — `VodComputer` reads canopy and reference groups and writes the VOD store
-
-Icechunk on a local or network file system cannot detect two commits at the same
-time, so a run has exactly one writer. Each receiver-day is written with one commit
-for its data (with `overwrite` on a temporary branch, then promoted) and one for the
-store metadata.
-
----
-
-## Three-Layer Deduplication
-
-Every ingest passes through three independent guards before a byte is
-written:
-
-| Layer | What it checks | Guard location |
-|-------|----------------|----------------|
-| **1. Hash match** | SHA-256 of the source file against the group's ingest ledger | `_check_existing_with_temporal_overlap()` in the orchestrator; again in `append_to_group()` |
-| **2. Temporal overlap** | A new file covering an already-ingested time range, even if renamed or re-split (catches daily-vs-sub-daily file overlap) | same |
-| **3. Intra-batch overlap** | Two files of one batch covering the same time | `_check_existing_with_temporal_overlap()` |
-
-A file that fails a check counts as already stored: the default write strategy
-`skip` does not write it (and logs it), `overwrite` replaces its time range. See
-[Storage Strategies](storage-strategies.md).
-
----
-
-## Storage Format
-
-| Property | Value |
-| -------- | ----- |
-| Backend format | Icechunk (Zarr v3) |
-| Default chunks | `epoch: 17280`, `sid: -1` |
-| Compression | Zstd level 3 |
-| Storage backend | Local or network file system (Icechunk library supports S3) |
-| Versioning | Git-like snapshots, hash-addressable |
-| Deduplication | Three-layer: hash + temporal overlap + intra-batch |
-
----
-
-## Versioning and History API
-
-```python
-# View ingest history
-store.get_ops_log(limit=20)  # Returns list of dicts
-store.print_ops_log(limit=50)  # Pretty-prints to console
-
-# Visualise commit graph
-store.plot_commit_graph()  # Wraps repo.ancestry_graph()
-
-# Tag and compare snapshots
-store.create_release_tag("v1.0", snapshot_id="abc123")
-store.list_tags()
-store.compare_snapshots(snapshot_id_1="abc123", snapshot_id_2="def456")
-```
-
----
-
-## CLI Quick Reference
-
-`canvodpy store` wraps the Python API above for terminal use — inspecting a
-site's store doesn't require dropping into Python or a notebook:
-
-```bash
-canvodpy store list                          # every configured site's gnss/vod store paths + status
-canvodpy store info ExampleSite                  # tree of branches/groups + compression stats
-canvodpy store info ExampleSite --group canopy_01   # full dataset + metadata table for one group
-canvodpy store log ExampleSite                   # commit graph (wraps repo.ancestry_graph())
-canvodpy store log ExampleSite --ops             # ops audit trail (wraps repo.ops_log())
-```
-
-`--store vod` targets the VOD store instead of the default GNSS observation
-store; `--branch` selects a non-`main` branch for `info`/`log`.
-
----
-
-## Store-Level Provenance
-
-Rich DataCite 4.5 / ACDD 1.3 / STAC 1.1 metadata is stored as a root
-Zarr attribute (`canvod_metadata`) and managed by the companion package.
-
-[:octicons-arrow-right-24: canvod-store-metadata — provenance and FAIR compliance](../store-metadata/overview.md)
-
-[:octicons-arrow-right-24: Icechunk storage details](icechunk.md)
+- [Versioning with Icechunk](icechunk.md): the store format, chunks, the
+  Icechunk settings, and reading earlier states.
+- [Write strategies](storage-strategies.md): what a run does with a file
+  that's already stored.
+- [canvod-store-metadata](../store-metadata/overview.md): the metadata that
+  describes a whole store.

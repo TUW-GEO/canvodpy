@@ -1,119 +1,86 @@
-# Storage Strategies
-
-The write strategy controls what a run does when a file is already in the
-GNSS store (same file hash, or an overlapping epoch range). New files are
-always written, whatever the strategy. Set it in `canvod-settings.yaml`
-under `processing.storage.gnss_store_strategy`.
-
-!!! note "VOD writes always skip"
-    The strategy applies to the GNSS store only. A VOD result is always
-    skipped when the VOD store already holds one computed from the same
-    source files, or one whose epoch range overlaps it; the log book records
-    `skip`. To recompute VOD for days already in the store, write to a new
-    VOD store (set another `processing.storage.vod_store_name`).
-
-<div class="grid cards" markdown>
-
--   :fontawesome-solid-forward-step: &nbsp; **Skip**
-
-    ---
-
-    No-op if the file already exists. Never writes, never touches existing data.
-
-    *Best for: initial ingestion, pipeline restarts (default)*
-
--   :fontawesome-solid-arrows-rotate: &nbsp; **Overwrite**
-
-    ---
-
-    Deletes the existing epochs for that file's range, then writes the new version.
-    The log book keeps all rows; `sbf_obs` loses that range and gets the
-    new file's `sbf_obs`, if stored. Each run produces a new Icechunk snapshot for audit. The new version is
-    staged on a temporary branch (`overwrite_{receiver}_{YYYYDOY}`) and moved to
-    `main` only if nothing else was committed to `main` meanwhile; otherwise the
-    run stops with `BranchMovedError`, `main` keeps the other commit, and the
-    staged version stays on the temporary branch.
-
-    *Best for: correcting already-ingested data after a pipeline bug fix*
-
--   :fontawesome-solid-triangle-exclamation: &nbsp; **Unsafe append**
-
-    ---
-
-    Writes the file's data again on top of what's already there, with **no
-    epoch-level uniqueness check**. See the warning below before using this.
-
-    *Best for: essentially nothing in normal operation — see warning*
-
-</div>
-
+---
+title: Write strategies
+description: What a run does with a file that is already in the GNSS store.
 ---
 
-## Behaviour Reference
+# Write strategies
 
-| Strategy | File already exists | File is new | Version snapshot |
-|----------|:--------------------:|:------------:|:----------------:|
-| `skip` | No write | Write | On write |
-| `overwrite` | Delete old epochs, write new | Write | Always |
-| `unsafe_append` | Write again on top (duplicates epochs) | Write | Always |
+The write strategy sets what a run does with a file that's already in the
+GNSS store: a file with the same hash, or one whose time span overlaps
+stored data (see [Duplicate checks](overview.md#duplicate-checks)). A run
+always writes new files, whatever the strategy.
 
----
-
-## Usage
+Set the strategy in `canvod-settings.yaml`:
 
 ```yaml
 processing:
   storage:
-    gnss_store_strategy: skip      # raw observations are immutable
+    gnss_store_strategy: skip
 ```
 
-The strategy comes from the settings file; `MyIcechunkStore()` has no
-`strategy=` argument. `canvodpy config show` prints the value in use under
+`MyIcechunkStore` has no `strategy` argument; the strategy comes from the
+settings. `canvodpy config show` prints the strategy in use under
 **Storage**.
 
----
+!!! note "The VOD store always skips"
+    The strategy applies to the GNSS store only. A run skips a VOD result
+    when the VOD store already holds one computed from the same source
+    files, or one whose epoch range overlaps it; the log book records
+    `skip`. To compute VOD again for days that are already in the VOD
+    store, write to a new VOD store: set another
+    `processing.storage.vod_store_name`.
 
-## Recommended Defaults
+## The strategies
 
-!!! success "Raw GNSS observations → `skip`"
-    Raw GNSS data doesn't change after collection — there's no legitimate "two versions
-    of the same file." A re-run over already-ingested files should be a no-op, not a
-    rewrite. `skip` is the default for exactly this reason.
+| Strategy | File already stored | New file |
+|---|---|---|
+| `skip` (default) | Not written; the run logs it. | Written |
+| `overwrite` | Its time range is replaced. | Written |
+| `unsafe_append` | Written again, next to the stored data. | Written |
 
-!!! danger "`unsafe_append` can corrupt unguarded reads"
-    `unsafe_append` does **not** merge or deduplicate — it writes the file's data again on
-    top of what's already there, producing duplicate `epoch` coordinate values in the Zarr
-    array. xarray does not enforce unique index values.
+### `skip`
 
-    The two built-in pipeline read paths already guard against this:
-    `GnssResearchSite.read_receiver_data()` routes through `read_group_deduplicated()`
-    whenever this strategy is set, and `VodComputer.compute_bulk()` unconditionally
-    deduplicates every read via `_dedup_sort()` regardless of strategy. But
-    `MyIcechunkStore.read_group()` itself — the low-level API used directly by custom
-    scripts — has **no**
-    such guard: `.sel()` on a duplicated label can raise or silently return multiple
-    matches, and aligning two datasets that both carry the duplicate (e.g. canopy vs.
-    reference) produces a cartesian product at those epochs, corrupting results without
-    raising an error.
+A file that's already stored isn't written, and the store doesn't change.
+Running again over the same files writes nothing new. This is the default.
 
-    The duplication is also physical, not just a read-time artifact: Icechunk stores the
-    extra chunks permanently, regardless of whether the read side protects against it.
-    Avoid `unsafe_append` unless you have a specific reason, and be aware any read path
-    outside the two guarded ones above is unprotected.
+### `overwrite`
 
----
+The run replaces the stored data in the file's time range with the file's
+data. Use it to correct stored data, for example after a fix in a reader
+or another ephemeris source.
 
-## Performance
+- The run merges the group's other epochs with the new data and rewrites
+  the group in epoch order, so an overwrite writes the whole group.
+- The log book keeps all its rows. For an SBF receiver, `sbf_obs` loses
+  that time range and gets the new file's rows.
+- The new version is written to a temporary branch,
+  `overwrite_{receiver}_{YYYYDOY}`, and moved to `main` only if nothing
+  else was committed to `main` in the meantime. Otherwise the run stops
+  with `BranchMovedError`: `main` keeps the other commit, and the new
+  version stays on the temporary branch.
+- The replaced data stays in earlier snapshots until they're expired and
+  garbage is collected (`canvodpy store maintain`).
 
-| Strategy | Typical write throughput | Storage overhead | Read safety |
-|----------|--------------------------|-------------------|-------------|
-| `skip` | Fastest — hash check only | None | Safe |
-| `overwrite` | Slowest — rewrites the receiver's whole group | Low after garbage collection | Safe |
-| `unsafe_append` | Like a new file — full write, no check | Higher (old + new chunks kept) | Unsafe outside the two guarded read paths above |
+### `unsafe_append`
 
-!!! tip "Garbage collection"
-    Overwritten chunks remain in the Icechunk object store until you run garbage collection (`canvodpy store maintain <site>`, a dry run unless you pass `--execute`). The old
-    versions are still accessible via snapshot IDs — useful for auditing before cleaning
-    up. `unsafe_append`'s duplicate chunks are unaffected by GC in the same way, since
-    they're still referenced by the current snapshot — GC only reclaims chunks that
-    nothing references anymore.
+The run writes the file's data again, with no check for epochs that are
+already stored. The group then holds the same `epoch` values twice, and
+xarray doesn't require unique index values.
+
+!!! danger "Duplicate epochs break reads that don't remove them"
+    Two reads remove duplicate epochs:
+
+    - `GnssResearchSite.read_receiver_data()` reads with
+      `read_group_deduplicated()` when the strategy is `unsafe_append`.
+    - `VodComputer.compute_bulk()` removes duplicate epochs from every read,
+      whatever the strategy.
+
+    `MyIcechunkStore.read_group()` doesn't. On data with duplicate epochs,
+    `.sel()` can raise an error or return several values, and aligning two
+    datasets that both have the duplicates (for example canopy and
+    reference) pairs each duplicate with each other one, without an
+    error.
+
+    The duplicates are stored: garbage collection doesn't remove them,
+    because the current snapshot still uses them. Don't use
+    `unsafe_append` unless you have a specific reason.
