@@ -3,7 +3,7 @@ title: Ephemeris Sources
 description: Three levels of satellite ephemeris for computing observation geometry
 ---
 
-# Ephemeris Sources
+# Ephemeris sources
 
 Computing satellite geometry (theta, phi) requires knowing where each satellite
 is at each observation epoch. canvodpy supports two ephemeris sources; a third
@@ -11,7 +11,7 @@ is at each observation epoch. canvodpy supports two ephemeris sources; a third
 
 ---
 
-## Source Overview
+## Source overview
 
 <div class="grid cards" markdown>
 
@@ -62,7 +62,7 @@ two sources on its test data; until then, do not mix them in one analysis.
 
 ---
 
-## Agency Final Products (SP3/CLK)
+## Agency final products (SP3/CLK)
 
 The default path of `canvodpy run` (`ephemeris_source: final`).
 
@@ -110,7 +110,7 @@ processing:
 
 ---
 
-## SBF Broadcast
+## SBF broadcast
 
 Available when the receiver is a Septentrio unit outputting SBF binary format,
 with `ephemeris_source: broadcast`.
@@ -158,7 +158,7 @@ processing:
 
 ---
 
-## RINEX NAV Broadcast
+## RINEX NAV broadcast
 
 !!! abstract "Status: not implemented"
 
@@ -193,15 +193,15 @@ Output: satellite ECEF (X, Y, Z) in meters
 
 ### GLONASS exception
 
-GLONASS broadcasts state vectors (x, y, z, vx, vy, vz) in PZ-90 frame
-instead of Keplerian elements. Propagation uses 4th-order Runge-Kutta
+GLONASS broadcasts state vectors ($x$, $y$, $z$, $v_x$, $v_y$, $v_z$) in PZ-90 frame
+instead of Keplerian elements. Propagation uses fourth-order Runge-Kutta
 numerical integration.
 
 ### NAV file types
 
 | Extension | Content | Constellations |
 |-----------|---------|----------------|
-| `.YYp` | Mixed GNSS navigation | All (GPS + GLONASS + Galileo + BeiDou + ...) |
+| `.YYp` | Mixed GNSS navigation | All (GPS, GLONASS, Galileo, BeiDou, and others) |
 | `.YYn` | GPS-only navigation | GPS |
 | `.YYg` | GLONASS-only navigation | GLONASS |
 
@@ -213,7 +213,7 @@ target epoch, not simply the first record found.
 
 ---
 
-## Receiver File Types Summary
+## Receiver file types summary
 
 | Extension | Format | Observations | Broadcast ephemeris | Use in canvodpy |
 |-----------|--------|:---:|:---:|---|
@@ -233,9 +233,9 @@ target epoch, not simply the first record found.
 
 ---
 
-## Choosing an Ephemeris Source
+## Choosing an ephemeris source
 
-??? question "When should I use agency final products?"
+??? question "When to use agency final products"
 
     Use `ephemeris_source: "final"` when:
 
@@ -244,7 +244,7 @@ target epoch, not simply the first record found.
       observation)
     - You have internet access during processing
 
-??? question "When should I use broadcast ephemerides?"
+??? question "When to use broadcast ephemerides"
 
     Use `ephemeris_source: "broadcast"` when:
 

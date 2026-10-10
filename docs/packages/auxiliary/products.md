@@ -1,10 +1,10 @@
-# Product Registry
+# Product registry
 
 The product registry provides declarative configuration for 23 final and rapid SP3/CLK products from 14 analysis centers (agency codes). Products are defined in TOML; no hardcoded URLs in the processing code. Every product was checked against the file listings of ESA GSSC and NASA CDDIS (2025-001 and 2026-244, checked 2026-10-05); `just check-products` repeats the check (see [Checking the registry](#checking-the-registry)).
 
 ---
 
-## Product Types
+## Product types
 
 <div class="grid cards" markdown>
 
@@ -39,7 +39,7 @@ carry the issue hour. The settings reject `product_type: ultra-rapid`.
 
 ---
 
-## Available Products
+## Available products
 
 Systems: G GPS, R GLONASS, E Galileo, C BeiDou, J QZSS, read from the SP3
 header of 2026-09-01. A run drops the observations of satellites the product
@@ -71,12 +71,12 @@ download if the configured product does not exist or has no clocks while
 `fetch_clock` is true, and names the closest products.
 
 !!! note "Several samplings per product"
-    Agencies have changed the sampling of their files over the years (e.g. ESA
+    Agencies have changed the sampling of their files over the years (for example ESA
     rapid: 15 min SP3 and 5 min CLK in 2025, 5 min SP3 and 30 s CLK in 2026).
     The registry lists every sampling a product has been published with, and
     the readers try them in that order, locally and then on each server. The
-    sampling of the file used is recorded in the orbit dataset's
-    `sampling_rate` attribute.
+    sampling of the file used is recorded in the `sampling_rate` attribute
+    of the orbit dataset.
 
 !!! tip "Servers and fallback"
     Products are downloaded from ESA GSSC (no account needed). NASA CDDIS is a
@@ -119,7 +119,7 @@ download if the configured product does not exist or has no clocks while
 
 ---
 
-## Registry Format
+## Registry format
 
 Products are declared in
 `packages/canvod-auxiliary/src/canvod/auxiliary/products/products.toml`, one
@@ -166,4 +166,4 @@ product, the files of that product the servers do have, and exits with 1 if
 any product is missing. NASA CDDIS is checked when the settings hold
 `credentials.nasa_earthdata_acc_mail`; otherwise products hosted only there
 are reported as skipped. Run it after editing `products.toml`, and from time
-to time: agencies rename products, change samplings and stop publishing.
+to time: agencies rename products, change samplings, and stop publishing.

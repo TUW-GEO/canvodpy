@@ -1,4 +1,4 @@
-# RINEX v2.11 Parsing
+# RINEX v2.11 parsing
 
 `Rnxv2Obs` reads [RINEX 2.11](https://files.igs.org/pub/data/format/rinex211.txt){:target="_blank"} observation files into the same `(epoch × sid)` Dataset that `Rnxv3Obs` produces. The format specification ships next to the reader as `canvod/readers/rinex/rinex211.txt`; every rule on this page cites it.
 
@@ -24,7 +24,7 @@ RINEX 2 cannot express that. Its observation codes are one letter for the observ
 | `P1`, `P2` | GPS / GLONASS P code |
 | `Lx`, `Dx`, `Sx` | carrier phase, Doppler, signal strength on frequency *x*, no code |
 
-and section 10.1.1 states that the two-character code cannot express the underlying code (P, Y, M in GPS) or the channel (e.g. I/Q in L5, the GPS L2C channels). Table A1 adds that observations collected under antispoofing are stored as "L2" or "P2", so the tracking technique is not recorded either. Phase, Doppler, and signal strength carry no code information at all.
+and section 10.1.1 states that the two-character code cannot express the underlying code (P, Y, M in GPS) or the channel (for example I/Q in L5, the GPS L2C channels). Table A1 adds that observations collected under antispoofing are stored as "L2" or "P2," so the tracking technique is not recorded either. Phase, Doppler, and signal strength carry no code information at all.
 
 Mapping RINEX 3 down to RINEX 2 would throw that information away for every modern file. canvodpy therefore lifts RINEX 2 up into the RINEX 3 structure, and fills in only what RINEX 2 itself defines.
 
@@ -64,31 +64,31 @@ Where RINEX 2 *does* identify the signal, the reader writes the real RINEX 3 cod
 
 Two consequences follow directly from the specification:
 
-- **Phase and signal strength of a RINEX 2 file share one sid per band** (`L1|u`), and the pseudoranges get their own (`L1|C`, `L1|p`). Table A1 describes signal strength as belonging "to the respective phase observations"; neither is tied to a code.
-- **Selecting a RINEX 3 code picks up RINEX 2 data only where RINEX 2 defines that code** (e.g. GPS `C1` in `L1|C`). `ds.sel(sid=ds.code == "W")` returns nothing from a RINEX 2 file, because RINEX 2 never said the signal was `W`. To use the remaining RINEX 2 data, select the markers explicitly and decide how to treat them.
+- **Phase and signal strength of a RINEX 2 file share one SID per band** (`L1|u`), and the pseudoranges get their own (`L1|C`, `L1|p`). Table A1 describes signal strength as belonging "to the respective phase observations"; neither is tied to a code.
+- **Selecting a RINEX 3 code picks up RINEX 2 data only where RINEX 2 defines that code** (for example GPS `C1` in `L1|C`). `ds.sel(sid=ds.code == "W")` returns nothing from a RINEX 2 file, because RINEX 2 never said the signal was `W`. To use the remaining RINEX 2 data, select the markers explicitly and decide how to treat them.
 
 Every RINEX 2 dataset documents the markers in its `"Tracking Code Markers"` attribute and records the source version in `"RINEX Version"`.
 
 !!! note "Global SID padding"
     The markers are registered in the constellation `BAND_CODES`, so
     `pad_to_global_sid()` keeps them. RINEX 2 and RINEX 3 data of the same
-    station can share one store: their sids are disjoint wherever RINEX 2
+    station can share one store: their SIDs are disjoint wherever RINEX 2
     could not resolve the code, and identical where it could (`G05|L1|C`).
 
 ---
 
 ## Default SID preset
 
-The `default` SID preset is defined in RINEX 3 codes, which RINEX 2 signal strength never carries. Band-only sids are populated only from RINEX 2 files, so the preset does not include them; otherwise every RINEX 3 or SBF dataset would carry them as empty sids. To process RINEX 2 files, select them explicitly (`sids: mode: custom`). The commented-out block at the end of `presets/default.yaml` lists the band-only sids of the preset's satellites that follow its exclusion rule (no codeless or semi-codeless tracking):
+The `default` SID preset is defined in RINEX 3 codes, which RINEX 2 signal strength never carries. Band-only SIDs are populated only from RINEX 2 files, so the preset does not include them; otherwise every RINEX 3 or SBF dataset would carry them as empty SIDs. To process RINEX 2 files, select them explicitly (`sids: mode: custom`). The commented-out block at the end of `presets/default.yaml` lists the band-only SIDs of the satellites of the preset that follow its exclusion rule (no codeless or semi-codeless tracking):
 
 | Band | RINEX 3 candidates for `u` | Listed |
 |---|---|---|
 | GLONASS G1 | `C`, `P`; RINEX 3.04 defines codeless/semi-codeless attributes for GPS only (Sect. 5.1) | `Rnn\|G1\|u` |
 | Galileo E1 | `A`, `B`, `C`, `X`, `Z`; likewise no codeless/semi-codeless attribute | `Enn\|E1\|u` |
 | GPS L1 | C/A, L1C, P(Y) codeless (`N`) or Z-tracking (`W`) | `Gnn\|L1\|u`, **assuming** S1 does not come from codeless or Z-tracking of P(Y) |
-| GPS L2 | L2C, C/A, or P(Y) | excluded: without L2C, L2 carries P(Y) or, by ground command, C/A (IS-GPS-200N Sect. 3.2.3); civil receivers track P(Y) only by codeless or semicodeless processing (Betz & Cerruti 2020, doi:10.1002/navi.347), and RINEX 2 cannot tell these modes from L2C |
+| GPS L2 | L2C, C/A, or P(Y) | excluded: without L2C, L2 carries P(Y) or, by ground command, C/A (IS-GPS-200N Sect. 3.2.3); civil receivers track P(Y) only by codeless or semi-codeless processing (Betz & Cerruti 2020, doi:10.1002/navi.347), and RINEX 2 cannot tell these modes from L2C |
 
-GLONASS G2 and Galileo E5a/E5b band-only sids are not listed.
+GLONASS G2 and Galileo E5a/E5b band-only SIDs are not listed.
 
 ---
 
@@ -110,10 +110,10 @@ The `LLI` variable has the [RINEX 3.04 meaning](rinex-format.md#loss-of-lock-and
 
 The `WAVELENGTH FACT L1/2` header record gives the factor for GPS L1 and L2 phase: 1 = full-cycle, 2 = half-cycle ambiguities (squaring receivers). The factor in force is the header default or a satellite-specific record, including records inserted with epoch flag 4 later in the file. Bit 1 switches it for the current epoch only. Every phase with factor 2 gets RINEX 3 bit 1, even without an LLI digit.
 
-Phase, Doppler, and signal strength of one band land in one sid, and some converters write flags on every observable. Following RINEX 3.04 Table A3 notes 1–3:
+Phase, Doppler, and signal strength of one band land in one SID, and some converters write flags on every observable. Following RINEX 3.04 Table A3 notes 1–3:
 
 - **LLI** is taken only from the phase observation. Flags on code, Doppler, or signal strength are ignored.
-- **SSI** is taken from the phase; for a sid without phase, from the pseudorange. RINEX 2.11 does not assign the SSI to an observable.
+- **SSI** is taken from the phase; for a SID without phase, from the pseudorange. RINEX 2.11 does not assign the SSI to an observable.
 
 ## Signal strength unit
 

@@ -1,17 +1,17 @@
-# Preprocessing Pipeline
+# Preprocessing pipeline
 
-Before interpolation, auxiliary data must be restructured to match the `(epoch × sid)` layout of the observation datasets. This pipeline bridges the **sv** (satellite) indexing of SP3/CLK files and the **sid** (signal ID) indexing of the observations.
+Before interpolation, auxiliary data must be restructured to match the `(epoch × sid)` layout of the observation datasets. This pipeline bridges the `sv` (satellite) indexing of SP3/CLK files and the `sid` (signal ID) indexing of the observations.
 
 In a run, `AuxDataPipeline` calls `prep_aux_ds()` with the signal IDs kept by the `sids:` settings, so the orbits and clocks carry the same signals as the observations before they are interpolated.
 
 ---
 
-## The Dimension Mismatch Problem
+## The dimension mismatch problem
 
 <div class="grid" markdown>
 
 !!! info "SP3 / CLK files"
-    Index by **satellite vehicle** (sv):
+    Index by **satellite vehicle** (`sv`):
 
     ```python
     sp3_data.dims
@@ -21,7 +21,7 @@ In a run, `AuxDataPipeline` calls `prep_aux_ds()` with the signal IDs kept by th
     GPS G01 has one entry: one position per epoch.
 
 !!! note "RINEX obs Dataset"
-    Index by **signal ID** (sid):
+    Index by **signal ID** (`sid`):
 
     ```python
     rinex_data.dims
@@ -32,20 +32,20 @@ In a run, `AuxDataPipeline` calls `prep_aux_ds()` with the signal IDs kept by th
 
 </div>
 
-Satellite **position** is frequency-independent (all signals leave the same antenna), so the sv $\rightarrow$ sid mapping simply **replicates** each position across all signal IDs for that satellite.
+Satellite **position** is frequency-independent (all signals leave the same antenna), so the `sv` $\rightarrow$ `sid` mapping simply **replicates** each position across all signal IDs for that satellite.
 
 ---
 
-## Pipeline Functions
+## Pipeline functions
 
 | Function | Purpose | Input dims | Output dims |
 |----------|---------|-----------|-------------|
-| `preprocess_aux_for_interpolation()` | Minimal prep for interpolation | sv: 32 | sid: 896 |
-| `prep_aux_ds()` | Steps 1-4; with `keep_sids`, only those signals (used by runs) | sv: 32 | sid: 4429 |
-| `map_aux_sv_to_sid()` | Step 1: expand sv $\rightarrow$ sid | sv: 32 | sid: 896 |
-| `pad_to_global_sid()` | Step 2: pad to all constellations | sid: 896 | sid: 4429 |
+| `preprocess_aux_for_interpolation()` | Minimal prep for interpolation | `sv`: 32 | `sid`: 896 |
+| `prep_aux_ds()` | Steps 1-4; with `keep_sids`, only those signals (used by runs) | `sv`: 32 | `sid`: 4429 |
+| `map_aux_sv_to_sid()` | Step 1: expand `sv` $\rightarrow$ `sid` | `sv`: 32 | `sid`: 896 |
+| `pad_to_global_sid()` | Step 2: pad to all constellations | `sid`: 896 | `sid`: 4429 |
 | `normalize_sid_dtype()` | Step 3: convert to object dtype | Any | dtype fixed |
-| `strip_fillvalue()` | Step 4: remove `_FillValue` attrs | Any | attrs cleaned |
+| `strip_fillvalue()` | Step 4: remove `_FillValue` attributes | Any | attributes cleaned |
 
 ---
 
@@ -119,7 +119,7 @@ ds = strip_fillvalue(ds)
 
 ---
 
-## Scientific Note
+## Scientific note
 
 Replicating satellite positions across signal IDs is scientifically valid:
 

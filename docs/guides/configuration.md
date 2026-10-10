@@ -274,7 +274,7 @@ sites:
     country: null            # ISO 3166-1 alpha-2, e.g. AT
     latitude: null           # WGS84 decimal degrees
     longitude: null
-    altitude_m: null         # metres above WGS84 ellipsoid
+    altitude_m: null         # meters above WGS84 ellipsoid
 
     receivers:
       reference_01:
@@ -308,7 +308,7 @@ sites:
 
 The signals (signal IDs, SIDs) to keep. There are three modes:
 
-| Mode     | Behaviour                                          |
+| Mode     | Behavior                                           |
 | -------- | -------------------------------------------------- |
 | `all`    | Keep every SID in the file                         |
 | `preset` | Use a named built-in list (see below)              |

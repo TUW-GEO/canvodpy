@@ -94,7 +94,7 @@ after each commit, merge and checkout.
 
 ```bash
 just graph-affected add_cell_ids_to_ds_fast   # everything that uses it
-just graph-explain VodComputer                # its neighbours, both directions
+just graph-explain VodComputer                # its neighbors, both directions
 just graph-path VodComputer TauOmegaZerothOrder
 ```
 

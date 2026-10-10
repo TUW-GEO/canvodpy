@@ -1,4 +1,4 @@
-# SBF Reader (Septentrio Binary Format)
+# SBF reader (Septentrio Binary Format)
 
 ## Overview
 
@@ -23,7 +23,7 @@ the observations of that same epoch. One decoder serves `iter_epochs()`,
 
 ---
 
-## Decoded SBF Blocks
+## Decoded SBF blocks
 
 <div class="grid cards" markdown>
 
@@ -106,7 +106,7 @@ the observations of that same epoch. One decoder serves `iter_epochs()`,
 
 ---
 
-## Output Datasets
+## Output datasets
 
 ### Observations dataset: `to_ds()`
 
@@ -116,7 +116,7 @@ Identical structure to `Rnxv3Obs.to_ds()`, a drop-in replacement:
 | -------- | ----- |
 | Dimensions | `(epoch, sid)` |
 | `epoch` coordinate | `datetime64[ns]`, GPS time (attribute `time_system: GPS`) |
-| `sid` coordinate | `"SV\|Band\|Code"` string (e.g. `G07\|L1\|C`) |
+| `sid` coordinate | `"SV\|Band\|Code"` string (for example `G07\|L1\|C`) |
 | Data variables | `SNR`, `Pseudorange`, `Phase`, `Doppler`, `SSI`, `Smoothing`, `HalfCycle` (select with `keep_data_vars`) |
 | Validation | Passes `validate_dataset()` |
 
@@ -279,7 +279,7 @@ Source: RefGuide-4.14.0, ReceiverStatus, field RxError, p.398.
 
 ---
 
-## Coordinate Conventions
+## Coordinate conventions
 
 ### Polar angle θ (theta)
 
@@ -318,12 +318,12 @@ The stored value is the **geographic (compass) azimuth**:
 
 ---
 
-## CF-Convention Metadata Attributes
+## CF-convention metadata attributes
 
 Every variable in the metadata dataset carries full CF-convention attributes for NetCDF
 interoperability and scientific reproducibility.
 
-=== "pdop"
+=== "`pdop`"
 
     ```python
     meta_ds["pdop"].attrs
@@ -336,7 +336,7 @@ interoperability and scientific reproducibility.
     # }
     ```
 
-=== "broadcast_theta"
+=== "`broadcast_theta`"
 
     ```python
     meta_ds["broadcast_theta"].attrs
@@ -351,7 +351,7 @@ interoperability and scientific reproducibility.
     # }
     ```
 
-=== "rx_error"
+=== "`rx_error`"
 
     ```python
     meta_ds["rx_error"].attrs
@@ -366,7 +366,7 @@ interoperability and scientific reproducibility.
     # }
     ```
 
-=== "pvt_mode"
+=== "`pvt_mode`"
 
     ```python
     meta_ds["pvt_mode"].attrs
@@ -456,7 +456,7 @@ interoperability and scientific reproducibility.
 
 ---
 
-## Combined Scan API: `to_ds_and_auxiliary()`
+## Combined scan API: `to_ds_and_auxiliary()`
 
 !!! info "Why a combined scan?"
 
@@ -490,7 +490,7 @@ tuple[xr.Dataset, dict[str, xr.Dataset]]
 
 ---
 
-## Source Format Identification
+## Source format identification
 
 Every reader exposes a `source_format` property used by the store and viewer
 to identify the data origin. Every reader must define it; `SbfReader`
@@ -507,7 +507,7 @@ detect whether `sbf_obs` metadata is available.
 
 ---
 
-## Broadcast Ephemeris: SBF as Geometry Source
+## Broadcast ephemeris: SBF as geometry source
 
 The SBF `SatVisibility` block provides satellite azimuth and elevation computed
 by the receiver firmware, per satellite either from its almanac or from its
@@ -571,7 +571,7 @@ The metadata is stored at `{receiver}/metadata/sbf_obs` in the Zarr hierarchy.
 
 ---
 
-## Satellite Catalog Enrichment
+## Satellite catalog enrichment
 
 Combine SBF observations with IGS satellite metadata to add SVN, block type,
 TX power, mass, and orbital plane as coordinates:
@@ -609,7 +609,7 @@ See [:octicons-arrow-right-24: Satellite Catalog](satellite-catalog.md) for the 
 
 ---
 
-## Time Conversion
+## Time conversion
 
 SBF time stamps are GPS time: GPS week (`WNc`) and time of week (`TOW`,
 milliseconds), with no leap seconds (RefGuide-4.14.0, Section 2.3, p.53).
@@ -624,7 +624,7 @@ where GPS epoch = 1980-01-06 00:00:00. A file named for a GPS day starts at
 
 ---
 
-## GLONASS FDMA Frequencies
+## GLONASS FDMA frequencies
 
 GLONASS signals use Frequency Division Multiple Access (FDMA). The center
 frequency depends on the frequency number $K = \text{FreqNr} - 8$

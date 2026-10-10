@@ -3,7 +3,7 @@ title: Satellite Catalog (IGS SINEX)
 description: Time-aware GNSS satellite metadata from the IGS igs_satellite_metadata.snx file
 ---
 
-# Satellite Catalog (IGS SINEX Metadata)
+# Satellite catalog (IGS SINEX metadata)
 
 ## Why satellite metadata matters for GNSS-T
 
@@ -27,7 +27,7 @@ directly affect signal interpretation:
 
 The IGS SINEX catalog provides all of this information in a single, authoritative,
 machine-readable file. `canvodpy run` does not use it: the catalog is a tool for
-your own analysis (e.g. `enrich_dataset` on data read from a store).
+your own analysis (for example `enrich_dataset` on data read from a store).
 
 ## Overview
 
@@ -60,7 +60,7 @@ The file has eight `SATELLITE/` blocks; the catalog reads the six below (not `CO
 
 ---
 
-## Loading the Catalog
+## Loading the catalog
 
 ### Discovery chain
 
@@ -196,7 +196,7 @@ meta = catalog.get_prn_metadata("G01", date(2024, 1, 1))
 
 ---
 
-## Polars DataFrame Export
+## Polars DataFrame export
 
 The catalog can be exported as a Polars DataFrame for interactive exploration
 in marimo notebooks.
@@ -237,7 +237,7 @@ in marimo notebooks.
 
 ---
 
-## Dataset Enrichment
+## Dataset enrichment
 
 `enrich_dataset()` adds satellite metadata as `sid`-level coordinates on an
 existing xarray Dataset. This attaches SVN, block type, TX power, mass, plane,
@@ -273,7 +273,7 @@ gps3_data = enriched.sel(sid=gps3_mask)
 
 ---
 
-## Integration with Constellations
+## Integration with constellations
 
 Each constellation class has an `update_svs_from_catalog()` method that
 replaces the static SV list with the actual active PRNs from the catalog:
@@ -290,7 +290,7 @@ print(len(gps.svs))  # the PRNs active on that date (32 on 2025-01-01)
 
 ---
 
-## Summary of Catalog Contents
+## Summary of catalog contents
 
 ```python
 catalog = SatelliteCatalog.load()
@@ -310,17 +310,17 @@ print(catalog.summary())
 
 ---
 
-## Data Classes Reference
+## Data classes reference
 
 | Class | Fields | Description |
 |-------|--------|-------------|
-| `SatelliteIdentity` | svn, cospar_id, satcat, block, comment | Static satellite info |
-| `PrnAssignment` | svn, prn, start, end | PRN $\leftrightarrow$ SVN with validity period |
-| `TxPowerRecord` | svn, power_watts, start, end, comment | TX power with validity |
-| `MassRecord` | svn, mass_kg, start, end, comment | Mass with validity |
-| `FrequencyChannel` | svn, channel, start, end, comment | GLONASS FDMA channel |
-| `PlaneSlot` | svn, plane, slot, start, end, comment | Orbital plane and slot |
-| `Reassignment` | prn, old_svn, new_svn, old_end, new_start | PRN reassignment event |
+| `SatelliteIdentity` | `svn`, `cospar_id`, `satcat`, `block`, `comment` | Static satellite info |
+| `PrnAssignment` | `svn`, `prn`, `start`, `end` | PRN $\leftrightarrow$ SVN with validity period |
+| `TxPowerRecord` | `svn`, `power_watts`, `start`, `end`, `comment` | TX power with validity |
+| `MassRecord` | `svn`, `mass_kg`, `start`, `end`, `comment` | Mass with validity |
+| `FrequencyChannel` | `svn`, `channel`, `start`, `end`, `comment` | GLONASS FDMA channel |
+| `PlaneSlot` | `svn`, `plane`, `slot`, `start`, `end`, `comment` | Orbital plane and slot |
+| `Reassignment` | `prn`, `old_svn`, `new_svn`, `old_end`, `new_start` | PRN reassignment event |
 
 ---
 

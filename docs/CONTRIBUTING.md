@@ -19,14 +19,14 @@ Contributions of all kinds are welcome — bug reports, feature implementations,
 
     ---
 
-    Issues labelled **"bug"** and **"help wanted"** are open for PRs.
+    Issues labeled **"bug"** and **"help wanted"** are open for PRs.
     Comment on the issue first so nobody duplicates work.
 
 -   :fontawesome-solid-star: &nbsp; **Implement Features**
 
     ---
 
-    Issues labelled **"enhancement"** and **"help wanted"** are open.
+    Issues labeled **"enhancement"** and **"help wanted"** are open.
     Keep scope narrow — one feature per PR.
 
 -   :fontawesome-solid-book: &nbsp; **Improve Documentation**
@@ -201,7 +201,7 @@ The CI runs the **same checks as the pre-commit hooks**, so fixing hook failures
     1. The change follows `CODING_STANDARDS.md` (rules and per-change checklist); the reasons are in the [decisions](adr/index.md).
     2. Include tests for all new functionality.
     3. New code must not reduce test coverage. Aim to increase it.
-    4. Update the Zensical documentation in `docs/` if adding or changing public API, behaviour, or configuration.
+    4. Update the Zensical documentation in `docs/` if adding or changing public API, behavior, or configuration.
     5. Target Python 3.14+.
     6. Add yourself to `CONTRIBUTORS.md` if this is your first contribution.
 ### Test coverage requirement

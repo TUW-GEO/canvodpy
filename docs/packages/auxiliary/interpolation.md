@@ -1,4 +1,4 @@
-# Interpolation Methods
+# Interpolation methods
 
 SP3 orbits come every 5 or 15 minutes and CLK clocks every 30 s or 5
 minutes; observations come every 1 to 30 s. canvod-auxiliary interpolates
@@ -25,7 +25,7 @@ provider of the Python API and the Airflow tasks all use these functions.
 
     Used for **CLK clock offsets**.
 
-    Linear between neighbouring clock epochs, never across a detected
+    Linear between neighboring clock epochs, never across a detected
     clock jump.
 
 </div>
@@ -101,7 +101,7 @@ and last interval of the day were off by up to 37 km ($0.11^\circ$), and a
 ## Piecewise linear (clocks)
 
 Satellite clock offsets can jump. Linear interpolation between
-neighbouring CLK epochs, split at each jump, avoids fitting across one.
+neighboring CLK epochs, split at each jump, avoids fitting across one.
 
 ```python
 from canvod.auxiliary.interpolation import ClockConfig, ClockInterpolationStrategy
@@ -123,7 +123,7 @@ result = interpolator.interpolate(clk_data, target_epochs)
     one with the largest difference). The series is split at each jump and
     interpolated linearly within each segment, never across a jump. Target
     epochs inside a jump gap, outside the data, or in a segment of a single
-    epoch are NaN. `window_size=1` compares the two neighbouring epochs only.
+    epoch are NaN. `window_size=1` compares the two neighboring epochs only.
 
 The strategy interpolates every data variable whose name contains
 `clock`, `clk`, `Clock` or `CLK`, and raises `ValueError` if there is none.

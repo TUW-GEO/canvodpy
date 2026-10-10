@@ -1,7 +1,7 @@
 # SBF field decoding reference
 
 Every value stored in `obs_ds` and the `sbf_obs` metadata dataset is derived
-from raw SBF integers through a well-defined transformation.  This page documents
+from raw SBF integers through a well-defined transformation. This page documents
 each formula with the source field type, the arithmetic applied, and the firmware
 page reference.
 
@@ -166,7 +166,7 @@ where $f_1, f_2$ are the carrier frequencies of the Type1 (master) and Type2
 **Source:** `MeasEpochChannelType1.CarrierMSB` (i1), `CarrierLSB` (u2), p.261.
 
 The carrier phase is encoded as a fractional offset relative to the pseudorange,
-expressed in cycles.  Let $\lambda = c / f$ be the carrier wavelength:
+expressed in cycles. Let $\lambda = c / f$ be the carrier wavelength:
 
 $$
 L = \frac{PR}{\lambda} + \bigl(\text{CarrierMSB} \times 65536 + \text{CarrierLSB}\bigr) \times 10^{-3} \quad [\text{cycles}]
@@ -316,8 +316,8 @@ $$
 T_\text{lock} = \text{LockTime}_\text{raw} \quad [\text{s}]
 $$
 
-Raw field: u2.  Duration of uninterrupted carrier phase tracking.  Reset to 0 on
-reacquisition.  Clipped to 65534 s.  **Do-Not-Use:** 65535 $\rightarrow$ NaN.
+Raw field: u2. Duration of uninterrupted carrier phase tracking. Reset to 0 on
+reacquisition. Clipped to 65534 s. **Do-Not-Use:** 65535 $\rightarrow$ NaN.
 
 ### Cumulative loss-of-continuity counter
 
@@ -325,7 +325,7 @@ $$
 N_\text{slip} = \text{CumLossCont}_\text{raw} \quad \text{(modulo 256)}
 $$
 
-Raw field: u1, direct copy.  Increments at every reacquisition or cycle slip.  A
+Raw field: u1, direct copy. Increments at every reacquisition or cycle slip. A
 change $\Delta N_\text{slip} \neq 0$ between consecutive epochs is a direct
 indicator of a carrier-phase discontinuity (cycle slip).
 
@@ -367,7 +367,7 @@ Page references: DOP block p.348, PVTGeodetic pp.337–339, ReceiverStatus pp.39
 | **$\theta$ (polar angle)** | Elevation $\rightarrow$ co-elevation ($90^\circ - \text{elevation}$), then degrees $\rightarrow$ radians |
 | **$\varphi$ (azimuth)** | Scale $0.01^\circ$/LSB, degrees $\rightarrow$ radians |
 | **GLONASS frequencies** | Slot-dependent FDMA formula required for $\lambda$ and Type2 Doppler |
-| **Epoch** | GPS week + TOW (ms) $\rightarrow$ GPS time datetime (no leap seconds) |
+| **Epoch** | GPS week + TOW (ms) $\rightarrow$ `datetime64[ns]` in GPS time (no leap seconds) |
 | **CN0HighRes** | Bit-field extraction (bits 0–2) then scale 1/32 dB-Hz/LSB |
 | **CarMPCorr** | Integer division by 512 to convert i1 to fractional cycles |
 

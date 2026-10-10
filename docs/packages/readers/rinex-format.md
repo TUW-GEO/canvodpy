@@ -1,10 +1,10 @@
-# RINEX v3.04 Parsing
+# RINEX v3.04 parsing
 
 `Rnxv3Obs` implements a full [RINEX v3.04](https://igs.org/formats-and-standards/){:target="_blank"} observation file parser, from raw text to a validated `xarray.Dataset` in a single `to_ds()` call.
 
 ---
 
-## File Structure
+## File structure
 
 A RINEX v3 observation file has two sections separated by `END OF HEADER`:
 
@@ -31,7 +31,7 @@ Supported systems: [GPS](https://gssc.esa.int/navipedia/index.php/GPS){:target="
 
 ---
 
-## Class Hierarchy
+## Class hierarchy
 
 ```mermaid
 classDiagram
@@ -66,7 +66,7 @@ classDiagram
 
 ---
 
-## Parsing Pipeline
+## Parsing pipeline
 
 ### Step 1: initialization
 
@@ -180,9 +180,9 @@ The full pipeline:
 
 ---
 
-## Pydantic Data Models
+## Pydantic data models
 
-### Header Model
+### Header model
 
 ```python
 class Rnxv3Header(BaseModel):   # rinex/v3_04.py
@@ -199,7 +199,7 @@ class Rnxv3Header(BaseModel):   # rinex/v3_04.py
     # ... more fields (see source for the full list)
 ```
 
-### Epoch Record
+### Epoch record
 
 Pydantic dataclasses in `gnss_specs/models.py`:
 
@@ -221,7 +221,7 @@ class Rnxv3ObsEpochRecord:
     data: list[Satellite]  # must hold num_satellites satellites
 ```
 
-### Observation and Satellite
+### Observation and satellite
 
 ```python
 class Observation:
@@ -238,7 +238,7 @@ class Satellite:
 
 ---
 
-## Signal ID Mapping
+## Signal ID mapping
 
 RINEX observation codes (`S1C`, `L2W`, `C5Q`, …) are mapped to the canonical Signal ID format `SV|BAND|CODE`:
 
@@ -248,7 +248,7 @@ RINEX observation codes (`S1C`, `L2W`, `C5Q`, …) are mapped to the canonical S
 | `S5Q` on `E08` | Galileo | E5a | Q | `E08\|E5a\|Q` |
 | `S2P` on `R05` | GLONASS | G2 | P | `R05\|G2\|P` |
 
-### Constellation Band Mapping
+### Constellation band mapping
 
 ```python
 SignalIDMapper().SYSTEM_BANDS == {
@@ -268,12 +268,12 @@ Satellite numbers follow RINEX 3.04 section 8.4. SBAS satellites are `Snn` with 
 
 ---
 
-## Loss of Lock and Signal Strength Indicators
+## Loss of lock and signal strength indicators
 
-Pseudorange, phase, Doppler, and SNR of one signal share one sid (`S1C`, `L1C`, `C1C`, `D1C` $\rightarrow$ `G01|L1|C`), but each observation field carries its own LLI and SSI digit. The reader stores one LLI and one SSI per sid, following RINEX 3.04 Table A3 notes 1–3:
+Pseudorange, phase, Doppler, and SNR of one signal share one SID (`S1C`, `L1C`, `C1C`, `D1C` $\rightarrow$ `G01|L1|C`), but each observation field carries its own LLI and SSI digit. The reader stores one LLI and one SSI per SID, following RINEX 3.04 Table A3 notes 1–3:
 
 - **LLI** is taken from the **phase** observation only ("should only be associated with the phase observation"). Flags on the other observables are ignored.
-- **SSI** is taken from the **phase**; if the signal has no phase (e.g. `C1W`/`S1W`), from the **pseudorange**. SSI on Doppler or SNR fields is ignored.
+- **SSI** is taken from the **phase**; if the signal has no phase (for example `C1W`/`S1W`), from the **pseudorange**. SSI on Doppler or SNR fields is ignored.
 
 The result does not depend on the order of observables in the header.
 
@@ -283,7 +283,7 @@ The result does not depend on the order of observables in the header.
 | 1 | Half-cycle ambiguity/slip possible |
 | 2 | Galileo BOC tracking of an MBOC-modulated signal |
 
-`-1` marks "no indicator written". Table A3 defines no further bits, so the `valid_range` of `LLI` is `[-1, 7]`. The RINEX 3 meaning of `LLI` and `SSI` is shared by all readers; the [RINEX 2 reader](rinex-v2-format.md#loss-of-lock-and-signal-strength-indicators) translates its bits.
+`-1` marks "no indicator written." Table A3 defines no further bits, so the `valid_range` of `LLI` is `[-1, 7]`. The RINEX 3 meaning of `LLI` and `SSI` is shared by all readers; the [RINEX 2 reader](rinex-v2-format.md#loss-of-lock-and-signal-strength-indicators) translates its bits.
 
 ## Signal strength unit
 
@@ -291,7 +291,7 @@ The unit of the `S` observations is declared by the optional `SIGNAL STRENGTH UN
 
 ---
 
-## Performance Notes
+## Performance notes
 
 <div class="grid" markdown>
 
@@ -341,7 +341,7 @@ naming the file; nothing is converted. The epoch coordinate records
 `time_system: GPS`. Seconds keep the 100 ns resolution of the epoch
 record's `F11.7` field.
 
-## Error Handling
+## Error handling
 
 ```python
 from pydantic import ValidationError
