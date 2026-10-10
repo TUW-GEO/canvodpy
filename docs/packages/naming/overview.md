@@ -2,11 +2,12 @@
 
 `canvod-preflight` defines the canVOD filename convention: `CanVODFilename` parses and
 builds canonical names, and `find_overlaps` finds files whose named time spans overlap.
-`canvodpy run` uses both to decide which files it processes.
+A run uses both to decide which files it processes, from the command line and from
+Python alike.
 
 ---
 
-## The CanVODFilename Convention
+## The canVOD filename convention
 
 Every canVOD-compatible GNSS file follows this naming format:
 
@@ -21,7 +22,7 @@ Every canVOD-compatible GNSS file follows this naming format:
 | Field | Width | Description | Example |
 |-------|-------|-------------|---------|
 | `SIT` | 3 | Site ID, uppercase | `ROS`, `HAI` |
-| `T` | 1 | Receiver type: **R** = reference, **A** = active (below-canopy) | `R`, `A` |
+| `T` | 1 | Receiver type: **R** = reference, **A** = active (below the canopy) | `R`, `A` |
 | `NN` | 2 | Receiver number, zero-padded | `01`, `35` |
 | `AGC` | 3 | Data provider / agency ID | `TUW`, `GFZ` |
 | `_R` | 2 | RINEX data-source field, always `R` (receiver-generated) | `_R` |
@@ -49,13 +50,13 @@ Every canVOD-compatible GNSS file follows this naming format:
 ROSR01TUW_R_20250010000_01D_05S_AA.rnx
 ```
 
-| Part | Value | Meaning |
+| Part | Field | Meaning |
 |------|-------|---------|
-| `ROS` | Site | ExampleSite |
-| `R` | Type | Reference (above-canopy) |
+| `ROS` | Site | Site ID `ROS` |
+| `R` | Type | Reference receiver |
 | `01` | Number | Receiver 01 |
 | `TUW` | Agency | TU Wien |
-| `2025001` | Date | 2025, DOY 001 |
+| `2025001` | Date | 2025, day of year 001 |
 | `0000` | Start | 00:00 GPS time |
 | `01D` | Period | 1-day file |
 | `05S` | Sampling | 5-second intervals |
@@ -63,13 +64,17 @@ ROSR01TUW_R_20250010000_01D_05S_AA.rnx
 | `rnx` | Type | RINEX observation |
 
 As in the RINEX 3 long names, the start time is in the time scale of the
-observations, which for canvodpy is GPS time.
+observations, which for canVODpy is GPS time.
+
+!!! example "Try it in a notebook"
+
+    Open [Naming convention](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/01_naming_convention.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
 ## Which files a run processes
 
-`canvodpy run` scans each receiver's `directory` recursively, in any folder layout (all
+A run scans each receiver's `directory` recursively, in any folder layout (all
 files in one folder, one folder per day, or deeper nesting). A file's day comes from the
 date in its name, not from its folder. Without a naming recipe, only files that follow
 the convention are processed. A run stops before reading any data if
@@ -98,7 +103,7 @@ Check a site before processing it; the check finds the files exactly as a run do
 also lists the files a run would pass over:
 
 ```bash
-just config-check-data <site>   # canvodpy config validate --site <site>
+canvodpy config validate --site <site>
 ```
 
 ---

@@ -11,6 +11,7 @@ Zensical
 Zenodo
 Pydantic
 Septentrio
+Hatanaka
 Navipedia
 (?i)pseudoranges?
 (?i)ephemerides
