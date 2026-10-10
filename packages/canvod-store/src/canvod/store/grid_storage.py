@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+import structlog
 import xarray as xr
 from canvod.grids import grid_to_dataset
 from canvod.grids.core import GridData
@@ -17,6 +18,8 @@ from canvod.store_metadata.io import commit_with_rebase
 
 if TYPE_CHECKING:
     from canvod.store.store import MyIcechunkStore
+
+logger = structlog.get_logger(__name__)
 
 
 def store_grid(
@@ -51,8 +54,6 @@ def store_grid(
     >>> snapshot_id = store_grid(grid, my_store, 'equal_area_4deg')
 
     """
-    print(f"\nStoring grid '{grid_name}'...")
-
     # Convert to unified xarray format
     ds_grid = grid_to_dataset(grid)
 
@@ -65,9 +66,13 @@ def store_grid(
         to_icechunk(ds_grid, session, group=group_path, mode="w")
         snapshot_id = commit_with_rebase(session, f"Stored {grid_name} grid structure")
 
-    print(f"  ✓ Stored to '{group_path}'")
-    print(f"  ✓ Snapshot: {snapshot_id[:8]}...")
-    print(f"  ✓ Cells: {grid.ncells}, Type: {grid.grid_type}")
+    logger.info(
+        "grid_stored",
+        group=group_path,
+        snapshot=snapshot_id,
+        ncells=grid.ncells,
+        grid_type=grid.grid_type,
+    )
 
     return snapshot_id
 
@@ -101,8 +106,6 @@ def load_grid(
 
     """
     import polars as pl
-
-    print(f"\nLoading grid '{grid_name}'...")
 
     group_path = f"grids/{grid_name}"
 
@@ -220,7 +223,11 @@ def load_grid(
         },
     )
 
-    print(f"  ✓ Loaded from '{group_path}'")
-    print(f"  ✓ Cells: {grid.ncells}, Type: {grid.grid_type}")
+    logger.info(
+        "grid_loaded",
+        group=group_path,
+        ncells=grid.ncells,
+        grid_type=grid.grid_type,
+    )
 
     return grid

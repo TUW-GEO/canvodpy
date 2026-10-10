@@ -12,6 +12,7 @@ Tests cover:
 - Metadata preservation
 - Error handling for invalid inputs
 - Concurrent grid access from multiple sessions
+- Reporting through the log instead of print()
 """
 
 from __future__ import annotations
@@ -358,3 +359,20 @@ class TestOldGridsNames:
         with pytest.warns(FutureWarning, match="canvod.store.AnalysisStorage"):
             storage = OldAnalysisStorage(vod_store.store_path)
         assert isinstance(storage, AnalysisStorage)
+
+
+def test_store_and_load_log_instead_of_printing(
+    vod_store, small_equal_area_grid
+) -> None:
+    """store_grid() and load_grid() report through the log, not print()."""
+    from structlog.testing import capture_logs
+
+    with capture_logs() as logs:
+        store_grid(small_equal_area_grid, vod_store, "logged")
+        load_grid(vod_store, "logged")
+    events = [(e["event"], e["group"], e["ncells"]) for e in logs]
+    ncells = small_equal_area_grid.ncells
+    assert events == [
+        ("grid_stored", "grids/logged", ncells),
+        ("grid_loaded", "grids/logged", ncells),
+    ]
