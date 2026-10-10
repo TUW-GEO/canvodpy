@@ -131,7 +131,7 @@ there's no attaching a debugger to a cron job after the fact. Log more than
 feels necessary, especially around: file I/O, external calls (downloads,
 Icechunk writes), anything with a fallback/degraded path, and any place a
 silent skip could hide data loss. See `docs/guides/diagnostics.md` for the
-full picture (two-track logging, `run_id`, crash handling, `stage_timer`,
+full picture (the log files, `run_id`, the failure events, `stage_timer`,
 the performance dashboard) — this section is the short "how do I add a log
 line" version.
 

@@ -19,8 +19,7 @@ management lives in [canvod.config](canvod-config.md) instead.
 ## Logging
 
 The run identifier and the stage timing; the log output is configured by
-`canvodpy.setup_logging` (see the [Diagnostics & Performance Monitoring
-guide](../guides/diagnostics.md)).
+`canvodpy.setup_logging` (see [Diagnostics](../guides/diagnostics.md)).
 
 ::: canvod.utils.logging
     options:

@@ -40,3 +40,6 @@ VODnet
 Geoinformation
 SIDs
 SID
+[Tt]racebacks?
+jq
+structlog
