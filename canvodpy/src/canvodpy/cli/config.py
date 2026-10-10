@@ -532,12 +532,6 @@ def _show_processing(config: ProcessingConfig) -> None:
         "Keep GNSS Observables", ", ".join(config.params.keep_gnss_observables)
     )
     table.add_row("Days per Batch", str(config.params.days_per_batch))
-    mem_str = (
-        f"{config.params.max_memory_gb} GB"
-        if config.params.max_memory_gb
-        else "[dim]no limit[/dim]"
-    )
-    table.add_row("Max Memory", mem_str)
     affinity_str = (
         str(config.params.cpu_affinity)
         if config.params.cpu_affinity

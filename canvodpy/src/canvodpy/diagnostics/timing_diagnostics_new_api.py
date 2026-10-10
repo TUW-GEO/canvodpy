@@ -127,7 +127,6 @@ def diagnose_processing_new_api(
     print(f"resource_mode: {proc.resource_mode}")
     print(f"n_max_threads (workers): {proc.n_max_threads}")
     print(f"days_per_batch: {proc.days_per_batch}")
-    print(f"max_memory_gb: {proc.max_memory_gb}")
     print(f"cpu_affinity: {proc.cpu_affinity}")
     print(f"nice_priority: {proc.nice_priority}")
     print(f"gnss_store_strategy: {cfg.processing.storage.gnss_store_strategy}")

@@ -213,13 +213,22 @@ class TestProcessingParams:
         p = ProcessingParams(
             resource_mode="manual",
             n_max_threads=8,
-            max_memory_gb=32.0,
             nice_priority=10,
         )
         r = p.resolve_resources()
         assert r["n_workers"] == 8
-        assert r["max_memory_gb"] == 32.0
         assert r["nice_priority"] == 10
+
+    def test_max_memory_gb_deprecated(self):
+        with pytest.warns(FutureWarning, match="'max_memory_gb' is left over"):
+            ProcessingParams(max_memory_gb=32.0)
+
+    def test_max_memory_gb_unset_no_warning(self):
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            ProcessingParams()
 
     def test_default_keep_gnss_observables(self):
         p = ProcessingParams()

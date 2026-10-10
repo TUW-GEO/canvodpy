@@ -116,7 +116,6 @@ The settings are under `processing.params` in `canvod-settings.yaml`.
 | `threads_per_worker` | none (1) | Threads that numerical libraries such as OpenBLAS and MKL use in each worker, 1 to 8. If you set `OMP_NUM_THREADS` or a similar variable yourself, your value applies. |
 | `cpu_affinity` | none | With `manual`: the CPU cores the workers run on. Works on Linux and Windows; macOS ignores it. |
 | `nice_priority` | `-5` | With `manual`: the [nice value](https://en.wikipedia.org/wiki/Nice_(Unix)) added to the workers' priority, from -20 (highest) to 19 (lowest). Only an administrator can set a negative value; for other users the workers keep the normal priority. With `auto`, the run always tries -5. |
-| `max_memory_gb` | none | Has no effect yet: canVODpy writes it to the log but doesn't limit memory. |
 
 On a server you share with others, use `manual` with at most half of the
 CPU cores and a positive `nice_priority`, such as 10, so the run gives way
@@ -128,8 +127,7 @@ to other programs.
 one run. In Python, `site.pipeline()` takes `n_workers`, `days_per_batch`
 and `threads_per_worker`. Setting the number of workers this way replaces
 the choice of `resource_mode: auto`. The workers' CPU cores and priority
-always come from the settings file: the `cpu_affinity` and
-`nice_priority` arguments of `site.pipeline()` have no effect yet.
+always come from the settings file.
 
 ---
 

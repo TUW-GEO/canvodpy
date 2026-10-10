@@ -119,8 +119,7 @@ processing:
 
     # Manual-mode caps (ignored when resource_mode: auto)
     # n_max_threads: 8           # Worker processes (≤ your core count)
-    # max_memory_gb: 16          # Total RAM budget (null = no limit)
-    # cpu_affinity: [0, 1, 2, 3] # Pin to CPU core IDs, Linux only
+    # cpu_affinity: [0, 1, 2, 3] # Pin to CPU core IDs, not on macOS
     # nice_priority: 10          # OS priority (0 = normal, 19 = lowest)
 
   # ---------------------------------------------------------------------------

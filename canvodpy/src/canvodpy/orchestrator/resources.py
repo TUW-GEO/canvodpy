@@ -5,14 +5,44 @@ from __future__ import annotations
 import os
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 import psutil
 import structlog
 
 from canvod.utils.logging import get_run_id, set_run_id
+from canvod.utils.tools import deprecated_argument
 
 logger = structlog.get_logger(__name__)
+
+_NO_EFFECT_ARGUMENTS = {
+    "max_memory_gb": (
+        "It has no effect: canVODpy does not limit memory. "
+        "To lower memory use, use fewer workers or a smaller days_per_batch."
+    ),
+    "cpu_affinity": (
+        "It has no effect: the worker processes take their CPU cores from "
+        "processing.params.cpu_affinity in canvod-settings.yaml. Set it there."
+    ),
+    "nice_priority": (
+        "It has no effect: the worker processes take their priority from "
+        "processing.params.nice_priority in canvod-settings.yaml. Set it there."
+    ),
+}
+
+
+def deprecate_no_effect_arguments[F: Callable[..., object]](func: F) -> F:
+    """Deprecate the resource arguments that have no effect on *func*."""
+    caller = func.__qualname__.removesuffix(".__init__")
+    for name, reason in _NO_EFFECT_ARGUMENTS.items():
+        func = deprecated_argument(
+            name,
+            f"The {name!r} argument of {caller}() is left over "
+            "from development and will be removed with the next major "
+            f"version. {reason} Remove the argument.",
+        )(func)
+    return func
 
 
 class MemoryMonitor:

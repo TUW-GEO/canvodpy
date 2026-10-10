@@ -64,7 +64,10 @@ from canvodpy.orchestrator.processor import (
     preprocess_reference_with_hermite_aux_fanout,
     preprocess_with_hermite_aux,
 )
-from canvodpy.orchestrator.resources import MemoryMonitor
+from canvodpy.orchestrator.resources import (
+    MemoryMonitor,
+    deprecate_no_effect_arguments,
+)
 from canvodpy.orchestrator.store_retry import STORE_ERROR_TYPES, call_with_store_retries
 
 # Old-style TypeVar (not PEP 695 `def f[T](...)`): CodeQL's Python analysis
@@ -205,12 +208,6 @@ class PipelineOrchestrator:
         If True, only simulate processing without executing
     days_per_batch : int
         Number of DOYs pooled per loky wave (default: 1)
-    max_memory_gb : float | None
-        Soft RAM limit in GB (None = no limit)
-    cpu_affinity : list[int] | None
-        Pin workers to specific CPU core IDs (None = no restriction)
-    nice_priority : int
-        Process nice value (0=normal, 19=lowest)
     threads_per_worker : int | None
         Threads per worker process (used to cap BLAS thread env vars).
         None defaults to 1.
@@ -226,6 +223,7 @@ class PipelineOrchestrator:
 
     """
 
+    @deprecate_no_effect_arguments
     def __init__(
         self,
         site: GnssResearchSite,
@@ -234,7 +232,7 @@ class PipelineOrchestrator:
         days_per_batch: int = 1,
         max_memory_gb: float | None = None,
         cpu_affinity: list[int] | None = None,
-        nice_priority: int = 0,
+        nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
     ) -> None:
@@ -252,11 +250,8 @@ class PipelineOrchestrator:
         self.days_per_batch = days_per_batch
         self._on_group_written = on_group_written
         self._batch_duration: pint.Quantity = days_per_batch * 24 * UREG.hour
-        self._max_memory_gb = max_memory_gb
-        self._cpu_affinity = cpu_affinity
-        self._nice_priority = nice_priority
         self._threads_per_worker = threads_per_worker
-        self._memory_monitor = MemoryMonitor(max_memory_gb=max_memory_gb)
+        self._memory_monitor = MemoryMonitor()
         self._logger = structlog.get_logger(__name__).bind(site=site.site_name)
 
         if n_max_workers is not None:
@@ -266,9 +261,6 @@ class PipelineOrchestrator:
             self._logger.info(
                 "resource_mode_manual",
                 n_workers=effective_workers,
-                max_memory_gb=max_memory_gb,
-                cpu_affinity=cpu_affinity,
-                nice_priority=nice_priority,
                 threads_per_worker=threads_per_worker,
             )
         else:
@@ -1528,9 +1520,6 @@ if __name__ == "__main__":
         dry_run=False,
         n_max_workers=resources["n_workers"],
         days_per_batch=proc.days_per_batch,
-        max_memory_gb=resources["max_memory_gb"],
-        cpu_affinity=resources["cpu_affinity"],
-        nice_priority=resources["nice_priority"],
     ) as orchestrator:
         for date_key, datasets, _timings in orchestrator.process_by_date(
             keep_vars=keep_vars

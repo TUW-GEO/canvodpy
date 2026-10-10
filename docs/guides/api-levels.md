@@ -136,9 +136,8 @@ automatic choice of `resource_mode: auto`:
 | `threads_per_worker` | Threads that numerical libraries use in each worker |
 | `keep_vars` | Observation variables to keep, such as `["SNR"]` |
 
-The arguments `max_memory_gb`, `cpu_affinity` and `nice_priority` have
-no effect yet; [Parallel processing](parallel-processing.md#settings)
-explains the matching settings.
+The workers' CPU cores and priority come from the settings file;
+[Parallel processing](parallel-processing.md#settings) explains them.
 
 ---
 

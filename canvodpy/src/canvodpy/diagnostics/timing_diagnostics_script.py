@@ -138,9 +138,6 @@ def diagnose_processing(
         dry_run=False,
         n_max_workers=resources["n_workers"],
         days_per_batch=proc.days_per_batch,
-        max_memory_gb=resources["max_memory_gb"],
-        cpu_affinity=resources["cpu_affinity"],
-        nice_priority=resources["nice_priority"],
     ) as orchestrator:
         for date_key, datasets, receiver_times in orchestrator.process_by_date(
             keep_vars=keep_vars, start_from=start_from, end_at=end_at

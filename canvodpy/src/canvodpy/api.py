@@ -34,6 +34,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from canvod.utils.tools import deprecated
+from canvodpy.orchestrator.resources import deprecate_no_effect_arguments
 
 # Lazy imports to avoid circular dependencies
 
@@ -128,6 +129,7 @@ class Site:
         """Access VOD results store."""
         return self._site.vod_store
 
+    @deprecate_no_effect_arguments
     def pipeline(
         self,
         keep_vars: list[str] | None = None,
@@ -163,13 +165,6 @@ class Site:
             If True, simulate processing without execution.
         days_per_batch : int, optional
             Number of DOYs per loky wave. Default: from config.
-        max_memory_gb : float, optional
-            Total RAM budget across all workers. Default: from config.
-        cpu_affinity : list[int], optional
-            Pin workers to specific CPU core IDs (Linux only).
-            Default: from config.
-        nice_priority : int, optional
-            Process nice value (0=normal, 19=lowest). Default: from config.
         threads_per_worker : int, optional
             Threads per worker process. Default: from config.
         on_group_written : Callable[[str], None], optional
@@ -186,7 +181,7 @@ class Site:
         Examples
         --------
         >>> site = Site("ExampleSite")
-        >>> pipeline = site.pipeline(n_workers=8, max_memory_gb=16)
+        >>> pipeline = site.pipeline(n_workers=8)
         >>> data = pipeline.process_date("2025001")
 
         """
@@ -197,9 +192,6 @@ class Site:
             n_workers=n_workers,
             dry_run=dry_run,
             days_per_batch=days_per_batch,
-            max_memory_gb=max_memory_gb,
-            cpu_affinity=cpu_affinity,
-            nice_priority=nice_priority,
             threads_per_worker=threads_per_worker,
             on_group_written=on_group_written,
         )
@@ -241,12 +233,6 @@ class Pipeline:
         If True, simulate without execution.
     days_per_batch : int, optional
         Calendar days to pool per processing wave. Default: from config.
-    max_memory_gb : float, optional
-        Total RAM budget across all workers. Default: from config.
-    cpu_affinity : list[int], optional
-        Pin workers to specific CPU core IDs. Default: from config.
-    nice_priority : int, optional
-        Process nice value (0=normal, 19=lowest). Default: from config.
     threads_per_worker : int, optional
         Threads per loky worker process. Default: from config.
     on_group_written : Callable[[str], None], optional
@@ -272,6 +258,7 @@ class Pipeline:
 
     """
 
+    @deprecate_no_effect_arguments
     def __init__(
         self,
         site: Site | str,
@@ -309,24 +296,12 @@ class Pipeline:
         # otherwise use resolve_resources() which respects resource_mode.
         if n_workers is not None:
             # Caller explicitly set n_workers → manual-like behavior
-            if max_memory_gb is None:
-                max_memory_gb = proc.max_memory_gb
-            if cpu_affinity is None:
-                cpu_affinity = proc.cpu_affinity
-            if nice_priority is None:
-                nice_priority = proc.nice_priority
             if threads_per_worker is None:
                 threads_per_worker = proc.threads_per_worker
         else:
             # No explicit n_workers → use resource_mode from config
             resources = proc.resolve_resources()
             n_workers = resources["n_workers"]
-            if max_memory_gb is None:
-                max_memory_gb = resources["max_memory_gb"]
-            if cpu_affinity is None:
-                cpu_affinity = resources["cpu_affinity"]
-            if nice_priority is None:
-                nice_priority = resources["nice_priority"]
             if threads_per_worker is None:
                 threads_per_worker = resources["threads_per_worker"]
 
@@ -353,9 +328,6 @@ class Pipeline:
             n_max_workers=n_workers,
             dry_run=dry_run,
             days_per_batch=days_per_batch,
-            max_memory_gb=max_memory_gb,
-            cpu_affinity=cpu_affinity,
-            nice_priority=nice_priority,
             threads_per_worker=threads_per_worker,
             on_group_written=on_group_written,
         )
@@ -367,8 +339,6 @@ class Pipeline:
             keep_vars=len(self.keep_vars),
             dry_run=dry_run,
             days_per_batch=days_per_batch,
-            max_memory_gb=max_memory_gb,
-            nice_priority=nice_priority,
             threads_per_worker=threads_per_worker,
         )
 

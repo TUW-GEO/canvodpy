@@ -154,6 +154,86 @@ class TestPipelineAPI:
             assert callable(pipeline.process_date)
 
 
+class TestNoEffectResourceArguments:
+    """The resource arguments that have no effect are deprecated."""
+
+    @pytest.fixture
+    def mocked_pipeline_setup(self):
+        mock_gnss_site = MagicMock()
+        with (
+            patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site),
+            patch("canvod.config.load_config") as mock_config,
+            patch("canvodpy.orchestrator.PipelineOrchestrator") as mock_orch,
+        ):
+            mock_proc = MagicMock()
+            mock_proc.keep_gnss_observables = ["SNR"]
+            mock_proc.days_per_batch = 1
+            mock_proc.resolve_resources.return_value = {
+                "n_workers": 2,
+                "threads_per_worker": 1,
+            }
+            mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.aux_data.agency = "COD"
+            yield mock_orch
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [("max_memory_gb", 16.0), ("cpu_affinity", [0, 1]), ("nice_priority", 10)],
+    )
+    def test_pipeline_argument_warns(self, mocked_pipeline_setup, name, value):
+        from canvodpy import Pipeline
+
+        with pytest.warns(FutureWarning, match=rf"'{name}' argument of Pipeline\(\)"):
+            Pipeline("Rosalia", **{name: value})
+        kwargs = mocked_pipeline_setup.call_args.kwargs
+        assert name not in kwargs
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [("max_memory_gb", 16.0), ("cpu_affinity", [0, 1]), ("nice_priority", 10)],
+    )
+    def test_site_pipeline_argument_warns_once(
+        self, mocked_pipeline_setup, name, value
+    ):
+        import warnings
+
+        from canvodpy import Site
+
+        site = Site("Rosalia")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            site.pipeline(**{name: value})
+        messages = [
+            str(w.message) for w in caught if issubclass(w.category, FutureWarning)
+        ]
+        assert len(messages) == 1
+        assert f"'{name}' argument of Site.pipeline()" in messages[0]
+
+    def test_pipeline_without_them_does_not_warn(self, mocked_pipeline_setup):
+        import warnings
+
+        from canvodpy import Pipeline
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            Pipeline("Rosalia", n_workers=2)
+
+    def test_orchestrator_argument_warns(self):
+        from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+
+        site = MagicMock()
+        with (
+            patch("canvodpy.orchestrator.pipeline.ensure_file_logging"),
+            patch("canvodpy.orchestrator.pipeline.clear_discovery_cache"),
+            patch("canvodpy.orchestrator.pipeline.check_receivers"),
+            pytest.warns(
+                FutureWarning,
+                match=r"'nice_priority' argument of PipelineOrchestrator\(\)",
+            ),
+        ):
+            PipelineOrchestrator(site, nice_priority=10)
+
+
 class TestConvenienceFunctions:
     """Test convenience functions."""
 
