@@ -287,7 +287,8 @@ Full documentation is available at **[nfb2021.github.io/canvodpy](https://nfb202
 Key pages:
 
 - [Contributor Setup](https://nfb2021.github.io/canvodpy/guides/contributor-setup/)
-- [Architecture & Design Patterns](https://nfb2021.github.io/canvodpy/guides/architecture-design/)
+- [Architecture](https://nfb2021.github.io/canvodpy/architecture/)
+- [Your Own Readers and VOD Calculators](https://nfb2021.github.io/canvodpy/guides/plugins/)
 - [API Levels](https://nfb2021.github.io/canvodpy/guides/api-levels/)
 - [Configuration Guide](https://nfb2021.github.io/canvodpy/guides/configuration/)
 - [Contributing](CONTRIBUTING.md)

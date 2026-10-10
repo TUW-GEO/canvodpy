@@ -9,6 +9,35 @@ calculator a choice of `--vod-calculator`. You change nothing in canvodpy.
 This page shows a complete plugin package. Copy it and replace the parts
 marked as yours.
 
+## Base classes and factories
+
+Each kind of component has an abstract base class, which lists the methods
+an implementation must have, and a factory, which maps names to the
+implementing classes. canvodpy registers its built-in classes when it is
+imported, and the plugins after them.
+
+| Factory | Base class | Built-in names | Used by |
+|---|---|---|---|
+| `ReaderFactory` | `canvod.readers.base.GNSSDataReader` | `rinex3`, `rinex3_stripped`, `rinex2`, `sbf`, `nmea` | `reader_format` of a receiver |
+| `VODFactory` | `canvod.vod.calculator.VODCalculator` | `tau_omega` | `canvodpy run --vod-calculator` |
+| `GridFactory` | `canvod.grids.core.grid_builder.BaseGridBuilder` | `equal_area` | your own scripts only |
+
+All three are importable from `canvodpy` and share these methods:
+
+- `register(name, cls)` adds a class. It raises a `TypeError` if the class
+  doesn't inherit the factory's base class.
+- `create(name, **kwargs)` creates an instance. It raises a `ValueError`
+  that lists the registered names if `name` isn't one of them.
+- `list_available()` returns the registered names.
+
+Because each class inherits an abstract base class, Python refuses to
+create an instance of a class that lacks one of the required methods: the
+error comes when the object is created, not halfway through a run.
+
+Plugins can add readers and VOD calculators. A grid builder can only be
+registered in your own scripts; `canvodpy run` creates its grids from the
+settings.
+
 ## How canvodpy finds a plugin
 
 A plugin declares **entry points** in its `pyproject.toml`: a name and the
