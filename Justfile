@@ -560,6 +560,14 @@ docs-lint-changed BASE="origin/main":
     uvx --from vale vale sync
     uvx --from vale vale $files
 
+# write the command-line reference page (docs/api/cli.md) from the --help texts
+cli-docs:
+    uv run python scripts/cli_docs.py
+
+# check that the command-line reference page matches the --help texts
+cli-docs-check:
+    uv run python scripts/cli_docs.py --check
+
 # check every link of the built docs site (lychee; brew install lychee)
 docs-links:
     @command -v lychee >/dev/null || { echo "lychee is not installed: brew install lychee" >&2; exit 1; }

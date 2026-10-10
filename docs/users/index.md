@@ -362,6 +362,14 @@ Each receiver pair has one group, `<VOD calculator>/<entry in
 vod_analyses>`. `print_tree` lists them. `read_group` returns an
 [xarray](https://docs.xarray.dev/) Dataset, with VOD per time and signal.
 
+To look at the stores from the command line, without opening Python:
+
+```bash
+canvodpy store list                          # every site's stores and their status
+canvodpy store info ExampleSite --store vod  # the groups of the VOD store
+canvodpy store log ExampleSite --store vod   # the history of its writes
+```
+
 !!! example "Try it in a notebook"
 
     Open [VOD retrieval](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/07_vod_retrieval.py?mode=edit), [Icechunk store](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/08_icechunk_store.py?mode=edit) in molab, the online notebook service of marimo.
@@ -374,6 +382,8 @@ vod_analyses>`. `print_tree` lists them. `read_group` returns an
 - [Configuration guide](../guides/configuration.md): every setting.
 - [Command line and Python](../guides/api-levels.md): all options of
   `canvodpy run`, and the `Site` and `Pipeline` objects in detail.
+- [Command line reference](../api/cli.md): every `canvodpy` command and
+  option.
 - [Hemispheric grids](../packages/grids/overview.md): assign the VOD to
   cells of the sky.
 - [Storage](../packages/store/overview.md): the history of a store, and

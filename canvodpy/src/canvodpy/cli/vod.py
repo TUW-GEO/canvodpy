@@ -47,11 +47,13 @@ def vod(
     ],
     start: Annotated[
         str | None,
-        typer.Option("--start", help="Start date in YYYYDOY format (e.g. 2025001)."),
+        typer.Option(
+            "--start", help="Start date in YYYYDOY format, for example 2025001."
+        ),
     ] = None,
     end: Annotated[
         str | None,
-        typer.Option("--end", help="End date in YYYYDOY format (e.g. 2025007)."),
+        typer.Option("--end", help="End date in YYYYDOY format, for example 2025007."),
     ] = None,
     calculator: Annotated[
         str,

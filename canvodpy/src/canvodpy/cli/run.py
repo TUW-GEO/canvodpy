@@ -599,9 +599,9 @@ def run(
         typer.Option(
             "--site",
             help=(
-                "Site name as defined under sites: in canvod-settings.yaml "
-                "(e.g. ExampleSite). Repeat "
-                "the flag for multiple sites — processed sequentially."
+                "Site name, as defined under sites: in canvod-settings.yaml, "
+                "for example ExampleSite. Repeat the option for several "
+                "sites; they are processed one after the other."
             ),
         ),
     ],
@@ -610,7 +610,7 @@ def run(
         typer.Option(
             "--start",
             help=(
-                "Start date in YYYYDOY format (e.g. 2025001). If omitted, "
+                "Start date in YYYYDOY format, for example 2025001. If omitted, "
                 "resumes from the last processed date in the store."
             ),
         ),
@@ -619,7 +619,7 @@ def run(
         str | None,
         typer.Option(
             "--end",
-            help="End date in YYYYDOY format (e.g. 2025007). If omitted, processes up to today.",
+            help="End date in YYYYDOY format, for example 2025007. If omitted, processes up to today.",
         ),
     ] = None,
     no_vod: Annotated[

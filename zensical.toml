@@ -131,7 +131,8 @@ nav = [
     ]},
   ]},
 
-  { "API reference" = [
+  { "Reference" = [
+    { "Command line" = "api/cli.md" },
     { "canvodpy" = "api/canvodpy.md" },
     { "canvod.readers" = "api/canvod-readers.md" },
     { "canvod.auxiliary" = "api/canvod-auxiliary.md" },

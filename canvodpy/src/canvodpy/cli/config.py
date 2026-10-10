@@ -148,13 +148,13 @@ def init(
         help="Walk through setup with a guided Q&A instead of hand-editing YAML",
     ),
 ) -> None:
-    """Initialize configuration from the canvod-settings.yaml template.
+    """Create canvod-settings.yaml from its template.
 
-    Creates:
-      - config/canvod-settings.yaml
+    The file goes into the configuration directory (see --config-dir).
+    Create a naming recipe for each receiver with
+    just naming-init SITE NAME.
 
-    Naming recipes are created per receiver with ``just naming-init SITE NAME``.
-
+    \f
     Parameters
     ----------
     config_dir : Path | None
@@ -332,6 +332,7 @@ def validate(
     The data are checked with the same file discovery as ``canvodpy run``:
     every error reported here would stop a run or make its results wrong.
 
+    \f
     Parameters
     ----------
     config_dir : Path | None
@@ -431,6 +432,7 @@ def show(
 ) -> None:
     """Display current configuration.
 
+    \f
     Parameters
     ----------
     config_dir : Path | None
@@ -476,6 +478,7 @@ def edit(
 ) -> None:
     """Open canvod-settings.yaml in $EDITOR.
 
+    \f
     Parameters
     ----------
     config_dir : Path | None

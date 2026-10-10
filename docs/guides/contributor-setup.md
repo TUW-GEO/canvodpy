@@ -782,6 +782,8 @@ just test-coverage
     | `just docs-lint`                  | Check the language of the docs (Vale)          |
     | `just docs-lint-changed`          | Vale on the pages changed since `origin/main`  |
     | `just docs-links`                 | Check every link of the built docs (lychee)    |
+    | `just cli-docs`                   | Write the command-line reference from `--help` |
+    | `just cli-docs-check`             | Check that reference against the `--help` texts |
     | `just test-coverage`              | Run tests with coverage report                 |
     | `just clean`                      | Remove build artifacts and caches              |
     | `uv sync`                         | Install/update Python dependencies             |

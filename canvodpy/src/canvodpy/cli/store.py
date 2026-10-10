@@ -231,7 +231,7 @@ def maintain(
         int,
         typer.Option(
             "--expire-days",
-            help="Snapshot retention window in days (weeks-to-months, not hours)",
+            help="Keep the snapshots of this many past days. Use weeks to months, not hours.",
         ),
     ] = 90,
     gc: Annotated[
@@ -242,26 +242,23 @@ def maintain(
         typer.Option(
             "--execute",
             help=(
-                "Actually run expiration/GC. Without this flag, only a "
-                "dry-run garbage-collect report is shown -- nothing is "
-                "deleted or expired."
+                "Expire snapshots and collect garbage, after you confirm. "
+                "Without this flag, only a dry-run report is shown and nothing "
+                "is deleted or expired."
             ),
         ),
     ] = False,
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Run store maintenance (expiration + garbage collection).
+    """Expire old snapshots of one site's store and collect garbage.
 
-    Defaults to a **dry run**: reports what garbage collection would delete
-    and how many ancestry entries are older than the cutoff, without
-    touching anything. Pass --execute to actually expire snapshots and
-    (optionally) run garbage collection for real.
+    Without --execute, this is a dry run: it reports what garbage
+    collection would delete and how many snapshots of the main branch are
+    older than the cutoff, and changes nothing. With --execute, it asks
+    for confirmation, expires the old snapshots and, unless --no-gc is
+    given, collects garbage.
 
-    This is an administrative operation -- never safe to run casually
-    alongside an active pipeline run on the same store. See
-    dev/perf_degradation_findings_2026_07_15.md for the full rationale
-    (expiration/GC concurrency caveats, why the default cadence is weeks-
-    to-months, and the retention-scheme design this command supports).
+    Don't run it while a canvodpy run writes to the same store.
     """
     if store not in _STORE_KINDS:
         console.print(
@@ -344,36 +341,31 @@ def maintain_due(
     ] = "both",
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Non-interactive maintenance: runs only what's actually due, or nothing.
+    """Run only the store maintenance that is due, without prompting.
 
-    Cron/systemd-timer-safe counterpart to ``maintain`` -- never prompts,
-    always exits 0 on a normal "nothing to do" outcome. `maintain` itself
-    can't be scheduled unattended: its --execute path requires an
-    interactive confirmation. This command instead reads
-    ``processing.storage.maintenance`` from canvod-settings.yaml and does
-    nothing unless all of the following hold:
+    Use this command, not maintain, in scheduled jobs such as cron: it
+    never asks for confirmation, and it exits with status 0 when nothing
+    is due. It reads processing.storage.maintenance in
+    canvod-settings.yaml and does nothing unless both of these hold:
 
     \b
-    - maintenance.enabled or maintenance.manifests_enabled is true (both
-      default false -- inert until a deployment has validated `maintain
-      --store ...` (dry run) against its real store first, see
-      dev/perf_degradation_findings_2026_07_15.md)
-    - no `canvodpy run` is currently active on this host
+    - maintenance.enabled or maintenance.manifests_enabled is true. Both
+      are false by default. Before you set them, run
+      canvodpy store maintain SITE, which is a dry run, on your store and
+      check its report.
+    - No canvodpy run is active on this computer.
 
-    Expiration/GC are gated on maintenance.enabled specifically, and are
-    due when the store's own ops log shows expiration/GC genuinely due
-    per maintenance.expire_interval_days / .gc_delay_days. Manifest
-    compaction (rewrite_manifests()) is gated independently by
-    maintenance.manifests_enabled -- it's a different risk profile (an
-    ordinary commit, no history rewrite or physical deletion) and has no
-    ops-log entry of its own to check, so due-ness is measured directly
-    from the store's current on-disk manifest count vs
-    maintenance.manifest_count_threshold instead of a time interval. A
-    deployment can enable either independently of the other.
+    maintenance.enabled allows snapshot expiry and garbage collection.
+    Expiry is due when the last one ran more than
+    maintenance.expire_interval_days ago, or never ran. Garbage
+    collection is due maintenance.gc_delay_days after an expiry, once per
+    expiry. maintenance.manifests_enabled allows manifest compaction,
+    which is due when the store holds at least
+    maintenance.manifest_count_threshold manifest files.
 
-    While maintenance.dry_run_until_confirmed is true (the default), a due
-    store is only ever reported, never actually touched -- flip it to
-    false per-deployment once satisfied with the reports.
+    While maintenance.dry_run_until_confirmed is true, which is the
+    default, a store that is due is only reported, not changed. Set it to
+    false once the reports look right.
     """
     if store == "both":
         store_kinds = _STORE_KINDS
