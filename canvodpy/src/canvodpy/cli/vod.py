@@ -1,10 +1,10 @@
-"""``canvodpy vod`` — compute VOD in bulk from an existing GNSS store.
+"""``canvodpy vod`` and ``canvodpy vod-reconcile``: VOD from an existing GNSS store.
 
-Thin wrapper around ``VodComputer.compute_bulk()``: reads canopy/reference
-data directly from the site's RINEX Icechunk store (rather than inline
-during a pipeline run) and writes the result under
-``{calculator}/{analysis_name}`` in the VOD store. For backfill/reprocessing
-outside of ``canvodpy run`` — see dev/todo_later.md §29.
+Both commands call ``VodComputer.compute_bulk()``. It reads the canopy and
+reference observations from the GNSS store of the site, not during a
+pipeline run, and writes the result to ``{calculator}/{analysis_name}`` in
+the VOD store. Use them to compute VOD again, or for dates that
+``canvodpy run`` left without VOD.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from canvodpy.cli.options import CONFIG_DIR_OPTION
+from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
 
 console = Console()
 
@@ -56,9 +56,9 @@ def vod(
         typer.Option("--end", help="End date in YYYYDOY format, for example 2025007."),
     ] = None,
     calculator: Annotated[
-        str,
+        VodCalculatorChoice,  # ty: ignore[invalid-type-form]
         typer.Option("--calculator", help="VOD calculator to use."),
-    ] = "tau_omega",
+    ] = VodCalculatorChoice["tau_omega"],
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
     """Compute VOD in bulk from an existing GNSS store and write the result."""
@@ -105,9 +105,9 @@ def vod_reconcile(
         ),
     ],
     calculator: Annotated[
-        str,
+        VodCalculatorChoice,  # ty: ignore[invalid-type-form]
         typer.Option("--calculator", help="VOD calculator to use."),
-    ] = "tau_omega",
+    ] = VodCalculatorChoice["tau_omega"],
     execute: Annotated[
         bool,
         typer.Option(

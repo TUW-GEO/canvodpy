@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import enum
 import os
 from pathlib import Path
 
@@ -32,3 +33,19 @@ CONFIG_DIR_OPTION = typer.Option(
     is_eager=True,
     show_default=False,
 )
+
+
+def _build_vod_calculator_choice() -> type[enum.StrEnum]:
+    """Build the VOD-calculator choice enum from the live factory registry.
+
+    A dynamic StrEnum: Typer renders it as a restricted choice in --help,
+    while downstream code can keep treating the value as a plain string
+    (calculator_name=args.vod_calculator works unchanged).
+    """
+    from canvodpy.factories import VODFactory
+
+    names = VODFactory.list_available()
+    return enum.StrEnum("VodCalculatorChoice", {name: name for name in names})
+
+
+VodCalculatorChoice = _build_vod_calculator_choice()

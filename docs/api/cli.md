@@ -82,7 +82,7 @@ $ canvodpy vod [OPTIONS]
 * `--analysis <str>`: VOD analysis name, as defined in site.vod_analyses  [required]
 * `--start <str>`: Start date in YYYYDOY format, for example 2025001.
 * `--end <str>`: End date in YYYYDOY format, for example 2025007.
-* `--calculator <str>`: VOD calculator to use.  [default: tau_omega]
+* `--calculator <tau_omega>`: VOD calculator to use.  [default: tau_omega]
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 
@@ -100,7 +100,7 @@ $ canvodpy vod-reconcile [OPTIONS]
 
 * `--site <str>`: Site name, as defined under sites: in canvod-settings.yaml  [required]
 * `--analysis <str>`: VOD analysis name, as defined in site.vod_analyses  [required]
-* `--calculator <str>`: VOD calculator to use.  [default: tau_omega]
+* `--calculator <tau_omega>`: VOD calculator to use.  [default: tau_omega]
 * `--execute`: Compute the VOD of the dates found. Without this flag, the command only reports them.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
