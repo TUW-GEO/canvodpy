@@ -138,7 +138,7 @@ The file has three sections:
 
 | Section       | What it sets                                                                       |
 | ------------- | ---------------------------------------------------------------------------------- |
-| `processing:` | Your name and institution for the metadata, where to write the stores, ephemeris products, and processing parameters |
+| `processing:` | Your name and institution for the metadata, where to write the stores and the log files, ephemeris products, and processing parameters |
 | `sites:`      | Your sites, the folder of each receiver, and the receiver pairs to compute VOD for |
 | `sids:`       | The signals to keep                                                                |
 
@@ -147,8 +147,8 @@ Only a few settings are required; the
 shows them. All others have defaults.
 
 The settings wizard creates the file for you. It asks for your name, your
-email address, your institution, the folder for the stores, your site,
-and the folders of the two receivers. Then it writes the file and checks
+email address, your institution, the folder for the stores, the folder
+for the log files, your site, and the folders of the two receivers. Then it writes the file and checks
 it:
 
 ```bash

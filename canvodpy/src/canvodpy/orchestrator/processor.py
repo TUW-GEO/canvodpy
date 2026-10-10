@@ -64,14 +64,19 @@ from canvod.store.prepare import prepare_write
 from canvod.store.store import _with_run_id
 from canvod.store.time_encoding import with_time_units
 from canvod.store_metadata.io import commit_with_rebase
-from canvod.utils.logging import get_run_id, set_run_id, stage_timer
+from canvod.utils.logging import (
+    get_run_id,
+    record_stage_timing,
+    set_run_id,
+    stage_timer,
+)
 from canvod.utils.tools import (
     _worker_init,
     deprecated,
     get_version_from_pyproject,
     sanitize_directory,
 )
-from canvodpy.logging.logging_config import ensure_file_logging
+from canvodpy.logging.logging_config import active_log_dir, configure_logging
 from canvodpy.orchestrator.discovery import (
     ReceiverDay,
     canonical_name_for,
@@ -87,7 +92,10 @@ from canvodpy.utils.history import history_entry
 
 
 def _worker_init_with_run_id(
-    nice: int, affinity: list[int] | None, run_id: str | None
+    nice: int,
+    affinity: list[int] | None,
+    run_id: str | None,
+    log_dir: Path | None,
 ) -> None:
     """Initialize a worker process, then bind the current run_id.
 
@@ -97,11 +105,17 @@ def _worker_init_with_run_id(
     ``ProcessPoolExecutor``/loky pool needs ``run_id`` set explicitly at
     startup for its log records to be correlated with the run that spawned
     it -- see ``logging/run_context.py``.
+
+    Parameters
+    ----------
+    log_dir : Path | None
+        Log folder of the parent process (``active_log_dir()``); the worker
+        writes its own per-PID files there. ``None``: the parent logs to the
+        console only, and so does the worker.
     """
     _worker_init(nice, affinity)
-    # Workers inherit CANVOD_CONFIG_DIR/CANVOD_CONFIG_FILE from the parent, so
-    # they log under the run's log directory, in their own per-PID files.
-    ensure_file_logging()
+    if log_dir is not None:
+        configure_logging(log_dir=log_dir)
     if run_id is not None:
         set_run_id(run_id)
 
@@ -256,6 +270,7 @@ def _preprocess_file(
     use_sbf_geometry: bool = False,
     broadcast_canopy_file: Path | None = None,
     broadcast_canopy_fmt: str | None = None,
+    date_key: str | None = None,
 ) -> tuple[Path, dict[str, xr.Dataset], dict[str, xr.Dataset], dict[str, list[str]]]:
     """Read one GNSS file once and add the geometry for each receiver position.
 
@@ -283,8 +298,6 @@ def _preprocess_file(
         ``dropped_by_filter``, ``dropped_no_ephemeris``.
 
     """
-    import re
-
     from canvod.readers.preprocessing import (
         flush_sid_accumulators,
         reset_sid_accumulators,
@@ -303,9 +316,16 @@ def _preprocess_file(
     log = structlog.get_logger(__name__).bind(
         file=str(rnx_file.name), receiver_type=receiver_type
     )
+    # A shared reference file (fan-out) is timed under the names of all
+    # its pairings; receiver_type is then only a scheduling key.
+    timed_receiver = (
+        receiver_type
+        if receiver_type in receiver_positions
+        else "+".join(sorted(receiver_positions))
+    )
 
     with stage_timer(
-        "rinex.process_file", file=str(rnx_file.name), receiver=receiver_type
+        "rinex.process_file", file=str(rnx_file.name), receiver=timed_receiver
     ):
         try:
             t0 = time.perf_counter()
@@ -450,35 +470,17 @@ def _preprocess_file(
                 pairings=len(receiver_positions),
             )
 
-            # Additive stage_timing for the performance dashboard's
-            # per-iteration breakdown (reading/validating/augmenting/
-            # writing) -- reuses the checkpoints already computed above
-            # rather than restructuring this function into nested
-            # stage_timer() context managers.
-            _date_key_match = re.search(r"_R_(\d{7})\d{4}_", rnx_file.name)
-            _date_key = _date_key_match.group(1) if _date_key_match else None
-            _stage_ctx = {"receiver": receiver_type, "date_key": _date_key}
-            log.info(
-                "stage_timing",
-                stage="reading",
-                duration_seconds=round(t_rinex - t0, 2),
-                status="ok",
-                **_stage_ctx,
-            )
-            log.info(
-                "stage_timing",
-                stage="validating",
-                duration_seconds=round(t_sid - t_aux, 4),
-                status="ok",
-                **_stage_ctx,
-            )
-            log.info(
-                "stage_timing",
-                stage="augmenting",
-                duration_seconds=round((t_aux - t_rinex) + (t_coords - t_sid), 2),
-                status="ok",
-                **_stage_ctx,
-            )
+            # The performance dashboard's per-day breakdown
+            # (reading/validating/augmenting/writing), from the checkpoints
+            # above rather than nested stage_timer() blocks.
+            for _stage, _seconds in (
+                ("reading", t_rinex - t0),
+                ("validating", t_sid - t_aux),
+                ("augmenting", (t_aux - t_rinex) + (t_coords - t_sid)),
+            ):
+                record_stage_timing(
+                    _stage, _seconds, receiver=timed_receiver, date_key=date_key
+                )
         except (
             OSError,
             RuntimeError,
@@ -518,6 +520,7 @@ def preprocess_with_hermite_aux(
     aux_group: str | None = None,
     rinex_v3_parser: str = "validated",
     aggregate_glonass_fdma: bool = True,
+    date_key: str | None = None,
 ) -> tuple[Path, xr.Dataset, dict[str, xr.Dataset], dict[str, list[str]]]:
     """Read RINEX and compute coordinates using Hermite-interpolated aux data from Zarr.
 
@@ -562,6 +565,9 @@ def preprocess_with_hermite_aux(
         Aggregate the GLONASS FDMA channels into one G1 and one G2 band
         (``processing.params.aggregate_glonass_fdma``). Passed to the reader;
         the aux data at ``aux_zarr_path`` must use the same setting.
+    date_key : str | None, default None
+        Processing day (``YYYYDOY``) the file belongs to, added to the
+        ``stage_timing`` events. ``None`` leaves the day out.
 
     Returns
     -------
@@ -588,6 +594,7 @@ def preprocess_with_hermite_aux(
         use_sbf_geometry=use_sbf_geometry,
         broadcast_canopy_file=broadcast_canopy_file,
         broadcast_canopy_fmt=broadcast_canopy_fmt,
+        date_key=date_key,
     )
     return path, by_position[receiver_type], aux_datasets, sid_issues
 
@@ -621,6 +628,7 @@ def preprocess_reference_with_hermite_aux_fanout(
     aux_group: str | None = None,
     rinex_v3_parser: str = "validated",
     aggregate_glonass_fdma: bool = True,
+    date_key: str | None = None,
 ) -> tuple[Path, dict[str, xr.Dataset], dict[str, xr.Dataset], dict[str, list[str]]]:
     """Read a shared reference file once, then compute geometry per canopy pairing.
 
@@ -669,6 +677,7 @@ def preprocess_reference_with_hermite_aux_fanout(
         aux_group,
         rinex_v3_parser,
         aggregate_glonass_fdma,
+        date_key=date_key,
     )
 
 
@@ -1890,7 +1899,12 @@ class RinexDataProcessor:
         with ProcessPoolExecutor(
             max_workers=workers,
             initializer=_worker_init_with_run_id,
-            initargs=(_res["nice_priority"], _res["cpu_affinity"], get_run_id()),
+            initargs=(
+                _res["nice_priority"],
+                _res["cpu_affinity"],
+                get_run_id(),
+                active_log_dir(),
+            ),
         ) as executor:
             futures = {
                 executor.submit(
@@ -1910,6 +1924,7 @@ class RinexDataProcessor:
                     aggregate_glonass_fdma=(
                         self._config.processing.params.aggregate_glonass_fdma
                     ),
+                    date_key=self.matched_data_dirs.yyyydoy.to_str(),
                 ): rinex_file
                 for rinex_file in rinex_files
             }
@@ -3710,15 +3725,11 @@ class RinexDataProcessor:
             self.site.gnss_store.promote_branch(temp_branch, "main", current_snapshot)
             self.site.gnss_store.repo.delete_branch(temp_branch)
 
-        # Additive stage_timing for the performance dashboard's per-iteration
-        # breakdown (reading/validating/augmenting/writing) -- reuses the
-        # already-computed t_start rather than restructuring this function's
-        # control flow into a stage_timer() context manager.
-        log.info(
-            "stage_timing",
-            stage="writing",
-            duration_seconds=round(time.time() - t_start, 2),
-            status="ok",
+        # The "writing" step of the performance dashboard's per-day
+        # breakdown, from t_start rather than a stage_timer() block.
+        record_stage_timing(
+            "writing",
+            time.time() - t_start,
             receiver=receiver_name,
             date_key=self.matched_data_dirs.yyyydoy.to_str(),
         )
@@ -4153,6 +4164,7 @@ class RinexDataProcessor:
                         aux_group=aux_group,
                         rinex_v3_parser=rinex_v3_parser,
                         aggregate_glonass_fdma=aggregate_glonass_fdma,
+                        date_key=self.matched_data_dirs.yyyydoy.to_str(),
                     )
                 )
 
@@ -4222,6 +4234,7 @@ class RinexDataProcessor:
                         aux_group=aux_group,
                         rinex_v3_parser=rinex_v3_parser,
                         aggregate_glonass_fdma=aggregate_glonass_fdma,
+                        date_key=self.matched_data_dirs.yyyydoy.to_str(),
                     )
                 )
 
@@ -4944,7 +4957,12 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
         with ProcessPoolExecutor(
             max_workers=self.n_max_workers,
             initializer=_worker_init_with_run_id,
-            initargs=(_res2["nice_priority"], _res2["cpu_affinity"], get_run_id()),
+            initargs=(
+                _res2["nice_priority"],
+                _res2["cpu_affinity"],
+                get_run_id(),
+                active_log_dir(),
+            ),
         ) as ex:
             futures = [
                 ex.submit(

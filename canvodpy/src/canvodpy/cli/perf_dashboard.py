@@ -26,7 +26,7 @@ def dashboard(
             "--logs-dir",
             help=(
                 "Directory containing the machine/performance*.json files "
-                "(default: from canvod-settings.yaml, or ./.logs)."
+                "(default: processing.logging.log_dir of canvod-settings.yaml)."
             ),
         ),
     ] = None,
@@ -51,7 +51,17 @@ def dashboard(
     """Launch the marimo performance dashboard for the pipeline's logs."""
     env = os.environ.copy()
     if logs_dir is not None:
-        env["CANVODPY_PERF_LOG_DIR"] = str(Path(logs_dir).expanduser())
+        log_dir = Path(logs_dir).expanduser()
+    else:
+        from canvod.config import load_config
+        from canvod.config.models.logging import LogDirNotSetError
+
+        try:
+            log_dir = load_config().processing.logging.get_log_dir()
+        except LogDirNotSetError as e:
+            typer.echo(f"Error: {e}\n\nOr pass the folder with --logs-dir.", err=True)
+            raise typer.Exit(code=1) from None
+    env["CANVODPY_PERF_LOG_DIR"] = str(log_dir)
 
     marimo_subcommand = "edit" if edit else "run"
     cmd = [sys.executable, "-m", "marimo", marimo_subcommand, str(_NOTEBOOK_PATH)]

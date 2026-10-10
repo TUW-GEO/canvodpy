@@ -22,16 +22,17 @@ processing:
     log_dir: /path/to/logs
 ```
 
-Without `log_dir`, the logs go to `.logs/` in the root of the git
-repository that holds the current folder. Set `log_dir` for scheduled
-runs, so the logs always end up in the same place.
+A run needs `log_dir`: without it, `canvodpy run` and `site.pipeline()`
+stop before they process anything, with a message that names the
+setting.
 
 Importing canVODpy writes no log files. Until a run starts, warnings and
 errors go to the terminal only. File logging starts when a pipeline is
 created, by `canvodpy run` or by `site.pipeline()` in Python, so the log
 folder comes from the settings of that run, including `--config-dir` and
 `--config`. To write the log files without a pipeline, for example when
-you use a reader or a store directly, call `canvodpy.setup_logging()`.
+you use a reader or a store directly, call `canvodpy.setup_logging()`, or
+`canvodpy.setup_logging(log_dir=...)` for another folder.
 
 The terminal shows warnings and errors in every case.
 
@@ -62,9 +63,18 @@ logging, so the detail has to be there already.
 
 Each worker process writes its own set of files, with its process ID in
 the name, for example `machine/agent.12345.json`. Files can't be shared
-safely between processes. Because new workers get new process IDs, the
-log folder fills with these files over time; delete old ones when you no
-longer need them.
+safely between processes. A worker creates a file only when it logs to
+it. New workers get new process IDs, so these files don't rotate like
+the files of the main process. Instead, a run deletes worker files that
+haven't changed for 30 days when its file logging starts. To keep them
+longer or shorter, set `worker_log_retention_days`:
+
+```yaml
+processing:
+  logging:
+    log_dir: /path/to/logs
+    worker_log_retention_days: 90
+```
 
 ---
 
@@ -105,8 +115,12 @@ Other errors stop the run:
   own scripts once file logging has started.
 
 After each site, also after a crash, `canvodpy run` logs a `run_summary`
-event with the number of days processed (`days`) and VOD results
-written (`vod_results`).
+event with the number of days processed (`days`), the VOD results
+written (`vod_results`), and per step the number of times it ran, its
+total time, and its errors (`stages`). `stages` covers the steps of the
+main process: `writing` (the GNSS store), `vod_calc`, and `vod_store`.
+The reading steps run in the worker processes; their times are in the
+log files and in the [dashboard](#see-where-a-run-spends-its-time).
 
 ### Search the logs
 
@@ -135,9 +149,11 @@ The worker processes write to their own files, so search
 ## The run ID
 
 `canvodpy run` gives each site it processes a run ID: the site name and
-the start time in UTC, for example `ExampleSite-20261010-030000`. Every
-event of that run carries it in the `run_id` field, in the main process
-and in the workers, so one search finds everything a run logged.
+the start time in UTC, for example `ExampleSite-20261010-030000`. In
+Python, `site.pipeline()` sets one in the same way; it applies until the
+pipeline is closed, at the end of the `with` block. Every event of the
+run carries it in the `run_id` field, in the main process and in the
+workers, so one search finds everything a run logged.
 
 The run ID also goes into the message of each commit the run makes to
 the stores, as `(run=ExampleSite-20261010-030000)`. To see which run
@@ -147,17 +163,15 @@ wrote which data, list the commits:
 canvodpy store log ExampleSite --store gnss
 ```
 
-`site.pipeline()` in Python sets no run ID. To give a Python run one,
-set it before you create the pipeline:
+To use a run ID of your own, set it before you create the pipeline; the
+pipeline then keeps it:
 
 ```python
-from datetime import UTC, datetime
-
 from canvodpy import Site
 from canvodpy.logging import reset_run_id, set_run_id
 
 site = Site("ExampleSite")
-token = set_run_id(f"ExampleSite-{datetime.now(UTC):%Y%m%d-%H%M%S}")
+token = set_run_id("ExampleSite-reprocessing-2025")
 try:
     with site.pipeline() as pipeline:
         for date, data in pipeline.process_range("2025001", "2025007"):
@@ -190,16 +204,16 @@ The dashboard shows, per site, receiver and VOD receiver pair:
 
 - the duration of each step per day: `reading`, `validating`,
   `augmenting` (adding the satellite angles), and `writing` for each
-  receiver, and `vod_store` (writing the VOD) for each pair;
+  receiver, and `vod_calc` (computing the VOD) and `vod_store` (writing
+  it) for each pair;
 - the total time per day;
 - a table with the exact figures.
 
 It reloads the logs every 10 seconds by default, so you can watch a run
 while it runs. On a long run, pick a longer interval.
 
-The dashboard takes the site from the run ID, so it shows only events
-that carry one. For a run from Python, set a run ID as shown in
-[The run ID](#the-run-id).
+The dashboard takes the site from the run ID. Events logged outside a
+run carry none; the dashboard shows them with "(no run ID)" as the site.
 
 The memory, CPU, and disk use of a run are in the `memory_stats` and
 `resource_sample` events; see
@@ -230,6 +244,10 @@ with stage_timer("my_step", receiver="canopy_01"):
 @timed_stage("my_function")
 def my_function(): ...
 ```
+
+When you measure the times yourself, for example several steps from one
+set of checkpoints, `record_stage_timing("my_step", seconds, ...)` writes
+the same event.
 
 The events go to `machine/performance.json`. The dashboard draws events
 that carry a `date_key` (`YYYYDDD`) and a `receiver` or `analysis`

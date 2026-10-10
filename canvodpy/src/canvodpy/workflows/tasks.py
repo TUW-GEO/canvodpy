@@ -683,6 +683,7 @@ def process_rinex(
                     receiver_type=recv_name,
                     keep_sids=keep_sids,
                     rinex_v3_parser=config.processing.params.rinex_v3_parser,
+                    date_key=yyyydoy,
                 )
             except Exception:
                 logger.exception("Failed to process %s", rnx_file.name)
@@ -874,6 +875,7 @@ def process_sbf(
                         keep_sids=keep_sids,
                         reader_name="sbf",
                         use_sbf_geometry=use_broadcast,
+                        date_key=yyyydoy,
                     )
                 )
             except Exception:

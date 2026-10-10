@@ -36,8 +36,9 @@ file_hash(path)  # first 16 hex digits of the file's SHA-256
 ## Diagnostics
 
 `canvod.utils.logging` holds the run identifier (`get_run_id`, `set_run_id`,
-`reset_run_id`) and the stage timing (`stage_timer`, `timed_stage`,
-`emit_run_summary`, `reset_run_stats`), so that every canvod package can use them without
+`reset_run_id`, `new_run_id`) and the stage timing (`stage_timer`,
+`timed_stage`, `record_stage_timing`, `emit_run_summary`,
+`reset_run_stats`), so that every canvod package can use them without
 depending on canvodpy. The log output is configured by
 `canvodpy.logging.configure_logging`. See [Diagnostics](../../guides/diagnostics.md).
 

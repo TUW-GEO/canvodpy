@@ -13,7 +13,7 @@ Get a logger:
 
 Importing canvodpy logs warnings and errors to the console only and reads
 no settings. File logging (the log tree under
-``processing.logging.get_log_file()``) starts when a pipeline is created.
+``processing.logging.log_dir``) starts when a pipeline is created.
 To start it yourself, for example before calling the functional API:
 
     >>> from canvodpy.logging import setup_logging
@@ -31,6 +31,8 @@ import canvodpy.logging.stage_timer
 from canvod.utils.logging import (
     emit_run_summary,
     get_run_id,
+    new_run_id,
+    record_stage_timing,
     reset_run_id,
     set_run_id,
     stage_timer,
@@ -62,6 +64,8 @@ __all__ = [
     "ensure_file_logging",
     "get_logger",
     "get_run_id",
+    "new_run_id",
+    "record_stage_timing",
     "reset_run_id",
     "set_run_id",
     "setup_logging",

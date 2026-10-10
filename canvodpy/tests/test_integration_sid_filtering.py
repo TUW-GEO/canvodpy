@@ -88,6 +88,7 @@ def test_sid_filtering_integration(tmp_path, monkeypatch):
     patched_config.processing.storage.stores_root_dir = tmp_path / "stores"
     patched_config.processing.storage.aux_data_dir = tmp_path / "aux"
     patched_config.processing.storage.shared_aux_cache_dir = None
+    patched_config.processing.logging.log_dir = tmp_path / "logs"
     patched_config.sites.sites["rosalia"] = SiteConfig(
         gnss_site_data_root=str(_ROSALIA_DATA),
         receivers={
@@ -109,17 +110,16 @@ def test_sid_filtering_integration(tmp_path, monkeypatch):
         name: VodAnalysisConfig(**cfg) for name, cfg in _TEST_VOD_ANALYSES.items()
     }
 
-    orchestrator = PipelineOrchestrator(site=site, dry_run=False)
-
     counter = 0
-    for date_key, _datasets, _receiver_times in orchestrator.process_by_date(
-        keep_vars=patched_config.processing.params.keep_gnss_observables,
-        start_from=None,
-        end_at=None,
-    ):
-        counter += 1
-        if counter >= 1:
-            break
+    with PipelineOrchestrator(site=site, dry_run=False) as orchestrator:
+        for date_key, _datasets, _receiver_times in orchestrator.process_by_date(
+            keep_vars=patched_config.processing.params.keep_gnss_observables,
+            start_from=None,
+            end_at=None,
+        ):
+            counter += 1
+            if counter >= 1:
+                break
 
     assert counter == 1, "Should have processed exactly one date"
 

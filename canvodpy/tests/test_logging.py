@@ -41,7 +41,7 @@ def _restore_excepthook():
 @pytest.fixture
 def configured_logs(tmp_path):
     """Configure logging against an isolated tmp directory and return its paths."""
-    configure_logging(tmp_path / ".logs" / "canvodpy.log")
+    configure_logging(log_dir=tmp_path / ".logs")
     machine_dir = tmp_path / ".logs" / "machine"
     return {
         "agent": machine_dir / "agent.json",
@@ -71,6 +71,7 @@ class TestRunContext:
 class TestAgentTrackAndRunId:
     def test_agent_json_exists_not_full_json(self, tmp_path, configured_logs):
         machine_dir = tmp_path / ".logs" / "machine"
+        structlog.get_logger("test").debug("first_event")
         assert configured_logs["agent"].exists()
         assert not (machine_dir / "full.json").exists()
 
@@ -245,6 +246,54 @@ class TestRunSummary:
         summaries = [e for e in events if e.get("event") == "run_summary"]
         assert summaries[-1]["stages"] == {}
 
+    def test_record_stage_timing_counts_toward_the_summary(self, configured_logs):
+        from canvodpy.logging import record_stage_timing
+
+        token = set_run_id("RecordTest-20260101-000000")
+        try:
+            record_stage_timing(
+                "writing", 1.5, receiver="canopy_01", date_key="2025001"
+            )
+            record_stage_timing(
+                "writing", 0.5, receiver="canopy_01", date_key="2025002"
+            )
+            emit_run_summary()
+        finally:
+            reset_run_stats("RecordTest-20260101-000000")
+            reset_run_id(token)
+
+        events = _read_jsonl(configured_logs["agent"])
+        timings = [e for e in events if e.get("event") == "stage_timing"]
+        assert [(e["receiver"], e["date_key"]) for e in timings] == [
+            ("canopy_01", "2025001"),
+            ("canopy_01", "2025002"),
+        ]
+        summary = next(e for e in events if e.get("event") == "run_summary")
+        assert summary["stages"]["writing"] == {
+            "count": 2,
+            "total_seconds": 2.0,
+            "errors": 0,
+        }
+
+    def test_worker_processes_keep_no_totals(self, configured_logs, monkeypatch):
+        import multiprocessing
+
+        from canvodpy.logging import record_stage_timing
+
+        monkeypatch.setattr(multiprocessing, "parent_process", lambda: object())
+        token = set_run_id("WorkerTest-20260101-000000")
+        try:
+            record_stage_timing("reading", 1.0)
+            emit_run_summary()
+        finally:
+            reset_run_stats("WorkerTest-20260101-000000")
+            reset_run_id(token)
+
+        events = _read_jsonl(configured_logs["agent"])
+        assert any(e.get("event") == "stage_timing" for e in events)
+        summary = next(e for e in events if e.get("event") == "run_summary")
+        assert summary["stages"] == {}
+
 
 class TestFileLoggingStartsWithTheRun:
     """Log files follow the configuration of the run, not of the import."""
@@ -257,10 +306,13 @@ class TestFileLoggingStartsWithTheRun:
         configure_console_logging()
 
     @staticmethod
-    def _settings_logging_to(logfile):
+    def _settings_logging_to(log_dir, retention_days=30):
         from types import SimpleNamespace
 
-        logging_settings = SimpleNamespace(get_log_file=lambda: logfile)
+        logging_settings = SimpleNamespace(
+            get_log_dir=lambda: log_dir,
+            worker_log_retention_days=retention_days,
+        )
         return SimpleNamespace(processing=SimpleNamespace(logging=logging_settings))
 
     def test_import_reads_no_settings(self, tmp_path):
@@ -292,11 +344,11 @@ class TestFileLoggingStartsWithTheRun:
         from canvodpy.logging import logging_config
 
         for run in ("first", "second"):
-            logfile = tmp_path / run / ".logs" / "canvodpy.log"
+            log_dir = tmp_path / run / ".logs"
             monkeypatch.setattr(
                 logging_config,
                 "load_config",
-                lambda logfile=logfile: self._settings_logging_to(logfile),
+                lambda log_dir=log_dir: self._settings_logging_to(log_dir),
             )
             logging_config.ensure_file_logging()
             structlog.get_logger("canvodpy.test").info("run_started", run=run)
@@ -312,3 +364,90 @@ class TestFileLoggingStartsWithTheRun:
         monkeypatch.setattr(logging_config, "load_config", _invalid)
         with pytest.raises(ValueError, match="invalid settings"):
             logging_config.ensure_file_logging()
+
+    def test_no_log_dir_raises(self):
+        from canvod.config.models import LogDirNotSetError, LoggingConfig
+
+        with pytest.raises(LogDirNotSetError, match=r"processing\.logging\.log_dir"):
+            LoggingConfig().get_log_dir()
+
+    def test_placeholder_log_dir_is_refused(self):
+        from pydantic import ValidationError
+
+        from canvod.config.models import LoggingConfig
+
+        with pytest.raises(ValidationError, match="placeholder"):
+            LoggingConfig(log_dir="/path/to/logs")
+
+    def test_logfile_argument_warns(self, tmp_path):
+        with pytest.warns(FutureWarning, match="left over from development"):
+            configure_logging(tmp_path / ".logs" / "canvodpy.log")
+        assert (tmp_path / ".logs" / "machine").is_dir()
+
+    def test_log_file_name_setting_warns(self):
+        from canvod.config.models import LoggingConfig
+
+        with pytest.warns(FutureWarning, match="log_file_name"):
+            LoggingConfig(log_file_name="canvodpy.log")
+
+    def test_no_archive_folder(self, tmp_path):
+        configure_logging(log_dir=tmp_path)
+        assert sorted(p.name for p in tmp_path.iterdir()) == [
+            "component",
+            "human",
+            "machine",
+        ]
+
+    def test_no_empty_files(self, tmp_path):
+        """A process that logs nothing to a file leaves no file behind."""
+        configure_logging(log_dir=tmp_path)
+        assert not list(tmp_path.rglob("*.*"))
+
+
+class TestWorkerLogRetention:
+    @pytest.fixture(autouse=True)
+    def _back_to_console(self):
+        yield
+        from canvodpy.logging.logging_config import configure_console_logging
+
+        configure_console_logging()
+
+    @staticmethod
+    def _age(path, days):
+        import os
+        import time
+
+        then = time.time() - days * 86_400
+        os.utime(path, (then, then))
+
+    def test_old_worker_files_are_deleted(self, tmp_path):
+        for sub in ("machine", "human", "component"):
+            (tmp_path / sub).mkdir()
+        old = [
+            tmp_path / "machine" / "agent.111.json",
+            tmp_path / "machine" / "performance.111.json.3",
+            tmp_path / "human" / "main.111.log.2026-01-01",
+            tmp_path / "component" / "icechunk.111.log",
+        ]
+        recent = tmp_path / "machine" / "agent.222.json"
+        main_old = tmp_path / "machine" / "agent.json.4"
+        for path in [*old, recent, main_old]:
+            path.write_text("x")
+        for path in [*old, main_old]:
+            self._age(path, 31)
+
+        configure_logging(log_dir=tmp_path, worker_log_retention_days=30)
+
+        assert not any(path.exists() for path in old)
+        assert recent.exists()
+        assert main_old.exists()  # main-process files rotate by themselves
+
+    def test_without_retention_nothing_is_deleted(self, tmp_path):
+        (tmp_path / "machine").mkdir()
+        old = tmp_path / "machine" / "agent.111.json"
+        old.write_text("x")
+        self._age(old, 400)
+
+        configure_logging(log_dir=tmp_path)
+
+        assert old.exists()

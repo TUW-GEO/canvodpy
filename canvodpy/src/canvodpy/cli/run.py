@@ -46,7 +46,13 @@ import typer
 import xarray as xr
 
 from canvod.config.models import reference_store_group
-from canvod.utils.logging import reset_run_id, reset_run_stats, set_run_id
+from canvod.utils.logging import (
+    new_run_id,
+    record_stage_timing,
+    reset_run_id,
+    reset_run_stats,
+    set_run_id,
+)
 from canvodpy.cli.options import CONFIG_DIR_OPTION
 from canvodpy.logging import emit_run_summary
 from canvodpy.orchestrator.resources import ResourceSampler
@@ -283,6 +289,13 @@ def _compute_vod_for_day(
             continue
 
         dt = time.perf_counter() - t0
+        record_stage_timing(
+            "vod_calc",
+            dt,
+            date_key=date_key,
+            calculator=vod_computer.calculator_name,
+            analysis=analysis_name,
+        )
         n_valid = int((~vod_ds["VOD"].isnull()).sum())
         n_total = vod_ds["VOD"].size
         if reporter:
@@ -319,6 +332,15 @@ def _main_impl(args: SimpleNamespace) -> int:
         print(format_validation_error(e), file=sys.stderr)
         return 1
     except FileNotFoundError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    # Before any work: a run writes log files, so it needs the log folder.
+    from canvod.config.models.logging import LogDirNotSetError
+
+    try:
+        config.processing.logging.get_log_dir()
+    except LogDirNotSetError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
@@ -382,7 +404,7 @@ def _main_impl(args: SimpleNamespace) -> int:
         for site_name, site, start, end in site_infos:
             # One run_id per site: failures are site-scoped, and this keeps
             # correlation with Icechunk commits (also per-site-store) clean.
-            run_id = f"{site_name}-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
+            run_id = new_run_id(site_name)
             run_id_token = set_run_id(run_id)
             last_good_date_key: str | None = None
             stage = "site_init"
@@ -495,19 +517,6 @@ def _main_impl(args: SimpleNamespace) -> int:
                                 reporter,
                             )
                             dt_vod = time.perf_counter() - t_vod
-                            # Additive stage_timing so the performance dashboard
-                            # can distinguish VOD models/analyses (see the
-                            # reading/validating/augmenting/writing events
-                            # emitted in processor.py for the same pattern).
-                            log.info(
-                                "stage_timing",
-                                stage="vod_calc",
-                                duration_seconds=round(dt_vod, 3),
-                                status="ok",
-                                date_key=date_key,
-                                calculator=args.vod_calculator,
-                                n_analyses=len(vod_results),
-                            )
 
                             stage = "vod_store"
                             t_vod_store = time.perf_counter()
@@ -537,16 +546,11 @@ def _main_impl(args: SimpleNamespace) -> int:
                                         f"{args.vod_calculator}/{analysis_name}"
                                     )
                                     group_result = batch_results.get(group_name)
-                                    log.info(
-                                        "stage_timing",
-                                        stage="vod_store",
-                                        duration_seconds=round(
-                                            group_result.duration_seconds
-                                            if group_result is not None
-                                            else 0.0,
-                                            3,
-                                        ),
-                                        status="ok",
+                                    record_stage_timing(
+                                        "vod_store",
+                                        group_result.duration_seconds
+                                        if group_result is not None
+                                        else 0.0,
                                         date_key=date_key,
                                         calculator=args.vod_calculator,
                                         analysis=analysis_name,

@@ -27,6 +27,8 @@ The run identifier and the stage timing; the log output is configured by
         - get_run_id
         - set_run_id
         - reset_run_id
+        - new_run_id
         - stage_timer
         - timed_stage
+        - record_stage_timing
         - emit_run_summary

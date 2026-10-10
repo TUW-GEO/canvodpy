@@ -35,6 +35,7 @@ class TestInteractiveWizard:
             "nico@example.com\n"
             "TU Wien\n"
             f"{tmp_path / 'stores'}\n"
+            f"{tmp_path / 'logs'}\n"
             "Rosalia\n"
             f"{tmp_path / 'data'}\n"
             "custom_canopy\n"
@@ -50,6 +51,7 @@ class TestInteractiveWizard:
         assert "email: nico@example.com" in text
         assert "institution: TU Wien" in text
         assert f"stores_root_dir: {tmp_path / 'stores'}" in text
+        assert f"log_dir: {tmp_path / 'logs'}" in text
         assert "  Rosalia:" in text
         assert f"gnss_site_data_root: {tmp_path / 'data'}" in text
         assert "directory: custom_canopy" in text
@@ -58,7 +60,7 @@ class TestInteractiveWizard:
     def test_preserves_template_comments(self, tmp_path):
         """A full YAML parse/re-dump would strip these — must survive."""
         config_dir = tmp_path / "config"
-        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\nSite\n{tmp_path / 'd'}\n\n\n"
+        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\n{tmp_path / 'l'}\nSite\n{tmp_path / 'd'}\n\n\n"
         _run_wizard(config_dir, answers)
 
         text = (config_dir / "canvod-settings.yaml").read_text()
@@ -71,7 +73,7 @@ class TestInteractiveWizard:
     def test_does_not_touch_commented_example_block(self, tmp_path):
         """The commented-out 'my_second_site' illustration must stay verbatim."""
         config_dir = tmp_path / "config"
-        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\nSite\n{tmp_path / 'd'}\n\n\n"
+        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\n{tmp_path / 'l'}\nSite\n{tmp_path / 'd'}\n\n\n"
         _run_wizard(config_dir, answers)
 
         text = (config_dir / "canvod-settings.yaml").read_text()
@@ -80,7 +82,7 @@ class TestInteractiveWizard:
 
     def test_default_receiver_directories_when_answer_blank(self, tmp_path):
         config_dir = tmp_path / "config"
-        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\nSite\n{tmp_path / 'd'}\n\n\n"
+        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\n{tmp_path / 'l'}\nSite\n{tmp_path / 'd'}\n\n\n"
         _run_wizard(config_dir, answers)
 
         text = (config_dir / "canvod-settings.yaml").read_text()
@@ -108,6 +110,7 @@ class TestInteractiveWizard:
             "b@example.com\n"
             "C\n"
             f"{tmp_path / 's'}\n"
+            f"{tmp_path / 'l'}\n"
             "Site\n"
             f"{tmp_path / 'd'}\n"
             "\n\n"

@@ -42,9 +42,9 @@ except ImportError:
 
 import structlog
 
-from canvod.utils.logging import get_run_id
+from canvod.utils.logging import get_run_id, new_run_id, reset_run_id, set_run_id
 from canvod.utils.tools import deprecated
-from canvodpy.logging.logging_config import ensure_file_logging
+from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
 from canvodpy.orchestrator.discovery import (
     ReceiverDay,
     check_receivers,
@@ -243,6 +243,11 @@ class PipelineOrchestrator:
         check_receivers(
             site.receivers, site._site_config.get_base_path(), site.site_name
         )
+        # A run started from Python gets a run_id like one of `canvodpy run`
+        # (which sets its own first); close() removes it again.
+        self._run_id_token = (
+            set_run_id(new_run_id(site.site_name)) if get_run_id() is None else None
+        )
 
         self.site = site
         self.n_max_workers = n_max_workers
@@ -281,8 +286,14 @@ class PipelineOrchestrator:
         )
 
     def close(self) -> None:
-        """Release orchestrator resources (loky's reusable executor is shared and left running)."""
+        """End the pipeline and remove the run_id it set, if any.
+
+        loky's reusable executor is shared and left running.
+        """
         self._logger.info("pipeline_orchestrator_closed")
+        if self._run_id_token is not None:
+            reset_run_id(self._run_id_token)
+            self._run_id_token = None
 
     def __enter__(self) -> PipelineOrchestrator:
         return self
@@ -1009,7 +1020,12 @@ class PipelineOrchestrator:
                 # down between separate cron invocations.
                 timeout=900,
                 initializer=_worker_init_with_run_id,
-                initargs=(_res["nice_priority"], _res["cpu_affinity"], get_run_id()),
+                initargs=(
+                    _res["nice_priority"],
+                    _res["cpu_affinity"],
+                    get_run_id(),
+                    active_log_dir(),
+                ),
             )
 
             def _submit_task(task: tuple[str, tuple], *, _pool=_pool) -> Future:

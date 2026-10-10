@@ -114,6 +114,9 @@ processing:
   storage:
     stores_root_dir: /data/stores
 
+  logging:
+    log_dir: /data/logs
+
 sites:
   mysite:
     gnss_site_data_root: /data/mysite
@@ -200,6 +203,9 @@ processing:
   storage:
     stores_root_dir: /path/to/stores
     gnss_store_strategy: skip         # skip, overwrite, or unsafe_append; see the warning below
+
+  logging:
+    log_dir: /path/to/logs            # required for a run
 ```
 
 ### Key fields
@@ -218,6 +224,7 @@ processing:
 | `params.store_sbf_raw_observables` | `true`, `false`       | SBF only: add the pre-correction observables (`SNR_raw`, `Pseudorange_unsmoothed`, `Pseudorange_raw`, `Phase_raw`) to the observations. Default `true`. |
 | `params.store_sbf_metadata`     | `true`, `false`          | SBF only: store the per-file metadata dataset `sbf_obs` (SatVisibility geometry, MeasExtra, PVT, DOP, receiver status) under `{group}/metadata/sbf_obs`, in the same commit as the observations. Default `true`. |
 | `storage.gnss_store_strategy`   | `skip`, `overwrite`, `unsafe_append` | What to do when a file already exists in the store. `skip` (default) is the normal case. See warning below before ever using `unsafe_append`.                              |
+| `logging.log_dir`               | folder                   | Folder of the log files. Required: a run stops if it is not set. [Diagnostics](diagnostics.md) describes the files. |
 
 [Parallel processing](parallel-processing.md) explains `resource_mode`,
 `days_per_batch`, `n_max_threads` and the other resource settings.

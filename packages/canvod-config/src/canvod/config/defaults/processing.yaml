@@ -62,6 +62,6 @@ storage:
   gnss_store_strategy: skip
 
 logging:
-  log_dir: null  # Defaults to .logs/ in monorepo root
-  log_file_name: canvodpy.log
+  log_dir: null  # required for a processing run; set in canvod-settings.yaml
+  worker_log_retention_days: 30
   log_path_depth: 6

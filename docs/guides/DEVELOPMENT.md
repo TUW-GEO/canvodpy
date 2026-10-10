@@ -176,11 +176,16 @@ with stage_timer("icechunk.write", group=group_name, size_mb=size_mb):
     to_icechunk(dataset, session, group=group_name)
 ```
 
-Only reach for a manual timing pattern when a block already has several
-distinct sequential checkpoints worth logging individually with their own
-rich context (see `_preprocess_aux_data_with_hermite` in `processor.py` for
-an example) — those specific, well-named events are more useful than
-forcing everything through one generic name.
+When one block has several sequential checkpoints, each a dashboard stage
+of its own, measure them yourself and emit each with
+`record_stage_timing(stage, seconds, ...)` (see `_preprocess_file` in
+`processor.py`). Checkpoints that are not dashboard stages belong in one
+specific, well-named event with their own rich context (see
+`_preprocess_aux_data_with_hermite` in `processor.py`), which is more useful
+than forcing everything through one generic name.
+
+Only the main process adds stages to the `run_summary`; stages timed in a
+worker process reach the log and the dashboard only.
 
 ---
 

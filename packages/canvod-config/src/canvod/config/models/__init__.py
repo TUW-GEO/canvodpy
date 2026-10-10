@@ -21,7 +21,7 @@ from .compression import (
     IcechunkConfig,
     NetcdfCompressionConfig,
 )
-from .logging import LoggingConfig
+from .logging import LogDirNotSetError, LoggingConfig
 from .metadata import CredentialsConfig, MetadataConfig
 from .preprocessing import (
     PREPROCESSING_ATTR,
@@ -69,6 +69,7 @@ __all__ = [
     "GridAssignmentConfig",
     "HistogramBinsConfig",
     "IcechunkConfig",
+    "LogDirNotSetError",
     "LoggingConfig",
     "MaintenanceConfig",
     "MetadataConfig",

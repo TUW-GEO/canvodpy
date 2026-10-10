@@ -87,6 +87,7 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
     email = Prompt.ask("  Your email")
     institution = Prompt.ask("  Institution")
     stores_root_dir = Prompt.ask("  Where should processed results be stored?")
+    log_dir = Prompt.ask("  Where should the log files go?")
     site_name = Prompt.ask("  Site name (e.g. ExampleSite)")
     data_root = Prompt.ask(f"  Data root directory for site '{site_name}'")
     canopy_dir = Prompt.ask(
@@ -106,6 +107,7 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
         "    stores_root_dir: /path/to/your/gnss/stores": (
             f"    stores_root_dir: {_yaml_scalar(stores_root_dir)}"
         ),
+        "    log_dir: /path/to/your/gnss/logs": f"    log_dir: {_yaml_scalar(log_dir)}",
         "  my_site:": f"  {site_name}:",
         "    gnss_site_data_root: /path/to/your/gnss/data/my_site": (
             f"    gnss_site_data_root: {_yaml_scalar(data_root)}"
@@ -239,6 +241,7 @@ def init(
     console.print("  1. Edit config/canvod-settings.yaml:")
     console.print("     - processing.metadata: fill in author, email, institution")
     console.print("     - processing.storage.stores_root_dir: set your store path")
+    console.print("     - processing.logging.log_dir: set your log folder")
     console.print("     - sites: replace the example site with your own")
     console.print("     (or re-run with --interactive/-i for a guided Q&A instead)")
     console.print("  2. For NASA CDDIS access, set this environment variable:")
@@ -570,9 +573,13 @@ def _show_processing(config: ProcessingConfig) -> None:
     # Logging
     lg = config.logging
     console.print("[bold]Logging:[/bold]")
-    log_dir = str(lg.log_dir) if lg.log_dir else "[dim]<monorepo>/.logs[/dim]"
+    log_dir = (
+        str(lg.log_dir) if lg.log_dir else "[red]not set (required for a run)[/red]"
+    )
     console.print(f"  Log directory:     {log_dir}")
-    console.print(f"  Log file name:     {lg.log_file_name}")
+    console.print(
+        f"  Worker log files:  deleted after {lg.worker_log_retention_days} days"
+    )
     console.print(f"  Log path depth:    {lg.log_path_depth}")
     console.print()
 

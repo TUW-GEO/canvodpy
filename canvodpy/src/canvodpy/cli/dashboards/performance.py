@@ -27,9 +27,11 @@ Not full telemetry — this is a lightweight, always-on, file-based
 view of how a pipeline run spent its time. Works while a run is
 still in progress (partial data) or after it's finished.
 
-**Site** is parsed from `run_id` (`{site}-{YYYYMMDD-HHMMSS}`, see
-`cli/run.py`'s per-site loop) — multiple sites' logs in the same
-directory show up as separate rows and can be filtered below.
+**Site** is parsed from `run_id` (`{site}-{YYYYMMDD-HHMMSS}`, set by
+`canvodpy run` and by `site.pipeline()`) — multiple sites' logs in the
+same directory show up as separate rows and can be filtered below.
+Events logged outside a run carry no `run_id` and show up as
+"(no run ID)".
 **VOD model** comes from the `calculator` field emitted on
 `vod_calc`/`vod_store` events — different `--vod-calculator` runs
 are distinguishable the same way.
@@ -44,15 +46,13 @@ def _(mo):
     from pathlib import Path
 
     def _default_log_dir() -> Path:
+        # `canvodpy dashboard` and `canvodpy run --dashboard` always set it.
         env_dir = os.environ.get("CANVODPY_PERF_LOG_DIR")
         if env_dir:
             return Path(env_dir).expanduser()
-        try:
-            from canvod.config import load_config
+        from canvod.config import load_config
 
-            return load_config().processing.logging.get_log_dir()
-        except Exception:
-            return Path.cwd() / ".logs"
+        return load_config().processing.logging.get_log_dir()
 
     log_dir = _default_log_dir()
     machine_dir = log_dir / "machine"
@@ -155,6 +155,7 @@ def _(machine_dir, mo, refresh):
         pl.col("run_id")
         .str.extract(r"^(.*)-\d{8}-\d{6}$", 1)
         .fill_null(pl.col("run_id"))
+        .fill_null("(no run ID)")
         .alias("site"),
         pl.coalesce([pl.col("receiver"), pl.col("analysis")]).alias("unit"),
     )

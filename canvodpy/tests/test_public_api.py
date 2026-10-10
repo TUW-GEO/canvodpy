@@ -231,7 +231,7 @@ class TestNoEffectResourceArguments:
                 match=r"'nice_priority' argument of PipelineOrchestrator\(\)",
             ),
         ):
-            PipelineOrchestrator(site, nice_priority=10)
+            PipelineOrchestrator(site, nice_priority=10).close()
 
 
 class TestConvenienceFunctions:

@@ -12,18 +12,19 @@ agent uses to see how far a run got before it died (the crash-handling path
 in ``cli/run.py`` calls ``emit_run_summary`` too, so a partial summary
 exists even for a run that later failed).
 
-Caveat: the accumulator is per-process. ``stage_timer`` calls made inside a
-``ProcessPoolExecutor``/loky worker accumulate in that worker's own
-interpreter, not the parent's -- they still reach the log (each worker
-writes its own per-PID log file, see ``canvodpy.logging.logging_config``'s
-``_process_log_suffix``), but won't roll into the parent process's
-``run_summary``. Solving that would require exactly the cross-process
-collector machinery this module exists to avoid.
+Only the main process accumulates. Stages timed in a worker process
+(``ProcessPoolExecutor``/loky) still reach the log -- each worker writes its
+own per-PID log file, see ``canvodpy.logging.logging_config``'s
+``_process_log_suffix`` -- but not the ``run_summary`` of the main process;
+collecting them would need exactly the cross-process machinery this module
+exists to avoid. Workers keep no totals, so long-lived workers don't
+accumulate them across runs.
 """
 
 from __future__ import annotations
 
 import functools
+import multiprocessing
 import threading
 import time
 from collections.abc import Callable, Generator
@@ -70,15 +71,38 @@ def stage_timer(stage: str, **context: Any) -> Generator[None]:
         status = "error"
         raise
     finally:
-        duration = time.perf_counter() - start
-        log.info(
-            "stage_timing",
-            stage=stage,
-            duration_seconds=round(duration, 3),
-            status=status,
-            **context,
-        )
-        _record(stage, duration, status)
+        record_stage_timing(stage, time.perf_counter() - start, status, **context)
+
+
+def record_stage_timing(
+    stage: str, duration_seconds: float, status: str = "ok", **context: Any
+) -> None:
+    """Emit one ``stage_timing`` event for a duration measured by the caller.
+
+    For code that measures several stages from one set of checkpoints
+    instead of one block per stage. The stage counts toward the run summary
+    like a :func:`stage_timer` block.
+
+    Parameters
+    ----------
+    stage : str
+        Stage name (e.g. ``"writing"``).
+    duration_seconds : float
+        Duration of the stage.
+    status : {"ok", "error"}, default "ok"
+        Whether the stage succeeded.
+    **context
+        Extra fields attached to the event (e.g. ``receiver=...``,
+        ``date_key=...``).
+    """
+    log.info(
+        "stage_timing",
+        stage=stage,
+        duration_seconds=round(duration_seconds, 3),
+        status=status,
+        **context,
+    )
+    _record(stage, duration_seconds, status)
 
 
 def timed_stage(stage: str, **context: Any) -> Callable[[_F], _F]:
@@ -96,6 +120,8 @@ def timed_stage(stage: str, **context: Any) -> Callable[[_F], _F]:
 
 
 def _record(stage: str, duration: float, status: str) -> None:
+    if multiprocessing.parent_process() is not None:
+        return  # worker process: see the module docstring
     run_id = get_run_id() or _NO_RUN_ID
     with _lock:
         stats = _run_stats.setdefault(run_id, {})
@@ -111,9 +137,12 @@ def _record(stage: str, duration: float, status: str) -> None:
 def emit_run_summary(**context: Any) -> None:
     """Emit a ``run_summary`` event: per-stage breakdown for the current run.
 
-    Called at the end of a successful run and also from the crash-handling
-    path in ``cli/run.py``, so a partial summary exists even for a run that
-    later failed -- showing how far it got before dying.
+    The breakdown covers the stages timed in the main process (in canVODpy:
+    writing the GNSS store, computing and writing VOD); the stages of the
+    worker processes are only in the log. Called at the end of a successful
+    run and also from the crash-handling path in ``cli/run.py``, so a
+    partial summary exists even for a run that later failed -- showing how
+    far it got before dying.
     """
     run_id = get_run_id() or _NO_RUN_ID
     with _lock:
