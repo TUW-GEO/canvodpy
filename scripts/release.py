@@ -145,6 +145,38 @@ def _commits(pkg: Package, since: str | None) -> list[tuple[str, str]]:
     return commits
 
 
+def _last_final(pkg: Package) -> Version | None:
+    """The package's newest final (not pre-release) version among its tags.
+
+    Like ``_last_tag``, a package without a final tag of its own falls back to
+    the canvodpy tags.
+    """
+    for prefix in (pkg.tag(""), "v"):
+        tags = _git("tag", "--merged", "HEAD", "--list", f"{prefix}*")
+        versions = []
+        for tag in tags.splitlines():
+            try:
+                versions.append(Version(tag.removeprefix(prefix)))
+            except InvalidVersion:
+                continue
+        finals = [v for v in versions if not v.is_prerelease]
+        if finals:
+            return max(finals)
+    return None
+
+
+def _increment_from_final(pkg: Package, new: Version) -> int:
+    """The increment of ``new`` over the package's last final version.
+
+    From a pre-release (``1.0.0b1``) to its final (``1.0.0``) the release
+    numbers don't change, so the increment counts from the version before.
+    """
+    old = pkg.version
+    if old.is_prerelease:
+        old = _last_final(pkg) or old
+    return _increment(old, new)
+
+
 def _increment(old: Version, new: Version) -> int:
     """0 patch, 1 minor, 2 major (as semantic versioning reads them)."""
     if new.major != old.major:
@@ -271,9 +303,9 @@ def prepare(packages: dict[str, Package], args: list[str]) -> int:
         if _git("tag", "--list", packages[name].tag(new)):
             problems.append(f"{name}: tag {packages[name].tag(new)} exists already.")
     if UMBRELLA in chosen and not problems:
-        umbrella_step = _increment(packages[UMBRELLA].version, chosen[UMBRELLA])
+        umbrella_step = _increment_from_final(packages[UMBRELLA], chosen[UMBRELLA])
         for name, new in chosen.items():
-            step = _increment(packages[name].version, new)
+            step = _increment_from_final(packages[name], new)
             if step > umbrella_step:
                 kinds = ("patch", "minor", "major")
                 problems.append(
