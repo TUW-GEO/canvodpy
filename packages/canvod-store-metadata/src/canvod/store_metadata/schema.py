@@ -114,6 +114,13 @@ class ReceiverInfo(BaseModel):
     )
 
 
+class VodAnalysisInfo(BaseModel):
+    """One VOD analysis a VOD store holds: the receivers it pairs."""
+
+    canopy_receiver: str
+    reference_receiver: str
+
+
 class Instruments(BaseModel):
     platform: str = Field("ground-based GNSS", description="Platform type")
     instruments: list[str] = Field(
@@ -245,6 +252,9 @@ class StoreMetadata(BaseModel):
     config: ConfigSnapshot = Field(default_factory=ConfigSnapshot)
     references: References = Field(default_factory=References)
     summaries: Summaries = Field(default_factory=Summaries)
+    vod_analyses: dict[str, VodAnalysisInfo] = Field(
+        default_factory=dict, description="VOD analyses of a VOD store"
+    )
     amendments: list[Amendment] = Field(default_factory=list)
 
     def to_root_attrs(self) -> dict[str, Any]:
@@ -318,6 +328,7 @@ class RepositoryMetadata(BaseModel):
     spatial: RepositorySpatial
     instruments: RepositoryInstruments = Field(default_factory=RepositoryInstruments)
     references: References = Field(default_factory=References)
+    vod_analyses: dict[str, VodAnalysisInfo] = Field(default_factory=dict)
     amendments: list[Amendment] = Field(default_factory=list)
 
     @classmethod

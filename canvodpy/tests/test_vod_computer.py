@@ -240,8 +240,8 @@ class TestVodComputerCompute:
             results = vc.compute_day_all(_day_datasets())
 
         assert set(results) == {"a", "b"}
-        # One commit for both analyses, metadata only after the data write.
-        assert order == ["write 2", "metadata"]
+        # The store metadata is checked first, then one commit for both.
+        assert order == ["metadata", "write 2"]
         items = site._site.store_vod_analyses_batch.call_args.kwargs["items"]
         assert [i["commit_message"] for i in items] == [
             "VOD a 2025001",
@@ -420,16 +420,17 @@ class TestAirflowVodTask:
 
 
 class TestVodStoreMetadata:
-    def test_failed_metadata_write_raises(self, monkeypatch):
-        """The VOD data is committed by then; a stale description must not pass."""
-        from canvodpy.vod_computer import ensure_vod_store_metadata
-
+    def test_failed_metadata_check_stops_before_the_write(self, monkeypatch):
+        """Nothing is written when the store metadata cannot be ensured."""
         import canvod.config
 
         def _fail():
             raise OSError("disk full")
 
         monkeypatch.setattr(canvod.config, "load_config", _fail)
-        with pytest.raises(RuntimeError, match="metadata write failed") as info:
-            ensure_vod_store_metadata(_make_site(), "tau_omega", {})
-        assert isinstance(info.value.__cause__, OSError)
+        site = _make_site({"a": _make_analysis_cfg()})
+        vc = VodComputer(site)
+
+        with pytest.raises(OSError, match="disk full"):
+            vc.compute_day(_day_datasets(), "a")
+        site._site.store_vod_analyses_batch.assert_not_called()

@@ -18,9 +18,13 @@ from .inventory import (
 )
 from .io import (
     COMMIT_LOCK_NAME,
+    MIGRATE_COMMAND,
     apply_updates,
+    check_receivers,
+    check_vod_analyses,
     commit_lock,
     commit_with_rebase,
+    ensure_metadata,
     metadata_exists,
     read_metadata,
     update_metadata,
@@ -33,12 +37,16 @@ from .validate import validate_all, validate_datacite, validate_fair
 
 __all__ = [
     "COMMIT_LOCK_NAME",
+    "MIGRATE_COMMAND",
     "StoreMetadata",
     "apply_updates",
+    "check_receivers",
+    "check_vod_analyses",
     "collect_config_snapshot",
     "collect_metadata",
     "commit_lock",
     "commit_with_rebase",
+    "ensure_metadata",
     "extract_env",
     "format_metadata",
     "metadata_exists",

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Generator
+from collections.abc import Callable, Generator, Iterable
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -15,7 +15,7 @@ from filelock import FileLock, Timeout
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
-from .schema import RepositoryMetadata, StoreMetadata
+from .schema import _METADATA_KEY, RepositoryMetadata, StoreMetadata
 
 #: Name of the lock file in the store directory (see :func:`commit_lock`).
 COMMIT_LOCK_NAME = ".canvodpy-commit.lock"
@@ -308,3 +308,109 @@ def metadata_exists(store_path: Path, branch: str = "main") -> bool:
     except icechunk.IcechunkError:
         return False
     return bool(repo.get_metadata())
+
+
+#: The command that moves a store to the metadata form of ADR 0014.
+MIGRATE_COMMAND = "canvodpy store migrate-metadata"
+
+
+def ensure_metadata(
+    store_path: Path, collect: Callable[[], StoreMetadata]
+) -> dict[str, Any]:
+    """Return a store's repository metadata, writing it for a new store.
+
+    Writers call this before they write data, so a store never holds data
+    without its metadata. ``collect`` builds the metadata of a new store
+    (``collect_metadata``); it is called only for a store that has none.
+
+    Raises
+    ------
+    ValueError
+        If the store holds data or old-form metadata but no repository
+        metadata: it predates ADR 0014 and must be migrated first.
+    """
+    with commit_lock(store_path):
+        repo = _open_repo(store_path)
+        existing = repo.get_metadata()
+        if existing:
+            return existing
+        session = repo.readonly_session(branch="main")
+        try:
+            root = zarr.open_group(session.store, mode="r")
+        except zarr_errors.GroupNotFoundError:
+            root = None
+        if root is not None and (
+            _METADATA_KEY in root.attrs or next(root.groups(), None) is not None
+        ):
+            msg = (
+                f"The store at {store_path} was written before stores kept "
+                "repository metadata; move it to the current form first:\n"
+                f"  {MIGRATE_COMMAND} --store {store_path}"
+            )
+            raise ValueError(msg)
+        write_metadata(store_path, collect())
+    return _open_repo(store_path).get_metadata()
+
+
+def _not_listed(names: Iterable[str], listed: Iterable[str]) -> list[str]:
+    """Names that are not listed and not a listed name's pair group.
+
+    A reference receiver is stored once per canopy it is paired with, in a
+    group named ``{reference}_{canopy}``.
+    """
+    listed = set(listed)
+    return sorted(
+        name
+        for name in set(names)
+        if name not in listed and not any(name.startswith(f"{r}_") for r in listed)
+    )
+
+
+def check_receivers(
+    repository: dict[str, Any], receivers: Iterable[str], *, store_path: Path | str
+) -> None:
+    """Refuse receivers the store's repository metadata does not list.
+
+    Raises
+    ------
+    ValueError
+        Naming the amend command that adds a receiver.
+    """
+    listed = repository.get("instruments", {}).get("receivers", {})
+    missing = _not_listed(receivers, listed)
+    if missing:
+        name = missing[0]
+        msg = (
+            f"The store at {store_path} lists the receivers {sorted(listed)}; "
+            f"{', '.join(map(repr, missing))} from the settings "
+            "(sites.<site>.receivers) is not one of them. Receivers are added "
+            "on purpose, with a reason:\n"
+            f"  canvodpy store amend --store {store_path} --add-receiver {name} "
+            '--reason "..."'
+        )
+        raise ValueError(msg)
+
+
+def check_vod_analyses(
+    repository: dict[str, Any], analyses: Iterable[str], *, store_path: Path | str
+) -> None:
+    """Refuse VOD analyses the VOD store's repository metadata does not list.
+
+    Raises
+    ------
+    ValueError
+        Naming the amend command that adds a VOD analysis.
+    """
+    listed = repository.get("vod_analyses", {})
+    missing = sorted(set(analyses) - set(listed))
+    if missing:
+        name = missing[0]
+        msg = (
+            f"The VOD store at {store_path} lists the VOD analyses "
+            f"{sorted(listed)}; {', '.join(map(repr, missing))} from the "
+            "settings (sites.<site>.vod_analyses) is not one of them. VOD "
+            "analyses are added on purpose, with a reason:\n"
+            f"  canvodpy store amend --store {store_path} --add-vod-analysis "
+            f'{name} --reason "..."'
+        )
+        raise ValueError(msg)

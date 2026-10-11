@@ -40,18 +40,15 @@ Custom calculator::
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 import structlog
 
 from canvod.config.models import (
     PREPROCESSING_ATTR,
-    describe_settings,
     vod_preprocessing_record,
-    vod_preprocessing_settings,
 )
-from canvodpy.utils.history import history_entry
 
 if TYPE_CHECKING:
     import xarray as xr
@@ -60,109 +57,47 @@ if TYPE_CHECKING:
 
 
 def ensure_vod_store_metadata(
-    site: Site, calculator_name: str, records: dict[str, str]
+    site: Site, calculator_name: str, analyses: list[str]
 ) -> None:
-    """Write or update rich store metadata for a site's VOD store.
+    """Give a new VOD store its metadata; refuse unlisted VOD analyses.
 
-    ``records`` holds, per VOD analysis written, its preprocessing record
-    (``vod_preprocessing_record``); the history entry of the write names
-    the preprocessing and the canVODpy version.
-
-    VOD writes never called ``collect_metadata()``/``write_metadata()``
-    before this — every VOD store showed "No metadata found" (see
-    ``canvod.store_metadata``). Wired the same way ``processor.py`` does
-    for GNSS stores (write once on first use; on later calls, re-snapshot
-    the config and record drift rather than silently freezing the config
-    section at whatever was true on the very first write). Call it after
-    the data write, so the coverage and summaries describe the data just
-    written.
+    Call it before the VOD write, so the VOD store never holds data
+    without its repository metadata (ADR 0014). Every commit then writes
+    the store's root copy and snapshot summary itself.
 
     Raises
     ------
-    RuntimeError
-        If the metadata cannot be written. The VOD data is committed by
-        then; the error says that its metadata is stale.
+    ValueError
+        If the site is not in the settings, the store predates repository
+        metadata (names the migrate command), or a VOD analysis is not
+        listed in it (names the amend command).
     """
-    log = structlog.get_logger(__name__).bind(
-        site=site.name, calculator=calculator_name
+    from canvod.config import load_config
+    from canvod.store_metadata import (
+        check_vod_analyses,
+        collect_metadata,
+        ensure_metadata,
     )
-    try:
-        from canvod.config import load_config
-        from canvod.store_metadata import (
-            apply_updates,
-            collect_config_snapshot,
-            collect_metadata,
-            metadata_exists,
-            read_metadata,
-            summarize_store,
-            update_metadata,
-            write_metadata,
+
+    config = load_config()
+    site_cfg = config.sites.sites.get(site.name)
+    if site_cfg is None:
+        msg = f"Site {site.name!r} is not in the settings (sites.{site.name})."
+        raise ValueError(msg)
+    store_path = site._site.vod_store.store_path
+
+    def collect():
+        return collect_metadata(
+            config=config,
+            site_name=site.name,
+            site_config=site_cfg,
+            store_type="vod_store",
+            source_format=calculator_name,
+            store_path=store_path,
         )
 
-        config = load_config()
-        site_cfg = config.sites.sites.get(site.name)
-        if site_cfg is None:
-            return
-
-        store_path = site._site.vod_store.store_path
-        now = datetime.now(UTC).isoformat()
-        write_entry = history_entry(
-            now,
-            f"VOD write ({calculator_name})",
-            {
-                name: describe_settings(vod_preprocessing_settings(record))
-                for name, record in records.items()
-            },
-        )
-
-        if not metadata_exists(store_path):
-            meta = collect_metadata(
-                config=config,
-                site_name=site.name,
-                site_config=site_cfg,
-                store_type="vod_store",
-                source_format=calculator_name,
-                store_path=store_path,
-            )
-            meta = apply_updates(meta, summarize_store(store_path))
-            meta = apply_updates(
-                meta, {"summaries.history": [*meta.summaries.history, write_entry]}
-            )
-            write_metadata(store_path, meta)
-            log.info("vod_store_metadata_written")
-        else:
-            existing_meta = read_metadata(store_path)
-            new_snapshot = collect_config_snapshot(config)
-
-            history_entries = [write_entry]
-            updates: dict[str, object] = {"temporal.updated": now}
-
-            drifted = new_snapshot.config_hash != existing_meta.config.config_hash
-            if drifted:
-                old_hash = (existing_meta.config.config_hash or "unknown")[:12]
-                new_hash = (new_snapshot.config_hash or "unknown")[:12]
-                history_entries.append(
-                    f"{now}: Config changed ({old_hash} -> {new_hash})"
-                )
-                updates["config"] = new_snapshot.model_dump(mode="json")
-
-            updates["summaries.history"] = [
-                *existing_meta.summaries.history,
-                *history_entries,
-            ]
-
-            # Coverage and summaries describe the data now stored.
-            updates.update(summarize_store(store_path))
-            update_metadata(store_path, updates)
-            log.info("vod_store_metadata_updated", config_drift_detected=drifted)
-    except Exception as exc:
-        # The VOD data is already committed, but the store metadata no
-        # longer describes it: stop instead of going on with it stale.
-        msg = (
-            "VOD store metadata write failed; the VOD data is committed, but "
-            "its metadata (coverage, summaries, history, config) is stale"
-        )
-        raise RuntimeError(msg) from exc
+    repository = ensure_metadata(store_path, collect)
+    check_vod_analyses(repository, analyses, store_path=store_path)
 
 
 class VodComputer:
@@ -544,7 +479,7 @@ class VodComputer:
         self,
         entries: list[tuple[str, xr.Dataset, xr.Dataset, xr.Dataset]],
     ) -> dict[str, Any]:
-        """Write VOD results in one commit, then update the store metadata.
+        """Write VOD results in one commit, after checking the store metadata.
 
         Parameters
         ----------
@@ -562,7 +497,6 @@ class VodComputer:
         gnss_store_path = str(research_site.gnss_store.store_path)
 
         items = []
-        records: dict[str, str] = {}
         for analysis_name, vod_ds, canopy_ds, sky_ds in entries:
             analysis_cfg = self._get_analysis_config(analysis_name)
             canopy_name = analysis_cfg.canopy_receiver
@@ -579,7 +513,6 @@ class VodComputer:
                     ),
                 }
             )
-            records[analysis_name] = record
             items.append(
                 {
                     "vod_dataset": self._prepare_for_store(vod_ds).assign_attrs(
@@ -605,18 +538,10 @@ class VodComputer:
                 }
             )
 
-        results = research_site.store_vod_analyses_batch(items=items)
         ensure_vod_store_metadata(
-            self._site,
-            self._calculator_name,
-            {
-                name: record
-                for name, record in records.items()
-                if getattr(
-                    results.get(f"{self._calculator_name}/{name}"), "written", False
-                )
-            },
+            self._site, self._calculator_name, [name for name, *_ in entries]
         )
+        results = research_site.store_vod_analyses_batch(items=items)
 
         for analysis_name, *_ in entries:
             self.log.info(

@@ -30,6 +30,7 @@ from .schema import (
     StoreMetadata,
     Summaries,
     TemporalExtent,
+    VodAnalysisInfo,
 )
 
 if TYPE_CHECKING:
@@ -293,6 +294,17 @@ def collect_instruments(site_config: Any) -> Instruments:
     return Instruments(receivers=receivers)
 
 
+def collect_vod_analyses(site_config: Any) -> dict[str, VodAnalysisInfo]:
+    """The VOD analyses of a site, for its VOD store."""
+    return {
+        name: VodAnalysisInfo(
+            canopy_receiver=analysis.canopy_receiver,
+            reference_receiver=analysis.reference_receiver,
+        )
+        for name, analysis in (getattr(site_config, "vod_analyses", None) or {}).items()
+    }
+
+
 def collect_processing_provenance(
     store_type: str,
     source_format: str,
@@ -397,6 +409,9 @@ def collect_metadata(
         ),
         config=collect_config_snapshot(config),
         references=collect_references(config),
+        vod_analyses=(
+            collect_vod_analyses(site_config) if store_type == "vod_store" else {}
+        ),
         summaries=Summaries(
             history=[f"{now}: Store created ({source_format})"],
         ),

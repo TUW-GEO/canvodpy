@@ -54,7 +54,6 @@ from canvod.auxiliary.products import check_product
 from canvod.config import CanvodConfig, load_config
 from canvod.config.models import (
     PREPROCESSING_ATTR,
-    describe_preprocessing,
     reference_store_group,
 )
 from canvod.ops import preprocess_files
@@ -85,7 +84,6 @@ from canvodpy.orchestrator.discovery import (
     parse_sampling_interval_from_filename,
     recipe_file,
 )
-from canvodpy.utils.history import history_entry
 
 # ============================================================================
 # MODULE-LEVEL FUNCTIONS (Required for loky / ProcessPoolExecutor serialization)
@@ -1426,6 +1424,46 @@ class RinexDataProcessor:
         msg = f"Site '{self.site.site_name}' not found in config"
         raise ValueError(msg)
 
+    def _ensure_gnss_store_metadata(
+        self, receivers: Sequence[str], reader_format: str | None
+    ) -> None:
+        """Give a new GNSS store its metadata; refuse unlisted receivers.
+
+        Runs before a batch writes data, so the store never holds data
+        without its repository metadata (ADR 0014). Every commit then
+        writes the store's root copy and snapshot summary itself.
+
+        Raises
+        ------
+        ValueError
+            If the store predates repository metadata (names the migrate
+            command), or a receiver is not listed in it (names the amend
+            command).
+        """
+        from canvod.store_metadata import (
+            check_receivers,
+            collect_metadata,
+            ensure_metadata,
+        )
+
+        store_path = self.site.gnss_store.store_path
+
+        def collect():
+            resources = self._config.processing.params.resolve_resources()
+            return collect_metadata(
+                config=self._config,
+                site_name=self.site.site_name,
+                site_config=self._get_site_config(),
+                store_type="gnss_store",
+                source_format=reader_format or self._reader_name,
+                store_path=store_path,
+                dask_workers=resources.get("n_workers"),
+                dask_threads_per_worker=resources.get("threads_per_worker"),
+            )
+
+        repository = ensure_metadata(store_path, collect)
+        check_receivers(repository, receivers, store_path=store_path)
+
     def _compute_receiver_position(
         self,
         position_files: list[Path],
@@ -2562,15 +2600,10 @@ class RinexDataProcessor:
         5. One `base_session.merge(*forks)` + one `base_session.commit(...)`
            for the groups written this round via fork.
         """
-        # Preprocessing of each group, for the store history (one record
-        # per receiver-day, so the first file's stands for all).
-        preprocessing_text = {
-            name: describe_preprocessing(
-                str(datasets[0][1].attrs.get(PREPROCESSING_ATTR, ""))
-            )
-            for name, datasets, *_ in group_inputs
-            if datasets
-        }
+        self._ensure_gnss_store_metadata(
+            [name for name, *_ in group_inputs],
+            next((fmt for *_, fmt in group_inputs if fmt), None),
+        )
         version = get_version_from_pyproject()
         log = self._logger
         yyyydoy = str(self.matched_data_dirs.yyyydoy)
@@ -2779,6 +2812,7 @@ class RinexDataProcessor:
                         prepass_session,
                         prepass_msg,
                         store_path=self.site.gnss_store.store_path,
+                        config=self._config,
                     )
                     log.info(
                         "Committed pre-pass %s (snapshot: %s...)",
@@ -2900,6 +2934,7 @@ class RinexDataProcessor:
                     commit_msg,
                     metadata=agg_metadata,
                     store_path=self.site.gnss_store.store_path,
+                    config=self._config,
                 )
                 log.info(
                     "Committed batch %s (snapshot: %s...)",
@@ -2974,113 +3009,6 @@ class RinexDataProcessor:
             )
             log.info("Set store source_format='%s'", reader_fmt)
 
-        # STEP 8: rich store metadata, once per batch (one history
-        # entry per ingest event, not one per group).
-        try:
-            from canvod.store_metadata import (
-                apply_updates,
-                collect_config_snapshot,
-                collect_metadata,
-                metadata_exists,
-                read_metadata,
-                summarize_store,
-                update_metadata,
-                write_metadata,
-            )
-
-            store_path = self.site.gnss_store.store_path
-            site_name = self.site.site_name
-            sites_cfg = self._config.sites
-            site_cfg = sites_cfg.sites.get(site_name)
-
-            if site_cfg is not None and results:
-                reader_fmt = next(iter(results.values())).reader_format or (
-                    self._reader_name
-                )
-                # Per-action counts, as in the commit message: a skipped
-                # file is in the log book but not newly stored.
-                per_receiver = ", ".join(
-                    f"{name}("
-                    + ", ".join(f"{k}={v}" for k, v in r.actions.items() if v > 0)
-                    + ")"
-                    for name, r in results.items()
-                )
-                ingest_entry = history_entry(
-                    datetime.now(UTC).isoformat(),
-                    f"Ingest {yyyydoy}: {per_receiver}",
-                    {name: preprocessing_text[name] for name in results},
-                )
-                if not metadata_exists(store_path, branch="main"):
-                    resources = self._config.processing.params.resolve_resources()
-                    meta = collect_metadata(
-                        config=self._config,
-                        site_name=site_name,
-                        site_config=site_cfg,
-                        store_type="gnss_store",
-                        source_format=reader_fmt,
-                        store_path=store_path,
-                        dask_workers=resources.get("n_workers"),
-                        dask_threads_per_worker=resources.get("threads_per_worker"),
-                    )
-                    meta = apply_updates(
-                        meta,
-                        summarize_store(
-                            store_path,
-                            branch="main",
-                            receivers=set(meta.instruments.receivers),
-                        ),
-                    )
-                    meta = apply_updates(
-                        meta,
-                        {"summaries.history": [*meta.summaries.history, ingest_entry]},
-                    )
-                    write_metadata(store_path, meta, branch="main")
-                    log.info("Wrote rich store metadata")
-                else:
-                    now = datetime.now(UTC).isoformat()
-                    existing_meta = read_metadata(store_path, branch="main")
-                    new_snapshot = collect_config_snapshot(self._config)
-                    history_entries = [ingest_entry]
-                    updates: dict[str, object] = {"temporal.updated": now}
-
-                    drifted = (
-                        new_snapshot.config_hash != existing_meta.config.config_hash
-                    )
-                    if drifted:
-                        old_hash = (existing_meta.config.config_hash or "unknown")[:12]
-                        new_hash = (new_snapshot.config_hash or "unknown")[:12]
-                        history_entries.append(
-                            f"{now}: Config changed ({old_hash} -> {new_hash})"
-                        )
-                        updates["config"] = new_snapshot.model_dump(mode="json")
-
-                    updates["summaries.history"] = [
-                        *existing_meta.summaries.history,
-                        *history_entries,
-                    ]
-
-                    # Coverage and summaries describe the data now stored.
-                    updates.update(
-                        summarize_store(
-                            store_path,
-                            branch="main",
-                            receivers=set(existing_meta.instruments.receivers),
-                        )
-                    )
-                    update_metadata(store_path, updates, branch="main")
-                    log.info(
-                        "Updated store metadata%s",
-                        " (config drift detected)" if drifted else "",
-                    )
-        except Exception as exc:
-            # The data is already committed, but the store metadata no
-            # longer describes it: stop instead of going on with it stale.
-            msg = (
-                "Store metadata write failed; the data is committed, but its "
-                "metadata (coverage, summaries, history, config) is stale"
-            )
-            raise RuntimeError(msg) from exc
-
         return results
 
     def _append_to_icechunk(
@@ -3103,11 +3031,13 @@ class RinexDataProcessor:
         1. Opens ONE session for all data writes
         2. Uses only to_icechunk() within the session (no nested sessions)
         3. Makes ONE commit for all data
-        4. Writes metadata separately after commit succeeds
+        4. Gives a new store its metadata first; the commit writes the
+           root copy and snapshot summary (ADR 0014)
         5. Writes any auxiliary datasets (e.g. SBF metadata) after commit
         """
         _ = rinex_files
         log = self._logger
+        self._ensure_gnss_store_metadata([receiver_name], reader_format)
         version = get_version_from_pyproject()
 
         t_start = time.time()
@@ -3485,6 +3415,7 @@ class RinexDataProcessor:
                     commit_msg,
                     metadata=_commit_meta,
                     store_path=self.site.gnss_store.store_path,
+                    config=self._config,
                 )
                 t8 = time.time()
                 log.info(
@@ -3599,127 +3530,6 @@ class RinexDataProcessor:
                 {"source_format": reader_fmt}, branch=branch
             )
             log.info("Set store source_format='%s'", reader_fmt)
-
-        # STEP 5b: Write rich store metadata (once, on first ingest); on
-        # subsequent ingests, re-snapshot the config and record any drift —
-        # otherwise a store's config section silently freezes at whatever
-        # was true on the very first ingest, forever.
-        try:
-            from canvod.store_metadata import (
-                apply_updates,
-                collect_config_snapshot,
-                collect_metadata,
-                metadata_exists,
-                read_metadata,
-                summarize_store,
-                update_metadata,
-                write_metadata,
-            )
-
-            store_path = self.site.gnss_store.store_path
-            site_name = self.site.site_name
-
-            # Find site config from CanvodConfig
-            sites_cfg = self._config.sites
-            site_cfg = None
-            for sn, sc in sites_cfg.sites.items():
-                if sn == site_name:
-                    site_cfg = sc
-                    break
-
-            if site_cfg is not None:
-                reader_fmt = reader_format or self._reader_name
-                # Per-action counts, as in the commit message: a skipped
-                # file is in the log book but not newly stored.
-                action_counts = ", ".join(
-                    f"{k}={v}" for k, v in actions.items() if v > 0
-                )
-                record = (
-                    str(augmented_datasets[0][1].attrs.get(PREPROCESSING_ATTR, ""))
-                    if augmented_datasets
-                    else ""
-                )
-                ingest_entry = history_entry(
-                    datetime.now(UTC).isoformat(),
-                    f"Ingest {receiver_name} {self.matched_data_dirs.yyyydoy}: "
-                    f"{action_counts}",
-                    {receiver_name: describe_preprocessing(record)},
-                )
-                if not metadata_exists(store_path, branch=branch):
-                    resources = self._config.processing.params.resolve_resources()
-                    meta = collect_metadata(
-                        config=self._config,
-                        site_name=site_name,
-                        site_config=site_cfg,
-                        store_type="gnss_store",
-                        source_format=reader_fmt,
-                        store_path=store_path,
-                        dask_workers=resources.get("n_workers"),
-                        dask_threads_per_worker=resources.get("threads_per_worker"),
-                    )
-                    meta = apply_updates(
-                        meta,
-                        summarize_store(
-                            store_path,
-                            branch=branch,
-                            receivers=set(meta.instruments.receivers),
-                        ),
-                    )
-                    meta = apply_updates(
-                        meta,
-                        {"summaries.history": [*meta.summaries.history, ingest_entry]},
-                    )
-                    write_metadata(store_path, meta, branch=branch)
-                    log.info("Wrote rich store metadata")
-                else:
-                    now = datetime.now(UTC).isoformat()
-                    existing_meta = read_metadata(store_path, branch=branch)
-                    new_snapshot = collect_config_snapshot(self._config)
-
-                    history_entries = [ingest_entry]
-                    updates: dict[str, object] = {"temporal.updated": now}
-
-                    drifted = (
-                        new_snapshot.config_hash != existing_meta.config.config_hash
-                    )
-                    if drifted:
-                        old_hash = (existing_meta.config.config_hash or "unknown")[:12]
-                        new_hash = (new_snapshot.config_hash or "unknown")[:12]
-                        history_entries.append(
-                            f"{now}: Config changed ({old_hash} -> {new_hash})"
-                        )
-                        updates["config"] = new_snapshot.model_dump(mode="json")
-
-                    # update_metadata() replaces (doesn't append to) list
-                    # fields, so merge history here rather than in io.py —
-                    # keeps that generic dotted-update helper's semantics
-                    # unchanged for its other callers.
-                    updates["summaries.history"] = [
-                        *existing_meta.summaries.history,
-                        *history_entries,
-                    ]
-
-                    # Coverage and summaries describe the data now stored.
-                    updates.update(
-                        summarize_store(
-                            store_path,
-                            branch=branch,
-                            receivers=set(existing_meta.instruments.receivers),
-                        )
-                    )
-                    update_metadata(store_path, updates, branch=branch)
-                    log.info(
-                        "Updated store metadata%s",
-                        " (config drift detected)" if drifted else "",
-                    )
-        except Exception as exc:
-            # The data is already committed, but the store metadata no
-            # longer describes it: stop instead of going on with it stale.
-            msg = (
-                "Store metadata write failed; the data is committed, but its "
-                "metadata (coverage, summaries, history, config) is stale"
-            )
-            raise RuntimeError(msg) from exc
 
         # Promote temp branch to main after successful commit. Refused with
         # BranchMovedError if main moved since the temp branch was created
@@ -4944,6 +4754,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             session,
             _with_run_id(f"Initialize {receiver_name} structure"),
             store_path=self.site.gnss_store.store_path,
+            config=self._config,
         )
 
         # STEP 2: Now do cooperative distributed writes
@@ -5017,6 +4828,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             session,
             _with_run_id(f"[v{version}] Cooperative write for {receiver_name}"),
             store_path=self.site.gnss_store.store_path,
+            config=self._config,
         )
 
         return [f.name for f in rinex_files_sorted]  # ty: ignore[invalid-return-type]

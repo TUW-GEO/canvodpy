@@ -98,10 +98,15 @@ class _TestProcessor(RinexDataProcessor):
         self._icechunk_log = structlog.get_logger(__name__)
         self._gnss_store_strategy = strategy
         self._keeper_tags_enabled = False
-        # No site in the settings: STEP 8 (store metadata) has nothing to
-        # describe and writes nothing.
         self._config = SimpleNamespace(sites=SimpleNamespace(sites={}))
         self._reader_name = "rinex3"
+
+    def _ensure_gnss_store_metadata(self, receivers, reader_format) -> None:
+        """No store metadata: these tests are about the batch writes.
+
+        The store stays without repository metadata, so its commits carry
+        no root copy (tested in canvod-store-metadata and end to end).
+        """
 
 
 @pytest.fixture

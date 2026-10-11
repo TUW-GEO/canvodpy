@@ -65,8 +65,13 @@ def _site_config() -> MagicMock:
             "description",
             "country",
             "receivers",
+            "vod_analyses",
         ]
     )
+    analysis = MagicMock(spec=["canopy_receiver", "reference_receiver"])
+    analysis.canopy_receiver = "canopy_01"
+    analysis.reference_receiver = "reference_01"
+    site_cfg.vod_analyses = {"canopy_01_vs_reference_01": analysis}
     site_cfg.latitude = 47.7
     site_cfg.longitude = 16.3
     site_cfg.altitude_m = 400.0
@@ -152,6 +157,15 @@ class TestIdentity:
     def test_a_naming_authority_that_is_not_reverse_dns_is_refused(self, authority):
         with pytest.raises(ValueError, match="reverse DNS"):
             _collect(naming_authority=authority)
+
+    def test_a_vod_store_lists_the_vod_analyses_of_the_settings(self):
+        meta = _collect("Rosalia", store_type="vod_store")
+        analysis = meta.vod_analyses["canopy_01_vs_reference_01"]
+        assert analysis.canopy_receiver == "canopy_01"
+        assert analysis.reference_receiver == "reference_01"
+
+    def test_a_gnss_store_lists_no_vod_analyses(self):
+        assert _collect("Rosalia").vod_analyses == {}
 
 
 class TestRepositoryMetadata:
