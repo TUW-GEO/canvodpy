@@ -7,6 +7,7 @@ Not to be confused with the *file registry* in ``canvod.store``
 (``{group}/metadata/table``), which tracks individual ingested files.
 """
 
+from .amend import amend_metadata
 from .collectors import collect_config_snapshot, collect_metadata
 from .inventory import (
     scan_stores,
@@ -28,6 +29,7 @@ from .io import (
     ensure_metadata,
     metadata_exists,
     read_metadata,
+    read_repository_metadata,
     update_metadata,
     write_metadata,
 )
@@ -43,6 +45,7 @@ __all__ = [
     "MIGRATE_COMMAND",
     "RESERVED_GROUP",
     "StoreMetadata",
+    "amend_metadata",
     "amendments_since",
     "apply_updates",
     "check_receivers",
@@ -57,6 +60,7 @@ __all__ = [
     "metadata_exists",
     "migrate_metadata",
     "read_metadata",
+    "read_repository_metadata",
     "scan_stores",
     "scan_stores_as_stac",
     "show_metadata",

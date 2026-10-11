@@ -584,3 +584,181 @@ def migrate_metadata_command(
         console.print(f"[red]❌ {exc}[/red]")
         raise typer.Exit(1) from None
     console.print(f"[green]✓ Migrated[/green] (snapshot {snapshot_id[:12]})")
+
+
+def _amend_changes(
+    site: str,
+    set_values: list[str],
+    add_receivers: list[str],
+    add_vod_analyses: list[str],
+) -> dict[str, object]:
+    """The changes of an amendment, with receiver and VOD analysis entries
+    taken from the settings."""
+    import yaml
+
+    from canvod.config import load_config
+    from canvod.store_metadata.collectors import collect_receiver
+
+    changes: dict[str, object] = {}
+    for item in set_values:
+        field, sep, value = item.partition("=")
+        if not sep:
+            console.print(f"[red]❌ --set takes field.path=value, not {item!r}[/red]")
+            raise typer.Exit(1)
+        changes[field.strip()] = yaml.safe_load(value)
+
+    site_cfg = load_config().sites.sites[site]
+    for name in add_receivers:
+        if name not in site_cfg.receivers:
+            console.print(
+                f"[red]❌ {name!r} is not a receiver of '{site}' in the settings "
+                f"(sites.{site}.receivers).[/red]"
+            )
+            raise typer.Exit(1)
+        receiver = collect_receiver(site_cfg.receivers[name])
+        changes[f"instruments.receivers.{name}"] = receiver.model_dump(
+            mode="json",
+            include={
+                "type",
+                "directory",
+                "reader_format",
+                "description",
+                "recipe",
+                "metadata",
+            },
+        )
+    analyses = site_cfg.vod_analyses or {}
+    for name in add_vod_analyses:
+        if name not in analyses:
+            console.print(
+                f"[red]❌ {name!r} is not a VOD analysis of '{site}' in the settings "
+                f"(sites.{site}.vod_analyses).[/red]"
+            )
+            raise typer.Exit(1)
+        changes[f"vod_analyses.{name}"] = {
+            "canopy_receiver": analyses[name].canopy_receiver,
+            "reference_receiver": analyses[name].reference_receiver,
+        }
+    return changes
+
+
+@store_app.command()
+def amend(
+    site: Annotated[
+        str,
+        typer.Argument(
+            help="Site name, as defined under sites: in canvod-settings.yaml"
+        ),
+    ],
+    store: Annotated[
+        str, typer.Option("--store", metavar="gnss|vod", help="Store to amend.")
+    ] = "gnss",
+    set_values: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--set",
+            metavar="field.path=value",
+            help="New value of a field, for example identity.title=Rosalia GNSS observations. Repeat for more fields.",
+        ),
+    ] = None,
+    add_receiver: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--add-receiver",
+            metavar="name",
+            help="Add a receiver of the site's settings to the store, so runs may write it.",
+        ),
+    ] = None,
+    add_vod_analysis: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--add-vod-analysis",
+            metavar="name",
+            help="Add a VOD analysis of the site's settings to the VOD store.",
+        ),
+    ] = None,
+    from_file: Annotated[
+        Path | None,
+        typer.Option(
+            "--from",
+            metavar="<path>",
+            help=(
+                "YAML file with the keys reason, set (field paths and values), "
+                "and the lists add_receivers and add_vod_analyses."
+            ),
+        ),
+    ] = None,
+    reason: Annotated[
+        str | None,
+        typer.Option("--reason", help="Why the fields change; recorded with each one."),
+    ] = None,
+    yes: Annotated[bool, typer.Option("--yes", help="Amend without asking.")] = False,
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+) -> None:
+    """Change the description of a site's store, with a reason.
+
+    Fixed fields (the store id, UUID, store type, source format, naming
+    authority and creation date) never change. Each changed field is
+    recorded with its old and new value, the reason, who and when, and a
+    new commit carries the new description.
+    """
+    import yaml
+
+    from canvod.config import load_config
+    from canvod.store_metadata import amend_metadata, read_repository_metadata
+    from canvod.store_metadata.amend import check_amendable
+
+    path, _ = _store_path(site, store)
+    set_values = list(set_values or [])
+    receivers = list(add_receiver or [])
+    vod_analyses = list(add_vod_analysis or [])
+    if from_file is not None:
+        spec = yaml.safe_load(from_file.read_text()) or {}
+        set_values += [
+            f"{k}={yaml.safe_dump(v).strip()}"
+            for k, v in (spec.get("set") or {}).items()
+        ]
+        receivers += list(spec.get("add_receivers") or [])
+        vod_analyses += list(spec.get("add_vod_analyses") or [])
+        reason = reason or spec.get("reason")
+    if not reason:
+        console.print(
+            "[red]❌ An amendment needs --reason (or reason: in the --from file).[/red]"
+        )
+        raise typer.Exit(1)
+
+    changes = _amend_changes(site, set_values, receivers, vod_analyses)
+    if not changes:
+        console.print(
+            "[red]❌ Nothing to change: use --set, --add-receiver, --add-vod-analysis or --from.[/red]"
+        )
+        raise typer.Exit(1)
+
+    try:
+        for field in changes:
+            check_amendable(field)
+    except ValueError as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(1) from None
+
+    current = read_repository_metadata(path)
+    table = Table(title=f"{site} — {store} store", show_lines=False)
+    table.add_column("Field")
+    table.add_column("Old")
+    table.add_column("New")
+    for field, value in changes.items():
+        old: object = current
+        for part in field.split("."):
+            old = old.get(part) if isinstance(old, dict) else None
+        table.add_row(field, str(old), str(value))
+    console.print(table)
+    console.print(f"Reason: {reason}")
+    if not yes and not typer.confirm("Amend the store metadata?"):
+        raise typer.Exit(1)
+
+    try:
+        snapshot_id = amend_metadata(path, changes, reason=reason, config=load_config())
+    except ValueError as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(1) from None
+    console.print(f"[green]✓ Amended[/green] (snapshot {snapshot_id[:12]})")

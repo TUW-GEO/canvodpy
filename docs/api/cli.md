@@ -254,6 +254,7 @@ $ canvodpy store [OPTIONS] COMMAND [ARGS]...
 * `maintain`: Expire old snapshots of one site's store...
 * `maintain-due`: Run only the store maintenance that's due,...
 * `migrate-metadata`: Move a store written before repository...
+* `amend`: Change the description of a site's store,...
 
 ### `canvodpy store list`
 
@@ -414,5 +415,36 @@ $ canvodpy store migrate-metadata [OPTIONS] {site}
 * `--store gnss|vod`: Store to migrate.  [default: gnss]
 * `--naming-authority <str>`: Your institution's domain in reverse order, for example at.ac.tuwien, for a store whose metadata has no naming authority.
 * `--yes`: Migrate without asking.
+* `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--help`: Show this message and exit.
+
+### `canvodpy store amend`
+
+Change the description of a site's store, with a reason.
+
+Fixed fields (the store id, UUID, store type, source format, naming
+authority and creation date) never change. Each changed field is
+recorded with its old and new value, the reason, who and when, and a
+new commit carries the new description.
+
+**Usage**:
+
+```console
+$ canvodpy store amend [OPTIONS] {site}
+```
+
+**Arguments**:
+
+* `site`: Site name, as defined under sites: in canvod-settings.yaml  [required]
+
+**Options**:
+
+* `--store gnss|vod`: Store to amend.  [default: gnss]
+* `--set field.path=value`: New value of a field, for example identity.title=Rosalia GNSS observations. Repeat for more fields.
+* `--add-receiver name`: Add a receiver of the site's settings to the store, so runs may write it.
+* `--add-vod-analysis name`: Add a VOD analysis of the site's settings to the VOD store.
+* `--from <path>`: YAML file with the keys reason, set (field paths and values), and the lists add_receivers and add_vod_analyses.
+* `--reason <str>`: Why the fields change; recorded with each one.
+* `--yes`: Amend without asking.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.

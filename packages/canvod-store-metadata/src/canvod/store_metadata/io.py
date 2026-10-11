@@ -13,6 +13,7 @@ from typing import Any
 import icechunk
 import structlog
 import zarr
+from canvod.utils.tools import deprecated
 from filelock import FileLock, Timeout
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
@@ -131,6 +132,11 @@ def _open_repo(store_path: Path) -> icechunk.Repository:
     return icechunk.Repository.open(storage=storage)
 
 
+def read_repository_metadata(store_path: Path) -> dict[str, Any]:
+    """The store's repository metadata as stored (empty for a store without)."""
+    return _open_repo(store_path).get_metadata()
+
+
 def write_metadata(
     store_path: Path,
     metadata: StoreMetadata,
@@ -235,11 +241,19 @@ def amendments_since(store_path: Path, metadata: StoreMetadata) -> list[Amendmen
     return [Amendment.model_validate(a) for a in current[len(metadata.amendments) :]]
 
 
+@deprecated(
+    "apply_updates() is left over from development and will be removed with the "
+    "next major version. Change a store's description with amend_metadata()."
+)
 def apply_updates(metadata: StoreMetadata, updates: dict[str, Any]) -> StoreMetadata:
     """Return a copy of ``metadata`` with dotted-key ``updates`` applied.
 
     Keys such as ``"temporal.updated"`` address nested fields.
     """
+    return _apply_updates(metadata, updates)
+
+
+def _apply_updates(metadata: StoreMetadata, updates: dict[str, Any]) -> StoreMetadata:
     data = metadata.model_dump(mode="json")
 
     for key, value in updates.items():
@@ -252,9 +266,12 @@ def apply_updates(metadata: StoreMetadata, updates: dict[str, Any]) -> StoreMeta
     return StoreMetadata.model_validate(data)
 
 
-def _repository_fields(key: str) -> bool:
-    """Whether a dotted key names a field of the repository metadata."""
-    model: Any = RepositoryMetadata
+def _field_exists(model: Any, key: str) -> bool:
+    """Whether a dotted key names a field of a pydantic model.
+
+    A dict field (receivers, VOD analyses) takes any entry name, followed
+    by the entry's fields.
+    """
     parts = key.split(".")
     while parts:
         part = parts.pop(0)
@@ -267,10 +284,24 @@ def _repository_fields(key: str) -> bool:
                 return True
             parts.pop(0)  # the dict key, e.g. a receiver name
             annotation = annotation.__args__[1]
+        elif (
+            getattr(annotation, "__args__", None) and type(None) in annotation.__args__
+        ):
+            annotation = next(a for a in annotation.__args__ if a is not type(None))
         model = annotation
     return True
 
 
+def _repository_fields(key: str) -> bool:
+    """Whether a dotted key names a field of the repository metadata."""
+    return _field_exists(RepositoryMetadata, key)
+
+
+@deprecated(
+    "update_metadata() is left over from development and will be removed with "
+    "the next major version. Every commit now writes the snapshot summary; "
+    "change a store's description with amend_metadata()."
+)
 def update_metadata(
     store_path: Path,
     updates: dict[str, Any],
@@ -308,7 +339,7 @@ def update_metadata(
             session, "Update store metadata", store_path=store_path
         )
 
-    updated = apply_updates(read_metadata(store_path, branch), updates)
+    updated = _apply_updates(read_metadata(store_path, branch), updates)
     session = repo.writable_session(branch)
     store = session.store
     try:

@@ -531,3 +531,188 @@ class TestStoreMigrateMetadata:
         from canvod.store_metadata import read_metadata
 
         assert read_metadata(store_path).identity.naming_authority == "com.example"
+
+
+def _write_current_store(stores_root, site="TestSite") -> None:
+    """A GNSS store with repository metadata, as a run creates it."""
+    import icechunk
+
+    from canvod.store_metadata import write_metadata
+    from canvod.store_metadata.schema import (
+        Creator,
+        Instruments,
+        ReceiverInfo,
+        SiteInfo,
+        SpatialExtent,
+        StoreIdentity,
+        StoreMetadata,
+        TemporalExtent,
+    )
+
+    path = stores_root / site / "rinex"
+    icechunk.Repository.create(storage=icechunk.local_filesystem_storage(str(path)))
+    write_metadata(
+        path,
+        StoreMetadata(
+            identity=StoreIdentity(
+                id="testsite-gnss",
+                uuid="00000000-0000-4000-8000-000000000001",
+                naming_authority="com.example",
+                stac_link="../../x/x/x.json",
+                title="TestSite GNSS Store",
+                store_type="gnss_store",
+                source_format="rinex3",
+            ),
+            creator=Creator(name="A", email="a@example.com", institution="B"),
+            temporal=TemporalExtent(created="2026-01-01T00:00:00Z", updated="x"),
+            spatial=SpatialExtent(site=SiteInfo(name=site)),
+            instruments=Instruments(
+                receivers={"canopy_01": ReceiverInfo(type="canopy", directory="c")}
+            ),
+        ),
+    )
+
+
+class TestStoreAmend:
+    def _setup(self, tmp_path, receivers=None):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        if receivers:
+            settings = yaml.safe_load((config_dir / "canvod-settings.yaml").read_text())
+            settings["sites"]["TestSite"]["receivers"].update(receivers)
+            (config_dir / "canvod-settings.yaml").write_text(yaml.safe_dump(settings))
+        _write_current_store(stores_root)
+        return config_dir, stores_root / "TestSite" / "rinex"
+
+    def _amend(self, config_dir, *args, input=None):
+        return runner.invoke(
+            main_app,
+            ["store", "amend", "TestSite", "--store", "gnss", *args],
+            env=_env(config_dir),
+            input=input,
+        )
+
+    def test_sets_a_field_after_showing_old_and_new(self, tmp_path):
+        config_dir, path = self._setup(tmp_path)
+
+        result = self._amend(
+            config_dir,
+            "--set",
+            "identity.title=TestSite GNSS",
+            "--reason",
+            "shorter title",
+            "--yes",
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "TestSite GNSS Store" in result.output
+        from canvod.store_metadata import read_metadata
+
+        meta = read_metadata(path)
+        assert meta.identity.title == "TestSite GNSS"
+        assert meta.amendments[0].reason == "shorter title"
+
+    def test_values_are_read_as_yaml(self, tmp_path):
+        config_dir, path = self._setup(tmp_path)
+
+        result = self._amend(
+            config_dir,
+            "--set",
+            "spatial.geospatial_lat=47.71",
+            "--reason",
+            "surveyed",
+            "--yes",
+        )
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(path).spatial.geospatial_lat == 47.71
+
+    def test_nothing_changes_without_confirmation(self, tmp_path):
+        config_dir, path = self._setup(tmp_path)
+
+        result = self._amend(
+            config_dir, "--set", "identity.title=x", "--reason", "r", input="n\n"
+        )
+
+        assert result.exit_code == 1
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(path).identity.title == "TestSite GNSS Store"
+
+    def test_a_fixed_field_is_refused(self, tmp_path):
+        config_dir, _ = self._setup(tmp_path)
+
+        result = self._amend(
+            config_dir, "--set", "identity.id=x-gnss", "--reason", "r", "--yes"
+        )
+
+        assert result.exit_code == 1
+        assert "create a new one" in result.output
+
+    def test_a_reason_is_required(self, tmp_path):
+        config_dir, _ = self._setup(tmp_path)
+
+        result = self._amend(config_dir, "--set", "identity.title=x", "--yes")
+
+        assert result.exit_code != 0
+        assert "--reason" in result.output
+
+    def test_adds_a_receiver_from_the_settings(self, tmp_path):
+        config_dir, path = self._setup(
+            tmp_path,
+            receivers={"canopy_02": {"type": "canopy", "directory": "03_canopy"}},
+        )
+
+        result = self._amend(
+            config_dir,
+            "--add-receiver",
+            "canopy_02",
+            "--reason",
+            "second canopy receiver installed",
+            "--yes",
+        )
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata
+
+        receiver = read_metadata(path).instruments.receivers["canopy_02"]
+        assert receiver.directory == "03_canopy"
+
+    def test_an_unknown_receiver_is_refused(self, tmp_path):
+        config_dir, _ = self._setup(tmp_path)
+
+        result = self._amend(
+            config_dir, "--add-receiver", "canopy_09", "--reason", "r", "--yes"
+        )
+
+        assert result.exit_code == 1
+        assert "canopy_09" in result.output
+
+    def test_changes_from_a_file(self, tmp_path):
+        config_dir, path = self._setup(
+            tmp_path,
+            receivers={"canopy_02": {"type": "canopy", "directory": "03_canopy"}},
+        )
+        changes = tmp_path / "amend.yaml"
+        changes.write_text(
+            yaml.safe_dump(
+                {
+                    "reason": "DOI assigned, second receiver",
+                    "set": {"identity.persistent_identifier": "10.1234/abc"},
+                    "add_receivers": ["canopy_02"],
+                }
+            )
+        )
+
+        result = self._amend(config_dir, "--from", str(changes), "--yes")
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata
+
+        meta = read_metadata(path)
+        assert meta.identity.persistent_identifier == "10.1234/abc"
+        assert "canopy_02" in meta.instruments.receivers
+        assert {a.reason for a in meta.amendments} == {"DOI assigned, second receiver"}

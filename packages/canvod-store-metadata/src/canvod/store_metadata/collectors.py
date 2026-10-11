@@ -278,19 +278,25 @@ def collect_spatial(site_config: Any, site_name: str) -> SpatialExtent:
     )
 
 
+def collect_receiver(receiver_config: Any) -> ReceiverInfo:
+    """A receiver's entry in the store metadata, from its settings."""
+    return ReceiverInfo(
+        type=receiver_config.type,
+        directory=receiver_config.directory,
+        reader_format=getattr(receiver_config, "reader_format", "auto"),
+        description=getattr(receiver_config, "description", None),
+        recipe=getattr(receiver_config, "recipe", None),
+        metadata=getattr(receiver_config, "metadata", None),
+    )
+
+
 def collect_instruments(site_config: Any) -> Instruments:
     """Build Instruments from SiteConfig receivers."""
-    receivers: dict[str, ReceiverInfo] = {}
-    for name, rcv in site_config.receivers.items():
-        receivers[name] = ReceiverInfo(
-            type=rcv.type,
-            directory=rcv.directory,
-            reader_format=getattr(rcv, "reader_format", "auto"),
-            description=getattr(rcv, "description", None),
-            recipe=getattr(rcv, "recipe", None),
-            metadata=getattr(rcv, "metadata", None),
-        )
-    return Instruments(receivers=receivers)
+    return Instruments(
+        receivers={
+            name: collect_receiver(rcv) for name, rcv in site_config.receivers.items()
+        }
+    )
 
 
 def collect_vod_analyses(site_config: Any) -> dict[str, VodAnalysisInfo]:

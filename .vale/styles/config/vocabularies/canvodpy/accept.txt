@@ -103,3 +103,5 @@ hardcoded
 Scripps
 ns
 (ESA|CODE)'s
+add_receivers
+add_vod_analyses
