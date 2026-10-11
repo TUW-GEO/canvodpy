@@ -289,6 +289,13 @@ class MigrationRecord(BaseModel):
     old_metadata_version: str
     who: str
     when: str
+    fields_given: list[str] = Field(
+        default_factory=list, description="Fields given at migration time"
+    )
+    variables_replaced: list[str] = Field(
+        default_factory=list,
+        description="Arrays whose attributes the migration replaced",
+    )
 
 
 class StoreMetadata(BaseModel):

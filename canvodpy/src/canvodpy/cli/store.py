@@ -541,6 +541,14 @@ def migrate_metadata_command(
             ),
         ),
     ] = None,
+    set_values: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--set",
+            metavar="field.path=value",
+            help="A field the store lacks, for example identity.description=Beech forest site, Rosalia. Repeat for more fields.",
+        ),
+    ] = None,
     yes: Annotated[bool, typer.Option("--yes", help="Migrate without asking.")] = False,
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
@@ -550,6 +558,12 @@ def migrate_metadata_command(
     a new store id, made of the site name in lowercase and the store kind,
     and a UUID, and keeps the old id in the migration record. Snapshots
     from before stay readable.
+
+    The migrated store must pass the standards checks: fields the store
+    lacks, such as its description, are given with --set, otherwise the
+    migration is refused and lists them. In a VOD store, the attributes of
+    VOD are replaced with the current ones: older versions copied the
+    attributes of SNR and theta to VOD, among them the valid range of theta.
     """
     from canvod.store_metadata import migrate_metadata, read_metadata
     from canvod.store_metadata.identity import store_id
@@ -575,11 +589,25 @@ def migrate_metadata_command(
         "  Naming authority:  "
         f"{naming_authority or old.identity.naming_authority or '(none)'}"
     )
+    values = _amend_changes(site, old.identity.store_type, set_values or [], [], [])
+    for field, value in values.items():
+        console.print(f"  Set {field}: {value!r}")
+    variable_attrs = {}
+    if old.identity.store_type == "vod_store":
+        from canvod.vod.calculator import VOD_ATTRS
+
+        variable_attrs = {"VOD": VOD_ATTRS}
+        console.print("  VOD attributes:   replaced with the current ones")
     if not yes and not typer.confirm("Migrate the store metadata?"):
         raise typer.Exit(1)
 
     try:
-        snapshot_id = migrate_metadata(path, naming_authority=naming_authority)
+        snapshot_id = migrate_metadata(
+            path,
+            naming_authority=naming_authority,
+            values=values,
+            variable_attrs=variable_attrs,
+        )
     except ValueError as exc:
         console.print(f"[red]❌ {exc}[/red]")
         raise typer.Exit(1) from None

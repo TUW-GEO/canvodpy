@@ -378,8 +378,34 @@ def combined_metadata(
     hash.
     """
     attrs: dict[str, Any] = dict(root.attrs)
-    data: dict[str, Any] = {**attrs[REPOSITORY_METADATA_ATTR]}
-    summary: dict[str, Any] = attrs[SNAPSHOT_SUMMARY_ATTR]
+    data = _combine(
+        attrs[REPOSITORY_METADATA_ATTR], attrs[SNAPSHOT_SUMMARY_ATTR], commit_metadata
+    )
+    if "environment" in data:
+        data["environment"] = {
+            **data["environment"],
+            **_environment_texts(root, data["environment"].get("uv_lock_hash")),
+        }
+    return StoreMetadata.model_validate(data)
+
+
+def preview_metadata(root: zarr.Group, repository: dict[str, Any]) -> StoreMetadata:
+    """The metadata a commit of ``root`` would give, before it is written.
+
+    Repository metadata plus the snapshot summary of the data under
+    ``root``; without commit metadata (software, environment, settings).
+    """
+    summary = snapshot_summary(root, repository, datetime.now(UTC).isoformat())
+    return StoreMetadata.model_validate(_combine(repository, summary, {}))
+
+
+def _combine(
+    repository: dict[str, Any],
+    summary: dict[str, Any],
+    commit_metadata: dict[str, Any],
+) -> dict[str, Any]:
+    """Repository metadata, snapshot summary and commit metadata as one dict."""
+    data: dict[str, Any] = {**repository}
     data["identity"] = {**data["identity"], "conventions": CONVENTIONS}
     data["temporal"] = {**data["temporal"], **summary["temporal"]}
     data["spatial"] = {**data["spatial"], **summary["spatial"]}
@@ -395,9 +421,4 @@ def combined_metadata(
     for section in ("processing", "environment", "config"):
         if section in commit_metadata:
             data[section] = commit_metadata[section]
-    if "environment" in data:
-        data["environment"] = {
-            **data["environment"],
-            **_environment_texts(root, data["environment"].get("uv_lock_hash")),
-        }
-    return StoreMetadata.model_validate(data)
+    return data

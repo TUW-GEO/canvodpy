@@ -423,13 +423,25 @@ class TestStoreMaintainDue:
         assert "Would expire" not in result.output
 
 
-def _write_old_form_store(store_path, naming_authority="at.ac.tuwien") -> None:
-    """A store as canVODpy wrote it before ADR 0014: one canvod_metadata attr."""
+def _write_old_form_store(
+    store_path,
+    naming_authority="at.ac.tuwien",
+    *,
+    complete=True,
+    store_type="gnss_store",
+) -> None:
+    """A store as canVODpy wrote it before ADR 0014: one canvod_metadata attr.
+
+    ``complete=False`` leaves out what older stores lack: description,
+    publisher, license and site position. A VOD store holds a VOD array
+    with the attributes older versions wrote.
+    """
     import icechunk
     import zarr
 
     from canvod.store_metadata.schema import (
         Creator,
+        Publisher,
         SiteInfo,
         SpatialExtent,
         StoreIdentity,
@@ -437,23 +449,59 @@ def _write_old_form_store(store_path, naming_authority="at.ac.tuwien") -> None:
         TemporalExtent,
     )
 
+    kind = store_type.removesuffix("_store")
     old = StoreMetadata(
         identity=StoreIdentity(
-            id="TestSite/gnss_store",
-            title="TestSite Gnss Store",
-            store_type="gnss_store",
+            id=f"TestSite/{store_type}",
+            title=f"TestSite {kind.title()} Store",
+            description="Test site observations." if complete else None,
+            keywords=["GNSS"],
+            store_type=store_type,
             source_format="rinex3",
             naming_authority=naming_authority,
         ),
         creator=Creator(name="A", email="a@example.com", institution="B"),
+        publisher=Publisher(name="B", license="CC-BY-4.0") if complete else Publisher(),
         temporal=TemporalExtent(created="2025-01-01T00:00:00Z", updated="x"),
-        spatial=SpatialExtent(site=SiteInfo(name="TestSite")),
+        spatial=SpatialExtent(
+            site=SiteInfo(name="TestSite"),
+            geospatial_lat=47.7 if complete else None,
+            geospatial_lon=16.3 if complete else None,
+        ),
     )
     repo = icechunk.Repository.create(
         storage=icechunk.local_filesystem_storage(str(store_path))
     )
     session = repo.writable_session("main")
-    zarr.open_group(session.store, mode="w").attrs.update(old.to_root_attrs())
+    root = zarr.open_group(session.store, mode="w")
+    root.attrs.update(old.to_root_attrs())
+    variable = "VOD" if store_type == "vod_store" else "SNR"
+    group = (
+        "tau_omega/canopy_01_vs_reference_01"
+        if store_type == "vod_store"
+        else "canopy_01"
+    )
+    xr.Dataset(
+        {
+            variable: (
+                ("epoch", "sid"),
+                np.array([[0.4, -0.1], [0.5, 1.9]]),
+                # As older versions wrote VOD: SNR's and theta's attributes.
+                {
+                    "standard_name": "carrier_to_noise_density_ratio",
+                    "valid_min": 0,
+                    "valid_range": [0.0, 1.5707963267948966],
+                },
+            )
+        },
+        coords={
+            "epoch": np.array(
+                ["2025-01-01T00:00:00", "2025-01-01T00:00:30"], dtype="datetime64[ns]"
+            ),
+            "sid": ["G01|L1|C", "G02|L1|C"],
+            "system": ("sid", ["G", "G"]),
+        },
+    ).to_zarr(session.store, group=group, consolidated=False)
     session.commit("old form")
 
 
@@ -531,6 +579,101 @@ class TestStoreMigrateMetadata:
         from canvod.store_metadata import read_metadata
 
         assert read_metadata(store_path).identity.naming_authority == "com.example"
+
+    def test_missing_fields_refuse_the_migration_and_are_listed(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        store_path = stores_root / "TestSite" / "rinex"
+        _write_old_form_store(store_path, complete=False)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "gnss", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 1
+        assert "summary" in result.output
+        assert "publisher.name" in result.output
+        assert "--set" in result.output
+        from canvod.store_metadata import metadata_exists
+
+        assert not metadata_exists(store_path)
+
+    def test_missing_fields_are_given_with_set(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        store_path = stores_root / "TestSite" / "rinex"
+        _write_old_form_store(store_path, complete=False)
+
+        result = runner.invoke(
+            main_app,
+            [
+                "store",
+                "migrate-metadata",
+                "TestSite",
+                "--store",
+                "gnss",
+                "--set",
+                "identity.description=Test site observations.",
+                "--set",
+                "publisher.name=B",
+                "--set",
+                "publisher.license=CC-BY-4.0",
+                "--set",
+                "spatial.geospatial_lat=47.7",
+                "--set",
+                "spatial.geospatial_lon=16.3",
+                "--yes",
+            ],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata, validate_all
+
+        meta = read_metadata(store_path)
+        assert meta.identity.description == "Test site observations."
+        assert not any(validate_all(meta, recommended=False).values())
+        assert meta.migration.fields_given == [
+            "identity.description",
+            "publisher.license",
+            "publisher.name",
+            "spatial.geospatial_lat",
+            "spatial.geospatial_lon",
+        ]
+
+    def test_vod_attributes_are_replaced(self, tmp_path):
+        import icechunk
+        import zarr
+
+        from canvod.vod.calculator import VOD_ATTRS
+
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        store_path = stores_root / "TestSite" / "vod"
+        _write_old_form_store(store_path, store_type="vod_store")
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "vod", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        repo = icechunk.Repository.open(
+            icechunk.local_filesystem_storage(str(store_path))
+        )
+        root = zarr.open_group(repo.readonly_session(branch="main").store, mode="r")
+        attrs = dict(root["tau_omega/canopy_01_vs_reference_01/VOD"].attrs)
+        assert {k: attrs[k] for k in VOD_ATTRS} == VOD_ATTRS
+        assert set(attrs) - set(VOD_ATTRS) <= {"_FillValue", "coordinates"}
+        assert repo.get_metadata()["migration"]["variables_replaced"] == [
+            "tau_omega/canopy_01_vs_reference_01/VOD"
+        ]
 
 
 def _write_current_store(stores_root, site="TestSite") -> None:

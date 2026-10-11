@@ -3,18 +3,22 @@
 from pathlib import Path
 
 import icechunk
+import numpy as np
 import pytest
+import xarray as xr
 import zarr
 
 from canvod.store_metadata import (
     ensure_metadata,
     migrate_metadata,
     read_metadata,
+    validate_all,
 )
 from canvod.store_metadata.schema import (
     ConfigSnapshot,
     Creator,
     Instruments,
+    Publisher,
     ReceiverInfo,
     SiteInfo,
     SpatialExtent,
@@ -23,17 +27,41 @@ from canvod.store_metadata.schema import (
     TemporalExtent,
 )
 
+#: Two epochs of SNR, with attributes as older versions wrote them.
+_SNR_DAY = xr.Dataset(
+    {
+        "SNR": (
+            ("epoch", "sid"),
+            np.array([[40.0, 41.0], [42.0, 43.0]]),
+            {"units": "dB", "valid_min": 0},
+        )
+    },
+    coords={
+        "epoch": np.array(
+            ["2025-01-01T00:00:00", "2025-01-01T00:00:30"], dtype="datetime64[ns]"
+        ),
+        "sid": ["G01|L1|C", "G02|L1|C"],
+        "system": ("sid", ["G", "G"]),
+    },
+)
 
-def _old_metadata(naming_authority: str | None = "at.ac.tuwien") -> StoreMetadata:
+
+def _old_metadata(
+    naming_authority: str | None = "at.ac.tuwien", *, complete: bool = True
+) -> StoreMetadata:
+    """``complete=False``: without the description and publisher older stores lack."""
     return StoreMetadata(
         identity=StoreIdentity(
             id="Rosalia/gnss_store",
             title="Rosalia Gnss Store",
+            description="Beech forest site." if complete else None,
+            keywords=["GNSS", "SNR"],
             store_type="gnss_store",
             source_format="rinex3",
             naming_authority=naming_authority,
         ),
         creator=Creator(name="T", email="t@example.org", institution="U"),
+        publisher=Publisher(name="U", license="CC-BY-4.0") if complete else Publisher(),
         temporal=TemporalExtent(
             created="2025-01-01T00:00:00+00:00", updated="2025-06-01T00:00:00+00:00"
         ),
@@ -49,15 +77,22 @@ def _old_metadata(naming_authority: str | None = "at.ac.tuwien") -> StoreMetadat
     )
 
 
-def _old_store(tmp_path: Path, naming_authority: str | None = "at.ac.tuwien") -> Path:
+def _old_store(
+    tmp_path: Path,
+    naming_authority: str | None = "at.ac.tuwien",
+    *,
+    complete: bool = True,
+) -> Path:
     path = tmp_path / "store"
     repo = icechunk.Repository.create(
         storage=icechunk.local_filesystem_storage(str(path))
     )
     session = repo.writable_session("main")
     root = zarr.open_group(session.store, mode="w")
-    root.attrs.update(_old_metadata(naming_authority).to_root_attrs())
-    root.require_group("canopy_01")
+    root.attrs.update(
+        _old_metadata(naming_authority, complete=complete).to_root_attrs()
+    )
+    _SNR_DAY.to_zarr(session.store, group="canopy_01", consolidated=False)
     session.commit("data and metadata, old form")
     return path
 
@@ -151,3 +186,72 @@ class TestMigration:
 
         with pytest.raises(ValueError, match="no store metadata to migrate"):
             migrate_metadata(path)
+
+
+class TestMigrationChecks:
+    def test_a_store_that_would_fail_the_checks_is_refused(self, tmp_path):
+        path = _old_store(tmp_path, complete=False)
+
+        with pytest.raises(ValueError, match="would fail the standards checks") as e:
+            migrate_metadata(path)
+        assert "summary" in str(e.value)
+        assert "publisher.name" in str(e.value)
+        assert "publisher.license" in str(e.value)
+        assert not _repo(path).get_metadata()
+
+    def test_missing_fields_are_given_at_migration_time(self, tmp_path):
+        path = _old_store(tmp_path, complete=False)
+
+        migrate_metadata(
+            path,
+            values={
+                "identity.description": "Beech forest site.",
+                "publisher.name": "U",
+                "publisher.license": "CC-BY-4.0",
+            },
+        )
+
+        meta = read_metadata(path)
+        assert meta.identity.description == "Beech forest site."
+        assert not any(validate_all(meta, recommended=False).values())
+        assert meta.migration.fields_given == [
+            "identity.description",
+            "publisher.license",
+            "publisher.name",
+        ]
+
+    def test_a_fixed_field_cannot_be_given(self, tmp_path):
+        path = _old_store(tmp_path)
+
+        with pytest.raises(ValueError, match="fixed field"):
+            migrate_metadata(path, values={"identity.id": "other"})
+        assert not _repo(path).get_metadata()
+
+
+class TestVariableAttributes:
+    def test_named_variables_get_the_new_attributes(self, tmp_path):
+        path = _old_store(tmp_path)
+        new = {"long_name": "Signal-to-noise ratio", "units": "dB"}
+
+        migrate_metadata(path, variable_attrs={"SNR": new})
+
+        root = zarr.open_group(
+            _repo(path).readonly_session(branch="main").store, mode="r"
+        )
+        attrs = dict(root["canopy_01/SNR"].attrs)
+        assert {k: attrs[k] for k in new} == new
+        assert set(attrs) - set(new) <= {"_FillValue", "coordinates"}
+        assert _repo(path).get_metadata()["migration"]["variables_replaced"] == [
+            "canopy_01/SNR"
+        ]
+
+    def test_without_variable_attrs_nothing_is_replaced(self, tmp_path):
+        path = _old_store(tmp_path)
+
+        migrate_metadata(path)
+
+        root = zarr.open_group(
+            _repo(path).readonly_session(branch="main").store, mode="r"
+        )
+        assert root["canopy_01/SNR"].attrs["valid_min"] == 0
+        assert _repo(path).get_metadata()["migration"]["variables_replaced"] == []

@@ -400,6 +400,12 @@ a new store id, made of the site name in lowercase and the store kind,
 and a UUID, and keeps the old id in the migration record. Snapshots
 from before stay readable.
 
+The migrated store must pass the standards checks: fields the store
+lacks, such as its description, are given with --set, otherwise the
+migration is refused and lists them. In a VOD store, the attributes of
+VOD are replaced with the current ones: older versions copied the
+attributes of SNR and theta to VOD, among them the valid range of theta.
+
 **Usage**:
 
 ```console
@@ -414,6 +420,7 @@ $ canvodpy store migrate-metadata [OPTIONS] {site}
 
 * `--store gnss|vod`: Store to migrate.  [default: gnss]
 * `--naming-authority <str>`: Your institution's domain in reverse order, for example at.ac.tuwien, for a store whose metadata has no naming authority.
+* `--set field.path=value`: A field the store lacks, for example identity.description=Beech forest site, Rosalia. Repeat for more fields.
 * `--yes`: Migrate without asking.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
