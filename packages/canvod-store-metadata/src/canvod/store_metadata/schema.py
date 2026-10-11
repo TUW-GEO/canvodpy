@@ -253,6 +253,15 @@ class Amendment(BaseModel):
     when: str
 
 
+class MigrationRecord(BaseModel):
+    """How a store written before ADR 0014 was moved to repository metadata."""
+
+    old_id: str
+    old_metadata_version: str
+    who: str
+    when: str
+
+
 class StoreMetadata(BaseModel):
     """Root metadata model composing all 11 sections."""
 
@@ -272,6 +281,9 @@ class StoreMetadata(BaseModel):
         default_factory=dict, description="VOD analyses of a VOD store"
     )
     amendments: list[Amendment] = Field(default_factory=list)
+    migration: MigrationRecord | None = Field(
+        None, description="Set when the store was migrated (ADR 0014)"
+    )
     written_before_migration: bool = Field(
         False,
         description=(
@@ -363,6 +375,7 @@ class RepositoryMetadata(BaseModel):
     references: References = Field(default_factory=References)
     vod_analyses: dict[str, VodAnalysisInfo] = Field(default_factory=dict)
     amendments: list[Amendment] = Field(default_factory=list)
+    migration: MigrationRecord | None = None
 
     @classmethod
     def from_store_metadata(cls, metadata: StoreMetadata) -> RepositoryMetadata:

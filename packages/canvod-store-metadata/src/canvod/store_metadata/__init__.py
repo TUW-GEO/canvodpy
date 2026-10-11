@@ -31,6 +31,7 @@ from .io import (
     update_metadata,
     write_metadata,
 )
+from .migration import migrate_metadata
 from .schema import StoreMetadata
 from .show import extract_env, format_metadata, show_metadata
 from .snapshot import RESERVED_GROUP
@@ -54,6 +55,7 @@ __all__ = [
     "extract_env",
     "format_metadata",
     "metadata_exists",
+    "migrate_metadata",
     "read_metadata",
     "scan_stores",
     "scan_stores_as_stac",

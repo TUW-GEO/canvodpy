@@ -421,3 +421,113 @@ class TestStoreMaintainDue:
         # threshold made this store "due" overall.
         assert "Would garbage-collect" not in result.output
         assert "Would expire" not in result.output
+
+
+def _write_old_form_store(store_path, naming_authority="at.ac.tuwien") -> None:
+    """A store as canVODpy wrote it before ADR 0014: one canvod_metadata attr."""
+    import icechunk
+    import zarr
+
+    from canvod.store_metadata.schema import (
+        Creator,
+        SiteInfo,
+        SpatialExtent,
+        StoreIdentity,
+        StoreMetadata,
+        TemporalExtent,
+    )
+
+    old = StoreMetadata(
+        identity=StoreIdentity(
+            id="TestSite/gnss_store",
+            title="TestSite Gnss Store",
+            store_type="gnss_store",
+            source_format="rinex3",
+            naming_authority=naming_authority,
+        ),
+        creator=Creator(name="A", email="a@example.com", institution="B"),
+        temporal=TemporalExtent(created="2025-01-01T00:00:00Z", updated="x"),
+        spatial=SpatialExtent(site=SiteInfo(name="TestSite")),
+    )
+    repo = icechunk.Repository.create(
+        storage=icechunk.local_filesystem_storage(str(store_path))
+    )
+    session = repo.writable_session("main")
+    zarr.open_group(session.store, mode="w").attrs.update(old.to_root_attrs())
+    session.commit("old form")
+
+
+class TestStoreMigrateMetadata:
+    def _setup(self, tmp_path, naming_authority="at.ac.tuwien"):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        store_path = stores_root / "TestSite" / "rinex"
+        _write_old_form_store(store_path, naming_authority)
+        return config_dir, store_path
+
+    def test_migrates_a_store_after_confirmation(self, tmp_path):
+        config_dir, store_path = self._setup(tmp_path)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "gnss", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "testsite-gnss" in result.output
+        assert "TestSite/gnss_store" in result.output
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(store_path).identity.id == "testsite-gnss"
+
+    def test_nothing_changes_without_confirmation(self, tmp_path):
+        config_dir, store_path = self._setup(tmp_path)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "gnss"],
+            env=_env(config_dir),
+            input="n\n",
+        )
+
+        assert result.exit_code == 1, result.output
+        from canvod.store_metadata import metadata_exists
+
+        assert not metadata_exists(store_path)
+
+    def test_a_missing_naming_authority_names_the_option(self, tmp_path):
+        config_dir, _ = self._setup(tmp_path, naming_authority=None)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "gnss", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 1
+        assert "--naming-authority" in result.output
+
+    def test_the_naming_authority_can_be_given(self, tmp_path):
+        config_dir, store_path = self._setup(tmp_path, naming_authority=None)
+
+        result = runner.invoke(
+            main_app,
+            [
+                "store",
+                "migrate-metadata",
+                "TestSite",
+                "--store",
+                "gnss",
+                "--naming-authority",
+                "com.example",
+                "--yes",
+            ],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(store_path).identity.naming_authority == "com.example"

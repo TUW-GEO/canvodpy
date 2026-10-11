@@ -96,7 +96,9 @@ def ensure_vod_store_metadata(
             store_path=store_path,
         )
 
-    repository = ensure_metadata(store_path, collect)
+    repository = ensure_metadata(
+        store_path, collect, site_name=site.name, store_type="vod_store"
+    )
     check_vod_analyses(repository, analyses, store_path=store_path)
 
 

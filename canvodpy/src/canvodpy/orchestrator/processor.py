@@ -1461,7 +1461,9 @@ class RinexDataProcessor:
                 dask_threads_per_worker=resources.get("threads_per_worker"),
             )
 
-        repository = ensure_metadata(store_path, collect)
+        repository = ensure_metadata(
+            store_path, collect, site_name=self.site.site_name, store_type="gnss_store"
+        )
         check_receivers(repository, receivers, store_path=store_path)
 
     def _compute_receiver_position(

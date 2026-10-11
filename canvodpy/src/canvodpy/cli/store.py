@@ -31,15 +31,20 @@ console = Console()
 _STORE_KINDS = ("gnss", "vod")
 
 
-def _open_store(site_name: str, store_kind: str):
-    """Resolve a site + store kind (gnss/vod) to an opened MyIcechunkStore.
+def _store_path(site_name: str, store_kind: str) -> tuple[Path, str]:
+    """Resolve a site + store kind (gnss/vod) to its path and store type.
 
     Exits cleanly with an actionable message if the site is unknown or the
     store hasn't been created yet — matches the rest of the CLI's error
     style (config.py, doctor.py), not a raw traceback.
     """
     from canvod.config import load_config
-    from canvod.store import MyIcechunkStore
+
+    if store_kind not in _STORE_KINDS:
+        console.print(
+            f"[red]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/red]"
+        )
+        raise typer.Exit(1)
 
     config = load_config()
     sites = config.sites.sites
@@ -63,6 +68,14 @@ def _open_store(site_name: str, store_kind: str):
         )
         raise typer.Exit(1)
 
+    return path, store_type
+
+
+def _open_store(site_name: str, store_kind: str):
+    """Resolve a site + store kind (gnss/vod) to an opened MyIcechunkStore."""
+    from canvod.store import MyIcechunkStore
+
+    path, store_type = _store_path(site_name, store_kind)
     return MyIcechunkStore(path, store_type=store_type)
 
 
@@ -505,3 +518,69 @@ def maintain_due(
             if due["manifests_due"]:
                 snapshot_id = icestore.compact_manifests(branch="main")
                 console.print(f"  Compacted manifests: snapshot {snapshot_id}")
+
+
+@store_app.command("migrate-metadata")
+def migrate_metadata_command(
+    site: Annotated[
+        str,
+        typer.Argument(
+            help="Site name, as defined under sites: in canvod-settings.yaml"
+        ),
+    ],
+    store: Annotated[
+        str, typer.Option("--store", metavar="gnss|vod", help="Store to migrate.")
+    ] = "gnss",
+    naming_authority: Annotated[
+        str | None,
+        typer.Option(
+            "--naming-authority",
+            help=(
+                "Your institution's domain in reverse order, for example "
+                "at.ac.tuwien, for a store whose metadata has no naming authority."
+            ),
+        ),
+    ] = None,
+    yes: Annotated[bool, typer.Option("--yes", help="Migrate without asking.")] = False,
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+) -> None:
+    """Move a store written before repository metadata to the current form.
+
+    Writes the store's description into its repository metadata, gives it
+    a new store id, made of the site name in lowercase and the store kind,
+    and a UUID, and keeps the old id in the migration record. Snapshots
+    from before stay readable.
+    """
+    from canvod.store_metadata import migrate_metadata, read_metadata
+    from canvod.store_metadata.identity import store_id
+
+    path, _ = _store_path(site, store)
+    try:
+        old = read_metadata(path)
+    except KeyError:
+        console.print(
+            f"[red]❌ The {store} store of '{site}' has no store metadata.[/red]"
+        )
+        raise typer.Exit(1) from None
+    if not old.written_before_migration:
+        console.print(
+            f"[green]✓ The {store} store of '{site}' is already migrated.[/green]"
+        )
+        return
+
+    new_id = store_id(old.spatial.site.name, old.identity.store_type)
+    console.print(f"\n[bold]{site}[/bold] — {store} store ({path})")
+    console.print(f"  Store id:          {old.identity.id} -> {new_id}")
+    console.print(
+        "  Naming authority:  "
+        f"{naming_authority or old.identity.naming_authority or '(none)'}"
+    )
+    if not yes and not typer.confirm("Migrate the store metadata?"):
+        raise typer.Exit(1)
+
+    try:
+        snapshot_id = migrate_metadata(path, naming_authority=naming_authority)
+    except ValueError as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(1) from None
+    console.print(f"[green]✓ Migrated[/green] (snapshot {snapshot_id[:12]})")

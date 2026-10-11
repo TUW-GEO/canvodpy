@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import getpass
+import socket
 import threading
 from collections.abc import Callable, Generator, Iterable
 from contextlib import contextmanager
@@ -331,12 +333,29 @@ def metadata_exists(store_path: Path, branch: str = "main") -> bool:
     return bool(repo.get_metadata())
 
 
+def current_user() -> str:
+    """Who changes a store: the operating system user and host."""
+    return f"{getpass.getuser()}@{socket.gethostname()}"
+
+
 #: The command that moves a store to the metadata form of ADR 0014.
 MIGRATE_COMMAND = "canvodpy store migrate-metadata"
 
+_STORE_KINDS = {"gnss_store": "gnss", "vod_store": "vod"}
+
+
+def store_command(command: str, site_name: str, store_type: str) -> str:
+    """A ``canvodpy store`` command line for one site's store."""
+    kind = _STORE_KINDS.get(store_type, store_type)
+    return f"canvodpy store {command} {site_name} --store {kind}"
+
 
 def ensure_metadata(
-    store_path: Path, collect: Callable[[], StoreMetadata]
+    store_path: Path,
+    collect: Callable[[], StoreMetadata],
+    *,
+    site_name: str,
+    store_type: str,
 ) -> dict[str, Any]:
     """Return a store's repository metadata, writing it for a new store.
 
@@ -366,11 +385,19 @@ def ensure_metadata(
             msg = (
                 f"The store at {store_path} was written before stores kept "
                 "repository metadata; move it to the current form first:\n"
-                f"  {MIGRATE_COMMAND} --store {store_path}"
+                f"  {store_command('migrate-metadata', site_name, store_type)}"
             )
             raise ValueError(msg)
         write_metadata(store_path, collect())
     return _open_repo(store_path).get_metadata()
+
+
+def _amend_command(repository: dict[str, Any]) -> str:
+    return store_command(
+        "amend",
+        repository["spatial"]["site"]["name"],
+        repository["identity"]["store_type"],
+    )
 
 
 def _not_listed(names: Iterable[str], listed: Iterable[str]) -> list[str]:
@@ -406,7 +433,7 @@ def check_receivers(
             f"{', '.join(map(repr, missing))} from the settings "
             "(sites.<site>.receivers) is not one of them. Receivers are added "
             "on purpose, with a reason:\n"
-            f"  canvodpy store amend --store {store_path} --add-receiver {name} "
+            f"  {_amend_command(repository)} --add-receiver {name} "
             '--reason "..."'
         )
         raise ValueError(msg)
@@ -431,7 +458,7 @@ def check_vod_analyses(
             f"{sorted(listed)}; {', '.join(map(repr, missing))} from the "
             "settings (sites.<site>.vod_analyses) is not one of them. VOD "
             "analyses are added on purpose, with a reason:\n"
-            f"  canvodpy store amend --store {store_path} --add-vod-analysis "
+            f"  {_amend_command(repository)} --add-vod-analysis "
             f'{name} --reason "..."'
         )
         raise ValueError(msg)

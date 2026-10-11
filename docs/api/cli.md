@@ -253,6 +253,7 @@ $ canvodpy store [OPTIONS] COMMAND [ARGS]...
 * `log`: Show the commit history as a graph, or the...
 * `maintain`: Expire old snapshots of one site's store...
 * `maintain-due`: Run only the store maintenance that's due,...
+* `migrate-metadata`: Move a store written before repository...
 
 ### `canvodpy store list`
 
@@ -386,5 +387,32 @@ $ canvodpy store maintain-due [OPTIONS] [site]
 
 * `--all-sites`: Run for every site in canvod-settings.yaml.
 * `--store gnss|vod|both`: Store to maintain.  [default: both]
+* `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--help`: Show this message and exit.
+
+### `canvodpy store migrate-metadata`
+
+Move a store written before repository metadata to the current form.
+
+Writes the store's description into its repository metadata, gives it
+a new store id, made of the site name in lowercase and the store kind,
+and a UUID, and keeps the old id in the migration record. Snapshots
+from before stay readable.
+
+**Usage**:
+
+```console
+$ canvodpy store migrate-metadata [OPTIONS] {site}
+```
+
+**Arguments**:
+
+* `site`: Site name, as defined under sites: in canvod-settings.yaml  [required]
+
+**Options**:
+
+* `--store gnss|vod`: Store to migrate.  [default: gnss]
+* `--naming-authority <str>`: Your institution's domain in reverse order, for example at.ac.tuwien, for a store whose metadata has no naming authority.
+* `--yes`: Migrate without asking.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.

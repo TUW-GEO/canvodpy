@@ -63,7 +63,13 @@ def _new_store(tmp_path: Path) -> Path:
 
 
 def _ensure(path: Path, metadata: StoreMetadata | None = None) -> dict:
-    return ensure_metadata(path, lambda: metadata or _metadata())
+    meta = metadata or _metadata()
+    return ensure_metadata(
+        path,
+        lambda: meta,
+        site_name="Rosalia",
+        store_type=meta.identity.store_type,
+    )
 
 
 class TestEnsureMetadata:
@@ -83,7 +89,9 @@ class TestEnsureMetadata:
             msg = "collected again"
             raise AssertionError(msg)
 
-        repository = ensure_metadata(path, fail)
+        repository = ensure_metadata(
+            path, fail, site_name="Rosalia", store_type="gnss_store"
+        )
         assert repository["identity"]["id"] == "rosalia-gnss"
 
     def test_a_store_with_old_metadata_is_refused(self, tmp_path):
@@ -93,7 +101,9 @@ class TestEnsureMetadata:
         zarr.open_group(session.store, mode="w").attrs["canvod_metadata"] = {"x": 1}
         session.commit("old form")
 
-        with pytest.raises(ValueError, match="canvodpy store migrate-metadata"):
+        with pytest.raises(
+            ValueError, match="canvodpy store migrate-metadata Rosalia --store gnss"
+        ):
             _ensure(path)
         assert not metadata_exists(path)
 
@@ -123,7 +133,7 @@ class TestListedReceivers:
 
         with pytest.raises(ValueError, match="--add-receiver canopy_02") as excinfo:
             check_receivers(repository, ["canopy_02"], store_path=path)
-        assert "canvodpy store amend" in str(excinfo.value)
+        assert "canvodpy store amend Rosalia --store gnss" in str(excinfo.value)
 
     def test_an_unlisted_vod_analysis_is_refused(self, tmp_path):
         path = _new_store(tmp_path)
