@@ -8,6 +8,7 @@ import xarray as xr
 from pydantic import ValidationError
 
 from canvod.vod import TauOmegaZerothOrder
+from canvod.vod.calculator import DELTA_SNR_ATTRS, VOD_ATTRS
 
 
 class TestVODCalculatorValidation:
@@ -146,6 +147,20 @@ class TestTauOmegaZerothOrder:
         vod_ds = calculator.calculate_vod()
 
         np.testing.assert_array_equal(vod_ds["cell_id_equal_area_2.0deg"].values, cells)
+
+    def test_calculate_vod_describes_its_variables(self):
+        """VOD and delta_snr carry their own attributes, none of the inputs'."""
+        canopy_ds, sky_ds = self.create_test_datasets()
+        for ds in (canopy_ds, sky_ds):
+            ds["SNR"].attrs = {"long_name": "SNR", "units": "dB-Hz"}
+            ds["theta"].attrs = {"long_name": "Polar angle", "valid_range": [0, 1.6]}
+        calculator = TauOmegaZerothOrder(canopy_ds=canopy_ds, sky_ds=sky_ds)
+
+        vod_ds = calculator.calculate_vod()
+
+        assert vod_ds["VOD"].attrs == VOD_ATTRS
+        assert vod_ds["delta_snr"].attrs == DELTA_SNR_ATTRS
+        assert vod_ds["VOD"].attrs["coverage_content_type"] == "modelResult"
 
     def test_calculate_vod_coords(self):
         """Test that VOD output preserves coordinates."""

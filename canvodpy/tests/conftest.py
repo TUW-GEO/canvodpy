@@ -115,8 +115,13 @@ def rosalia_one_day(tmp_path, monkeypatch):
     # New stores need a naming authority (ADR 0015); don't rely on the
     # local settings having one.
     patched_config.processing.metadata.naming_authority = "at.ac.tuwien"
+    patched_config.processing.metadata.store_description = (
+        "One day of GNSS observations from the Rosalia test data."
+    )
     patched_config.sites.sites["rosalia"] = SiteConfig(
         gnss_site_data_root=str(_ROSALIA_DATA),
+        latitude=47.7,
+        longitude=16.3,
         receivers={
             "canopy_01": ReceiverConfig(type="canopy", directory="placeholder"),
         },

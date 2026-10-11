@@ -165,6 +165,23 @@ class VODCalculator(ABC, BaseModel):
         return calculator.calculate_vod()
 
 
+VOD_ATTRS: dict[str, str] = {
+    "long_name": "Vegetation optical depth",
+    "coverage_content_type": "modelResult",
+    "units": "1",
+    "description": (
+        "Zeroth-order tau-omega approximation: "
+        "VOD = -ln(10 ** (delta_snr / 10)) * cos(theta)."
+    ),
+}
+
+DELTA_SNR_ATTRS: dict[str, str] = {
+    "long_name": "SNR of the canopy receiver minus SNR of the reference receiver",
+    "coverage_content_type": "physicalMeasurement",
+    "units": "dB",
+}
+
+
 class TauOmegaZerothOrder(VODCalculator):
     """Calculate VOD using the zeroth-order Tau-Omega approximation.
 
@@ -265,8 +282,10 @@ class TauOmegaZerothOrder(VODCalculator):
         }
         vod_ds = xr.Dataset(
             {
-                "VOD": vod,
-                "delta_snr": delta_snr,
+                "VOD": vod.drop_attrs(deep=False).assign_attrs(VOD_ATTRS),
+                "delta_snr": delta_snr.drop_attrs(deep=False).assign_attrs(
+                    DELTA_SNR_ATTRS
+                ),
                 "phi": self.canopy_ds["phi"],
                 "theta": self.canopy_ds["theta"],
                 **cell_ids,

@@ -142,20 +142,35 @@ show_metadata(store_path)  # print all sections
 To recreate the Python environment that wrote a store, `extract_env()`
 writes the stored `pyproject.toml` and `uv.lock` to a directory.
 
-## Check for missing fields
+## Check against the standards
 
 ```python
-from canvod.store_metadata import validate_all, validate_datacite, validate_fair
+from canvod.store_metadata import validate_all
 
-issues = validate_all(meta)
-# {"fair": [...], "datacite": [...], "acdd": [...], "stac": [...]}
+failures = validate_all(meta, recommended=False)
+# {"zarr_conventions": [], "acdd": [], "datacite": [], "stac": [], "fair": []}
 
-issues = validate_datacite(meta)
+issues = validate_all(meta)  # also recommendations and FAIR advice
 ```
 
-Each function returns the fields that are missing or empty, as a list of
-messages. The functions check the fields of `StoreMetadata`; they don't
-validate the metadata against the full schema of each standard.
+`validate_all()` returns a list of messages per standard. With
+`recommended=False` it lists only failures: what a standard requires, or
+for ACDD 1.3 what it highly recommends. A store created by canVODpy has
+none. Without it, the lists also hold the ACDD recommendations, marked
+`[recommended]`, and the FAIR advice.
+
+| Key | What is checked |
+|---|---|
+| `zarr_conventions` | The `proj`, `license` and `stac` attributes of the root group, with `zarr-cm` |
+| `acdd` | The ACDD 1.3 global attributes of the root group |
+| `datacite` | Identifier, title, creator, creation date, store type, publisher |
+| `stac` | Identifier, title, bounding box, time range, license |
+| `fair` | Advice only: persistent identifier, access URL, cross-references, provenance |
+
+The tests also check a day of data exported to netCDF with IOOS
+compliance-checker, for CF 1.11 and ACDD 1.3. Two of its findings are
+known and accepted. CF has no standard names for GNSS observables, and
+UDUNITS has no unit for dB or dB-Hz.
 
 ## Change the metadata
 

@@ -26,6 +26,11 @@ recipes run these from the command line (`just metadata-show <store>`,
 - Repository metadata is written once, when the store gets its metadata;
   every commit through `commit_with_rebase` then writes the root copy and
   the snapshot summary and checks the root copy (ADR 0014).
+- A store created by canVODpy has no validation failures:
+  `validate_all(meta, recommended=False)` is empty. CF 1.11 and ACDD 1.3
+  are checked on a netCDF export by IOOS compliance-checker in
+  `canvodpy/tests/test_store_compliance.py`; its known exceptions are listed
+  there.
 
 ## Tests
 

@@ -289,6 +289,7 @@ def _get_bandwidth_mhz(system: str, band: str) -> float:
 
 _BROADCAST_THETA_ATTRS: dict[str, str] = {
     "long_name": "Satellite polar angle reported by the receiver",
+    "coverage_content_type": "auxiliaryInformation",
     "short_name": "θ_B",
     "units": "rad",
     "source": "SBF SatVisibility block (Block 4012), reported by receiver firmware",
@@ -307,6 +308,7 @@ _BROADCAST_THETA_ATTRS: dict[str, str] = {
 }
 _BROADCAST_PHI_ATTRS: dict[str, str] = {
     "long_name": "Satellite azimuth reported by the receiver (geographic convention)",
+    "coverage_content_type": "auxiliaryInformation",
     "short_name": "φ_B",
     "units": "rad",
     "source": "SBF SatVisibility block (Block 4012), reported by receiver firmware",
@@ -326,6 +328,7 @@ _BROADCAST_PHI_ATTRS: dict[str, str] = {
 
 _RISE_SET_ATTRS: dict[str, object] = {
     "long_name": "Satellite rise/set indicator",
+    "coverage_content_type": "auxiliaryInformation",
     "flag_values": [0, 1],
     "flag_meanings": "setting rising",
     "source": "SBF SatVisibility block, reported by receiver firmware",
@@ -345,6 +348,7 @@ _RISE_SET_ATTRS: dict[str, object] = {
 
 _BROADCAST_ANGLE_SOURCE_ATTRS: dict[str, object] = {
     "long_name": "Orbit data behind broadcast_theta and broadcast_phi",
+    "coverage_content_type": "auxiliaryInformation",
     "flag_values": [1, 2],
     "flag_meanings": "almanac ephemeris",
     "source": "SBF SatVisibility block, reported by receiver firmware",
@@ -365,6 +369,7 @@ _BROADCAST_ANGLE_SOURCE_ATTRS: dict[str, object] = {
 
 _MP_CORRECTION_ATTRS: dict[str, object] = {
     "long_name": "Pseudorange multipath correction",
+    "coverage_content_type": "auxiliaryInformation",
     "units": "m",
     "source": "SBF MeasExtra block (Block 4000), reported by receiver firmware",
     "comment": (
@@ -381,6 +386,7 @@ _MP_CORRECTION_ATTRS: dict[str, object] = {
 
 _CODE_VAR_ATTRS: dict[str, object] = {
     "long_name": "Code tracking noise variance",
+    "coverage_content_type": "qualityInformation",
     "units": "m^2",
     "valid_max": 65534e-4,
     "source": "SBF MeasExtra block (Block 4000), reported by receiver firmware",
@@ -398,6 +404,7 @@ _CODE_VAR_ATTRS: dict[str, object] = {
 
 _CARRIER_VAR_ATTRS: dict[str, object] = {
     "long_name": "Carrier phase tracking noise variance",
+    "coverage_content_type": "qualityInformation",
     "units": "mcycles^2",
     "valid_max": 65534.0,
     "source": "SBF MeasExtra block (Block 4000), reported by receiver firmware",
@@ -417,6 +424,7 @@ _CARRIER_VAR_ATTRS: dict[str, object] = {
 
 _CN0_HIGHRES_CORRECTION_ATTRS: dict[str, object] = {
     "long_name": "C/N0 high-resolution correction from MeasExtra",
+    "coverage_content_type": "auxiliaryInformation",
     "units": "dB-Hz",
     "valid_min": 0.0,
     "valid_max": 7 * 0.03125,  # CN0HighRes max value 7 → 0.21875 dB-Hz
@@ -438,6 +446,7 @@ _CN0_HIGHRES_CORRECTION_ATTRS: dict[str, object] = {
 
 _SMOOTHING_CORR_ATTRS: dict[str, object] = {
     "long_name": "Pseudorange Hatch-filter smoothing correction",
+    "coverage_content_type": "auxiliaryInformation",
     "units": "m",
     "source": "SBF MeasExtra block (Block 4000), reported by receiver firmware",
     "comment": (
@@ -455,9 +464,10 @@ _SMOOTHING_CORR_ATTRS: dict[str, object] = {
 
 _LOCK_TIME_ATTRS: dict[str, object] = {
     "long_name": "Carrier phase lock time",
+    "coverage_content_type": "qualityInformation",
     "units": "s",
-    "valid_min": 0,
-    "valid_max": 65534,
+    "valid_min": 0.0,
+    "valid_max": 65534.0,
     "source": "SBF MeasExtra block (Block 4000), reported by receiver firmware",
     "comment": (
         "Duration of continuous carrier phase tracking for this signal. "
@@ -473,6 +483,7 @@ _LOCK_TIME_ATTRS: dict[str, object] = {
 
 _CUM_LOSS_CONT_ATTRS: dict[str, object] = {
     "long_name": "Cumulative loss-of-continuity counter",
+    "coverage_content_type": "qualityInformation",
     "units": "1",
     "source": "SBF MeasExtra block (Block 4000), reported by receiver firmware",
     "comment": (
@@ -490,6 +501,7 @@ _CUM_LOSS_CONT_ATTRS: dict[str, object] = {
 
 _CAR_MP_CORR_ATTRS: dict[str, object] = {
     "long_name": "Carrier phase multipath correction",
+    "coverage_content_type": "auxiliaryInformation",
     "units": "cycles",
     "source": "SBF MeasExtra block (Block 4000), reported by receiver firmware",
     "comment": (
@@ -507,6 +519,7 @@ _CAR_MP_CORR_ATTRS: dict[str, object] = {
 
 _SNR_RAW_ATTRS: dict[str, object] = {
     "long_name": "C/N0 before CN0HighRes correction (0.25 dB-Hz resolution)",
+    "coverage_content_type": "physicalMeasurement",
     "units": "dB-Hz",
     "valid_min": 0.0,
     "source": "SBF MeasEpoch block (Block 4027), before CN0HighRes correction",
@@ -525,6 +538,7 @@ _SNR_RAW_ATTRS: dict[str, object] = {
 
 _PSEUDORANGE_UNSMOOTHED_ATTRS: dict[str, object] = {
     "long_name": "Pseudorange before Hatch-filter carrier smoothing",
+    "coverage_content_type": "physicalMeasurement",
     "units": "m",
     "source": "SBF MeasEpoch + MeasExtra (Blocks 4027, 4000)",
     "comment": (
@@ -543,6 +557,7 @@ _PSEUDORANGE_UNSMOOTHED_ATTRS: dict[str, object] = {
 
 _PSEUDORANGE_RAW_ATTRS: dict[str, object] = {
     "long_name": "Pseudorange before Hatch-filter smoothing and multipath mitigation",
+    "coverage_content_type": "physicalMeasurement",
     "units": "m",
     "source": "SBF MeasEpoch + MeasExtra (Blocks 4027, 4000)",
     "comment": (
@@ -560,6 +575,7 @@ _PSEUDORANGE_RAW_ATTRS: dict[str, object] = {
 
 _PHASE_RAW_ATTRS: dict[str, object] = {
     "long_name": "Carrier phase before carrier multipath correction",
+    "coverage_content_type": "physicalMeasurement",
     "units": "cycles",
     "source": "SBF MeasEpoch + MeasExtra (Blocks 4027, 4000)",
     "comment": (
@@ -576,6 +592,7 @@ _PHASE_RAW_ATTRS: dict[str, object] = {
 
 _PDOP_ATTRS: dict[str, object] = {
     "long_name": "Position Dilution of Precision",
+    "coverage_content_type": "qualityInformation",
     "units": "1",
     "source": "SBF DOP block (Block 4001), reported by receiver firmware",
     "comment": (
@@ -592,6 +609,7 @@ _PDOP_ATTRS: dict[str, object] = {
 
 _HDOP_ATTRS: dict[str, object] = {
     "long_name": "Horizontal Dilution of Precision",
+    "coverage_content_type": "qualityInformation",
     "units": "1",
     "source": "SBF DOP block (Block 4001), reported by receiver firmware",
     "comment": (
@@ -608,6 +626,7 @@ _HDOP_ATTRS: dict[str, object] = {
 
 _VDOP_ATTRS: dict[str, object] = {
     "long_name": "Vertical Dilution of Precision",
+    "coverage_content_type": "qualityInformation",
     "units": "1",
     "source": "SBF DOP block (Block 4001), reported by receiver firmware",
     "comment": (
@@ -624,6 +643,7 @@ _VDOP_ATTRS: dict[str, object] = {
 
 _N_SV_ATTRS: dict[str, object] = {
     "long_name": "Number of satellites used in PVT computation",
+    "coverage_content_type": "auxiliaryInformation",
     "units": "1",
     "source": "SBF PVTGeodetic block (Block 4007), reported by receiver firmware",
     "comment": (
@@ -639,6 +659,7 @@ _N_SV_ATTRS: dict[str, object] = {
 
 _H_ACCURACY_ATTRS: dict[str, object] = {
     "long_name": "Horizontal position accuracy (2DRMS, 95%)",
+    "coverage_content_type": "qualityInformation",
     "units": "m",
     "source": "SBF PVTGeodetic block (Block 4007), reported by receiver firmware",
     "comment": (
@@ -655,6 +676,7 @@ _H_ACCURACY_ATTRS: dict[str, object] = {
 
 _V_ACCURACY_ATTRS: dict[str, object] = {
     "long_name": "Vertical position accuracy (2-sigma, 95%)",
+    "coverage_content_type": "qualityInformation",
     "units": "m",
     "source": "SBF PVTGeodetic block (Block 4007), reported by receiver firmware",
     "comment": (
@@ -671,6 +693,7 @@ _V_ACCURACY_ATTRS: dict[str, object] = {
 
 _PVT_MODE_ATTRS: dict[str, object] = {
     "long_name": "PVT solution mode",
+    "coverage_content_type": "auxiliaryInformation",
     "units": "1",
     "flag_values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 10],
     "flag_meanings": (
@@ -696,6 +719,7 @@ _PVT_MODE_ATTRS: dict[str, object] = {
 
 _MEAN_CORR_AGE_ATTRS: dict[str, object] = {
     "long_name": "Mean age of differential corrections",
+    "coverage_content_type": "auxiliaryInformation",
     "units": "s",
     "source": "SBF PVTGeodetic block, reported by receiver firmware",
     "comment": (
@@ -712,6 +736,7 @@ _MEAN_CORR_AGE_ATTRS: dict[str, object] = {
 
 _CPU_LOAD_ATTRS: dict[str, object] = {
     "long_name": "Receiver CPU load",
+    "coverage_content_type": "auxiliaryInformation",
     "units": "percent",
     "valid_min": 0,
     "valid_max": 100,
@@ -731,6 +756,7 @@ _CPU_LOAD_ATTRS: dict[str, object] = {
 
 _TEMPERATURE_ATTRS: dict[str, object] = {
     "long_name": "Receiver internal temperature",
+    "coverage_content_type": "auxiliaryInformation",
     "units": "degC",
     "source": "SBF ReceiverStatus block, reported by receiver firmware",
     "comment": (
@@ -749,6 +775,7 @@ _TEMPERATURE_ATTRS: dict[str, object] = {
 
 _RX_ERROR_ATTRS: dict[str, object] = {
     "long_name": "Receiver error status bit field",
+    "coverage_content_type": "qualityInformation",
     "units": "1",
     # CF bitmask convention: test each flag with (value & mask) != 0
     # Bit positions: 3=8, 4=16, 5=32, 6=64, 8=256, 9=512, 10=1024, 11=2048
@@ -775,6 +802,7 @@ _RX_ERROR_ATTRS: dict[str, object] = {
 
 _SMOOTHING_FLAG_ATTRS: dict[str, object] = {
     "long_name": "Pseudorange smoothing flag",
+    "coverage_content_type": "qualityInformation",
     "flag_values": [-1, 0, 1],
     "flag_meanings": "missing not_smoothed smoothed",
     "source": "SBF MeasEpoch block (Block 4027), ObsInfo bit 0",
@@ -792,6 +820,7 @@ _SMOOTHING_FLAG_ATTRS: dict[str, object] = {
 }
 _HALF_CYCLE_ATTRS: dict[str, object] = {
     "long_name": "Carrier-phase half-cycle ambiguity flag",
+    "coverage_content_type": "qualityInformation",
     "flag_values": [-1, 0, 1],
     "flag_meanings": "missing resolved half_cycle_ambiguous",
     "source": "SBF MeasEpoch block (Block 4027), ObsInfo bit 2",
@@ -823,6 +852,7 @@ _QUAL_REFERENCE = (
 )
 _QUAL_OVERALL_ATTRS: dict[str, object] = {
     "long_name": "Overall receiver quality indicator",
+    "coverage_content_type": "qualityInformation",
     "valid_range": [0, 10],
     "source": "SBF QualityInd block (Block 4082), indicator type 0",
     "comment": _QUAL_COMMENT_TAIL,
@@ -830,6 +860,7 @@ _QUAL_OVERALL_ATTRS: dict[str, object] = {
 }
 _QUAL_GNSS_MAIN_ATTRS: dict[str, object] = {
     "long_name": "GNSS signal quality, main antenna",
+    "coverage_content_type": "qualityInformation",
     "valid_range": [0, 10],
     "source": "SBF QualityInd block (Block 4082), indicator type 1",
     "comment": _QUAL_COMMENT_TAIL,
@@ -837,6 +868,7 @@ _QUAL_GNSS_MAIN_ATTRS: dict[str, object] = {
 }
 _QUAL_RF_MAIN_ATTRS: dict[str, object] = {
     "long_name": "RF power level quality, main antenna",
+    "coverage_content_type": "qualityInformation",
     "valid_range": [0, 10],
     "source": "SBF QualityInd block (Block 4082), indicator type 11",
     "comment": _QUAL_COMMENT_TAIL,
@@ -844,6 +876,7 @@ _QUAL_RF_MAIN_ATTRS: dict[str, object] = {
 }
 _QUAL_CPU_ATTRS: dict[str, object] = {
     "long_name": "CPU headroom quality indicator",
+    "coverage_content_type": "qualityInformation",
     "valid_range": [0, 10],
     "source": "SBF QualityInd block (Block 4082), indicator type 21",
     "comment": _QUAL_COMMENT_TAIL,
@@ -851,6 +884,7 @@ _QUAL_CPU_ATTRS: dict[str, object] = {
 }
 _QUAL_SCINT_ATTRS: dict[str, object] = {
     "long_name": "Ionospheric scintillation score",
+    "coverage_content_type": "qualityInformation",
     "valid_range": [0, 10],
     "source": "SBF QualityInd block (Block 4082), indicator type 29",
     "comment": (_QUAL_COMMENT_TAIL + " Indicator type 29 requires firmware >= 4.15.1."),
@@ -863,6 +897,7 @@ _QUAL_SCINT_ATTRS: dict[str, object] = {
 
 _SPOOFING_FLAG_ATTRS: dict[str, object] = {
     "long_name": "GNSS spoofing detection flag",
+    "coverage_content_type": "qualityInformation",
     "flag_values": [-1, 0, 1],
     "flag_meanings": "not_available no_spoofing spoofing_detected",
     "source": "SBF RFStatus block (Block 4092), Flags bit 0",
@@ -878,6 +913,7 @@ _SPOOFING_FLAG_ATTRS: dict[str, object] = {
 }
 _NMA_FAIL_ATTRS: dict[str, object] = {
     "long_name": "Navigation message authentication failure flag",
+    "coverage_content_type": "qualityInformation",
     "flag_values": [-1, 0, 1],
     "flag_meanings": "not_available authentication_ok authentication_failed",
     "source": "SBF RFStatus block (Block 4092), Flags bit 1",
@@ -898,6 +934,7 @@ _NMA_FAIL_ATTRS: dict[str, object] = {
 
 _TRACKING_STATUS_RAW_ATTRS: dict[str, object] = {
     "long_name": "Raw per-satellite tracking status bitfield (main antenna)",
+    "coverage_content_type": "qualityInformation",
     "source": "SBF ChannelStatus block (Block 4013), ChannelStateInfo.TrackingStatus",
     "comment": (
         "Raw u2 bitfield with 2 bits per signal type: 0 = Idle, 1 = Search, "
@@ -916,6 +953,7 @@ _TRACKING_STATUS_RAW_ATTRS: dict[str, object] = {
 }
 _PVT_STATUS_RAW_ATTRS: dict[str, object] = {
     "long_name": "Raw per-satellite PVT usage status bitfield (main antenna)",
+    "coverage_content_type": "qualityInformation",
     "source": "SBF ChannelStatus block (Block 4013), ChannelStateInfo.PVTStatus",
     "comment": (
         "Raw u2 bitfield with 2 bits per signal type: 0 = Not used in PVT, "

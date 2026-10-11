@@ -137,7 +137,14 @@ def add_cell_ids_to_ds_fast(
     else:
         cell_ids = _assign_block(np.asarray(phi), np.asarray(theta))
 
-    ds[f"cell_id_{grid_name}"] = (("epoch", "sid"), cell_ids)
+    ds[f"cell_id_{grid_name}"] = (
+        ("epoch", "sid"),
+        cell_ids,
+        {
+            "long_name": f"Cell of the {grid_name} grid",
+            "coverage_content_type": "referenceInformation",
+        },
+    )
     log.info(
         "cell_assignment_complete",
         grid_name=grid_name,

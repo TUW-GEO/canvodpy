@@ -127,6 +127,7 @@ def compute_spherical_coordinates(
 
 _BROADCAST_OBS_THETA_ATTRS: dict[str, object] = {
     "long_name": "Satellite polar angle (broadcast ephemeris)",
+    "coverage_content_type": "auxiliaryInformation",
     "short_name": "θ_B",
     "units": "rad",
     "description": "Polar angle from zenith (+z/Up), broadcast navigation solution",
@@ -143,6 +144,7 @@ _BROADCAST_OBS_THETA_ATTRS: dict[str, object] = {
 
 _BROADCAST_OBS_PHI_ATTRS: dict[str, object] = {
     "long_name": "Azimuthal angle (broadcast ephemeris, navigation convention)",
+    "coverage_content_type": "auxiliaryInformation",
     "short_name": "φ_B",
     "units": "rad",
     "description": "Azimuthal angle from North in ENU frame, clockwise (broadcast)",
@@ -245,6 +247,7 @@ def add_spherical_coords_to_dataset(
                 dims=["epoch", "sid"],
                 attrs={
                     "long_name": "Azimuthal angle (navigation convention)",
+                    "coverage_content_type": "auxiliaryInformation",
                     "short_name": "φ",
                     "units": "rad",
                     "description": (
@@ -260,6 +263,7 @@ def add_spherical_coords_to_dataset(
                 dims=["epoch", "sid"],
                 attrs={
                     "long_name": "Polar angle (physics convention)",
+                    "coverage_content_type": "auxiliaryInformation",
                     "short_name": "θ",
                     "units": "rad",
                     "description": "Polar angle from zenith (+z/Up)",
@@ -273,6 +277,7 @@ def add_spherical_coords_to_dataset(
                 dims=["epoch", "sid"],
                 attrs={
                     "long_name": "Distance",
+                    "coverage_content_type": "auxiliaryInformation",
                     "short_name": "r",
                     "units": "m",
                     "description": "Distance between satellite and receiver",

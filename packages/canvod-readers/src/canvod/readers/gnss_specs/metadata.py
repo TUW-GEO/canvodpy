@@ -42,8 +42,9 @@ from canvod.readers.gnss_specs.constants import FREQ_UNIT
 OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
     "Pseudorange": {
         "long_name": "GNSS Pseudorange",
+        "coverage_content_type": "physicalMeasurement",
         "units": "meters",
-        "valid_min": 0,
+        "valid_min": 0.0,
         "description": (
             "The pseudorange is the raw distance measurement between the GNSS "
             "satellite and receiver, including any timing errors due to "
@@ -58,8 +59,9 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
     },
     "Doppler": {
         "long_name": "GNSS Doppler Shift",
+        "coverage_content_type": "physicalMeasurement",
         "units": "Hz",
-        "valid_min": -10_000,
+        "valid_min": -10_000.0,
         "description": (
             "The Doppler shift represents the rate of change in the phase of "
             "the GNSS signal due to the relative motion between the satellite "
@@ -75,6 +77,7 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
     },
     "Phase": {
         "long_name": "GNSS Carrier Phase",
+        "coverage_content_type": "physicalMeasurement",
         "units": "cycles",
         "description": (
             "The carrier phase is the accumulated phase change of the GNSS "
@@ -91,6 +94,7 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
     },
     "LLI": {
         "long_name": "Loss of Lock Indicator",
+        "coverage_content_type": "qualityInformation",
         "units": "1",
         "valid_range": [-1, 7],
         "description": (
@@ -105,6 +109,7 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
     },
     "SSI": {
         "long_name": "Signal Strength Indicator",
+        "coverage_content_type": "qualityInformation",
         "units": "1",
         "valid_range": [-1, 9],
         "description": (
@@ -122,8 +127,9 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
 # -------------------
 CN0_METADATA: Final[dict[str, Any]] = {
     "long_name": "Carrier-to-Noise Density Ratio (C/N0)",
+    "coverage_content_type": "physicalMeasurement",
     "units": "dB-Hz",
-    "valid_min": 0,
+    "valid_min": 0.0,
     "description": (
         "Carrier-to-noise density ratio (C/N0): carrier power relative to the "
         "noise power density (per 1 Hz). RINEX 3.04 observation type S "
@@ -134,8 +140,9 @@ CN0_METADATA: Final[dict[str, Any]] = {
 
 SNR_METADATA: Final[dict[str, Any]] = {
     "long_name": "Signal-to-Noise Ratio (SNR)",
+    "coverage_content_type": "physicalMeasurement",
     "units": "dB",
-    "valid_min": 0,
+    "valid_min": 0.0,
     "description": (
         "Raw signal strength as given by the receiver (RINEX 3.04 "
         "observation type S). RINEX 3.04 sect. 5.7 defines only the unit "

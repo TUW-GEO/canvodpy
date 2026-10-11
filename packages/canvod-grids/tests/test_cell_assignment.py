@@ -76,6 +76,15 @@ class TestCellAssignmentBasic:
         assert np.all(valid_ids >= 0)
         assert np.all(valid_ids < sample_grid.ncells)
 
+    def test_cell_ids_are_described(self, sample_grid, sample_vod_dataset) -> None:
+        """The cell ids say which grid they index (ACDD 1.3)."""
+        result = add_cell_ids_to_ds_fast(sample_vod_dataset, sample_grid, "test_grid")
+
+        assert result["cell_id_test_grid"].attrs == {
+            "long_name": "Cell of the test_grid grid",
+            "coverage_content_type": "referenceInformation",
+        }
+
     def test_cell_assignment_preserves_original_data(
         self, sample_grid, sample_vod_dataset
     ) -> None:

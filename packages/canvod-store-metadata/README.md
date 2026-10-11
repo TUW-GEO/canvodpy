@@ -60,7 +60,7 @@ print(format_metadata(meta))
 # Query a single section
 print(format_metadata(meta, section="env"))
 
-# Validate against DataCite/ACDD/STAC
+# Validate against the zarr conventions, ACDD, DataCite, STAC, FAIR
 issues = validate_all(meta)
 
 # Export STAC Collection JSON
@@ -310,18 +310,19 @@ sub-principle to the fields and features that satisfy it:
 
 ## Standards compliance
 
-Metadata is validated against four standards:
+`validate_all(meta)` checks the metadata against these standards:
 
 | Standard | What it checks |
 |---|---|
-| **FAIR** | All sub-principles: persistent ID, rich metadata, license, provenance, access URL, cross-references |
-| **DataCite 4.5** | Mandatory fields for TU Wien Repositum deposits: id, title, creator name/institution, publication date, resource type, publisher |
-| **ACDD 1.3** | Highly recommended (title, id, conventions, creator, date) + recommended (keywords, description, geospatial) |
-| **STAC 1.1** | Collection required fields: id, title, description, bbox, temporal interval, license |
+| **zarr conventions** | The `proj`, `license` and `stac` attributes of the root group, with `zarr-cm` |
+| **ACDD 1.3** | The global attributes of the root group: highly recommended ones are failures, recommended ones are listed as `[recommended]` |
+| **DataCite** | Identifier, title, creator name and institution, creation date, store type, publisher |
+| **STAC 1.1** | Collection fields: id, title, bbox, temporal interval, license; description is recommended |
+| **FAIR** | Advice only: persistent ID, rich metadata, license, provenance, access URL, cross-references |
 
 ```python
-results = validate_all(meta)
-for standard, issues in results.items():
+failures = validate_all(meta, recommended=False)  # a new store has none
+for standard, issues in validate_all(meta).items():
     print(f"{standard}: {'PASS' if not issues else f'{len(issues)} issues'}")
 ```
 

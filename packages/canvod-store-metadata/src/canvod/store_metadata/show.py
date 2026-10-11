@@ -265,10 +265,16 @@ def format_summaries(meta: StoreMetadata) -> str:
 
 
 def format_validation(meta: StoreMetadata) -> str:
+    """Failures per standard, then the recommendations and FAIR advice."""
+    failures = validate_all(meta, recommended=False)
     results = validate_all(meta)
     lines = [_section("FAIR & Compliance Validation")]
     for standard, issues in results.items():
-        status = "PASS" if not issues else f"{len(issues)} issues"
+        failed = failures[standard]
+        advice = len(issues) - len(failed)
+        status = "PASS" if not failed else f"{len(failed)} failures"
+        if advice:
+            status += f", {advice} recommendations"
         lines.append(f"    {standard.upper()}: {status}")
         for issue in issues:
             lines.append(f"      - {issue}")
@@ -477,7 +483,10 @@ def show_metadata(
         print(f"No metadata found in {path}")
         return
     repo = _open_repo(path)
-    meta.summaries.store_size_mb = round(repo.total_chunks_storage() / 1e6, 3)
+    # Native and inlined chunks: what the store itself holds.
+    meta.summaries.store_size_mb = round(
+        repo.chunk_storage_stats().non_virtual_bytes() / 1e6, 3
+    )
     if meta.written_before_migration:
         print(
             "This snapshot was written before migration: the store kept its "

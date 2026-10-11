@@ -36,6 +36,7 @@ filemap = ["canvod-filemap"]
 dev = [
     "anywidget>=0.11.0",
     "commitizen>=4.19.0",
+    "compliance-checker>=6.1.0",
     "hypothesis>=6.168.1",
     "ipykernel>=7.3.0",
     "loky>=3.6.0",

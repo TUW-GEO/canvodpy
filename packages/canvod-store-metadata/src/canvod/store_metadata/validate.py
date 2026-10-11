@@ -1,11 +1,125 @@
-"""Validate metadata completeness against FAIR, DataCite 4.5, ACDD 1.3, STAC 1.1."""
+"""Validate store metadata against zarr conventions, ACDD 1.3, DataCite, STAC, FAIR.
+
+A failure breaks a standard; a store created in the current form has none.
+Recommendations (``[recommended]``) and FAIR advice are listed with
+``recommended=True``. CF and the ACDD variable attributes are checked on a
+netCDF export by IOOS compliance-checker in the tests.
+"""
 
 from __future__ import annotations
 
 import functools
 from importlib import resources
+from typing import Any
 
-from .schema import StoreMetadata
+import zarr_cm
+
+from .schema import RepositoryMetadata, StoreMetadata
+from .snapshot import root_copy
+
+#: ACDD 1.3 global attributes (https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery_1-3).
+ACDD_HIGHLY_RECOMMENDED = ("title", "summary", "keywords", "Conventions")
+ACDD_RECOMMENDED = (
+    "id",
+    "naming_authority",
+    "history",
+    "source",
+    "processing_level",
+    "comment",
+    "acknowledgement",
+    "license",
+    "standard_name_vocabulary",
+    "date_created",
+    "creator_name",
+    "creator_email",
+    "creator_url",
+    "institution",
+    "project",
+    "publisher_name",
+    "publisher_email",
+    "publisher_url",
+    "geospatial_bounds",
+    "geospatial_bounds_crs",
+    "geospatial_bounds_vertical_crs",
+    "geospatial_lat_min",
+    "geospatial_lat_max",
+    "geospatial_lon_min",
+    "geospatial_lon_max",
+    "geospatial_vertical_min",
+    "geospatial_vertical_max",
+    "geospatial_vertical_positive",
+    "time_coverage_start",
+    "time_coverage_end",
+    "time_coverage_duration",
+    "time_coverage_resolution",
+)
+
+#: The ACDD 1.3 values of a variable's ``coverage_content_type``.
+COVERAGE_CONTENT_TYPES = (
+    "image",
+    "thematicClassification",
+    "physicalMeasurement",
+    "auxiliaryInformation",
+    "qualityInformation",
+    "referenceInformation",
+    "modelResult",
+    "coordinate",
+)
+
+# Where a root attribute comes from, for the message.
+_ACDD_SOURCE = {
+    "title": "identity.title",
+    "summary": "identity.description",
+    "keywords": "identity.keywords",
+    "creator_url": "creator.website",
+    "publisher_name": "publisher.name",
+    "publisher_url": "publisher.url",
+    "geospatial_lat_min": "spatial.geospatial_lat",
+    "geospatial_lat_max": "spatial.geospatial_lat",
+    "geospatial_lon_min": "spatial.geospatial_lon",
+    "geospatial_lon_max": "spatial.geospatial_lon",
+    "geospatial_vertical_min": "spatial.geospatial_alt_m",
+    "geospatial_vertical_max": "spatial.geospatial_alt_m",
+    "geospatial_vertical_positive": "spatial.geospatial_alt_m",
+}
+
+
+def root_attributes(metadata: StoreMetadata) -> dict[str, Any]:
+    """The root group attributes a commit writes for ``metadata``.
+
+    Raises
+    ------
+    ValueError
+        If ``metadata`` is in the form from before the migration (no UUID,
+        naming authority or STAC link).
+    """
+    identity = metadata.identity
+    missing = [
+        name
+        for name in ("uuid", "naming_authority", "stac_link")
+        if not getattr(identity, name)
+    ]
+    if missing:
+        msg = (
+            f"The metadata has no identity.{', identity.'.join(missing)}: it is "
+            "from before the migration. Migrate the store: canvodpy store "
+            "migrate-metadata."
+        )
+        raise ValueError(msg)
+    repository = RepositoryMetadata.from_store_metadata(metadata).model_dump(
+        mode="json"
+    )
+    temporal = metadata.temporal.model_dump(
+        include={
+            "updated",
+            "time_coverage_start",
+            "time_coverage_end",
+            "time_coverage_duration",
+            "time_coverage_resolution",
+        }
+    )
+    summary = {"temporal": temporal, "spatial": {}, "receivers": {}, "summaries": {}}
+    return root_copy(repository, summary)
 
 
 def _check_field(obj: object, field: str, label: str) -> str | None:
@@ -39,39 +153,50 @@ def validate_datacite(metadata: StoreMetadata) -> list[str]:
     return issues
 
 
-def validate_acdd(metadata: StoreMetadata) -> list[str]:
-    """Check ACDD 1.3 highly recommended + recommended fields."""
-    issues: list[str] = []
+def validate_acdd(metadata: StoreMetadata, *, recommended: bool = True) -> list[str]:
+    """Check the root attributes against the ACDD 1.3 global attributes.
 
-    hr_checks = [
-        (metadata.identity, "title", "identity"),
-        (metadata.identity, "id", "identity"),
-        (metadata.identity, "conventions", "identity"),
-        (metadata.creator, "name", "creator"),
-        (metadata.creator, "email", "creator"),
-        (metadata.creator, "institution", "creator"),
-        (metadata.temporal, "created", "temporal"),
+    A missing highly recommended attribute is a failure; a missing
+    recommended one is listed with ``recommended=True``.
+    """
+    try:
+        attrs = root_attributes(metadata)
+    except ValueError as exc:
+        return [str(exc)]
+    issues = [
+        _acdd_issue(name, "highly recommended")
+        for name in ACDD_HIGHLY_RECOMMENDED
+        if attrs.get(name) in (None, "")
     ]
-    for obj, field, label in hr_checks:
-        issue = _check_field(obj, field, label)
-        if issue:
-            issues.append(f"[highly recommended] {issue}")
-
-    rec_checks = [
-        (metadata.identity, "keywords", "identity"),
-        (metadata.identity, "description", "identity"),
-        (metadata.spatial, "geospatial_lat", "spatial"),
-        (metadata.spatial, "geospatial_lon", "spatial"),
-    ]
-    for obj, field, label in rec_checks:
-        issue = _check_field(obj, field, label)
-        if issue:
-            issues.append(f"[recommended] {issue}")
-
+    if recommended:
+        issues += [
+            f"[recommended] {_acdd_issue(name, 'recommended')}"
+            for name in ACDD_RECOMMENDED
+            if attrs.get(name) in (None, "")
+        ]
     return issues
 
 
-def validate_stac(metadata: StoreMetadata) -> list[str]:
+def _acdd_issue(name: str, level: str) -> str:
+    source = _ACDD_SOURCE.get(name)
+    where = f" (from {source})" if source else ""
+    return f"ACDD 1.3 {level} attribute `{name}` is missing{where}"
+
+
+def validate_zarr_conventions(metadata: StoreMetadata) -> list[str]:
+    """Check the zarr conventions in the root attributes with zarr-cm."""
+    try:
+        attrs = root_attributes(metadata)
+    except ValueError as exc:
+        return [str(exc)]
+    try:
+        zarr_cm.validate_all(attrs)
+    except Exception as exc:  # zarr-cm raises per convention, with its reason
+        return [f"zarr conventions: {exc}"]
+    return []
+
+
+def validate_stac(metadata: StoreMetadata, *, recommended: bool = True) -> list[str]:
     """Check STAC 1.1 Collection required fields."""
     issues: list[str] = []
 
@@ -79,8 +204,8 @@ def validate_stac(metadata: StoreMetadata) -> list[str]:
         issues.append("identity.id required for STAC Collection")
     if not metadata.identity.title:
         issues.append("identity.title required for STAC Collection")
-    if not metadata.identity.description:
-        issues.append("identity.description recommended for STAC Collection")
+    if recommended and not metadata.identity.description:
+        issues.append("[recommended] identity.description for STAC Collection")
     if metadata.spatial.bbox is None:
         issues.append("spatial.bbox required for STAC spatial extent")
     if metadata.spatial.extent_temporal_interval is None:
@@ -194,13 +319,23 @@ def validate_fair(metadata: StoreMetadata) -> list[str]:
     return issues
 
 
-def validate_all(metadata: StoreMetadata) -> dict[str, list[str]]:
-    """Run all validators, return issues grouped by standard."""
+def validate_all(
+    metadata: StoreMetadata, *, recommended: bool = True
+) -> dict[str, list[str]]:
+    """Run all validators, return issues grouped by standard.
+
+    Parameters
+    ----------
+    recommended
+        Also list ACDD recommendations and FAIR advice. With ``False`` only
+        failures are listed: a store created in the current form has none.
+    """
     return {
-        "fair": validate_fair(metadata),
+        "zarr_conventions": validate_zarr_conventions(metadata),
+        "acdd": validate_acdd(metadata, recommended=recommended),
         "datacite": validate_datacite(metadata),
-        "acdd": validate_acdd(metadata),
-        "stac": validate_stac(metadata),
+        "stac": validate_stac(metadata, recommended=recommended),
+        "fair": validate_fair(metadata) if recommended else [],
     }
 
 
