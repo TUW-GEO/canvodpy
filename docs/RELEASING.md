@@ -35,6 +35,10 @@ increment of each package you release:
 canvodpy is part of every release, and its increment is at least the
 largest of the packages released with it.
 
+To test a release first, publish it as a pre-release (`1.0.0a1`,
+`1.0.0b1`, `1.0.0rc1`); [Versioning](VERSIONING.md#pre-releases) explains
+the stages and when to choose which. The steps below are the same.
+
 ---
 
 ## Step-by-Step

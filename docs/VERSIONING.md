@@ -41,12 +41,59 @@ package on its own:
 | `MINOR` | New features, backwards compatible | 1.1.0 $\rightarrow$ 1.2.0 |
 | `PATCH` | Bug fixes, backwards compatible | 1.1.0 $\rightarrow$ 1.1.1 |
 
-Versions are written as Python writes them (PEP 440); a pre-release is
-`1.2.0rc1`, `1.2.0b1` or `1.2.0a1`.
+Versions are written as Python writes them
+([PEP 440](https://peps.python.org/pep-0440/)).
 
 canvodpy's increment is at least the largest increment of the packages
 released with it: a minor release of canvod-store comes with at least a
 minor release of canvodpy.
+
+---
+
+## Pre-releases
+
+Before a final version, a package can be released as a test version. PEP 440
+defines three kinds, marked by a suffix, and sorts them before the final
+version:
+
+`1.0.0a1` $<$ `1.0.0b1` $<$ `1.0.0rc1` $<$ `1.0.0`
+
+| Stage | Suffix | What it says | Choose it when |
+|-------|--------|--------------|----------------|
+| Alpha | `a` | Incomplete | Planned features are still missing |
+| Beta | `b` | Nearly complete, may still change | The planned features are in, but behavior or interfaces can still change before the final version |
+| Release candidate | `rc` | The final version, unless a bug turns up | Only fixes remain |
+| Final | none | Released | A release candidate needed no further fix |
+
+- Each stage counts from 1 (`1.0.0b1`, `1.0.0b2`, …), and the next stage
+  starts again at 1 (`1.0.0b2`, then `1.0.0rc1`). A stage may be skipped.
+- A pre-release of canvodpy pins pre-releases of the packages it releases,
+  with the same suffix: canvodpy `1.0.0b1` pins canvod-store `1.0.0b1`.
+- uv and pip skip pre-releases unless asked for one: by its exact version
+  (`uv add canvodpy==1.0.0b1`), or with `--prerelease allow` (uv) or
+  `--pre` (pip). canvodpy's exact pins then bring every package at its
+  pre-release. A notebook or script that installs canVODpy packages next
+  to canvodpy pins each of them too: a package that nothing pins to its
+  pre-release is installed at its last final version.
+- Tags carry the suffix (`v1.0.0b1`, `canvod-store-v1.0.0b1`). Pushing a
+  pre-release tag of canvodpy publishes the packages released at that
+  commit to TestPyPI, and the draft GitHub release is marked as a
+  pre-release. Publishing to PyPI stays a separate step
+  ([Releasing](RELEASING.md)).
+
+---
+
+## Choosing a version
+
+For each package in a release:
+
+1. Choose the increment from the changes since the package's last final
+   version ([Semantic Versioning](#semantic-versioning)): major, minor or
+   patch.
+2. Choose the stage ([Pre-releases](#pre-releases)): a pre-release while the
+   release is still being tested, the final version once it holds.
+3. canvodpy takes at least the largest increment of the packages, and the
+   same stage.
 
 ---
 
