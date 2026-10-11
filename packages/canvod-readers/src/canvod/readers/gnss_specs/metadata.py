@@ -41,7 +41,6 @@ from canvod.readers.gnss_specs.constants import FREQ_UNIT
 # -------------------
 OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
     "Pseudorange": {
-        "standard_name": "pseudorange",
         "long_name": "GNSS Pseudorange",
         "units": "meters",
         "valid_min": 0,
@@ -58,7 +57,6 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "_FillValue": np.nan,
     },
     "Doppler": {
-        "standard_name": "doppler_shift",
         "long_name": "GNSS Doppler Shift",
         "units": "Hz",
         "valid_min": -10_000,
@@ -76,7 +74,6 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "_FillValue": np.nan,
     },
     "Phase": {
-        "standard_name": "carrier_phase",
         "long_name": "GNSS Carrier Phase",
         "units": "cycles",
         "description": (
@@ -93,7 +90,6 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "_FillValue": np.nan,
     },
     "LLI": {
-        "standard_name": "loss_of_lock_indicator",
         "long_name": "Loss of Lock Indicator",
         "units": "1",
         "valid_range": [-1, 7],
@@ -108,7 +104,6 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "_FillValue": -1,
     },
     "SSI": {
-        "standard_name": "signal_strength_indicator",
         "long_name": "Signal Strength Indicator",
         "units": "1",
         "valid_range": [-1, 9],
@@ -126,7 +121,6 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
 # SNR vs C/N0 metadata
 # -------------------
 CN0_METADATA: Final[dict[str, Any]] = {
-    "standard_name": "carrier_to_noise_density_ratio",
     "long_name": "Carrier-to-Noise Density Ratio (C/N0)",
     "units": "dB-Hz",
     "valid_min": 0,
@@ -139,7 +133,6 @@ CN0_METADATA: Final[dict[str, Any]] = {
 }
 
 SNR_METADATA: Final[dict[str, Any]] = {
-    "standard_name": "signal_to_noise_ratio",
     "long_name": "Signal-to-Noise Ratio (SNR)",
     "units": "dB",
     "valid_min": 0,
@@ -166,7 +159,6 @@ COORDS_METADATA: Final[dict[str, dict[str, str]]] = {
         ),
     },
     "sv": {
-        "standard_name": "space_vehicle_identifier",
         "long_name": "GNSS Space Vehicle Identifier",
         "description": (
             "The Space Vehicle (sv) identifier denotes the specific satellite "
@@ -195,19 +187,16 @@ COORDS_METADATA: Final[dict[str, dict[str, str]]] = {
     "freq_center": {
         "description": "Center frequency of the signal band",
         "long_name": "Center Frequency",
-        "standard_name": "center_frequency",
         "units": f"{FREQ_UNIT:~}",
     },
     "freq_min": {
         "description": "Minimum frequency of the signal band",
         "long_name": "Minimum Frequency",
-        "standard_name": "minimum_frequency",
         "units": f"{FREQ_UNIT:~}",
     },
     "freq_max": {
         "description": "Maximum frequency of the signal band",
         "long_name": "Maximum Frequency",
-        "standard_name": "maximum_frequency",
         "units": f"{FREQ_UNIT:~}",
     },
 }
@@ -338,7 +327,6 @@ DATAVARS_TO_BE_FILLED: Final[dict[str, dict[str, Any]]] = {
         "dtype": np.float32,
         "attrs": {
             "long_name": "radial distance",
-            "standard_name": "slant_range",
             "units": "meters",
             "description": "Slant distance from receiver to satellite in ECEF spherical coordinates",
         },
@@ -348,7 +336,6 @@ DATAVARS_TO_BE_FILLED: Final[dict[str, dict[str, Any]]] = {
         "dtype": np.float32,
         "attrs": {
             "long_name": "polar angle",
-            "standard_name": "polar_angle",
             "units": "degrees",
             "description": "Angle from positive Z-axis (zenith)",
         },
@@ -358,7 +345,6 @@ DATAVARS_TO_BE_FILLED: Final[dict[str, dict[str, Any]]] = {
         "dtype": np.float32,
         "attrs": {
             "long_name": "azimuthal angle",
-            "standard_name": "azimuth",
             "units": "degrees",
             "description": "Rotation angle from reference meridian in XY-plane",
         },
@@ -368,7 +354,6 @@ DATAVARS_TO_BE_FILLED: Final[dict[str, dict[str, Any]]] = {
         "dtype": np.float32,
         "attrs": {
             "long_name": "satellite velocity",
-            "standard_name": "platform_velocity",
             "units": "meters per second",
             "description": "Instantaneous satellite velocity relative to receiver",
         },
@@ -378,7 +363,6 @@ DATAVARS_TO_BE_FILLED: Final[dict[str, dict[str, Any]]] = {
         "dtype": np.float32,
         "attrs": {
             "long_name": "satellite acceleration",
-            "standard_name": "platform_acceleration",
             "units": "meters per second squared",
             "description": "Instantaneous satellite acceleration relative to receiver",
         },

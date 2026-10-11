@@ -262,21 +262,18 @@ class Sp3File(AuxFile):
         return {
             "Vx": {
                 "long_name": "x-component of velocity",
-                "standard_name": "v_x",
                 "short_name": "v_x",
                 "axis": "v_x",
                 **base_attrs,
             },
             "Vy": {
                 "long_name": "y-component of velocity",
-                "standard_name": "v_y",
                 "short_name": "v_y",
                 "axis": "v_y",
                 **base_attrs,
             },
             "Vz": {
                 "long_name": "z-component of velocity",
-                "standard_name": "v_z",
                 "short_name": "v_z",
                 "axis": "v_z",
                 **base_attrs,

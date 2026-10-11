@@ -320,8 +320,10 @@ The stored value is the **geographic (compass) azimuth**:
 
 ## CF-convention metadata attributes
 
-Every variable in the metadata dataset carries full CF-convention attributes for NetCDF
-interoperability and scientific reproducibility.
+Every variable in the metadata dataset carries the CF attributes `long_name` and
+`units`, plus `source`, `comment` and `references`, which say where each value comes
+from. None carries a `standard_name`: the CF standard name table has no name for these
+quantities.
 
 === "`pdop`"
 
@@ -341,9 +343,8 @@ interoperability and scientific reproducibility.
     ```python
     meta_ds["broadcast_theta"].attrs
     # {
-    #     "long_name":     "Satellite polar angle (broadcast ephemeris)",
+    #     "long_name":     "Satellite polar angle reported by the receiver",
     #     "short_name":    "θ_B",
-    #     "standard_name": "sensor_polar_angle",
     #     "units":         "rad",
     #     "source":        "SBF SatVisibility block (Block 4012), reported by receiver firmware",
     #     "comment":       "Polar angle from vertical: 0 = overhead, π/2 = horizon. ...",

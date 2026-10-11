@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import functools
+from importlib import resources
+
 from .schema import StoreMetadata
 
 
@@ -199,3 +202,16 @@ def validate_all(metadata: StoreMetadata) -> dict[str, list[str]]:
         "acdd": validate_acdd(metadata),
         "stac": validate_stac(metadata),
     }
+
+
+@functools.cache
+def cf_standard_names() -> frozenset[str]:
+    """The names and aliases of the CF standard name table vendored here."""
+    text = (
+        resources.files("canvod.store_metadata")
+        .joinpath("standards/cf_standard_names_v95.txt")
+        .read_text()
+    )
+    return frozenset(
+        line for line in text.splitlines() if line and not line.startswith("#")
+    )

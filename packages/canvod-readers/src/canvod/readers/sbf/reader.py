@@ -290,7 +290,6 @@ def _get_bandwidth_mhz(system: str, band: str) -> float:
 _BROADCAST_THETA_ATTRS: dict[str, str] = {
     "long_name": "Satellite polar angle reported by the receiver",
     "short_name": "θ_B",
-    "standard_name": "sensor_polar_angle",
     "units": "rad",
     "source": "SBF SatVisibility block (Block 4012), reported by receiver firmware",
     "comment": (
@@ -309,7 +308,6 @@ _BROADCAST_THETA_ATTRS: dict[str, str] = {
 _BROADCAST_PHI_ATTRS: dict[str, str] = {
     "long_name": "Satellite azimuth reported by the receiver (geographic convention)",
     "short_name": "φ_B",
-    "standard_name": "sensor_azimuth_angle",
     "units": "rad",
     "source": "SBF SatVisibility block (Block 4012), reported by receiver firmware",
     "comment": (

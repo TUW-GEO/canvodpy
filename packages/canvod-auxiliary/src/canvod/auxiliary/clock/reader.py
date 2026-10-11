@@ -206,7 +206,6 @@ class ClkFile(AuxFile):
         # Add variable attributes
         ds.clock_offset.attrs = {
             "long_name": "Satellite clock offset",
-            "standard_name": "clock_offset",
             "units": "seconds",
             "description": "Clock correction for each satellite",
         }

@@ -225,7 +225,6 @@ class Sp3Parser:
         return {
             "X": {
                 "long_name": "x-coordinate in ECEF",
-                "standard_name": r"x_{ECEF}",
                 "short_name": "x",
                 "units": "m",
                 "axis": "x",
@@ -233,7 +232,6 @@ class Sp3Parser:
             },
             "Y": {
                 "long_name": "y-coordinate in ECEF",
-                "standard_name": r"y_{ECEF}",
                 "short_name": "y",
                 "units": "m",
                 "axis": "y",
@@ -241,7 +239,6 @@ class Sp3Parser:
             },
             "Z": {
                 "long_name": "z-coordinate in ECEF",
-                "standard_name": r"z_{ECEF}",
                 "short_name": "z",
                 "units": "m",
                 "axis": "z",
