@@ -663,7 +663,13 @@ class TestStoreAmend:
     def test_adds_a_receiver_from_the_settings(self, tmp_path):
         config_dir, path = self._setup(
             tmp_path,
-            receivers={"canopy_02": {"type": "canopy", "directory": "03_canopy"}},
+            receivers={
+                "canopy_02": {
+                    "type": "canopy",
+                    "directory": "03_canopy",
+                    "antenna": {"model": "SEPCHOKE_B3E6"},
+                }
+            },
         )
 
         result = self._amend(
@@ -680,6 +686,7 @@ class TestStoreAmend:
 
         receiver = read_metadata(path).instruments.receivers["canopy_02"]
         assert receiver.directory == "03_canopy"
+        assert receiver.antenna.model == "SEPCHOKE_B3E6"
 
     def test_an_unknown_receiver_is_refused(self, tmp_path):
         config_dir, _ = self._setup(tmp_path)

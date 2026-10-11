@@ -97,6 +97,29 @@ class SpatialExtent(BaseModel):
 
 
 # §6 — Receivers & Instruments
+class ReceiverHardware(BaseModel):
+    """The GNSS receiver itself (optional, from the settings)."""
+
+    manufacturer: str | None = None
+    model: str | None = None
+    serial_number: str | None = None
+    firmware: str | None = None
+
+
+class Antenna(BaseModel):
+    """The receiver's antenna (optional, from the settings)."""
+
+    manufacturer: str | None = None
+    model: str | None = Field(None, description="IGS antenna name")
+    radome: str | None = Field(None, description="IGS radome name")
+    serial_number: str | None = None
+    height_m: float | None = Field(None, description="Antenna height in metres")
+    choke_ring: bool | None = Field(None, description="Whether a choke ring is used")
+    polarization: str | None = Field(
+        None, description="'RHCP' (the standard), 'LHCP' or 'dual-pol'"
+    )
+
+
 class ReceiverInfo(BaseModel):
     type: str = Field(..., description="reference or canopy")
     directory: str = Field(..., description="Data subdirectory")
@@ -113,6 +136,12 @@ class ReceiverInfo(BaseModel):
     )
     metadata: dict[str, Any] | None = Field(
         None, description="Freeform receiver metadata"
+    )
+    receiver_hardware: ReceiverHardware | None = Field(
+        None, description="Receiver manufacturer, model, serial number, firmware"
+    )
+    antenna: Antenna | None = Field(
+        None, description="Antenna manufacturer, model, radome, serial, height"
     )
 
 
@@ -354,6 +383,8 @@ class RepositoryReceiver(BaseModel):
     description: str | None = None
     recipe: str | None = None
     metadata: dict[str, Any] | None = None
+    receiver_hardware: ReceiverHardware | None = None
+    antenna: Antenna | None = None
 
 
 class RepositoryInstruments(BaseModel):

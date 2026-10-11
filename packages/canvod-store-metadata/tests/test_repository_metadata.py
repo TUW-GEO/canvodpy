@@ -77,7 +77,24 @@ def _site_config() -> MagicMock:
     site_cfg.altitude_m = 400.0
     site_cfg.description = None
     site_cfg.country = None
-    site_cfg.receivers = {}
+    from canvod.config.models import ReceiverConfig
+
+    site_cfg.receivers = {
+        "canopy_01": ReceiverConfig.model_validate(
+            {
+                "type": "canopy",
+                "directory": "c",
+                "receiver_hardware": {"manufacturer": "Septentrio", "model": "PolaRx5"},
+                "antenna": {
+                    "model": "SEPCHOKE_B3E6",
+                    "radome": "NONE",
+                    "height_m": 1.5,
+                    "choke_ring": True,
+                    "polarization": "RHCP",
+                },
+            }
+        )
+    }
     return site_cfg
 
 
@@ -166,6 +183,33 @@ class TestIdentity:
 
     def test_a_gnss_store_lists_no_vod_analyses(self):
         assert _collect("Rosalia").vod_analyses == {}
+
+
+class TestReceiverSpecs:
+    def test_a_gnss_store_copies_the_receiver_and_antenna_details(self):
+        receiver = _collect().instruments.receivers["canopy_01"]
+
+        assert receiver.receiver_hardware.model == "PolaRx5"
+        assert receiver.antenna.model == "SEPCHOKE_B3E6"
+        assert receiver.antenna.height_m == 1.5
+        assert receiver.antenna.choke_ring is True
+        assert receiver.antenna.polarization == "RHCP"
+
+    def test_the_details_reach_the_repository_metadata(self, tmp_path):
+        store_path = _empty_store(tmp_path / "store")
+        write_metadata(store_path, _collect())
+
+        receiver = _repository_metadata(store_path)["instruments"]["receivers"][
+            "canopy_01"
+        ]
+        assert receiver["receiver_hardware"]["manufacturer"] == "Septentrio"
+        assert receiver["antenna"]["radome"] == "NONE"
+
+    def test_a_vod_store_does_not_copy_them(self):
+        receiver = _collect(store_type="vod_store").instruments.receivers["canopy_01"]
+
+        assert receiver.receiver_hardware is None
+        assert receiver.antenna is None
 
 
 class TestRepositoryMetadata:

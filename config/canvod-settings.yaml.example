@@ -267,6 +267,21 @@ sites:
         description: null
         # recipe: my_site_reference  # → <config dir>/recipes/my_site/my_site_reference.yaml
         #                            #   (requires canvod-filemap)
+        # Optional, for the store metadata; leave out what you don't want
+        # to disclose:
+        # receiver_hardware:
+        #   manufacturer: null
+        #   model: null
+        #   serial_number: null
+        #   firmware: null
+        # antenna:
+        #   manufacturer: null
+        #   model: null                # IGS antenna name
+        #   radome: null               # IGS radome name
+        #   serial_number: null
+        #   height_m: null             # antenna height in metres
+        #   choke_ring: null           # true or false
+        #   polarization: null         # RHCP (the standard), LHCP or dual-pol
 
       canopy_01:
         type: canopy

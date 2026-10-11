@@ -47,7 +47,9 @@ from .references import FundingRef, PublicationRef, ReferencesConfig
 from .root import CanvodConfig
 from .sids import SidsConfig
 from .sites import (
+    AntennaConfig,
     ReceiverConfig,
+    ReceiverHardwareConfig,
     SiteConfig,
     SitesConfig,
     VodAnalysisConfig,
@@ -59,6 +61,7 @@ from .storage import MaintenanceConfig, StorageConfig
 __all__ = [
     "PREPROCESSING_ATTR",
     "PREPROCESSING_RECORD_VERSION",
+    "AntennaConfig",
     "AuxDataConfig",
     "CanvodConfig",
     "ChunkStrategies",
@@ -80,6 +83,7 @@ __all__ = [
     "ProcessingParams",
     "PublicationRef",
     "ReceiverConfig",
+    "ReceiverHardwareConfig",
     "ReferencesConfig",
     "SidsConfig",
     "SiteConfig",

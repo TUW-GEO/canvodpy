@@ -588,6 +588,7 @@ def migrate_metadata_command(
 
 def _amend_changes(
     site: str,
+    store_type: str,
     set_values: list[str],
     add_receivers: list[str],
     add_vod_analyses: list[str],
@@ -598,6 +599,7 @@ def _amend_changes(
 
     from canvod.config import load_config
     from canvod.store_metadata.collectors import collect_receiver
+    from canvod.store_metadata.schema import RepositoryReceiver
 
     changes: dict[str, object] = {}
     for item in set_values:
@@ -616,16 +618,13 @@ def _amend_changes(
             )
             raise typer.Exit(1)
         receiver = collect_receiver(site_cfg.receivers[name])
+        if store_type == "vod_store":
+            # A VOD store reads the hardware from the GNSS store's entries.
+            receiver = receiver.model_copy(
+                update={"receiver_hardware": None, "antenna": None}
+            )
         changes[f"instruments.receivers.{name}"] = receiver.model_dump(
-            mode="json",
-            include={
-                "type",
-                "directory",
-                "reader_format",
-                "description",
-                "recipe",
-                "metadata",
-            },
+            mode="json", include=set(RepositoryReceiver.model_fields)
         )
     analyses = site_cfg.vod_analyses or {}
     for name in add_vod_analyses:
@@ -708,7 +707,7 @@ def amend(
     from canvod.store_metadata import amend_metadata, read_repository_metadata
     from canvod.store_metadata.amend import check_amendable
 
-    path, _ = _store_path(site, store)
+    path, store_type = _store_path(site, store)
     set_values = list(set_values or [])
     receivers = list(add_receiver or [])
     vod_analyses = list(add_vod_analysis or [])
@@ -727,7 +726,7 @@ def amend(
         )
         raise typer.Exit(1)
 
-    changes = _amend_changes(site, set_values, receivers, vod_analyses)
+    changes = _amend_changes(site, store_type, set_values, receivers, vod_analyses)
     if not changes:
         console.print(
             "[red]❌ Nothing to change: use --set, --add-receiver, --add-vod-analysis or --from.[/red]"

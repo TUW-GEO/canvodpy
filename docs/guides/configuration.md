@@ -302,6 +302,11 @@ sites:
 | `directory`       | --      | Subdirectory under `gnss_site_data_root` holding this receiver's files.                                                                                                                                                                            |
 | `reader_format`   | `auto`  | Reader for the receiver's files: `rinex3`, `rinex3_stripped` (signal strengths only, faster), `rinex2`, `sbf`, `nmea`, or the name of an installed reader plugin ([Your Own Readers and VOD Calculators](plugins.md)). `auto` detects it per day, never choosing a plugin: SBF and NMEA by file type, and the RINEX version from the header. A day whose files need different readers stops the run with an error; then set the reader, or keep each format in its own directory. A canopy receiver and its reference must record the same file format (`rinex3` and `rinex3_stripped` both read RINEX 3); mixed formats are rejected when the settings load, or, with `auto`, by `canvodpy config validate` and at the start of a run. |
 | `paired_canopies` | --      | Which canopy receivers this reference is paired with: `all` or a list of canopy receiver names. Required for reference receivers, must not be set for canopy receivers. |
+| `receiver_hardware` | --    | Optional: `manufacturer`, `model`, `serial_number` and `firmware` of the receiver. Copied into the GNSS store's metadata when the store is created or the receiver is added to it. |
+| `antenna`         | --      | Optional: `manufacturer`, `model` and `radome` (IGS names), `serial_number`, `height_m` (metres), `choke_ring` (`true` or `false`) and `polarization` (`RHCP`, the standard, `LHCP` or `dual-pol`) of the antenna. Copied into the GNSS store's metadata like `receiver_hardware`. |
+
+Leave out the receiver and antenna details you don't want to disclose; every
+field in them is optional.
 
 ---
 

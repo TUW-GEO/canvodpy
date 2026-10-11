@@ -12,6 +12,33 @@ from canvod.utils.tools import deprecated
 from .base import _StrictModel
 
 
+class ReceiverHardwareConfig(_StrictModel):
+    """The GNSS receiver itself, for the store metadata. All optional."""
+
+    manufacturer: str | None = Field(None, description="Receiver manufacturer")
+    model: str | None = Field(None, description="Receiver model")
+    serial_number: str | None = Field(None, description="Receiver serial number")
+    firmware: str | None = Field(None, description="Firmware version")
+
+
+class AntennaConfig(_StrictModel):
+    """The receiver's antenna, for the store metadata. All optional."""
+
+    manufacturer: str | None = Field(None, description="Antenna manufacturer")
+    model: str | None = Field(None, description="Antenna model, as its IGS name")
+    radome: str | None = Field(None, description="Radome, as its IGS name")
+    serial_number: str | None = Field(None, description="Antenna serial number")
+    height_m: float | None = Field(None, description="Antenna height in metres")
+    choke_ring: bool | None = Field(None, description="Whether a choke ring is used")
+    polarization: Literal["RHCP", "LHCP", "dual-pol"] | None = Field(
+        None,
+        description=(
+            "Polarization the antenna receives: 'RHCP' (the standard), 'LHCP' "
+            "or 'dual-pol'"
+        ),
+    )
+
+
 class ReceiverConfig(_StrictModel):
     """Receiver configuration."""
 
@@ -48,6 +75,21 @@ class ReceiverConfig(_StrictModel):
         description=(
             "Freeform receiver metadata written to dataset global attrs. "
             "Example keys: site_url, antenna_height, species."
+        ),
+    )
+    receiver_hardware: ReceiverHardwareConfig | None = Field(
+        None,
+        description=(
+            "Optional: the receiver's manufacturer, model, serial number and "
+            "firmware, copied into the GNSS store's metadata."
+        ),
+    )
+    antenna: AntennaConfig | None = Field(
+        None,
+        description=(
+            "Optional: the antenna's manufacturer, model and radome (IGS "
+            "names), serial number and height, copied into the GNSS store's "
+            "metadata."
         ),
     )
     reader_format: str = Field(

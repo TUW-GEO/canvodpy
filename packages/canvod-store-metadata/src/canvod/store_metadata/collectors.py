@@ -287,16 +287,31 @@ def collect_receiver(receiver_config: Any) -> ReceiverInfo:
         description=getattr(receiver_config, "description", None),
         recipe=getattr(receiver_config, "recipe", None),
         metadata=getattr(receiver_config, "metadata", None),
+        receiver_hardware=_dump(getattr(receiver_config, "receiver_hardware", None)),
+        antenna=_dump(getattr(receiver_config, "antenna", None)),
     )
 
 
-def collect_instruments(site_config: Any) -> Instruments:
-    """Build Instruments from SiteConfig receivers."""
-    return Instruments(
-        receivers={
-            name: collect_receiver(rcv) for name, rcv in site_config.receivers.items()
+def _dump(settings: Any) -> dict[str, Any] | None:
+    """A settings block as a plain dict, ``None`` when not set."""
+    return None if settings is None else settings.model_dump()
+
+
+def collect_instruments(site_config: Any, *, hardware: bool = True) -> Instruments:
+    """Build Instruments from SiteConfig receivers.
+
+    ``hardware=False`` leaves out the receiver and antenna details: a VOD
+    store reads them from the GNSS store's entries instead of copying them.
+    """
+    receivers = {
+        name: collect_receiver(rcv) for name, rcv in site_config.receivers.items()
+    }
+    if not hardware:
+        receivers = {
+            name: r.model_copy(update={"receiver_hardware": None, "antenna": None})
+            for name, r in receivers.items()
         }
-    )
+    return Instruments(receivers=receivers)
 
 
 def collect_vod_analyses(site_config: Any) -> dict[str, VodAnalysisInfo]:
@@ -407,7 +422,9 @@ def collect_metadata(
         publisher=collect_publisher(meta_cfg),
         temporal=TemporalExtent(created=now, updated=now),
         spatial=collect_spatial(site_config, site_name),
-        instruments=collect_instruments(site_config),
+        instruments=collect_instruments(
+            site_config, hardware=store_type != "vod_store"
+        ),
         processing=collect_processing_provenance(store_type, source_format),
         environment=collect_environment(
             store_path, dask_workers, dask_threads_per_worker
