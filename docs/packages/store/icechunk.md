@@ -65,6 +65,16 @@ written. The default chunk shapes are:
     group: a group keeps the chunk shape it was created with. To change the
     chunks of an existing group, use `store.rechunk_group()`.
 
+!!! note "GNSS stores created before 1.0.0b1"
+    Before 1.0.0b1, the GNSS store default was `epoch: 17280`. Groups
+    created then keep those chunks: reads work as before, but every file a
+    run adds rewrites the last chunk. To change a group to the current
+    default:
+
+    ```python
+    store.rechunk_group("canopy_01", {"epoch": 180, "sid": -1})
+    ```
+
 `chunk_strategies` has exactly two keys, `gnss_store` and `vod_store`. A
 store that you leave out keeps the default, and any other key fails
 validation. A store that you set needs `epoch`; `sid` defaults to `-1`.
@@ -128,10 +138,10 @@ Icechunk or Zarr; the table names their defaults for Icechunk 2.3 and Zarr
 | `inline_chunk_threshold_bytes` | `512` | Chunks up to this size are stored in the manifest instead of in `chunks/`. |
 | `get_partial_values_concurrency` | `1` | Concurrent requests when reading part of a chunk. |
 | `max_concurrent_requests` | `null` | Limit on concurrent storage requests. |
-| `zarr_async_concurrency` | `null` | Limit on the concurrent chunk reads and writes of Zarr per array; `null` keeps Zarr's default of 10. On a network-mounted store (CIFS or NFS) that fails with connection-abort errors during writes, set a lower value; writes get slower. |
+| `zarr_async_concurrency` | `null` | Limit on the concurrent chunk reads and writes of Zarr per array; `null` keeps Zarr's default of 10. On a network-mounted store (CIFS or NFS) that drops connections during writes, set a lower value; writes get slower. |
 | `chunk_strategies` | see [Chunks](#chunks) | Chunk shape per store. |
-| `manifest_splitting_enabled` | `true` | Splits manifests along `epoch` every `manifest_splitting_epoch_range` epochs. |
-| `manifest_splitting_epoch_range` | `17280` | Set it to the epoch chunk size. |
+| `manifest_splitting_enabled` | `true` | Splits manifests along `epoch` every `manifest_splitting_epoch_range` epoch chunks. |
+| `manifest_splitting_epoch_range` | `17280` | Epoch chunks per manifest. The value counts chunks, not epochs: with the default chunks, a GNSS store manifest covers $17280 \times 180$ epochs (180 days at 5 s). |
 | `manifest_preload_enabled` | `false` | Reads the manifests of matching arrays when a store is opened. |
 | `manifest_preload_max_refs` | `10000` | Limit on the chunk references read in advance. |
 | `manifest_preload_max_arrays_to_scan` | `500` | Limit on the arrays checked for reading in advance. |

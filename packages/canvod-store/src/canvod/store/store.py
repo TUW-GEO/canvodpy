@@ -644,6 +644,21 @@ class MyIcechunkStore:
             encoding[str(var)] = {"chunks": chunk_shape}
         return encoding
 
+    def _for_group_creation(
+        self, ds: xr.Dataset
+    ) -> tuple[xr.Dataset, dict[str, dict[str, tuple[int, ...]]]]:
+        """Return ``ds`` and the ``encoding=`` for a write that creates a group.
+
+        The encoding sets the stored chunks to ``self.chunk_strategy`` (see
+        :meth:`chunk_encoding_for`). A Dask-backed ``ds`` is rechunked to the
+        same chunks, because a Dask chunk that spans two stored chunks can't
+        be written safely.
+        """
+        if ds.chunks and self.chunk_strategy:
+            strategy = self.chunk_strategy.items()
+            ds = ds.chunk({dim: size for dim, size in strategy if dim in ds.dims})
+        return ds, self.chunk_encoding_for(ds)
+
     def _clean_ds_store(self) -> None:
         """Remove .DS_Store files from the store directory tree.
 
@@ -1512,8 +1527,11 @@ class MyIcechunkStore:
             version = get_version_from_pyproject()
             commit_message = f"[v{version}] Initial commit to group '{group_name}'"
 
+        dataset, encoding = self._for_group_creation(dataset)
         with self.writable_session(branch) as session:
-            self._to_icechunk_throttled(dataset, session, group=group_name, mode="w")
+            self._to_icechunk_throttled(
+                dataset, session, group=group_name, mode="w", encoding=encoding
+            )
             zroot = zarr.open_group(session.store, mode="a")
             self._append_metadata_row(
                 zroot=zroot,
@@ -2328,9 +2346,10 @@ class MyIcechunkStore:
                 f"Appended {len(dataset.epoch)} epochs to group '{group_name}'"
             )
         else:
+            dataset, encoding = self._for_group_creation(dataset)
             with self.writable_session(branch) as session:
                 self._to_icechunk_throttled(
-                    dataset, session, group=group_name, mode="w"
+                    dataset, session, group=group_name, mode="w", encoding=encoding
                 )
                 for name, meta_ds in (metadata_datasets or {}).items():
                     self.write_metadata_parts([meta_ds], group_name, name, session)

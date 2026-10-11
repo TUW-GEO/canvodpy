@@ -135,8 +135,9 @@ class IcechunkConfig(_StrictModel):
         17280,
         ge=1,
         description=(
-            "Split arrays along the epoch dimension every N indices. "
-            "Set to match your epoch chunk size (e.g. 17280 for 24 h at 5 s)."
+            "Epoch chunks per manifest: Icechunk starts a new manifest of an "
+            "array every N chunks along the epoch dimension (N chunks, not N "
+            "epochs)."
         ),
     )
     num_updates_per_repo_info_file: int | None = Field(

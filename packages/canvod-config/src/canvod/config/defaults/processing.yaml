@@ -55,7 +55,7 @@ icechunk:
   manifest_preload_max_arrays_to_scan: 500
   manifest_preload_pattern: "^(epoch|sid)$"
   manifest_splitting_enabled: true
-  manifest_splitting_epoch_range: 17280
+  manifest_splitting_epoch_range: 17280  # epoch chunks per manifest, not epochs
 
 storage:
   stores_root_dir: /path/to/stores  # MUST be set by user!

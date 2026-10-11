@@ -230,8 +230,8 @@ class TestReadChunks:
     def test_read_group_uses_the_stored_chunks(self, tmp_path) -> None:
         """Reads follow the chunks a group was written with, not the settings."""
         store = create_gnss_store(tmp_path / "site" / "gnss_store")
-        stored = _dataset(1, "h1", _record([])).chunk({"epoch": 2})
-        store.write_initial_group(stored, "canopy_01")
+        store.chunk_strategy = {"epoch": 2, "sid": -1}
+        store.write_initial_group(_dataset(1, "h1", _record([])), "canopy_01")
         store.chunk_strategy = {"epoch": 3, "sid": -1}
 
         with warnings.catch_warnings():
@@ -243,3 +243,24 @@ class TestReadChunks:
     def test_explicit_chunks_still_apply(self, store) -> None:
         group = store.read_group("canopy_01", chunks={"epoch": 8, "sid": -1})
         assert group["SNR"].chunks == ((8,), (2,))
+
+
+class TestWriteChunks:
+    """Writes that create a group store it with ``chunk_strategy``."""
+
+    def _stored_chunks(self, store, group: str) -> tuple[int, ...]:
+        with store.readonly_session() as session:
+            return zarr.open_group(session.store, mode="r")[group]["SNR"].chunks
+
+    def test_write_initial_group(self, tmp_path) -> None:
+        store = create_gnss_store(tmp_path / "site" / "gnss_store")
+        store.chunk_strategy = {"epoch": 3, "sid": -1}
+        store.write_initial_group(_dataset(1, "h1", _record([])), "canopy_01")
+        assert self._stored_chunks(store, "canopy_01") == (3, 2)
+
+    def test_write_or_append_group_rechunks_dask_input(self, tmp_path) -> None:
+        store = create_gnss_store(tmp_path / "site" / "gnss_store")
+        store.chunk_strategy = {"epoch": 3, "sid": -1}
+        dataset = _dataset(1, "h1", _record([])).chunk({"epoch": 2})
+        store.write_or_append_group(dataset, "canopy_01")
+        assert self._stored_chunks(store, "canopy_01") == (3, 2)
