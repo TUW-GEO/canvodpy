@@ -13,7 +13,10 @@ from pydantic import BaseModel, Field
 
 # §1 — Identity & Discovery
 class StoreIdentity(BaseModel):
-    id: str = Field(..., description="Unique store identifier (site/store_type)")
+    id: str = Field(..., description="Store id: {site slug}-{gnss|vod}")
+    uuid: str | None = Field(
+        None, description="Random UUID generated when the store is created"
+    )
     title: str = Field(..., description="Human-readable store title")
     description: str | None = Field(None, description="Store description")
     store_type: str = Field(..., description="Store type: gnss_store, vod_store")
@@ -22,7 +25,12 @@ class StoreIdentity(BaseModel):
     )
     keywords: list[str] = Field(default_factory=list, description="Discovery keywords")
     conventions: str = Field("ACDD-1.3", description="Metadata conventions")
-    naming_authority: str | None = Field(None, description="Naming authority URI")
+    naming_authority: str | None = Field(
+        None, description="Naming authority, reverse DNS (e.g. at.ac.tuwien)"
+    )
+    stac_link: str | None = Field(
+        None, description="Link to the store's item in the catalog, relative"
+    )
     persistent_identifier: str | None = Field(
         None, description="DOI or other persistent identifier (FAIR F1)"
     )
@@ -229,3 +237,82 @@ class StoreMetadata(BaseModel):
         """Reconstruct from Zarr root attrs dict."""
         data = attrs[_METADATA_KEY]
         return cls.model_validate(data)
+
+
+# ── Repository metadata (ADR 0014) ──────────────────────────────────────────
+#
+# The part of the metadata that describes the store as a whole, kept in
+# Icechunk's repository metadata. Field names match ``StoreMetadata``, so
+# ``RepositoryMetadata.from_store_metadata`` drops the per-snapshot and
+# per-commit fields. The id, UUID, naming authority and catalog link are
+# required here: a store is never created without them.
+
+
+class RepositoryIdentity(BaseModel):
+    id: str
+    uuid: str
+    store_type: str
+    source_format: str
+    naming_authority: str
+    stac_link: str
+    title: str
+    description: str | None = None
+    keywords: list[str] = Field(default_factory=list)
+    persistent_identifier: str | None = None
+
+
+class RepositoryTemporal(BaseModel):
+    created: str
+
+
+class RepositorySpatial(BaseModel):
+    site: SiteInfo
+    geospatial_lat: float | None = None
+    geospatial_lon: float | None = None
+    geospatial_alt_m: float | None = None
+    geospatial_vertical_crs: str = "EPSG:4979"
+
+
+class RepositoryReceiver(BaseModel):
+    type: str
+    directory: str
+    reader_format: str = "auto"
+    description: str | None = None
+    recipe: str | None = None
+    metadata: dict[str, Any] | None = None
+
+
+class RepositoryInstruments(BaseModel):
+    platform: str = "ground-based GNSS"
+    instruments: list[str] = Field(default_factory=lambda: ["GNSS receiver"])
+    receivers: dict[str, RepositoryReceiver] = Field(default_factory=dict)
+
+
+class Amendment(BaseModel):
+    """One recorded change of an amendable field."""
+
+    field: str
+    old: Any = None
+    new: Any = None
+    reason: str
+    who: str
+    when: str
+
+
+class RepositoryMetadata(BaseModel):
+    """What describes a store as a whole: fixed and amendable fields."""
+
+    metadata_version: str = Field(_METADATA_VERSION)
+    identity: RepositoryIdentity
+    creator: Creator
+    publisher: Publisher = Field(default_factory=Publisher)
+    temporal: RepositoryTemporal
+    spatial: RepositorySpatial
+    instruments: RepositoryInstruments = Field(default_factory=RepositoryInstruments)
+    references: References = Field(default_factory=References)
+    amendments: list[Amendment] = Field(default_factory=list)
+
+    @classmethod
+    def from_store_metadata(cls, metadata: StoreMetadata) -> RepositoryMetadata:
+        """Take the repository part of ``metadata``."""
+        return cls.model_validate(metadata.model_dump(mode="json"))

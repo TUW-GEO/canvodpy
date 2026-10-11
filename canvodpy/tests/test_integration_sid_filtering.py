@@ -90,6 +90,9 @@ def test_sid_filtering_integration(tmp_path, monkeypatch):
     patched_config.processing.storage.aux_data_dir = tmp_path / "aux"
     patched_config.processing.storage.shared_aux_cache_dir = None
     patched_config.processing.logging.log_dir = tmp_path / "logs"
+    # New stores need a naming authority (ADR 0015); don't rely on the
+    # local settings having one.
+    patched_config.processing.metadata.naming_authority = "at.ac.tuwien"
     patched_config.sites.sites["rosalia"] = SiteConfig(
         gnss_site_data_root=str(_ROSALIA_DATA),
         receivers={

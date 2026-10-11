@@ -148,8 +148,9 @@ processing:
     author: Your Name
     email: your.email@example.com
     institution: Your Institution
+    naming_authority: org.example  # your domain in reverse; required to create a store
     # optional: orcid, institution_ror, department, research_group,
-    # website, license, publisher, publisher_url, naming_authority
+    # website, license, publisher, publisher_url
 
   credentials:
     nasa_earthdata_acc_mail: null

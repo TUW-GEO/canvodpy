@@ -80,7 +80,14 @@ class MetadataConfig(_StrictModel):
     license: str | None = Field(None, description="SPDX license identifier")
     publisher: str | None = Field(None, description="Publisher name")
     publisher_url: str | None = Field(None, description="Publisher URL")
-    naming_authority: str | None = Field(None, description="Naming authority URI")
+    naming_authority: str | None = Field(
+        None,
+        description=(
+            "Your institution's domain in reverse order, lowercase "
+            "(e.g. 'at.ac.tuwien'). Required when a store is created: with "
+            "the store id it gives the store's id in the STAC catalog."
+        ),
+    )
     store_description: str | None = Field(
         None,
         description=(

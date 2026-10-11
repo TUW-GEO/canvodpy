@@ -104,7 +104,7 @@ processing:
     department: "Department of Geodesy"     # optional
     license: "CC-BY-4.0"                 # optional, SPDX identifier
     publisher: "Example University"      # optional
-    naming_authority: "org.example"      # optional
+    naming_authority: "org.example"      # required to create a store
 ```
 
 The site description and location come from the site:

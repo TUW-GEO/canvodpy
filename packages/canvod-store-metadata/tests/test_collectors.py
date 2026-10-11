@@ -191,7 +191,7 @@ class TestCollectors:
         meta_cfg.publisher = None
         meta_cfg.publisher_url = None
         meta_cfg.license = None
-        meta_cfg.naming_authority = None
+        meta_cfg.naming_authority = "at.ac.tuwien"
         meta_cfg.store_description = "A test store for TestSite."
 
         proc = MagicMock(spec=["metadata", "references"])
@@ -233,7 +233,7 @@ class TestCollectors:
                 source_format="rinex3",
                 store_path=Path("/tmp/test"),
             )
-        assert meta.identity.id == "TestSite/gnss_store"
+        assert meta.identity.id == "testsite-gnss"
         assert meta.identity.description == "A test store for TestSite."
         assert meta.creator.name == "Test"
         assert meta.processing.python is not None
@@ -270,7 +270,7 @@ class TestCollectors:
         meta_cfg.publisher = None
         meta_cfg.publisher_url = None
         meta_cfg.license = None
-        meta_cfg.naming_authority = None
+        meta_cfg.naming_authority = "at.ac.tuwien"
 
         proc = MagicMock(spec=["metadata", "references"])
         proc.metadata = meta_cfg

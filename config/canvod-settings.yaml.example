@@ -38,7 +38,7 @@ processing:
     license: CC-BY-4.0                   # SPDX identifier
     publisher: null                      # Optional
     publisher_url: null                  # Optional
-    naming_authority: null               # e.g. "at.ac.tuwien"
+    naming_authority: null               # Required to create a store, e.g. "at.ac.tuwien"
 
   # ---------------------------------------------------------------------------
   # Credentials

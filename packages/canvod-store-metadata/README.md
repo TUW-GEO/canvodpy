@@ -94,14 +94,16 @@ Identifies the store and enables discovery in catalogs.
 
 | Field | Type | Description | Standard |
 |---|---|---|---|
-| `id` | str | Unique store identifier, e.g. `ExampleSite/gnss_store` | DataCite, STAC |
+| `id` | str | Store id `{site}-{gnss\|vod}` from the lowercase site name, e.g. `examplesite-gnss`; fixed | DataCite, STAC |
+| `uuid` | str | Random UUID generated when the store is created; fixed | DataCite |
 | `title` | str | Human-readable title | DataCite, ACDD, STAC |
 | `description` | str? | Free-text description | ACDD, STAC |
 | `store_type` | str | `gnss_store`, `vod_store`, etc. | DataCite (resourceType) |
 | `source_format` | str | `rinex3`, `rinex2`, `sbf` | — |
 | `keywords` | list[str] | Discovery keywords | ACDD, STAC |
 | `conventions` | str | Metadata conventions followed (default `ACDD-1.3`) | ACDD |
-| `naming_authority` | str? | Naming authority URI, e.g. `at.ac.tuwien` | ACDD |
+| `naming_authority` | str | Your domain in reverse order, e.g. `at.ac.tuwien`; required when the store is created; fixed | ACDD |
+| `stac_link` | str | Link from the store to its item in the STAC catalog, relative; fixed | STAC |
 | `persistent_identifier` | str? | DOI or other persistent identifier | FAIR F1, DataCite |
 | `standard_name_vocabulary` | str? | Vocabulary for standard_name attributes | ACDD |
 

@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from .identity import check_naming_authority, new_uuid, stac_link, store_id
 from .schema import (
     ConfigSnapshot,
     Creator,
@@ -342,20 +343,33 @@ def collect_metadata(
 ) -> StoreMetadata:
     """Collect all metadata sections into a StoreMetadata object.
 
-    This is the main entry point for metadata collection.
+    This is the main entry point for metadata collection. It gives a new
+    store its id, UUID and catalog link.
+
+    Raises
+    ------
+    ValueError
+        If the site name gives no valid store id, or the naming authority
+        is missing or not a reverse DNS name.
     """
-    now = datetime.now(UTC).isoformat()
     meta_cfg = config.processing.metadata
+    sid = store_id(site_name, store_type)
+    naming_authority = check_naming_authority(
+        getattr(meta_cfg, "naming_authority", None)
+    )
+    now = datetime.now(UTC).isoformat()
 
     return StoreMetadata(
         identity=StoreIdentity(
-            id=f"{site_name}/{store_type}",
+            id=sid,
+            uuid=new_uuid(),
             title=f"{site_name} {store_type.replace('_', ' ').title()}",
             description=getattr(meta_cfg, "store_description", None),
             store_type=store_type,
             source_format=source_format,
             keywords=["GNSS", "VOD", site_name, source_format],
-            naming_authority=getattr(meta_cfg, "naming_authority", None),
+            naming_authority=naming_authority,
+            stac_link=stac_link(naming_authority, sid, store_type),
         ),
         creator=collect_creator(meta_cfg),
         publisher=collect_publisher(meta_cfg),

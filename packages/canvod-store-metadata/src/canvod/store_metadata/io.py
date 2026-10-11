@@ -12,9 +12,10 @@ import icechunk
 import structlog
 import zarr
 from filelock import FileLock, Timeout
+from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
-from .schema import _METADATA_KEY, StoreMetadata
+from .schema import RepositoryMetadata, StoreMetadata
 
 #: Name of the lock file in the store directory (see :func:`commit_lock`).
 COMMIT_LOCK_NAME = ".canvodpy-commit.lock"
@@ -95,23 +96,55 @@ def write_metadata(
     metadata: StoreMetadata,
     branch: str = "main",
 ) -> str:
-    """Write metadata to Icechunk store root attrs.
+    """Write a new store's metadata.
+
+    The repository metadata (fixed and amendable fields, ADR 0014) is
+    written once; the root group gets the full metadata in the same call.
 
     Returns
     -------
     str
         Snapshot ID from the commit.
-    """
-    repo = _open_repo(store_path)
-    session = repo.writable_session(branch)
-    store = session.store
-    try:
-        root = zarr.open_group(store, mode="r+")
-    except zarr_errors.GroupNotFoundError:
-        root = zarr.open_group(store, mode="w")
 
-    root.attrs.update(metadata.to_root_attrs())
-    return commit_with_rebase(session, "Write store metadata", store_path=store_path)
+    Raises
+    ------
+    ValueError
+        If the store already has repository metadata, or ``metadata``
+        lacks a fixed field (build it with ``collect_metadata``).
+    """
+    try:
+        repository_metadata = RepositoryMetadata.from_store_metadata(metadata)
+    except ValidationError as exc:
+        missing = sorted(
+            ".".join(str(part) for part in error["loc"]) for error in exc.errors()
+        )
+        msg = (
+            f"The store metadata lacks fields a store needs when it is created "
+            f"({', '.join(missing)}); build it with collect_metadata."
+        )
+        raise ValueError(msg) from exc
+
+    with commit_lock(store_path):
+        repo = _open_repo(store_path)
+        existing = repo.get_metadata()
+        if existing:
+            store = existing.get("identity", {}).get("id", "unknown id")
+            msg = (
+                f"The store at {store_path} already has repository metadata "
+                f"(store {store}); open it instead of creating it again."
+            )
+            raise ValueError(msg)
+        repo.set_metadata(repository_metadata.model_dump(mode="json"))
+
+        session = repo.writable_session(branch)
+        try:
+            root = zarr.open_group(session.store, mode="r+")
+        except zarr_errors.GroupNotFoundError:
+            root = zarr.open_group(session.store, mode="w")
+        root.attrs.update(metadata.to_root_attrs())
+        return commit_with_rebase(
+            session, "Write store metadata", store_path=store_path
+        )
 
 
 def read_metadata(
@@ -179,12 +212,13 @@ def update_metadata(
 
 
 def metadata_exists(store_path: Path, branch: str = "main") -> bool:
-    """Check if metadata exists in the store."""
+    """Check if the store has repository metadata.
+
+    ``branch`` is not used: repository metadata is on no branch. It stays
+    for callers that pass it.
+    """
     try:
         repo = _open_repo(store_path)
-        session = repo.readonly_session(branch=branch)
-        store = session.store
-        root = zarr.open_group(store, mode="r")
-        return _METADATA_KEY in root.attrs
-    except Exception:
+    except icechunk.IcechunkError:
         return False
+    return bool(repo.get_metadata())

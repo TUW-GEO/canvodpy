@@ -92,6 +92,11 @@ def _build_store_and_metadata(
     meta = StoreMetadata(
         identity=StoreIdentity(
             id=store_id,
+            uuid="00000000-0000-4000-8000-000000000001",
+            stac_link=(
+                f"../../gnss-observations/at.ac.tuwien.{store_id}/"
+                f"at.ac.tuwien.{store_id}.json"
+            ),
             title=title,
             description=(f"1-hour subset of GNSS observations ({source_format})"),
             store_type=store_type,
@@ -226,7 +231,7 @@ class TestOneDayStore:
         _build_store_and_metadata(
             gnss_store_path,
             datasets,
-            store_id="Rosalia/gnss_store",
+            store_id="rosalia-gnss",
             title="Rosalia GNSS Store (1-day test)",
             store_type="gnss_store",
             source_format="rinex3",
@@ -248,9 +253,9 @@ class TestOneDayStore:
         _build_store_and_metadata(
             sbf_store_path,
             datasets,
-            store_id="Rosalia/sbf_store",
+            store_id="rosalia-gnss",
             title="Rosalia SBF Store (1-day test)",
-            store_type="sbf_store",
+            store_type="gnss_store",
             source_format="sbf",
             file_count=len(sbf_files),
         )

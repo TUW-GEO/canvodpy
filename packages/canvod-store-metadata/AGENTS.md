@@ -8,7 +8,8 @@ canvod-store (`{group}/metadata/table`).
 
 | Path (under `src/canvod/store_metadata/`) | What |
 |---|---|
-| `schema.py` | The metadata models; stored as the root attribute `canvod_metadata` |
+| `schema.py` | The metadata models; stored as the root attribute `canvod_metadata`, the repository part (`RepositoryMetadata`) in Icechunk's repository metadata |
+| `identity.py` | Store id, UUID, naming authority and catalog link of a new store |
 | `collectors.py` | `collect_metadata`: fills the model from settings, dataset and environment |
 | `io.py` | Read, write, update the metadata of a store |
 | `validate.py` | Checks against the schema and the standards |
