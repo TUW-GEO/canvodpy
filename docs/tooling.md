@@ -145,7 +145,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 === "just: task runner"
 
-    Recipes are defined in `justfile` at the repo root. Use `just --list` to
+    Recipes are defined in `Justfile` at the repo root. Use `just --list` to
     see all available recipes.
 
     All common tasks are single commands:
