@@ -38,26 +38,28 @@ open them there.
 ## Chunks
 
 A Zarr array is stored in chunks: the unit that is read, compressed, and
-written. The default chunk shape of both stores is:
+written. The default chunk shapes are:
 
-```python
-{"epoch": 17280, "sid": -1}
-```
+| Store | Chunk shape | Size in epochs |
+|---|---|---|
+| GNSS store | `{"epoch": 180, "sid": -1}` | one 15-minute file at a 5 s sampling interval ($900\,\text{s} / 5\,\text{s}$) |
+| VOD store | `{"epoch": 17280, "sid": -1}` | one day at a 5 s sampling interval ($86400\,\text{s} / 5\,\text{s}$) |
 
-- `epoch: 17280` is one day at a 5 s sampling interval (86,400 s ÷ 5 s).
-- `sid: -1` puts all signals in one chunk.
+`sid: -1` puts all signals in one chunk.
 
-!!! warning "Match the epoch chunk size to your sampling interval"
-    A run writes one day per commit. Set the epoch chunk size to the
-    number of epochs in one day at your site's sampling interval:
+!!! warning "Match the epoch chunk size to what a run writes"
+    A run adds one file at a time to the GNSS store and one day at a time
+    to the VOD store. An addition that ends inside a chunk rewrites that
+    whole chunk the next time. Set the epoch chunk sizes to:
 
-    ```text
-    epoch chunk size = 86,400 s ÷ sampling interval in seconds
-    ```
+    $$
+    \text{GNSS store: } \frac{\text{file length in s}}{\text{sampling interval in s}}
+    \qquad
+    \text{VOD store: } \frac{86400\,\text{s}}{\text{sampling interval in s}}
+    $$
 
-    For example, a 2.5 s interval needs `epoch: 34560`. With another chunk
-    size, most daily writes end inside a chunk, and the next write reads and
-    rewrites that chunk.
+    For example, 15-minute files at a 2.5 s interval need `epoch: 360` in
+    the GNSS store and `epoch: 34560` in the VOD store.
 
     Set `processing.icechunk.chunk_strategies` before the first write of a
     group: a group keeps the chunk shape it was created with. To change the
@@ -65,7 +67,7 @@ written. The default chunk shape of both stores is:
 
 `chunk_strategies` has exactly two keys, `gnss_store` and `vod_store`. A
 store that you leave out keeps the default, and any other key fails
-validation.
+validation. A store that you set needs `epoch`; `sid` defaults to `-1`.
 
 ### Reads are lazy
 
@@ -75,11 +77,13 @@ example `.compute()`, `.values`, or a plot), and then only the chunks the
 result needs.
 
 With the default `sid: -1`, a chunk holds all signals, so one signal over a
-year reads 365 chunks. If you read single signals over long periods, rechunk
-along `sid` with `rechunk_group()`.
+year reads 365 chunks of the VOD store and 35,040 of the GNSS store. If you
+read single signals over long periods, rechunk along `sid` with
+`rechunk_group()`.
 
-The `chunks` argument of `read_group()` sets the Dask chunks of the
-returned dataset; it doesn't change the chunks on disk:
+`read_group()` returns Dask chunks equal to the chunks on disk, whatever
+`chunk_strategies` says now. Its `chunks` argument sets other Dask chunks
+for the returned dataset; it doesn't change the chunks on disk:
 
 ```python
 ds = store.read_group(
@@ -104,7 +108,7 @@ processing:
     compression_level: 3
     chunk_strategies:
       gnss_store:
-        epoch: 17280
+        epoch: 180
         sid: -1
       vod_store:
         epoch: 17280

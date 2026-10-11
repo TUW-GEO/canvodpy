@@ -45,10 +45,10 @@ icechunk:
   # cache_num_bytes_chunks: null    # icechunk default
   chunk_strategies:
     gnss_store:
-      epoch: 17280  # 24h at 5s sampling; override to match your site's rate
+      epoch: 180  # one 15-min file at 5 s sampling; set to the epochs per file
       sid: -1
     vod_store:
-      epoch: 17280
+      epoch: 17280  # one day at 5 s sampling; set to the epochs per day
       sid: -1
   manifest_preload_enabled: false
   manifest_preload_max_refs: 10000

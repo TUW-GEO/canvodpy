@@ -154,10 +154,10 @@ processing:
 
     chunk_strategies:
       gnss_store:
-        epoch: 17280  # 24h of 5s data; override to match your site's sampling rate
+        epoch: 180    # epochs per file (15 min at 5 s sampling)
         sid: -1       # Don't chunk along sid
       vod_store:
-        epoch: 17280
+        epoch: 17280  # epochs per day (5 s sampling)
         sid: -1
 
   # ---------------------------------------------------------------------------

@@ -194,10 +194,10 @@ processing:
     inline_chunk_threshold_bytes: 512
     chunk_strategies:
       gnss_store:
-        epoch: 17280  # 24h at 5s sampling; override to match your site's rate
+        epoch: 180    # epochs per file (15 min at 5 s sampling)
         sid: -1
       vod_store:
-        epoch: 17280
+        epoch: 17280  # epochs per day (5 s sampling)
         sid: -1
 
   storage:

@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pytest
 import xarray as xr
@@ -222,3 +224,22 @@ class TestGuardAfterGroupWideStep:
             vod.check_preprocessing_matches(
                 group, _dataset(2, "h2", vod_preprocessing_record(sources))
             )
+
+
+class TestReadChunks:
+    def test_read_group_uses_the_stored_chunks(self, tmp_path) -> None:
+        """Reads follow the chunks a group was written with, not the settings."""
+        store = create_gnss_store(tmp_path / "site" / "gnss_store")
+        stored = _dataset(1, "h1", _record([])).chunk({"epoch": 2})
+        store.write_initial_group(stored, "canopy_01")
+        store.chunk_strategy = {"epoch": 3, "sid": -1}
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            group = store.read_group("canopy_01")
+
+        assert group["SNR"].chunks == ((2, 2), (2,))
+
+    def test_explicit_chunks_still_apply(self, store) -> None:
+        group = store.read_group("canopy_01", chunks={"epoch": 8, "sid": -1})
+        assert group["SNR"].chunks == ((8,), (2,))

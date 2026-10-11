@@ -33,7 +33,7 @@ class ChunkStrategy(_StrictModel):
     """
 
     epoch: int = Field(
-        17280,
+        ...,
         ge=1,
         description="Chunk size for epoch dimension",
     )
@@ -54,11 +54,12 @@ class ChunkStrategies(_StrictModel):
     leaving that store unchunked.
     """
 
-    # 17280 = 86400 s/day / 5 s sampling interval (the reference site's
-    # actual cadence): append_to_group() commits once per day, so chunks
-    # match one day exactly. Sites sampling at a different rate must override.
+    # gnss_store: a run appends one file at a time, and an append that ends
+    # inside a chunk rewrites that whole chunk. 180 = one 15-minute file at
+    # a 5 s sampling interval, so each append fills its own chunks.
+    # vod_store: a run appends one day at a time; 17280 = one day at 5 s.
     gnss_store: ChunkStrategy = Field(
-        default_factory=lambda: ChunkStrategy(epoch=17280, sid=-1),
+        default_factory=lambda: ChunkStrategy(epoch=180, sid=-1),
         description="Chunking of the GNSS store",
     )
     vod_store: ChunkStrategy = Field(

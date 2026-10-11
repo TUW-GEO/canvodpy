@@ -435,19 +435,14 @@ class MyIcechunkStore:
         """
         self._logger = structlog.get_logger(__name__)
 
-        try:
-            from canvod.config import load_config
+        from canvod.config import load_config
 
-            cfg = load_config()
-            ic_cfg = cfg.processing.icechunk
-            _gnss_store_strategy = cfg.processing.storage.gnss_store_strategy
-            _log_path_depth = cfg.processing.logging.log_path_depth
-        except Exception:
-            from canvod.config.models import IcechunkConfig
-
-            ic_cfg = IcechunkConfig()
-            _gnss_store_strategy = "skip"
-            _log_path_depth = 3
+        # No fallback: settings that fail to load raise here, so a store is
+        # never opened with defaults the user didn't choose.
+        cfg = load_config()
+        ic_cfg = cfg.processing.icechunk
+        _gnss_store_strategy = cfg.processing.storage.gnss_store_strategy
+        _log_path_depth = cfg.processing.logging.log_path_depth
 
         self.store_path = Path(store_path)
         self.store_type = store_type
@@ -1285,7 +1280,7 @@ class MyIcechunkStore:
             YYYYDOY string (e.g. ``"2025001"``) selecting a single calendar day.
             Converted to a ``time_slice``; mutually exclusive with ``time_slice``.
         chunks : dict[str, Any] | None, optional
-            Chunking specification (uses config defaults if None).
+            Dask chunks for reading. If None, the chunks stored in the group.
 
         Returns
         -------
@@ -1301,14 +1296,12 @@ class MyIcechunkStore:
             time_slice = slice(str(_d), str(_d + timedelta(days=1)))
 
         with self.readonly_session(branch) as session:
-            # Use default chunking strategy if none provided
-            if chunks is None:
-                chunks = self.chunk_strategy or {"epoch": 17280, "sid": -1}
-
+            # The stored chunks, not chunk_strategy: a group keeps the chunks
+            # it was written with, which the settings may no longer match.
             ds = xr.open_zarr(
                 session.store,
                 group=group_name,
-                chunks=chunks,
+                chunks={} if chunks is None else chunks,
                 consolidated=False,
             )
 
@@ -2013,8 +2006,8 @@ class MyIcechunkStore:
         branch : str, default "main"
             Repository branch.
         chunks : dict | None, optional
-            Dask chunk specification.  Defaults to
-            ``{"epoch": 17280, "sid": -1}``.
+            Dask chunks for reading. If None, the chunks stored in the
+            dataset.
 
         Returns
         -------
@@ -2026,7 +2019,7 @@ class MyIcechunkStore:
             return xr.open_zarr(
                 session.store,
                 group=path,
-                chunks=chunks or self.chunk_strategy or {"epoch": 17280, "sid": -1},
+                chunks={} if chunks is None else chunks,
                 consolidated=False,
             )
 

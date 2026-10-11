@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from canvod.config.models import (
     AuxDataConfig,
     CanvodConfig,
+    ChunkStrategies,
     ChunkStrategy,
     CompressionConfig,
     CredentialsConfig,
@@ -703,13 +704,27 @@ class TestAuxDataProductType:
 class TestChunkStrategies:
     def test_defaults_for_both_stores(self):
         ic = IcechunkConfig()
-        assert ic.chunk_strategies.gnss_store == ChunkStrategy(epoch=17280, sid=-1)
+        assert ic.chunk_strategies.gnss_store == ChunkStrategy(epoch=180, sid=-1)
         assert ic.chunk_strategies.vod_store == ChunkStrategy(epoch=17280, sid=-1)
 
     def test_one_store_set_keeps_the_other_default(self):
         ic = IcechunkConfig(chunk_strategies={"gnss_store": {"epoch": 720}})
         assert ic.chunk_strategies.gnss_store.epoch == 720
         assert ic.chunk_strategies.vod_store.epoch == 17280
+
+    def test_shipped_defaults_match_the_model(self):
+        import yaml
+
+        import canvod.config
+
+        defaults_yaml = (
+            Path(canvod.config.__file__).parent / "defaults" / "processing.yaml"
+        )
+        shipped = yaml.safe_load(defaults_yaml.read_text())["icechunk"]
+        assert (
+            ChunkStrategies(**shipped["chunk_strategies"])
+            == IcechunkConfig().chunk_strategies
+        )
 
     def test_misspelled_store_rejected_with_suggestion(self):
         with pytest.raises(ValidationError) as exc:
@@ -726,14 +741,16 @@ class TestUnknownKeySuggestion:
     def test_nested_typo_names_location_and_match(self):
         with pytest.raises(ValidationError) as exc:
             IcechunkConfig(chunk_strategies={"gnss_store": {"epok": 720}})
-        err = exc.value.errors()[0]
+        missing, err = exc.value.errors()
+        assert missing["loc"] == ("chunk_strategies", "gnss_store", "epoch")
+        assert missing["type"] == "missing"
         assert err["loc"] == ("chunk_strategies", "gnss_store", "epok")
         assert err["type"] == "extra_forbidden"
         assert "Did you mean 'epoch'?" in err["msg"]
 
     def test_no_close_match_lists_allowed_keys_only(self):
         with pytest.raises(ValidationError) as exc:
-            ChunkStrategy(xyz=1)
+            ChunkStrategy(epoch=180, xyz=1)
         msg = exc.value.errors()[0]["msg"]
         assert "Did you mean" not in msg
         assert "Allowed keys: epoch, sid" in msg
@@ -750,10 +767,10 @@ class TestUnknownKeySuggestion:
 
 
 class TestChunkStrategy:
-    def test_defaults(self):
-        cs = ChunkStrategy()
-        assert cs.epoch == 17280
-        assert cs.sid == -1
+    def test_epoch_required_sid_defaults_to_unchunked(self):
+        with pytest.raises(ValidationError):
+            ChunkStrategy()
+        assert ChunkStrategy(epoch=180).sid == -1
 
     def test_epoch_must_be_positive(self):
         with pytest.raises(ValidationError):
