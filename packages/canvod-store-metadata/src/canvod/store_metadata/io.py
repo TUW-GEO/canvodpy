@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Iterator
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -25,7 +25,7 @@ _locks_guard = threading.Lock()
 
 
 @contextmanager
-def commit_lock(store_path: Path | str) -> Iterator[None]:
+def commit_lock(store_path: Path | str) -> Generator[None]:
     """Let only one commit at a time change the store at ``store_path``.
 
     Icechunk on a local file system is not safe for concurrent commits:
