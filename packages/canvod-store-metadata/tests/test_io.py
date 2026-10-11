@@ -72,7 +72,14 @@ class TestIO:
 
         write_metadata(store_path, meta)
         restored = read_metadata(store_path)
-        assert restored == meta
+
+        for section in ("identity", "creator", "publisher", "references"):
+            written = getattr(meta, section).model_dump()
+            read = getattr(restored, section).model_dump()
+            assert {k: read[k] for k in written if k != "conventions"} == {
+                k: v for k, v in written.items() if k != "conventions"
+            }
+        assert restored.temporal.created == meta.temporal.created
 
     def test_metadata_exists_false(self, tmp_path):
         store_path = _create_store(tmp_path / "store")
@@ -86,15 +93,22 @@ class TestIO:
     def test_metadata_exists_no_store(self, tmp_path):
         assert not metadata_exists(tmp_path / "nonexistent")
 
-    def test_update_metadata(self, tmp_path):
+    def test_update_metadata_refuses_repository_fields(self, tmp_path):
         store_path = _create_store(tmp_path / "store")
-        meta = _make_metadata()
-        write_metadata(store_path, meta)
+        write_metadata(store_path, _make_metadata())
+
+        with pytest.raises(ValueError, match="only by amendment"):
+            update_metadata(store_path, {"identity.title": "Another title"})
+        assert read_metadata(store_path).identity.title == "Test Store"
+
+    def test_update_metadata_commits_summary_fields_as_computed(self, tmp_path):
+        store_path = _create_store(tmp_path / "store")
+        write_metadata(store_path, _make_metadata())
 
         update_metadata(store_path, {"temporal.updated": "2026-06-01T00:00:00Z"})
-        updated = read_metadata(store_path)
-        assert updated.temporal.updated == "2026-06-01T00:00:00Z"
-        assert updated.temporal.created == "2026-01-01T00:00:00Z"
+
+        # The commit writes the time it was made, not the value passed.
+        assert read_metadata(store_path).temporal.updated != "2026-06-01T00:00:00Z"
 
     def test_read_missing_raises(self, tmp_path):
         store_path = _create_store(tmp_path / "store")

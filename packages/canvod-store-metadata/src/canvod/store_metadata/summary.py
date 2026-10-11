@@ -7,13 +7,12 @@ being fixed when the store is created.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import zarr
-
-from .io import _open_repo
 
 _CONSTELLATIONS = {
     "G": "GPS",
@@ -110,37 +109,63 @@ def _stored_file_count(group: zarr.Group) -> int | None:
     )
 
 
+def _header_position(attrs: dict[str, Any]) -> tuple[float, float, float] | None:
+    """A file's header position (ECEF, m) from its log-book ``attrs``.
+
+    RINEX headers give ``APPROX POSITION X/Y/Z``; SBF files give
+    ``Approximate Position`` as ``"X=..., Y=..., Z=..."`` (the same two forms
+    ``canvod.auxiliary.position.ECEFPosition.from_ds_metadata`` reads). A
+    missing or all-zero position counts as not given.
+    """
+    if "APPROX POSITION X" in attrs:
+        xyz = tuple(float(attrs[f"APPROX POSITION {c}"]) for c in "XYZ")
+    elif "Approximate Position" in attrs:
+        parts = str(attrs["Approximate Position"]).split(",")
+        xyz = tuple(float(p.split("=")[1].strip().split()[0]) for p in parts[:3])
+    else:
+        return None
+    return None if not any(xyz) else (xyz[0], xyz[1], xyz[2])
+
+
+def _header_positions(group: zarr.Group) -> dict[str, tuple[float, float, float]]:
+    """Header positions of the stored files in a group's log book, by hash."""
+    if "metadata/table" not in group:
+        return {}
+    table = group["metadata/table"]
+    if not isinstance(table, zarr.Group) or not {"rinex_hash", "action", "attrs"} <= {
+        name for name, _ in table.arrays()
+    }:
+        return {}
+    rows = zip(
+        np.asarray(_array(table, "rinex_hash")[...]),
+        np.asarray(_array(table, "action")[...]),
+        np.asarray(_array(table, "attrs")[...]),
+        strict=True,
+    )
+    positions = {}
+    for file_hash, action, attrs in rows:
+        if action not in _STORED_ACTIONS:
+            continue
+        position = _header_position(json.loads(str(attrs) or "{}"))
+        if position is not None:
+            positions[str(file_hash)] = position
+    return positions
+
+
 def _store_size_mb(store_path: Path) -> float:
     size = sum(f.stat().st_size for f in store_path.rglob("*") if f.is_file())
     return round(size / 1e6, 3)
 
 
-def summarize_store(
-    store_path: Path,
-    branch: str = "main",
-    receivers: set[str] | None = None,
+def summarize_root(
+    root: zarr.Group, receivers: set[str] | None = None
 ) -> dict[str, Any]:
-    """Metadata updates describing the data currently in a store.
+    """Dotted-key updates describing the data under ``root``.
 
-    Parameters
-    ----------
-    store_path : Path
-        Path to the Icechunk store.
-    branch : str
-        Branch to summarize.
-    receivers : set[str] | None
-        Receiver names present in ``instruments.receivers``. Each receiver
-        with data in the store also gets its per-receiver fields updated,
-        from the group named after it and any ``{receiver}_*`` groups.
-
-    Returns
-    -------
-    dict[str, Any]
-        Dotted-key updates for :func:`update_metadata` (or
-        :func:`apply_updates`). Empty if the store holds no data yet.
+    The same as :func:`summarize_store` without ``summaries.store_size_mb``,
+    for a group that need not be committed yet (the commit function
+    summarizes the session it commits).
     """
-    session = _open_repo(store_path).readonly_session(branch=branch)
-    root = zarr.open_group(session.store, mode="r")
     data_groups = _data_groups(root)
     groups = {name: _group_summary(g) for name, g in data_groups.items()}
     if not groups:
@@ -177,7 +202,6 @@ def summarize_store(
         ),
         "summaries.temporal_resolution_s": resolution,
         "summaries.file_count": sum(file_counts) if file_counts else None,
-        "summaries.store_size_mb": _store_size_mb(store_path),
     }
     for receiver in sorted(receivers or ()):
         # A reference receiver is stored once per canopy it is paired with
@@ -197,4 +221,49 @@ def summarize_store(
             set().union(*(g["variables"] for g in own))
         )
         updates[f"{prefix}.temporal_range"] = [_iso(r_epochs[0]), _iso(r_epochs[-1])]
+        # A file stored in several groups (a reference paired with several
+        # canopies) counts once.
+        positions = {
+            file_hash: xyz
+            for name, g in data_groups.items()
+            if name == receiver or name.startswith(f"{receiver}_")
+            for file_hash, xyz in _header_positions(g).items()
+        }
+        if positions:
+            updates[f"{prefix}.position_ecef_m"] = [
+                float(v) for v in np.median(np.array(list(positions.values())), axis=0)
+            ]
+    return updates
+
+
+def summarize_store(
+    store_path: Path,
+    branch: str = "main",
+    receivers: set[str] | None = None,
+) -> dict[str, Any]:
+    """Metadata updates describing the data currently in a store.
+
+    Parameters
+    ----------
+    store_path : Path
+        Path to the Icechunk store.
+    branch : str
+        Branch to summarize.
+    receivers : set[str] | None
+        Receiver names present in ``instruments.receivers``. Each receiver
+        with data in the store also gets its per-receiver fields updated,
+        from the group named after it and any ``{receiver}_*`` groups.
+
+    Returns
+    -------
+    dict[str, Any]
+        Dotted-key updates for :func:`update_metadata` (or
+        :func:`apply_updates`). Empty if the store holds no data yet.
+    """
+    from .io import _open_repo
+
+    session = _open_repo(store_path).readonly_session(branch=branch)
+    updates = summarize_root(zarr.open_group(session.store, mode="r"), receivers)
+    if updates:
+        updates["summaries.store_size_mb"] = _store_size_mb(store_path)
     return updates

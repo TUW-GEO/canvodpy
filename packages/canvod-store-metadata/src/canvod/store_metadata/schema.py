@@ -105,6 +105,10 @@ class ReceiverInfo(BaseModel):
     sids: int | None = Field(None, description="Number of SIDs observed")
     variables: list[str] | None = Field(None, description="Variable names")
     temporal_range: list[str] | None = Field(None, description="[start, end] ISO")
+    position_ecef_m: list[float] | None = Field(
+        None,
+        description=("Median of the stored files' header positions [X, Y, Z], ECEF, m"),
+    )
     metadata: dict[str, Any] | None = Field(
         None, description="Freeform receiver metadata"
     )
@@ -210,6 +214,20 @@ class Summaries(BaseModel):
 
 _METADATA_VERSION = "1.0.0"
 _METADATA_KEY = "canvod_metadata"
+#: Version of the metadata form of ADR 0014 (repository metadata, root
+#: copy, snapshot summary, commit metadata).
+FORM_VERSION = "2.0.0"
+
+
+class Amendment(BaseModel):
+    """One recorded change of an amendable field."""
+
+    field: str
+    old: Any = None
+    new: Any = None
+    reason: str
+    who: str
+    when: str
 
 
 class StoreMetadata(BaseModel):
@@ -227,6 +245,7 @@ class StoreMetadata(BaseModel):
     config: ConfigSnapshot = Field(default_factory=ConfigSnapshot)
     references: References = Field(default_factory=References)
     summaries: Summaries = Field(default_factory=Summaries)
+    amendments: list[Amendment] = Field(default_factory=list)
 
     def to_root_attrs(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict for Zarr root attrs."""
@@ -288,21 +307,10 @@ class RepositoryInstruments(BaseModel):
     receivers: dict[str, RepositoryReceiver] = Field(default_factory=dict)
 
 
-class Amendment(BaseModel):
-    """One recorded change of an amendable field."""
-
-    field: str
-    old: Any = None
-    new: Any = None
-    reason: str
-    who: str
-    when: str
-
-
 class RepositoryMetadata(BaseModel):
     """What describes a store as a whole: fixed and amendable fields."""
 
-    metadata_version: str = Field(_METADATA_VERSION)
+    metadata_version: str = Field(FORM_VERSION)
     identity: RepositoryIdentity
     creator: Creator
     publisher: Publisher = Field(default_factory=Publisher)
@@ -314,5 +322,7 @@ class RepositoryMetadata(BaseModel):
 
     @classmethod
     def from_store_metadata(cls, metadata: StoreMetadata) -> RepositoryMetadata:
-        """Take the repository part of ``metadata``."""
-        return cls.model_validate(metadata.model_dump(mode="json"))
+        """Take the repository part of ``metadata``, in the current form."""
+        data = metadata.model_dump(mode="json")
+        data["metadata_version"] = FORM_VERSION
+        return cls.model_validate(data)

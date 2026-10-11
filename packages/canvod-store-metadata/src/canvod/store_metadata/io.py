@@ -61,6 +61,7 @@ def commit_with_rebase(
     metadata: dict[str, Any] | None = None,
     *,
     store_path: Path | str,
+    config: Any = None,
 ) -> str:
     """Commit a session, rebasing it if the branch moved since it was opened.
 
@@ -72,14 +73,51 @@ def commit_with_rebase(
     different groups) onto the new tip; overlapping changes fail with
     ``icechunk.RebaseFailedError``.
 
+    In a store with repository metadata (ADR 0014) the commit also writes
+    the root copy and the snapshot summary of the rebased session, stores
+    the lockfile text once per hash, and records software, environment and
+    settings as commit metadata, next to ``metadata``. It refuses a root
+    group that differs from the repository metadata.
+
     Every commit in canVODpy goes through this function.
+
+    Parameters
+    ----------
+    config
+        The settings recorded in the commit metadata: a settings object or a
+        :class:`~canvod.store_metadata.schema.ConfigSnapshot`. ``None``
+        loads the settings.
 
     Returns
     -------
     str
         Snapshot ID from the commit.
+
+    Raises
+    ------
+    ValueError
+        If the root group last committed differs from the repository
+        metadata (written by an older canvodpy or edited by hand).
     """
     with commit_lock(store_path):
+        repository = _open_repo(Path(store_path)).get_metadata()
+        if repository:
+            from .snapshot import prepare_commit
+
+            # Rebase first, so the summary describes everything the commit
+            # will hold and the root group is changed by this commit only.
+            session.rebase(icechunk.ConflictDetector())
+            if config is None:
+                from canvod.config import load_config
+
+                config = load_config()
+            root = zarr.open_group(session.store, mode="a")
+            metadata = {
+                **prepare_commit(
+                    root, repository, store_path=store_path, config=config
+                ),
+                **(metadata or {}),
+            }
         return session.commit(
             message, metadata=metadata, rebase_with=icechunk.ConflictDetector()
         )
@@ -99,7 +137,9 @@ def write_metadata(
     """Write a new store's metadata.
 
     The repository metadata (fixed and amendable fields, ADR 0014) is
-    written once; the root group gets the full metadata in the same call.
+    written once; a first commit writes its root copy and the snapshot
+    summary, with ``metadata.config`` as the settings in the commit
+    metadata.
 
     Returns
     -------
@@ -137,13 +177,12 @@ def write_metadata(
         repo.set_metadata(repository_metadata.model_dump(mode="json"))
 
         session = repo.writable_session(branch)
-        try:
-            root = zarr.open_group(session.store, mode="r+")
-        except zarr_errors.GroupNotFoundError:
-            root = zarr.open_group(session.store, mode="w")
-        root.attrs.update(metadata.to_root_attrs())
+        zarr.open_group(session.store, mode="a")
         return commit_with_rebase(
-            session, "Write store metadata", store_path=store_path
+            session,
+            "Write store metadata",
+            store_path=store_path,
+            config=metadata.config,
         )
 
 
@@ -151,19 +190,26 @@ def read_metadata(
     store_path: Path,
     branch: str = "main",
 ) -> StoreMetadata:
-    """Read metadata from Icechunk store root attrs.
+    """Read the metadata of the tip of ``branch``.
+
+    One :class:`StoreMetadata` from the snapshot's root copy, snapshot
+    summary and commit metadata; a snapshot written before ADR 0014 is
+    read from its old ``canvod_metadata`` attribute.
 
     Raises
     ------
     KeyError
         If no metadata found in store.
     """
+    from .snapshot import REPOSITORY_METADATA_ATTR, combined_metadata
+
     repo = _open_repo(store_path)
     session = repo.readonly_session(branch=branch)
-    store = session.store
-    root = zarr.open_group(store, mode="r")
-    attrs = dict(root.attrs)
-    return StoreMetadata.from_root_attrs(attrs)
+    root = zarr.open_group(session.store, mode="r")
+    if REPOSITORY_METADATA_ATTR not in root.attrs:
+        return StoreMetadata.from_root_attrs(dict(root.attrs))
+    snapshot = next(iter(repo.ancestry(snapshot_id=session.snapshot_id)))
+    return combined_metadata(root, snapshot.metadata)
 
 
 def apply_updates(metadata: StoreMetadata, updates: dict[str, Any]) -> StoreMetadata:
@@ -183,6 +229,25 @@ def apply_updates(metadata: StoreMetadata, updates: dict[str, Any]) -> StoreMeta
     return StoreMetadata.model_validate(data)
 
 
+def _repository_fields(key: str) -> bool:
+    """Whether a dotted key names a field of the repository metadata."""
+    model: Any = RepositoryMetadata
+    parts = key.split(".")
+    while parts:
+        part = parts.pop(0)
+        fields = getattr(model, "model_fields", None)
+        if fields is None or part not in fields:
+            return False
+        annotation = fields[part].annotation
+        if getattr(annotation, "__origin__", None) is dict:
+            if not parts:
+                return True
+            parts.pop(0)  # the dict key, e.g. a receiver name
+            annotation = annotation.__args__[1]
+        model = annotation
+    return True
+
+
 def update_metadata(
     store_path: Path,
     updates: dict[str, Any],
@@ -192,14 +257,35 @@ def update_metadata(
 
     Supports dotted keys for nested updates (e.g. "temporal.updated").
 
+    In a store with repository metadata (ADR 0014) the snapshot summary
+    and the commit metadata are written by every commit, so this only
+    commits; a key naming a repository metadata field is refused.
+
     Returns
     -------
     str
         Snapshot ID from the commit.
-    """
-    updated = apply_updates(read_metadata(store_path, branch), updates)
 
+    Raises
+    ------
+    ValueError
+        If a key names a repository metadata field.
+    """
     repo = _open_repo(store_path)
+    if repo.get_metadata():
+        refused = sorted(key for key in updates if _repository_fields(key))
+        if refused:
+            msg = (
+                f"{', '.join(refused)} belong to the repository metadata of the "
+                f"store at {store_path}; they change only by amendment."
+            )
+            raise ValueError(msg)
+        session = repo.writable_session(branch)
+        return commit_with_rebase(
+            session, "Update store metadata", store_path=store_path
+        )
+
+    updated = apply_updates(read_metadata(store_path, branch), updates)
     session = repo.writable_session(branch)
     store = session.store
     try:

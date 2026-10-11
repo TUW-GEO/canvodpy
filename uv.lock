@@ -510,6 +510,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "structlog" },
     { name = "zarr" },
+    { name = "zarr-cm" },
 ]
 
 [package.dev-dependencies]
@@ -530,6 +531,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.0" },
     { name = "structlog", specifier = ">=24.1.0" },
     { name = "zarr", specifier = ">=3.1.2" },
+    { name = "zarr-cm", specifier = ">=0.5.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -3867,6 +3869,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3e/62/e8a36a4b65f01499c7aefcf103aabba0c37c018bf135fbf179f6ed2f01a0/zarr-3.4.1.tar.gz", hash = "sha256:b34bda11ceb199c81ee78ecd42cd02f46c7f67a6d8a1e9bc501cafd5a1795356", size = 923257, upload-time = "2026-10-08T17:14:25.972Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/82/0dbc9bc77b49cfb9268dc2b2b1dcd04346c8c7ed52e272b76a628a941656/zarr-3.4.1-py3-none-any.whl", hash = "sha256:38b540578a119352bdce02a720d7bfd99846e77f0728c58b1bab3d1f547526a0", size = 405257, upload-time = "2026-10-08T17:14:23.926Z" },
+]
+
+[[package]]
+name = "zarr-cm"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/45/81/29d60d04fad69ae1d7ee2675990a4c7421ded4d9a15280ead2d4c5f470c6/zarr_cm-0.5.0.tar.gz", hash = "sha256:f39234ef5abc9acab2a4fadcde9132f8695fa47692a1f4e000d2d7b6fac039bd", size = 202161, upload-time = "2026-09-26T07:57:43.488Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/fb/8c17b2956a248be9398f6727490976ab3e69cd419af9d983164a46d830da/zarr_cm-0.5.0-py3-none-any.whl", hash = "sha256:99fef56dae5eb5ee2a7126d8a18e669944494e0778832577ae8ae922b0207b12", size = 55585, upload-time = "2026-09-26T07:57:41.935Z" },
 ]
 
 [[package]]
