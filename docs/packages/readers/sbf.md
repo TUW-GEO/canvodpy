@@ -233,7 +233,7 @@ geometry still works, since it uses `sbf_obs` in memory.
     #                      "rtk_fixed_ambiguities rtk_float_ambiguities sbas_aided "
     #                      "moving_base_rtk_fixed_ambiguities "
     #                      "moving_base_rtk_float_ambiguities ppp",
-    #     "source": "SBF PVTGeodetic block (Block 4007) — reported by receiver firmware",
+    #     "source": "SBF PVTGeodetic block (Block 4007), reported by receiver firmware",
     #     ...
     # }
     ```
@@ -345,7 +345,7 @@ interoperability and scientific reproducibility.
     #     "short_name":    "θ_B",
     #     "standard_name": "sensor_polar_angle",
     #     "units":         "rad",
-    #     "source":        "SBF SatVisibility block (Block 4012) — reported by receiver firmware",
+    #     "source":        "SBF SatVisibility block (Block 4012), reported by receiver firmware",
     #     "comment":       "Polar angle from vertical: 0 = overhead, π/2 = horizon. ...",
     #     "references":    "Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide, ...",
     # }
@@ -361,7 +361,7 @@ interoperability and scientific reproducibility.
     #     "flag_masks":    [8, 16, 32, 64, 256, 512, 1024, 2048],
     #     "flag_meanings": "software watchdog antenna congestion missedevent cpuoverload "
     #                      "invalidconfig outofgeofence",
-    #     "source":        "SBF ReceiverStatus block — reported by receiver firmware",
+    #     "source":        "SBF ReceiverStatus block, reported by receiver firmware",
     #     ...
     # }
     ```
@@ -378,7 +378,7 @@ interoperability and scientific reproducibility.
     #                      "rtk_fixed_ambiguities rtk_float_ambiguities sbas_aided "
     #                      "moving_base_rtk_fixed_ambiguities "
     #                      "moving_base_rtk_float_ambiguities ppp",
-    #     "source": "SBF PVTGeodetic block (Block 4007) — reported by receiver firmware",
+    #     "source": "SBF PVTGeodetic block (Block 4007), reported by receiver firmware",
     #     ...
     # }
     ```

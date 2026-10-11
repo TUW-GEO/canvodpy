@@ -21,14 +21,14 @@ uv add canvodpy  # Gets all packages automatically
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-flask: &nbsp; **Phase 1 — TestPyPI** *(Done)*
+-   :fontawesome-solid-flask: &nbsp; **Phase 1, TestPyPI** *(Done)*
 
     ---
 
     Account created · First manual upload · OIDC trusted publishers configured.
     Beta/alpha releases publish here automatically.
 
--   :fontawesome-solid-box-open: &nbsp; **Phase 2 — Real PyPI** *(Active)*
+-   :fontawesome-solid-box-open: &nbsp; **Phase 2, real PyPI** *(Active)*
 
     ---
 
@@ -465,7 +465,7 @@ uv run --isolated --no-project --with canvodpy \
     Bump the version and re-release if you need to fix a bad upload.
 
 !!! info "Environment protection"
-    The `release` environment has required reviewers and a 5-minute wait timer —
+    The `release` environment has required reviewers and a 5-minute wait timer:
     this prevents accidental production releases.
 
 ---

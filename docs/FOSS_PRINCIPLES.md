@@ -30,7 +30,7 @@ Open source software, as characterized by the Open Source Initiative, emphasizes
 
 ### Relationship and Convergence
 
-While historically distinguished by philosophical emphasis—free software prioritizing user freedom, open source emphasizing practical benefits—the vast majority of licenses satisfy both definitions.[^3] Modern practice increasingly treats these as complementary perspectives on the same software licensing paradigm, hence the unified term "FOSS" (Free and Open Source Software) or "FLOSS" (Free/Libre and Open Source Software).
+While historically distinguished by philosophical emphasis (free software prioritizing user freedom, open source emphasizing practical benefits), the vast majority of licenses satisfy both definitions.[^3] Modern practice increasingly treats these as complementary perspectives on the same software licensing paradigm, hence the unified term "FOSS" (Free and Open Source Software) or "FLOSS" (Free/Libre and Open Source Software).
 
 ## License: Apache License 2.0
 
@@ -59,7 +59,7 @@ Apache 2.0 was selected for several reasons relevant to scientific software:
 
 ### FAIR Software Principles
 
-The FAIR principles—originally developed for research data[^17]—have been adapted for research software[^18] to enhance:
+The FAIR principles, originally developed for research data[^17], have been adapted for research software[^18] to enhance:
 
 - **Findability**: Persistent identifiers and metadata enable software discovery
 - **Accessibility**: Open access and clear licenses facilitate software reuse

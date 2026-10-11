@@ -1,4 +1,4 @@
-# Configuration Guide
+# Configuration guide
 
 canVODpy reads its settings from one file, `canvod-settings.yaml`. The
 file holds what canVODpy cannot know on its own:
@@ -299,7 +299,7 @@ sites:
 | ----------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `type`            | --      | `reference` or `canopy`.                                                                                                                                                                                                                           |
 | `directory`       | --      | Subdirectory under `gnss_site_data_root` holding this receiver's files.                                                                                                                                                                            |
-| `reader_format`   | `auto`  | Reader for the receiver's files: `rinex3`, `rinex3_stripped` (signal strengths only, faster), `rinex2`, `sbf`, `nmea`, or the name of an installed reader plugin ([Your Own Readers and VOD Calculators](plugins.md)). `auto` detects it per day, never choosing a plugin: SBF and NMEA by file type, RINEX 2 or 3 from the header. A day whose files need different readers stops the run with an error; then set the reader, or keep each format in its own directory. A canopy receiver and its reference must record the same file format (`rinex3` and `rinex3_stripped` both read RINEX 3); mixed formats are rejected when the settings load, or, with `auto`, by `canvodpy config validate` and at the start of a run. |
+| `reader_format`   | `auto`  | Reader for the receiver's files: `rinex3`, `rinex3_stripped` (signal strengths only, faster), `rinex2`, `sbf`, `nmea`, or the name of an installed reader plugin ([Your Own Readers and VOD Calculators](plugins.md)). `auto` detects it per day, never choosing a plugin: SBF and NMEA by file type, and the RINEX version from the header. A day whose files need different readers stops the run with an error; then set the reader, or keep each format in its own directory. A canopy receiver and its reference must record the same file format (`rinex3` and `rinex3_stripped` both read RINEX 3); mixed formats are rejected when the settings load, or, with `auto`, by `canvodpy config validate` and at the start of a run. |
 | `paired_canopies` | --      | Which canopy receivers this reference is paired with: `all` or a list of canopy receiver names. Required for reference receivers, must not be set for canopy receivers. |
 
 ---

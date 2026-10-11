@@ -42,7 +42,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ---
 
     Task runner with simpler syntax than Make. All common development
-    tasks — test, check, docs, config — are `just <command>` away.
+    tasks (test, check, docs, config) are `just <command>` away.
 
     [:octicons-arrow-right-24: github.com/casey/just](https://github.com/casey/just)
 
@@ -52,7 +52,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 ## Core Tools
 
-=== "uv — Package Manager"
+=== "uv: package manager"
 
     ```bash
     uv sync                  # Install all dependencies (workspace-aware)
@@ -64,7 +64,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ```
 
     `uv sync` resolves `uv.lock` and creates or updates the shared workspace
-    `.venv` at the repo root — all 13 packages share a single environment.
+    `.venv` at the repo root; all 13 packages share a single environment.
 
     Configuration in `pyproject.toml`:
 
@@ -76,7 +76,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     dev = ["pytest>=9.0", "ruff>=0.15", "ty>=0.0.44"]
     ```
 
-=== "uv_build — Build Backend"
+=== "uv_build: build backend"
 
     Builds wheel and sdist with native namespace package support:
 
@@ -92,7 +92,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
     All 13 workspace packages use `uv_build` as their build backend.
 
-=== "ruff — Linter + Formatter"
+=== "ruff: linter + formatter"
 
     ```bash
     ruff check .          # Lint
@@ -100,7 +100,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ruff format .         # Format
     ```
 
-    Configuration (workspace root `pyproject.toml` — inherited by all packages):
+    Configuration (workspace root `pyproject.toml`, inherited by all packages):
 
     ```toml
     [tool.ruff]
@@ -115,9 +115,9 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     scientists over naming or style. Dropped stylistic rules (N, SIM, C4, PIE, PT)
     that add noise without catching bugs.
 
-=== "ty — Type Checker"
+=== "ty: type checker"
 
-    Type annotations are optional labels on function inputs/outputs — `ty`
+    Type annotations are optional labels on function inputs/outputs; `ty`
     checks that they are consistent, catching a class of bugs before you run
     the code.
 
@@ -143,7 +143,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 ## Supporting Tools
 
-=== "just — Task Runner"
+=== "just: task runner"
 
     Recipes are defined in `justfile` at the repo root. Use `just --list` to
     see all available recipes.
@@ -163,7 +163,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     just --list           # Show all available commands
     ```
 
-=== "pytest — Testing"
+=== "pytest: testing"
 
     ```bash
     uv run pytest                        # All tests
@@ -173,10 +173,10 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ```
 
     Integration tests are marked `@pytest.mark.integration`. They are **not**
-    excluded by default — pass `-m "not integration"` to skip them for a fast
+    excluded by default; pass `-m "not integration"` to skip them for a fast
     unit-only run.
 
-=== "pre-commit — Git Hooks"
+=== "pre-commit: Git hooks"
 
     ```bash
     just hooks    # Install hooks (run once after clone)

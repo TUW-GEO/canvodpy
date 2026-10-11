@@ -5,7 +5,7 @@ description: Package building and distribution for canVODpy
 
 # Build System
 
-canVODpy uses `uv_build` as its build backend — a modern, fast backend from the Astral ecosystem with native namespace package support.
+canVODpy uses `uv_build` as its build backend: a modern, fast backend from the Astral ecosystem with native namespace package support.
 
 ---
 
@@ -28,7 +28,7 @@ canVODpy uses `uv_build` as its build backend — a modern, fast backend from th
 
 === "Source Distribution"
 
-    `canvod_readers-0.1.0.tar.gz` — contains source code + metadata.
+    `canvod_readers-0.1.0.tar.gz`: contains source code + metadata.
     Requires a build step during installation. Provided alongside wheels for PyPI.
 
 ---
@@ -48,7 +48,7 @@ exclude     = ["src/canvod/readers/tests/"]
 ```
 
 !!! note "canvod-utils exception"
-    `canvod-utils` uses `hatchling` as its build backend — the only
+    `canvod-utils` uses `hatchling` as its build backend, the only
     package in the monorepo that does not use `uv_build`.
 
 ---
@@ -153,7 +153,7 @@ branch; it makes no tag (`just tag-release` on the merged commit).
     Verify `module-name` in `pyproject.toml` uses dotted notation:
     ```toml
     module-name = "canvod.readers"    # correct
-    # module-name = "canvod_readers"  # wrong — creates regular package
+    # module-name = "canvod_readers"  # wrong: creates regular package
     ```
 
 !!! failure "Wrong package structure in wheel"

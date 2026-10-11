@@ -1,6 +1,6 @@
 # Contributing
 
-Contributions of all kinds are welcome — bug reports, feature implementations, documentation improvements, and feedback.
+Contributions of all kinds are welcome: bug reports, feature implementations, documentation improvements, and feedback.
 
 ---
 
@@ -27,7 +27,7 @@ Contributions of all kinds are welcome — bug reports, feature implementations,
     ---
 
     Issues labeled **"enhancement"** and **"help wanted"** are open.
-    Keep scope narrow — one feature per PR.
+    Keep scope narrow: one feature per PR.
 
 -   :fontawesome-solid-book: &nbsp; **Improve Documentation**
 
@@ -132,7 +132,7 @@ See [Conventional Commits](https://www.conventionalcommits.org/) for the full sp
 
 ## Pre-Commit Hooks
 
-When you run `just hooks`, Git hooks are installed that execute automatically on every `git commit`. These hooks enforce code quality and commit message standards. **If a hook fails, the commit is rejected** — your files stay staged, but no commit object is created.
+When you run `just hooks`, Git hooks are installed that execute automatically on every `git commit`. These hooks enforce code quality and commit message standards. **If a hook fails, the commit is rejected**: your files stay staged, but no commit object is created.
 
 ### Hooks and what they check
 
@@ -186,9 +186,9 @@ When you run `just hooks`, Git hooks are installed that execute automatically on
 
 Every push and pull request triggers automated CI on GitHub Actions:
 
-- **Code Quality** — ruff linting, formatting, ty type-checking, lockfile consistency
-- **Test with Coverage** — pytest with coverage measurement, results uploaded to [Coveralls](https://coveralls.io/github/nfb2021/canvodpy) and posted as a PR comment
-- **Platform Tests** — test suite across multiple OS and Python versions
+- **Code Quality**: ruff linting, formatting, ty type-checking, lockfile consistency
+- **Test with Coverage**: pytest with coverage measurement, results uploaded to [Coveralls](https://coveralls.io/github/nfb2021/canvodpy) and posted as a PR comment
+- **Platform Tests**: test suite across multiple OS and Python versions
 
 The CI runs the **same checks as the pre-commit hooks**, so fixing hook failures locally means your PR will pass CI.
 

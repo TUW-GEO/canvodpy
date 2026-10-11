@@ -69,7 +69,7 @@ class FibonacciBuilder(BaseGridBuilder):
        Tessellating the full sphere (rather than hemisphere-only points)
        is required for correctness: with no sites in the southern
        hemisphere, cells along the horizon would have no southern
-       neighbour to bound them and would balloon out to cover the entire
+       neighbor to bound them and would balloon out to cover the entire
        (empty) opposite hemisphere.
     3. **Hemisphere filter** – of the resulting cells, only those whose
        *generating point* has ``θ ≤ π/2 − cutoff_theta`` are kept.

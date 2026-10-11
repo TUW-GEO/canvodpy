@@ -27,7 +27,7 @@ Make canvodpy properly citable with a permanent DOI for academic papers using **
     ---
 
     CERN guarantees 20+ years of preservation.
-    Every release is archived forever — reproducibility guaranteed.
+    Every release is archived forever, so it stays reproducible.
 
 -   :fontawesome-solid-magnifying-glass: &nbsp; **FAIR Compliant**
 
@@ -94,7 +94,7 @@ Zenodo. https://doi.org/10.5281/zenodo.XXXXX
 
 !!! tip "Add your ORCID iD"
     Edit `CITATION.cff` line 14 and add your ORCID identifier.
-    Get one at [orcid.org/register](https://orcid.org/register) — it links your publications to your researcher profile.
+    Get one at [orcid.org/register](https://orcid.org/register); it links your publications to your researcher profile.
 
 ---
 
@@ -248,11 +248,11 @@ Researchers cite specific versions:
 
 | Category | What you get |
 |----------|-------------|
-| Academic recognition | Citable software output — DOI trackable in citations |
+| Academic recognition | Citable software output; the DOI is trackable in citations |
 | ORCID integration | Links code releases to your researcher profile |
 | FAIR compliance | Findable, Accessible, Interoperable, Reusable |
 | Permanent archival | CERN preserves every release indefinitely |
-| Trusted repository | Used by CERN, NASA, ESA — accepted by all journals |
+| Trusted repository | Used by CERN, NASA, and ESA; accepted by all journals |
 
 ---
 
@@ -260,7 +260,7 @@ Researchers cite specific versions:
 
 ??? failure "Repo not visible on Zenodo"
     1. Ensure you logged in **with GitHub** (not email)
-    2. Check the repo is **public** — Zenodo only indexes public repos
+    2. Check the repo is **public**: Zenodo only indexes public repos
     3. Log out and back in; sync can take a few minutes
 
 ??? failure "No DOI created for a release"
@@ -273,7 +273,7 @@ Researchers cite specific versions:
     Zenodo reads the updated file for the new DOI automatically.
 
 ??? question "Can I get a DOI for old releases?"
-    No — Zenodo only archives releases created **after** the integration was enabled.
+    No. Zenodo only archives releases created **after** the integration was enabled.
     You can create new patch/beta releases to archive historical code states.
 
 ---

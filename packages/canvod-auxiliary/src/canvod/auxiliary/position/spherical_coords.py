@@ -132,7 +132,7 @@ _BROADCAST_OBS_THETA_ATTRS: dict[str, object] = {
     "description": "Polar angle from zenith (+z/Up), broadcast navigation solution",
     "valid_range": [0.0, np.pi / 2],
     "convention": "physics (0=zenith, π/2=horizon)",
-    "source": "SBF SatVisibility block — receiver firmware (broadcast ephemeris)",
+    "source": "SBF SatVisibility block, receiver firmware (broadcast ephemeris)",
     "comment": (
         "Computed by the receiver firmware from the satellite's broadcast "
         "ephemeris (SatVisibility SatelliteInfo = 2), reported in steps of "
@@ -148,7 +148,7 @@ _BROADCAST_OBS_PHI_ATTRS: dict[str, object] = {
     "description": "Azimuthal angle from North in ENU frame, clockwise (broadcast)",
     "valid_range": [0.0, 2 * np.pi],
     "convention": "navigation (0=North, π/2=East, π=South, 3π/2=West)",
-    "source": "SBF SatVisibility block — receiver firmware (broadcast ephemeris)",
+    "source": "SBF SatVisibility block, receiver firmware (broadcast ephemeris)",
     "comment": (
         "Computed by the receiver firmware from the satellite's broadcast "
         "ephemeris (SatVisibility SatelliteInfo = 2), reported in steps of "

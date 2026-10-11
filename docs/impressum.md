@@ -10,7 +10,7 @@ description: Legal notice and responsible parties for canVODpy
 
 Climate and Environmental Remote Sensing Research Unit (CLIMERS)
 Department of Geodesy and Geoinformation
-TU Wien — Vienna University of Technology
+TU Wien (Vienna University of Technology)
 Wiedner Hauptstraße 8/E120.8
 1040 Wien, Austria
 

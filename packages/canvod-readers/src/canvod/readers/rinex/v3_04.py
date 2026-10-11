@@ -95,8 +95,8 @@ def _str_to_object(ds: xr.Dataset) -> xr.Dataset:
 
     NumPy 2.x introduces ``StringDType`` (kind ``"T"``) which Zarr V3 /
     Icechunk cannot round-trip.  Fixed-width unicode (kind ``"U"``) also
-    causes dtype mismatches on store append.  Normalising to ``object``
-    keeps behaviour identical to NumPy 1.x.
+    causes dtype mismatches on store append.  Normalizing to ``object``
+    keeps behavior identical to NumPy 1.x.
     """
     for name in list(ds.coords) + list(ds.data_vars):
         if ds[name].dtype.kind in ("U", "T"):
@@ -2111,7 +2111,7 @@ class Rnxv3Obs(GNSSDataReader):
             }
             ds.to_netcdf(str(outname), encoding=encoding)
 
-        # Normalise string dtypes for Icechunk / Zarr V3 compatibility
+        # Normalize string dtypes for Icechunk / Zarr V3 compatibility
         ds = _str_to_object(ds)
 
         # Validate output structure for pipeline compatibility

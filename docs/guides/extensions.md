@@ -1,8 +1,8 @@
 # Optional Extensions
 
-canvodpy ships as a lean core. Packages that only a subset of users need —
-because their receivers use non-standard filenames, or because they run a
-specific orchestrator — live in a separate repository so the core install
+canvodpy ships as a lean core. Packages that only a subset of users need
+(because their receivers use non-standard filenames, or because they run a
+specific orchestrator) live in a separate repository so the core install
 stays small and dependency-free by default:
 
 **[github.com/nfb2021/canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions)**
@@ -65,7 +65,7 @@ source in your own uncommitted local checkout to pick up changes without
 reinstalling:
 
 ```toml
-# pyproject.toml (local override — do not commit)
+# pyproject.toml (local override, do not commit)
 [tool.uv.sources]
 canvod-filemap = { path = "../canvodpy-extensions/packages/canvod-filemap" }
 ```
@@ -108,6 +108,6 @@ canvodpy imports `canvod-filemap` only for a receiver whose settings set
 `recipe:`. Without a recipe, discovery takes files with canonical canVOD
 names only, whether or not the package is installed. A receiver with a
 recipe but without `canvod-filemap` installed stops the run with an error
-that says how to install it — it never falls back to guessing file names.
+that says how to install it; it never falls back to guessing file names.
 See [Configuration $\rightarrow$ Optional: non-canonical
 filenames](configuration.md#optional-non-canonical-filenames).
