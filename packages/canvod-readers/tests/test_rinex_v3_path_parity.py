@@ -29,6 +29,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
+from canvod.readers.gnss_specs.exceptions import InvalidEpochError
 from canvod.readers.rinex.v3_04 import (
     Rnxv3Obs,
     UnvalidatedParserWarning,
@@ -206,3 +207,66 @@ def test_epoch_seconds_keep_100ns_resolution(seconds, expected_ns):
 def test_epoch_seconds_out_of_range_raise(seconds):
     with pytest.raises(ValueError, match="second must be"):
         _epoch_datetime64(2025, 1, 1, 0, 0, seconds)
+
+
+@needs_invalid
+@pytest.mark.parametrize(
+    ("name", "rejected_lines", "n_kept"),
+    [
+        ("huge_satellite_count.25o", [61], 1),
+        ("invalid_satellite_id.25o", [61], 1),
+        ("misaligned_observations.25o", [61], 1),
+        ("mixed_valid_corrupt.25o", [97], 2),
+        ("negative_seconds.25o", [61], 1),
+        ("non_numeric_observations.25o", [61], 0),
+        ("satellite_count_mismatch.25o", [61], 1),
+        ("truncated_mid_epoch.25o", [61], 0),
+        ("zero_satellites.25o", [61], 1),
+    ],
+)
+def test_rejected_epochs_by_line(name, rejected_lines, n_kept):
+    """The epochs the validated parser rejects, by 1-based line number."""
+    obs = Rnxv3Obs(fpath=INVALID_DIR / name, completeness_mode="off")
+    rejected: list[int] = []
+    n_found = sum(1 for _ in obs._iter_validated_epochs(rejected))
+    assert [i + 1 for i in rejected] == rejected_lines
+    assert n_found == n_kept
+    assert obs._create_dataset(None, "validated").sizes["epoch"] == n_kept
+
+
+@needs_invalid
+def test_unreadable_field_rejects_its_epoch():
+    """A field that is not blank but holds no readable value rejects the epoch."""
+    obs = Rnxv3Obs(
+        fpath=INVALID_DIR / "non_numeric_observations.25o", completeness_mode="off"
+    )
+    with pytest.raises(InvalidEpochError, match="Unreadable observation field"):
+        obs.process_satellite_data(obs._lines[61])
+
+
+@needs_v304
+@pytest.mark.parametrize(
+    "field",
+    [
+        "  23456789.123 7",  # standard form
+        "  23456789.12345",  # LLI and SSI digits
+        "        45.250  ",  # no flags
+        "      -123.456 1",  # negative value
+        "                ",  # blank
+        "  23456789.123X7",  # LLI not a digit
+        "  23456789.123 ²",  # SSI a non-ASCII digit
+        "999999.999 9  99",  # decimal point not in column 10
+        "         12345  ",  # no decimal point
+        "  1234_5678.1 7 ",  # underscore
+        "  ABCDEFGHIJKL 7",  # no value
+    ],
+)
+def test_field_reading_matches_flexible_parser(field):
+    """The direct read of a field gives the result of parse_observation_slice."""
+    obs = Rnxv3Obs(fpath=V304_FILE, completeness_mode="off")
+    expected = obs.parse_observation_slice(field)
+    if expected[0] is None and field.strip():
+        with pytest.raises(InvalidEpochError):
+            obs._read_observation_field(field)
+    else:
+        assert obs._read_observation_field(field) == expected

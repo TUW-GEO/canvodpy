@@ -592,6 +592,41 @@ class Rnxv3ObsEpochRecordLineModel(BaseModel):
         return values
 
 
+def check_satellite_count(info: Rnxv3ObsEpochRecordLineModel, n_found: int) -> None:
+    """Check the satellite count of an epoch line against its satellite lines.
+
+    Parameters
+    ----------
+    info : Rnxv3ObsEpochRecordLineModel
+        The epoch line.
+    n_found : int
+        Number of non-blank satellite lines of the epoch.
+
+    Raises
+    ------
+    IncompleteEpochError
+        If the epoch line gives no satellites, or a number other than
+        ``n_found``.
+
+    """
+    if not info.num_satellites:
+        msg = (
+            "Number of satellites is automatically specified in the epoch "
+            "record. Thus, your data seems to be incorrect. Please check "
+            "the validity of your data."
+        )
+        raise IncompleteEpochError(msg)
+
+    if info.num_satellites != n_found:
+        msg = (
+            "Number of satellites mismatch in epoch record. "
+            f"Expected: {info.num_satellites}, "
+            f"Got: {n_found}. Please check the validity of your "
+            f"data of epoch '{info.epoch}'."
+        )
+        raise IncompleteEpochError(msg)
+
+
 @dataclass(frozen=True, kw_only=True)
 class Rnxv3ObsEpochRecord:
     """Represents a complete epoch record in RINEX v3 format.
@@ -620,23 +655,7 @@ class Rnxv3ObsEpochRecord:
             If satellite count doesn't match actual data.
 
         """
-        if not self.info.num_satellites:
-            msg = (
-                "Number of satellites is automatically specified in the epoch "
-                "record. Thus, your data seems to be incorrect. Please check "
-                "the validity of your data."
-            )
-            raise IncompleteEpochError(msg)
-
-        if self.info.num_satellites != len(self.data):
-            msg = (
-                "Number of satellites mismatch in epoch record. "
-                f"Expected: {self.info.num_satellites}, "
-                f"Got: {len(self.data)}. Please check the validity of your "
-                f"data of epoch '{self.info.epoch}'."
-            )
-            raise IncompleteEpochError(msg)
-
+        check_satellite_count(self.info, len(self.data))
         return self
 
     def get_satellites_by_system(self, system: str) -> list[Satellite]:

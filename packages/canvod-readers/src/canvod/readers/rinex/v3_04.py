@@ -44,6 +44,7 @@ from canvod.readers.gnss_specs.constellations import (
     IRNSS,
     QZSS,
     SBAS,
+    SV_PATTERN,
 )
 from canvod.readers.gnss_specs.exceptions import (
     IncompleteEpochError,
@@ -68,6 +69,7 @@ from canvod.readers.gnss_specs.models import (
     Rnxv3ObsEpochRecordLineModel,
     RnxVersion3Model,
     Satellite,
+    check_satellite_count,
 )
 from canvod.readers.gnss_specs.signals import SignalIDMapper
 from canvod.utils.tools import bytes_hash
@@ -110,6 +112,16 @@ _EPOCH_RE = re.compile(
 )
 
 _OBS_VAL_END = 14
+
+# A satellite line: the SV in columns 0-2, then one 16-character field per
+# observation type of the system's SYS / # / OBS TYPES record.
+_OBS_FIELD_LEN = 16
+# LLI and SSI characters of the standard field form (RINEX 3.04 Table A3:
+# I1, blank if not known); any other character goes to the flexible parser.
+_FLAG_OF_CHAR: dict[str, int | None] = {" ": None} | {str(d): d for d in range(10)}
+_NOT_A_FLAG = -1
+
+ObsField = tuple[float | None, int | None, int | None]
 
 
 @functools.cache
@@ -1203,59 +1215,90 @@ class Rnxv3Obs(GNSSDataReader):
 
         return None, None, None
 
-    def process_satellite_data(self, s: str) -> Satellite:
-        """Process satellite data line into a Satellite object with observations.
+    def _read_observation_field(self, field: str) -> ObsField:
+        """Return the (value, LLI, SSI) of one 16-character observation field.
 
-        Handles variable-length observation records correctly by adaptively parsing
-        based on the actual line length and content.
+        Gives the result of :meth:`parse_observation_slice`: a field in the
+        standard form (F14.3 with the decimal point in column 10, LLI and
+        SSI blank or a digit) is read directly, any other field by
+        :meth:`parse_observation_slice`.
+
+        Raises
+        ------
+        InvalidEpochError
+            If the field is not blank but holds no readable value.
+
         """
-        sv = s[:3].strip()
-        satellite = Satellite(sv=sv)
+        if field[10] == ".":
+            lli = _FLAG_OF_CHAR.get(field[14], _NOT_A_FLAG)
+            ssi = _FLAG_OF_CHAR.get(field[15], _NOT_A_FLAG)
+            if lli != _NOT_A_FLAG and ssi != _NOT_A_FLAG:
+                try:
+                    return float(field[:_OBS_VAL_END]), lli, ssi
+                except ValueError:
+                    pass
+        elif field.isspace():
+            return None, None, None
+        value, lli, ssi = self.parse_observation_slice(field)
+        if value is None and field.strip():
+            msg = f"Unreadable observation field: {field!r}"
+            raise InvalidEpochError(msg)
+        return value, lli, ssi
+
+    def _read_satellite_line(self, line: str) -> tuple[str, list[ObsField]]:
+        """Return the SV and the (value, LLI, SSI) per observation type of a line.
+
+        One entry per observation type of the system's ``SYS / # / OBS
+        TYPES`` record, in its order. Fields missing at the end of a short
+        line are empty; text beyond the last field is ignored.
+
+        Raises
+        ------
+        ValueError
+            If the SV is not a valid satellite identifier.
+        InvalidEpochError
+            If the system has no ``SYS / # / OBS TYPES`` record, or a field
+            is not blank but holds no readable value.
+
+        """
+        sv = line[:3].strip()
+        if not SV_PATTERN.match(sv):
+            msg = f"Invalid satellite identifier format: {sv}"
+            raise ValueError(msg)
         obs_codes = self.header.obs_codes_per_system.get(sv[0])
         if obs_codes is None:
             msg = f"{sv}: system {sv[0]} has no SYS / # / OBS TYPES header record"
             raise InvalidEpochError(msg)
-        bands_tbe = [f"{sv}|{b}" for b in obs_codes]
 
-        # Get the data part (after sv identifier)
-        data_part = s[3:]
-
-        # Process each observation adaptively
-        for i, band in enumerate(bands_tbe):
-            start_idx = i * 16
-            end_idx = start_idx + 16
-
-            # Check if we have enough data for this observation
-            if start_idx >= len(data_part):
-                # No more data available - create empty observation
-                observation = Observation(
-                    obs_type=band.split("|")[1][0],
-                    value=None,
-                    lli=None,
-                    ssi=None,
-                )
-                satellite.add_observation(observation)
-                continue
-
-            # Extract the slice, but handle variable length
-            if end_idx <= len(data_part):
-                # Full 16-character slice available
-                slice_data = data_part[start_idx:end_idx]
+        data_part = line[3:]
+        n_chars = len(data_part)
+        fields: list[ObsField] = []
+        for col in range(0, len(obs_codes) * _OBS_FIELD_LEN, _OBS_FIELD_LEN):
+            if col >= n_chars:
+                fields.append((None, None, None))
             else:
-                # Partial slice - pad with spaces to maintain consistency
-                available_slice = data_part[start_idx:]
-                slice_data = available_slice.ljust(16)  # Pad with spaces if needed
+                field = data_part[col : col + _OBS_FIELD_LEN].ljust(_OBS_FIELD_LEN)
+                fields.append(self._read_observation_field(field))
+        return sv, fields
 
-            value, lli, ssi = self.parse_observation_slice(slice_data)
+    def process_satellite_data(self, s: str) -> Satellite:
+        """Process satellite data line into a Satellite object with observations.
 
-            observation = Observation(
-                obs_type=band.split("|")[1][0],
-                value=value,
-                lli=lli,
-                ssi=ssi,
+        Reads the line with the rules of the dataset builder (see
+        :meth:`_read_satellite_line`); a field that is not blank but holds no
+        readable value raises :class:`InvalidEpochError`.
+        """
+        return self._satellite_model(*self._read_satellite_line(s))
+
+    def _satellite_model(self, sv: str, fields: list[ObsField]) -> Satellite:
+        """Wrap a read satellite line in the Satellite and Observation models."""
+        satellite = Satellite(sv=sv)
+        for obs_code, (value, lli, ssi) in zip(
+            self.header.obs_codes_per_system[sv[0]], fields, strict=True
+        ):
+            satellite.add_observation(
+                Observation(obs_type=obs_code[0], value=value, lli=lli, ssi=ssi)
             )
-            satellite.add_observation(observation)
-
         return satellite
 
     @property
@@ -1298,28 +1341,54 @@ class Rnxv3Obs(GNSSDataReader):
             validation is appended to it. Event epochs are not rejections.
 
         """
+        for info, satellites in self._iter_checked_epochs(rejected):
+            yield Rnxv3ObsEpochRecord(
+                info=info,
+                data=[self._satellite_model(sv, fields) for sv, fields in satellites],
+            )
+
+    def _iter_checked_epochs(
+        self, rejected: list[int] | None
+    ) -> Iterator[
+        tuple[Rnxv3ObsEpochRecordLineModel, list[tuple[str, list[ObsField]]]]
+    ]:
+        """Yield each valid epoch as its epoch line and its satellite lines.
+
+        The single definition of the epoch checks of the validated parser.
+        An epoch is rejected if its epoch line does not match the format, a
+        satellite line has an invalid SV or a system without ``SYS / # / OBS
+        TYPES``, an observation field is not blank but holds no readable
+        value, or the satellite count differs from the satellite lines.
+        Event epochs (flag 2-6) and out-of-range flags are skipped and are
+        not rejections.
+
+        Parameters
+        ----------
+        rejected : list of int or None
+            If given, the 0-based line index of each rejected epoch record is
+            appended to it.
+
+        """
+        lines = self._load_file()
         for start, end in self.get_epoch_record_batches():
             try:
                 info = Rnxv3ObsEpochRecordLineModel.model_validate(
-                    {"epoch": self._lines[start]}
+                    {"epoch": lines[start]}
                 )
-
-                # Skip event epochs (flag 2-6: special records, not observations)
                 if info.epoch_flag > 1:
                     continue
-
-                # Filter out blank/whitespace-only lines from data slice
-                data = [line for line in self._lines[start + 1 : end] if line.strip()]
-                epoch = Rnxv3ObsEpochRecord(
-                    info=info,
-                    data=[self.process_satellite_data(line) for line in data],
-                )
-                yield epoch
+                satellites = [
+                    self._read_satellite_line(line)
+                    for line in lines[start + 1 : end]
+                    if line.strip()
+                ]
+                check_satellite_count(info, len(satellites))
             except InvalidEpochError, IncompleteEpochError, ValueError:
-                # Skip epochs with validation errors (invalid SV, malformed data,
-                # pydantic ValidationError inherits from ValueError)
+                # pydantic's ValidationError is a ValueError
                 if rejected is not None:
                     rejected.append(start)
+                continue
+            yield info, satellites
 
     def iter_epochs_in_range(
         self,
@@ -1708,13 +1777,14 @@ class Rnxv3Obs(GNSSDataReader):
     def _create_dataset_validated(
         self, keep_data_vars: frozenset[str] | None = None
     ) -> xr.Dataset:
-        """Build the dataset from the validated epochs of :meth:`iter_epochs`.
+        """Build the dataset from the epochs that pass validation.
 
-        Every epoch passes the pydantic epoch and satellite models (epoch
-        line, satellite IDs, satellite count). Epochs that fail are dropped
-        and logged with their line numbers. Values are stored with the same
-        rules as :meth:`_create_dataset_unvalidated_fast`, so both give the
-        same dataset for a valid file.
+        Uses the checks of :meth:`_iter_checked_epochs`, the same as
+        :meth:`iter_epochs`, without building a model object per
+        observation. Epochs that fail are dropped and logged with their
+        line numbers. Values are stored with the same rules as
+        :meth:`_create_dataset_unvalidated_fast`, so both give the same
+        dataset for a valid file.
 
         Returns
         -------
@@ -1727,7 +1797,7 @@ class Rnxv3Obs(GNSSDataReader):
         obs_lut = self._obs_code_lut()
 
         rejected: list[int] = []
-        records = list(self._iter_validated_epochs(rejected))
+        records = list(self._iter_checked_epochs(rejected))
         if rejected:
             log.warning(
                 "rinex_epochs_rejected",
@@ -1735,33 +1805,27 @@ class Rnxv3Obs(GNSSDataReader):
                 n_rejected=len(rejected),
                 first_lines=[i + 1 for i in rejected[:10]],
                 reason="failed epoch validation (epoch line, satellite ID, "
-                "satellite count or observation record)",
+                "satellite count or observation field)",
             )
 
         arrays = _allocate_obs_arrays(
             len(records), len(sorted_sids), self._kept_vars(keep_data_vars)
         )
         timestamps = np.empty(len(records), dtype="datetime64[ns]")
-        for t_idx, record in enumerate(records):
-            info = record.info
+        for t_idx, (info, satellites) in enumerate(records):
             timestamps[t_idx] = _epoch_datetime64(
                 info.year, info.month, info.day, info.hour, info.minute, info.seconds
             )
-            for sat in record.data:
-                lut_list = obs_lut.get(sat.sv[0])
-                if lut_list is None:
-                    continue
-                for (obs_type, sid_suffix), obs in zip(
-                    lut_list, sat.observations, strict=False
+            for sv, fields in satellites:
+                for (obs_type, sid_suffix), (value, lli, ssi) in zip(
+                    obs_lut[sv[0]], fields, strict=True
                 ):
-                    if not obs_type or obs.value is None:
+                    if not obs_type or value is None:
                         continue
-                    s_idx = sid_to_idx.get(sat.sv + sid_suffix)
+                    s_idx = sid_to_idx.get(sv + sid_suffix)
                     if s_idx is None:
                         continue
-                    _store_observation(
-                        arrays, t_idx, s_idx, obs_type, obs.value, obs.lli, obs.ssi
-                    )
+                    _store_observation(arrays, t_idx, s_idx, obs_type, value, lli, ssi)
 
         return self._assemble_dataset(timestamps, arrays, sorted_sids, sid_properties)
 
@@ -2051,8 +2115,9 @@ class Rnxv3Obs(GNSSDataReader):
             If provided, filters/pads dataset to these specific SIDs.
             If None and pad_global_sid=True, pads to all possible SIDs.
         parser : {"validated", "unvalidated_fast"}, default "validated"
-            ``"validated"`` checks every epoch through the pydantic epoch and
-            satellite models and drops (and logs) epochs that fail.
+            ``"validated"`` checks every epoch (epoch line, satellite IDs,
+            satellite count, observation fields) and drops (and logs) epochs
+            that fail; see :meth:`_iter_checked_epochs`.
             ``"unvalidated_fast"`` is DANGEROUS: it slices fixed columns
             without any check, so corrupted records can enter the dataset as
             partial or wrong values; canVODpy takes no responsibility for its

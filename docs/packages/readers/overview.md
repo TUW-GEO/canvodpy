@@ -308,7 +308,13 @@ Subclasses only need to inherit from `GNSSDataReader`: no separate `BaseModel` i
 
 Two parsers fill these arrays:
 
-- **`validated`** (default): every epoch passes the Pydantic epoch and satellite models (epoch line, satellite IDs, satellite count, observation records). Epochs that fail are dropped, and the reader logs how many and at which lines (`rinex_epochs_rejected`).
+- **`validated`** (default): checks every epoch and drops the epochs that fail. The reader logs how many and at which lines (`rinex_epochs_rejected`). An epoch is dropped if:
+    - its epoch line doesn't match the RINEX 3 format (Pydantic epoch model);
+    - a satellite line has an invalid satellite ID, or a system without a `SYS / # / OBS TYPES` header record;
+    - an observation field isn't blank but holds no readable value;
+    - the satellite count of the epoch line differs from the number of satellite lines.
+
+    Every field of a satellite line is checked, also the fields of variables that `keep_data_vars` leaves out, so the kept epochs don't depend on `keep_data_vars`. Fields are read into the arrays directly, without a Pydantic object per observation; `iter_epochs()` applies the same checks and returns the Pydantic models.
 - **`unvalidated_fast`**: slices fixed columns without any check.
 
 Both share the SID space, the array allocation, the epoch-time conversion and the dataset assembly. For a valid file they give the identical dataset (`test_rinex_v3_path_parity.py`).
