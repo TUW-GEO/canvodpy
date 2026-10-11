@@ -57,6 +57,7 @@ if "ICECHUNK_LOG" not in os.environ:
     )
 
 if TYPE_CHECKING:
+    from canvod.config.models import CanvodConfig
     from icechunk import AncestryGraph
 
 
@@ -419,6 +420,8 @@ class MyIcechunkStore:
         store_type: str = "gnss_store",
         compression_level: int | None = None,
         compression_algorithm: str | None = None,
+        *,
+        config: CanvodConfig | None = None,
     ) -> None:
         """Initialize the Icechunk store manager.
 
@@ -432,6 +435,9 @@ class MyIcechunkStore:
             Override default compression level.
         compression_algorithm : str | None, optional
             Override default compression algorithm.
+        config : CanvodConfig | None, optional
+            The settings the store works with; every commit records them.
+            ``None`` loads the settings.
         """
         self._logger = structlog.get_logger(__name__)
 
@@ -439,7 +445,8 @@ class MyIcechunkStore:
 
         # No fallback: settings that fail to load raise here, so a store is
         # never opened with defaults the user didn't choose.
-        cfg = load_config()
+        cfg = config if config is not None else load_config()
+        self.settings = cfg
         ic_cfg = cfg.processing.icechunk
         _gnss_store_strategy = cfg.processing.storage.gnss_store_strategy
         _log_path_depth = cfg.processing.logging.log_path_depth
@@ -811,7 +818,9 @@ class MyIcechunkStore:
         except zarr.errors.GroupNotFoundError:
             root = zarr.open_group(session.store, mode="w")
         root.attrs.update(attrs)
-        return commit_with_rebase(session, message, store_path=self.store_path)
+        return commit_with_rebase(
+            session, message, store_path=self.store_path, config=self.settings
+        )
 
     def get_root_attrs(self, branch: str = "main") -> dict[str, Any]:
         """Read root-level Zarr attributes from the store.
@@ -1267,7 +1276,9 @@ class MyIcechunkStore:
                 "variables": new_names,
             },
         )
-        commit_with_rebase(session, commit_message, store_path=self.store_path)
+        commit_with_rebase(
+            session, commit_message, store_path=self.store_path, config=self.settings
+        )
         new_tip = self.promote_branch(temp_branch, branch, tip)
         self.repo.delete_branch(temp_branch)
         return new_tip
@@ -1545,7 +1556,10 @@ class MyIcechunkStore:
                 dataset_attrs=dataset.attrs,
             )
             commit_with_rebase(
-                session, _with_run_id(commit_message), store_path=self.store_path
+                session,
+                _with_run_id(commit_message),
+                store_path=self.store_path,
+                config=self.settings,
             )
 
         self._logger.info(
@@ -1814,7 +1828,12 @@ class MyIcechunkStore:
                 commit_msg=commit_message,
                 dataset_attrs=dataset.attrs,
             )
-            commit_with_rebase(session, commit_message, store_path=self.store_path)
+            commit_with_rebase(
+                session,
+                commit_message,
+                store_path=self.store_path,
+                config=self.settings,
+            )
 
     def get_group_info(self, group_name: str, branch: str = "main") -> dict[str, Any]:
         """
@@ -1913,6 +1932,7 @@ class MyIcechunkStore:
                 session,
                 _with_run_id(f"[v{version}] metadata/{name} for {group_name}"),
                 store_path=self.store_path,
+                config=self.settings,
             )
 
     def write_metadata_parts(
@@ -2004,6 +2024,7 @@ class MyIcechunkStore:
                     f"({total_epochs} epochs)"
                 ),
                 store_path=self.store_path,
+                config=self.settings,
             )
 
     def read_metadata_dataset(
@@ -2234,7 +2255,10 @@ class MyIcechunkStore:
                 dataset_attrs=dataset.attrs,
             )
             commit_with_rebase(
-                session, _with_run_id(commit_message), store_path=self.store_path
+                session,
+                _with_run_id(commit_message),
+                store_path=self.store_path,
+                config=self.settings,
             )
 
         if action == "append":
@@ -2341,7 +2365,12 @@ class MyIcechunkStore:
                 self._log_group_write(
                     session, group_name, dataset, "append", commit_message
                 )
-                commit_with_rebase(session, commit_message, store_path=self.store_path)
+                commit_with_rebase(
+                    session,
+                    commit_message,
+                    store_path=self.store_path,
+                    config=self.settings,
+                )
             self._logger.info(
                 f"Appended {len(dataset.epoch)} epochs to group '{group_name}'"
             )
@@ -2359,7 +2388,12 @@ class MyIcechunkStore:
                 self._log_group_write(
                     session, group_name, dataset, "write", commit_message
                 )
-                commit_with_rebase(session, commit_message, store_path=self.store_path)
+                commit_with_rebase(
+                    session,
+                    commit_message,
+                    store_path=self.store_path,
+                    config=self.settings,
+                )
             self._logger.info(
                 f"Created group '{group_name}' with {len(dataset.epoch)} epochs"
             )
@@ -2493,7 +2527,9 @@ class MyIcechunkStore:
             canonical_name=canonical_name,
             physical_path=physical_path,
         )
-        commit_with_rebase(session, message, store_path=self.store_path)
+        commit_with_rebase(
+            session, message, store_path=self.store_path, config=self.settings
+        )
 
         self._logger.info(
             f"Metadata appended for group '{group_name}': "
@@ -2577,6 +2613,7 @@ class MyIcechunkStore:
                     sess,
                     _with_run_id(f"Bulk metadata append for {group_name}"),
                     store_path=self.store_path,
+                    config=self.settings,
                 )
 
     # ------------------------------------------------------------------
@@ -2909,7 +2946,12 @@ class MyIcechunkStore:
                 calculator_name=calculator_name,
                 dataset_attrs=dict(dataset.attrs),
             )
-            commit_with_rebase(session, commit_message, store_path=self.store_path)
+            commit_with_rebase(
+                session,
+                commit_message,
+                store_path=self.store_path,
+                config=self.settings,
+            )
 
         self._logger.info(
             f"{action.capitalize()}d VOD group '{group_name}' "
@@ -3149,6 +3191,7 @@ class MyIcechunkStore:
                         prepass_msg,
                         metadata=prepass_metadata,
                         store_path=self.store_path,
+                        config=self.settings,
                     )
                     for name in summary_parts:
                         results[name].snapshot_id = prepass_snapshot_id
@@ -3186,6 +3229,7 @@ class MyIcechunkStore:
                     commit_msg,
                     metadata=agg_metadata,
                     store_path=self.store_path,
+                    config=self.settings,
                 )
                 for name, result in completed.items():
                     result.snapshot_id = batch_snapshot_id
@@ -4271,6 +4315,7 @@ class MyIcechunkStore:
                     f"({subgroup_count} subgroups restored)"
                 ),
                 store_path=self.store_path,
+                config=self.settings,
             )
 
         self._logger.info(
