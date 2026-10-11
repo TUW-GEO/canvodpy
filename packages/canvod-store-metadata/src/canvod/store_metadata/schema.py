@@ -6,8 +6,10 @@ checks the fields against them and the FAIR principles.
 
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
+from canvod.utils.tools import deprecated
 from pydantic import BaseModel, Field
 
 
@@ -213,8 +215,22 @@ class Summaries(BaseModel):
     file_count: int | None = Field(None)
     store_size_mb: float | None = Field(None)
     history: list[str] = Field(
-        default_factory=list, description="Processing log entries"
+        default_factory=list,
+        description="Processing log entries (stores before ADR 0014 only)",
     )
+
+    def __getattribute__(self, name: str) -> Any:
+        if name == "history":
+            # FutureWarning, which Python shows by default; pydantic's own
+            # field deprecation warns with DeprecationWarning only.
+            warnings.warn(
+                "summaries.history is left over from development and will be "
+                "removed with the next major version. The history of a store is "
+                "its commit log: show_metadata lists it.",
+                FutureWarning,
+                stacklevel=2,
+            )
+        return super().__getattribute__(name)
 
 
 # ── Root model ──────────────────────────────────────────────────────────────
@@ -256,16 +272,33 @@ class StoreMetadata(BaseModel):
         default_factory=dict, description="VOD analyses of a VOD store"
     )
     amendments: list[Amendment] = Field(default_factory=list)
+    written_before_migration: bool = Field(
+        False,
+        description=(
+            "Read from a snapshot written before the store kept repository "
+            "metadata (ADR 0014)"
+        ),
+    )
 
     def to_root_attrs(self) -> dict[str, Any]:
         """Serialize to a JSON-compatible dict for Zarr root attrs."""
         return {_METADATA_KEY: self.model_dump(mode="json")}
 
     @classmethod
-    def from_root_attrs(cls, attrs: dict[str, Any]) -> StoreMetadata:
-        """Reconstruct from Zarr root attrs dict."""
-        data = attrs[_METADATA_KEY]
+    def _from_old_root_attrs(cls, attrs: dict[str, Any]) -> StoreMetadata:
+        """Read a snapshot written before ADR 0014 (one ``canvod_metadata``)."""
+        data = {**attrs[_METADATA_KEY], "written_before_migration": True}
         return cls.model_validate(data)
+
+    @classmethod
+    @deprecated(
+        "StoreMetadata.from_root_attrs() is left over from development and will "
+        "be removed with the next major version. Use read_metadata(), which "
+        "reads every snapshot, also those written before the migration."
+    )
+    def from_root_attrs(cls, attrs: dict[str, Any]) -> StoreMetadata:
+        """Reconstruct from Zarr root attrs dict (the form before ADR 0014)."""
+        return cls._from_old_root_attrs(attrs)
 
 
 # ── Repository metadata (ADR 0014) ──────────────────────────────────────────

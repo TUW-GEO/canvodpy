@@ -23,6 +23,8 @@ from functools import lru_cache
 from html import escape
 from typing import TYPE_CHECKING, Any, cast
 
+from canvod.store_metadata import RESERVED_GROUP
+
 if TYPE_CHECKING:
     from canvod.store.store import MyIcechunkStore
 
@@ -397,7 +399,9 @@ class IcechunkStoreViewer:
 
                 with self.store.readonly_session(branch) as session:
                     root = cast(Any, zarr.open_group(session.store, mode="r"))
-                    for group_key in root.group_keys():
+                    for group_key in (
+                        k for k in root.group_keys() if k != RESERVED_GROUP
+                    ):
                         if f"{group_key}/metadata/sbf_obs" in root:
                             return "SBF"
             except Exception:

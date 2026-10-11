@@ -1,10 +1,21 @@
-"""Entries of the store history (``summaries.history`` of the store metadata)."""
+"""Entries of the store history (``summaries.history`` of the store metadata).
+
+Deprecated: the history of a store is its commit log (ADR 0014), and
+canVODpy no longer writes ``summaries.history``.
+"""
 
 from __future__ import annotations
 
 import importlib.metadata
 
+from canvod.utils.tools import deprecated
 
+
+@deprecated(
+    "history_entry() is left over from development and will be removed with the "
+    "next major version. The history of a store is its commit log; "
+    "canvod.store_metadata.show_metadata lists it."
+)
 def history_entry(now: str, event: str, preprocessing: dict[str, str]) -> str:
     """One history line: time, event, canVODpy version and preprocessing.
 

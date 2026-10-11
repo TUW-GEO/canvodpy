@@ -15,7 +15,7 @@ from filelock import FileLock, Timeout
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
-from .schema import _METADATA_KEY, RepositoryMetadata, StoreMetadata
+from .schema import _METADATA_KEY, Amendment, RepositoryMetadata, StoreMetadata
 
 #: Name of the lock file in the store directory (see :func:`commit_lock`).
 COMMIT_LOCK_NAME = ".canvodpy-commit.lock"
@@ -189,12 +189,23 @@ def write_metadata(
 def read_metadata(
     store_path: Path,
     branch: str = "main",
+    *,
+    snapshot_id: str | None = None,
 ) -> StoreMetadata:
-    """Read the metadata of the tip of ``branch``.
+    """Read the metadata of a snapshot as it was when it was committed.
 
     One :class:`StoreMetadata` from the snapshot's root copy, snapshot
-    summary and commit metadata; a snapshot written before ADR 0014 is
-    read from its old ``canvod_metadata`` attribute.
+    summary and commit metadata. A snapshot written before the store kept
+    repository metadata is read from its old ``canvod_metadata`` attribute
+    and marked ``written_before_migration``.
+
+    Parameters
+    ----------
+    branch
+        Read the tip of this branch.
+    snapshot_id
+        Read this snapshot instead of a branch tip (e.g. one a release
+        pins).
 
     Raises
     ------
@@ -204,12 +215,22 @@ def read_metadata(
     from .snapshot import REPOSITORY_METADATA_ATTR, combined_metadata
 
     repo = _open_repo(store_path)
-    session = repo.readonly_session(branch=branch)
+    session = (
+        repo.readonly_session(snapshot_id=snapshot_id)
+        if snapshot_id is not None
+        else repo.readonly_session(branch=branch)
+    )
     root = zarr.open_group(session.store, mode="r")
     if REPOSITORY_METADATA_ATTR not in root.attrs:
-        return StoreMetadata.from_root_attrs(dict(root.attrs))
+        return StoreMetadata._from_old_root_attrs(dict(root.attrs))
     snapshot = next(iter(repo.ancestry(snapshot_id=session.snapshot_id)))
     return combined_metadata(root, snapshot.metadata)
+
+
+def amendments_since(store_path: Path, metadata: StoreMetadata) -> list[Amendment]:
+    """Amendments made to the store after the snapshot ``metadata`` was read from."""
+    current = _open_repo(store_path).get_metadata().get("amendments", [])
+    return [Amendment.model_validate(a) for a in current[len(metadata.amendments) :]]
 
 
 def apply_updates(metadata: StoreMetadata, updates: dict[str, Any]) -> StoreMetadata:

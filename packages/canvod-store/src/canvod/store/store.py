@@ -28,6 +28,7 @@ from canvod.config.models import (
     vod_preprocessing_settings,
 )
 from canvod.readers.base import validate_vod_dataset
+from canvod.store_metadata import RESERVED_GROUP
 from canvod.store_metadata.io import commit_lock, commit_with_rebase
 from canvod.utils.logging import get_run_id, stage_timer
 from canvod.utils.tools import get_version_from_pyproject, sanitize_directory
@@ -874,7 +875,9 @@ class MyIcechunkStore:
             with self.readonly_session(br) as session:
                 try:
                     root = zarr.open(session.store, mode="r")
-                    group_dict[br] = list(root.group_keys())
+                    group_dict[br] = [
+                        name for name in root.group_keys() if name != RESERVED_GROUP
+                    ]
                 except zarr.errors.GroupNotFoundError:
                     group_dict[br] = []
         return group_dict
@@ -968,8 +971,12 @@ class MyIcechunkStore:
         if max_depth is not None and current_depth >= max_depth:
             return
 
-        # Get all groups and arrays
-        groups = list(group.group_keys())
+        # Get all groups and arrays (not the reserved group at the root)
+        groups = [
+            name
+            for name in group.group_keys()
+            if not (current_depth == 0 and name == RESERVED_GROUP)
+        ]
         arrays = list(group.array_keys())
         items = groups + arrays
 
@@ -4597,7 +4604,9 @@ class MyIcechunkStore:
         try:
             session = self.repo.readonly_session(snapshot_id=snap.id)
             root = zarr.open(session.store, mode="r")
-            info["groups"] = list(root.group_keys())
+            info["groups"] = [
+                name for name in root.group_keys() if name != RESERVED_GROUP
+            ]
             info["arrays"] = list(root.array_keys())
         except Exception as e:
             self._logger.warning(f"Could not inspect snapshot contents: {e}")

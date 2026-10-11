@@ -19,6 +19,7 @@ from .inventory import (
 from .io import (
     COMMIT_LOCK_NAME,
     MIGRATE_COMMAND,
+    amendments_since,
     apply_updates,
     check_receivers,
     check_vod_analyses,
@@ -32,13 +33,16 @@ from .io import (
 )
 from .schema import StoreMetadata
 from .show import extract_env, format_metadata, show_metadata
+from .snapshot import RESERVED_GROUP
 from .summary import summarize_store
 from .validate import validate_all, validate_datacite, validate_fair
 
 __all__ = [
     "COMMIT_LOCK_NAME",
     "MIGRATE_COMMAND",
+    "RESERVED_GROUP",
     "StoreMetadata",
+    "amendments_since",
     "apply_updates",
     "check_receivers",
     "check_vod_analyses",

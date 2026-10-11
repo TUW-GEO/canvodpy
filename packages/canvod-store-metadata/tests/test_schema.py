@@ -47,8 +47,10 @@ class TestStoreMetadata:
     def test_round_trip_via_root_attrs(self):
         meta = _make_minimal_metadata()
         attrs = meta.to_root_attrs()
-        restored = StoreMetadata.from_root_attrs(attrs)
-        assert restored == meta
+        with pytest.warns(FutureWarning, match="read_metadata"):
+            restored = StoreMetadata.from_root_attrs(attrs)
+        assert restored.written_before_migration
+        assert restored.model_copy(update={"written_before_migration": False}) == meta
 
     def test_to_root_attrs_structure(self):
         meta = _make_minimal_metadata()

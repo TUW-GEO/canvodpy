@@ -12,10 +12,11 @@ from __future__ import annotations
 
 import sys
 import textwrap
+import warnings
 from pathlib import Path
 from typing import Any
 
-from .io import metadata_exists, read_metadata
+from .io import _open_repo, amendments_since, read_metadata
 from .schema import StoreMetadata
 from .validate import validate_all
 
@@ -249,12 +250,17 @@ def format_summaries(meta: StoreMetadata) -> str:
     lines.append(_kv("Temporal res (s)", s.temporal_resolution_s))
     lines.append(_kv("File count", s.file_count))
     lines.append(_kv("Store size (MB)", s.store_size_mb))
-    if s.history:
-        lines.append("    History:")
-        for entry in s.history[-10:]:
+    # Only snapshots written before the migration have a stored history;
+    # the history of every other snapshot is its commit log.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        history = s.history
+    if history:
+        lines.append("    History (stored before migration):")
+        for entry in history[-10:]:
             lines.append(f"      {entry}")
-        if len(s.history) > 10:
-            lines.append(f"      ... +{len(s.history) - 10} older entries")
+        if len(history) > 10:
+            lines.append(f"      ... +{len(history) - 10} older entries")
     return "\n".join(lines)
 
 
@@ -427,10 +433,29 @@ def extract_env(
     return output_dir
 
 
+def _commit_log(store_path: Path, snapshot_id: str, limit: int = 20) -> list[str]:
+    """The newest commits up to ``snapshot_id``: time, message, settings hash."""
+    lines = []
+    for i, snapshot in enumerate(
+        _open_repo(store_path).ancestry(snapshot_id=snapshot_id)
+    ):
+        if i == limit:
+            lines.append(f"  ... older commits not shown (the {limit} newest are)")
+            break
+        config_hash = snapshot.metadata.get("config", {}).get("config_hash")
+        settings = f"  (settings {config_hash[:12]})" if config_hash else ""
+        lines.append(
+            f"  {snapshot.written_at:%Y-%m-%d %H:%M:%S}  {snapshot.message}{settings}"
+        )
+    return lines
+
+
 def show_metadata(
     store_path: str | Path,
     section: str | None = None,
     branch: str = "main",
+    *,
+    snapshot_id: str | None = None,
 ) -> None:
     """Print store metadata to stdout.
 
@@ -441,14 +466,37 @@ def show_metadata(
     section : str | None
         Section to show (None = full report).
     branch : str
-        Store branch.
+        Show the tip of this branch.
+    snapshot_id : str | None
+        Show this snapshot instead of a branch tip.
     """
     path = Path(store_path)
-    if not metadata_exists(path, branch):
+    try:
+        meta = read_metadata(path, branch, snapshot_id=snapshot_id)
+    except KeyError:
         print(f"No metadata found in {path}")
         return
-    meta = read_metadata(path, branch)
+    repo = _open_repo(path)
+    meta.summaries.store_size_mb = round(repo.total_chunks_storage() / 1e6, 3)
+    if meta.written_before_migration:
+        print(
+            "This snapshot was written before migration: the store kept its "
+            "metadata in one attribute then (canvodpy store migrate-metadata)."
+        )
     print(format_metadata(meta, section))
+    if section is not None:
+        return
+    since = [] if meta.written_before_migration else amendments_since(path, meta)
+    if since:
+        print(_section("Amended since this snapshot"))
+        for amendment in since:
+            print(
+                f"  {amendment.when}  {amendment.field}: {amendment.old!r} -> "
+                f"{amendment.new!r} ({amendment.reason}; {amendment.who})"
+            )
+    snapshot = snapshot_id or repo.lookup_branch(branch)
+    print(_section("History (commit log)"))
+    print("\n".join(_commit_log(path, snapshot)))
 
 
 # CLI entry point

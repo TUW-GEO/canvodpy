@@ -28,7 +28,6 @@ from .schema import (
     SpatialExtent,
     StoreIdentity,
     StoreMetadata,
-    Summaries,
     TemporalExtent,
     VodAnalysisInfo,
 )
@@ -411,8 +410,5 @@ def collect_metadata(
         references=collect_references(config),
         vod_analyses=(
             collect_vod_analyses(site_config) if store_type == "vod_store" else {}
-        ),
-        summaries=Summaries(
-            history=[f"{now}: Store created ({source_format})"],
         ),
     )
