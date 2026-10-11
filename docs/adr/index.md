@@ -32,3 +32,5 @@ that names the decision replacing it.
 | [0011](0011-free-tools-only.md) | Only free tools |
 | [0012](0012-agent-development-workflow.md) | Contributors develop with agents through one shared workflow |
 | [0013](0013-agents-never-merge.md) | Agents open pull requests; people merge |
+| [0014](0014-store-metadata-split.md) | A store's description lives in its repository metadata; each snapshot carries a checked copy |
+| [0015](0015-stac-catalog-at-data-root.md) | The STAC catalog sits beside the stores; a release is a tag in each store plus a pinned catalog |

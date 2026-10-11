@@ -121,6 +121,11 @@ aggregation, grid assignment), applied only when the settings ask for
 them.
 _Avoid_: filtering, cleaning
 
+**Store**:
+An Icechunk repository holding one site's GNSS data or VOD; a GNSS store
+or a VOD store.
+_Avoid_: repo, database
+
 **GNSS store**:
 A site's versioned store of the observations of all its receivers.
 _Avoid_: RINEX store, observation store
@@ -141,6 +146,46 @@ _Avoid_: metadata table, registry
 **Snapshot**:
 One committed state of a store, which can be read again later.
 _Avoid_: version (for a store state), checkpoint
+
+**Repository metadata** (Icechunk's term):
+The description of a store that belongs to no snapshot and no branch:
+who made it, what it holds, where, under which license. Some of its
+fields never change; the others change only by amendment.
+_Avoid_: global attributes, store identity
+
+**Commit metadata** (Icechunk's term):
+What one commit records about how it was made: software versions,
+environment and settings of the run that wrote it.
+_Avoid_: history, provenance (the log books hold provenance)
+
+**Snapshot summary**:
+The description of what one snapshot holds (time coverage, receivers,
+counts), written in the same commit as the data it describes.
+_Avoid_: statistics, store state
+
+**Fixed field**:
+A field of the repository metadata that never changes once the store
+exists, such as its id or creation date.
+_Avoid_: immutable field
+
+**Amendable field**:
+A field of the repository metadata that changes only by amendment, such
+as the creator's email or the license.
+
+**Amendment**:
+A recorded change to an amendable field: old and new value, reason, who
+and when.
+_Avoid_: edit, update (for repository metadata)
+
+**Catalog**:
+The STAC description of all stores under one data root, kept beside
+them: one item per store, grouped into GNSS observations and VOD.
+_Avoid_: inventory, index
+
+**Release**:
+A named, fixed state of all stores under a data root: a tag in each
+store plus a catalog that pins each store's snapshot.
+_Avoid_: version (for a store state), export
 
 **Plugin**:
 An installed package that adds a reader or a VOD calculator to runs.
