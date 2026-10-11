@@ -109,6 +109,20 @@ class TestCollectors:
         assert len(snap.config_hash) == 64
         assert snap.processing == {"batch_hours": 24}
 
+    def test_config_snapshot_leaves_out_credentials(self):
+        with_account = {
+            "processing": {
+                "batch_hours": 24,
+                "credentials": {"nasa_earthdata_acc_mail": "jane@example.org"},
+            }
+        }
+        without = {"processing": {"batch_hours": 24}}
+
+        snap = collect_config_snapshot(with_account)
+
+        assert snap.processing == {"batch_hours": 24}
+        assert snap.config_hash == collect_config_snapshot(without).config_hash
+
     def test_collect_references_none_config(self):
         config = MagicMock(spec=["processing"])
         config.processing = MagicMock(spec=[])  # no `references` attribute

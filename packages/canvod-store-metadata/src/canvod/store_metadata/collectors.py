@@ -171,8 +171,16 @@ def collect_environment(
     )
 
 
+#: Settings never written into a store: account details for data servers.
+_PRIVATE_PROCESSING_KEYS = ("credentials",)
+
+
 def collect_config_snapshot(config: Any) -> ConfigSnapshot:
-    """Serialize config sections + compute SHA256 hash."""
+    """Serialize config sections + compute SHA256 hash.
+
+    ``processing.credentials`` is left out (and out of the hash): stores
+    are shared, account details are not.
+    """
     sections: dict[str, Any] = {}
     keys = (
         "processing",
@@ -198,6 +206,13 @@ def collect_config_snapshot(config: Any) -> ConfigSnapshot:
                 sections[key] = obj
             else:
                 sections[key] = str(obj)
+
+    if isinstance(sections.get("processing"), dict):
+        sections["processing"] = {
+            k: v
+            for k, v in sections["processing"].items()
+            if k not in _PRIVATE_PROCESSING_KEYS
+        }
 
     config_str = json.dumps(sections, sort_keys=True, default=str)
     config_hash = hashlib.sha256(config_str.encode()).hexdigest()
