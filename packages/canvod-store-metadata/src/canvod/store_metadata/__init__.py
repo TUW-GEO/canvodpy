@@ -30,6 +30,7 @@ from .io import (
     metadata_exists,
     read_metadata,
     read_repository_metadata,
+    rewrite_manifests,
     update_metadata,
     write_metadata,
 )
@@ -61,6 +62,7 @@ __all__ = [
     "migrate_metadata",
     "read_metadata",
     "read_repository_metadata",
+    "rewrite_manifests",
     "scan_stores",
     "scan_stores_as_stac",
     "show_metadata",

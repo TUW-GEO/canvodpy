@@ -327,6 +327,11 @@ def commit_metadata(
     return metadata, texts
 
 
+def lockfile_stored(root: zarr.Group, lock_hash: str | None) -> bool:
+    """Whether the lockfile texts for ``lock_hash`` are stored (or there are none)."""
+    return lock_hash is None or f"{ENVIRONMENTS_GROUP}/{lock_hash}" in root
+
+
 def _write_environment(root: zarr.Group, texts: dict[str, str | None]) -> None:
     """Store the lockfile texts once per hash."""
     lock_hash = texts["uv_lock_hash"]

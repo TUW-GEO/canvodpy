@@ -30,7 +30,11 @@ from canvod.config.models import (
 from canvod.readers.base import validate_vod_dataset
 from canvod.store_metadata import RESERVED_GROUP
 from canvod.store_metadata.icechunk_logs import apply_icechunk_log_filter
-from canvod.store_metadata.io import commit_lock, commit_with_rebase
+from canvod.store_metadata.io import (
+    commit_lock,
+    commit_with_rebase,
+    rewrite_manifests,
+)
 from canvod.utils.logging import get_run_id, stage_timer
 from canvod.utils.tools import get_version_from_pyproject, sanitize_directory
 from icechunk.session import ForkSession
@@ -4036,7 +4040,9 @@ class MyIcechunkStore:
         already attaches structured provenance (receiver, date, file
         hashes) to every ingest commit -- amending could silently clobber
         that. An explicit, separate, auditable commit matches the
-        precedent expire/GC already set.
+        precedent expire/GC already set. Like every commit, it records
+        software, environment and settings as commit metadata
+        (:func:`canvod.store_metadata.rewrite_manifests`).
 
         Like ``expire_old_snapshots()``/``garbage_collect()``, this is an
         administrative operation -- never call it while a pipeline run is
@@ -4068,12 +4074,12 @@ class MyIcechunkStore:
         self._logger.info(
             f"Compacting manifests on store '{self.store_type}' (branch '{branch}')"
         )
-        with commit_lock(self.store_path):
-            new_snapshot = self.repo.rewrite_manifests(
-                f"Compact manifests ({self.store_type})",
-                branch=branch,
-                commit_method="new_commit",
-            )
+        new_snapshot = rewrite_manifests(
+            self.store_path,
+            f"Compact manifests ({self.store_type})",
+            branch=branch,
+            config=self.settings,
+        )
         self._logger.info(f"Manifest compaction complete: snapshot {new_snapshot}")
         return new_snapshot
 

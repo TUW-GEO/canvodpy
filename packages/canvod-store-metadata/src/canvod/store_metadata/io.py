@@ -5,6 +5,7 @@ from __future__ import annotations
 import threading
 from collections.abc import Callable, Generator, Iterable, Mapping
 from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -84,7 +85,8 @@ def commit_with_rebase(
     settings as commit metadata, next to ``metadata``. It refuses a root
     group that differs from the repository metadata.
 
-    Every commit in canVODpy goes through this function.
+    Every commit in canVODpy goes through this function, except manifest
+    compaction, which goes through :func:`rewrite_manifests`.
 
     Parameters
     ----------
@@ -136,6 +138,58 @@ def commit_with_rebase(
             }
         return session.commit(
             message, metadata=metadata, rebase_with=icechunk.ConflictDetector()
+        )
+
+
+def rewrite_manifests(
+    store_path: Path | str,
+    message: str,
+    *,
+    branch: str = "main",
+    config: Any = None,
+) -> str:
+    """Compact a branch's manifests in a commit that carries commit metadata.
+
+    ``Repository.rewrite_manifests`` commits without a session, so it can
+    write no lockfile text: when the lockfile in use is not stored in the
+    store yet, a commit through :func:`commit_with_rebase` stores it first.
+    In a store without repository metadata the compaction records only
+    Icechunk's own metadata, as :func:`commit_with_rebase` does.
+
+    Parameters
+    ----------
+    config
+        The settings recorded in the commit metadata; ``None`` loads them.
+
+    Returns
+    -------
+    str
+        Snapshot ID of the compaction commit.
+    """
+    with commit_lock(store_path):
+        repo = _open_repo(Path(store_path))
+        repository = repo.get_metadata()
+        metadata = None
+        if repository:
+            from .snapshot import commit_metadata, lockfile_stored
+
+            if config is None:
+                from canvod.config import load_config
+
+                config = load_config()
+            metadata, texts = commit_metadata(
+                repository, config, store_path, datetime.now(UTC).isoformat()
+            )
+            root = zarr.open_group(repo.readonly_session(branch=branch).store, mode="r")
+            if not lockfile_stored(root, texts["uv_lock_hash"]):
+                commit_with_rebase(
+                    repo.writable_session(branch),
+                    "Store the lockfile in use",
+                    store_path=store_path,
+                    config=config,
+                )
+        return repo.rewrite_manifests(
+            message, branch=branch, metadata=metadata, commit_method="new_commit"
         )
 
 

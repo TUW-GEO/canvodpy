@@ -393,3 +393,113 @@ class TestManifestCompaction:
         after = store.read_group("canopy")
         assert before["x"].values.tolist() == after["x"].values.tolist()
         assert before["epoch"].values.tolist() == after["epoch"].values.tolist()
+
+
+class TestCompactionRecordsCommitMetadata:
+    """A compaction commit carries commit metadata like every other commit."""
+
+    def _store_with_metadata(self, path: Path):
+        import icechunk
+        import numpy as np
+        import xarray as xr
+        from canvod.config import load_config
+        from canvod.store_metadata import (
+            collect_config_snapshot,
+            commit_with_rebase,
+            write_metadata,
+        )
+        from canvod.store_metadata.schema import (
+            Creator,
+            SiteInfo,
+            SpatialExtent,
+            StoreIdentity,
+            StoreMetadata,
+            TemporalExtent,
+        )
+        from icechunk.xarray import to_icechunk
+
+        from canvod.store import MyIcechunkStore
+
+        settings = load_config()
+        icechunk.Repository.create(icechunk.local_filesystem_storage(str(path)))
+        write_metadata(
+            path,
+            StoreMetadata(
+                identity=StoreIdentity(
+                    id="fangorn-vod",
+                    uuid="00000000-0000-4000-8000-000000000001",
+                    naming_authority="org.middle-earth",
+                    stac_link="../../vod/x/x.json",
+                    title="Fangorn VOD Store",
+                    store_type="vod_store",
+                    source_format="rinex3",
+                ),
+                creator=Creator(name="T", email="t@example.org", institution="U"),
+                temporal=TemporalExtent(created="2026-01-01T00:00:00Z", updated="x"),
+                spatial=SpatialExtent(site=SiteInfo(name="Fangorn")),
+                config=collect_config_snapshot(settings),
+            ),
+        )
+        store = MyIcechunkStore(path, store_type="vod_store", config=settings)
+        for i in range(3):
+            with store.writable_session() as session:
+                ds = xr.Dataset(
+                    {"x": (("epoch",), np.arange(3.0) + i)},
+                    coords={
+                        "epoch": np.datetime64("2025-01-01T00:00:00", "s")
+                        + np.arange(i * 3, i * 3 + 3) * np.timedelta64(5, "s")
+                    },
+                )
+                kwargs = {"mode": "w"} if i == 0 else {"append_dim": "epoch"}
+                to_icechunk(ds, session, group="canopy", **kwargs)
+                commit_with_rebase(
+                    session, f"write {i}", store_path=path, config=settings
+                )
+        return store
+
+    def _tip_metadata(self, store) -> dict:
+        tip = store.repo.lookup_branch("main")
+        return next(iter(store.repo.ancestry(snapshot_id=tip))).metadata
+
+    def test_the_compaction_commit_has_commit_metadata(self, tmp_path: Path):
+        from canvod.store_metadata import read_metadata, validate_all
+
+        store = self._store_with_metadata(tmp_path / "store")
+        before = validate_all(read_metadata(store.store_path), recommended=False)
+
+        store.compact_manifests(branch="main")
+
+        metadata = self._tip_metadata(store)
+        assert {"processing", "environment", "config"} <= metadata.keys()
+        assert "__icechunk" in metadata  # Icechunk's own splitting_config
+        meta = read_metadata(store.store_path)
+        assert meta.processing.software
+        assert meta.config.config_hash
+        assert validate_all(meta, recommended=False) == before
+
+    def test_every_commit_carries_commit_metadata(self, tmp_path: Path):
+        store = self._store_with_metadata(tmp_path / "store")
+        store.compact_manifests(branch="main")
+
+        commits = list(store.repo.ancestry(branch="main"))[:-1]  # not the first
+
+        assert len(commits) == 5  # metadata, 3 writes, compaction
+        for commit in commits:
+            assert "environment" in commit.metadata, commit.message
+
+    def test_a_new_lockfile_is_stored_before_compaction(
+        self, tmp_path: Path, monkeypatch
+    ):
+        from canvod.store_metadata import read_metadata
+
+        store = self._store_with_metadata(tmp_path / "store")
+        project = tmp_path / "fangorn"
+        project.mkdir()
+        (project / "pyproject.toml").write_text('[project]\nname = "fangorn"\n')
+        (project / "uv.lock").write_text("version = 1\nrevision = 3\n")
+        monkeypatch.chdir(project)
+
+        store.compact_manifests(branch="main")
+
+        meta = read_metadata(store.store_path)
+        assert meta.environment.uv_lock_text == "version = 1\nrevision = 3\n"
