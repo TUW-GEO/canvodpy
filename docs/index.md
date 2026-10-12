@@ -26,6 +26,7 @@ signal-to-noise ratio observations.
 
 [Get started retrieving VOD :fontawesome-solid-arrow-right:](users/index.md){ .md-button .md-button--primary }
 [Get started contributing to the ecosystem :fontawesome-solid-arrow-right:](CONTRIBUTING.md){ .md-button }
+[See canVODpy at work in molab :fontawesome-solid-arrow-up-right-from-square:](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_convenience_speedrun.py){ .md-button target=_blank }
 
 </div>
 
