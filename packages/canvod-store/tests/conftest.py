@@ -45,16 +45,19 @@ def _made_up_settings(
 
     Never the user's own ``config/canvod-settings.yaml`` (CI has none).
     A test that needs other settings sets ``CANVOD_CONFIG_DIR`` itself.
-    The cache is cleared because tests change the settings object.
+    The cache is cleared because tests change the settings object. The
+    cached function is kept, because a test may replace it with a plain one
+    that is still in place when this fixture ends.
     """
     folder = tmp_path_factory.getbasetemp() / "made-up-settings"
     if not folder.exists():
         testing.write_settings(folder)
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(folder))
     monkeypatch.delenv("CANVOD_CONFIG_FILE", raising=False)
-    loader._load_config_cached.cache_clear()
+    cached = loader._load_config_cached
+    cached.cache_clear()
     yield
-    loader._load_config_cached.cache_clear()
+    cached.cache_clear()
 
 
 @pytest.fixture(scope="session")
