@@ -18,7 +18,7 @@ code. WASM is also a non-starter here regardless: these notebooks depend
 on Icechunk, which has a Rust-compiled backend, and marimo's WASM runtime
 (Pyodide) can only execute pure-Python or WASM-compiled dependencies in
 the browser. Every notebook also links to its source on
-[molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo) for forking
+[molab](https://molab.marimo.io/) for forking
 and live editing.
 
 ### Run canvodpy
