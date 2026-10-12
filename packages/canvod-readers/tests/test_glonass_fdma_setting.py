@@ -21,6 +21,12 @@ RINEX3 = (
 SBF = _VALID / "sbf/01_Rosalia/02_canopy/25001/ROSA01TUW_R_20250012300_15M_05S_AA.sbf"
 NMEA = _VALID / "nmea/02_Hainich/02_canopy/HAIA02MPI_R_20260010000_01H_01S_AA.nmea"
 
+# The test-data submodule; CI runs without it for now.
+pytestmark = pytest.mark.skipif(
+    not all(f.exists() for f in (RINEX3, SBF, NMEA)),
+    reason="test data not available",
+)
+
 
 def _glonass_with_data(aggregate: bool, pad: bool) -> list[str]:
     reader = Rnxv3Obs(fpath=RINEX3, aggregate_glonass_fdma=aggregate)

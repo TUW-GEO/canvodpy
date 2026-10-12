@@ -72,6 +72,9 @@ and only maintainers can create, move or delete release tags (`v*`).
    the specification, measured data), never recomputed the way the code
    does it. A test that needs a person, a site or a position takes the
    made-up ones in `canvod.utils.testing`, never real people or sites.
+   Tests never read the user's own settings: code that loads the settings
+   itself gets the made-up ones (`testing.write_settings`, an autouse
+   fixture in the root `conftest.py`).
 3. **Docs in the same pull request**: the pages under `docs/` and the
    `AGENTS.md` files, wherever the change makes them wrong. A pull request
    that changes behavior (new logic, new code, changed code) without docs

@@ -1,13 +1,42 @@
 """Pytest configuration for canvodpy workspace."""
 
 import logging
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
+from canvod.config import loader
+from canvod.utils import testing
+
 # Existing submodule paths
 TEST_DATA_ROOT = Path(__file__).parent / "packages/canvod-readers/tests/test_data"
 DEMO_ROOT = Path(__file__).parent / "demo"
+
+
+# ============================================================================
+# Settings: made-up, never the user's own
+# ============================================================================
+
+
+@pytest.fixture(autouse=True)
+def _made_up_settings(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[None]:
+    """Code that loads the settings itself reads the made-up ones.
+
+    Never the user's own ``config/canvod-settings.yaml`` (CI has none).
+    A test that needs other settings sets ``CANVOD_CONFIG_DIR`` itself.
+    The cache is cleared because tests change the settings object.
+    """
+    folder = tmp_path_factory.getbasetemp() / "made-up-settings"
+    if not folder.exists():
+        testing.write_settings(folder)
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(folder))
+    monkeypatch.delenv("CANVOD_CONFIG_FILE", raising=False)
+    loader._load_config_cached.cache_clear()
+    yield
+    loader._load_config_cached.cache_clear()
 
 
 # ============================================================================

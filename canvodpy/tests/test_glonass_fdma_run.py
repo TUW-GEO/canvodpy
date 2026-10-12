@@ -22,6 +22,10 @@ RINEX3 = (
     / "packages/canvod-readers/tests/test_data/valid/rinex_v3_04/01_Rosalia"
     / "02_canopy/01_GNSS/01_raw/25001/ROSA01TUW_R_20250011945_15M_05S_AA.rnx"
 )
+# The test-data submodule; CI runs without it for now.
+needs_test_data = pytest.mark.skipif(
+    not RINEX3.exists(), reason="test data not available"
+)
 EPOCHS = np.array(["2025-01-01T00:00:00"], dtype="datetime64[ns]")
 SIDS = ["G01|L1|C"]
 POSITION = ECEFPosition(x=4194304.0, y=1162205.0, z=4647245.0)
@@ -89,11 +93,13 @@ def _glonass_sids(aggregate_reader: bool, aggregate_aux: bool) -> set[str]:
     return {s for s in with_data if s.startswith("R")} & aux_sids
 
 
+@needs_test_data
 @pytest.mark.parametrize("aggregate", [True, False])
 def test_glonass_survives_the_join_when_both_sides_agree(aggregate: bool) -> None:
     assert _glonass_sids(aggregate, aggregate)
 
 
+@needs_test_data
 def test_mismatched_settings_lose_glonass_signals() -> None:
     """Why reader and aux data must share the setting."""
     assert _glonass_sids(True, True) - _glonass_sids(False, True)
