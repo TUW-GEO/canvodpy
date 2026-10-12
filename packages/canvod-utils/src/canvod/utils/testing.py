@@ -12,6 +12,9 @@ The position is Tolkien's birthplace, Bloemfontein.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 #: The person who runs the made-up site.
 PERSON_NAME = "John Ronald Reuel Tolkien"
 #: How the person signs changes of store metadata.
@@ -64,3 +67,43 @@ ALTITUDE_M = 1395.0
 ECEF_X = 5004115.301
 ECEF_Y = 2463414.934
 ECEF_Z = -3086206.104
+
+
+def write_settings(folder: Path) -> Path:
+    """Write a settings file for the made-up person and site.
+
+    For tests of code that loads the settings itself: point
+    ``CANVOD_CONFIG_DIR`` at ``folder``. Stores, auxiliary files and logs
+    go below ``folder``. Returns the settings file (JSON, which YAML
+    reads).
+    """
+    folder.mkdir(parents=True, exist_ok=True)
+    settings = {
+        "processing": {
+            "metadata": {
+                "author": PERSON_NAME,
+                "email": PERSON_EMAIL,
+                "institution": INSTITUTION,
+                "publisher": PUBLISHER,
+                "naming_authority": NAMING_AUTHORITY,
+                "initials": PERSON_INITIALS,
+                "license": "CC-BY-4.0",
+            },
+            "storage": {
+                "stores_root_dir": str(folder / "stores"),
+                "aux_data_dir": str(folder / "aux"),
+            },
+            "logging": {"log_dir": str(folder / "logs")},
+        },
+        "sites": {
+            SITE_KEY: {
+                "gnss_site_data_root": str(folder / "data"),
+                "receivers": {
+                    "canopy_01": {"type": "canopy", "directory": "02_canopy"},
+                },
+            }
+        },
+    }
+    path = folder / "canvod-settings.yaml"
+    path.write_text(json.dumps(settings, indent=2))
+    return path

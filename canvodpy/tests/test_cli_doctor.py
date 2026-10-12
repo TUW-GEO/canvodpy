@@ -60,6 +60,7 @@ class TestDoctor:
     def test_reports_dev_checkout_when_monorepo_config_exists(
         self, monkeypatch, tmp_path
     ):
+        monkeypatch.delenv("CANVOD_CONFIG_DIR", raising=False)
         fake_root = tmp_path / "checkout"
         (fake_root / "config").mkdir(parents=True)
         with patch.object(loader_module, "find_monorepo_root", return_value=fake_root):
