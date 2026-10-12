@@ -22,7 +22,12 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/nfb2021/canvodpy/badge)](https://securityscorecards.dev/viewer/?uri=github.com/nfb2021/canvodpy)
 
 
-# canVODpy
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo/canvodpy_logo_dark_mode.svg">
+    <img alt="canVODpy" src="docs/assets/logo/canvodpy_logo_bright_mode.svg" width="390">
+  </picture>
+</h1>
 
 An open Python ecosystem for GNSS-Transmissometry (GNSS-T) canopy VOD retrievals. canVODpy is a community-driven software suite for deriving and analyzing Vegetation Optical Depth from GNSS signal-to-noise ratio observations.
 
