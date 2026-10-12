@@ -109,7 +109,7 @@ interpolated = strategy.interpolate(sp3_dataset, target_epochs)
 
 ## Documentation
 
-[Full documentation](https://nfb2021.github.io/canvodpy/packages/auxiliary/overview/)
+[Full documentation](https://canvodpy.eu/packages/auxiliary/overview/)
 
 ## Package Structure
 

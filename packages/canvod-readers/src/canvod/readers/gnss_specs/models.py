@@ -410,7 +410,7 @@ class Rnxv3ObsEpochRecordCompletenessModel(BaseModel):
 
     @field_validator("rnx_file_dump_interval")
     @classmethod
-    def rnx_file_dump_interval(
+    def check_rnx_file_dump_interval(
         cls,
         value: str | Quantity,
     ) -> Quantity:

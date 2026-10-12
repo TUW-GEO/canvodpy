@@ -40,7 +40,7 @@ canvod-config = { workspace = true }
 
 [project.urls]
 Homepage = "https://github.com/nfb2021/canvodpy"
-Documentation = "https://nfb2021.github.io/canvodpy/packages/store-metadata/overview/"
+Documentation = "https://canvodpy.eu/packages/store-metadata/overview/"
 Repository = "https://github.com/nfb2021/canvodpy"
 Issues = "https://github.com/nfb2021/canvodpy/issues"
 

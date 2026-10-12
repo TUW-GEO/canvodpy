@@ -290,7 +290,7 @@ Unified styling for both 2D and 3D.
 
 ## Documentation
 
-[Full documentation](https://nfb2021.github.io/canvodpy/packages/viz/overview/)
+[Full documentation](https://canvodpy.eu/packages/viz/overview/)
 
 ## Examples
 

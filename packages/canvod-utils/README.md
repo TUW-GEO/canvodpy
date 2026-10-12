@@ -29,7 +29,7 @@ print(date.to_datetime())
 
 ## Documentation
 
-[Full documentation](https://nfb2021.github.io/canvodpy/packages/utils/overview/)
+[Full documentation](https://canvodpy.eu/packages/utils/overview/)
 
 ## Development
 

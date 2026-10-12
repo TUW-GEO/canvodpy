@@ -176,7 +176,7 @@ def process(config: CanvodConfig):
 
 ## Documentation
 
-[Full documentation](https://nfb2021.github.io/canvodpy/packages/config/overview/)
+[Full documentation](https://canvodpy.eu/packages/config/overview/)
 
 ## Development
 

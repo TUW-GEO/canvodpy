@@ -44,7 +44,7 @@ optional = [
 
 [project.urls]
 Homepage = "https://github.com/nfb2021/canvodpy"
-Documentation = "https://nfb2021.github.io/canvodpy/packages/grids/overview/"
+Documentation = "https://canvodpy.eu/packages/grids/overview/"
 Repository = "https://github.com/nfb2021/canvodpy"
 Issues = "https://github.com/nfb2021/canvodpy/issues"
 
