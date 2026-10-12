@@ -29,7 +29,10 @@ Background: `docs/guides/configuration.md`, `docs/packages/config/overview.md`.
   (`mixed_format_error` in `models/sites.py`, the one check used by the
   settings, `config validate` and `run`). Mixed setups are not supported.
 - Every new setting has a description on the model, a visible default or
-  none, and an entry in the template.
+  none, and an entry in the template. Edit the shipped template
+  (`src/canvod/config/templates/canvod-settings.yaml.example`) and copy it
+  to the repository's `config/canvod-settings.yaml.example`; a test keeps
+  the two identical.
 
 ## Tests
 

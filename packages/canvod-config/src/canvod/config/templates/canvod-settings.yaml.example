@@ -61,6 +61,11 @@ processing:
     product_type: final      # final, rapid, ultra-rapid
     # ftp_timeout_s: 30      # FTP connection timeout in seconds
     # fetch_clock: true      # Set false to skip CLK downloads/interpolation; VOD doesn't use clock corrections
+    # zarr_async_concurrency: 2   # Cap zarr's concurrent chunk write/read burst
+    #                              # for the aux cache's own writes. Unset by
+    #                              # default (zarr's default of 10 applies).
+    #                              # Separate from processing.icechunk's own
+    #                              # knob: different store, different profile.
 
   # ---------------------------------------------------------------------------
   # Processing Parameters
@@ -152,6 +157,11 @@ processing:
     compression_algorithm: zstd  # currently only zstd is supported
     inline_chunk_threshold_bytes: 512   # Bytes; chunks ≤ this are inlined into the manifest
     get_partial_values_concurrency: 1   # Concurrent partial-value reads (increase for S3/GCS)
+    # zarr_async_concurrency: 2         # Cap zarr's concurrent chunk write/read bursts.
+    #                                    # Unset by default (no cap, zarr's own default of
+    #                                    # 10 applies). Set this on network-mounted stores
+    #                                    # (CIFS/NFS) that trip connection-abort errors
+    #                                    # under a concurrent write burst.
 
     chunk_strategies:
       gnss_store:
@@ -178,7 +188,32 @@ processing:
     # If not set, uses system temp directory.
     # aux_data_dir: /path/to/aux_data
 
-    gnss_store_strategy: skip      # skip, overwrite, unsafe_append
+    # Network-wide, fingerprint-keyed aux (SP3/CLK Hermite) cache root.
+    # Unset by default: falls back to per-site aux_data_dir, rebuilt every
+    # run. Point every site in a network at the SAME path here to share one
+    # cache entry per (agency, product, date) instead of each site rebuilding
+    # it independently; ephemeris products are satellite-based, not
+    # site-based, so this is safe across sites with different sampling rates.
+    # shared_aux_cache_dir: /path/to/shared/aux_cache
+
+    # What to do when a file's hash/time-range already exists in the store
+    # (new files are always written regardless):
+    #   skip:          do nothing (default, recommended; a re-run is a no-op)
+    #   overwrite:     delete old epochs for that range, write the new
+    #                   version (for pipeline bug fixes, not raw-data changes)
+    #   unsafe_append: write the data again on top, with NO epoch-uniqueness
+    #                   check. Produces duplicate epoch coordinate values.
+    #                   The two built-in pipeline read paths already guard
+    #                   against this (read_receiver_data() and VodComputer.
+    #                   compute_bulk() both dedup), but MyIcechunkStore.
+    #                   read_group() itself (custom scripts/notebooks, and
+    #                   the deprecated L1 Pipeline.calculate_vod()) has no
+    #                   such guard -- .sel() and dataset alignment can
+    #                   silently produce wrong results at duplicated epochs
+    #                   there. Also stores the extra chunks permanently
+    #                   regardless of read-side protection. Avoid unless you
+    #                   have a specific reason.
+    gnss_store_strategy: skip
 
   # ---------------------------------------------------------------------------
   # Logging

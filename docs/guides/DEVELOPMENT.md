@@ -52,7 +52,7 @@ canVODpy uses three YAML files in `config/`:
 | `sites:` | Research sites, receiver definitions, data root paths, VOD analysis pairs |
 | `sids:` | Signal ID filtering: `all`, a named `preset`, or a `custom` list |
 
-All three sections live in a single `config/canvod-settings.yaml`. Template: `config/canvod-settings.yaml.example`.
+All three sections live in a single `config/canvod-settings.yaml`. Template: `config/canvod-settings.yaml.example`, a copy of the template the package ships (`packages/canvod-config/src/canvod/config/templates/`); edit that one and copy it.
 
 === "First-time setup"
 

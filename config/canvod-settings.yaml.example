@@ -121,7 +121,8 @@ processing:
     # Manual-mode caps (ignored when resource_mode: auto)
     # n_max_threads: 8           # Worker processes (≤ your core count)
     # cpu_affinity: [0, 1, 2, 3] # Pin to CPU core IDs, not on macOS
-    # nice_priority: 10          # OS priority (0 = normal, 19 = lowest)
+    # nice_priority: -5          # OS priority (-20 = highest, 0 = normal, 19 = lowest;
+    #                            # negative needs root/CAP_SYS_NICE on Linux, else no-op)
 
   # ---------------------------------------------------------------------------
   # Preprocessing (optional; nothing is applied unless set)
@@ -164,10 +165,10 @@ processing:
 
     chunk_strategies:
       gnss_store:
-        epoch: 17280  # 24h of 5s data; override to match your site's sampling rate
+        epoch: 180    # epochs per file (15 min at 5 s sampling)
         sid: -1       # Don't chunk along sid
       vod_store:
-        epoch: 17280
+        epoch: 17280  # epochs per day (5 s sampling)
         sid: -1
 
   # ---------------------------------------------------------------------------

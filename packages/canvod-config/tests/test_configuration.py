@@ -92,3 +92,20 @@ def test_imports():
     # CredentialsConfig should accept an email
     creds_with_mail = CredentialsConfig(nasa_earthdata_acc_mail="test@example.com")
     assert creds_with_mail.nasa_earthdata_acc_mail == "test@example.com"
+
+
+def test_the_repository_template_is_the_shipped_one():
+    """``config/canvod-settings.yaml.example`` is a copy of the shipped template.
+
+    Edit the shipped one (``canvod/config/templates/``) and copy it.
+    """
+    repository_copy = (
+        Path(__file__).parents[3] / "config" / "canvod-settings.yaml.example"
+    )
+    if not repository_copy.exists():
+        pytest.skip("not run from a canvodpy checkout")
+    assert repository_copy.read_text() == _template_text(), (
+        "config/canvod-settings.yaml.example differs from the shipped template: "
+        "copy packages/canvod-config/src/canvod/config/templates/"
+        "canvod-settings.yaml.example over it"
+    )
