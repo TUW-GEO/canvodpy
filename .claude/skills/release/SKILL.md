@@ -23,7 +23,8 @@ to PyPI.
 - Deprecated code stays in every 1.x release; v2.0.0 removes it.
 - `just check` and `just test` pass.
 - The release files (`pyproject.toml` files, `uv.lock`, the `CHANGELOG.md`
-  files) have no uncommitted changes; `just release` refuses otherwise and
+  files, `CITATION.cff`, `.zenodo.json`, `codemeta.json`) have no
+  uncommitted changes; `just release` refuses otherwise and
   commits only those files.
 
 ## Steps
@@ -33,7 +34,9 @@ to PyPI.
 2. `just release <package>=X.Y.Z ... canvodpy=X.Y.Z`. It runs the tests,
    checks the choice (canvodpy included, its increment at least the
    largest, ranges between packages admit the new versions), writes the
-   versions, canvodpy's pins, the changelogs and `uv.lock`, and commits
+   versions, canvodpy's pins, the changelogs, canvodpy's version and the
+   date in the citation files (Zenodo takes the version from them) and
+   `uv.lock`, and commits
    them on the new branch `release/vX.Y.Z` (canvodpy's version); no tag.
    Push that branch and open a PR. The user merges it; an agent never
    merges (`CODING_STANDARDS.md`, Git and GitHub).

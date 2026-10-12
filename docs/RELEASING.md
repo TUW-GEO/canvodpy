@@ -15,7 +15,8 @@ Before starting a release:
 - [ ] You are a maintainer: `main` requires a PR (step 4), and only
       maintainers can create release tags (step 5)
 - [ ] The release files (`pyproject.toml` files, `uv.lock`, the
-      `CHANGELOG.md` files) have no uncommitted changes; `just release`
+      `CHANGELOG.md` files, `CITATION.cff`, `.zenodo.json`,
+      `codemeta.json`) have no uncommitted changes; `just release`
       refuses otherwise. Other changes in the working tree stay out of the
       release commit.
 
@@ -73,10 +74,14 @@ This command:
 2. Refuses the release, and says why, when canvodpy is missing, a version
    does not go up or is tagged already, canvodpy's increment is smaller
    than a package's, a package's range on another excludes the new
-   version, or a release file has uncommitted changes
+   version, a citation file lacks its version or date field, or a release
+   file has uncommitted changes
 3. Writes the new versions, canvodpy's `==` pins, a section in each
    released package's `CHANGELOG.md` (from the commits that touched its
-   folder; canvodpy's lists the pinned versions), and `uv.lock`
+   folder; canvodpy's lists the pinned versions), canvodpy's version and
+   today's date in `CITATION.cff`, `.zenodo.json` and `codemeta.json`
+   (Zenodo takes the version of the archived record from them), and
+   `uv.lock`
 4. Creates the branch `release/v1.1.0` (canvodpy's version) and commits
    exactly the release files:
    `bump: canvodpy 1.1.0 (canvod-store 1.1.0, canvod-grids 1.0.1)`
@@ -134,7 +139,7 @@ publishing are deliberately decoupled (see step 8).
 Not automatic. Trigger `publish_pypi.yml` on the canvodpy tag, either from
 the
 [Actions tab](https://github.com/nfb2021/canvodpy/actions/workflows/publish_pypi.yml)
-("Run workflow", choosing the tag) or:
+(the Run workflow button; choose the tag) or:
 
 ```bash
 gh workflow run publish_pypi.yml --ref v1.1.0
@@ -148,8 +153,8 @@ tag existing is not a promise that PyPI has it.
 ### 9. Post-release
 
 - Monitor issues for regressions
-- Create a Zenodo snapshot for DOI ([Zenodo Setup](guides/ZENODO_SETUP.md))
-- Update citation information if needed
+- Check the Zenodo record the release created: its version must be
+  canvodpy's ([Zenodo Setup](guides/ZENODO_SETUP.md))
 
 ---
 

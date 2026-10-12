@@ -66,6 +66,11 @@ just tag-release && git push origin v1.1.0 canvod-store-v1.1.0
 Only the canvodpy tag (`v1.1.0`) creates a GitHub release, so Zenodo
 archives one version per canvodpy release; package tags get none.
 
+Zenodo takes the version and date of the record from `CITATION.cff` and
+`.zenodo.json` at the tag. `just release` writes canvodpy's version and the
+release date into both (and into `codemeta.json`), so the record carries
+the version of the release.
+
 **Automatic workflow:**
 1. GitHub creates release v0.1.0
 2. Zenodo detects new release

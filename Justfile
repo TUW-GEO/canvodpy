@@ -353,8 +353,8 @@ release-status:
 
 # Runs the tests, checks the choice (canvodpy always included, its
 # increment at least the largest, ranges admit the new versions), writes the
-# versions, canvodpy's pins, the changelogs and uv.lock, and commits them on
-# release/v<canvodpy version>; no tag (docs/RELEASING.md).
+# versions, canvodpy's pins, the changelogs, the citation files and uv.lock,
+# and commits them on release/v<canvodpy version>; no tag (docs/RELEASING.md).
 # prepare a release: just release canvod-store=1.1.0 canvodpy=1.1.0
 release +VERSIONS: test
     uv run --no-sync python scripts/release.py prepare {{VERSIONS}}
