@@ -1,4 +1,4 @@
-"""Pydantic models for store metadata (11 sections, ~90 fields).
+"""Pydantic models for store metadata (14 sections).
 
 Field names follow DataCite 4.5, ACDD 1.3, and STAC 1.1; ``validate.py``
 checks the fields against them and the FAIR principles.
@@ -301,7 +301,7 @@ class MigrationRecord(BaseModel):
 
 
 class StoreMetadata(BaseModel):
-    """Root metadata model composing all 11 sections."""
+    """Root metadata model composing all 14 sections."""
 
     metadata_version: str = Field(_METADATA_VERSION, description="Schema version")
     identity: StoreIdentity

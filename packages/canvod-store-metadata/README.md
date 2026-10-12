@@ -83,7 +83,7 @@ python -m canvod.store_metadata.show /path/to/store toml         # raw pyproject
 
 ---
 
-## What we track (11 sections, ~90 fields)
+## What we track (14 sections)
 
 The metadata has three parts (ADR 0014). The **repository metadata**, in
 Icechunk's repository metadata, describes the store as a whole: identity,
@@ -293,6 +293,42 @@ Aggregate statistics about the store contents.
 | `store_size_mb` | float? | Store size on disk in MB |
 | `history` | list[str] | Deprecated: only in snapshots from before the migration; the history of a store is its commit log |
 
+### 12. VOD Analyses
+
+The VOD analyses of a VOD store, by name; empty for a GNSS store.
+
+| Field | Type | Description |
+|---|---|---|
+| `canopy_receiver` | str | Canopy receiver of the analysis |
+| `reference_receiver` | str | Reference receiver of the analysis |
+
+### 13. Amendments
+
+One entry per changed amendable field.
+
+| Field | Type | Description |
+|---|---|---|
+| `field` | str | The changed field, e.g. `creator.email` |
+| `old` | any | Value before the amendment |
+| `new` | any | Value after the amendment |
+| `reason` | str | Why the field changed |
+| `who` | str | Who changed it |
+| `when` | str | When it changed (ISO 8601) |
+
+### 14. Migration
+
+Set only for a store written before the repository metadata and moved
+with `canvodpy store migrate-metadata`.
+
+| Field | Type | Description |
+|---|---|---|
+| `old_id` | str | The store id before the migration |
+| `old_metadata_version` | str | Schema version of the old metadata |
+| `who` | str | Who migrated the store |
+| `when` | str | When it was migrated (ISO 8601) |
+| `fields_given` | list[str] | Fields given at migration time |
+| `variables_replaced` | list[str] | Arrays whose attributes the migration replaced |
+
 ---
 
 ## FAIR data principles
@@ -304,7 +340,7 @@ sub-principle to the fields and features that satisfy it:
 | Principle | Requirement | How we satisfy it |
 |---|---|---|
 | **F1** | Globally unique persistent identifier | `identity.id` (local) + `identity.persistent_identifier` (DOI) |
-| **F2** | Rich metadata | 11 sections, ~90 fields |
+| **F2** | Rich metadata | 14 sections |
 | **F3** | Metadata includes data identifier | `identity.id` and `identity.uuid` are in the repository metadata and in the root copy of every snapshot |
 | **F4** | Registered in searchable resource | `scan_stores()`, STAC catalog export |
 | **A1** | Retrievable by standard protocol | Zarr/Icechunk (local, S3, HTTP); `references.access_url` |
@@ -377,7 +413,7 @@ print(df)
 
 | Module | Purpose |
 |---|---|
-| `schema.py` | Pydantic v2 models for all 11 sections |
+| `schema.py` | Pydantic v2 models for all 14 sections |
 | `collectors.py` | Pure functions that gather runtime info |
 | `io.py` | Write a new store's metadata, read a snapshot's; `commit_with_rebase`, the one commit function |
 | `snapshot.py` | What every commit writes: root copy, snapshot summary, commit metadata |
