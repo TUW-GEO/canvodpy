@@ -59,8 +59,9 @@ Background: `docs/packages/store/overview.md`,
 
 One Icechunk repository per store; one group per receiver (observation
 store) or per analysis (VOD store), each with a log of the
-ingested files (`{group}/metadata/table`). Root attributes hold the source format and the rich
-metadata (`canvod_metadata`, see canvod-store-metadata).
+ingested files (`{group}/metadata/table`). The store metadata is in
+Icechunk's repository metadata, with a copy and the snapshot summary in
+the root attributes of every snapshot (see canvod-store-metadata).
 
 ## Tests
 

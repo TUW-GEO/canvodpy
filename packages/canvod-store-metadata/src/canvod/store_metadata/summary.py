@@ -257,8 +257,8 @@ def summarize_store(
     Returns
     -------
     dict[str, Any]
-        Dotted-key updates for :func:`update_metadata` (or
-        :func:`apply_updates`). Empty if the store holds no data yet.
+        Dotted-key updates of the snapshot summary's fields, plus
+        ``summaries.store_size_mb``. Empty if the store holds no data yet.
     """
     from .io import _open_repo
 

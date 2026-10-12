@@ -18,11 +18,28 @@ a directory with it.
 
 ## Where it's stored
 
-The metadata is a JSON object in the root attributes of the store, under
-the key `canvod_metadata`, on the branch `main`:
+A store's metadata has three parts (ADR 0014), each kept where Icechunk
+keeps that kind of information:
+
+| Part | Where | What it holds | Changes |
+|---|---|---|---|
+| **Repository metadata** | Icechunk's repository metadata: on no branch, in no snapshot | What describes the store as a whole: identity, creator, publisher and license, site and position, receivers or VOD analyses, references | Fixed fields never; amendable fields only by amendment |
+| **Snapshot summary** | Root attributes of each snapshot | What the snapshot holds: time coverage, per-receiver epochs, signals, variables, time range and position, constellations | Written by every commit, from the data of that commit |
+| **Commit metadata** | Icechunk's metadata of each commit | How the commit was made: software versions, environment, settings and their hash, hash of `uv.lock` | Written by every commit |
+
+Every commit also writes a copy of the repository metadata into the root
+attributes, in standard form: flat CF and ACDD global attributes, the
+Zarr conventions for `proj`, `license` and `stac`, and the lossless copy
+under `canvod:repository_metadata`. So each snapshot shows its store as
+it was when it was committed, and tools that read only the root group,
+such as xarray, see it too. The text of `uv.lock` and `pyproject.toml` is
+stored once per hash, in the reserved group `canvod`:
 
 ```text
-store_root/                    # root attributes: {"canvod_metadata": {...}}
+store_root/                    # root attributes: root copy and snapshot summary
+├── canvod/
+│   └── environments/
+│       └── <uv.lock hash>/    # uv_lock, pyproject_toml (text as bytes)
 ├── canopy_01/
 │   ├── SNR
 │   ├── ...
@@ -33,23 +50,32 @@ store_root/                    # root attributes: {"canvod_metadata": {...}}
     └── ...
 ```
 
+The **fixed fields** say which store this is: the store id, UUID, store
+type, source format, naming authority, catalog link, and creation date.
+The store id is `{site}-{gnss|vod}`, from the site name in lowercase.
+Every other field of the repository metadata is **amendable**.
+
 ## Sections
 
-The `StoreMetadata` model has a `metadata_version` and 11 sections:
+`read_metadata()` combines the three parts of one snapshot into one
+`StoreMetadata`, with a `metadata_version` and these sections:
 
-| Section | Model | Content |
-|---|---|---|
-| `identity` | `StoreIdentity` | ID, title, description, store type, source format, keywords, conventions |
-| `creator` | `Creator` | Name, email, ORCID, institution and its ROR ID, department |
-| `publisher` | `Publisher` | Name, URL, license (SPDX identifier), license URI |
-| `temporal` | `TemporalExtent` | Created, updated, first and last stored epoch, duration, resolution |
-| `spatial` | `SpatialExtent` | Site name and country, latitude, longitude, altitude (WGS84), bounding box |
-| `instruments` | `Instruments` | Platform; per receiver: type, directory, reader format, epochs, signals, variables |
-| `processing` | `ProcessingProvenance` | Versions of canvodpy and of the 11 `canvod-*` packages it installs, and of the main libraries (Icechunk, Zarr, xarray, Dask, NumPy, Polars, Pydantic); Python and uv versions; processing level; lineage |
-| `environment` | `Environment` | Host name, operating system, architecture, CPUs, memory, free disk space, the hash and text of `uv.lock`, and the text of `pyproject.toml` |
-| `config` | `ConfigSnapshot` | The processing, preprocessing, auxiliary data, compression, Icechunk, and signal settings, and their hash |
-| `references` | `References` | Repository, documentation, publications, funding |
-| `summaries` | `Summaries` | Number of epochs and signals, constellations, variables, number of files, store size, history |
+| Section | Model | Content | Part |
+|---|---|---|---|
+| `identity` | `StoreIdentity` | ID, UUID, naming authority, catalog link, title, description, store type, source format, keywords | Repository metadata |
+| `creator` | `Creator` | Name, email, ORCID, institution and its ROR ID, department, research group, website | Repository metadata |
+| `publisher` | `Publisher` | Name, URL, license (SPDX identifier), license URI | Repository metadata |
+| `temporal` | `TemporalExtent` | Created; updated, first and last stored epoch, duration, resolution | Created: repository metadata; the rest: snapshot summary |
+| `spatial` | `SpatialExtent` | Site name, description and country, latitude, longitude, altitude (WGS84); bounding box | Site and position: repository metadata; bounding box: snapshot summary |
+| `instruments` | `Instruments` | Platform; per receiver: type, directory, reader format, hardware, antenna; epochs, signals, variables, time range, position | Receiver description: repository metadata; counts, time range, position: snapshot summary |
+| `vod_analyses` | `VodAnalysisInfo` | Per VOD analysis of a VOD store: its canopy and reference receiver | Repository metadata |
+| `references` | `References` | Repository, documentation, publications, funding | Repository metadata |
+| `summaries` | `Summaries` | Number of epochs and signals, constellations, variables, number of files | Snapshot summary |
+| `processing` | `ProcessingProvenance` | Versions of canvodpy and of the 11 `canvod-*` packages it installs, and of the main libraries (Icechunk, Zarr, xarray, Dask, NumPy, Polars, Pydantic); Python and uv versions; processing level | Commit metadata |
+| `environment` | `Environment` | Host name, operating system, architecture, CPUs, memory, free disk space, the hash and text of `uv.lock`, and the text of `pyproject.toml` | Commit metadata |
+| `config` | `ConfigSnapshot` | The processing, preprocessing, auxiliary data, compression, Icechunk, and signal settings, and their hash | Commit metadata |
+| `amendments` | `Amendment` | Each amendment: field, old and new value, reason, who, when | Repository metadata |
+| `migration` | `MigrationRecord` | For a migrated store: old id, who migrated it and when, fields given | Repository metadata |
 
 The field names follow three metadata standards: the DataCite Metadata Schema 4.5, the
 Attribute Convention for Data Discovery (ACDD) 1.3, and the SpatioTemporal
@@ -58,34 +84,28 @@ Asset Catalog (STAC) 1.1.
 ## How runs write it
 
 Every run (`canvodpy run`, `Site.pipeline()`, or Airflow) writes the
-metadata of both stores itself, after each day written to the GNSS store
-and after each VOD write:
+metadata itself:
 
-1. At the first write to a store, `collect_metadata()` collects all 11
-   sections from the settings and the environment, `summarize_store()`
-   adds the coverage and summaries of the stored data, and
-   `write_metadata()` writes them, with the first history line.
-1. At every later write, `update_metadata()` sets `temporal.updated` and
-   adds a line to `summaries.history`. It computes the coverage and
-   summaries again from the stored data and replaces the settings snapshot
-   if the settings changed. The history line then names the old and new hash of
-   the settings.
+1. Before the first write to a store, `collect_metadata()` builds the
+   repository metadata from the settings, and `write_metadata()` writes
+   it. A store never holds data without its metadata.
+1. Every commit, of a run or of any other canVODpy command, writes the
+   root copy and the snapshot summary in the same commit as the data,
+   and records the commit metadata. The snapshot summary therefore can't
+   disagree with the data it describes.
+1. A run that writes a receiver (GNSS store) or a VOD analysis (VOD
+   store) that the repository metadata doesn't list is refused. The
+   error names the `canvodpy store amend` command that adds it.
 
-A history line names what was written, the canVODpy version, and the
-preprocessing of each group written, for example:
+A failed metadata write fails the commit, and the run stops with an
+error. A commit whose root group differs from the repository metadata,
+for example after an edit by hand, is refused.
 
-```text
-2026-10-05T12:00:00+00:00: Ingest 2025003: canopy_01(written=96) (canvodpy 1.0.0); preprocessing: canopy_01: temporal_aggregate(freq=1min, method=mean, integer_method=first)
-```
-
-The full record of each file is in the group's log book (see
+The history of a store is its commit log. `show_metadata()` lists it,
+and `canvodpy store log SITE` draws it as a graph. Each commit records
+its settings, so the preprocessing of a write can be read from its
+commit. The full record of each file is in the group's log book (see
 [The preprocessing record](../ops/overview.md#the-preprocessing-record)).
-
-A failed metadata write stops the run with an error. By then, the data of
-that write is committed (the metadata goes in a separate commit), so the
-error says that the metadata no longer describes all of the stored data.
-The next successful write computes coverage and summaries again from the
-stored data.
 
 ## Settings
 
@@ -111,7 +131,7 @@ processing:
 DataCite requires the publisher and STAC requires the license, so a
 store isn't created without them.
 
-The description of the site's stores, the site description and the
+The description of the site's stores, the site description, and the
 location come from the site:
 
 ```yaml
@@ -143,7 +163,10 @@ if metadata_exists(store_path):
 show_metadata(store_path)  # print all sections
 ```
 
-`format_metadata(meta)` returns the same text as a string.
+`read_metadata()` reads the tip of `main`; `branch=` reads another
+branch, and `snapshot_id=` reads one snapshot as it was when it was
+committed. `format_metadata(meta)` returns the text of `show_metadata()`
+as a string.
 
 To recreate the Python environment that wrote a store, `extract_env()`
 writes the stored `pyproject.toml` and `uv.lock` to a directory.
@@ -178,22 +201,50 @@ compliance-checker, for CF 1.11 and ACDD 1.3. Two of its findings are
 known and accepted. CF has no standard names for GNSS observables, and
 UDUNITS has no unit for dB or dB-Hz.
 
-## Change the metadata
+## Change the description: amendments
 
-`update_metadata()` changes fields, addressed by dotted keys, and commits
-the change:
+Amendable fields change only by amendment, with a reason:
 
-```python
-from canvod.store_metadata import update_metadata
-
-update_metadata(
-    store_path,
-    {"identity.description": "GNSS-T observations of the Example site, 2025"},
-)
+```bash
+canvodpy store amend ExampleSite --store gnss \
+  --set identity.title="Example site GNSS-T observations" \
+  --reason "Clearer title"
 ```
 
-Runs set the coverage, summaries, and history themselves; change those
-only through a run.
+The command shows the changes and asks before it writes them. Each
+changed field is recorded with its old and new value, the reason, who
+(the initials in `processing.metadata.initials`), and when. A new commit
+carries the new description. Snapshots from before keep the description
+they were written with; `show_metadata()` lists the amendments made
+since. A fixed field is refused: a different id or creation date means a
+different store.
+
+`--add-receiver NAME` adds a receiver of the site's settings to a GNSS
+store, and `--add-vod-analysis NAME` adds a VOD analysis to a VOD store,
+so runs may write them. `--from FILE` reads the changes from a YAML
+file. In Python, `amend_metadata()` does the same.
+
+Runs set the snapshot summary and the commit metadata themselves; they
+are never amended.
+
+## Move an older store to the current form
+
+A store written before the repository metadata keeps its metadata in one
+root attribute. Runs refuse such a store, and the error names the
+command that moves it:
+
+```bash
+canvodpy store migrate-metadata ExampleSite --store gnss \
+  --set identity.description="GNSS-T observations below a beech canopy"
+```
+
+The migration writes the repository metadata, gives the store its new id
+and a UUID, and keeps the old id in the migration record, with who
+migrated it and when. A migrated store must pass the standards checks
+like a new one. Fields it lacks, such as its description, are given with
+`--set`; otherwise the migration is refused and lists them. In a VOD
+store, the attributes of `VOD` are replaced with the current ones.
+Snapshots from before the migration stay readable.
 
 ## List the stores of a directory
 

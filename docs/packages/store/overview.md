@@ -96,8 +96,9 @@ For each receiver and day, a run does the following:
 1. Applies the preprocessing in `processing.preprocessing`, if set.
 1. Checks each file against the group's log book (see
    [Duplicate checks](#duplicate-checks)).
-1. Writes the new data with one commit, and the store metadata with a
-   second commit (see [canvod-store-metadata](../store-metadata/overview.md)).
+1. Writes the new data with one commit. The same commit writes the
+   snapshot summary and records the commit metadata (see
+   [canvod-store-metadata](../store-metadata/overview.md)).
 
 An append must match the group. A run stops with an error if:
 

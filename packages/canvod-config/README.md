@@ -77,7 +77,7 @@ processing:
     author: Your Name
     email: your.email@example.com
     license: CC-BY-4.0
-    # ... DataCite/ACDD provenance fields, written as Zarr store metadata
+    # ... DataCite/ACDD fields, written into the repository metadata of new stores
 
   credentials:
     nasa_earthdata_acc_mail: null  # optional; prefer the env var override below

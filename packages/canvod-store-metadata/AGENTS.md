@@ -8,10 +8,11 @@ canvod-store (`{group}/metadata/table`).
 
 | Path (under `src/canvod/store_metadata/`) | What |
 |---|---|
-| `schema.py` | The metadata models; stored as the root attribute `canvod_metadata`, the repository part (`RepositoryMetadata`) in Icechunk's repository metadata |
+| `schema.py` | The metadata models: `RepositoryMetadata` in Icechunk's repository metadata, `StoreMetadata` as read from one snapshot (repository metadata, snapshot summary and commit metadata); the old root attribute `canvod_metadata` only in snapshots from before ADR 0014 |
+| `amend.py`, `migration.py` | `amend_metadata` (amendable fields, with a reason) and `migrate_metadata` (stores from before ADR 0014) |
 | `identity.py` | Store id, UUID, naming authority and catalog link of a new store |
 | `collectors.py` | `collect_metadata`: fills the model from settings, dataset and environment |
-| `io.py` | Read, write, update the metadata of a store; `commit_with_rebase`, the one commit function |
+| `io.py` | Write a new store's metadata, read a snapshot's; `commit_with_rebase`, the one commit function |
 | `snapshot.py` | What every commit writes: root copy, snapshot summary, commit metadata, lockfile text in the reserved group `canvod` |
 | `validate.py` | Checks against the schema and the standards |
 | `inventory.py`, `show.py`, `summary.py` | Several stores at once; reports |

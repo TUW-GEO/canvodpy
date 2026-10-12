@@ -284,9 +284,9 @@ data have exactly the variables and attributes of data without preprocessing.
 - **VOD store**: the `preprocessing` column of the analysis group's log book
   holds, per receiver, the records of the GNSS data the result was computed
   from, for example `{"canopy_01": [record], "reference_01": [record]}`.
-- **Store history**: each entry (`summaries.history` of the store metadata,
-  shown by `canvod.store_metadata.show_metadata`) names the preprocessing of
-  every group written and the canVODpy version.
+- **Store history**: the commit log of the store. Each commit records its
+  settings, among them the preprocessing, and the canVODpy version in its
+  commit metadata; `canvod.store_metadata.show_metadata` lists the commits.
 
 A store group never mixes data preprocessed with different operations or
 settings. Before each write, the store compares the settings of the new data

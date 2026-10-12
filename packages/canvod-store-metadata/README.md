@@ -27,7 +27,7 @@ canvod has two distinct concepts that both involve "metadata":
 
 | Concept | Package | Location in store | What it tracks |
 | --- | --- | --- | --- |
-| **Store metadata** | `canvod-store-metadata` (this package) | Zarr root attrs (`canvod_metadata` key) | *Who/what/when/how* — identity, creator, provenance, environment, compliance |
+| **Store metadata** | `canvod-store-metadata` (this package) | Icechunk's repository metadata, a copy in the root attributes of every snapshot | *Who/what/when/how* — identity, creator, provenance, environment, compliance |
 | **File registry** | `canvod-store` (`MyIcechunkStore`) | `{group}/metadata/table` Zarr arrays | *Which files* went in — per-file hash, temporal range, filename, path |
 
 In short: **store metadata** describes the store as a whole (for catalogs, reproducibility,
@@ -48,7 +48,7 @@ from canvod.store_metadata import (
     scan_stores,
 )
 
-# Write metadata to an existing Icechunk store
+# Write a new store's metadata (build it with collect_metadata)
 write_metadata(store_path, metadata)
 
 # Read it back
@@ -85,8 +85,18 @@ python -m canvod.store_metadata.show /path/to/store toml         # raw pyproject
 
 ## What we track (11 sections, ~90 fields)
 
-All metadata is stored as a single JSON blob in the Zarr root attributes under the
-key `canvod_metadata`. Each section is described below.
+The metadata has three parts (ADR 0014). The **repository metadata**, in
+Icechunk's repository metadata, describes the store as a whole: identity,
+creator, publisher, site, receivers, references. Its fixed fields never
+change; the others change only by amendment (`canvodpy store amend`, or
+`amend_metadata`), with a reason. Every commit writes the **snapshot
+summary** (coverage, counts, per-receiver position) into the root
+attributes, with a copy of the repository metadata in standard form, and
+records the **commit metadata** (software, environment, settings).
+`read_metadata()` combines the three for one snapshot. Stores written
+before keep their metadata in the root attribute `canvod_metadata`;
+`canvodpy store migrate-metadata` moves them. Each section is described
+below.
 
 ### 1. Identity & Discovery
 
@@ -281,7 +291,7 @@ Aggregate statistics about the store contents.
 | `temporal_resolution_s` | float? | Temporal resolution in seconds |
 | `file_count` | int? | Number of source files ingested |
 | `store_size_mb` | float? | Store size on disk in MB |
-| `history` | list[str] | Timestamped processing log entries |
+| `history` | list[str] | Deprecated: only in snapshots from before the migration; the history of a store is its commit log |
 
 ---
 
@@ -295,12 +305,12 @@ sub-principle to the fields and features that satisfy it:
 |---|---|---|
 | **F1** | Globally unique persistent identifier | `identity.id` (local) + `identity.persistent_identifier` (DOI) |
 | **F2** | Rich metadata | 11 sections, ~90 fields |
-| **F3** | Metadata includes data identifier | `identity.id` is part of the metadata blob |
+| **F3** | Metadata includes data identifier | `identity.id` and `identity.uuid` are in the repository metadata and in the root copy of every snapshot |
 | **F4** | Registered in searchable resource | `scan_stores()`, STAC catalog export |
 | **A1** | Retrievable by standard protocol | Zarr/Icechunk (local, S3, HTTP); `references.access_url` |
 | **A1.1** | Protocol is open and free | Zarr v3 + Icechunk — open specifications |
 | **A1.2** | Protocol allows authentication | Icechunk supports S3/GCS credentials |
-| **A2** | Metadata accessible if data gone | Metadata in root attrs (coupled); STAC JSON is independent |
+| **A2** | Metadata accessible if data gone | Repository metadata outlives every snapshot; STAC JSON is independent |
 | **I1** | Formal knowledge representation | JSON with Pydantic v2 schema |
 | **I2** | FAIR-compliant vocabularies | ACDD conventions, SPDX licenses |
 | **I3** | Qualified cross-references | `references.related_stores`, `references.publications` |
@@ -356,8 +366,8 @@ print(df)
 # ┌────────────────────────┬────────────┬─────────────┬──────────────┐
 # │ id                     ┆ store_type ┆ site        ┆ total_epochs │
 # ╞════════════════════════╪════════════╪═════════════╪══════════════╡
-# │ ExampleSite/gnss_store ┆ gnss_store ┆ ExampleSite ┆ 86400        │
-# │ ExampleSite/vod_store  ┆ vod_store  ┆ ExampleSite ┆ 86400        │
+# │ examplesite-gnss       ┆ gnss_store ┆ ExampleSite ┆ 86400        │
+# │ examplesite-vod        ┆ vod_store  ┆ ExampleSite ┆ 86400        │
 # └────────────────────────┴────────────┴─────────────┴──────────────┘
 ```
 
@@ -367,7 +377,10 @@ print(df)
 |---|---|
 | `schema.py` | Pydantic v2 models for all 11 sections |
 | `collectors.py` | Pure functions that gather runtime info |
-| `io.py` | Write/read/update metadata to Icechunk root attrs |
+| `io.py` | Write a new store's metadata, read a snapshot's; `commit_with_rebase`, the one commit function |
+| `snapshot.py` | What every commit writes: root copy, snapshot summary, commit metadata |
+| `amend.py` | Amendments of amendable fields |
+| `migration.py` | Moving stores from before ADR 0014 |
 | `validate.py` | Compliance checking (DataCite, ACDD, STAC) |
 | `inventory.py` | Directory scanning, catalog building, STAC export |
 | `show.py` | Human-readable formatting, env extraction, CLI |

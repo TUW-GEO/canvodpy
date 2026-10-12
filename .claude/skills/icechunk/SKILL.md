@@ -139,9 +139,12 @@ rechunk) only through `MyIcechunkStore.promote_branch`, which raises
 
 - `repo.get_metadata()`, `repo.set_metadata(d)` (replaces),
   `repo.update_metadata(d)` (merges): metadata of the repository itself,
-  readable without opening a session. canvodpy keeps its rich metadata in
-  the root attribute `canvod_metadata` (canvod-store-metadata); don't
-  start a second copy here without deciding which one is the truth.
+  readable without opening a session. canvodpy keeps a store's
+  repository metadata here (ADR 0014, canvod-store-metadata): write it
+  only through `write_metadata`, `amend_metadata` or `migrate_metadata`,
+  never with `set_metadata` or `update_metadata` directly. Each commit,
+  through `commit_with_rebase`, copies it into the root attributes and
+  refuses a root group that differs.
 - `repo.set_default_commit_metadata(d)`: merged into every later commit's
   metadata (sessions opened afterwards only).
 - `repo.get_status()` / `repo.set_status(icechunk.RepoStatus(...))`:
