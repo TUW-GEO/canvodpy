@@ -1,16 +1,20 @@
 """Test runtime collectors."""
 
+import hashlib
+import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from canvod.utils import testing
 
+from canvod.store_metadata import collectors
 from canvod.store_metadata.collectors import (
     collect_config_snapshot,
     collect_creator,
     collect_environment,
     collect_metadata,
+    collect_processing_provenance,
     collect_python_info,
     collect_references,
     collect_software_versions,
@@ -307,3 +311,95 @@ def _collect(config: MagicMock, site_cfg: MagicMock):
             source_format="rinex3",
             store_path=Path("/tmp/test"),
         )
+
+
+def _project(path: Path, lock: str = "version = 1\n") -> Path:
+    """A uv project: pyproject.toml and uv.lock."""
+    path.mkdir(parents=True, exist_ok=True)
+    (path / "pyproject.toml").write_text('[project]\nname = "fangorn"\n')
+    (path / "uv.lock").write_text(lock)
+    return path
+
+
+class TestLockfile:
+    def test_the_lockfile_of_the_project_run_from_is_recorded(
+        self, tmp_path, monkeypatch
+    ):
+        project = _project(tmp_path / "fangorn")
+        (project / "notebooks").mkdir()
+        monkeypatch.chdir(project / "notebooks")
+
+        env = collect_environment()
+
+        assert env.uv_lock_text == "version = 1\n"
+        assert env.uv_lock_hash == hashlib.sha256(b"version = 1\n").hexdigest()
+        assert env.pyproject_toml_text == '[project]\nname = "fangorn"\n'
+
+    def test_outside_a_project_no_lockfile_is_recorded(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+
+        env = collect_environment()
+
+        assert env.uv_lock_text is None
+        assert env.uv_lock_hash is None
+        assert env.pyproject_toml_text is None
+
+    def test_an_unreadable_lockfile_is_an_error(self, tmp_path, monkeypatch):
+        project = _project(tmp_path / "fangorn")
+        monkeypatch.chdir(project)
+        monkeypatch.setattr(
+            Path,
+            "read_bytes",
+            lambda self: (_ for _ in ()).throw(PermissionError(str(self))),
+        )
+
+        with pytest.raises(PermissionError, match="uv.lock"):
+            collect_environment()
+
+
+class TestOncePerProcess:
+    def test_uv_runs_once_for_many_commits(self, monkeypatch):
+        calls = []
+
+        def run(*args, **kwargs):
+            calls.append(args)
+            return subprocess.CompletedProcess(args, 0, stdout="uv 0.9.0\n")
+
+        monkeypatch.setattr(subprocess, "run", run)
+        collectors.collect_uv_version.cache_clear()
+        try:
+            first = collect_processing_provenance("gnss_store", "rinex3")
+            second = collect_processing_provenance("gnss_store", "rinex3")
+        finally:
+            collectors.collect_uv_version.cache_clear()
+
+        assert len(calls) == 1
+        assert first.uv_version == second.uv_version == "uv 0.9.0"
+
+    def test_the_lockfile_is_read_once_until_it_changes(self, tmp_path, monkeypatch):
+        project = _project(tmp_path / "fangorn")
+        monkeypatch.chdir(project)
+        reads = []
+        read_bytes = Path.read_bytes
+
+        def counted(self):
+            reads.append(self.name)
+            return read_bytes(self)
+
+        monkeypatch.setattr(Path, "read_bytes", counted)
+
+        first = collect_environment()
+        second = collect_environment()
+        assert reads.count("uv.lock") == 1
+        assert first.uv_lock_hash == second.uv_lock_hash
+
+        (project / "uv.lock").write_text("version = 1\nrevision = 3\n")
+        third = collect_environment()
+        assert reads.count("uv.lock") == 2
+        assert third.uv_lock_text == "version = 1\nrevision = 3\n"
+        assert third.uv_lock_hash != first.uv_lock_hash
+
+    def test_software_versions_cannot_be_changed_by_a_caller(self):
+        collect_software_versions()["pydantic"] = "0"
+
+        assert collect_software_versions()["pydantic"] != "0"

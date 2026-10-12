@@ -32,8 +32,11 @@ attributes, in standard form: flat CF and ACDD global attributes, the
 Zarr conventions for `proj`, `license` and `stac`, and the lossless copy
 under `canvod:repository_metadata`. So each snapshot shows its store as
 it was when it was committed, and tools that read only the root group,
-such as xarray, see it too. The text of `uv.lock` and `pyproject.toml` is
-stored once per hash, in the reserved group `canvod`:
+such as xarray, see it too. The `uv.lock` and `pyproject.toml` are those
+of the project the run starts in: the nearest directory, from the working
+directory up, that holds both. A run outside such a project records
+neither. Their text is stored once per hash, in the reserved group
+`canvod`:
 
 ```text
 store_root/                    # root attributes: root copy and snapshot summary

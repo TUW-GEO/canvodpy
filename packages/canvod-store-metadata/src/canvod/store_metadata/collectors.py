@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -38,6 +39,12 @@ if TYPE_CHECKING:
 
 def collect_software_versions() -> dict[str, str]:
     """Collect versions of key packages via importlib.metadata."""
+    return dict(_software_versions())
+
+
+@functools.cache
+def _software_versions() -> dict[str, str]:
+    """The installed versions, looked up once per process."""
     import importlib.metadata
 
     packages = [
@@ -70,13 +77,15 @@ def collect_software_versions() -> dict[str, str]:
     return versions
 
 
+@functools.cache
 def collect_python_info() -> str:
     """Return Python version + implementation."""
     return f"{sys.version} ({platform.python_implementation()})"
 
 
+@functools.cache
 def collect_uv_version() -> str | None:
-    """Return uv version or None if not installed."""
+    """Return uv version or None if not installed (asked once per process)."""
     try:
         result = subprocess.run(
             ["uv", "--version"],
@@ -91,38 +100,43 @@ def collect_uv_version() -> str | None:
     return None
 
 
-def _find_monorepo_root() -> Path | None:
-    """Walk up from this file to find pyproject.toml with workspace."""
-    try:
-        from canvod.config.loader import find_monorepo_root
+def _find_project_root() -> Path | None:
+    """The uv project the process runs from: the nearest directory, from
+    the working directory up, that holds ``pyproject.toml`` and ``uv.lock``.
 
-        return find_monorepo_root()
-    except Exception:
-        pass
-    # Fallback: walk up from cwd
-    p = Path.cwd()
-    for _ in range(10):
-        if (p / "pyproject.toml").exists() and (p / "uv.lock").exists():
-            return p
-        if p.parent == p:
-            break
-        p = p.parent
+    ``None`` outside such a project; no lockfile is recorded then.
+    """
+    current = Path.cwd().resolve()
+    for path in [current, *current.parents]:
+        if (path / "pyproject.toml").is_file() and (path / "uv.lock").is_file():
+            return path
     return None
 
 
-def _read_file_text(path: Path) -> str | None:
-    """Read a file as UTF-8 text, return None if missing."""
-    if not path.exists():
-        return None
-    return path.read_text(encoding="utf-8")
+def _project_files(root: Path) -> tuple[str, str, str]:
+    """``pyproject.toml`` text, ``uv.lock`` text and its SHA256.
+
+    Read again only when either file changed (modification time or size).
+    """
+    pyproject, lock = (root / "pyproject.toml").stat(), (root / "uv.lock").stat()
+    return _read_project_files(
+        root,
+        (pyproject.st_mtime_ns, pyproject.st_size),
+        (lock.st_mtime_ns, lock.st_size),
+    )
 
 
-def _read_uv_lock_hash(root: Path) -> str | None:
-    """Return SHA256 of uv.lock for quick comparison."""
-    lock_path = root / "uv.lock"
-    if not lock_path.exists():
-        return None
-    return hashlib.sha256(lock_path.read_bytes()).hexdigest()
+@functools.lru_cache(maxsize=8)
+def _read_project_files(
+    root: Path, pyproject_key: tuple[int, int], lock_key: tuple[int, int]
+) -> tuple[str, str, str]:
+    """Read the project files; the keys only identify their versions."""
+    lock = (root / "uv.lock").read_bytes()
+    return (
+        (root / "pyproject.toml").read_text(encoding="utf-8"),
+        lock.decode("utf-8"),
+        hashlib.sha256(lock).hexdigest(),
+    )
 
 
 def collect_environment(
@@ -146,15 +160,11 @@ def collect_environment(
             usage = shutil.disk_usage(check_path)
             disk_free_gb = round(usage.free / (1024**3), 1)
 
-    # Read raw pyproject.toml + uv.lock from monorepo root
-    pyproject_text = None
-    uv_lock_text = None
-    uv_lock_hash = None
-    root = _find_monorepo_root()
+    # Raw pyproject.toml + uv.lock of the project the process runs from
+    pyproject_text = uv_lock_text = uv_lock_hash = None
+    root = _find_project_root()
     if root is not None:
-        pyproject_text = _read_file_text(root / "pyproject.toml")
-        uv_lock_text = _read_file_text(root / "uv.lock")
-        uv_lock_hash = _read_uv_lock_hash(root)
+        pyproject_text, uv_lock_text, uv_lock_hash = _project_files(root)
 
     return Environment(
         hostname=socket.gethostname(),
