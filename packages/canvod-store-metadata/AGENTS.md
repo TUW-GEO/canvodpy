@@ -16,6 +16,7 @@ canvod-store (`{group}/metadata/table`).
 | `snapshot.py` | What every commit writes: root copy, snapshot summary, commit metadata, lockfile text in the reserved group `canvod` |
 | `validate.py` | Checks against the schema and the standards |
 | `inventory.py`, `show.py`, `summary.py` | Several stores at once; reports |
+| `testing.py` | Stores with the made-up site's metadata, for tests |
 
 Background: `docs/packages/store-metadata/overview.md`. The `metadata-*`
 recipes run these from the command line (`just metadata-show <store>`,
@@ -27,6 +28,9 @@ recipes run these from the command line (`just metadata-show <store>`,
 - Repository metadata is written once, when the store gets its metadata;
   every commit through `commit_with_rebase` then writes the root copy and
   the snapshot summary and checks the root copy (ADR 0014).
+- `commit_with_rebase` refuses a store without repository metadata. Tests
+  that write to a store directly give it made-up metadata first with
+  `canvod.store_metadata.testing.give_test_metadata`.
 - A store created by canVODpy has no validation failures:
   `validate_all(meta, recommended=False)` is empty. CF 1.11 and ACDD 1.3
   are checked on a netCDF export by IOOS compliance-checker in

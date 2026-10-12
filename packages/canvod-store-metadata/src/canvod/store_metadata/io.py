@@ -79,11 +79,12 @@ def commit_with_rebase(
     different groups) onto the new tip; overlapping changes fail with
     ``icechunk.RebaseFailedError``.
 
-    In a store with repository metadata (ADR 0014) the commit also writes
-    the root copy and the snapshot summary of the rebased session, stores
-    the lockfile text once per hash, and records software, environment and
-    settings as commit metadata, next to ``metadata``. It refuses a root
-    group that differs from the repository metadata.
+    The commit also writes the root copy and the snapshot summary of the
+    rebased session (ADR 0014), stores the lockfile text once per hash, and
+    records software, environment and settings as commit metadata, next to
+    ``metadata``. It refuses a store without repository metadata, so no
+    store holds data without it, and a root group that differs from the
+    repository metadata.
 
     Every commit in canVODpy goes through this function, except manifest
     compaction, which goes through :func:`rewrite_manifests`.
@@ -109,33 +110,41 @@ def commit_with_rebase(
     Raises
     ------
     ValueError
-        If the root group last committed differs from the repository
+        If the store has no repository metadata and ``repository`` is not
+        given, or the root group last committed differs from the repository
         metadata (written by an older canvodpy or edited by hand).
     """
     with commit_lock(store_path):
         repo = _open_repo(Path(store_path))
         if repository is None:
             repository = repo.get_metadata()
-        if repository:
-            from .snapshot import prepare_commit
+        if not repository:
+            msg = (
+                f"The store at {store_path} has no repository metadata, so it "
+                "takes no data; nothing was committed. A run gives a new store "
+                "its metadata before it writes data (canvodpy run, Site(...)"
+                ".pipeline(), VodComputer). A store written before stores kept "
+                "repository metadata is moved to the current form with:\n"
+                f"  {MIGRATE_COMMAND} SITE --store gnss|vod"
+            )
+            raise ValueError(msg)
+        from .snapshot import prepare_commit
 
-            # Rebase first, if the branch moved, so the summary describes
-            # everything the commit will hold and the root group is changed
-            # by this commit only.
-            branch = session.branch
-            if branch is None or repo.lookup_branch(branch) != session.snapshot_id:
-                session.rebase(icechunk.ConflictDetector())
-            if config is None:
-                from canvod.config import load_config
+        # Rebase first, if the branch moved, so the summary describes
+        # everything the commit will hold and the root group is changed by
+        # this commit only.
+        branch = session.branch
+        if branch is None or repo.lookup_branch(branch) != session.snapshot_id:
+            session.rebase(icechunk.ConflictDetector())
+        if config is None:
+            from canvod.config import load_config
 
-                config = load_config()
-            root = zarr.open_group(session.store, mode="a")
-            metadata = {
-                **prepare_commit(
-                    root, repository, store_path=store_path, config=config
-                ),
-                **(metadata or {}),
-            }
+            config = load_config()
+        root = zarr.open_group(session.store, mode="a")
+        metadata = {
+            **prepare_commit(root, repository, store_path=store_path, config=config),
+            **(metadata or {}),
+        }
         return session.commit(
             message, metadata=metadata, rebase_with=icechunk.ConflictDetector()
         )

@@ -38,6 +38,7 @@ import xarray as xr
 from canvodpy.orchestrator.processor import RinexDataProcessor
 
 from canvod.store import MyIcechunkStore
+from canvod.store_metadata.testing import give_test_metadata
 
 _SIDS = [f"G{i:02d}|L1|C" for i in range(1, 6)]
 
@@ -102,10 +103,9 @@ class _TestProcessor(RinexDataProcessor):
         self._reader_name = "rinex3"
 
     def _ensure_gnss_store_metadata(self, receivers, reader_format) -> None:
-        """No store metadata: these tests are about the batch writes.
-
-        The store stays without repository metadata, so its commits carry
-        no root copy (tested in canvod-store-metadata and end to end).
+        """The ``store`` fixture has its metadata: these tests are about the
+        batch writes (metadata first is tested in canvod-store-metadata and
+        end to end).
         """
 
 
@@ -113,7 +113,9 @@ class _TestProcessor(RinexDataProcessor):
 def store(tmp_path: Path) -> MyIcechunkStore:
     store_path = tmp_path / "throwaway_store"
     store_path.mkdir()
-    return MyIcechunkStore(store_path)
+    store = MyIcechunkStore(store_path)
+    give_test_metadata(store_path)
+    return store
 
 
 def _group_input(name: str, files: list[tuple[Path, xr.Dataset]]):
@@ -328,7 +330,11 @@ class _SbfConfig:
 
     def __init__(self, store_sbf_metadata: bool) -> None:
         params = type("P", (), {"store_sbf_metadata": store_sbf_metadata})()
-        self.processing = type("C", (), {"params": params})()
+        dumped = {"params": {"store_sbf_metadata": store_sbf_metadata}}
+        # Commits record the settings as commit metadata, through model_dump.
+        self.processing = type(
+            "C", (), {"params": params, "model_dump": lambda self, mode: dumped}
+        )()
         self.sites = SimpleNamespace(sites={})
 
 

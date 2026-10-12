@@ -16,6 +16,7 @@ from _helpers import (
     RINEX_REFERENCE_DIR,
     _array_checksum,
     make_synthetic_dataset,
+    new_gnss_store,
 )
 from canvod.config import loader
 from canvod.utils import testing
@@ -65,9 +66,7 @@ def synthetic_day() -> list[xr.Dataset]:
 @pytest.fixture
 def tmp_store(tmp_path):
     """Return a fresh MyIcechunkStore in a temporary directory."""
-    from canvod.store import MyIcechunkStore
-
-    return MyIcechunkStore(tmp_path / "test_store")
+    return new_gnss_store(tmp_path / "test_store")
 
 
 @pytest.fixture(scope="session")

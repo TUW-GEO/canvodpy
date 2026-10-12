@@ -19,8 +19,7 @@ import numpy as np
 import pytest
 import xarray as xr
 import zarr
-
-from canvod.store import create_gnss_store, create_vod_store
+from _helpers import new_gnss_store, new_vod_store
 
 
 def _make_dataset(start: str, n_epochs: int, file_hash: str) -> xr.Dataset:
@@ -66,7 +65,7 @@ def _column_lengths(store, group: str) -> dict[str, int]:
 
 @pytest.fixture
 def store(tmp_path: Path):
-    s = create_gnss_store(tmp_path / "rinex")
+    s = new_gnss_store(tmp_path / "rinex")
     s.write_initial_group(
         dataset=_make_dataset("2025-01-01T00:00:00", 12, "h_day1"),
         group_name="canopy_01",
@@ -164,7 +163,7 @@ def test_overwrite_keeps_epoch_monotonic(store) -> None:
 
 
 def test_vod_log_book_records_skip(tmp_path: Path) -> None:
-    vod = create_vod_store(tmp_path / "site" / "vod_store")
+    vod = new_vod_store(tmp_path / "site" / "vod_store")
     group = "tau_omega/canopy_01_vs_reference_01"
     vod.write_initial_group(_make_dataset("2025-01-02T00:00", 4, "h1"), group)
 

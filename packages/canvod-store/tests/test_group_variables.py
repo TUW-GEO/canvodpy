@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 import xarray as xr
 import zarr
+from _helpers import new_gnss_store, new_vod_store
 from canvod.config.models import (
     PREPROCESSING_ATTR,
     PreprocessingMismatchError,
@@ -28,7 +29,6 @@ from canvod.config.models import (
     vod_preprocessing_record,
 )
 
-from canvod.store import create_gnss_store, create_vod_store
 from canvod.store.prepare import (
     GroupCoordinatesMismatchError,
     GroupVariablesMismatchError,
@@ -67,7 +67,7 @@ def _dataset(
 
 @pytest.fixture
 def store(tmp_path):
-    store = create_gnss_store(tmp_path / "site" / "gnss_store")
+    store = new_gnss_store(tmp_path / "site" / "gnss_store")
     store.write_initial_group(_dataset(1, "h1", _record([])), "canopy_01")
     store.append_to_group(_dataset(2, "h2", _record([])), "canopy_01")
     return store
@@ -201,7 +201,7 @@ class TestGuardAfterGroupWideStep:
             )
 
     def test_vod_records_include_the_step(self, tmp_path) -> None:
-        vod = create_vod_store(tmp_path / "site" / "vod_store")
+        vod = new_vod_store(tmp_path / "site" / "vod_store")
         sources = {"canopy_01": [_record([])], "reference_01": [_record([])]}
         ds = _dataset(1, "h1", vod_preprocessing_record(sources))
         vod.write_initial_group(ds, "tau_omega/canopy_01_vs_reference_01")
@@ -229,7 +229,7 @@ class TestGuardAfterGroupWideStep:
 class TestReadChunks:
     def test_read_group_uses_the_stored_chunks(self, tmp_path) -> None:
         """Reads follow the chunks a group was written with, not the settings."""
-        store = create_gnss_store(tmp_path / "site" / "gnss_store")
+        store = new_gnss_store(tmp_path / "site" / "gnss_store")
         store.chunk_strategy = {"epoch": 2, "sid": -1}
         store.write_initial_group(_dataset(1, "h1", _record([])), "canopy_01")
         store.chunk_strategy = {"epoch": 3, "sid": -1}
@@ -253,13 +253,13 @@ class TestWriteChunks:
             return zarr.open_group(session.store, mode="r")[group]["SNR"].chunks
 
     def test_write_initial_group(self, tmp_path) -> None:
-        store = create_gnss_store(tmp_path / "site" / "gnss_store")
+        store = new_gnss_store(tmp_path / "site" / "gnss_store")
         store.chunk_strategy = {"epoch": 3, "sid": -1}
         store.write_initial_group(_dataset(1, "h1", _record([])), "canopy_01")
         assert self._stored_chunks(store, "canopy_01") == (3, 2)
 
     def test_write_or_append_group_rechunks_dask_input(self, tmp_path) -> None:
-        store = create_gnss_store(tmp_path / "site" / "gnss_store")
+        store = new_gnss_store(tmp_path / "site" / "gnss_store")
         store.chunk_strategy = {"epoch": 3, "sid": -1}
         dataset = _dataset(1, "h1", _record([])).chunk({"epoch": 2})
         store.write_or_append_group(dataset, "canopy_01")

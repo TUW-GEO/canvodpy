@@ -14,15 +14,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import xarray as xr
-from _helpers import _array_checksum, make_synthetic_dataset
+from _helpers import _array_checksum, make_synthetic_dataset, new_gnss_store
 
 
 @pytest.fixture
 def store_with_data(tmp_path):
     """A tmp_store with 4 appended 15-min datasets under one group, plus root attrs."""
-    from canvod.store import MyIcechunkStore
 
-    store = MyIcechunkStore(tmp_path / "rechunk_test_store")
+    store = new_gnss_store(tmp_path / "rechunk_test_store")
     group = "canopy_01"
 
     datasets = [make_synthetic_dataset(slot=i) for i in range(4)]
@@ -68,11 +67,15 @@ class TestRechunkGroup:
     def test_root_attrs_survive_rechunk(self, store_with_data) -> None:
         store, group, _ = store_with_data
 
+        # Every commit writes its own modification date and snapshot summary.
+        per_commit = {"date_modified", "canvod:snapshot_summary"}
         before_attrs = store.get_root_attrs()
         store.rechunk_group(group, chunks={"epoch": 360, "sid": -1})
         after_attrs = store.get_root_attrs()
 
-        assert before_attrs == after_attrs, "root attrs changed after rechunk"
+        assert {k: v for k, v in before_attrs.items() if k not in per_commit} == {
+            k: v for k, v in after_attrs.items() if k not in per_commit
+        }, "root attrs changed after rechunk"
 
     def test_data_values_identical_after_rechunk(self, store_with_data) -> None:
         store, group, _ = store_with_data
@@ -123,9 +126,8 @@ class TestRechunkGroup:
 
     def test_other_groups_untouched_by_rechunk(self, tmp_path) -> None:
         """rechunk_group() on one group must not affect a sibling group."""
-        from canvod.store import MyIcechunkStore
 
-        store = MyIcechunkStore(tmp_path / "rechunk_multi_group_store")
+        store = new_gnss_store(tmp_path / "rechunk_multi_group_store")
         ds_a = make_synthetic_dataset(slot=0)
         ds_b = make_synthetic_dataset(slot=0, seed=99, day="2025-01-02")
         for key in list(ds_a.data_vars) + list(ds_a.coords):

@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
-from _helpers import GROUP, make_synthetic_dataset
+from _helpers import GROUP, make_synthetic_dataset, new_gnss_store
 from build_day0_store import build_store
 
 from canvod.store import MyIcechunkStore
@@ -55,7 +55,7 @@ class TestStructureMatchesDay0:
 
     def test_groups_present(self, day0_store_path, tmp_path):
         store = MyIcechunkStore(day0_store_path)
-        fresh_store = MyIcechunkStore(tmp_path / "s")
+        fresh_store = new_gnss_store(tmp_path / "s")
         # write one dataset so the group exists
         ds = make_synthetic_dataset(slot=0)
         fresh_store.write_initial_group(ds, group_name=GROUP)

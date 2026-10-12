@@ -183,3 +183,33 @@ def make_synthetic_vod_dataset(
             **sid_coords(signals, mapper=SignalIDMapper()),
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# Stores
+# ---------------------------------------------------------------------------
+
+
+def new_gnss_store(path: Path):
+    """A new GNSS store with the made-up site's repository metadata.
+
+    A store takes no data without repository metadata (ADR 0014).
+    """
+    from canvod.store_metadata.testing import give_test_metadata
+
+    from canvod.store import create_gnss_store
+
+    store = create_gnss_store(path)
+    give_test_metadata(store.store_path, "gnss_store")
+    return store
+
+
+def new_vod_store(path: Path):
+    """A new VOD store with the made-up site's repository metadata."""
+    from canvod.store_metadata.testing import give_test_metadata
+
+    from canvod.store import create_vod_store
+
+    store = create_vod_store(path)
+    give_test_metadata(store.store_path, "vod_store")
+    return store

@@ -20,7 +20,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from _helpers import make_synthetic_vod_dataset
+from _helpers import make_synthetic_vod_dataset, new_vod_store
 
 from canvod.store import MyIcechunkStore
 from canvod.store.store import VodWriteItem
@@ -30,7 +30,7 @@ from canvod.store.store import VodWriteItem
 def store(tmp_path: Path) -> MyIcechunkStore:
     store_path = tmp_path / "throwaway_vod_store"
     store_path.mkdir()
-    return MyIcechunkStore(store_path, store_type="vod_store")
+    return new_vod_store(store_path)
 
 
 def _item(

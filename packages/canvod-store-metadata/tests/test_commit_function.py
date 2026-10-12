@@ -345,13 +345,16 @@ class TestCheck:
 
         assert _root_attrs(path)["title"] == "Fangorn GNSS"
 
-    def test_a_store_without_repository_metadata_commits_as_before(self, tmp_path):
+    def test_a_store_without_repository_metadata_takes_no_data(self, tmp_path):
         path = tmp_path / "plain"
         repo = icechunk.Repository.create(
             storage=icechunk.local_filesystem_storage(str(path))
         )
+        before = repo.lookup_branch("main")
         session = repo.writable_session("main")
         _write_receiver(session, "canopy_01", "2025-01-01", 4)
-        commit_with_rebase(session, "write", store_path=path, config=_CONFIG)
 
-        assert _root_attrs(path) == {}
+        with pytest.raises(ValueError, match="no repository metadata"):
+            commit_with_rebase(session, "write", store_path=path, config=_CONFIG)
+
+        assert repo.lookup_branch("main") == before

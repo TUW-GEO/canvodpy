@@ -22,16 +22,17 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
+from _helpers import new_vod_store
 from canvod.grids import create_hemigrid
 
-from canvod.store import create_vod_store, load_grid, store_grid
+from canvod.store import load_grid, store_grid
 
 
 @pytest.fixture
 def vod_store(tmp_path: Path):
     """Create temporary VOD store for testing."""
     store_path = tmp_path / "test_site" / "vod_store"
-    return create_vod_store(store_path)
+    return new_vod_store(store_path)
 
 
 @pytest.fixture

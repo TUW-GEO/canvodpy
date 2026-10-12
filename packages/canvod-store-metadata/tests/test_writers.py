@@ -9,6 +9,7 @@ import zarr
 from canvod.store_metadata import (
     check_receivers,
     check_vod_analyses,
+    commit_with_rebase,
     ensure_metadata,
     metadata_exists,
 )
@@ -152,3 +153,33 @@ class TestListedReceivers:
         check_vod_analyses(repository, ["canopy_01_vs_reference_01"], store_path=path)
         with pytest.raises(ValueError, match="--add-vod-analysis canopy_02_vs_ref"):
             check_vod_analyses(repository, ["canopy_02_vs_ref"], store_path=path)
+
+
+class TestStoreRefusesDataWithoutMetadata:
+    def test_a_commit_to_a_store_without_metadata_is_refused(self, tmp_path):
+        path = _new_store(tmp_path)
+        repo = icechunk.Repository.open(icechunk.local_filesystem_storage(str(path)))
+        before = repo.lookup_branch("main")
+        session = repo.writable_session("main")
+        zarr.open_group(session.store, mode="w").require_group("canopy_01")
+
+        with pytest.raises(ValueError, match="no repository metadata") as excinfo:
+            commit_with_rebase(session, "data", store_path=path)
+
+        assert "canvodpy store migrate-metadata" in str(excinfo.value)
+        assert repo.lookup_branch("main") == before
+
+    def test_a_commit_to_a_store_with_metadata_is_written(self, tmp_path):
+        path = _new_store(tmp_path)
+        _ensure(path)
+        repo = icechunk.Repository.open(icechunk.local_filesystem_storage(str(path)))
+        session = repo.writable_session("main")
+        zarr.open_group(session.store, mode="a").require_group("canopy_01")
+
+        commit_with_rebase(session, "data", store_path=path, config={"processing": {}})
+
+        assert "canopy_01" in dict(
+            zarr.open_group(
+                repo.readonly_session(branch="main").store, mode="r"
+            ).groups()
+        )

@@ -91,7 +91,10 @@ metadata itself:
 
 1. Before the first write to a store, `collect_metadata()` builds the
    repository metadata from the settings, and `write_metadata()` writes
-   it. A store never holds data without its metadata.
+   it. A store never holds data without its metadata: a commit to a
+   store without repository metadata is refused, and nothing is
+   committed. Code that writes to a store directly, without a run, gives
+   it its metadata first.
 1. Every commit, of a run or of any other canVODpy command, writes the
    root copy and the snapshot summary in the same commit as the data,
    and records the commit metadata. The snapshot summary therefore can't

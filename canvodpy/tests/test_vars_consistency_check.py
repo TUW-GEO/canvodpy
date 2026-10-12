@@ -22,6 +22,7 @@ import xarray as xr
 from canvodpy.orchestrator.processor import RinexDataProcessor
 
 from canvod.store import MyIcechunkStore
+from canvod.store_metadata.testing import give_test_metadata
 
 _SIDS = [f"G{i:02d}|L1|C" for i in range(1, 4)]
 
@@ -76,7 +77,9 @@ class _TestProcessor(RinexDataProcessor):
 def store(tmp_path: Path) -> MyIcechunkStore:
     store_path = tmp_path / "throwaway_store"
     store_path.mkdir()
-    return MyIcechunkStore(store_path)
+    store = MyIcechunkStore(store_path)
+    give_test_metadata(store_path)
+    return store
 
 
 def test_new_group_is_a_noop(store: MyIcechunkStore) -> None:

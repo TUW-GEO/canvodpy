@@ -27,6 +27,8 @@ from canvod.store_metadata.schema import (
     StoreMetadata,
     TemporalExtent,
 )
+from canvod.store_metadata.snapshot import RESERVED_GROUP
+from canvod.store_metadata.testing import give_test_metadata
 
 
 def _make_metadata() -> StoreMetadata:
@@ -63,6 +65,11 @@ def _create_store(path):
     zarr.open_group(session.store, mode="w")
     session.commit("init")
     return path
+
+
+def _store_with_metadata(path):
+    """A store data may be committed to: one with repository metadata."""
+    return give_test_metadata(path)
 
 
 class TestIO:
@@ -162,7 +169,9 @@ class TestCommitWithRebase:
 
     def test_disjoint_groups_both_commit(self, tmp_path):
         repo = icechunk.Repository.open(
-            icechunk.local_filesystem_storage(str(_create_store(tmp_path / "store")))
+            icechunk.local_filesystem_storage(
+                str(_store_with_metadata(tmp_path / "store"))
+            )
         )
         first = repo.writable_session("main")
         second = repo.writable_session("main")
@@ -178,7 +187,9 @@ class TestCommitWithRebase:
 
     def test_overlapping_writes_fail_loudly(self, tmp_path):
         repo = icechunk.Repository.open(
-            icechunk.local_filesystem_storage(str(_create_store(tmp_path / "store")))
+            icechunk.local_filesystem_storage(
+                str(_store_with_metadata(tmp_path / "store"))
+            )
         )
         first = repo.writable_session("main")
         second = repo.writable_session("main")
@@ -208,7 +219,7 @@ class TestCommitLock:
     """Commits to one store run one after the other, also across processes."""
 
     def test_commit_waits_for_another_process(self, tmp_path):
-        store_path = _create_store(tmp_path / "store")
+        store_path = _store_with_metadata(tmp_path / "store")
         holder = subprocess.Popen(
             [
                 sys.executable,
@@ -241,7 +252,7 @@ class TestCommitLock:
             holder.wait(timeout=30)
 
     def test_concurrent_processes_lose_no_commit(self, tmp_path):
-        store_path = _create_store(tmp_path / "store")
+        store_path = _store_with_metadata(tmp_path / "store")
         n_processes, n_commits = 4, 5
         workers = [
             subprocess.Popen(
@@ -270,9 +281,10 @@ class TestCommitLock:
             icechunk.local_filesystem_storage(str(store_path))
         )
         root = zarr.open_group(repo.readonly_session("main").store, mode="r")
-        assert len(list(root.group_keys())) == n_processes * n_commits
+        written = set(root.group_keys()) - {RESERVED_GROUP}
+        assert len(written) == n_processes * n_commits
         # Every commit is on the branch: the n_processes * n_commits commits,
-        # the "init" commit and the commit that created the repository.
+        # the metadata commit and the commit that created the repository.
         ancestry = list(repo.ancestry(branch="main"))
         assert len(ancestry) == n_processes * n_commits + 2
 
