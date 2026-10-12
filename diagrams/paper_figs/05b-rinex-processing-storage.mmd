@@ -1,0 +1,24 @@
+flowchart TD
+    MERGE_AUX["Merged Auxiliary Data<br/>(from ephemeris preparation)"]
+    RINEX["RINEX v3.04<br/>Observation File"]
+
+    subgraph PARALLEL[Parallel RINEX Processing]
+        READ["Read RINEX (per hourly file)"]
+        SID["Signal ID Mapping (sv|band|code)"]
+        SLICE["Slice Auxiliary to Observation Epochs (nearest-neighbour)"]
+        SCS["Spherical Coordinate Transformation (ECEF → r, θ, φ)"]
+    end
+
+    subgraph STORAGE[Versioned Storage - two Icechunk repositories per site]
+        ICECHUNK["RINEX/SBF Repository<br/>(append per epoch, commit per file)"]
+        META_TRACK["Metadata Tracking<br/>(RINEX hash, snapshot ID, epoch range)"]
+        VOD_REPO["VOD Repository<br/>(per calculator/analysis group)"]
+    end
+
+    RINEX --> READ
+    READ --> SID
+    MERGE_AUX --> SLICE
+    SID --> SLICE
+    SLICE --> SCS
+    SCS --> ICECHUNK
+    ICECHUNK --> META_TRACK

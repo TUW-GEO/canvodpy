@@ -12,36 +12,36 @@
         <meta name="author" content="Nicolas Bader">
       
       
-        <link rel="canonical" href="https://nfb2021.github.io/canvodpy/guides/diagnostics/">
+        <link rel="canonical" href="https://canvodpy.eu/guides/diagnostics/">
       
       
-        <link rel="prev" href="../airflow/">
+        <link rel="prev" href="../parallel-processing/">
       
       
-        <link rel="next" href="../../VERSIONING/">
+        <link rel="next" href="../../notebooks/">
       
       
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.40">
+      <link rel="icon" href="../../assets/logo/canvodpy_favicon_bright_mode.svg">
+      <meta name="generator" content="zensical-0.0.69">
     
     
       
-        <title>Diagnostics & Performance Monitoring - canVODpy</title>
+        <title>Diagnostics & Monitoring - canVODpy</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.fba56155.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e15858d4.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.dfe2e883.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b27955a4.min.css">
       
       
 
@@ -114,6 +114,11 @@
 
     
     
+  <link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: light)"
+        href="../../assets/logo/canvodpy_favicon_bright_mode.svg">
+  <link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: dark)"
+        href="../../assets/logo/canvodpy_favicon_dark_mode.svg">
+
   </head>
   
   
@@ -129,14 +134,11 @@
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
     <div data-md-component="skip">
-      
-        
-        <a href="#diagnostics-performance-monitoring" class="md-skip">
-          Skip to content
-        </a>
-      
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
     </div>
     <div data-md-component="announce">
       
@@ -149,8 +151,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+  <img src="../../assets/logo/canvodpy_logo_dark_mode.svg" alt="canVODpy">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
@@ -167,7 +168,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Diagnostics &amp; Performance Monitoring
+              Diagnostics & Monitoring
             
           </span>
         </div>
@@ -223,7 +224,7 @@
         <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
     nfb2021/canvodpy
@@ -265,93 +266,86 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../../principles/" class="md-tabs__link">
-        
   
-  Conventions & Defaults
-
-      </a>
-    </li>
-  
-
+    
+      
       
         
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../architecture/" class="md-tabs__link">
           
-  
-  Architecture
-
-        </a>
-      </li>
-    
-  
-
+        
       
         
-  
-  
-  
-  
-    
-    
-      
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../packages/readers/overview/" class="md-tabs__link">
-          
-  
-  Packages
-
-        </a>
-      </li>
-    
-  
-
-    
-  
-
       
         
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../../notebooks/" class="md-tabs__link">
-        
-  
-  Notebooks
-
-      </a>
-    </li>
-  
-
       
         
-  
-  
-  
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
-  
-  
+    
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../getting-started/" class="md-tabs__link">
+        <a href="../../users/" class="md-tabs__link">
+          
+  
+  Usage
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../CONTRIBUTING/" class="md-tabs__link">
           
   
   Development
@@ -368,62 +362,32 @@
   
   
     
-    
-      <li class="md-tabs__item">
-        <a href="../../VERSIONING/" class="md-tabs__link">
-          
-  
-  Release & Publishing
-
-        </a>
-      </li>
-    
-  
-
+      
       
         
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../FOSS_PRINCIPLES/" class="md-tabs__link">
-          
-  
-  Quality & Compliance
-
-        </a>
-      </li>
-    
-  
-
       
         
-  
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../impressum/" class="md-tabs__link">
-          
-  
-  Legal
-
-        </a>
-      </li>
-    
-  
-
       
         
-  
-  
-  
-  
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
     
     
       <li class="md-tabs__item">
@@ -431,6 +395,32 @@
           
   
   API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../impressum/" class="md-tabs__link">
+          
+  
+  Legal
 
         </a>
       </li>
@@ -462,8 +452,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="canVODpy" class="md-nav__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+  <img src="../../assets/logo/canvodpy_logo_dark_mode.svg" alt="canVODpy">
 
     </a>
     canVODpy
@@ -473,7 +462,7 @@
       <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
     nfb2021/canvodpy
@@ -513,1652 +502,15 @@
       
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../../principles/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
     
-  
-  Conventions & Defaults
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
   
   
   
     
     
       
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Architecture
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  Architecture
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Monorepo Structure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../namespace-packages/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Namespace Packages
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../dependencies/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Package Dependencies
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Packages
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  Packages
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-readers
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_1">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-readers
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  RINEX v3.04 Format
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Reader
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Field Decoding
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/ephemeris-sources/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Ephemeris Sources
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_2">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-auxiliary
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/auxiliary/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/auxiliary/preprocessing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Preprocessing Pipeline
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/auxiliary/interpolation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Interpolation Methods
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/auxiliary/coordinates/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Coordinate Systems
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/auxiliary/products/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-grids
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/grids/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-vod
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/vod/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_5">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-store
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/store/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/store/icechunk/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Icechunk Storage
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/store/storage-strategies/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Storage Strategies
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_6">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-store-metadata
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/store-metadata/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_7" id="__nav_4_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_7">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-viz
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/viz/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-utils
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_8">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-utils
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/utils/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_9">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-ops
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_10" id="__nav_4_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-virtualiconvname
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_10">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-virtualiconvname
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_11" id="__nav_4_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-audit
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_11">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  canvod-audit
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/audit/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../notebooks/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Notebooks
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
         
       
         
@@ -2195,51 +547,61 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
-            
+          <div class="md-nav__link md-nav__container">
+            <a href="../../users/" class="md-nav__link ">
+              
   
   
   <span class="md-ellipsis">
     
   
-  Development
+  Usage
 
     
   </span>
   
   
 
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_6">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  Development
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
+            </a>
             
               
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Usage
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
                 
+              
+                
+                  
   
   
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/" class="md-nav__link">
+      <a href="../../users/cli/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Getting Started
+  CLI Quickstart
 
     
   </span>
@@ -2250,23 +612,23 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../CONTRIBUTING/" class="md-nav__link">
+      <a href="../../users/python/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Contributing
+  Python Quickstart
 
     
   </span>
@@ -2277,145 +639,10 @@
     </li>
   
 
-              
-            
+                
               
                 
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../DEVELOPMENT/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Development Guide
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../architecture-design/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Architecture & Design Patterns
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../ai-development/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Developing with Claude Code
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../build-system/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Build System
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../tooling/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Tooling
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
+                  
   
   
   
@@ -2428,7 +655,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration Guide
+  Configuration
 
     
   </span>
@@ -2439,23 +666,23 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
   
     <li class="md-nav__item">
-      <a href="../dask-resources/" class="md-nav__link">
+      <a href="../extensions/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Dask & Resource Management
+  Optional Extensions
 
     
   </span>
@@ -2466,10 +693,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -2493,23 +720,23 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
   
     <li class="md-nav__item">
-      <a href="../airflow/" class="md-nav__link">
+      <a href="../parallel-processing/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Airflow Integration
+  Parallel Processing
 
     
   </span>
@@ -2520,10 +747,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
     
@@ -2588,10 +815,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#why-monitor-a-scientific-pipeline" class="md-nav__link">
+  <a href="#two-tracks-human-and-agent" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Why monitor a scientific pipeline?
+        Two tracks: human and agent
       </span>
     </span>
   </a>
@@ -2599,10 +826,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-three-layers" class="md-nav__link">
+  <a href="#run_id-correlating-a-single-pipeline-invocation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        The three layers
+        <code>run_id</code>: correlating a single pipeline invocation
       </span>
     </span>
   </a>
@@ -2610,226 +837,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#crash-handling-logs-are-the-only-evidence" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quick start
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Quick start">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#install" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Install
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#track-how-long-something-takes" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Track how long something takes
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#see-where-time-goes" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        See where time goes
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tools-reference" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Tools reference
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tools reference">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#track_time-timing" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>track_time</code> — Timing
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#track_memory-peak-memory" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>track_memory</code> — Peak memory
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#track_dataset-data-quality" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>track_dataset</code> — Data quality
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#batchtracker-batch-processing" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>BatchTracker</code> — Batch processing
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#task_metrics-airflow-ready-monitoring" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>task_metrics</code> — Airflow-ready monitoring
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#retry-retry-with-backoff" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>retry</code> — Retry with backoff
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#rate_limit-throttle-noisy-callbacks" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>rate_limit</code> — Throttle noisy callbacks
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#timer-minimal-stopwatch" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>timer</code> — Minimal stopwatch
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#bottlenecks-and-plot_bottlenecks-find-what-is-slow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>bottlenecks</code> and <code>plot_bottlenecks</code> — Find what is slow
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#persistent-metrics-database" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Persistent metrics database
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Persistent metrics database">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How it works
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#querying-the-database" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Querying the database
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#database-schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Database schema
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#marimo-dashboard" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Marimo dashboard
+        Crash handling — logs are the only evidence
       </span>
     </span>
   </a>
@@ -2837,99 +848,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#airflow-grafana-production" class="md-nav__link">
+  <a href="#stage_timer-a-simplified-performance-tracker" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Airflow + Grafana (production)
+        <code>stage_timer</code> — a simplified performance tracker
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Airflow + Grafana (production)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Setup
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#patterns-for-scientific-pipelines" class="md-nav__link">
+  <a href="#live-performance-dashboard" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Patterns for scientific pipelines
+        Live performance dashboard
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Patterns for scientific pipelines">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pattern-1-instrument-every-processing-step" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pattern 1: Instrument every processing step
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pattern-2-batch-processing-with-summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pattern 2: Batch processing with summary
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pattern-3-compare-performance-across-runs" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pattern 3: Compare performance across runs
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pattern-4-memory-aware-chunking-decisions" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pattern 4: Memory-aware chunking decisions
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
+  <a href="#reading-machineagentjson-after-a-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Summary
+        Reading <code>machine/agent.json</code> after a failure
       </span>
     </span>
   </a>
@@ -2943,10 +887,1503 @@
     </li>
   
 
+                
               
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Notebooks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="">
             
-          </ul>
-        </nav>
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Packages
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Packages
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-readers
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_1">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-readers
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v3.04 Format
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF Reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF Field Decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/ephemeris-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Ephemeris Sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite Catalog (IGS SINEX)
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reader Architecture
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/extending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Extending Readers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-auxiliary
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-auxiliary
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preprocessing Pipeline
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/interpolation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Interpolation Methods
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/coordinates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coordinate Systems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product Registry
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-grids
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-grids
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/grids/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-vod
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-vod
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/vod/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-store
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-store
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/icechunk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Icechunk Storage
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/storage-strategies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Storage Strategies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-store-metadata
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-store-metadata
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store-metadata/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-viz
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-viz
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/viz/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-config
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-config
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-utils
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_9">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-utils
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/utils/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-ops
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-ops
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/ops/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod-preflight
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_10_11">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  canvod-preflight
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Naming Convention & Validation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
       
     </li>
   
@@ -2954,6 +2391,446 @@
     
       
       
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Development
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Development
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributor-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributor Setup
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEVELOPMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Development Guide
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture-design/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Architecture & Design Patterns
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Developing with Claude Code
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build System
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions & Defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Architecture
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_9">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Architecture
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Monorepo Structure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../namespace-packages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Namespace Packages
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Package Dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
   
   
   
@@ -2986,10 +2863,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
             
   
   
@@ -3006,18 +2883,19 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
-            <span class="md-nav__icon md-icon"></span>
-            
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
   
   Release & Publishing
 
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
+                  
   
   
   
@@ -3041,10 +2919,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3068,10 +2946,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3095,10 +2973,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3122,10 +3000,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3149,10 +3027,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3176,17 +3054,19 @@
     </li>
   
 
+                
               
-            
-          </ul>
-        </nav>
+            </ul>
+          </nav>
+        
       
     </li>
   
 
-    
-      
-      
+                
+              
+                
+                  
   
   
   
@@ -3215,10 +3095,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
             
   
   
@@ -3235,18 +3115,19 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
-            <span class="md-nav__icon md-icon"></span>
-            
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
+              <span class="md-nav__icon md-icon"></span>
+              
   
   Quality & Compliance
 
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
+                  
   
   
   
@@ -3270,10 +3151,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3297,10 +3178,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3324,10 +3205,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3351,98 +3232,20 @@
     </li>
   
 
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-  Legal
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
                 
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
               
-            
-          </ul>
-        </nav>
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
       
     </li>
   
@@ -3456,8 +3259,6 @@
   
     
     
-      
-        
       
         
       
@@ -3494,10 +3295,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
             
   
   
@@ -3514,18 +3315,19 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
-            <span class="md-nav__icon md-icon"></span>
-            
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_4">
+              <span class="md-nav__icon md-icon"></span>
+              
   
   API Reference
 
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
+                  
   
   
   
@@ -3549,10 +3351,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3576,10 +3378,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3603,10 +3405,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3630,10 +3432,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3657,10 +3459,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3684,10 +3486,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3711,10 +3513,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3738,10 +3540,37 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.config
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
   
   
   
@@ -3765,10 +3594,10 @@
     </li>
   
 
-              
-            
+                
               
                 
+                  
   
   
   
@@ -3792,23 +3621,86 @@
     </li>
   
 
+                
               
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Legal
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Legal
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
+                  
   
   
   
   
     <li class="md-nav__item">
-      <a href="../../api/canvod-virtualiconvname/" class="md-nav__link">
+      <a href="../../impressum/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  canvod.virtualiconvname
+  Impressum & AI Disclosure
 
     
   </span>
@@ -3819,37 +3711,11 @@
     </li>
   
 
-              
-            
-              
                 
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../api/canvod-audit/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod.audit
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
               
-            
-          </ul>
-        </nav>
+            </ul>
+          </nav>
+        
       
     </li>
   
@@ -3896,10 +3762,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#why-monitor-a-scientific-pipeline" class="md-nav__link">
+  <a href="#two-tracks-human-and-agent" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Why monitor a scientific pipeline?
+        Two tracks: human and agent
       </span>
     </span>
   </a>
@@ -3907,10 +3773,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-three-layers" class="md-nav__link">
+  <a href="#run_id-correlating-a-single-pipeline-invocation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        The three layers
+        <code>run_id</code>: correlating a single pipeline invocation
       </span>
     </span>
   </a>
@@ -3918,226 +3784,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
+  <a href="#crash-handling-logs-are-the-only-evidence" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quick start
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Quick start">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#install" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Install
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#track-how-long-something-takes" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Track how long something takes
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#see-where-time-goes" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        See where time goes
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tools-reference" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Tools reference
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tools reference">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#track_time-timing" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>track_time</code> — Timing
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#track_memory-peak-memory" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>track_memory</code> — Peak memory
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#track_dataset-data-quality" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>track_dataset</code> — Data quality
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#batchtracker-batch-processing" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>BatchTracker</code> — Batch processing
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#task_metrics-airflow-ready-monitoring" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>task_metrics</code> — Airflow-ready monitoring
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#retry-retry-with-backoff" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>retry</code> — Retry with backoff
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#rate_limit-throttle-noisy-callbacks" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>rate_limit</code> — Throttle noisy callbacks
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#timer-minimal-stopwatch" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>timer</code> — Minimal stopwatch
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#bottlenecks-and-plot_bottlenecks-find-what-is-slow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>bottlenecks</code> and <code>plot_bottlenecks</code> — Find what is slow
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#persistent-metrics-database" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Persistent metrics database
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Persistent metrics database">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How it works
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#querying-the-database" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Querying the database
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#database-schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Database schema
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#marimo-dashboard" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Marimo dashboard
+        Crash handling — logs are the only evidence
       </span>
     </span>
   </a>
@@ -4145,99 +3795,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#airflow-grafana-production" class="md-nav__link">
+  <a href="#stage_timer-a-simplified-performance-tracker" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Airflow + Grafana (production)
+        <code>stage_timer</code> — a simplified performance tracker
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Airflow + Grafana (production)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Setup
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#patterns-for-scientific-pipelines" class="md-nav__link">
+  <a href="#live-performance-dashboard" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Patterns for scientific pipelines
+        Live performance dashboard
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Patterns for scientific pipelines">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pattern-1-instrument-every-processing-step" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pattern 1: Instrument every processing step
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pattern-2-batch-processing-with-summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pattern 2: Batch processing with summary
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pattern-3-compare-performance-across-runs" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pattern 3: Compare performance across runs
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pattern-4-memory-aware-chunking-decisions" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Pattern 4: Memory-aware chunking decisions
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
+  <a href="#reading-machineagentjson-after-a-failure" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Summary
+        Reading <code>machine/agent.json</code> after a failure
       </span>
     </span>
   </a>
@@ -4271,6 +3854,7 @@
     <li class="md-path__item">
       <a href="../.." class="md-path__link">
         
+  
   <span class="md-ellipsis">
     Home
   </span>
@@ -4286,11 +3870,39 @@
   
     
     
-      <li class="md-path__item">
-        <a href="../getting-started/" class="md-path__link">
+      
+        
           
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../../users/" class="md-path__link">
+          
+  
   <span class="md-ellipsis">
-    Development
+    Usage
   </span>
 
         </a>
@@ -4304,630 +3916,219 @@
 
               
               <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
                 
                   
+
   
   
 
 
 <h1 id="diagnostics-performance-monitoring">Diagnostics &amp; Performance Monitoring<a class="headerlink" href="#diagnostics-performance-monitoring" title="Permanent link">&para;</a></h1>
-<p>Scientific computing pipelines often run for hours, processing hundreds of <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> files per site per year. When something goes wrong — a step is unexpectedly slow, memory usage spikes, or data silently loses satellites — you need tools to find out <em>where</em> and <em>why</em>.</p>
-<p>The <code>canvod.utils.diagnostics</code> module provides lightweight, zero-infrastructure monitoring that works on your laptop, in a Jupyter/marimo notebook, or inside Apache Airflow. No external services, no accounts, no Docker containers required.</p>
-<hr />
-<h2 id="why-monitor-a-scientific-pipeline">Why monitor a scientific pipeline?<a class="headerlink" href="#why-monitor-a-scientific-pipeline" title="Permanent link">&para;</a></h2>
-<p>If you have ever:</p>
-<ul>
-<li>Waited hours for a pipeline to finish, then wondered <em>which step</em> took so long</li>
-<li>Discovered that 50% of your <abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr> values are NaN, but only after plotting the final <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr></li>
-<li>Had a processing run silently skip files because of a transient download failure</li>
-<li>Wanted to compare "how fast did my pipeline run this week vs. last month?"</li>
-</ul>
-<p>...then you need diagnostics. These tools answer those questions automatically, without changing how you write your science code.</p>
-<hr />
-<h2 id="the-three-layers">The three layers<a class="headerlink" href="#the-three-layers" title="Permanent link">&para;</a></h2>
-<pre class="mermaid"><code>graph TB
-    subgraph Your Code
-        A["@track_time('rinex.read')"]
-        B["track_dataset('after_augment', ds)"]
-        C["with task_metrics('batch'):"]
-    end
-
-    subgraph Diagnostics Layer
-        D["In-memory store&lt;br/&gt;&lt;i&gt;current session&lt;/i&gt;"]
-        E["SQLite database&lt;br/&gt;&lt;i&gt;cross-session history&lt;/i&gt;"]
-        F["Airflow StatsD&lt;br/&gt;&lt;i&gt;production monitoring&lt;/i&gt;"]
-    end
-
-    subgraph Visualization
-        G["bottlenecks()"]
-        H["Marimo dashboard"]
-        I["Grafana"]
-    end
-
-    A --&gt; D
-    B --&gt; D
-    C --&gt; D
-    D --&gt; E
-    D --&gt; F
-    D --&gt; G
-    E --&gt; H
-    F --&gt; I</code></pre>
-<table>
-<thead>
-<tr>
-<th>Layer</th>
-<th>What</th>
-<th>When to use</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>In-memory</strong></td>
-<td><abbr title="Fast DataFrame library written in Rust — used for metadata catalogs and inventory">Polars</abbr> DataFrame of all metrics from current Python session</td>
-<td>Interactive exploration, notebooks</td>
-</tr>
-<tr>
-<td><strong>SQLite</strong></td>
-<td>Persistent database at <code>~/.canvod/metrics.db</code></td>
-<td>Compare runs across days/weeks, trend analysis</td>
-</tr>
-<tr>
-<td><strong>Airflow StatsD</strong></td>
-<td>Pushes to Prometheus/Grafana via Airflow's metrics system</td>
-<td>Production monitoring with dashboards and alerts</td>
-</tr>
-</tbody>
-</table>
-<p>All three layers are populated automatically — you just decorate your functions.</p>
-<hr />
-<h2 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
-<h3 id="install">Install<a class="headerlink" href="#install" title="Permanent link">&para;</a></h3>
-<p>The diagnostics module is part of <code>canvod-utils</code>, which is a dependency of every canvodpy package. No extra installation needed.</p>
-<h3 id="track-how-long-something-takes">Track how long something takes<a class="headerlink" href="#track-how-long-something-takes" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">track_time</span>
-
-<span class="c1"># As a decorator</span>
-<span class="nd">@track_time</span><span class="p">(</span><span class="s2">&quot;rinex.read&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">read_rinex</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">reader</span><span class="o">.</span><span class="n">to_ds</span><span class="p">()</span>
-
-<span class="c1"># As a context manager</span>
-<span class="k">with</span> <span class="n">track_time</span><span class="p">(</span><span class="s2">&quot;store.write&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="s2">&quot;2025001.zarr&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">t</span><span class="p">:</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">to_zarr</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Write took </span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="n">elapsed</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
-</code></pre></div>
-<p>Every call records a row: <code>operation</code>, <code>duration_s</code>, <code>timestamp</code>, plus any extra key-value pairs you pass.</p>
-<h3 id="see-where-time-goes">See where time goes<a class="headerlink" href="#see-where-time-goes" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">bottlenecks</span>
-
-<span class="c1"># After running your pipeline...</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">bottlenecks</span><span class="p">(</span><span class="n">top_n</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>
-</code></pre></div>
-<div class="highlight"><pre><span></span><code>┌──────────────────┬─────────┬────────┬───────┬──────┐
-│ operation        ┆ total_s ┆ mean_s ┆ count ┆ pct  │
-├──────────────────┼─────────┼────────┼───────┼──────┤
-│ store.write      ┆ 45.2    ┆ 4.5    ┆ 10    ┆ 38.1 │
-│ rinex.read       ┆ 32.1    ┆ 3.2    ┆ 10    ┆ 27.0 │
-│ aux.interpolate  ┆ 18.7    ┆ 1.9    ┆ 10    ┆ 15.7 │
-│ vod.compute      ┆ 12.3    ┆ 1.2    ┆ 10    ┆ 10.4 │
-│ coords.transform ┆ 10.5    ┆ 1.1    ┆ 10    ┆ 8.8  │
-└──────────────────┴─────────┴────────┴───────┴──────┘
-</code></pre></div>
-<p>Now you know: optimize <code>store.write</code> first — it is 38% of total time.</p>
-<hr />
-<h2 id="tools-reference">Tools reference<a class="headerlink" href="#tools-reference" title="Permanent link">&para;</a></h2>
-<h3 id="track_time-timing"><code>track_time</code> — Timing<a class="headerlink" href="#track_time-timing" title="Permanent link">&para;</a></h3>
-<p>Decorator <strong>and</strong> context manager. Records duration to the global metrics store.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">track_time</span>
-
-<span class="c1"># Decorator: times every call to this function</span>
-<span class="nd">@track_time</span><span class="p">(</span><span class="s2">&quot;aux.download&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">download_orbits</span><span class="p">(</span><span class="n">date</span><span class="p">):</span>
-    <span class="o">...</span>
-
-<span class="c1"># Context manager: times a specific block</span>
-<span class="k">with</span> <span class="n">track_time</span><span class="p">(</span><span class="s2">&quot;pipeline.batch&quot;</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="s2">&quot;rosalia&quot;</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="s2">&quot;2025001&quot;</span><span class="p">):</span>
-    <span class="n">process_batch</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
-</code></pre></div>
-<p><strong>What it records:</strong> <code>operation</code>, <code>duration_s</code>, <code>timestamp</code>, plus any keyword arguments you pass (e.g. <code>site</code>, <code>date</code>, <code>file</code>).</p>
-<p><strong>When to use:</strong> Wrap any function or code block you want to time. Use dot-separated names to create a hierarchy: <code>rinex.read</code>, <code>rinex.validate</code>, <code>store.write</code>, <code>store.commit</code>.</p>
-<hr />
-<h3 id="track_memory-peak-memory"><code>track_memory</code> — Peak memory<a class="headerlink" href="#track_memory-peak-memory" title="Permanent link">&para;</a></h3>
-<p>Same dual interface as <code>track_time</code>, but measures peak memory allocation using Python's built-in <code>tracemalloc</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">track_memory</span>
-
-<span class="c1"># Decorator</span>
-<span class="nd">@track_memory</span><span class="p">(</span><span class="s2">&quot;vod.compute&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">compute_vod</span><span class="p">(</span><span class="n">ds</span><span class="p">):</span>
-    <span class="o">...</span>
-
-<span class="c1"># Context manager</span>
-<span class="k">with</span> <span class="n">track_memory</span><span class="p">(</span><span class="s2">&quot;big_merge&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
-    <span class="n">merged</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">datasets</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;epoch&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Peak memory: </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">peak_mb</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> MB&quot;</span><span class="p">)</span>
-</code></pre></div>
-<p><strong>What it records:</strong> <code>operation</code>, <code>peak_memory_mb</code>, <code>current_memory_mb</code>, <code>metric_type="memory"</code>.</p>
-<p><strong>When to use:</strong> Wrap operations that handle large arrays — <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> reads, dataset concatenations, <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> computations. Helps you find memory bottlenecks before you hit an <code>OutOfMemoryError</code>.</p>
-<div class="admonition warning">
-<p class="admonition-title">tracemalloc overhead</p>
-<p><code>tracemalloc</code> adds ~10-20% overhead. Use it during development and profiling, not in tight inner loops.</p>
+<p>canvodpy runs unattended on remote machines — a cron job, a scheduler, a
+headless server with no one watching. When something goes wrong there, the
+log files written during that run are the only forensic evidence that will
+ever exist: there is no re-run, no debugger, no live system to inspect
+after the fact. This page describes canvodpy's logging and lightweight
+performance-tracking infrastructure, built around that constraint.</p>
+<div class="admonition note">
+<p class="admonition-title">Superseded content</p>
+<p>This page previously described <code>canvod.utils.diagnostics</code> — a
+SQLite/StatsD/Airflow-metrics module that has been removed (it
+accumulated unused backends nobody exercised). Everything below
+describes what actually exists today.</p>
 </div>
 <hr />
-<h3 id="track_dataset-data-quality"><code>track_dataset</code> — Data quality<a class="headerlink" href="#track_dataset-data-quality" title="Permanent link">&para;</a></h3>
-<p>Inspects an <abbr title="Labelled multi-dimensional arrays for Python — extends NumPy with named dims, coords, and attrs">xarray</abbr> Dataset and records its shape, NaN ratios, epoch gaps, and size. This is the tool that catches silent data loss.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">track_dataset</span>
-
-<span class="n">ds</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">to_ds</span><span class="p">()</span>
-<span class="n">report</span> <span class="o">=</span> <span class="n">track_dataset</span><span class="p">(</span><span class="s2">&quot;after_read&quot;</span><span class="p">,</span> <span class="n">ds</span><span class="p">)</span>
-<span class="c1"># INFO: dataset_ok operation=after_read n_epochs=8640 n_sids=86 n_vars=4 size_mb=23.7</span>
-
-<span class="n">ds</span> <span class="o">=</span> <span class="n">augment_with_ephemeris</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">sp3</span><span class="p">,</span> <span class="n">clk</span><span class="p">)</span>
-<span class="n">report</span> <span class="o">=</span> <span class="n">track_dataset</span><span class="p">(</span><span class="s2">&quot;after_augment&quot;</span><span class="p">,</span> <span class="n">ds</span><span class="p">)</span>
-<span class="c1"># WARNING: dataset_quality operation=after_augment n_epochs=8640 n_sids=86</span>
-<span class="c1">#          high_nan_vars={&#39;sat_x&#39;: 0.62} epoch_gaps=2</span>
-</code></pre></div>
-<p><strong>What it checks:</strong></p>
+<h2 id="two-tracks-human-and-agent">Two tracks: human and agent<a class="headerlink" href="#two-tracks-human-and-agent" title="Permanent link">&para;</a></h2>
+<p>Every log record is written to two purpose-built tracks, plus a couple of
+narrower supporting files, all under <code>.logs/</code> (or wherever
+<code>processing.logging.get_log_file()</code> points):</p>
+<pre class="mermaid"><code>graph LR
+    A[structlog event] --&gt; B[shared processors&lt;br/&gt;timestamp, level, run_id]
+    B --&gt; C[human/main.log&lt;br/&gt;readable, INFO+]
+    B --&gt; D[human/errors.log&lt;br/&gt;ERROR+, full traceback]
+    B --&gt; E[machine/agent.json&lt;br/&gt;always-on DEBUG&lt;br/&gt;causal narrative]
+    B --&gt; F[machine/performance.json&lt;br/&gt;stage_timing events]
+    B --&gt; G[component/*.log&lt;br/&gt;processor / auxiliary / icechunk]</code></pre>
 <table>
 <thead>
 <tr>
-<th>Check</th>
-<th>What it finds</th>
+<th>File</th>
+<th>Purpose</th>
+<th>Level</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>Shape</strong></td>
-<td><code>n_epochs</code>, <code>n_sids</code> — did a merge drop satellites?</td>
+<td><code>human/main.log</code></td>
+<td>Traditional readable text, for a person tailing a run</td>
+<td>INFO+</td>
 </tr>
 <tr>
-<td><strong>NaN ratios</strong></td>
-<td>Per-variable NaN percentage — did <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> data fail to match?</td>
+<td><code>human/errors.log</code></td>
+<td>Full stack traces for errors only</td>
+<td>ERROR+</td>
 </tr>
 <tr>
-<td><strong>Epoch gaps</strong></td>
-<td>Time series discontinuities &gt;3x the median interval</td>
+<td><code>machine/agent.json</code></td>
+<td><strong>Always-on</strong> curated JSON causal narrative — the file to hand to an AI agent (or read yourself) for root-cause diagnosis</td>
+<td>DEBUG</td>
 </tr>
 <tr>
-<td><strong>Size</strong></td>
-<td>Dataset size in MB — sudden drops indicate data loss</td>
+<td><code>machine/performance.json</code></td>
+<td>Timing events (<code>stage_timing</code>, plus any event carrying <code>duration_seconds</code>)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>component/{processor,auxiliary,icechunk}.log</code></td>
+<td>Per-component readable logs</td>
+<td>DEBUG</td>
 </tr>
 </tbody>
 </table>
-<p><strong>The <code>DatasetReport</code> object:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="n">report</span><span class="o">.</span><span class="n">n_epochs</span>          <span class="c1"># 8640</span>
-<span class="n">report</span><span class="o">.</span><span class="n">n_sids</span>            <span class="c1"># 86</span>
-<span class="n">report</span><span class="o">.</span><span class="n">nan_ratios</span>        <span class="c1"># {&quot;sat_x&quot;: 0.62, &quot;sat_y&quot;: 0.62, &quot;SNR&quot;: 0.01}</span>
-<span class="n">report</span><span class="o">.</span><span class="n">epoch_gaps</span>        <span class="c1"># [&quot;2025-01-01T06:00 → 2025-01-01T08:00 (gap=7200s, expected≈30s)&quot;]</span>
-<span class="n">report</span><span class="o">.</span><span class="n">size_mb</span>           <span class="c1"># 23.7</span>
-<span class="n">report</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>         <span class="c1"># flat dict for Airflow XCom</span>
-</code></pre></div>
-<p><strong>When to use:</strong> After every processing step that transforms data. Place it after <code>read</code>, after <code>augment</code>, after <code>merge</code> — anywhere the dataset shape or content might change.</p>
+<p><code>machine/agent.json</code> is deliberately <strong>always on</strong>, never gated behind a
+debug flag — on a remote run there is no way to retroactively enable debug
+logging after a failure, so it has to already be capturing everything.</p>
+<p>Every log record — from any package, any process — automatically carries
+the current <code>run_id</code> once one is bound (see below), so a human or an agent
+can grep a single identifier across every file this run touched.</p>
+<p>Multi-process note: each non-main process (a <code>ProcessPoolExecutor</code>/<abbr title="Reusable Process Pool Executor - based on Python's native concurrent.futures">loky</abbr>
+worker) gets its own per-PID-suffixed files (<code>agent.&lt;pid&gt;.json</code>, etc.) —
+<code>RotatingFileHandler</code>/<code>TimedRotatingFileHandler</code> aren't safe to share across
+processes, so rather than coordinate rotation, each process just gets its
+own file set.</p>
 <hr />
-<h3 id="batchtracker-batch-processing"><code>BatchTracker</code> — Batch processing<a class="headerlink" href="#batchtracker-batch-processing" title="Permanent link">&para;</a></h3>
-<p>Tracks timing for a loop of sequential steps and produces a summary DataFrame and bar chart.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchTracker</span>
-
-<span class="n">tracker</span> <span class="o">=</span> <span class="n">BatchTracker</span><span class="p">(</span><span class="s2">&quot;process_2025&quot;</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">rinex_files</span><span class="p">:</span>
-    <span class="k">with</span> <span class="n">tracker</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
-        <span class="n">process_file</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-
-<span class="c1"># Summary table</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">tracker</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
-
-<span class="c1"># Quick visualization</span>
-<span class="n">fig</span> <span class="o">=</span> <span class="n">tracker</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;batch_timing.png&quot;</span><span class="p">)</span>
-
-<span class="c1"># Aggregate stats</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total: </span><span class="si">{</span><span class="n">tracker</span><span class="o">.</span><span class="n">total</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s, Mean: </span><span class="si">{</span><span class="n">tracker</span><span class="o">.</span><span class="n">mean</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s/file&quot;</span><span class="p">)</span>
+<h2 id="run_id-correlating-a-single-pipeline-invocation"><code>run_id</code>: correlating a single pipeline invocation<a class="headerlink" href="#run_id-correlating-a-single-pipeline-invocation" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_run_id</span><span class="p">,</span> <span class="n">set_run_id</span><span class="p">,</span> <span class="n">reset_run_id</span>
 </code></pre></div>
-<p><strong>When to use:</strong> Processing loops — iterating over files, dates, or sites.</p>
+<p>A <code>run_id</code> identifies one pipeline invocation for one site — format
+<code>{site}-{YYYYMMDD-HHMMSS}</code> (e.g. <code>ExampleSite-20260713-143022</code>), chosen to
+be legible and grep-able over a UUID. The CLI (<code>canvodpy run</code>) generates one
+automatically per site in a multi-site invocation (<code>--site A --site B</code>
+gets two independent run_ids — failures are site-scoped, and this keeps
+correlation with <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> commits, which are also per-site-store, clean).</p>
+<p>It's a <code>contextvars.ContextVar</code>, so it's bound automatically into every
+structlog event via a processor — no call site needs to pass it explicitly.
+Contextvars don't cross process boundaries, so worker processes
+(<code>ProcessPoolExecutor</code>/<abbr title="Reusable Process Pool Executor - based on Python's native concurrent.futures">loky</abbr>) receive it explicitly at startup via
+<code>initializer</code>/<code>initargs</code> (see <code>_worker_init_with_run_id</code> in
+<code>canvodpy.orchestrator.processor</code>).</p>
+<p>It also gets appended to <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> commit messages (<code>(run={run_id})</code>), so
+you can correlate a specific commit with the exact run that wrote it —
+across the log files <em>and</em> the data.</p>
+<div class="highlight"><pre><span></span><code><span class="n">token</span> <span class="o">=</span> <span class="n">set_run_id</span><span class="p">(</span><span class="s2">&quot;ExampleSite-20260713-143022&quot;</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="o">...</span>  <span class="c1"># process the site</span>
+<span class="k">finally</span><span class="p">:</span>
+    <span class="n">reset_run_id</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</code></pre></div>
 <hr />
-<h3 id="task_metrics-airflow-ready-monitoring"><code>task_metrics</code> — Airflow-ready monitoring<a class="headerlink" href="#task_metrics-airflow-ready-monitoring" title="Permanent link">&para;</a></h3>
-<p>Context manager that combines timing + memory + success/failure tracking. Designed for Airflow tasks but works anywhere.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">task_metrics</span>
-
-<span class="c1"># Standalone (no Airflow)</span>
-<span class="k">with</span> <span class="n">task_metrics</span><span class="p">(</span><span class="s2">&quot;ingest_rinex&quot;</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="s2">&quot;rosalia&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
-    <span class="n">process_all_files</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Took </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">duration_s</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">s, peak </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">peak_memory_mb</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> MB, status: </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-<span class="c1"># Inside an Airflow task — push=True sends to XCom + StatsD</span>
-<span class="nd">@task</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">ingest_rinex</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="o">**</span><span class="n">context</span><span class="p">):</span>
-    <span class="k">with</span> <span class="n">task_metrics</span><span class="p">(</span><span class="s2">&quot;ingest_rinex&quot;</span><span class="p">,</span> <span class="n">push</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">date</span><span class="p">)</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
-        <span class="n">process_files</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">m</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>  <span class="c1"># available via XCom for downstream tasks</span>
-</code></pre></div>
-<p><strong>What it collects:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>duration_s</code></td>
-<td>Wall-clock time</td>
-</tr>
-<tr>
-<td><code>peak_memory_mb</code></td>
-<td>Peak memory via tracemalloc</td>
-</tr>
-<tr>
-<td><code>status</code></td>
-<td><code>"success"</code> or <code>"failed"</code> (auto-detected from exceptions)</td>
-</tr>
-<tr>
-<td><code>extras</code></td>
-<td>Any keyword arguments you pass</td>
-</tr>
-</tbody>
-</table>
-<p><strong>What <code>push=True</code> does (Airflow only):</strong></p>
+<h2 id="crash-handling-logs-are-the-only-evidence">Crash handling — logs are the only evidence<a class="headerlink" href="#crash-handling-logs-are-the-only-evidence" title="Permanent link">&para;</a></h2>
+<p>Two complementary safety nets guarantee that an uncaught exception is
+logged before the process dies, whether it happens in the main process or
+a worker:</p>
 <ol>
-<li>Pushes <code>m.as_dict()</code> to <strong>XCom</strong> — downstream tasks can read it</li>
-<li>Emits <strong>StatsD</strong> metrics: <code>canvod.&lt;op&gt;.duration_s</code>, <code>canvod.&lt;op&gt;.peak_memory_mb</code>, <code>canvod.&lt;op&gt;.success</code></li>
+<li><strong><code>sys.excepthook</code></strong> (installed in <code>configure_logging()</code>): catches
+   anything that escapes all other handling in the main process, logs a
+   structured <code>uncaught_exception</code> event with the full traceback and
+   current <code>run_id</code>, then chains to the default hook (console output for
+   attended sessions is unchanged).</li>
+<li><strong>A top-level try/except around each site's processing loop</strong> in
+   <code>cli/run.py</code>: has access to state <code>sys.excepthook</code> can't reconstruct
+   after the stack unwinds — the last successfully processed date, which
+   stage it was in (<code>pipeline_process</code>, <code>vod_calc</code>, <code>vod_store</code>, ...). Logs
+   a <code>run_crashed</code> event with that context, then <strong>re-raises</strong> — a
+   swallowed crash that silently "succeeds" is worse than a visible
+   nonzero exit.</li>
+<li><strong>Worker-process failures</strong> (<code>ProcessPoolExecutor</code>): existing
+   <code>fut.result()</code> call sites log a <code>worker_task_failed</code> event with the
+   task's metadata (date, receiver) before failure handling proceeds, with
+   a distinct <code>worker_pool_broken</code> event for <code>BrokenProcessPool</code> (the
+   worker process itself died — OOM, segfault — a different failure class
+   than an exception raised inside a task).</li>
 </ol>
+<p>Degraded-but-not-crashed states are first-class logged events too, not
+just buried warnings: <code>file_skipped</code>, <code>vod_failed</code>,
+<code>clock_interpolation_skipped</code>, and similar — so <code>machine/agent.json</code> gives
+a reconstructable causal narrative even for a run that finished but took a
+degraded path.</p>
 <hr />
-<h3 id="retry-retry-with-backoff"><code>retry</code> — Retry with backoff<a class="headerlink" href="#retry-retry-with-backoff" title="Permanent link">&para;</a></h3>
-<p>Wraps <a href="https://tenacity.readthedocs.io/">tenacity</a> with a simple interface. Use for operations that fail transiently — network downloads, <abbr title="File Transfer Protocol">FTP</abbr> connections.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">retry</span>
+<h2 id="stage_timer-a-simplified-performance-tracker"><code>stage_timer</code> — a simplified performance tracker<a class="headerlink" href="#stage_timer-a-simplified-performance-tracker" title="Permanent link">&para;</a></h2>
+<p>Deliberately <strong>not</strong> full telemetry: no spans, no collectors, no
+exporters, no extra dependency. <code>canvodpy.utils.telemetry</code> (an
+OpenTelemetry-based tracer) was removed because <code>opentelemetry</code> was never
+actually installed anywhere in this repo — every span was silently a
+no-op. <code>stage_timer</code> replaces it, plus the previously ragged mix of field
+names (<code>duration_seconds</code>, <code>processing_time_min</code>, ...) some call sites used.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">stage_timer</span><span class="p">,</span> <span class="n">timed_stage</span><span class="p">,</span> <span class="n">emit_run_summary</span>
 
-<span class="nd">@retry</span><span class="p">(</span><span class="n">attempts</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">backoff</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="ne">ConnectionError</span><span class="p">,</span> <span class="ne">TimeoutError</span><span class="p">))</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">download_sp3</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">fetch</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">stage_timer</span><span class="p">(</span><span class="s2">&quot;icechunk.write&quot;</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group_name</span><span class="p">,</span> <span class="n">size_mb</span><span class="o">=</span><span class="mf">12.4</span><span class="p">):</span>
+    <span class="n">to_icechunk</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group_name</span><span class="p">)</span>
+
+<span class="nd">@timed_stage</span><span class="p">(</span><span class="s2">&quot;rinex.process_file&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_one</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="o">...</span>
 </code></pre></div>
-<p><strong>Parameters:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Param</th>
-<th>Default</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>attempts</code></td>
-<td>3</td>
-<td>Total tries before giving up</td>
-</tr>
-<tr>
-<td><code>delay</code></td>
-<td>1.0</td>
-<td>Initial delay (seconds) between retries</td>
-</tr>
-<tr>
-<td><code>backoff</code></td>
-<td>2.0</td>
-<td>Multiply delay by this after each retry (1s → 2s → 4s)</td>
-</tr>
-<tr>
-<td><code>exceptions</code></td>
-<td><code>(Exception,)</code></td>
-<td>Only retry on these exception types</td>
-</tr>
-</tbody>
-</table>
+<p>Emits exactly one event, <code>stage_timing</code>, on both success and failure
+(<code>status="ok"</code>/<code>"error"</code>) — on exception, it still emits before
+re-raising, so a partial summary exists even for a run that later crashes.
+<code>machine/performance.json</code> picks these up automatically (it also still
+picks up any pre-existing event that carries its own <code>duration_seconds</code>
+field under a more specific event name — e.g.
+<code>ephemeris_interpolation_complete</code> — those are deliberately detailed,
+named events, not a ragged convention needing consolidation).</p>
+<p><code>emit_run_summary()</code> rolls up all <code>stage_timing</code> events accumulated for the
+current <code>run_id</code> into one <code>run_summary</code> event — per-stage count, total
+seconds, error count. Called at the end of a successful site run, and also
+from the crash-handling path (showing whatever stages completed before the
+crash). <code>reset_run_stats(run_id)</code> clears the in-process accumulator
+afterward so a long-lived multi-site invocation doesn't grow it unbounded.</p>
+<p>Caveat: the accumulator is per-process. <code>stage_timer</code> calls made inside a
+<code>ProcessPoolExecutor</code>/<abbr title="Reusable Process Pool Executor - based on Python's native concurrent.futures">loky</abbr> worker land in that worker's own per-PID log
+file, but won't roll into the parent process's <code>run_summary</code> — solving
+that would require exactly the cross-process collector machinery this
+module exists to avoid.</p>
+<p>The per-file <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> pipeline emits <code>stage_timing</code> for four sub-stages —
+<code>reading</code>, <code>validating</code>, <code>augmenting</code>, <code>writing</code> — each tagged with
+<code>receiver</code> and <code>date_key</code>, specifically so the performance dashboard (next
+section) can break down both "what part of the current iteration is slow"
+and "elapsed time per receiver per day" from the same file.</p>
 <hr />
-<h3 id="rate_limit-throttle-noisy-callbacks"><code>rate_limit</code> — Throttle noisy callbacks<a class="headerlink" href="#rate_limit-throttle-noisy-callbacks" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">rate_limit</span>
-
-<span class="nd">@rate_limit</span><span class="p">(</span><span class="n">interval</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">log_progress</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100000</span><span class="p">):</span>
-    <span class="n">log_progress</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">100000</span><span class="p">)</span>  <span class="c1"># prints at most every 2 seconds</span>
+<h2 id="live-performance-dashboard">Live performance dashboard<a class="headerlink" href="#live-performance-dashboard" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>dashboard<span class="w">                    </span><span class="c1"># read-only app view</span>
+canvodpy<span class="w"> </span>dashboard<span class="w"> </span>--edit<span class="w">             </span><span class="c1"># marimo&#39;s interactive editor</span>
+canvodpy<span class="w"> </span>dashboard<span class="w"> </span>--logs-dir<span class="w"> </span>/path/to/.logs
 </code></pre></div>
+<p>A marimo notebook (<code>canvodpy/cli/dashboards/performance.py</code>) that reads
+<code>machine/performance*.json</code> and shows two views: a per-stage breakdown for
+the most recently completed (receiver, date) unit of work, and total
+elapsed time per receiver × day across the whole run. Click the refresh
+button to reload — works equally well pointed at a run still in progress
+(partial data) or a finished one. No new data format: it's the same
+<code>stage_timing</code> JSONL <code>stage_timer()</code> already writes, read directly with
+polars — not a separate telemetry backend.</p>
 <hr />
-<h3 id="timer-minimal-stopwatch"><code>timer</code> — Minimal stopwatch<a class="headerlink" href="#timer-minimal-stopwatch" title="Permanent link">&para;</a></h3>
-<p>For quick one-off timing without recording to the global store.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">timer</span>
+<h2 id="reading-machineagentjson-after-a-failure">Reading <code>machine/agent.json</code> after a failure<a class="headerlink" href="#reading-machineagentjson-after-a-failure" title="Permanent link">&para;</a></h2>
+<p>The whole point: this file alone should be enough to answer "what
+happened?" without re-running anything.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Everything for one run, in order</span>
+grep<span class="w"> </span><span class="s1">&#39;&quot;run_id&quot;: &quot;ExampleSite-20260713-143022&quot;&#39;</span><span class="w"> </span>.logs/machine/agent.json
 
-<span class="k">with</span> <span class="n">timer</span><span class="p">()</span> <span class="k">as</span> <span class="n">t</span><span class="p">:</span>
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Read took </span><span class="si">{</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;elapsed&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+<span class="c1"># Just the crash / uncaught exception</span>
+grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">&#39;&quot;event&quot;: &quot;(run_crashed|uncaught_exception|worker_task_failed|worker_pool_broken)&quot;&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>.logs/machine/agent.json
+
+<span class="c1"># How far did it get before dying?</span>
+grep<span class="w"> </span><span class="s1">&#39;&quot;event&quot;: &quot;run_summary&quot;&#39;</span><span class="w"> </span>.logs/machine/agent.json
 </code></pre></div>
+<p>Each line is a self-contained JSON object — pipe through <code>jq</code> for
+formatting, or hand the whole grep'd slice to an LLM for triage.</p>
 <hr />
-<h3 id="bottlenecks-and-plot_bottlenecks-find-what-is-slow"><code>bottlenecks</code> and <code>plot_bottlenecks</code> — Find what is slow<a class="headerlink" href="#bottlenecks-and-plot_bottlenecks-find-what-is-slow" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">bottlenecks</span><span class="p">,</span> <span class="n">plot_bottlenecks</span>
-
-<span class="c1"># Table: operation, total_s, mean_s, count, pct</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">bottlenecks</span><span class="p">(</span><span class="n">top_n</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-
-<span class="c1"># Horizontal bar chart with percentage labels</span>
-<span class="n">fig</span> <span class="o">=</span> <span class="n">plot_bottlenecks</span><span class="p">(</span><span class="n">top_n</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Pipeline bottlenecks — Rosalia 2025&quot;</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">&quot;bottlenecks.png&quot;</span><span class="p">)</span>
-</code></pre></div>
-<hr />
-<h2 id="persistent-metrics-database">Persistent metrics database<a class="headerlink" href="#persistent-metrics-database" title="Permanent link">&para;</a></h2>
-<h3 id="how-it-works">How it works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h3>
-<p>Every <code>record()</code> call writes to both:</p>
-<ol>
-<li>An <strong>in-memory list</strong> (fast, current session only)</li>
-<li>A <strong>SQLite database</strong> (persistent, survives restarts)</li>
-</ol>
-<p>The database is auto-created at <code>~/.canvod/metrics.db</code> on first use. Configure it explicitly:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure_db</span>
-
-<span class="c1"># Custom path</span>
-<span class="n">configure_db</span><span class="p">(</span><span class="s2">&quot;~/research/gnss_metrics.db&quot;</span><span class="p">)</span>
-
-<span class="c1"># Disable persistence (in-memory only)</span>
-<span class="n">configure_db</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-</code></pre></div>
-<p>Or set the environment variable:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">CANVOD_METRICS_DB</span><span class="o">=</span>~/research/gnss_metrics.db
-<span class="c1"># or disable:</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">CANVOD_METRICS_DB</span><span class="o">=</span>none
-</code></pre></div>
-<h3 id="querying-the-database">Querying the database<a class="headerlink" href="#querying-the-database" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">query_db</span>
-
-<span class="c1"># All records from the last 24 hours</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">query_db</span><span class="p">(</span><span class="n">since</span><span class="o">=</span><span class="s2">&quot;2026-03-09T00:00:00&quot;</span><span class="p">)</span>
-
-<span class="c1"># Filter by operation pattern (SQL LIKE)</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">query_db</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;store.%&quot;</span><span class="p">)</span>
-
-<span class="c1"># Filter by metric type</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">query_db</span><span class="p">(</span><span class="n">metric_type</span><span class="o">=</span><span class="s2">&quot;task&quot;</span><span class="p">)</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">query_db</span><span class="p">(</span><span class="n">metric_type</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">)</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">query_db</span><span class="p">(</span><span class="n">metric_type</span><span class="o">=</span><span class="s2">&quot;memory&quot;</span><span class="p">)</span>
-
-<span class="c1"># Combine filters</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">query_db</span><span class="p">(</span><span class="n">since</span><span class="o">=</span><span class="s2">&quot;2026-03-01&quot;</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;rinex.%&quot;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="database-schema">Database schema<a class="headerlink" href="#database-schema" title="Permanent link">&para;</a></h3>
-<p>The <code>metrics</code> table stores all diagnostics in a single, queryable table:</p>
-<table>
-<thead>
-<tr>
-<th>Column</th>
-<th>Type</th>
-<th>Source</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>operation</code></td>
-<td>TEXT</td>
-<td>All tools</td>
-</tr>
-<tr>
-<td><code>duration_s</code></td>
-<td>REAL</td>
-<td><code>track_time</code>, <code>task_metrics</code></td>
-</tr>
-<tr>
-<td><code>timestamp</code></td>
-<td>TEXT (ISO 8601)</td>
-<td>All tools</td>
-</tr>
-<tr>
-<td><code>metric_type</code></td>
-<td>TEXT</td>
-<td><code>"memory"</code>, <code>"dataset"</code>, <code>"task"</code>, or NULL (timing)</td>
-</tr>
-<tr>
-<td><code>status</code></td>
-<td>TEXT</td>
-<td><code>task_metrics</code> (<code>"success"</code> / <code>"failed"</code>)</td>
-</tr>
-<tr>
-<td><code>peak_memory_mb</code></td>
-<td>REAL</td>
-<td><code>track_memory</code>, <code>task_metrics</code></td>
-</tr>
-<tr>
-<td><code>n_epochs</code></td>
-<td>INTEGER</td>
-<td><code>track_dataset</code></td>
-</tr>
-<tr>
-<td><code>n_sids</code></td>
-<td>INTEGER</td>
-<td><code>track_dataset</code></td>
-</tr>
-<tr>
-<td><code>n_variables</code></td>
-<td>INTEGER</td>
-<td><code>track_dataset</code></td>
-</tr>
-<tr>
-<td><code>size_mb</code></td>
-<td>REAL</td>
-<td><code>track_dataset</code></td>
-</tr>
-<tr>
-<td><code>batch</code></td>
-<td>TEXT</td>
-<td><code>BatchTracker</code></td>
-</tr>
-<tr>
-<td><code>extras</code></td>
-<td>TEXT (JSON)</td>
-<td>Any additional keyword arguments</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="marimo-dashboard">Marimo dashboard<a class="headerlink" href="#marimo-dashboard" title="Permanent link">&para;</a></h2>
-<p>A pre-built interactive dashboard is included at <code>demo/diagnostics_dashboard.py</code>:</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>marimo<span class="w"> </span>run<span class="w"> </span>demo/diagnostics_dashboard.py
-</code></pre></div>
-<p>It reads from the SQLite database and shows:</p>
-<ul>
-<li><strong>Summary cards</strong> — total records, unique operations, total time, peak memory</li>
-<li><strong>Bottleneck chart</strong> — interactive bar chart of slowest operations</li>
-<li><strong>Performance timeline</strong> — how duration changes over time</li>
-<li><strong>Memory usage</strong> — peak memory per operation</li>
-<li><strong>Dataset quality</strong> — epoch/sid counts, NaN warnings, gap detection</li>
-<li><strong>Task outcomes</strong> — success/failure donut chart</li>
-<li><strong>Raw data browser</strong> — paginated table of all metrics</li>
-</ul>
-<p>Filters: time range (1h / 24h / 7d / 30d / all) and metric type.</p>
-<hr />
-<h2 id="airflow-grafana-production">Airflow + Grafana (production)<a class="headerlink" href="#airflow-grafana-production" title="Permanent link">&para;</a></h2>
-<p>For production Airflow deployments, diagnostics metrics flow to Grafana via StatsD:</p>
-<div class="highlight"><pre><span></span><code>Pipeline task → task_metrics(push=True) → Airflow StatsD → Prometheus → Grafana
-</code></pre></div>
-<h3 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h3>
-<ol>
-<li>
-<p><strong>Enable StatsD in Airflow</strong> (<code>airflow.cfg</code>):</p>
-<div class="highlight"><pre><span></span><code><span class="k">[metrics]</span>
-<span class="na">statsd_on</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">statsd_host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">localhost</span>
-<span class="na">statsd_port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">8125</span>
-<span class="na">statsd_prefix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">airflow</span>
-</code></pre></div>
-</li>
-<li>
-<p><strong>Use <code>task_metrics</code> with <code>push=True</code></strong> in your <abbr title="Directed Acyclic Graph — task dependency structure used by workflow schedulers (Airflow, Prefect)">DAG</abbr> tasks:</p>
-<div class="highlight"><pre><span></span><code><span class="nd">@task</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">ingest_rinex</span><span class="p">(</span><span class="n">site</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">date</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">context</span><span class="p">):</span>
-    <span class="k">with</span> <span class="n">task_metrics</span><span class="p">(</span><span class="s2">&quot;ingest_rinex&quot;</span><span class="p">,</span> <span class="n">push</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="n">site</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">date</span><span class="p">):</span>
-        <span class="n">process_files</span><span class="p">()</span>
-</code></pre></div>
-</li>
-<li>
-<p><strong>Import the Grafana dashboard</strong>:</p>
-<p>The file <code>canvod/utils/diagnostics/grafana_dashboard.json</code> provides a
-pre-built dashboard with:</p>
-<ul>
-<li>Task success rate gauge</li>
-<li>Duration time series (per operation)</li>
-<li>Memory usage bars</li>
-<li>p50/p95 duration percentiles</li>
-<li>Throughput (tasks/hour)</li>
-<li>Success vs. failure pie chart</li>
-</ul>
-<p>Import it via Grafana UI → Dashboards → Import → Upload JSON.</p>
-</li>
-</ol>
-<hr />
-<h2 id="patterns-for-scientific-pipelines">Patterns for scientific pipelines<a class="headerlink" href="#patterns-for-scientific-pipelines" title="Permanent link">&para;</a></h2>
-<h3 id="pattern-1-instrument-every-processing-step">Pattern 1: Instrument every processing step<a class="headerlink" href="#pattern-1-instrument-every-processing-step" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">track_time</span><span class="p">,</span> <span class="n">track_dataset</span>
-
-<span class="nd">@track_time</span><span class="p">(</span><span class="s2">&quot;rinex.read&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">read_rinex</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">to_ds</span><span class="p">()</span>
-    <span class="n">track_dataset</span><span class="p">(</span><span class="s2">&quot;after_read&quot;</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">ds</span>
-
-<span class="nd">@track_time</span><span class="p">(</span><span class="s2">&quot;aux.augment&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">augment</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">sp3</span><span class="p">,</span> <span class="n">clk</span><span class="p">):</span>
-    <span class="n">ds</span> <span class="o">=</span> <span class="n">augment_with_ephemeris</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">sp3</span><span class="p">,</span> <span class="n">clk</span><span class="p">)</span>
-    <span class="n">track_dataset</span><span class="p">(</span><span class="s2">&quot;after_augment&quot;</span><span class="p">,</span> <span class="n">ds</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">ds</span>
-
-<span class="nd">@track_time</span><span class="p">(</span><span class="s2">&quot;store.write&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">write_store</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">group</span><span class="p">):</span>
-    <span class="n">ds</span><span class="o">.</span><span class="n">to_zarr</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;a&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="pattern-2-batch-processing-with-summary">Pattern 2: Batch processing with summary<a class="headerlink" href="#pattern-2-batch-processing-with-summary" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">BatchTracker</span><span class="p">,</span> <span class="n">task_metrics</span>
-
-<span class="k">with</span> <span class="n">task_metrics</span><span class="p">(</span><span class="s2">&quot;daily_ingest&quot;</span><span class="p">,</span> <span class="n">push</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="s2">&quot;rosalia&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
-    <span class="n">tracker</span> <span class="o">=</span> <span class="n">BatchTracker</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">rinex_files</span><span class="p">:</span>
-        <span class="k">with</span> <span class="n">tracker</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">):</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">read_rinex</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-            <span class="n">ds</span> <span class="o">=</span> <span class="n">augment</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">sp3</span><span class="p">,</span> <span class="n">clk</span><span class="p">)</span>
-            <span class="n">write_store</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">group</span><span class="p">)</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="n">tracker</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
-    <span class="c1"># Total: 142.3s for 24 files, mean 5.9s/file</span>
-</code></pre></div>
-<h3 id="pattern-3-compare-performance-across-runs">Pattern 3: Compare performance across runs<a class="headerlink" href="#pattern-3-compare-performance-across-runs" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">query_db</span>
-
-<span class="c1"># How did last week compare to this week?</span>
-<span class="n">last_week</span> <span class="o">=</span> <span class="n">query_db</span><span class="p">(</span><span class="n">since</span><span class="o">=</span><span class="s2">&quot;2026-03-03&quot;</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;rinex.read&quot;</span><span class="p">)</span>
-<span class="n">this_week</span> <span class="o">=</span> <span class="n">query_db</span><span class="p">(</span><span class="n">since</span><span class="o">=</span><span class="s2">&quot;2026-03-10&quot;</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;rinex.read&quot;</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Last week mean: </span><span class="si">{</span><span class="n">last_week</span><span class="p">[</span><span class="s1">&#39;duration_s&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;This week mean: </span><span class="si">{</span><span class="n">this_week</span><span class="p">[</span><span class="s1">&#39;duration_s&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="pattern-4-memory-aware-chunking-decisions">Pattern 4: Memory-aware chunking decisions<a class="headerlink" href="#pattern-4-memory-aware-chunking-decisions" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.diagnostics</span><span class="w"> </span><span class="kn">import</span> <span class="n">track_memory</span>
-
-<span class="c1"># Compare chunking strategies</span>
-<span class="k">for</span> <span class="n">chunk_size</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">]:</span>
-    <span class="k">with</span> <span class="n">track_memory</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;zarr.write.chunk_</span><span class="si">{</span><span class="n">chunk_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">m</span><span class="p">:</span>
-        <span class="n">ds</span><span class="o">.</span><span class="n">chunk</span><span class="p">({</span><span class="s2">&quot;epoch&quot;</span><span class="p">:</span> <span class="n">chunk_size</span><span class="p">})</span><span class="o">.</span><span class="n">to_zarr</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Chunk </span><span class="si">{</span><span class="n">chunk_size</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">peak_mb</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> MB&quot;</span><span class="p">)</span>
-</code></pre></div>
-<hr />
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Tool</th>
-<th>One-liner</th>
-<th>Use for</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>track_time</code></td>
-<td>How long did it take?</td>
-<td>Every processing step</td>
-</tr>
-<tr>
-<td><code>track_memory</code></td>
-<td>How much RAM did it use?</td>
-<td>Large array operations</td>
-</tr>
-<tr>
-<td><code>track_dataset</code></td>
-<td>Is the data still healthy?</td>
-<td>After every transform</td>
-</tr>
-<tr>
-<td><code>BatchTracker</code></td>
-<td>How long did each file take?</td>
-<td>Processing loops</td>
-</tr>
-<tr>
-<td><code>task_metrics</code></td>
-<td>Full task report (time + memory + status)</td>
-<td>Airflow tasks</td>
-</tr>
-<tr>
-<td><code>retry</code></td>
-<td>Try again on failure</td>
-<td>Network downloads</td>
-</tr>
-<tr>
-<td><code>rate_limit</code></td>
-<td>Don't log too often</td>
-<td>Progress callbacks</td>
-</tr>
-<tr>
-<td><code>timer</code></td>
-<td>Quick stopwatch</td>
-<td>One-off timing</td>
-</tr>
-<tr>
-<td><code>bottlenecks</code></td>
-<td>What is slowest?</td>
-<td>Post-run analysis</td>
-</tr>
-<tr>
-<td><code>query_db</code></td>
-<td>What happened last week?</td>
-<td>Cross-session trends</td>
-</tr>
-</tbody>
-</table>
+<div class="admonition example">
+<p class="admonition-title">Try it</p>
+<p><a href="../../notebooks/_build/02_configuration.html" target="_blank">02 · Configuration</a>
+· <a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/02_configuration.py">view source on molab</a></p>
+</div>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -4979,7 +4180,7 @@ pre-built dashboard with:</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../airflow/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Airflow Integration">
+          <a href="../parallel-processing/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Parallel Processing">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4989,20 +4190,20 @@ pre-built dashboard with:</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Airflow Integration
+                Parallel Processing
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../VERSIONING/" class="md-footer__link md-footer__link--next" aria-label="Next: Versioning">
+          <a href="../../notebooks/" class="md-footer__link md-footer__link--next" aria-label="Next: Notebooks">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Versioning
+                Notebooks
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -5041,7 +4242,7 @@ pre-built dashboard with:</p>
       
     
     <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
     
@@ -5052,7 +4253,7 @@ pre-built dashboard with:</p>
       
     
     <a href="https://pypi.org/project/canvodpy/" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
     </a>
   
 </div>
@@ -5062,20 +4263,25 @@ pre-built dashboard with:</p>
 </footer>
       
     </div>
-    <div class="md-dialog" data-md-component="dialog">
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+      
+<div class="md-progress" data-md-component="progress" role="progressbar" aria-label="Loading"></div>
     
     
     
       
       
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"search":"../../assets/javascripts/workers/search.e2d2d235.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.dbc0afdc.min.js"></script>
+      <script src="../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
       
         <script src="../../assets/mermaid-init.js"></script>
       

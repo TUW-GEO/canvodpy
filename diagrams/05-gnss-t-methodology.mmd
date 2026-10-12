@@ -2,7 +2,7 @@ flowchart TD
     subgraph INPUT[Data Acquisition]
         RINEX["RINEX v3.04 Observation Files<br/>(SNR, Pseudorange, Phase, Doppler)"]
         SP3["SP3 Precise Ephemerides<br/>(satellite positions every 5/15 min)"]
-        CLK["CLK Precise Clock Corrections<br/>(satellite clock offsets)"]
+        CLK["CLK Precise Clock Corrections (optional)<br/>(satellite clock offsets, unused by VOD)"]
     end
 
     subgraph DOWNLOAD[Auxiliary Data Retrieval]
@@ -25,9 +25,10 @@ flowchart TD
         SCS["Spherical Coordinate Transformation (ECEF → r, θ, φ)"]
     end
 
-    subgraph STORAGE[Versioned Storage - Icechunk]
-        ICECHUNK["Observations Repository<br/>(append per epoch, commit per file)"]
+    subgraph STORAGE[Versioned Storage - two Icechunk repositories per site]
+        ICECHUNK["RINEX/SBF Repository<br/>(append per epoch, commit per file)"]
         META_TRACK["Metadata Tracking<br/>(RINEX hash, snapshot ID, epoch range)"]
+        VOD_REPO["VOD Repository<br/>(per calculator/analysis group)"]
     end
 
     subgraph VOD[VOD Retrieval]
@@ -37,7 +38,7 @@ flowchart TD
     end
 
     subgraph GRIDDING[Hemispheric Grid Assignment]
-        GRID["Grid Construction<br/>(equal-area, HEALPix, geodesic, ...)"]
+        GRID["Grid Construction<br/>(equal-area, equal-angle, ...)"]
         KDTREE["KDTree Cell Assignment (O(n log m) spatial query)"]
     end
 
@@ -47,14 +48,18 @@ flowchart TD
     end
 
     SP3 --> FTP
-    CLK --> FTP
+    CLK -.->|"if fetch_clock"| FTP
     FTP --> CACHE
     CACHE --> PARSE_SP3
-    CACHE --> PARSE_CLK
+    CACHE -.->|"if fetch_clock"| PARSE_CLK
     PARSE_SP3 --> HERMITE
-    PARSE_CLK --> LINEAR
+    PARSE_CLK -.-> LINEAR
     HERMITE --> MERGE_AUX
-    LINEAR --> MERGE_AUX
+    LINEAR -.-> MERGE_AUX
+
+    style CLK fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5
+    style PARSE_CLK fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5
+    style LINEAR fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5
 
     RINEX --> READ
     READ --> SID
@@ -68,6 +73,7 @@ flowchart TD
     PAIR --> TAU
     TAU --> FORMULA
     FORMULA --> VOD_DS
+    VOD_DS --> VOD_REPO
     VOD_DS --> GRID
     GRID --> KDTREE
     KDTREE --> VIZ

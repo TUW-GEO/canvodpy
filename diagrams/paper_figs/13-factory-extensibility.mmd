@@ -1,0 +1,51 @@
+flowchart LR
+    subgraph ABCS[Abstract Base Classes]
+        READER_ABC["GNSSDataReader (read, to_ds, validate_output)"]
+        GRID_ABC["BaseGridBuilder (_build_grid, build)"]
+        VOD_ABC["VODCalculator (calculate_vod)"]
+        AUG_ABC["AugmentationStep (apply)<br/>no factory registry — subclassed directly"]
+    end
+
+    subgraph FACTORIES[Factory Registry]
+        RF["ReaderFactory"]
+        GF["GridFactory"]
+        VF["VODFactory"]
+    end
+
+    subgraph BUILTIN[Built-in Implementations]
+        RINEX3["Rnxv3Obs (RINEX v3.04)"]
+        EA["EqualAreaBuilder"]
+        HP["EqualAngleBuilder"]
+        GD["GeodesicBuilder"]
+        FB["FibonacciBuilder"]
+        TO["TauOmegaZerothOrder"]
+    end
+
+    subgraph CUSTOM[User Extension]
+        IMPL["Custom Implementation (inherits ABC)"]
+        REG["Factory.register( name, class)"]
+        USE["Factory.create( name, **params)"]
+    end
+
+    subgraph VALIDATION[Validation Chain]
+        V1["1. ABC compliance check (issubclass)"]
+        V2["2. Pydantic model validation (at creation)"]
+        V3["3. Runtime type checking (Generic T)"]
+    end
+
+    READER_ABC --> RF
+    GRID_ABC --> GF
+    VOD_ABC --> VF
+
+    RINEX3 --> RF
+    EA --> GF
+    HP --> GF
+    GD --> GF
+    FB --> GF
+    TO --> VF
+
+    IMPL --> REG
+    REG --> V1
+    V1 --> V2
+    V2 --> V3
+    V3 --> USE

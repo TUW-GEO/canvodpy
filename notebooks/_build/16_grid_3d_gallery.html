@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/favicon.ico" />
+    <!-- Preload is necessary because we show these images when we disconnect from the server,
+    but at that point we cannot load these images from the server -->
+    <link rel="preload" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/gradient-yHQUC_QB.png" as="image" />
+    <link rel="preload" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/noise-60BoTA8O.png" as="image" />
+    <!-- Preload the fonts -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/Lora-VariableFont_wght-CZceb_kH.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/PTSans-Regular-Bam3NpBI.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/PTSans-Bold-C_DwAp7Z.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/FiraMono-Regular-CEsLFVD9.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/FiraMono-Medium-D5MAsWEG.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/FiraMono-Bold-C6PDArdf.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="a marimo app" />
+    <link rel="apple-touch-icon" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/apple-touch-icon.png" />
+    <link rel="manifest" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/manifest.json" />
+
+    <script data-marimo="true">
+      function __resizeIframe(obj) {
+        const scrollbarHeight = 20; // Max between windows, mac, and linux
+
+        function setHeight() {
+          // Guard against race condition where iframe isn't ready
+          if (!obj.contentWindow?.document?.documentElement) {
+            return;
+          }
+          const element = obj.contentWindow.document.documentElement;
+          // If there is no vertical scrollbar, we don't need to resize the iframe
+          if (element.scrollHeight === element.clientHeight) {
+            return;
+          }
+
+          // Create a new height that includes the scrollbar height if it's visible
+          const hasHorizontalScrollbar = element.scrollWidth > element.clientWidth;
+          const newHeight = element.scrollHeight + (hasHorizontalScrollbar ? scrollbarHeight : 0);
+
+          // Only update the height if it's different from the current height
+          if (obj.style.height !== `${newHeight}px`) {
+            obj.style.height = `${newHeight}px`;
+          }
+        }
+
+        // Resize the iframe to the height of the content and bottom scrollbar height
+        setHeight();
+
+        // Resize the iframe when the content changes
+        const resizeObserver = new ResizeObserver((_entries) => {
+          setHeight();
+        });
+        // Only observe if iframe content is ready
+        if (obj.contentWindow?.document?.body) {
+          resizeObserver.observe(obj.contentWindow.document.body);
+        }
+      }
+    </script>
+    <marimo-filename hidden>16_grid_3d_gallery.py</marimo-filename>
+    <!-- TODO(Trevor): Legacy, required by VS Code plugin. Remove when plugin is updated (see marimo/server/_templates/template.py) -->
+    <marimo-version data-version="{{ version }}" hidden></marimo-version>
+    <marimo-user-config data-config="{{ user_config }}" hidden></marimo-user-config>
+    <marimo-server-token data-token="{{ server_token }}" hidden></marimo-server-token>
+    <!-- /TODO -->
+    <title>3D Grid Gallery</title>
+    <script type="module" crossorigin src="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/index-DafnX1Xx.js"></script>
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/rolldown-runtime-B0Z9INg1.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/react-CUdNIagt.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/compiler-runtime-BQ9S8nyo.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/useEvent-Dc9HkKI2.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/react-dom-CKsE8sC1.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/schemas-BL-NsLlF.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/isObject-BCaOs5rp.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/isSymbol-oX0TOjjx.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/now-Cmx0b_zA.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/debounce-aFmHgJZY.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/isArrayLikeObject-DnwgSs_Z.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/_baseMerge-CQpUq7ep.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/objects-snlMn4yk.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/jsx-runtime-B74pBk57.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/useEventListener-BdZUApHd.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/invariant-Ci2dTZ72.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/config-BxZgoFvi.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/utils-B4K466FK.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/session-DXKMv4Bs.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/Deferred-CrTnjj37.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/config-DpGPGznL.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/clsx-DB0hHKMi.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/cn-ldLVeaqm.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/fullscreen-BmzAqMKq.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dist-CyYN7zJg.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/menu-items-BBdeXCvU.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/use-restore-focus-B98SEiGc.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/button-BoklZTGL.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/createLucideIcon-rHn2EdoM.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/check-Wea4hZ6R.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/context-BFOBKCJB.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/useNumberFormatter-C4-_TnkF.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/select-BplWpfFo.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/circle-CeQt3rdW.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/toast-KNfsFUiB.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/tooltip-DR2Z2N4w.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/paths-CzfpItSz.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/useLifecycle-DKSBdWUf.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/toDate-BbJ1_N2T.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/database-zap-CrkOvbyN.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/alert-dialog-CeE3i3Qa.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/arrays-BqUx5USx.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/once-Haz_uxEL.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/numbers-DsgsDslU.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/useDebounce-DMbg9X18.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/input-BDakodZ2.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/use-toast-CC89xOwH.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/requests-yTHMxhVa.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/uuid-k9DpjH68.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/write-secret-modal-BiG2tahJ.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/plus-gbN72xHe.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/trash-2-BJG-7Qob.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/preload-helper-HclGiUj8.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dist-BczecT6V.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dist-BTskHGpb.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/capabilities-Bj3s1hGN.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/cjs-C49f7GXV.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/createReducer-BPvK7C_R.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dist-Ccyblc8N.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/marked.esm-B_3iMIUq.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/strings-BHZPE0Mc.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dist-BN-7G8qZ.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/badge-DFf033uX.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dist-CiUBikfn.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dist-MRn68vX1.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dist-Bviq_Dee.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dist-DBqBVprh.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dist-DueXZKz9.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/stex-CJTNBbet.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/useTheme-DcnXlv0_.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/useAsyncData-DucTwMkf.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/purify.es-CYRiAeUx.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/cells-CzugpTQu.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/get-DjNf4SIX.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/copy-RyCOE8jo.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/copy-BhJktFeI.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/copy-icon-DFhUGBjO.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/ErrorBoundary-BeE1cdgM.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/config-B4VJJibu.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/chevron-right-DOPs2jx8.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/dropdown-menu-VuyoeQOD.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/LazyAnyLanguageCodeMirror-B_IYTCX5.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/hat-glasses-DVgK5i5l.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/package-BeYhVWvM.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/errors-D9vyuMar.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/defaultLocale-CNPGWpMu.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/precisionRound-Bq_nmf5u.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/defaultLocale-D5bOh7g6.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/vega-loader.browser-CLRkNgm7.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/tooltip-PLkI_UfK.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/filename-fxG7K_MU.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/micromark-factory-space-D9Dr-k4J.js">
+    <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/chunk-YOKDWASO-CaoEAGJk.js">
+    <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/cells-0PFKL3SH.css">
+    <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/npm/@marimo-team/frontend@0.25.1/dist/assets/index--sT8xf-8.css">
+  
+<script data-marimo="true">
+    Object.defineProperty(window, "__MARIMO_STATIC__", {
+        value: Object.freeze({
+            files: Object.freeze({}),
+            modelNotifications: Object.freeze([]),
+        }),
+        writable: false,
+        configurable: false,
+    });
+</script>
+
+<script data-marimo="true">
+    Object.defineProperty(window, "__MARIMO_EXPORT_CONTEXT__", {
+        value: Object.freeze({
+            trusted: true,
+            notebookCode: "# /// script\n# requires-python = \"\u003E=3.14\"\n# dependencies = [\n#   \"canvod-auxiliary\",\n#   \"canvod-config\",\n#   \"canvod-grids\",\n#   \"canvod-ops\",\n#   \"canvod-preflight\",\n#   \"canvod-readers\",\n#   \"canvod-store\",\n#   \"canvod-store-metadata\",\n#   \"canvod-utils\",\n#   \"canvod-viz\",\n#   \"canvod-vod\",\n#   \"canvodpy\",\n#   \"healpy\u003E=1.16\",\n#   \"plotly\u003E=5.0\",\n#   \"marimo\u003E=0.21.1\",\n# ]\n#\n# [tool.uv.sources]\n# canvod-auxiliary = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-auxiliary\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvod-config = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-config\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvod-grids = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-grids\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvod-ops = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-ops\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvod-preflight = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-preflight\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvod-readers = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-readers\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvod-store = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-store\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvod-store-metadata = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-store-metadata\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvod-utils = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-utils\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvod-viz = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-viz\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvod-vod = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"packages/canvod-vod\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n# canvodpy = { git = \"https://github.com/nfb2021/canvodpy.git\", subdirectory = \"canvodpy\", rev = \"f30959f710ca71e28433135f25140097d0c0e08f\" }\n#\n# [tool.marimo.opengraph]\n# title = \"16 \u00b7 3D Grid Gallery\"\n# description = \"Interactive 3D gallery comparing every implemented hemispheric grid type: empty geometry, shared random synthetic data, and per-cell sampled-volume as a biomass proxy.\"\n# ///\n\nimport marimo\n\n__generated_with = \"0.25.1\"\napp = marimo.App(\n    width=\"medium\",\n    app_title=\"3D Grid Gallery\",\n    css_file=\"canvod_nordic.css\",\n)\n\n\n@app.cell\ndef _():\n    import marimo as mo\n\n    mo.md(\n        r\"\"\"\n    # 3D Grid Gallery\n\n    [![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/16_grid_3d_gallery.py?mode=edit)\n\n    A side-by-side comparison of every hemispheric grid type\n    `canvod-grids` implements, each rendered as an **interactive 3D\n    Plotly scene** (rotate by dragging, zoom with scroll) in three ways:\n\n    - **a) Empty grid**: the raw tessellation, uniformly coloured, to\n      compare cell shape and density\n    - **b) Synthetic data**: the same random per-cell values projected\n      onto each grid's own cells\n    - **c) Cell volume**: each cell's angular wedge volume out to an\n      assumed sensing radius, a proxy for how much biomass a signal in\n      that direction samples\n    - **d) 2D projection comparison**: the same synthetic data rendered\n      as a 2D matplotlib polar plot, orthographic vs equidistant, side\n      by side for each grid type\n\n    All grids are built at a common **5\u00b0 angular resolution** via\n    `canvod.grids.create_hemigrid()`. Every 3D scene always shows real\n    cell boundaries and the project's E/N/Up reference axes; see the\n    note after the grid-building step for why.\n    \"\"\"\n    )\n    return (mo,)\n\n\n@app.cell\ndef _():\n    import numpy as np\n\n    return (np,)\n\n\n@app.cell\ndef _(mo):\n    from canvod.grids import create_hemigrid\n\n    GRID_LABELS = {\n        \"equal_area\": \"Equal Area\",\n        \"equal_angle\": \"Equal Angle\",\n        \"equirectangular\": \"Equirectangular\",\n        \"htm\": \"HTM\",\n        \"geodesic\": \"Geodesic\",\n        \"fibonacci\": \"Fibonacci\",\n        \"healpix\": \"HEALPix\",\n    }\n    RESOLUTION_DEG = 5.0\n\n    grids = {}\n    _build_errors = {}\n    for _gtype in GRID_LABELS:\n        try:\n            grids[_gtype] = create_hemigrid(_gtype, angular_resolution=RESOLUTION_DEG)\n        except Exception as _e:\n            _build_errors[_gtype] = str(_e).splitlines()[0]\n\n    _rows = \"\\n\".join(\n        f\"| {GRID_LABELS[_t]} | `{_t}` | {grids[_t].ncells:,} | \u2705 built |\"\n        if _t in grids\n        else f\"| {GRID_LABELS[_t]} | `{_t}` | n/a | \u23ed\ufe0f skipped: {_build_errors[_t]} |\"\n        for _t in GRID_LABELS\n    )\n\n    mo.md(\n        f\"\"\"\n    ## Building all implemented grid types\n\n    | Grid | key | Cells (5\u00b0) | Status |\n    |---|---|---:|---|\n    {_rows}\n\n    HEALPix requires the optional `healpy` dependency. If it isn't\n    installed, that row is skipped above and the rest of this notebook\n    simply shows one fewer tab in each gallery.\n    \"\"\"\n    )\n    return GRID_LABELS, grids\n\n\n@app.cell\ndef _(mo):\n    mo.md(r\"\"\"\n    ## Every 3D scene includes cell boundaries and reference axes\n\n    `canvod-viz`'s Plotly 3D scenes hide the native Cartesian\n    x/y/z axes (`showbackground=False`) since raw sin/cos-projected\n    coordinates aren't physically meaningful on their own.\n    `HemisphereVisualizer3D.add_custom_axes()` draws artificial E/N/Up\n    axis lines and labels in their place, not real Plotly axes, but\n    built to read as if they were. `add_spherical_overlays()` adds\n    elevation rings and meridians as an angular reference grid.\n    Without these, a 3D hemisphere plot has no orientation or scale\n    reference at all. Every figure in this notebook applies both,\n    plus real cell-boundary wireframes (`show_wireframe=True`, fixed\n    2026-07-19; previously a declared-but-unwired no-op parameter in\n    `plot_hemisphere_surface`; cell edges were never actually drawn).\n    \"\"\")\n    return\n\n\n@app.cell\ndef _():\n    from canvod.viz import HemisphereVisualizer3D\n\n    def add_reference_frame(fig, viz: HemisphereVisualizer3D):\n        \"\"\"Apply this project's standard 3D reference frame to `fig`.\n\n        Elevation rings + meridians (`add_spherical_overlays`) and the\n        artificial-but-native-looking E/N/Up axes (`add_custom_axes`)\n        are a non-negotiable part of every 3D hemisphere plot in this\n        project -- see canvodpy-perf/CLAUDE.md's \"3D visualization\n        conventions\" section.\n        \"\"\"\n        fig = viz.add_spherical_overlays(fig)\n        fig = viz.add_custom_axes(fig)\n        return fig\n\n    return HemisphereVisualizer3D, add_reference_frame\n\n\n@app.cell\ndef _(mo):\n    mo.md(r\"\"\"\n    ## Synthetic data\n\n    Each grid gets independent random per-cell values from a fixed\n    seed, not a physically meaningful field, just enough variation to\n    compare how each tessellation renders data.\n    \"\"\")\n    return\n\n\n@app.cell\ndef _(grids, np):\n    _rng = np.random.default_rng(42)\n    synthetic_data = {_t: _rng.uniform(0.1, 1.0, _g.ncells) for _t, _g in grids.items()}\n    return (synthetic_data,)\n\n\n@app.cell\ndef _(mo):\n    mo.md(r\"\"\"\n    ## Cell volume: a biomass-sampling proxy\n\n    Grid cells are purely angular (theta, phi) partitions of the sky as\n    seen from the antenna -- they have a solid angle but no inherent\n    physical size. What actually determines how much canopy biomass a\n    satellite signal in a given cell's direction samples is the\n    **volume** of space that direction subtends, not its solid angle\n    alone.\n\n    Modelling the canopy as a uniform-density region extending out to a\n    fixed **sensing radius** $R$ around the antenna, each cell is a\n    spherical sector (a cone from the antenna out to radius $R$)\n    with volume\n\n    $$\n    V_{\\text{cell}} = \\frac{1}{3} \\, \\Omega_{\\text{cell}} \\, R^3\n    $$\n\n    where $\\Omega_{\\text{cell}}$ is the cell's solid angle\n    (`GridData.get_solid_angles()`, fixed and verified 2026-07-19 for\n    all 6 non-HEALPix grid types). Since $R$ is the same for every\n    cell, the *relative* pattern across cells is identical to the\n    solid-angle pattern -- but expressed in physically interpretable\n    units (m\u00b3), it directly answers \"how much more/less biomass would\n    a uniform canopy contribute to this cell than that one,\" which\n    solid angle alone (steradians) does not communicate as directly.\n\n    $R$ below is illustrative (a plausible forest canopy depth), not a\n    calibrated value -- adjust `SENSING_RADIUS_M` for a real site.\n\n    **On Fibonacci specifically:** its horizon-boundary cells are real\n    spherical-Voronoi regions bounded by actual southern-hemisphere\n    lattice points (needed to avoid the 4\u03c0 double-counting bug fixed\n    2026-07-19), so a handful of them genuinely dip a few degrees past\n    the horizon (verified: ~6\u00b0 at 10\u00b0 resolution, ~12\u00b0 at 20\u00b0; worse\n    at coarser resolutions, but nowhere near reaching the far pole).\n    That's still enough to skew a colour range shared across grid\n    types, which is why each tab below uses its **own** scale instead:\n    a shared one would let those few boundary cells compress every\n    other grid's real distortion pattern into one indistinguishable\n    colour. Each figure's title shows its own value range so the\n    absolute numbers stay comparable even though the colours aren't\n    directly comparable tab-to-tab.\n    \"\"\")\n    return\n\n\n@app.cell\ndef _(grids):\n    SENSING_RADIUS_M = 20.0\n\n    cell_volumes = {\n        _t: _g.get_solid_angles() * SENSING_RADIUS_M**3 / 3 for _t, _g in grids.items()\n    }\n    return (cell_volumes,)\n\n\n@app.cell\ndef _(mo):\n    mo.md(r\"\"\"\n    ## a) Empty grids: geometry only\n\n    Uniform cell colour, no data; only the tessellation itself is\n    visible: cell shape, density, and horizon coverage.\n    \"\"\")\n    return\n\n\n@app.cell\ndef _(GRID_LABELS, HemisphereVisualizer3D, add_reference_frame, grids, mo):\n    _empty_figs = {}\n    for _t, _g in grids.items():\n        _viz = HemisphereVisualizer3D(_g)\n        _fig = _viz.plot_hemisphere_surface(\n            data=None,\n            title=f\"{GRID_LABELS[_t]}: {_g.ncells:,} cells\",\n            colorscale=\"Blues\",\n            opacity=0.85,\n            show_wireframe=True,\n            width=650,\n            height=500,\n        )\n        _fig = add_reference_frame(_fig, _viz)\n        _empty_figs[GRID_LABELS[_t]] = _fig\n\n    mo.ui.tabs(_empty_figs, lazy=True)\n    return\n\n\n@app.cell\ndef _(mo):\n    mo.md(r\"\"\"\n    ## b) Synthetic data on each grid\n\n    Same random values everywhere, but **each tab has its own colour\n    scale** (auto-scaled to that grid's own min/max) rather than one\n    shared range, since a shared scale would compress everything toward one\n    colour once any grid has a wider spread than the others. The title\n    on each figure shows its actual value range so the numbers stay\n    comparable even though the colours aren't.\n    \"\"\")\n    return\n\n\n@app.cell\ndef _(\n    GRID_LABELS,\n    HemisphereVisualizer3D,\n    add_reference_frame,\n    grids,\n    mo,\n    synthetic_data,\n):\n    _data_figs = {}\n    for _t, _g in grids.items():\n        _viz = HemisphereVisualizer3D(_g)\n        _vals = synthetic_data[_t]\n        _fig = _viz.plot_hemisphere_surface(\n            data=_vals,\n            title=f\"{GRID_LABELS[_t]}: synthetic data ({_vals.min():.2f}\u2013{_vals.max():.2f})\",\n            colorscale=\"YlGn\",\n            opacity=0.95,\n            show_wireframe=True,\n            width=650,\n            height=500,\n        )\n        _fig = add_reference_frame(_fig, _viz)\n        _data_figs[GRID_LABELS[_t]] = _fig\n\n    mo.ui.tabs(_data_figs, lazy=True)\n    return\n\n\n@app.cell\ndef _(mo):\n    mo.md(r\"\"\"\n    ## c) Cell volume: biomass-sampling proxy\n\n    Colour now encodes each cell's own sampled volume, not a\n    projection-distortion probe. **Each tab is scaled to its own\n    min/max**, not a shared range; with a shared scale, Fibonacci's\n    few over-horizon outlier cells (see note above) would stretch the\n    colour range so wide that every other grid's real distortion\n    pattern gets compressed into one indistinguishable colour. The\n    title on each figure shows its actual m\u00b3 range, so `equal_area`\n    reading as visually flat *and* a tight title range together\n    confirm genuine uniformity, not just a coincidentally narrow\n    shared scale.\n    \"\"\")\n    return\n\n\n@app.cell\ndef _(\n    GRID_LABELS,\n    HemisphereVisualizer3D,\n    add_reference_frame,\n    cell_volumes,\n    grids,\n    mo,\n):\n    _volume_figs = {}\n    for _t, _g in grids.items():\n        _viz = HemisphereVisualizer3D(_g)\n        _vols = cell_volumes[_t]\n        _fig = _viz.plot_hemisphere_surface(\n            data=_vols,\n            title=f\"{GRID_LABELS[_t]}: cell volume ({_vols.min():.1f}\u2013{_vols.max():.1f} m\u00b3)\",\n            colorscale=\"Plasma\",\n            opacity=0.95,\n            show_wireframe=True,\n            width=650,\n            height=500,\n        )\n        _fig = add_reference_frame(_fig, _viz)\n        _volume_figs[GRID_LABELS[_t]] = _fig\n\n    mo.ui.tabs(_volume_figs, lazy=True)\n    return\n\n\n@app.cell\ndef _(mo):\n    mo.md(r\"\"\"\n    ## d) 2D projection comparison: orthographic vs equidistant\n\n    Everything above is the interactive 3D scene. `canvod-viz` also ships\n    a publication-quality 2D matplotlib renderer\n    (`HemisphereVisualizer2D` / `PolarPlotStyle`), and as of this section\n    it supports two different **theta \u2192 rho** radial mappings via\n    `PolarPlotStyle.projection`:\n\n    - **orthographic** (`rho = sin(theta)`, the default): mathematically\n      the same view as looking straight down at the 3D hemisphere above\n      from directly overhead: horizon cells compress toward the plot's\n      rim, zenith cells stay spread out near the centre.\n    - **equidistant** (`rho = theta / (pi/2)`): a *true* polar plot,\n      radius linear in the polar angle, so elevation rings are evenly\n      spaced. This is the conventional GNSS-skyplot convention (e.g.\n      RTKLIB), as opposed to a sphere-viewed-from-above projection.\n\n    Same synthetic data as section (b), rendered both ways side by side\n    for each grid type; the tessellation and the data are identical;\n    only the radial mapping changes.\n    \"\"\")\n    return\n\n\n@app.cell\ndef _(GRID_LABELS, grids, mo, synthetic_data):\n    import matplotlib.pyplot as plt\n\n    from canvod.viz import HemisphereVisualizer2D, PolarPlotStyle\n\n    _proj_figs = {}\n    for _t, _g in grids.items():\n        _viz = HemisphereVisualizer2D(_g)\n        _vals = synthetic_data[_t]\n        _fig, _axes = plt.subplots(\n            1, 2, figsize=(12, 6), subplot_kw={\"projection\": \"polar\"}\n        )\n        for _ax, _proj in zip(_axes, [\"orthographic\", \"equidistant\"]):\n            _style = PolarPlotStyle(\n                title=f\"{GRID_LABELS[_t]}: {_proj}\",\n                cmap=\"YlGn\",\n                projection=_proj,\n            )\n            _viz.plot_grid_patches(data=_vals, style=_style, ax=_ax)\n        _fig.tight_layout()\n        _proj_figs[GRID_LABELS[_t]] = _fig\n\n    mo.ui.tabs(_proj_figs, lazy=True)\n    return\n\n\n@app.cell\ndef _(mo):\n    mo.md(r\"\"\"\n    ---\n\n    **Previous**: [15 \u00b7 Grid Exploration](./15_grid_exploration.py)\n    | **Next**: [17 \u00b7 API Overview](./17_api_overview.py)\n\n    *canVODpy \u00b7 Apache 2.0*\n    \"\"\")\n    return\n\n\nif __name__ == \"__main__\":\n    app.run()\n",
+        }),
+        writable: false,
+        configurable: false,
+    });
+</script>
+<style title='marimo-custom'>/* =========================================================
+   canVODpy Nordic — marimo theme
+   Mirrors the zensical docs design language
+   5-color Nordic Green palette + Space Grotesk / Fira Code
+   ========================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Fira+Code:wght@300..700&display=swap");
+
+/* ---------- Palette tokens (always available) ---------- */
+:root {
+  --g1: #E1E6B9;
+  --g2: #C4D7A4;
+  --g3: #ABC8A4;
+  --g4: #375D3B;
+  --g5: #183128;
+
+  --monospace-font: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --text-font: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --heading-font: "Space Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --radius: 12px;
+}
+
+/* ==========================================================
+   LIGHT MODE
+   Match marimo's own selector specificity: .light,.light-theme,:root
+   ========================================================== */
+.light, .light-theme, :root {
+  --background:            var(--g1);
+  --foreground:            var(--g5);
+  --muted:                 var(--g2);
+  --muted-foreground:      var(--g4);
+  --popover:               var(--g1);
+  --popover-foreground:    var(--g5);
+  --card:                  var(--g2);
+  --card-foreground:       var(--g5);
+  --border:                #96B07A;
+  --input:                 #96B07A;
+  --primary:               var(--g4);
+  --primary-foreground:    var(--g1);
+  --secondary:             var(--g2);
+  --secondary-foreground:  var(--g5);
+  --accent:                var(--g3);
+  --accent-foreground:     var(--g5);
+  --ring:                  var(--g3);
+
+  --destructive:           #8B3A3A;
+  --destructive-foreground: var(--g1);
+  --error:                 #8B3A3A;
+  --error-foreground:      var(--g1);
+  --success:               var(--g4);
+  --success-foreground:    var(--g1);
+
+  --action:                var(--g2);
+  --action-hover:          var(--g3);
+  --action-foreground:     var(--g5);
+
+  --link:                  var(--g4);
+  --link-visited:          var(--g4);
+  --stale:                 hsla(90, 30%, 60%, 0.25);
+
+  --base-shadow:           hsla(80, 20%, 50%, 0.15);
+  --base-shadow-darker:    hsla(80, 30%, 40%, 0.2);
+  --base-shadow-opacity:   8%;
+
+  /* -- Radix gray → green-tinted cream (higher contrast) -- */
+  --gray-1:  #E4E8B8;
+  --gray-2:  #CBD4A0;
+  --gray-3:  #BFCA96;
+  --gray-4:  #C4CC9C;
+  --gray-5:  #B8C490;
+  --gray-6:  #ABC886;
+  --gray-7:  #96B07A;
+  --gray-8:  #7D9568;
+  --gray-9:  #5A7A4A;
+  --gray-10: #4D6B3F;
+  --gray-11: #375D3B;
+  --gray-12: #183128;
+
+  /* -- Radix slate → same as gray -- */
+  --slate-1:  #E8ECBF;
+  --slate-2:  #D6DDB0;
+  --slate-3:  #CDD5A6;
+  --slate-4:  #C4CC9C;
+  --slate-5:  #B8C490;
+  --slate-6:  #ABC886;
+  --slate-7:  #96B07A;
+  --slate-8:  #7D9568;
+  --slate-9:  #5A7A4A;
+  --slate-10: #4D6B3F;
+  --slate-11: #375D3B;
+  --slate-12: #183128;
+
+  /* -- Radix sage → same as gray -- */
+  --sage-1:  #E8ECBF;
+  --sage-2:  #D6DDB0;
+  --sage-3:  #CDD5A6;
+  --sage-4:  #C4CC9C;
+  --sage-5:  #B8C490;
+  --sage-6:  #ABC886;
+  --sage-7:  #96B07A;
+  --sage-8:  #7D9568;
+  --sage-9:  #5A7A4A;
+  --sage-10: #4D6B3F;
+  --sage-11: #375D3B;
+  --sage-12: #183128;
+
+  /* -- Radix amber → green (kill yellow) -- */
+  --amber-1:  #EAECCC;
+  --amber-2:  #DDE2B8;
+  --amber-3:  #D0D8A8;
+  --amber-4:  #C0CC96;
+  --amber-5:  #B0C084;
+  --amber-6:  #9DB474;
+  --amber-7:  #88A262;
+  --amber-8:  #6E8A4E;
+  --amber-9:  #5A7A3E;
+  --amber-10: #4D6B34;
+  --amber-11: #3D5A2A;
+  --amber-12: #D4DCAC;
+
+  /* -- Radix yellow → green (kill yellow) -- */
+  --yellow-1:  #EAECCC;
+  --yellow-2:  #DDE2B8;
+  --yellow-3:  #D0D8A8;
+  --yellow-4:  #C0CC96;
+  --yellow-5:  #B0C084;
+  --yellow-6:  #9DB474;
+  --yellow-7:  #88A262;
+  --yellow-8:  #6E8A4E;
+  --yellow-9:  #5A7A3E;
+  --yellow-10: #4D6B34;
+  --yellow-11: #3D5A2A;
+  --yellow-12: #D4DCAC;
+
+  /* -- Radix orange → green (kill orange) -- */
+  --orange-1:  #EAECCC;
+  --orange-2:  #DDE2B8;
+  --orange-3:  #D0D8A8;
+  --orange-4:  #C0CC96;
+  --orange-5:  #B0C084;
+  --orange-6:  #9DB474;
+  --orange-7:  #88A262;
+  --orange-8:  #6E8A4E;
+  --orange-9:  #5A7A3E;
+  --orange-10: #4D6B34;
+  --orange-11: #3D5A2A;
+  --orange-12: #D4DCAC;
+
+  /* -- Radix lime → Nordic green (table odd rows use --lime-2) -- */
+  --lime-1:  #E8ECBF;
+  --lime-2:  #D6DDB0;
+  --lime-3:  #CDD5A6;
+  --lime-4:  #C0CC96;
+  --lime-5:  #B0C084;
+  --lime-6:  #9DB474;
+  --lime-7:  #88A262;
+  --lime-8:  #6E8A4E;
+  --lime-9:  #5A7A3E;
+  --lime-10: #4D6B34;
+  --lime-11: #3D5A2A;
+  --lime-12: #2A4020;
+
+  /* -- Radix grass → Nordic green (success backgrounds) -- */
+  --grass-1:  #E8ECBF;
+  --grass-2:  #D6DDB0;
+  --grass-3:  #CDD5A6;
+  --grass-4:  #C0CC96;
+  --grass-5:  #B0C084;
+  --grass-6:  #9DB474;
+  --grass-7:  #88A262;
+  --grass-8:  #6E8A4E;
+  --grass-9:  #5A7A3E;
+  --grass-10: #4D6B34;
+  --grass-11: #3D5A2A;
+  --grass-12: #2A4020;
+
+  /* -- Radix green → Nordic green -- */
+  --green-1:  #E8ECBF;
+  --green-2:  #D6DDB0;
+  --green-3:  #CDD5A6;
+  --green-4:  #C0CC96;
+  --green-5:  #B0C084;
+  --green-6:  #9DB474;
+  --green-7:  #88A262;
+  --green-8:  #6E8A4E;
+  --green-9:  #5A7A3E;
+  --green-10: #4D6B34;
+  --green-11: #3D5A2A;
+  --green-12: #2A4020;
+}
+
+/* ========== LIGHT-MODE element overrides ========== */
+
+.cm-editor {
+  background-color: var(--gray-2) !important;
+}
+.cm-gutters {
+  background-color: var(--gray-2) !important;
+  border-right-color: var(--gray-4) !important;
+}
+.cm-activeLine {
+  background-color: hsla(90, 40%, 55%, 0.12) !important;
+}
+.cm-activeLineGutter {
+  background-color: hsla(90, 40%, 55%, 0.18) !important;
+}
+.cm-editor .cm-selectionBackground,
+.cm-editor.cm-focused .cm-selectionBackground,
+::selection {
+  background-color: hsla(100, 50%, 45%, 0.25) !important;
+}
+.marimo-cell {
+  border-color: var(--gray-5) !important;
+}
+.marimo-cell:hover {
+  border-color: var(--gray-7) !important;
+}
+
+/* Matching brackets — green */
+.cm-editor.cm-focused .cm-matchingBracket {
+  background-color: hsla(90, 50%, 50%, 0.25) !important;
+  outline: 1px solid hsla(90, 50%, 50%, 0.35) !important;
+}
+.cm-editor .cm-searchMatch {
+  background-color: hsla(90, 60%, 50%, 0.3) !important;
+  outline: 1px solid hsla(90, 60%, 50%, 0.4) !important;
+}
+.cm-editor .cm-selectionMatch {
+  background-color: hsla(90, 40%, 50%, 0.15) !important;
+}
+
+/* Markdown output — transparent, not white */
+[data-cell-id] > div,
+.output-area {
+  background-color: transparent !important;
+}
+
+/* Tables */
+table, th, td {
+  border-color: var(--gray-5) !important;
+}
+th {
+  background-color: var(--gray-4) !important;
+}
+
+/* Code blocks in rendered markdown */
+pre, code {
+  background-color: var(--gray-2) !important;
+}
+
+/* Table row striping — force green palette */
+table tbody tr:nth-child(odd),
+table.dataframe tbody tr:nth-child(odd) {
+  background-color: var(--gray-2) !important;
+}
+table tbody tr:nth-child(even),
+table.dataframe tbody tr:nth-child(even) {
+  background-color: var(--gray-1) !important;
+}
+table tbody tr:hover {
+  background-color: var(--gray-3) !important;
+}
+
+/* ==========================================================
+   DARK MODE
+   ========================================================== */
+.dark, .dark-theme, body.dark-theme {
+  --background:            #0d0d0d;
+  --foreground:            var(--g1);
+  --muted:                 #3a3a3a;
+  --muted-foreground:      var(--g2);
+  --popover:               #2a2a2a;
+  --popover-foreground:    var(--g1);
+  --card:                  #2a2a2a;
+  --card-foreground:       var(--g1);
+  --border:                #444444;
+  --input:                 #444444;
+  --primary:               var(--g3);
+  --primary-foreground:    #0d0d0d;
+  --secondary:             #3a3a3a;
+  --secondary-foreground:  var(--g1);
+  --accent:                #3a3a3a;
+  --accent-foreground:     var(--g1);
+  --ring:                  #444444;
+
+  --destructive:           #C47070;
+  --destructive-foreground: var(--g5);
+  --error:                 #C47070;
+  --error-foreground:      var(--g5);
+  --success:               var(--g3);
+  --success-foreground:    #0d0d0d;
+
+  --action:                #2d4a2d;
+  --action-hover:          #3a5a3a;
+  --action-foreground:     var(--g1);
+
+  --link:                  var(--g3);
+  --link-visited:          var(--g2);
+  --stale:                 #3a3a3a;
+
+  --base-shadow:           hsla(0, 0%, 0%, 0.3);
+  --base-shadow-darker:    hsla(0, 0%, 0%, 0.5);
+  --base-shadow-opacity:   5%;
+
+  /* -- Radix gray (dark) -- */
+  --gray-1:  #111111;
+  --gray-2:  #1a1a1a;
+  --gray-3:  #222222;
+  --gray-4:  #2a2a2a;
+  --gray-5:  #333333;
+  --gray-6:  #3a3a3a;
+  --gray-7:  #484848;
+  --gray-8:  #555555;
+  --gray-9:  #6e6e6e;
+  --gray-10: #7b7b7b;
+  --gray-11: #C4D7A4;
+  --gray-12: #E1E6B9;
+
+  /* -- Radix slate (dark) -- */
+  --slate-1:  #111111;
+  --slate-2:  #1a1a1a;
+  --slate-3:  #222222;
+  --slate-4:  #2a2a2a;
+  --slate-5:  #333333;
+  --slate-6:  #3a3a3a;
+  --slate-7:  #484848;
+  --slate-8:  #555555;
+  --slate-9:  #6e6e6e;
+  --slate-10: #7b7b7b;
+  --slate-11: #C4D7A4;
+  --slate-12: #E1E6B9;
+
+  /* -- Radix sage (dark) -- */
+  --sage-1:  #111111;
+  --sage-2:  #1a1a1a;
+  --sage-3:  #222222;
+  --sage-4:  #2a2a2a;
+  --sage-5:  #333333;
+  --sage-6:  #3a3a3a;
+  --sage-7:  #484848;
+  --sage-8:  #555555;
+  --sage-9:  #6e6e6e;
+  --sage-10: #7b7b7b;
+  --sage-11: #C4D7A4;
+  --sage-12: #E1E6B9;
+
+  /* -- Radix amber (dark) — kill yellow -- */
+  --amber-1:  #111510;
+  --amber-2:  #1a2018;
+  --amber-3:  #223020;
+  --amber-4:  #2a3a28;
+  --amber-5:  #334530;
+  --amber-6:  #3d5038;
+  --amber-7:  #4a6044;
+  --amber-8:  #5a7550;
+  --amber-9:  #6e8a5e;
+  --amber-10: #7d9B6e;
+  --amber-11: #ABC8A4;
+  --amber-12: #E1E6B9;
+
+  /* -- Radix yellow (dark) — kill yellow -- */
+  --yellow-1:  #111510;
+  --yellow-2:  #1a2018;
+  --yellow-3:  #223020;
+  --yellow-4:  #2a3a28;
+  --yellow-5:  #334530;
+  --yellow-6:  #3d5038;
+  --yellow-7:  #4a6044;
+  --yellow-8:  #5a7550;
+  --yellow-9:  #6e8a5e;
+  --yellow-10: #7d9B6e;
+  --yellow-11: #ABC8A4;
+  --yellow-12: #E1E6B9;
+
+  /* -- Radix orange (dark) — kill orange -- */
+  --orange-1:  #111510;
+  --orange-2:  #1a2018;
+  --orange-3:  #223020;
+  --orange-4:  #2a3a28;
+  --orange-5:  #334530;
+  --orange-6:  #3d5038;
+  --orange-7:  #4a6044;
+  --orange-8:  #5a7550;
+  --orange-9:  #6e8a5e;
+  --orange-10: #7d9B6e;
+  --orange-11: #ABC8A4;
+  --orange-12: #E1E6B9;
+
+  /* -- Radix lime (dark) -- */
+  --lime-1:  #111511;
+  --lime-2:  #1a201a;
+  --lime-3:  #223022;
+  --lime-4:  #2a3a2a;
+  --lime-5:  #334533;
+  --lime-6:  #3d503d;
+  --lime-7:  #4a604a;
+  --lime-8:  #5a755a;
+  --lime-9:  #6e8a6e;
+  --lime-10: #7d9B7d;
+  --lime-11: #ABC8A4;
+  --lime-12: #E1E6B9;
+
+  /* -- Radix grass (dark) -- */
+  --grass-1:  #111511;
+  --grass-2:  #1a201a;
+  --grass-3:  #223022;
+  --grass-4:  #2a3a2a;
+  --grass-5:  #334533;
+  --grass-6:  #3d503d;
+  --grass-7:  #4a604a;
+  --grass-8:  #5a755a;
+  --grass-9:  #6e8a6e;
+  --grass-10: #7d9B7d;
+  --grass-11: #ABC8A4;
+  --grass-12: #E1E6B9;
+
+  /* -- Radix green (dark) -- */
+  --green-1:  #111511;
+  --green-2:  #1a201a;
+  --green-3:  #223022;
+  --green-4:  #2a3a2a;
+  --green-5:  #334533;
+  --green-6:  #3d503d;
+  --green-7:  #4a604a;
+  --green-8:  #5a755a;
+  --green-9:  #6e8a6e;
+  --green-10: #7d9B7d;
+  --green-11: #ABC8A4;
+  --green-12: #E1E6B9;
+}
+
+/* Dark-mode — fix bold/heading text in markdown output only */
+body.dark-theme .markdown h1,
+body.dark-theme .markdown h2,
+body.dark-theme .markdown h3,
+body.dark-theme .markdown h4,
+body.dark-theme .markdown h5,
+body.dark-theme .markdown h6,
+body.dark-theme .markdown strong,
+body.dark-theme .markdown b,
+.dark .markdown h1,
+.dark .markdown h2,
+.dark .markdown h3,
+.dark .markdown h4,
+.dark .markdown h5,
+.dark .markdown h6,
+.dark .markdown strong,
+.dark .markdown b {
+  color: var(--g1) !important;
+}
+
+/* Dark-mode element overrides */
+
+/* Override One Dark syntax theme — cream tones instead of bright white/gray */
+body.dark-theme .cm-editor .cm-content,
+.dark .cm-editor .cm-content {
+  color: #D0D6A8 !important;  /* muted cream, not #abb2bf gray */
+  caret-color: var(--g3) !important;
+}
+
+/* Matching brackets — green tint instead of blue */
+body.dark-theme .cm-editor.cm-focused .cm-matchingBracket,
+.dark .cm-editor.cm-focused .cm-matchingBracket {
+  background-color: hsla(90, 40%, 40%, 0.3) !important;
+  outline: 1px solid hsla(90, 40%, 50%, 0.4) !important;
+}
+
+/* Search match — green instead of blue */
+body.dark-theme .cm-editor .cm-searchMatch,
+.dark .cm-editor .cm-searchMatch {
+  background-color: hsla(90, 50%, 40%, 0.35) !important;
+  outline: 1px solid hsla(90, 50%, 50%, 0.5) !important;
+}
+
+/* Selection match — subtle green */
+body.dark-theme .cm-editor .cm-selectionMatch,
+.dark .cm-editor .cm-selectionMatch {
+  background-color: hsla(90, 40%, 40%, 0.15) !important;
+}
+
+/* Fold placeholder */
+body.dark-theme .cm-editor .cm-foldPlaceholder,
+.dark .cm-editor .cm-foldPlaceholder {
+  color: var(--g3) !important;
+}
+
+/* Tooltip / autocomplete */
+body.dark-theme .cm-editor .cm-tooltip,
+.dark .cm-editor .cm-tooltip {
+  background-color: #222 !important;
+  border-color: #444 !important;
+  color: var(--g1) !important;
+}
+
+body.dark-theme .cm-editor .cm-tooltip-autocomplete ul li[aria-selected],
+.dark .cm-editor .cm-tooltip-autocomplete ul li[aria-selected] {
+  background-color: hsla(90, 30%, 35%, 0.4) !important;
+}
+
+/* Line numbers — muted */
+body.dark-theme .cm-editor .cm-lineNumbers .cm-gutterElement,
+.dark .cm-editor .cm-lineNumbers .cm-gutterElement {
+  color: #555 !important;
+}
+
+body.dark-theme .cm-editor,
+.dark .cm-editor {
+  background-color: #1a1a1a !important;
+}
+body.dark-theme .cm-gutters,
+.dark .cm-gutters {
+  background-color: #1a1a1a !important;
+  border-right-color: #333 !important;
+}
+body.dark-theme .cm-activeLine,
+.dark .cm-activeLine {
+  background-color: hsla(90, 30%, 40%, 0.1) !important;
+}
+body.dark-theme .cm-activeLineGutter,
+.dark .cm-activeLineGutter {
+  background-color: hsla(90, 30%, 40%, 0.14) !important;
+}
+body.dark-theme .cm-editor .cm-selectionBackground,
+body.dark-theme .cm-editor.cm-focused .cm-selectionBackground,
+.dark .cm-editor .cm-selectionBackground,
+.dark .cm-editor.cm-focused .cm-selectionBackground {
+  background-color: hsla(100, 40%, 35%, 0.3) !important;
+}
+body.dark-theme .marimo-cell,
+.dark .marimo-cell {
+  border-color: #333 !important;
+}
+body.dark-theme .marimo-cell:hover,
+.dark .marimo-cell:hover {
+  border-color: #555 !important;
+}
+body.dark-theme pre,
+body.dark-theme code,
+.dark pre,
+.dark code {
+  background-color: #1a1a1a !important;
+}
+body.dark-theme th,
+.dark th {
+  background-color: #2a2a2a !important;
+}
+body.dark-theme table,
+body.dark-theme th,
+body.dark-theme td,
+.dark table,
+.dark th,
+.dark td {
+  border-color: #444 !important;
+}
+body.dark-theme table tbody tr:nth-child(odd),
+body.dark-theme table.dataframe tbody tr:nth-child(odd),
+.dark table tbody tr:nth-child(odd),
+.dark table.dataframe tbody tr:nth-child(odd) {
+  background-color: #1a1a1a !important;
+}
+body.dark-theme table tbody tr:nth-child(even),
+body.dark-theme table.dataframe tbody tr:nth-child(even),
+.dark table tbody tr:nth-child(even),
+.dark table.dataframe tbody tr:nth-child(even) {
+  background-color: #151515 !important;
+}
+body.dark-theme table tbody tr:hover,
+.dark table tbody tr:hover {
+  background-color: #222 !important;
+}
+
+/* =========================================================
+   xarray repr dark-mode fixes
+   ========================================================= */
+body.dark-theme .xr-wrap,
+.dark .xr-wrap {
+  --xr-font-color0: rgba(255, 255, 255, 1);
+  --xr-font-color2: rgba(255, 255, 255, 0.7);
+  --xr-font-color3: rgba(255, 255, 255, 0.45);
+  --xr-border-color: rgba(255, 255, 255, 0.18);
+  --xr-disabled-color: rgba(255, 255, 255, 0.35);
+  --xr-background-color: transparent;
+  --xr-background-color-row-even: rgba(255, 255, 255, 0.05);
+  --xr-background-color-row-odd: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .xr-wrap,
+body.dark-theme .xr-wrap .xr-var-name,
+body.dark-theme .xr-wrap .xr-var-dims,
+body.dark-theme .xr-wrap .xr-var-dtype,
+.dark .xr-wrap,
+.dark .xr-wrap .xr-var-name,
+.dark .xr-wrap .xr-var-dims,
+.dark .xr-wrap .xr-var-dtype {
+  color: inherit !important;
+}
+
+body.dark-theme .xr-wrap :focus,
+.dark .xr-wrap :focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+body.dark-theme .xr-wrap .xr-section-item input + label,
+body.dark-theme .xr-wrap .xr-var-attrs-in + label,
+body.dark-theme .xr-wrap .xr-var-data-in + label,
+body.dark-theme .xr-wrap .xr-index-data-in + label,
+.dark .xr-wrap .xr-section-item input + label,
+.dark .xr-wrap .xr-var-attrs-in + label,
+.dark .xr-wrap .xr-var-data-in + label,
+.dark .xr-wrap .xr-index-data-in + label {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+body.dark-theme .xr-wrap .xr-header,
+.dark .xr-wrap .xr-header {
+  border-bottom: 1px solid var(--xr-border-color) !important;
+}
+
+body.dark-theme .xr-wrap table,
+body.dark-theme .xr-wrap th,
+body.dark-theme .xr-wrap td,
+body.dark-theme .xr-wrap pre,
+body.dark-theme .xr-wrap .xr-var-data > pre,
+body.dark-theme .xr-wrap .xr-index-data > pre,
+body.dark-theme .xr-wrap .xr-var-data > table > tbody > tr,
+.dark .xr-wrap table,
+.dark .xr-wrap th,
+.dark .xr-wrap td,
+.dark .xr-wrap pre,
+.dark .xr-wrap .xr-var-data > pre,
+.dark .xr-wrap .xr-index-data > pre,
+.dark .xr-wrap .xr-var-data > table > tbody > tr {
+  background-color: transparent !important;
+}
+
+body.dark-theme .xr-wrap .xr-var-item > .xr-var-name span,
+.dark .xr-wrap .xr-var-item > .xr-var-name span {
+  background-color: transparent !important;
+}
+
+body.dark-theme .xr-wrap .xr-icon-database,
+body.dark-theme .xr-wrap .xr-icon-file-text2,
+.dark .xr-wrap .xr-icon-database,
+.dark .xr-wrap .xr-icon-file-text2 {
+  opacity: 0.5;
+}
+
+body.dark-theme .xr-wrap .xr-var-attrs-in:checked + label > .xr-icon-file-text2,
+body.dark-theme .xr-wrap .xr-var-data-in:checked + label > .xr-icon-database,
+body.dark-theme .xr-wrap .xr-index-data-in:checked + label > .xr-icon-database,
+.dark .xr-wrap .xr-var-attrs-in:checked + label > .xr-icon-file-text2,
+.dark .xr-wrap .xr-var-data-in:checked + label > .xr-icon-database,
+.dark .xr-wrap .xr-index-data-in:checked + label > .xr-icon-database {
+  opacity: 0.7;
+  filter: none;
+}
+
+body.dark-theme .xr-wrap .xr-section-summary-in,
+body.dark-theme .xr-wrap .xr-var-attrs-in,
+body.dark-theme .xr-wrap .xr-var-data-in,
+body.dark-theme .xr-wrap .xr-index-data-in,
+.dark .xr-wrap .xr-section-summary-in,
+.dark .xr-wrap .xr-var-attrs-in,
+.dark .xr-wrap .xr-var-data-in,
+.dark .xr-wrap .xr-index-data-in {
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+/* =========================================================
+   Accessibility: reduced motion
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style></head>
+  <body>
+    <div id="root"></div>
+    <script data-marimo="true">
+      Object.defineProperty(window, "__MARIMO_MOUNT_CONFIG__", {
+        value: Object.freeze({
+            "filename": "16_grid_3d_gallery.py",
+            "cwd": "",
+            "lspWorkspace": null,
+            "mode": "read",
+            "version": "0.25.1",
+            "serverToken": "static",
+            "config": {"ai": {"allow_provider_config": true, "custom_providers": {}, "enabled": true, "models": {"custom_models": [], "displayed_models": []}}, "completion": {"activate_on_typing": true, "auto_close_pairs": true, "copilot": false, "signature_hint_on_typing": false}, "diagnostics": {"sql_linter": true}, "display": {"cell_output": "below", "code_editor_font_size": 14, "code_lens": true, "dataframes": "rich", "default_table_max_columns": 50, "default_table_page_size": 10, "default_width": "medium", "reference_highlighting": true, "theme": "light"}, "formatting": {"line_length": 79}, "keymap": {"overrides": {}, "preset": "default"}, "language_servers": {"pylsp": {"enable_flake8": false, "enable_mypy": true, "enable_pydocstyle": false, "enable_pyflakes": false, "enable_pylint": false, "enable_ruff": true, "enabled": false}}, "mcp": {"mcpServers": {}, "presets": []}, "package_management": {"manager": "uv"}, "runtime": {"auto_instantiate": false, "auto_reload": "off", "default_csv_encoding": "utf-8", "default_sql_output": "auto", "on_cell_change": "autorun", "output_max_bytes": 8000000, "reactive_tests": true, "show_tracebacks": false, "std_stream_max_bytes": 1000000, "watcher_on_save": "lazy"}, "save": {"autosave": "after_delay", "autosave_delay": 1000, "format_on_save": false}, "server": {"browser": "default", "follow_symlink": false}, "snippets": {"custom_paths": [], "include_default_snippets": true}},
+            "configOverrides": {},
+            "appConfig": {"app_title": "3D Grid Gallery", "css_file": "canvod_nordic.css", "sql_output": "auto", "width": "medium"},
+            "layout": null,
+            "view": {"showAppCode": true},
+            "notebook": {"cells": [{"code": "import marimo as mo\n\nmo.md(\n    r\"\"\"\n# 3D Grid Gallery\n\n[![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/16_grid_3d_gallery.py?mode=edit)\n\nA side-by-side comparison of every hemispheric grid type\n`canvod-grids` implements, each rendered as an **interactive 3D\nPlotly scene** (rotate by dragging, zoom with scroll) in three ways:\n\n- **a) Empty grid**: the raw tessellation, uniformly coloured, to\n  compare cell shape and density\n- **b) Synthetic data**: the same random per-cell values projected\n  onto each grid's own cells\n- **c) Cell volume**: each cell's angular wedge volume out to an\n  assumed sensing radius, a proxy for how much biomass a signal in\n  that direction samples\n- **d) 2D projection comparison**: the same synthetic data rendered\n  as a 2D matplotlib polar plot, orthographic vs equidistant, side\n  by side for each grid type\n\nAll grids are built at a common **5\u00b0 angular resolution** via\n`canvod.grids.create_hemigrid()`. Every 3D scene always shows real\ncell boundaries and the project's E/N/Up reference axes; see the\nnote after the grid-building step for why.\n\"\"\"\n)", "code_hash": "4cfc6798dfcbb9003a8d31aabf4fc317", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "Hbol", "name": "_"}, {"code": "import numpy as np", "code_hash": "2165a3ac278eb64f0d36dac4f79fbeda", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "MJUe", "name": "_"}, {"code": "from canvod.grids import create_hemigrid\n\nGRID_LABELS = {\n    \"equal_area\": \"Equal Area\",\n    \"equal_angle\": \"Equal Angle\",\n    \"equirectangular\": \"Equirectangular\",\n    \"htm\": \"HTM\",\n    \"geodesic\": \"Geodesic\",\n    \"fibonacci\": \"Fibonacci\",\n    \"healpix\": \"HEALPix\",\n}\nRESOLUTION_DEG = 5.0\n\ngrids = {}\n_build_errors = {}\nfor _gtype in GRID_LABELS:\n    try:\n        grids[_gtype] = create_hemigrid(_gtype, angular_resolution=RESOLUTION_DEG)\n    except Exception as _e:\n        _build_errors[_gtype] = str(_e).splitlines()[0]\n\n_rows = \"\\n\".join(\n    f\"| {GRID_LABELS[_t]} | `{_t}` | {grids[_t].ncells:,} | \u2705 built |\"\n    if _t in grids\n    else f\"| {GRID_LABELS[_t]} | `{_t}` | n/a | \u23ed\ufe0f skipped: {_build_errors[_t]} |\"\n    for _t in GRID_LABELS\n)\n\nmo.md(\n    f\"\"\"\n## Building all implemented grid types\n\n| Grid | key | Cells (5\u00b0) | Status |\n|---|---|---:|---|\n{_rows}\n\nHEALPix requires the optional `healpy` dependency. If it isn't\ninstalled, that row is skipped above and the rest of this notebook\nsimply shows one fewer tab in each gallery.\n\"\"\"\n)", "code_hash": "eff888d50bd14b529cb86fe45b2eccad", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "vblA", "name": "_"}, {"code": "mo.md(r\"\"\"\n## Every 3D scene includes cell boundaries and reference axes\n\n`canvod-viz`'s Plotly 3D scenes hide the native Cartesian\nx/y/z axes (`showbackground=False`) since raw sin/cos-projected\ncoordinates aren't physically meaningful on their own.\n`HemisphereVisualizer3D.add_custom_axes()` draws artificial E/N/Up\naxis lines and labels in their place, not real Plotly axes, but\nbuilt to read as if they were. `add_spherical_overlays()` adds\nelevation rings and meridians as an angular reference grid.\nWithout these, a 3D hemisphere plot has no orientation or scale\nreference at all. Every figure in this notebook applies both,\nplus real cell-boundary wireframes (`show_wireframe=True`, fixed\n2026-07-19; previously a declared-but-unwired no-op parameter in\n`plot_hemisphere_surface`; cell edges were never actually drawn).\n\"\"\")", "code_hash": "366b324fa3ce9182b42f1cff88bd90a9", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "bkHC", "name": "_"}, {"code": "from canvod.viz import HemisphereVisualizer3D\n\ndef add_reference_frame(fig, viz: HemisphereVisualizer3D):\n    \"\"\"Apply this project's standard 3D reference frame to `fig`.\n\n    Elevation rings + meridians (`add_spherical_overlays`) and the\n    artificial-but-native-looking E/N/Up axes (`add_custom_axes`)\n    are a non-negotiable part of every 3D hemisphere plot in this\n    project -- see canvodpy-perf/CLAUDE.md's \"3D visualization\n    conventions\" section.\n    \"\"\"\n    fig = viz.add_spherical_overlays(fig)\n    fig = viz.add_custom_axes(fig)\n    return fig", "code_hash": "48c25146c632dfa8e0e71e76b6c4a140", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "lEQa", "name": "_"}, {"code": "mo.md(r\"\"\"\n## Synthetic data\n\nEach grid gets independent random per-cell values from a fixed\nseed, not a physically meaningful field, just enough variation to\ncompare how each tessellation renders data.\n\"\"\")", "code_hash": "3817baa425d13aa3835a81d56a06afd2", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "PKri", "name": "_"}, {"code": "_rng = np.random.default_rng(42)\nsynthetic_data = {_t: _rng.uniform(0.1, 1.0, _g.ncells) for _t, _g in grids.items()}", "code_hash": "4ea57a45e5f446a2df90c9f7d9362a65", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "Xref", "name": "_"}, {"code": "mo.md(r\"\"\"\n## Cell volume: a biomass-sampling proxy\n\nGrid cells are purely angular (theta, phi) partitions of the sky as\nseen from the antenna -- they have a solid angle but no inherent\nphysical size. What actually determines how much canopy biomass a\nsatellite signal in a given cell's direction samples is the\n**volume** of space that direction subtends, not its solid angle\nalone.\n\nModelling the canopy as a uniform-density region extending out to a\nfixed **sensing radius** $R$ around the antenna, each cell is a\nspherical sector (a cone from the antenna out to radius $R$)\nwith volume\n\n$$\nV_{\\text{cell}} = \\frac{1}{3} \\, \\Omega_{\\text{cell}} \\, R^3\n$$\n\nwhere $\\Omega_{\\text{cell}}$ is the cell's solid angle\n(`GridData.get_solid_angles()`, fixed and verified 2026-07-19 for\nall 6 non-HEALPix grid types). Since $R$ is the same for every\ncell, the *relative* pattern across cells is identical to the\nsolid-angle pattern -- but expressed in physically interpretable\nunits (m\u00b3), it directly answers \"how much more/less biomass would\na uniform canopy contribute to this cell than that one,\" which\nsolid angle alone (steradians) does not communicate as directly.\n\n$R$ below is illustrative (a plausible forest canopy depth), not a\ncalibrated value -- adjust `SENSING_RADIUS_M` for a real site.\n\n**On Fibonacci specifically:** its horizon-boundary cells are real\nspherical-Voronoi regions bounded by actual southern-hemisphere\nlattice points (needed to avoid the 4\u03c0 double-counting bug fixed\n2026-07-19), so a handful of them genuinely dip a few degrees past\nthe horizon (verified: ~6\u00b0 at 10\u00b0 resolution, ~12\u00b0 at 20\u00b0; worse\nat coarser resolutions, but nowhere near reaching the far pole).\nThat's still enough to skew a colour range shared across grid\ntypes, which is why each tab below uses its **own** scale instead:\na shared one would let those few boundary cells compress every\nother grid's real distortion pattern into one indistinguishable\ncolour. Each figure's title shows its own value range so the\nabsolute numbers stay comparable even though the colours aren't\ndirectly comparable tab-to-tab.\n\"\"\")", "code_hash": "c6a85d62f76313b89507f5cdfac666ec", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "SFPL", "name": "_"}, {"code": "SENSING_RADIUS_M = 20.0\n\ncell_volumes = {\n    _t: _g.get_solid_angles() * SENSING_RADIUS_M**3 / 3 for _t, _g in grids.items()\n}", "code_hash": "a47ae2374ce293e1a78e4f17e93e772d", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "BYtC", "name": "_"}, {"code": "mo.md(r\"\"\"\n## a) Empty grids: geometry only\n\nUniform cell colour, no data; only the tessellation itself is\nvisible: cell shape, density, and horizon coverage.\n\"\"\")", "code_hash": "ae45979e934ac9b338121d6a1a6abe24", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "RGSE", "name": "_"}, {"code": "_empty_figs = {}\nfor _t, _g in grids.items():\n    _viz = HemisphereVisualizer3D(_g)\n    _fig = _viz.plot_hemisphere_surface(\n        data=None,\n        title=f\"{GRID_LABELS[_t]}: {_g.ncells:,} cells\",\n        colorscale=\"Blues\",\n        opacity=0.85,\n        show_wireframe=True,\n        width=650,\n        height=500,\n    )\n    _fig = add_reference_frame(_fig, _viz)\n    _empty_figs[GRID_LABELS[_t]] = _fig\n\nmo.ui.tabs(_empty_figs, lazy=True)", "code_hash": "56cdef22eefcec2480feb2240a5072f7", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "Kclp", "name": "_"}, {"code": "mo.md(r\"\"\"\n## b) Synthetic data on each grid\n\nSame random values everywhere, but **each tab has its own colour\nscale** (auto-scaled to that grid's own min/max) rather than one\nshared range, since a shared scale would compress everything toward one\ncolour once any grid has a wider spread than the others. The title\non each figure shows its actual value range so the numbers stay\ncomparable even though the colours aren't.\n\"\"\")", "code_hash": "d3be74500f15d641e9be15e16b33ad27", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "emfo", "name": "_"}, {"code": "_data_figs = {}\nfor _t, _g in grids.items():\n    _viz = HemisphereVisualizer3D(_g)\n    _vals = synthetic_data[_t]\n    _fig = _viz.plot_hemisphere_surface(\n        data=_vals,\n        title=f\"{GRID_LABELS[_t]}: synthetic data ({_vals.min():.2f}\u2013{_vals.max():.2f})\",\n        colorscale=\"YlGn\",\n        opacity=0.95,\n        show_wireframe=True,\n        width=650,\n        height=500,\n    )\n    _fig = add_reference_frame(_fig, _viz)\n    _data_figs[GRID_LABELS[_t]] = _fig\n\nmo.ui.tabs(_data_figs, lazy=True)", "code_hash": "e128b9828807da70acec72e59be6d912", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "Hstk", "name": "_"}, {"code": "mo.md(r\"\"\"\n## c) Cell volume: biomass-sampling proxy\n\nColour now encodes each cell's own sampled volume, not a\nprojection-distortion probe. **Each tab is scaled to its own\nmin/max**, not a shared range; with a shared scale, Fibonacci's\nfew over-horizon outlier cells (see note above) would stretch the\ncolour range so wide that every other grid's real distortion\npattern gets compressed into one indistinguishable colour. The\ntitle on each figure shows its actual m\u00b3 range, so `equal_area`\nreading as visually flat *and* a tight title range together\nconfirm genuine uniformity, not just a coincidentally narrow\nshared scale.\n\"\"\")", "code_hash": "72d724de23c0513a7cd559b82780fdc3", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "nWHF", "name": "_"}, {"code": "_volume_figs = {}\nfor _t, _g in grids.items():\n    _viz = HemisphereVisualizer3D(_g)\n    _vols = cell_volumes[_t]\n    _fig = _viz.plot_hemisphere_surface(\n        data=_vols,\n        title=f\"{GRID_LABELS[_t]}: cell volume ({_vols.min():.1f}\u2013{_vols.max():.1f} m\u00b3)\",\n        colorscale=\"Plasma\",\n        opacity=0.95,\n        show_wireframe=True,\n        width=650,\n        height=500,\n    )\n    _fig = add_reference_frame(_fig, _viz)\n    _volume_figs[GRID_LABELS[_t]] = _fig\n\nmo.ui.tabs(_volume_figs, lazy=True)", "code_hash": "61283d47b3ef7d0b2e0cf01ad3405c1a", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "iLit", "name": "_"}, {"code": "mo.md(r\"\"\"\n## d) 2D projection comparison: orthographic vs equidistant\n\nEverything above is the interactive 3D scene. `canvod-viz` also ships\na publication-quality 2D matplotlib renderer\n(`HemisphereVisualizer2D` / `PolarPlotStyle`), and as of this section\nit supports two different **theta \u2192 rho** radial mappings via\n`PolarPlotStyle.projection`:\n\n- **orthographic** (`rho = sin(theta)`, the default): mathematically\n  the same view as looking straight down at the 3D hemisphere above\n  from directly overhead: horizon cells compress toward the plot's\n  rim, zenith cells stay spread out near the centre.\n- **equidistant** (`rho = theta / (pi/2)`): a *true* polar plot,\n  radius linear in the polar angle, so elevation rings are evenly\n  spaced. This is the conventional GNSS-skyplot convention (e.g.\n  RTKLIB), as opposed to a sphere-viewed-from-above projection.\n\nSame synthetic data as section (b), rendered both ways side by side\nfor each grid type; the tessellation and the data are identical;\nonly the radial mapping changes.\n\"\"\")", "code_hash": "9ede9dffdb502523ec3ab1adc52d9cb1", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "ZHCJ", "name": "_"}, {"code": "import matplotlib.pyplot as plt\n\nfrom canvod.viz import HemisphereVisualizer2D, PolarPlotStyle\n\n_proj_figs = {}\nfor _t, _g in grids.items():\n    _viz = HemisphereVisualizer2D(_g)\n    _vals = synthetic_data[_t]\n    _fig, _axes = plt.subplots(\n        1, 2, figsize=(12, 6), subplot_kw={\"projection\": \"polar\"}\n    )\n    for _ax, _proj in zip(_axes, [\"orthographic\", \"equidistant\"]):\n        _style = PolarPlotStyle(\n            title=f\"{GRID_LABELS[_t]}: {_proj}\",\n            cmap=\"YlGn\",\n            projection=_proj,\n        )\n        _viz.plot_grid_patches(data=_vals, style=_style, ax=_ax)\n    _fig.tight_layout()\n    _proj_figs[GRID_LABELS[_t]] = _fig\n\nmo.ui.tabs(_proj_figs, lazy=True)", "code_hash": "60802fb2aa024121499cf272e917b3ef", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "ROlb", "name": "_"}, {"code": "mo.md(r\"\"\"\n---\n\n**Previous**: [15 \u00b7 Grid Exploration](./15_grid_exploration.py)\n| **Next**: [17 \u00b7 API Overview](./17_api_overview.py)\n\n*canVODpy \u00b7 Apache 2.0*\n\"\"\")", "code_hash": "ad16a0424eebb515862ab154208ca5d4", "config": {"column": null, "disabled": false, "expand_output": false, "hide_code": false}, "id": "qnkX", "name": "_"}], "metadata": {"marimo_version": "0.25.1"}, "version": "1"},
+            "session": {"cells": [{"code_hash": "4cfc6798dfcbb9003a8d31aabf4fc317", "console": [], "id": "Hbol", "outputs": [{"data": {"text/markdown": "\u003Cspan class=\"markdown prose dark:prose-invert contents\"\u003E\u003Ch1 id=\"3d-grid-gallery\"\u003E3D Grid Gallery\u003C/h1\u003E\n\u003Cspan class=\"paragraph\"\u003E\u003Ca href=\"https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/16_grid_3d_gallery.py?mode=edit\" rel=\"noopener noreferrer\" target=\"_blank\"\u003E\u003Cimg alt=\"Open in molab\" src=\"https://marimo.io/molab-shield.svg\" /\u003E\u003C/a\u003E\u003C/span\u003E\n\u003Cspan class=\"paragraph\"\u003EA side-by-side comparison of every hemispheric grid type\n\u003Ccode\u003Ecanvod-grids\u003C/code\u003E implements, each rendered as an \u003Cstrong\u003Einteractive 3D\nPlotly scene\u003C/strong\u003E (rotate by dragging, zoom with scroll) in three ways:\u003C/span\u003E\n\u003Cul\u003E\n\u003Cli\u003E\u003Cstrong\u003Ea) Empty grid\u003C/strong\u003E: the raw tessellation, uniformly coloured, to\n  compare cell shape and density\u003C/li\u003E\n\u003Cli\u003E\u003Cstrong\u003Eb) Synthetic data\u003C/strong\u003E: the same random per-cell values projected\n  onto each grid's own cells\u003C/li\u003E\n\u003Cli\u003E\u003Cstrong\u003Ec) Cell volume\u003C/strong\u003E: each cell's angular wedge volume out to an\n  assumed sensing radius, a proxy for how much biomass a signal in\n  that direction samples\u003C/li\u003E\n\u003Cli\u003E\u003Cstrong\u003Ed) 2D projection comparison\u003C/strong\u003E: the same synthetic data rendered\n  as a 2D matplotlib polar plot, orthographic vs equidistant, side\n  by side for each grid type\u003C/li\u003E\n\u003C/ul\u003E\n\u003Cspan class=\"paragraph\"\u003EAll grids are built at a common \u003Cstrong\u003E5\u00b0 angular resolution\u003C/strong\u003E via\n\u003Ccode\u003Ecanvod.grids.create_hemigrid()\u003C/code\u003E. Every 3D scene always shows real\ncell boundaries and the project's E/N/Up reference axes; see the\nnote after the grid-building step for why.\u003C/span\u003E\u003C/span\u003E"}, "type": "data"}]}, {"code_hash": "2165a3ac278eb64f0d36dac4f79fbeda", "console": [], "id": "MJUe", "outputs": [{"data": {"text/plain": ""}, "type": "data"}]}, {"code_hash": "eff888d50bd14b529cb86fe45b2eccad", "console": [{"mimetype": "text/plain", "name": "stdout", "text": "2026-10-12 21:30:26 [info     ] grid_build_started             angular_resolution=5.0 grid_type=equal_area\n2026-10-12 21:30:26 [info     ] grid_build_complete            ncells=1005\n2026-10-12 21:30:26 [info     ] grid_build_started             angular_resolution=5.0 grid_type=equal_angle\n2026-10-12 21:30:26 [info     ] grid_build_complete            ncells=1225\n2026-10-12 21:30:26 [info     ] grid_build_started             angular_resolution=5.0 grid_type=equirectangular\n2026-10-12 21:30:26 [info     ] grid_build_complete            ncells=1296\n2026-10-12 21:30:26 [info     ] HTM: level=4, ~2048 triangles\n2026-10-12 21:30:26 [info     ] grid_build_started             angular_resolution=5.0 grid_type=htm\n2026-10-12 21:30:27 [info     ] grid_build_complete            ncells=1024\n2026-10-12 21:30:27 [info     ] Geodesic: subdivision_level=3, ~1280 triangles\n2026-10-12 21:30:27 [info     ] grid_build_started             angular_resolution=5.0 grid_type=geodesic\n2026-10-12 21:30:27 [info     ] grid_build_complete            ncells=656\n2026-10-12 21:30:27 [info     ] Fibonacci: generating 825 points\n2026-10-12 21:30:27 [info     ] grid_build_started             angular_resolution=5.0 grid_type=fibonacci\n2026-10-12 21:30:27 [info     ] grid_build_complete            ncells=825\n", "type": "stream"}], "id": "vblA", "outputs": [{"data": {"text/markdown": "\u003Cspan class=\"markdown prose dark:prose-invert contents\"\u003E\u003Ch2 id=\"building-all-implemented-grid-types\"\u003EBuilding all implemented grid types\u003C/h2\u003E\n\u003Ctable\u003E\n\u003Cthead\u003E\n\u003Ctr\u003E\n\u003Cth\u003EGrid\u003C/th\u003E\n\u003Cth\u003Ekey\u003C/th\u003E\n\u003Cth style=\"text-align: right;\"\u003ECells (5\u00b0)\u003C/th\u003E\n\u003Cth\u003EStatus\u003C/th\u003E\n\u003C/tr\u003E\n\u003C/thead\u003E\n\u003Ctbody\u003E\n\u003Ctr\u003E\n\u003Ctd\u003EEqual Area\u003C/td\u003E\n\u003Ctd\u003E\u003Ccode\u003Eequal_area\u003C/code\u003E\u003C/td\u003E\n\u003Ctd style=\"text-align: right;\"\u003E1,005\u003C/td\u003E\n\u003Ctd\u003E\u2705 built\u003C/td\u003E\n\u003C/tr\u003E\n\u003Ctr\u003E\n\u003Ctd\u003EEqual Angle\u003C/td\u003E\n\u003Ctd\u003E\u003Ccode\u003Eequal_angle\u003C/code\u003E\u003C/td\u003E\n\u003Ctd style=\"text-align: right;\"\u003E1,225\u003C/td\u003E\n\u003Ctd\u003E\u2705 built\u003C/td\u003E\n\u003C/tr\u003E\n\u003Ctr\u003E\n\u003Ctd\u003EEquirectangular\u003C/td\u003E\n\u003Ctd\u003E\u003Ccode\u003Eequirectangular\u003C/code\u003E\u003C/td\u003E\n\u003Ctd style=\"text-align: right;\"\u003E1,296\u003C/td\u003E\n\u003Ctd\u003E\u2705 built\u003C/td\u003E\n\u003C/tr\u003E\n\u003Ctr\u003E\n\u003Ctd\u003EHTM\u003C/td\u003E\n\u003Ctd\u003E\u003Ccode\u003Ehtm\u003C/code\u003E\u003C/td\u003E\n\u003Ctd style=\"text-align: right;\"\u003E1,024\u003C/td\u003E\n\u003Ctd\u003E\u2705 built\u003C/td\u003E\n\u003C/tr\u003E\n\u003Ctr\u003E\n\u003Ctd\u003EGeodesic\u003C/td\u003E\n\u003Ctd\u003E\u003Ccode\u003Egeodesic\u003C/code\u003E\u003C/td\u003E\n\u003Ctd style=\"text-align: right;\"\u003E656\u003C/td\u003E\n\u003Ctd\u003E\u2705 built\u003C/td\u003E\n\u003C/tr\u003E\n\u003Ctr\u003E\n\u003Ctd\u003EFibonacci\u003C/td\u003E\n\u003Ctd\u003E\u003Ccode\u003Efibonacci\u003C/code\u003E\u003C/td\u003E\n\u003Ctd style=\"text-align: right;\"\u003E825\u003C/td\u003E\n\u003Ctd\u003E\u2705 built\u003C/td\u003E\n\u003C/tr\u003E\n\u003Ctr\u003E\n\u003Ctd\u003EHEALPix\u003C/td\u003E\n\u003Ctd\u003E\u003Ccode\u003Ehealpix\u003C/code\u003E\u003C/td\u003E\n\u003Ctd style=\"text-align: right;\"\u003En/a\u003C/td\u003E\n\u003Ctd\u003E\u23ed\ufe0f skipped: healpy is required for HEALPix grid. Install with: pip install healpy\u003C/td\u003E\n\u003C/tr\u003E\n\u003C/tbody\u003E\n\u003C/table\u003E\n\u003Cspan class=\"paragraph\"\u003EHEALPix requires the optional \u003Ccode\u003Ehealpy\u003C/code\u003E dependency. If it isn't\ninstalled, that row is skipped above and the rest of this notebook\nsimply shows one fewer tab in each gallery.\u003C/span\u003E\u003C/span\u003E"}, "type": "data"}]}, {"code_hash": "366b324fa3ce9182b42f1cff88bd90a9", "console": [], "id": "bkHC", "outputs": [{"data": {"text/markdown": "\u003Cspan class=\"markdown prose dark:prose-invert contents\"\u003E\u003Ch2 id=\"every-3d-scene-includes-cell-boundaries-and-reference-axes\"\u003EEvery 3D scene includes cell boundaries and reference axes\u003C/h2\u003E\n\u003Cspan class=\"paragraph\"\u003E\u003Ccode\u003Ecanvod-viz\u003C/code\u003E's Plotly 3D scenes hide the native Cartesian\nx/y/z axes (\u003Ccode\u003Eshowbackground=False\u003C/code\u003E) since raw sin/cos-projected\ncoordinates aren't physically meaningful on their own.\n\u003Ccode\u003EHemisphereVisualizer3D.add_custom_axes()\u003C/code\u003E draws artificial E/N/Up\naxis lines and labels in their place, not real Plotly axes, but\nbuilt to read as if they were. \u003Ccode\u003Eadd_spherical_overlays()\u003C/code\u003E adds\nelevation rings and meridians as an angular reference grid.\nWithout these, a 3D hemisphere plot has no orientation or scale\nreference at all. Every figure in this notebook applies both,\nplus real cell-boundary wireframes (\u003Ccode\u003Eshow_wireframe=True\u003C/code\u003E, fixed\n2026-07-19; previously a declared-but-unwired no-op parameter in\n\u003Ccode\u003Eplot_hemisphere_surface\u003C/code\u003E; cell edges were never actually drawn).\u003C/span\u003E\u003C/span\u003E"}, "type": "data"}]}, {"code_hash": "48c25146c632dfa8e0e71e76b6c4a140", "console": [], "id": "lEQa", "outputs": [{"data": {"text/plain": ""}, "type": "data"}]}, {"code_hash": "3817baa425d13aa3835a81d56a06afd2", "console": [], "id": "PKri", "outputs": [{"data": {"text/markdown": "\u003Cspan class=\"markdown prose dark:prose-invert contents\"\u003E\u003Ch2 id=\"synthetic-data\"\u003ESynthetic data\u003C/h2\u003E\n\u003Cspan class=\"paragraph\"\u003EEach grid gets independent random per-cell values from a fixed\nseed, not a physically meaningful field, just enough variation to\ncompare how each tessellation renders data.\u003C/span\u003E\u003C/span\u003E"}, "type": "data"}]}, {"code_hash": "4ea57a45e5f446a2df90c9f7d9362a65", "console": [], "id": "Xref", "outputs": [{"data": {"text/plain": ""}, "type": "data"}]}, {"code_hash": "c6a85d62f76313b89507f5cdfac666ec", "console": [], "id": "SFPL", "outputs": [{"data": {"text/markdown": "\u003Cspan class=\"markdown prose dark:prose-invert contents\"\u003E\u003Ch2 id=\"cell-volume-a-biomass-sampling-proxy\"\u003ECell volume: a biomass-sampling proxy\u003C/h2\u003E\n\u003Cspan class=\"paragraph\"\u003EGrid cells are purely angular (theta, phi) partitions of the sky as\nseen from the antenna -- they have a solid angle but no inherent\nphysical size. What actually determines how much canopy biomass a\nsatellite signal in a given cell's direction samples is the\n\u003Cstrong\u003Evolume\u003C/strong\u003E of space that direction subtends, not its solid angle\nalone.\u003C/span\u003E\n\u003Cspan class=\"paragraph\"\u003EModelling the canopy as a uniform-density region extending out to a\nfixed \u003Cstrong\u003Esensing radius\u003C/strong\u003E \u003Cmarimo-tex class=\"arithmatex\"\u003E||(R||)\u003C/marimo-tex\u003E around the antenna, each cell is a\nspherical sector (a cone from the antenna out to radius \u003Cmarimo-tex class=\"arithmatex\"\u003E||(R||)\u003C/marimo-tex\u003E)\nwith volume\u003C/span\u003E\n\u003Cmarimo-tex class=\"arithmatex\"\u003E||[\nV_{\\text{cell}} = \\frac{1}{3} \\, \\Omega_{\\text{cell}} \\, R^3\n||]\u003C/marimo-tex\u003E\u003Cspan class=\"paragraph\"\u003Ewhere \u003Cmarimo-tex class=\"arithmatex\"\u003E||(\\Omega_{\\text{cell}}||)\u003C/marimo-tex\u003E is the cell's solid angle\n(\u003Ccode\u003EGridData.get_solid_angles()\u003C/code\u003E, fixed and verified 2026-07-19 for\nall 6 non-HEALPix grid types). Since \u003Cmarimo-tex class=\"arithmatex\"\u003E||(R||)\u003C/marimo-tex\u003E is the same for every\ncell, the \u003Cem\u003Erelative\u003C/em\u003E pattern across cells is identical to the\nsolid-angle pattern -- but expressed in physically interpretable\nunits (m\u00b3), it directly answers \"how much more/less biomass would\na uniform canopy contribute to this cell than that one,\" which\nsolid angle alone (steradians) does not communicate as directly.\u003C/span\u003E\n\u003Cspan class=\"paragraph\"\u003E\u003Cmarimo-tex class=\"arithmatex\"\u003E||(R||)\u003C/marimo-tex\u003E below is illustrative (a plausible forest canopy depth), not a\ncalibrated value -- adjust \u003Ccode\u003ESENSING_RADIUS_M\u003C/code\u003E for a real site.\u003C/span\u003E\n\u003Cspan class=\"paragraph\"\u003E\u003Cstrong\u003EOn Fibonacci specifically:\u003C/strong\u003E its horizon-boundary cells are real\nspherical-Voronoi regions bounded by actual southern-hemisphere\nlattice points (needed to avoid the 4\u03c0 double-counting bug fixed\n2026-07-19), so a handful of them genuinely dip a few degrees past\nthe horizon (verified: ~6\u00b0 at 10\u00b0 resolution, ~12\u00b0 at 20\u00b0; worse\nat coarser resolutions, but nowhere near reaching the far pole).\nThat's still enough to skew a colour range shared across grid\ntypes, which is why each tab below uses its \u003Cstrong\u003Eown\u003C/strong\u003E scale instead:\na shared one would let those few boundary cells compress every\nother grid's real distortion pattern into one indistinguishable\ncolour. Each figure's title shows its own value range so the\nabsolute numbers stay comparable even though the colours aren't\ndirectly comparable tab-to-tab.\u003C/span\u003E\u003C/span\u003E"}, "type": "data"}]}, {"code_hash": "a47ae2374ce293e1a78e4f17e93e772d", "console": [], "id": "BYtC", "outputs": [{"data": {"text/plain": ""}, "type": "data"}]}, {"code_hash": "ae45979e934ac9b338121d6a1a6abe24", "console": [], "id": "RGSE", "outputs": [{"data": {"text/markdown": "\u003Cspan class=\"markdown prose dark:prose-invert contents\"\u003E\u003Ch2 id=\"a-empty-grids-geometry-only\"\u003Ea) Empty grids: geometry only\u003C/h2\u003E\n\u003Cspan class=\"paragraph\"\u003EUniform cell colour, no data; only the tessellation itself is\nvisible: cell shape, density, and horizon coverage.\u003C/span\u003E\u003C/span\u003E"}, "type": "data"}]}, {"code_hash": "56cdef22eefcec2480feb2240a5072f7", "console": [], "id": "Kclp", "outputs": [{"data": {"text/html": "\u003Cmarimo-ui-element object-id='Kclp-6' random-id='e5d60844-2a46-e83b-d260-c61547909d3f'\u003E\u003Cmarimo-tabs data-initial-value='\u0026quot;\u0026quot;' data-label='null' data-tabs='[\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEqual Area\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEqual Angle\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEquirectangular\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eHTM\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eGeodesic\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eFibonacci\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;]' data-orientation='\u0026quot;horizontal\u0026quot;'\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Kclp-0' random-id='e8801127-3372-adba-a934-ecfa223b0438'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Kclp-1' random-id='2d4b8f1c-32de-32a8-f6c5-89dd4caa246b'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Kclp-2' random-id='2bc70e4e-0c0b-195d-02b5-60e8df40c766'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Kclp-3' random-id='bfbdcca6-33b5-a29d-f17e-9d32c0e57c48'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Kclp-4' random-id='4a8d989a-8050-a94a-7e86-649298da74cb'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Kclp-5' random-id='0a66d966-d44a-99f4-03ee-e247de3cd2a1'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003C/marimo-tabs\u003E\u003C/marimo-ui-element\u003E"}, "type": "data"}]}, {"code_hash": "d3be74500f15d641e9be15e16b33ad27", "console": [], "id": "emfo", "outputs": [{"data": {"text/markdown": "\u003Cspan class=\"markdown prose dark:prose-invert contents\"\u003E\u003Ch2 id=\"b-synthetic-data-on-each-grid\"\u003Eb) Synthetic data on each grid\u003C/h2\u003E\n\u003Cspan class=\"paragraph\"\u003ESame random values everywhere, but \u003Cstrong\u003Eeach tab has its own colour\nscale\u003C/strong\u003E (auto-scaled to that grid's own min/max) rather than one\nshared range, since a shared scale would compress everything toward one\ncolour once any grid has a wider spread than the others. The title\non each figure shows its actual value range so the numbers stay\ncomparable even though the colours aren't.\u003C/span\u003E\u003C/span\u003E"}, "type": "data"}]}, {"code_hash": "e128b9828807da70acec72e59be6d912", "console": [], "id": "Hstk", "outputs": [{"data": {"text/html": "\u003Cmarimo-ui-element object-id='Hstk-6' random-id='edcf2aa9-ad7d-9b88-25b1-ce5bf75b83f1'\u003E\u003Cmarimo-tabs data-initial-value='\u0026quot;\u0026quot;' data-label='null' data-tabs='[\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEqual Area\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEqual Angle\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEquirectangular\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eHTM\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eGeodesic\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eFibonacci\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;]' data-orientation='\u0026quot;horizontal\u0026quot;'\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Hstk-0' random-id='4e564528-4bf5-2bc6-c691-f0f3fe28aa10'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Hstk-1' random-id='c94d8dbc-7461-dc49-18b6-dab3baac06f8'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Hstk-2' random-id='3c7cfee9-2541-e507-8920-f469f3743642'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Hstk-3' random-id='32a13263-7fe6-5a63-2218-d894b365793f'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Hstk-4' random-id='57135590-d5e6-bf34-d4f9-6126e57f78ef'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='Hstk-5' random-id='cd2db061-6bc2-81c9-ee01-0d3358948189'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003C/marimo-tabs\u003E\u003C/marimo-ui-element\u003E"}, "type": "data"}]}, {"code_hash": "72d724de23c0513a7cd559b82780fdc3", "console": [], "id": "nWHF", "outputs": [{"data": {"text/markdown": "\u003Cspan class=\"markdown prose dark:prose-invert contents\"\u003E\u003Ch2 id=\"c-cell-volume-biomass-sampling-proxy\"\u003Ec) Cell volume: biomass-sampling proxy\u003C/h2\u003E\n\u003Cspan class=\"paragraph\"\u003EColour now encodes each cell's own sampled volume, not a\nprojection-distortion probe. \u003Cstrong\u003EEach tab is scaled to its own\nmin/max\u003C/strong\u003E, not a shared range; with a shared scale, Fibonacci's\nfew over-horizon outlier cells (see note above) would stretch the\ncolour range so wide that every other grid's real distortion\npattern gets compressed into one indistinguishable colour. The\ntitle on each figure shows its actual m\u00b3 range, so \u003Ccode\u003Eequal_area\u003C/code\u003E\nreading as visually flat \u003Cem\u003Eand\u003C/em\u003E a tight title range together\nconfirm genuine uniformity, not just a coincidentally narrow\nshared scale.\u003C/span\u003E\u003C/span\u003E"}, "type": "data"}]}, {"code_hash": "61283d47b3ef7d0b2e0cf01ad3405c1a", "console": [], "id": "iLit", "outputs": [{"data": {"text/html": "\u003Cmarimo-ui-element object-id='iLit-6' random-id='d0c2a0b3-6f82-2a8c-4910-d4cbe1c901ae'\u003E\u003Cmarimo-tabs data-initial-value='\u0026quot;\u0026quot;' data-label='null' data-tabs='[\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEqual Area\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEqual Angle\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEquirectangular\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eHTM\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eGeodesic\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eFibonacci\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;]' data-orientation='\u0026quot;horizontal\u0026quot;'\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='iLit-0' random-id='4ba3e9df-7dad-632f-dc9e-44724233f7bc'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='iLit-1' random-id='11ed828f-14c3-7a23-30ee-40137fb8463b'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='iLit-2' random-id='b81a2659-4fc7-a158-a4b9-56bf88c620b8'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='iLit-3' random-id='3edfeeba-97a8-a337-84ba-2c98ee759c44'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='iLit-4' random-id='96a4a98a-84a0-a647-5b84-ac2cc76fe21c'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='iLit-5' random-id='b08360d7-6ad5-5c68-bdd6-5e2fe9eb512e'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003C/marimo-tabs\u003E\u003C/marimo-ui-element\u003E"}, "type": "data"}]}, {"code_hash": "9ede9dffdb502523ec3ab1adc52d9cb1", "console": [], "id": "ZHCJ", "outputs": [{"data": {"text/markdown": "\u003Cspan class=\"markdown prose dark:prose-invert contents\"\u003E\u003Ch2 id=\"d-2d-projection-comparison-orthographic-vs-equidistant\"\u003Ed) 2D projection comparison: orthographic vs equidistant\u003C/h2\u003E\n\u003Cspan class=\"paragraph\"\u003EEverything above is the interactive 3D scene. \u003Ccode\u003Ecanvod-viz\u003C/code\u003E also ships\na publication-quality 2D matplotlib renderer\n(\u003Ccode\u003EHemisphereVisualizer2D\u003C/code\u003E / \u003Ccode\u003EPolarPlotStyle\u003C/code\u003E), and as of this section\nit supports two different \u003Cstrong\u003Etheta \u2192 rho\u003C/strong\u003E radial mappings via\n\u003Ccode\u003EPolarPlotStyle.projection\u003C/code\u003E:\u003C/span\u003E\n\u003Cul\u003E\n\u003Cli\u003E\u003Cstrong\u003Eorthographic\u003C/strong\u003E (\u003Ccode\u003Erho = sin(theta)\u003C/code\u003E, the default): mathematically\n  the same view as looking straight down at the 3D hemisphere above\n  from directly overhead: horizon cells compress toward the plot's\n  rim, zenith cells stay spread out near the centre.\u003C/li\u003E\n\u003Cli\u003E\u003Cstrong\u003Eequidistant\u003C/strong\u003E (\u003Ccode\u003Erho = theta / (pi/2)\u003C/code\u003E): a \u003Cem\u003Etrue\u003C/em\u003E polar plot,\n  radius linear in the polar angle, so elevation rings are evenly\n  spaced. This is the conventional GNSS-skyplot convention (e.g.\n  RTKLIB), as opposed to a sphere-viewed-from-above projection.\u003C/li\u003E\n\u003C/ul\u003E\n\u003Cspan class=\"paragraph\"\u003ESame synthetic data as section (b), rendered both ways side by side\nfor each grid type; the tessellation and the data are identical;\nonly the radial mapping changes.\u003C/span\u003E\u003C/span\u003E"}, "type": "data"}]}, {"code_hash": "60802fb2aa024121499cf272e917b3ef", "console": [], "id": "ROlb", "outputs": [{"data": {"text/html": "\u003Cmarimo-ui-element object-id='ROlb-6' random-id='e5f430a0-5ff2-d198-3b29-e4d400a8202b'\u003E\u003Cmarimo-tabs data-initial-value='\u0026quot;\u0026quot;' data-label='null' data-tabs='[\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEqual Area\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEqual Angle\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eEquirectangular\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eHTM\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eGeodesic\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;,\u0026quot;\u0026#92;u003cspan class=\u0026#92;\u0026quot;markdown prose dark:prose-invert contents\u0026#92;\u0026quot;\u0026#92;u003e\u0026#92;u003cspan class=\u0026#92;\u0026quot;paragraph\u0026#92;\u0026quot;\u0026#92;u003eFibonacci\u0026#92;u003c/span\u0026#92;u003e\u0026#92;u003c/span\u0026#92;u003e\u0026quot;]' data-orientation='\u0026quot;horizontal\u0026quot;'\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='ROlb-0' random-id='afd57e7f-fc1d-8437-7be2-d71464987b2e'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='ROlb-1' random-id='b029631b-4602-f6f8-a440-d8cab83d37ea'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='ROlb-2' random-id='558bd2ab-5f22-5d8a-9c66-df902be392f1'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='ROlb-3' random-id='1eb45d14-044b-6dd7-386d-d90714ba6c52'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='ROlb-4' random-id='891fd8f9-18a2-3203-6d56-8c0f425b9dba'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003Cdiv data-kind='tab'\u003E\u003Cmarimo-ui-element object-id='ROlb-5' random-id='1ddacbb8-13f1-dd5b-25c0-6bc6679b7e3d'\u003E\u003Cmarimo-lazy data-initial-value='false' data-label='null' data-show-loading-indicator='false'\u003E\u003C/marimo-lazy\u003E\u003C/marimo-ui-element\u003E\u003C/div\u003E\u003C/marimo-tabs\u003E\u003C/marimo-ui-element\u003E"}, "type": "data"}]}, {"code_hash": "ad16a0424eebb515862ab154208ca5d4", "console": [], "id": "qnkX", "outputs": [{"data": {"text/markdown": "\u003Cspan class=\"markdown prose dark:prose-invert contents\"\u003E\u003Chr /\u003E\n\u003Cspan class=\"paragraph\"\u003E\u003Cstrong\u003EPrevious\u003C/strong\u003E: \u003Ca href=\"./15_grid_exploration.py\"\u003E15 \u00b7 Grid Exploration\u003C/a\u003E\n| \u003Cstrong\u003ENext\u003C/strong\u003E: \u003Ca href=\"./17_api_overview.py\"\u003E17 \u00b7 API Overview\u003C/a\u003E\u003C/span\u003E\n\u003Cspan class=\"paragraph\"\u003E\u003Cem\u003EcanVODpy \u00b7 Apache 2.0\u003C/em\u003E\u003C/span\u003E\u003C/span\u003E"}, "type": "data"}]}], "metadata": {"marimo_version": "0.25.1", "script_metadata_hash": null}, "version": "1"},
+            "runtimeConfig": null
+        }),
+        writable: false,
+        configurable: false,
+      });
+    </script>
+  
+<marimo-code hidden="">
+    %23%20%2F%2F%2F%20script%0A%23%20requires-python%20%3D%20%22%3E%3D3.14%22%0A%23%20dependencies%20%3D%20%5B%0A%23%20%20%20%22canvod-auxiliary%22%2C%0A%23%20%20%20%22canvod-config%22%2C%0A%23%20%20%20%22canvod-grids%22%2C%0A%23%20%20%20%22canvod-ops%22%2C%0A%23%20%20%20%22canvod-preflight%22%2C%0A%23%20%20%20%22canvod-readers%22%2C%0A%23%20%20%20%22canvod-store%22%2C%0A%23%20%20%20%22canvod-store-metadata%22%2C%0A%23%20%20%20%22canvod-utils%22%2C%0A%23%20%20%20%22canvod-viz%22%2C%0A%23%20%20%20%22canvod-vod%22%2C%0A%23%20%20%20%22canvodpy%22%2C%0A%23%20%20%20%22healpy%3E%3D1.16%22%2C%0A%23%20%20%20%22plotly%3E%3D5.0%22%2C%0A%23%20%20%20%22marimo%3E%3D0.21.1%22%2C%0A%23%20%5D%0A%23%0A%23%20%5Btool.uv.sources%5D%0A%23%20canvod-auxiliary%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-auxiliary%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvod-config%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-config%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvod-grids%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-grids%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvod-ops%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-ops%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvod-preflight%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-preflight%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvod-readers%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-readers%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvod-store%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-store%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvod-store-metadata%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-store-metadata%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvod-utils%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-utils%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvod-viz%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-viz%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvod-vod%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22packages%2Fcanvod-vod%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%20canvodpy%20%3D%20%7B%20git%20%3D%20%22https%3A%2F%2Fgithub.com%2Fnfb2021%2Fcanvodpy.git%22%2C%20subdirectory%20%3D%20%22canvodpy%22%2C%20rev%20%3D%20%22f30959f710ca71e28433135f25140097d0c0e08f%22%20%7D%0A%23%0A%23%20%5Btool.marimo.opengraph%5D%0A%23%20title%20%3D%20%2216%20%C2%B7%203D%20Grid%20Gallery%22%0A%23%20description%20%3D%20%22Interactive%203D%20gallery%20comparing%20every%20implemented%20hemispheric%20grid%20type%3A%20empty%20geometry%2C%20shared%20random%20synthetic%20data%2C%20and%20per-cell%20sampled-volume%20as%20a%20biomass%20proxy.%22%0A%23%20%2F%2F%2F%0A%0Aimport%20marimo%0A%0A__generated_with%20%3D%20%220.25.1%22%0Aapp%20%3D%20marimo.App(%0A%20%20%20%20width%3D%22medium%22%2C%0A%20%20%20%20app_title%3D%223D%20Grid%20Gallery%22%2C%0A%20%20%20%20css_file%3D%22canvod_nordic.css%22%2C%0A)%0A%0A%0A%40app.cell%0Adef%20_()%3A%0A%20%20%20%20import%20marimo%20as%20mo%0A%0A%20%20%20%20mo.md(%0A%20%20%20%20%20%20%20%20r%22%22%22%0A%20%20%20%20%23%203D%20Grid%20Gallery%0A%0A%20%20%20%20%5B!%5BOpen%20in%20molab%5D(https%3A%2F%2Fmarimo.io%2Fmolab-shield.svg)%5D(https%3A%2F%2Fmolab.marimo.io%2Fgithub%2Fnfb2021%2Fcanvodpy-demo%2Fblob%2Fmain%2F16_grid_3d_gallery.py%3Fmode%3Dedit)%0A%0A%20%20%20%20A%20side-by-side%20comparison%20of%20every%20hemispheric%20grid%20type%0A%20%20%20%20%60canvod-grids%60%20implements%2C%20each%20rendered%20as%20an%20**interactive%203D%0A%20%20%20%20Plotly%20scene**%20(rotate%20by%20dragging%2C%20zoom%20with%20scroll)%20in%20three%20ways%3A%0A%0A%20%20%20%20-%20**a)%20Empty%20grid**%3A%20the%20raw%20tessellation%2C%20uniformly%20coloured%2C%20to%0A%20%20%20%20%20%20compare%20cell%20shape%20and%20density%0A%20%20%20%20-%20**b)%20Synthetic%20data**%3A%20the%20same%20random%20per-cell%20values%20projected%0A%20%20%20%20%20%20onto%20each%20grid's%20own%20cells%0A%20%20%20%20-%20**c)%20Cell%20volume**%3A%20each%20cell's%20angular%20wedge%20volume%20out%20to%20an%0A%20%20%20%20%20%20assumed%20sensing%20radius%2C%20a%20proxy%20for%20how%20much%20biomass%20a%20signal%20in%0A%20%20%20%20%20%20that%20direction%20samples%0A%20%20%20%20-%20**d)%202D%20projection%20comparison**%3A%20the%20same%20synthetic%20data%20rendered%0A%20%20%20%20%20%20as%20a%202D%20matplotlib%20polar%20plot%2C%20orthographic%20vs%20equidistant%2C%20side%0A%20%20%20%20%20%20by%20side%20for%20each%20grid%20type%0A%0A%20%20%20%20All%20grids%20are%20built%20at%20a%20common%20**5%C2%B0%20angular%20resolution**%20via%0A%20%20%20%20%60canvod.grids.create_hemigrid()%60.%20Every%203D%20scene%20always%20shows%20real%0A%20%20%20%20cell%20boundaries%20and%20the%20project's%20E%2FN%2FUp%20reference%20axes%3B%20see%20the%0A%20%20%20%20note%20after%20the%20grid-building%20step%20for%20why.%0A%20%20%20%20%22%22%22%0A%20%20%20%20)%0A%20%20%20%20return%20(mo%2C)%0A%0A%0A%40app.cell%0Adef%20_()%3A%0A%20%20%20%20import%20numpy%20as%20np%0A%0A%20%20%20%20return%20(np%2C)%0A%0A%0A%40app.cell%0Adef%20_(mo)%3A%0A%20%20%20%20from%20canvod.grids%20import%20create_hemigrid%0A%0A%20%20%20%20GRID_LABELS%20%3D%20%7B%0A%20%20%20%20%20%20%20%20%22equal_area%22%3A%20%22Equal%20Area%22%2C%0A%20%20%20%20%20%20%20%20%22equal_angle%22%3A%20%22Equal%20Angle%22%2C%0A%20%20%20%20%20%20%20%20%22equirectangular%22%3A%20%22Equirectangular%22%2C%0A%20%20%20%20%20%20%20%20%22htm%22%3A%20%22HTM%22%2C%0A%20%20%20%20%20%20%20%20%22geodesic%22%3A%20%22Geodesic%22%2C%0A%20%20%20%20%20%20%20%20%22fibonacci%22%3A%20%22Fibonacci%22%2C%0A%20%20%20%20%20%20%20%20%22healpix%22%3A%20%22HEALPix%22%2C%0A%20%20%20%20%7D%0A%20%20%20%20RESOLUTION_DEG%20%3D%205.0%0A%0A%20%20%20%20grids%20%3D%20%7B%7D%0A%20%20%20%20_build_errors%20%3D%20%7B%7D%0A%20%20%20%20for%20_gtype%20in%20GRID_LABELS%3A%0A%20%20%20%20%20%20%20%20try%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20grids%5B_gtype%5D%20%3D%20create_hemigrid(_gtype%2C%20angular_resolution%3DRESOLUTION_DEG)%0A%20%20%20%20%20%20%20%20except%20Exception%20as%20_e%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20_build_errors%5B_gtype%5D%20%3D%20str(_e).splitlines()%5B0%5D%0A%0A%20%20%20%20_rows%20%3D%20%22%5Cn%22.join(%0A%20%20%20%20%20%20%20%20f%22%7C%20%7BGRID_LABELS%5B_t%5D%7D%20%7C%20%60%7B_t%7D%60%20%7C%20%7Bgrids%5B_t%5D.ncells%3A%2C%7D%20%7C%20%E2%9C%85%20built%20%7C%22%0A%20%20%20%20%20%20%20%20if%20_t%20in%20grids%0A%20%20%20%20%20%20%20%20else%20f%22%7C%20%7BGRID_LABELS%5B_t%5D%7D%20%7C%20%60%7B_t%7D%60%20%7C%20n%2Fa%20%7C%20%E2%8F%AD%EF%B8%8F%20skipped%3A%20%7B_build_errors%5B_t%5D%7D%20%7C%22%0A%20%20%20%20%20%20%20%20for%20_t%20in%20GRID_LABELS%0A%20%20%20%20)%0A%0A%20%20%20%20mo.md(%0A%20%20%20%20%20%20%20%20f%22%22%22%0A%20%20%20%20%23%23%20Building%20all%20implemented%20grid%20types%0A%0A%20%20%20%20%7C%20Grid%20%7C%20key%20%7C%20Cells%20(5%C2%B0)%20%7C%20Status%20%7C%0A%20%20%20%20%7C---%7C---%7C---%3A%7C---%7C%0A%20%20%20%20%7B_rows%7D%0A%0A%20%20%20%20HEALPix%20requires%20the%20optional%20%60healpy%60%20dependency.%20If%20it%20isn't%0A%20%20%20%20installed%2C%20that%20row%20is%20skipped%20above%20and%20the%20rest%20of%20this%20notebook%0A%20%20%20%20simply%20shows%20one%20fewer%20tab%20in%20each%20gallery.%0A%20%20%20%20%22%22%22%0A%20%20%20%20)%0A%20%20%20%20return%20GRID_LABELS%2C%20grids%0A%0A%0A%40app.cell%0Adef%20_(mo)%3A%0A%20%20%20%20mo.md(r%22%22%22%0A%20%20%20%20%23%23%20Every%203D%20scene%20includes%20cell%20boundaries%20and%20reference%20axes%0A%0A%20%20%20%20%60canvod-viz%60's%20Plotly%203D%20scenes%20hide%20the%20native%20Cartesian%0A%20%20%20%20x%2Fy%2Fz%20axes%20(%60showbackground%3DFalse%60)%20since%20raw%20sin%2Fcos-projected%0A%20%20%20%20coordinates%20aren't%20physically%20meaningful%20on%20their%20own.%0A%20%20%20%20%60HemisphereVisualizer3D.add_custom_axes()%60%20draws%20artificial%20E%2FN%2FUp%0A%20%20%20%20axis%20lines%20and%20labels%20in%20their%20place%2C%20not%20real%20Plotly%20axes%2C%20but%0A%20%20%20%20built%20to%20read%20as%20if%20they%20were.%20%60add_spherical_overlays()%60%20adds%0A%20%20%20%20elevation%20rings%20and%20meridians%20as%20an%20angular%20reference%20grid.%0A%20%20%20%20Without%20these%2C%20a%203D%20hemisphere%20plot%20has%20no%20orientation%20or%20scale%0A%20%20%20%20reference%20at%20all.%20Every%20figure%20in%20this%20notebook%20applies%20both%2C%0A%20%20%20%20plus%20real%20cell-boundary%20wireframes%20(%60show_wireframe%3DTrue%60%2C%20fixed%0A%20%20%20%202026-07-19%3B%20previously%20a%20declared-but-unwired%20no-op%20parameter%20in%0A%20%20%20%20%60plot_hemisphere_surface%60%3B%20cell%20edges%20were%20never%20actually%20drawn).%0A%20%20%20%20%22%22%22)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_()%3A%0A%20%20%20%20from%20canvod.viz%20import%20HemisphereVisualizer3D%0A%0A%20%20%20%20def%20add_reference_frame(fig%2C%20viz%3A%20HemisphereVisualizer3D)%3A%0A%20%20%20%20%20%20%20%20%22%22%22Apply%20this%20project's%20standard%203D%20reference%20frame%20to%20%60fig%60.%0A%0A%20%20%20%20%20%20%20%20Elevation%20rings%20%2B%20meridians%20(%60add_spherical_overlays%60)%20and%20the%0A%20%20%20%20%20%20%20%20artificial-but-native-looking%20E%2FN%2FUp%20axes%20(%60add_custom_axes%60)%0A%20%20%20%20%20%20%20%20are%20a%20non-negotiable%20part%20of%20every%203D%20hemisphere%20plot%20in%20this%0A%20%20%20%20%20%20%20%20project%20--%20see%20canvodpy-perf%2FCLAUDE.md's%20%223D%20visualization%0A%20%20%20%20%20%20%20%20conventions%22%20section.%0A%20%20%20%20%20%20%20%20%22%22%22%0A%20%20%20%20%20%20%20%20fig%20%3D%20viz.add_spherical_overlays(fig)%0A%20%20%20%20%20%20%20%20fig%20%3D%20viz.add_custom_axes(fig)%0A%20%20%20%20%20%20%20%20return%20fig%0A%0A%20%20%20%20return%20HemisphereVisualizer3D%2C%20add_reference_frame%0A%0A%0A%40app.cell%0Adef%20_(mo)%3A%0A%20%20%20%20mo.md(r%22%22%22%0A%20%20%20%20%23%23%20Synthetic%20data%0A%0A%20%20%20%20Each%20grid%20gets%20independent%20random%20per-cell%20values%20from%20a%20fixed%0A%20%20%20%20seed%2C%20not%20a%20physically%20meaningful%20field%2C%20just%20enough%20variation%20to%0A%20%20%20%20compare%20how%20each%20tessellation%20renders%20data.%0A%20%20%20%20%22%22%22)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_(grids%2C%20np)%3A%0A%20%20%20%20_rng%20%3D%20np.random.default_rng(42)%0A%20%20%20%20synthetic_data%20%3D%20%7B_t%3A%20_rng.uniform(0.1%2C%201.0%2C%20_g.ncells)%20for%20_t%2C%20_g%20in%20grids.items()%7D%0A%20%20%20%20return%20(synthetic_data%2C)%0A%0A%0A%40app.cell%0Adef%20_(mo)%3A%0A%20%20%20%20mo.md(r%22%22%22%0A%20%20%20%20%23%23%20Cell%20volume%3A%20a%20biomass-sampling%20proxy%0A%0A%20%20%20%20Grid%20cells%20are%20purely%20angular%20(theta%2C%20phi)%20partitions%20of%20the%20sky%20as%0A%20%20%20%20seen%20from%20the%20antenna%20--%20they%20have%20a%20solid%20angle%20but%20no%20inherent%0A%20%20%20%20physical%20size.%20What%20actually%20determines%20how%20much%20canopy%20biomass%20a%0A%20%20%20%20satellite%20signal%20in%20a%20given%20cell's%20direction%20samples%20is%20the%0A%20%20%20%20**volume**%20of%20space%20that%20direction%20subtends%2C%20not%20its%20solid%20angle%0A%20%20%20%20alone.%0A%0A%20%20%20%20Modelling%20the%20canopy%20as%20a%20uniform-density%20region%20extending%20out%20to%20a%0A%20%20%20%20fixed%20**sensing%20radius**%20%24R%24%20around%20the%20antenna%2C%20each%20cell%20is%20a%0A%20%20%20%20spherical%20sector%20(a%20cone%20from%20the%20antenna%20out%20to%20radius%20%24R%24)%0A%20%20%20%20with%20volume%0A%0A%20%20%20%20%24%24%0A%20%20%20%20V_%7B%5Ctext%7Bcell%7D%7D%20%3D%20%5Cfrac%7B1%7D%7B3%7D%20%5C%2C%20%5COmega_%7B%5Ctext%7Bcell%7D%7D%20%5C%2C%20R%5E3%0A%20%20%20%20%24%24%0A%0A%20%20%20%20where%20%24%5COmega_%7B%5Ctext%7Bcell%7D%7D%24%20is%20the%20cell's%20solid%20angle%0A%20%20%20%20(%60GridData.get_solid_angles()%60%2C%20fixed%20and%20verified%202026-07-19%20for%0A%20%20%20%20all%206%20non-HEALPix%20grid%20types).%20Since%20%24R%24%20is%20the%20same%20for%20every%0A%20%20%20%20cell%2C%20the%20*relative*%20pattern%20across%20cells%20is%20identical%20to%20the%0A%20%20%20%20solid-angle%20pattern%20--%20but%20expressed%20in%20physically%20interpretable%0A%20%20%20%20units%20(m%C2%B3)%2C%20it%20directly%20answers%20%22how%20much%20more%2Fless%20biomass%20would%0A%20%20%20%20a%20uniform%20canopy%20contribute%20to%20this%20cell%20than%20that%20one%2C%22%20which%0A%20%20%20%20solid%20angle%20alone%20(steradians)%20does%20not%20communicate%20as%20directly.%0A%0A%20%20%20%20%24R%24%20below%20is%20illustrative%20(a%20plausible%20forest%20canopy%20depth)%2C%20not%20a%0A%20%20%20%20calibrated%20value%20--%20adjust%20%60SENSING_RADIUS_M%60%20for%20a%20real%20site.%0A%0A%20%20%20%20**On%20Fibonacci%20specifically%3A**%20its%20horizon-boundary%20cells%20are%20real%0A%20%20%20%20spherical-Voronoi%20regions%20bounded%20by%20actual%20southern-hemisphere%0A%20%20%20%20lattice%20points%20(needed%20to%20avoid%20the%204%CF%80%20double-counting%20bug%20fixed%0A%20%20%20%202026-07-19)%2C%20so%20a%20handful%20of%20them%20genuinely%20dip%20a%20few%20degrees%20past%0A%20%20%20%20the%20horizon%20(verified%3A%20~6%C2%B0%20at%2010%C2%B0%20resolution%2C%20~12%C2%B0%20at%2020%C2%B0%3B%20worse%0A%20%20%20%20at%20coarser%20resolutions%2C%20but%20nowhere%20near%20reaching%20the%20far%20pole).%0A%20%20%20%20That's%20still%20enough%20to%20skew%20a%20colour%20range%20shared%20across%20grid%0A%20%20%20%20types%2C%20which%20is%20why%20each%20tab%20below%20uses%20its%20**own**%20scale%20instead%3A%0A%20%20%20%20a%20shared%20one%20would%20let%20those%20few%20boundary%20cells%20compress%20every%0A%20%20%20%20other%20grid's%20real%20distortion%20pattern%20into%20one%20indistinguishable%0A%20%20%20%20colour.%20Each%20figure's%20title%20shows%20its%20own%20value%20range%20so%20the%0A%20%20%20%20absolute%20numbers%20stay%20comparable%20even%20though%20the%20colours%20aren't%0A%20%20%20%20directly%20comparable%20tab-to-tab.%0A%20%20%20%20%22%22%22)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_(grids)%3A%0A%20%20%20%20SENSING_RADIUS_M%20%3D%2020.0%0A%0A%20%20%20%20cell_volumes%20%3D%20%7B%0A%20%20%20%20%20%20%20%20_t%3A%20_g.get_solid_angles()%20*%20SENSING_RADIUS_M**3%20%2F%203%20for%20_t%2C%20_g%20in%20grids.items()%0A%20%20%20%20%7D%0A%20%20%20%20return%20(cell_volumes%2C)%0A%0A%0A%40app.cell%0Adef%20_(mo)%3A%0A%20%20%20%20mo.md(r%22%22%22%0A%20%20%20%20%23%23%20a)%20Empty%20grids%3A%20geometry%20only%0A%0A%20%20%20%20Uniform%20cell%20colour%2C%20no%20data%3B%20only%20the%20tessellation%20itself%20is%0A%20%20%20%20visible%3A%20cell%20shape%2C%20density%2C%20and%20horizon%20coverage.%0A%20%20%20%20%22%22%22)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_(GRID_LABELS%2C%20HemisphereVisualizer3D%2C%20add_reference_frame%2C%20grids%2C%20mo)%3A%0A%20%20%20%20_empty_figs%20%3D%20%7B%7D%0A%20%20%20%20for%20_t%2C%20_g%20in%20grids.items()%3A%0A%20%20%20%20%20%20%20%20_viz%20%3D%20HemisphereVisualizer3D(_g)%0A%20%20%20%20%20%20%20%20_fig%20%3D%20_viz.plot_hemisphere_surface(%0A%20%20%20%20%20%20%20%20%20%20%20%20data%3DNone%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20title%3Df%22%7BGRID_LABELS%5B_t%5D%7D%3A%20%7B_g.ncells%3A%2C%7D%20cells%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20colorscale%3D%22Blues%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20opacity%3D0.85%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20show_wireframe%3DTrue%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20width%3D650%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20height%3D500%2C%0A%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20%20_fig%20%3D%20add_reference_frame(_fig%2C%20_viz)%0A%20%20%20%20%20%20%20%20_empty_figs%5BGRID_LABELS%5B_t%5D%5D%20%3D%20_fig%0A%0A%20%20%20%20mo.ui.tabs(_empty_figs%2C%20lazy%3DTrue)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_(mo)%3A%0A%20%20%20%20mo.md(r%22%22%22%0A%20%20%20%20%23%23%20b)%20Synthetic%20data%20on%20each%20grid%0A%0A%20%20%20%20Same%20random%20values%20everywhere%2C%20but%20**each%20tab%20has%20its%20own%20colour%0A%20%20%20%20scale**%20(auto-scaled%20to%20that%20grid's%20own%20min%2Fmax)%20rather%20than%20one%0A%20%20%20%20shared%20range%2C%20since%20a%20shared%20scale%20would%20compress%20everything%20toward%20one%0A%20%20%20%20colour%20once%20any%20grid%20has%20a%20wider%20spread%20than%20the%20others.%20The%20title%0A%20%20%20%20on%20each%20figure%20shows%20its%20actual%20value%20range%20so%20the%20numbers%20stay%0A%20%20%20%20comparable%20even%20though%20the%20colours%20aren't.%0A%20%20%20%20%22%22%22)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_(%0A%20%20%20%20GRID_LABELS%2C%0A%20%20%20%20HemisphereVisualizer3D%2C%0A%20%20%20%20add_reference_frame%2C%0A%20%20%20%20grids%2C%0A%20%20%20%20mo%2C%0A%20%20%20%20synthetic_data%2C%0A)%3A%0A%20%20%20%20_data_figs%20%3D%20%7B%7D%0A%20%20%20%20for%20_t%2C%20_g%20in%20grids.items()%3A%0A%20%20%20%20%20%20%20%20_viz%20%3D%20HemisphereVisualizer3D(_g)%0A%20%20%20%20%20%20%20%20_vals%20%3D%20synthetic_data%5B_t%5D%0A%20%20%20%20%20%20%20%20_fig%20%3D%20_viz.plot_hemisphere_surface(%0A%20%20%20%20%20%20%20%20%20%20%20%20data%3D_vals%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20title%3Df%22%7BGRID_LABELS%5B_t%5D%7D%3A%20synthetic%20data%20(%7B_vals.min()%3A.2f%7D%E2%80%93%7B_vals.max()%3A.2f%7D)%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20colorscale%3D%22YlGn%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20opacity%3D0.95%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20show_wireframe%3DTrue%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20width%3D650%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20height%3D500%2C%0A%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20%20_fig%20%3D%20add_reference_frame(_fig%2C%20_viz)%0A%20%20%20%20%20%20%20%20_data_figs%5BGRID_LABELS%5B_t%5D%5D%20%3D%20_fig%0A%0A%20%20%20%20mo.ui.tabs(_data_figs%2C%20lazy%3DTrue)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_(mo)%3A%0A%20%20%20%20mo.md(r%22%22%22%0A%20%20%20%20%23%23%20c)%20Cell%20volume%3A%20biomass-sampling%20proxy%0A%0A%20%20%20%20Colour%20now%20encodes%20each%20cell's%20own%20sampled%20volume%2C%20not%20a%0A%20%20%20%20projection-distortion%20probe.%20**Each%20tab%20is%20scaled%20to%20its%20own%0A%20%20%20%20min%2Fmax**%2C%20not%20a%20shared%20range%3B%20with%20a%20shared%20scale%2C%20Fibonacci's%0A%20%20%20%20few%20over-horizon%20outlier%20cells%20(see%20note%20above)%20would%20stretch%20the%0A%20%20%20%20colour%20range%20so%20wide%20that%20every%20other%20grid's%20real%20distortion%0A%20%20%20%20pattern%20gets%20compressed%20into%20one%20indistinguishable%20colour.%20The%0A%20%20%20%20title%20on%20each%20figure%20shows%20its%20actual%20m%C2%B3%20range%2C%20so%20%60equal_area%60%0A%20%20%20%20reading%20as%20visually%20flat%20*and*%20a%20tight%20title%20range%20together%0A%20%20%20%20confirm%20genuine%20uniformity%2C%20not%20just%20a%20coincidentally%20narrow%0A%20%20%20%20shared%20scale.%0A%20%20%20%20%22%22%22)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_(%0A%20%20%20%20GRID_LABELS%2C%0A%20%20%20%20HemisphereVisualizer3D%2C%0A%20%20%20%20add_reference_frame%2C%0A%20%20%20%20cell_volumes%2C%0A%20%20%20%20grids%2C%0A%20%20%20%20mo%2C%0A)%3A%0A%20%20%20%20_volume_figs%20%3D%20%7B%7D%0A%20%20%20%20for%20_t%2C%20_g%20in%20grids.items()%3A%0A%20%20%20%20%20%20%20%20_viz%20%3D%20HemisphereVisualizer3D(_g)%0A%20%20%20%20%20%20%20%20_vols%20%3D%20cell_volumes%5B_t%5D%0A%20%20%20%20%20%20%20%20_fig%20%3D%20_viz.plot_hemisphere_surface(%0A%20%20%20%20%20%20%20%20%20%20%20%20data%3D_vols%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20title%3Df%22%7BGRID_LABELS%5B_t%5D%7D%3A%20cell%20volume%20(%7B_vols.min()%3A.1f%7D%E2%80%93%7B_vols.max()%3A.1f%7D%20m%C2%B3)%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20colorscale%3D%22Plasma%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20opacity%3D0.95%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20show_wireframe%3DTrue%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20width%3D650%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20height%3D500%2C%0A%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20%20_fig%20%3D%20add_reference_frame(_fig%2C%20_viz)%0A%20%20%20%20%20%20%20%20_volume_figs%5BGRID_LABELS%5B_t%5D%5D%20%3D%20_fig%0A%0A%20%20%20%20mo.ui.tabs(_volume_figs%2C%20lazy%3DTrue)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_(mo)%3A%0A%20%20%20%20mo.md(r%22%22%22%0A%20%20%20%20%23%23%20d)%202D%20projection%20comparison%3A%20orthographic%20vs%20equidistant%0A%0A%20%20%20%20Everything%20above%20is%20the%20interactive%203D%20scene.%20%60canvod-viz%60%20also%20ships%0A%20%20%20%20a%20publication-quality%202D%20matplotlib%20renderer%0A%20%20%20%20(%60HemisphereVisualizer2D%60%20%2F%20%60PolarPlotStyle%60)%2C%20and%20as%20of%20this%20section%0A%20%20%20%20it%20supports%20two%20different%20**theta%20%E2%86%92%20rho**%20radial%20mappings%20via%0A%20%20%20%20%60PolarPlotStyle.projection%60%3A%0A%0A%20%20%20%20-%20**orthographic**%20(%60rho%20%3D%20sin(theta)%60%2C%20the%20default)%3A%20mathematically%0A%20%20%20%20%20%20the%20same%20view%20as%20looking%20straight%20down%20at%20the%203D%20hemisphere%20above%0A%20%20%20%20%20%20from%20directly%20overhead%3A%20horizon%20cells%20compress%20toward%20the%20plot's%0A%20%20%20%20%20%20rim%2C%20zenith%20cells%20stay%20spread%20out%20near%20the%20centre.%0A%20%20%20%20-%20**equidistant**%20(%60rho%20%3D%20theta%20%2F%20(pi%2F2)%60)%3A%20a%20*true*%20polar%20plot%2C%0A%20%20%20%20%20%20radius%20linear%20in%20the%20polar%20angle%2C%20so%20elevation%20rings%20are%20evenly%0A%20%20%20%20%20%20spaced.%20This%20is%20the%20conventional%20GNSS-skyplot%20convention%20(e.g.%0A%20%20%20%20%20%20RTKLIB)%2C%20as%20opposed%20to%20a%20sphere-viewed-from-above%20projection.%0A%0A%20%20%20%20Same%20synthetic%20data%20as%20section%20(b)%2C%20rendered%20both%20ways%20side%20by%20side%0A%20%20%20%20for%20each%20grid%20type%3B%20the%20tessellation%20and%20the%20data%20are%20identical%3B%0A%20%20%20%20only%20the%20radial%20mapping%20changes.%0A%20%20%20%20%22%22%22)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_(GRID_LABELS%2C%20grids%2C%20mo%2C%20synthetic_data)%3A%0A%20%20%20%20import%20matplotlib.pyplot%20as%20plt%0A%0A%20%20%20%20from%20canvod.viz%20import%20HemisphereVisualizer2D%2C%20PolarPlotStyle%0A%0A%20%20%20%20_proj_figs%20%3D%20%7B%7D%0A%20%20%20%20for%20_t%2C%20_g%20in%20grids.items()%3A%0A%20%20%20%20%20%20%20%20_viz%20%3D%20HemisphereVisualizer2D(_g)%0A%20%20%20%20%20%20%20%20_vals%20%3D%20synthetic_data%5B_t%5D%0A%20%20%20%20%20%20%20%20_fig%2C%20_axes%20%3D%20plt.subplots(%0A%20%20%20%20%20%20%20%20%20%20%20%201%2C%202%2C%20figsize%3D(12%2C%206)%2C%20subplot_kw%3D%7B%22projection%22%3A%20%22polar%22%7D%0A%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20%20for%20_ax%2C%20_proj%20in%20zip(_axes%2C%20%5B%22orthographic%22%2C%20%22equidistant%22%5D)%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20_style%20%3D%20PolarPlotStyle(%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20title%3Df%22%7BGRID_LABELS%5B_t%5D%7D%3A%20%7B_proj%7D%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20cmap%3D%22YlGn%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20projection%3D_proj%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20%20%20%20%20%20_viz.plot_grid_patches(data%3D_vals%2C%20style%3D_style%2C%20ax%3D_ax)%0A%20%20%20%20%20%20%20%20_fig.tight_layout()%0A%20%20%20%20%20%20%20%20_proj_figs%5BGRID_LABELS%5B_t%5D%5D%20%3D%20_fig%0A%0A%20%20%20%20mo.ui.tabs(_proj_figs%2C%20lazy%3DTrue)%0A%20%20%20%20return%0A%0A%0A%40app.cell%0Adef%20_(mo)%3A%0A%20%20%20%20mo.md(r%22%22%22%0A%20%20%20%20---%0A%0A%20%20%20%20**Previous**%3A%20%5B15%20%C2%B7%20Grid%20Exploration%5D(.%2F15_grid_exploration.py)%0A%20%20%20%20%7C%20**Next**%3A%20%5B17%20%C2%B7%20API%20Overview%5D(.%2F17_api_overview.py)%0A%0A%20%20%20%20*canVODpy%20%C2%B7%20Apache%202.0*%0A%20%20%20%20%22%22%22)%0A%20%20%20%20return%0A%0A%0Aif%20__name__%20%3D%3D%20%22__main__%22%3A%0A%20%20%20%20app.run()%0A
+</marimo-code>
+
+<marimo-code-hash hidden="">5ac5e2f054a5c70b307f8f21800a7295</marimo-code-hash>
+</body>
+</html>

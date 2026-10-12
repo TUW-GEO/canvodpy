@@ -25,10 +25,10 @@ flowchart TD
     subgraph AUX[Auxiliary Data Pipeline - once per DOY]
         FTP["FTP Download ESA primary / NASA fallback"]
         SP3_PARSE["Parse SP3 Ephemerides (ECEF positions + velocities)"]
-        CLK_PARSE["Parse CLK Corrections (satellite clock offsets)"]
+        CLK_PARSE["Parse CLK Corrections (optional, satellite clock offsets, unused by VOD)"]
         EPOCH_GRID["Generate 24h Epoch Grid (n = 86400 / sampling_interval)"]
         HERMITE["Hermite Spline Interpolation (ephemerides, cubic, velocity-aware)"]
-        LINEAR["Piecewise Linear Interpolation (clock corrections, window=9, jump_thr=1e-6)"]
+        LINEAR["Piecewise Linear Interpolation (optional, clock corrections, window=9, jump_thr=1e-6)"]
         AUX_ZARR["Merged Auxiliary Zarr (cached per DOY)"]
     end
 
@@ -64,7 +64,7 @@ flowchart TD
 
     %% ── Grid Assignment ──
     subgraph GRID[Hemispheric Grid Assignment]
-        BUILD_GRID["Construct Grid (equal-area, HEALPix, geodesic, fibonacci, ...)"]
+        BUILD_GRID["Construct Grid (equal-area, equal-angle, ...)"]
         KDTREE["Build KDTree (cell centres in Cartesian coordinates)"]
         ASSIGN["Spatial Query (O(n log m) per observation)"]
     end
@@ -94,14 +94,14 @@ flowchart TD
     %% Auxiliary pipeline
     SCHEDULE --> FTP
     FTP --> SP3_PARSE
-    FTP --> CLK_PARSE
+    FTP -.->|"if fetch_clock"| CLK_PARSE
     SP3_PARSE --> HERMITE
-    CLK_PARSE --> LINEAR
+    CLK_PARSE -.-> LINEAR
     SCHEDULE --> EPOCH_GRID
     EPOCH_GRID --> HERMITE
-    EPOCH_GRID --> LINEAR
+    EPOCH_GRID -.-> LINEAR
     HERMITE --> AUX_ZARR
-    LINEAR --> AUX_ZARR
+    LINEAR -.-> AUX_ZARR
 
     %% Parallel processing
     SCHEDULE --> READ
@@ -139,3 +139,6 @@ flowchart TD
     ASSIGN --> VIZ_2D
     ASSIGN --> VIZ_3D
     ASSIGN --> EXPORT
+
+    style CLK_PARSE fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5
+    style LINEAR fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5

@@ -1,8 +1,7 @@
 flowchart TD
     subgraph CONFIG["YAML Configuration"]
-        PROC["processing.yaml"]
-        SITES["sites.yaml"]
-        SIDS["sids.yaml"]
+        YAML["canvod-settings.yaml"]
+        ENV[".env / env vars"]
     end
 
     subgraph LOADER["Configuration Loader"]
@@ -36,9 +35,8 @@ flowchart TD
         snapshot ID, timestamp`"]
     end
 
-    PROC --> MERGE
-    SITES --> MERGE
-    SIDS --> MERGE
+    YAML --> MERGE
+    ENV --> MERGE
     DEFAULTS --> MERGE
     MERGE --> PYDANTIC
     PYDANTIC --> PC

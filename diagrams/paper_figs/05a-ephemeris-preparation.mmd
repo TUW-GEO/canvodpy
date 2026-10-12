@@ -1,0 +1,33 @@
+flowchart TD
+    subgraph INPUT[Data Acquisition]
+        RINEX["RINEX v3.04 Observation Files<br/>(SNR, Pseudorange, Phase, Doppler)"]
+        SP3["SP3 Precise Ephemerides<br/>(satellite positions every 5/15 min)"]
+        CLK["CLK Precise Clock Corrections (optional)<br/>(satellite clock offsets, unused by VOD)"]
+    end
+
+    subgraph DOWNLOAD[Auxiliary Data Retrieval]
+        FTP["FTP Download<br/>(ESA primary, NASA CDDIS fallback)"]
+        CACHE["Local File Cache<br/>(SP3/CLK per DOY)"]
+    end
+
+    subgraph PREPROCESS_R[Auxiliary Preprocessing]
+        PARSE_SP3["Parse SP3<br/>(ECEF positions + velocities)"]
+        PARSE_CLK["Parse CLK<br/>(satellite clock offsets)"]
+        HERMITE["Hermite Spline Interpolation<br/>(cubic, velocity-aware)"]
+        LINEAR["Piecewise Linear Interpolation<br/>(clock corrections)"]
+        MERGE_AUX["Merge Interpolated<br/>Auxiliary Data (Zarr cache)"]
+    end
+
+    SP3 --> FTP
+    CLK -.->|"if fetch_clock"| FTP
+    FTP --> CACHE
+    CACHE --> PARSE_SP3
+    CACHE -.->|"if fetch_clock"| PARSE_CLK
+    PARSE_SP3 --> HERMITE
+    PARSE_CLK -.-> LINEAR
+    HERMITE --> MERGE_AUX
+    LINEAR -.-> MERGE_AUX
+
+    style CLK fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5
+    style PARSE_CLK fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5
+    style LINEAR fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5

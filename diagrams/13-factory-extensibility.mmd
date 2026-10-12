@@ -3,20 +3,19 @@ flowchart TD
         READER_ABC["GNSSDataReader (read, to_ds, validate_output)"]
         GRID_ABC["BaseGridBuilder (_build_grid, build)"]
         VOD_ABC["VODCalculator (calculate_vod)"]
-        AUG_ABC["AugmentationStep (apply)"]
+        AUG_ABC["AugmentationStep (apply)<br/>no factory registry — subclassed directly"]
     end
 
     subgraph FACTORIES[Factory Registry]
         RF["ReaderFactory"]
         GF["GridFactory"]
         VF["VODFactory"]
-        AF["AugmentationFactory"]
     end
 
     subgraph BUILTIN[Built-in Implementations]
         RINEX3["Rnxv3Obs (RINEX v3.04)"]
         EA["EqualAreaBuilder"]
-        HP["HEALPixBuilder"]
+        HP["EqualAngleBuilder"]
         GD["GeodesicBuilder"]
         FB["FibonacciBuilder"]
         TO["TauOmegaZerothOrder"]
@@ -37,7 +36,6 @@ flowchart TD
     READER_ABC --> RF
     GRID_ABC --> GF
     VOD_ABC --> VF
-    AUG_ABC --> AF
 
     RINEX3 --> RF
     EA --> GF

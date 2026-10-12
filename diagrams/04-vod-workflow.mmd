@@ -1,12 +1,12 @@
 sequenceDiagram
     participant User
-    participant Pipeline as PipelineOrchestrator
-    participant Store as GnssResearchSite
-    participant VODCalc as VODCalculator
-    participant Grid as HemiGrid
-    participant Viz as Visualizer
+    participant Pipeline as Pipeline (canvodpy.api)
+    participant Store as GnssResearchSite (store engine)
+    participant VODCalc as TauOmegaZerothOrder
+    participant Grid as GridData
+    participant Viz as HemisphereVisualizer
 
-    User->>Pipeline: calculate_vod("site", "canopy", "ref", date)
+    User->>Pipeline: Site("site").pipeline().calculate_vod("canopy", "reference", date)
 
     Pipeline->>Store: Load canopy dataset
     Store-->>Pipeline: Canopy Dataset (φ, θ, SNR)
@@ -14,18 +14,19 @@ sequenceDiagram
     Pipeline->>Store: Load reference dataset
     Store-->>Pipeline: Reference Dataset (φ, θ, SNR)
 
-    Pipeline->>VODCalc: calculate(canopy_ds, ref_ds)
+    Pipeline->>VODCalc: TauOmegaZerothOrder(canopy_ds, reference_ds)
 
-    VODCalc->>VODCalc: Compute Transmissivity<br/>T = 10^(ΔSNR_dBHz / 10)
-    VODCalc->>VODCalc: Apply Tau-Omega Model<br/>τ = -ln(T) · cos(θ)
+    VODCalc->>VODCalc: get_delta_snr()<br/>ΔSNR = SNR_canopy − SNR_sky
+    VODCalc->>VODCalc: decibel2linear(ΔSNR)<br/>T = 10^(ΔSNR_dB / 10)
+    VODCalc->>VODCalc: calculate_vod()<br/>τ = −ln(T) · cos(θ)
 
     VODCalc-->>Pipeline: VOD Dataset (τ per sid, epoch)
 
-    Pipeline->>Grid: assign_cells(vod_ds)
-    Grid->>Grid: Map (φ,θ) → cell_id
+    Pipeline->>Grid: add_cell_ids_to_vod_fast(vod_ds, grid, grid_name)
+    Grid->>Grid: KDTree query: (φ,θ) → cell_id
     Grid-->>Pipeline: Gridded VOD
 
-    Pipeline->>Viz: plot_hemisphere(gridded_vod)
+    Pipeline->>Viz: HemisphereVisualizer(grid).plot_2d(gridded_vod)
     Viz-->>User: 📊 2D/3D Visualization
 
     Note over User,Viz: Complete VOD workflow<br/>from raw RINEX to visualization

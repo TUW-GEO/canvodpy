@@ -7,7 +7,7 @@ flowchart TD
     end
 
     subgraph Ephemeris[🛰️ Ephemeris Sources]
-        SP3["🏛️ Agency Final<br/>SP3 + CLK<br/>(12-18 day latency)"]
+        SP3["🏛️ Agency Final<br/>SP3 + CLK (optional)<br/>(12-18 day latency)"]
         SBFVIS["📡 SBF Broadcast<br/>SatVisibility block<br/>(immediate)"]
         NAV["📄 RINEX NAV 🚧<br/>.YYp / .YYn<br/>(planned)"]
     end
@@ -15,25 +15,26 @@ flowchart TD
     subgraph Reading[🔍 Reading and Parsing]
         RinexReader["Rnxv3Obs<br/>Parse RINEX v3.04"]
         SbfReader["SbfReader<br/>Parse Septentrio Binary"]
-        AuxReader["SP3/CLK Parsers<br/>Load Auxiliary Data"]
+        AuxReader["SP3 (+ CLK) Parsers<br/>Load Auxiliary Data"]
     end
 
     subgraph Processing[⚙️ Geometry Augmentation]
-        Interp["Hermite Interpolation<br/>Orbits/clocks → obs epochs"]
+        Interp["Hermite Interpolation<br/>Orbits (+ clocks, optional) → obs epochs"]
         Position["Coordinate Transform<br/>ECEF → spherical (r, θ, φ)"]
         DirectGeom["Direct θ, φ<br/>From receiver firmware"]
         Augment["Dataset Augmentation<br/>Merge observations + geometry"]
     end
 
-    subgraph Storage[💾 Versioned Storage - Icechunk]
+    subgraph Storage[💾 Versioned Storage - two Icechunk repositories per site]
         Dedup["3-Layer Deduplication<br/>Hash · Temporal · Intra-batch"]
-        Icechunk["Observations Store<br/>(epoch × sid)"]
+        Icechunk["RINEX/SBF Store<br/>(epoch × sid, per receiver group)"]
         Meta["Metadata Table<br/>File provenance"]
+        VodStore["VOD Store<br/>(epoch × sid, per calculator/analysis group)"]
     end
 
     subgraph Analysis[📊 Analysis]
         VODCalc["VodComputer<br/>Tau-Omega model · canopy vs reference"]
-        GridAssign["Hemispheric Grid Assignment<br/>Equal-area / HEALPix / geodesic"]
+        GridAssign["Hemispheric Grid Assignment<br/>Equal-area / Equal-angle / ..."]
         Aggregate["Aggregation<br/>Per-cell statistics"]
     end
 
@@ -62,6 +63,7 @@ flowchart TD
     Icechunk --> VODCalc
     VODCalc --> GridAssign
     GridAssign --> Aggregate
+    Aggregate --> VodStore
 
     Aggregate --> Viz2D
     Aggregate --> Viz3D

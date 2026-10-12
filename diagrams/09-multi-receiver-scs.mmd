@@ -5,10 +5,10 @@ flowchart TD
         R1["Reference Receiver (open sky)"]
     end
 
-    subgraph SCS_CONFIG[SCS Configuration - sites.yaml]
-        C1_CFG["canopy_01 type: canopy scs_from: null (uses own position)"]
-        C2_CFG["canopy_02 type: canopy scs_from: null (uses own position)"]
-        R1_CFG["reference_01 type: reference scs_from:   - canopy_01   - canopy_02"]
+    subgraph SCS_CONFIG[SCS Configuration - canvod-settings.yaml]
+        C1_CFG["canopy_01 type: canopy paired_canopies: null (uses own position)"]
+        C2_CFG["canopy_02 type: canopy paired_canopies: null (uses own position)"]
+        R1_CFG["reference_01 type: reference paired_canopies:   - canopy_01   - canopy_02<br/><i>(scs_from is a deprecated alias, auto-migrated)</i>"]
     end
 
     subgraph EXPANSION[SCS Processing Expansion]

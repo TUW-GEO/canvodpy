@@ -3,24 +3,21 @@ flowchart TD
     (epoch, sid) from RINEX store`"]
 
     RAW --> SIG["`**Signal Selection**
-    keep_sids filter
-    obs type selection`"]
+    keep_sids filter, obs type selection
+    (applied upstream, before ops.Pipeline)`"]
 
-    SIG --> QC["`**Quality Control**
-    polar angle cutoff
-    SNR threshold mask`"]
-
-    QC --> TA["`**TemporalAggregate**
+    SIG --> TA["`**TemporalAggregate**
     resample → regular epoch grid
     configurable window (e.g. 1 min)`"]
 
     TA --> GA["`**GridAssignment**
     KDTree nearest-cell query
-    2° equal-area hemigrid`"]
+    2° equal-area hemigrid (default)`"]
 
-    GA --> OUT["`**PipelineResult**
+    GA --> OUT["`**Transformed Dataset**
     + cell_id coord
-    + pipeline metadata attrs`"]
+    returned alongside PipelineResult
+    (total_duration_seconds, to_metadata_dict())`"]
 
     OUT --> STORE["`**Icechunk Store**
     versioned, atomic commit`"]

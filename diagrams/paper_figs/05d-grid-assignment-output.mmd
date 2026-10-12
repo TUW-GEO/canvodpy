@@ -1,0 +1,17 @@
+flowchart TD
+    VOD_DS["VOD Dataset<br/>(per sid, epoch, cell)"]
+
+    subgraph GRIDDING[Hemispheric Grid Assignment]
+        GRID["Grid Construction<br/>(equal-area, equal-angle, ...)"]
+        KDTREE["KDTree Cell Assignment<br/>(O(n log m) spatial query)"]
+    end
+
+    subgraph OUTPUT[Output]
+        VOD_REPO["VOD Repository<br/>(per calculator/analysis group)"]
+        VIZ["Hemispheric Visualization<br/>(polar projection)"]
+    end
+
+    VOD_DS --> GRID
+    GRID --> KDTREE
+    KDTREE --> VOD_REPO
+    KDTREE --> VIZ

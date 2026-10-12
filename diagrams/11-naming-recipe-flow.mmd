@@ -1,12 +1,10 @@
 flowchart TD
     PHYS["`**Physical File**
     rref001a00.25_`"]
-    PHYS --> RECIPE["`**NamingRecipe**
+    PHYS --> RECIPE["`**SourcePattern**
     Field Extraction`"]
     RECIPE --> VF["`**VirtualFile**
     physical_path + canonical`"]
     VF --> CANON["`**Canonical Name**
     ROSR01TUW_R_20250010000_15M_05S_AA.sbf`"]
-    CANON --> CATALOG["`**FilenameCatalog**
-    DuckDB`"]
     CANON --> PIPELINE["`**Processing Pipeline**`"]

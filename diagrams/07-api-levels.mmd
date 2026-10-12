@@ -1,16 +1,16 @@
 flowchart TD
     subgraph L1["Level 1: Convenience"]
-        L1A["process_date('Rosalia', '2025001')"]
+        L1A["process_date('Rosalia', '2025001') 🚫 deprecated"]
         L1A --> L1B["Pipeline (internal)"]
         L1B --> L1C["PipelineOrchestrator"]
-        L1C --> L1D["Dask Workers"]
+        L1C --> L1D["Process Pool (loky)"]
     end
 
     subgraph L2["Level 2: Fluent"]
         L2A[".workflow('Rosalia')"]
         L2A --> L2B[".read('2025001')"]
         L2B --> L2C[".augment(source='final')"]
-        L2C --> L2E[".grid(grid_type='equal_area')"]
+        L2C --> L2E[".grid(kind='equal_area')"]
         L2E --> L2F[".vod(canopy, ref)"]
         L2F --> L2D[".result()"]
     end
@@ -19,7 +19,7 @@ flowchart TD
         L3A["Site('Rosalia')"]
         L3A --> L3B[".pipeline(n_workers=8)"]
         L3B --> L3C[".process_range(...)"]
-        L3C --> L3D["Reusable Dask Cluster"]
+        L3C --> L3D["Reusable Process Pool (loky)"]
         L3A --> L3E["site.vod.compute_bulk(date_range)"]
     end
 
@@ -28,12 +28,12 @@ flowchart TD
         L4A --> L4B["augment_with_ephemeris(ds)"]
         L4B --> L4G["assign_grid_cells(ds)"]
         L4G --> L4C["calculate_vod(canopy, ref)"]
-        L4C --> L4H["write_to_store(ds, group)"]
+        L4C --> L4H["*_to_file() variants<br/>e.g. calculate_vod_to_file()"]
         L4H --> L4D["XCom / NetCDF path"]
     end
 
     subgraph Shared["Shared Components"]
-        FM["FilenameMapper"]
+        FM["FilenameMapper<br/>(canvod-filemap, optional extra)"]
         EP["EphemerisProvider"]
         READER["GNSSDataReader"]
         STORE["Icechunk Store"]

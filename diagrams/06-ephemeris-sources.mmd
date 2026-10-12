@@ -6,21 +6,22 @@ flowchart TD
 
     subgraph EphemSources["🛰️ Ephemeris Sources"]
         direction TB
-        SP3["🏛️ Agency Final<br/>SP3 + CLK<br/><i>12-18 day latency</i><br/><i>~2-3 cm accuracy</i>"]
+        SP3["🏛️ Agency Final<br/>SP3 (+ CLK, optional)<br/><i>12-18 day latency</i><br/><i>~2-3 cm accuracy</i>"]
         SBFVIS["📡 SBF Broadcast<br/>SatVisibility block<br/><i>Immediate</i><br/><i>~1-2 m accuracy</i>"]
         NAV["📄 RINEX NAV 🚧<br/>.YYp / .YYn / .YYg<br/><i>Planned — not yet implemented</i>"]
     end
 
     subgraph Agency["Agency Final Pipeline"]
-        DL["FTP Download<br/>COD / ESA / IGS"] --> HERMI["Hermite Interpolation<br/>Orbits → target epochs"]
-        HERMI --> CLK["Clock Interpolation<br/>Piecewise linear"]
-        CLK --> ZCACHE["Zarr Cache<br/>aux_{date}.zarr"]
+        DL["FTP Download<br/>ESA (primary) / NASA CDDIS (fallback)<br/>agency product: COD default"] --> HERMI["Hermite Interpolation<br/>Orbits → target epochs"]
+        HERMI --> ZCACHE["Zarr Cache<br/>aux_{date}.zarr"]
+        DL -.->|"if fetch_clock"| CLK["Clock Interpolation (optional)<br/>Piecewise linear"]
+        CLK -.-> ZCACHE
     end
 
     subgraph Broadcast["Broadcast Pipeline"]
         SATVIS["SatVisibility Extract<br/>θ, φ from receiver FW"]
-        KEPLER["Keplerian Propagation<br/>GPS/Galileo/BeiDou orbital elements"]
-        RK4["RK4 Integration<br/>GLONASS state vectors"]
+        KEPLER["🚧 Keplerian Propagation<br/>GPS/Galileo/BeiDou orbital elements<br/><i>Planned — not yet implemented</i>"]
+        RK4["🚧 RK4 Integration<br/>GLONASS state vectors<br/><i>Planned — not yet implemented</i>"]
     end
 
     subgraph Transform["Coordinate Transform"]
@@ -34,12 +35,12 @@ flowchart TD
 
     SP3 --> DL
     SBFVIS --> SATVIS
-    NAV --> KEPLER
-    NAV --> RK4
+    NAV -.-> KEPLER
+    NAV -.-> RK4
 
     ZCACHE --> SCS
-    KEPLER --> SCS
-    RK4 --> SCS
+    KEPLER -.-> SCS
+    RK4 -.-> SCS
     SATVIS --> DIRECT
 
     SCS --> DS
@@ -56,3 +57,6 @@ flowchart TD
     style Transform fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
     style Output fill:#e0f2f1,stroke:#00695c,stroke-width:2px
     style NAV fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5
+    style CLK fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5
+    style KEPLER fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5
+    style RK4 fill:#fff9c4,stroke:#f9a825,stroke-width:2px,stroke-dasharray: 5 5

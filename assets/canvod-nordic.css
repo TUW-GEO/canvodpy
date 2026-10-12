@@ -743,6 +743,24 @@ body{
   line-height: 1.1;
 }
 
+/* The logo is the hero heading (docs/index.md) */
+.hero h1.hero-logo{
+  margin: 0 0 1rem;
+  line-height: 0;
+}
+.hero h1.hero-logo img{
+  width: 27rem;          /* 18rem high at the logo's aspect ratio */
+  max-width: 100%;       /* shrinks on narrow screens, keeping its shape */
+  height: auto;
+}
+
+/* The logo in the header: larger than the theme's 1.2rem icon size */
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg{
+  height: 3.2rem;
+  width: auto;
+}
+
 /* Tagline (second paragraph) */
 .hero p:first-of-type{
   font-size: 1.05rem;

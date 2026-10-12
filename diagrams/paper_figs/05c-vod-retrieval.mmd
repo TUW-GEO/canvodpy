@@ -1,0 +1,15 @@
+flowchart TD
+    ICECHUNK["RINEX/SBF Repository<br/>(from processing &amp; storage)"]
+
+    subgraph VOD[VOD Retrieval]
+        PAIR["Canopy-Reference Dataset Pairing"]
+        TAU["Zeroth-Order Tau-Omega Inversion"]
+        FORMULA["ΔSNR = SNR_canopy − SNR_reference<br/>T = 10^(ΔSNR/10), VOD = −ln(T)·cos(θ)"]
+    end
+
+    VOD_DS["VOD Dataset<br/>(per sid, epoch, cell)"]
+
+    ICECHUNK --> PAIR
+    PAIR --> TAU
+    TAU --> FORMULA
+    FORMULA --> VOD_DS
