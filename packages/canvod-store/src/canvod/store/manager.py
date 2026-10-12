@@ -83,6 +83,7 @@ class GnssResearchSite:
             )
 
         self.site_name = site_name
+        self._config = config
         self._site_config = sites[site_name]
         self._logger = structlog.get_logger(__name__).bind(site=site_name)
 
@@ -322,6 +323,49 @@ class GnssResearchSite:
         except Exception:
             return []
 
+    def ensure_store_metadata(
+        self, store_type: str, names: Sequence[str], source_format: str
+    ) -> dict[str, Any]:
+        """Make a store of the site ready for data: the step every run takes first.
+
+        Gives a new store its repository metadata from the settings and
+        refuses groups the metadata doesn't list (ADR 0014).
+
+        Parameters
+        ----------
+        store_type : str
+            ``"gnss_store"`` or ``"vod_store"``.
+        names : Sequence[str]
+            The groups about to be written: receivers and their pair groups,
+            or VOD analyses.
+        source_format : str
+            The reader format (GNSS store) or VOD calculator (VOD store) a
+            new store records.
+
+        Returns
+        -------
+        dict
+            The store's repository metadata.
+
+        Raises
+        ------
+        ValueError
+            If the store predates repository metadata (names the migrate
+            command), or a group is not listed in it (names the amend
+            command).
+        """
+        from canvod.store_metadata import ensure_store_metadata
+
+        store = self.vod_store if store_type == "vod_store" else self.gnss_store
+        return ensure_store_metadata(
+            store.store_path,
+            config=self._config,
+            site_name=self.site_name,
+            store_type=store_type,
+            source_format=source_format,
+            names=names,
+        )
+
     def ingest_receiver_data(
         self, dataset: xr.Dataset, receiver_name: str, commit_message: str | None = None
     ) -> None:
@@ -365,6 +409,11 @@ class GnssResearchSite:
 
         self._logger.info(f"Ingesting RINEX data for receiver '{receiver_name}'")
 
+        self.ensure_store_metadata(
+            "gnss_store",
+            [receiver_name],
+            self._site_config.receivers[receiver_name].reader_format,
+        )
         self.gnss_store.write_or_append_group(
             dataset=dataset, group_name=receiver_name, commit_message=commit_message
         )
@@ -509,6 +558,7 @@ class GnssResearchSite:
         group_name = f"{calculator_name}/{analysis_name}"
         self._logger.info(f"Storing VOD analysis results: '{group_name}'")
 
+        self.ensure_store_metadata("vod_store", [analysis_name], calculator_name)
         written = self.vod_store.write_or_append_vod_group(
             dataset=vod_dataset,
             group_name=group_name,
@@ -575,6 +625,12 @@ class GnssResearchSite:
                 )
             )
 
+        if items:
+            self.ensure_store_metadata(
+                "vod_store",
+                [entry["analysis_name"] for entry in items],
+                items[0]["calculator_name"],
+            )
         results = self.vod_store.write_or_append_vod_groups_batch(write_items)
 
         for group_name, result in results.items():

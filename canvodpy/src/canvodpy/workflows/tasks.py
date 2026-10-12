@@ -133,6 +133,22 @@ def _day_files(
     }
 
 
+def _store_groups(site_cfg: Any) -> list[str]:
+    """Every GNSS store group of a site: canopy receivers and pair groups."""
+    return [
+        group
+        for name, rcfg in site_cfg.receivers.items()
+        for group in (
+            [name]
+            if rcfg.type == "canopy"
+            else [
+                reference_store_group(name, canopy)
+                for canopy in site_cfg.resolve_paired_canopies(name)
+            ]
+        )
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Task 1 — check_day
 # ---------------------------------------------------------------------------
@@ -624,6 +640,8 @@ def process_rinex(
     aux_path = Path(aux_zarr_path)
 
     research_site = GnssResearchSite(site)
+    # The same step as ``canvodpy run`` takes before it writes data
+    research_site.ensure_store_metadata("gnss_store", _store_groups(site_cfg), "rinex3")
     receivers_processed: list[str] = []
     total_files_written = 0
     # Discovered only if the files are not passed in from check_rinex/check_sbf
@@ -815,6 +833,8 @@ def process_sbf(
     effective_aux_path = Path("/dev/null") if use_broadcast else Path(aux_zarr_path)
 
     research_site = GnssResearchSite(site)
+    # The same step as ``canvodpy run`` takes before it writes data
+    research_site.ensure_store_metadata("gnss_store", _store_groups(site_cfg), "sbf")
     receivers_processed: list[str] = []
     total_files_written = 0
     # Discovered only if the files are not passed in from check_rinex/check_sbf

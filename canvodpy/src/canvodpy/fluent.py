@@ -176,6 +176,7 @@ class FluentWorkflow:
         # State populated by steps
         self._datasets: dict[str, xr.Dataset] = {}
         self._vod_result: xr.Dataset | None = None
+        self._vod_pair: tuple[str, str] | None = None
         self._grid: Any = None
         self._last_date: str | None = None
 
@@ -390,6 +391,7 @@ class FluentWorkflow:
             sky_ds=ref_ds,
         )
         self._vod_result = calculator.calculate_vod()
+        self._vod_pair = (canopy, reference)
 
         self.log.info("vod_complete", canopy=canopy, reference=reference)
         return self
@@ -411,16 +413,55 @@ class FluentWorkflow:
 
     @terminal
     def to_store(self) -> FluentWorkflow:
-        """Execute the plan and write results to Icechunk storage."""
+        """Execute the plan and write results to Icechunk storage.
+
+        Takes the same step first as ``canvodpy run``: a new store gets
+        its metadata from the settings, and receivers or VOD analyses the
+        store's metadata doesn't list are refused. VOD goes to the group
+        ``{calculator}/{analysis}`` of the VOD analysis of the settings that
+        pairs the ``.vod()`` receivers, as ``site.vod`` writes it.
+
+        Raises
+        ------
+        ValueError
+            If no VOD analysis of the settings pairs the ``.vod()``
+            receivers, or the store refuses the write (names the command
+            to run).
+        """
+        research_site = self._site._site
         if self._vod_result is not None:
-            # Store VOD result — requires a store name convention
-            self.log.info("to_store_vod")
-            self._site.vod_store.write_or_append_group(self._vod_result, "vod_result")
+            analysis = self._vod_analysis()
+            self.log.info("to_store_vod", analysis=analysis)
+            research_site.ensure_store_metadata(
+                "vod_store", [analysis], self._vod_calculator_name
+            )
+            self._site.vod_store.write_or_append_group(
+                self._vod_result, f"{self._vod_calculator_name}/{analysis}"
+            )
         else:
+            research_site.ensure_store_metadata(
+                "gnss_store", list(self._datasets), self._reader_name
+            )
             for name, ds in self._datasets.items():
                 self.log.info("to_store_dataset", receiver=name)
                 self._site.gnss_store.write_or_append_group(ds, name)
         return self
+
+    def _vod_analysis(self) -> str:
+        """The VOD analysis of the settings that pairs the .vod() receivers."""
+        canopy, reference = self._vod_pair or (None, None)
+        for name, analysis in self._site.vod_analyses.items():
+            if (analysis.canopy_receiver, analysis.reference_receiver) == (
+                canopy,
+                reference,
+            ):
+                return name
+        msg = (
+            f"No VOD analysis in the settings pairs {canopy!r} with "
+            f"{reference!r} (sites.{self._site.name}.vod_analyses); add one "
+            "to store this VOD."
+        )
+        raise ValueError(msg)
 
     @terminal
     def plot(self) -> Any:

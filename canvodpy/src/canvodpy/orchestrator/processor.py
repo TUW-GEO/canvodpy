@@ -1440,31 +1440,19 @@ class RinexDataProcessor:
             command), or a receiver is not listed in it (names the amend
             command).
         """
-        from canvod.store_metadata import (
-            check_receivers,
-            collect_metadata,
-            ensure_metadata,
+        from canvod.store_metadata import ensure_store_metadata
+
+        resources = self._config.processing.params.resolve_resources()
+        ensure_store_metadata(
+            self.site.gnss_store.store_path,
+            config=self._config,
+            site_name=self.site.site_name,
+            store_type="gnss_store",
+            source_format=reader_format or self._reader_name,
+            names=receivers,
+            dask_workers=resources.get("n_workers"),
+            dask_threads_per_worker=resources.get("threads_per_worker"),
         )
-
-        store_path = self.site.gnss_store.store_path
-
-        def collect():
-            resources = self._config.processing.params.resolve_resources()
-            return collect_metadata(
-                config=self._config,
-                site_name=self.site.site_name,
-                site_config=self._get_site_config(),
-                store_type="gnss_store",
-                source_format=reader_format or self._reader_name,
-                store_path=store_path,
-                dask_workers=resources.get("n_workers"),
-                dask_threads_per_worker=resources.get("threads_per_worker"),
-            )
-
-        repository = ensure_metadata(
-            store_path, collect, site_name=self.site.site_name, store_type="gnss_store"
-        )
-        check_receivers(repository, receivers, store_path=store_path)
 
     def _compute_receiver_position(
         self,
@@ -4706,6 +4694,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
         receiver_name: str,
     ) -> list[Path]:
         version = get_version_from_pyproject()
+        self._ensure_gnss_store_metadata([receiver_name], self._reader_name)
         repo = self.site.gnss_store.repo
         rinex_files_sorted = sorted(rinex_files, key=lambda p: p.name)
 

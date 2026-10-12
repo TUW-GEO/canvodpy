@@ -5,12 +5,14 @@ from pathlib import Path
 import icechunk
 import pytest
 import zarr
+from canvod.utils import testing
 
 from canvod.store_metadata import (
     check_receivers,
     check_vod_analyses,
     commit_with_rebase,
     ensure_metadata,
+    ensure_store_metadata,
     metadata_exists,
 )
 from canvod.store_metadata.schema import (
@@ -183,3 +185,75 @@ class TestStoreRefusesDataWithoutMetadata:
                 repo.readonly_session(branch="main").store, mode="r"
             ).groups()
         )
+
+
+def _settings(tmp_path: Path):
+    """The made-up settings, with what a new store needs from its site."""
+    from canvod.config import load_config
+    from canvod.config.models import ReceiverConfig, VodAnalysisConfig
+
+    folder = tmp_path / "settings"
+    testing.write_settings(folder)
+    config = load_config(config_dir=folder).model_copy(deep=True)
+    site = config.sites.sites[testing.SITE_KEY]
+    site.store_description = "GNSS-T observations below an Ent canopy"
+    site.receivers["reference_01"] = ReceiverConfig(
+        type="reference", directory="01_reference", paired_canopies=["canopy_01"]
+    )
+    site.vod_analyses = {
+        "canopy_01_vs_reference_01": VodAnalysisConfig(
+            canopy_receiver="canopy_01", reference_receiver="reference_01"
+        )
+    }
+    return config
+
+
+def _ensure_store(tmp_path: Path, store_type: str, names: list[str]) -> dict:
+    return ensure_store_metadata(
+        _new_store(tmp_path),
+        config=_settings(tmp_path),
+        site_name=testing.SITE_KEY,
+        store_type=store_type,
+        source_format="rinex3",
+        names=names,
+    )
+
+
+class TestMetadataFirst:
+    """The step every run takes before it writes data."""
+
+    def test_a_new_gnss_store_gets_the_receivers_of_the_settings(self, tmp_path):
+        repository = _ensure_store(
+            tmp_path, "gnss_store", ["canopy_01", "reference_01_canopy_01"]
+        )
+
+        assert repository["identity"]["id"] == f"{testing.SITE_KEY}-gnss"
+        assert set(repository["instruments"]["receivers"]) == {
+            "canopy_01",
+            "reference_01",
+        }
+        assert metadata_exists(tmp_path / "store")
+
+    def test_an_unlisted_receiver_is_refused_with_the_amend_command(self, tmp_path):
+        with pytest.raises(ValueError, match="--add-receiver canopy_02"):
+            _ensure_store(tmp_path, "gnss_store", ["canopy_02"])
+
+    def test_a_new_vod_store_gets_the_vod_analyses_of_the_settings(self, tmp_path):
+        repository = _ensure_store(tmp_path, "vod_store", ["canopy_01_vs_reference_01"])
+
+        assert set(repository["vod_analyses"]) == {"canopy_01_vs_reference_01"}
+
+    def test_an_unlisted_vod_analysis_is_refused(self, tmp_path):
+        with pytest.raises(ValueError, match="--add-vod-analysis vod_result"):
+            _ensure_store(tmp_path, "vod_store", ["vod_result"])
+
+    def test_a_site_not_in_the_settings_is_refused(self, tmp_path):
+        with pytest.raises(ValueError, match=r"sites\.isengard"):
+            ensure_store_metadata(
+                _new_store(tmp_path),
+                config=_settings(tmp_path),
+                site_name="isengard",
+                store_type="gnss_store",
+                source_format="rinex3",
+                names=["canopy_01"],
+            )

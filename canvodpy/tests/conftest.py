@@ -1,10 +1,12 @@
 """Pytest configuration for canvodpy tests."""
 
+import json
 import os
 from pathlib import Path
 
 import pytest
 
+from canvod.config import loader as config_loader_module
 from canvod.config.models import ReceiverConfig, VodAnalysisConfig
 from canvod.config.models.references import ReferencesConfig
 from canvod.utils import testing
@@ -165,3 +167,33 @@ def rosalia_one_day(tmp_path, monkeypatch):
                 break
 
     return patched_config, counter
+
+
+@pytest.fixture
+def site_settings(tmp_path, monkeypatch):
+    """The made-up settings, with a reference receiver and a VOD analysis.
+
+    For code that loads the settings itself and creates the site's stores.
+    Returns the folder of the stores.
+    """
+    folder = tmp_path / "settings"
+    path = testing.write_settings(folder)
+    settings = json.loads(path.read_text())
+    site = settings["sites"][testing.SITE_KEY]
+    site["store_description"] = "GNSS-T observations below an Ent canopy"
+    site["receivers"]["reference_01"] = {
+        "type": "reference",
+        "directory": "01_reference",
+        "paired_canopies": ["canopy_01"],
+    }
+    site["vod_analyses"] = {
+        "canopy_01_vs_reference_01": {
+            "canopy_receiver": "canopy_01",
+            "reference_receiver": "reference_01",
+        }
+    }
+    path.write_text(json.dumps(settings))
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(folder))
+    config_loader_module._load_config_cached.cache_clear()
+    yield folder / "stores"
+    config_loader_module._load_config_cached.cache_clear()

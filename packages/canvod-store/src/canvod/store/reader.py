@@ -346,6 +346,7 @@ class IcechunkDataReader:
             if not rinex_files:
                 self._logger.warning(f"No RINEX files found in {rinex_dir}")
                 continue
+            self._site.ensure_store_metadata("gnss_store", [store_group], "rinex3")
 
             self._logger.info(
                 f"Processing {len(rinex_files)} RINEX files for {receiver_type}"

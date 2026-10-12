@@ -73,33 +73,16 @@ def ensure_vod_store_metadata(
         listed in it (names the amend command).
     """
     from canvod.config import load_config
-    from canvod.store_metadata import (
-        check_vod_analyses,
-        collect_metadata,
-        ensure_metadata,
+    from canvod.store_metadata import ensure_store_metadata
+
+    ensure_store_metadata(
+        site._site.vod_store.store_path,
+        config=load_config(),
+        site_name=site.name,
+        store_type="vod_store",
+        source_format=calculator_name,
+        names=analyses,
     )
-
-    config = load_config()
-    site_cfg = config.sites.sites.get(site.name)
-    if site_cfg is None:
-        msg = f"Site {site.name!r} is not in the settings (sites.{site.name})."
-        raise ValueError(msg)
-    store_path = site._site.vod_store.store_path
-
-    def collect():
-        return collect_metadata(
-            config=config,
-            site_name=site.name,
-            site_config=site_cfg,
-            store_type="vod_store",
-            source_format=calculator_name,
-            store_path=store_path,
-        )
-
-    repository = ensure_metadata(
-        store_path, collect, site_name=site.name, store_type="vod_store"
-    )
-    check_vod_analyses(repository, analyses, store_path=store_path)
 
 
 class VodComputer:

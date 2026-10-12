@@ -541,6 +541,76 @@ def ensure_metadata(
     return _open_repo(store_path).get_metadata()
 
 
+def ensure_store_metadata(
+    store_path: Path,
+    *,
+    config: Any,
+    site_name: str,
+    store_type: str,
+    source_format: str,
+    names: Iterable[str],
+    dask_workers: int | None = None,
+    dask_threads_per_worker: int | None = None,
+) -> dict[str, Any]:
+    """Make a store ready for a run's data: the step every run takes first.
+
+    Gives a new store its repository metadata from the settings, then
+    refuses ``names`` the metadata doesn't list: receivers and their pair
+    groups for a GNSS store, VOD analyses for a VOD store. Runs from the
+    command line, Python and Airflow all take this step, so they behave
+    the same.
+
+    Parameters
+    ----------
+    config
+        The settings of the run.
+    source_format
+        The reader format (GNSS store) or VOD calculator (VOD store) a new
+        store records.
+    names
+        The groups the run will write.
+
+    Returns
+    -------
+    dict
+        The store's repository metadata.
+
+    Raises
+    ------
+    ValueError
+        If the site is not in the settings, the store predates repository
+        metadata (names the migrate command), or a name is not listed in
+        the metadata (names the amend command).
+    """
+    from .collectors import collect_metadata
+
+    site_config = config.sites.sites.get(site_name)
+    if site_config is None:
+        msg = f"Site {site_name!r} is not in the settings (sites.{site_name})."
+        raise ValueError(msg)
+
+    def collect() -> StoreMetadata:
+        return collect_metadata(
+            config=config,
+            site_name=site_name,
+            site_config=site_config,
+            store_type=store_type,
+            source_format=source_format,
+            store_path=store_path,
+            dask_workers=dask_workers,
+            dask_threads_per_worker=dask_threads_per_worker,
+        )
+
+    repository = ensure_metadata(
+        store_path, collect, site_name=site_name, store_type=store_type
+    )
+    if store_type == "vod_store":
+        check_vod_analyses(repository, names, store_path=store_path)
+    else:
+        check_receivers(repository, names, store_path=store_path)
+    return repository
+
+
 def _amend_command(repository: dict[str, Any]) -> str:
     return store_command(
         "amend",

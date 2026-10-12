@@ -86,8 +86,11 @@ Asset Catalog (STAC) 1.1.
 
 ## How runs write it
 
-Every run (`canvodpy run`, `Site.pipeline()`, or Airflow) writes the
-metadata itself:
+Every run writes the metadata itself, whether it starts from the command
+line (`canvodpy run`), from Python (`Site.pipeline()`, `site.vod`,
+`FluentWorkflow.to_store()`, the write methods of `GnssResearchSite`) or
+from Airflow. All of them take the same step, `ensure_store_metadata()`,
+before they write data:
 
 1. Before the first write to a store, `collect_metadata()` builds the
    repository metadata from the settings, and `write_metadata()` writes
@@ -102,6 +105,9 @@ metadata itself:
 1. A run that writes a receiver (GNSS store) or a VOD analysis (VOD
    store) that the repository metadata doesn't list is refused. The
    error names the `canvodpy store amend` command that adds it.
+   `FluentWorkflow.to_store()` writes VOD to the VOD analysis of the
+   settings that pairs the receivers of its `.vod()` step, and refuses a
+   pair without one.
 
 A failed metadata write fails the commit, and the run stops with an
 error. A commit whose root group differs from the repository metadata,
@@ -203,9 +209,10 @@ none. Without it, the lists also hold the ACDD recommendations, marked
 | `fair` | Advice only: persistent identifier, access URL, cross-references, provenance |
 
 The tests also check a day of data exported to netCDF with IOOS
-compliance-checker, for CF 1.11 and ACDD 1.3. Two of its findings are
-known and accepted. CF has no standard names for GNSS observables, and
-UDUNITS has no unit for dB or dB-Hz.
+compliance-checker, for CF 1.11 and ACDD 1.3. Three of its findings are
+known and accepted. CF has no standard names for GNSS observables,
+UDUNITS has no unit for dB or dB-Hz, and the grid cell ids
+(`cell_id_*`) have no units because they are indices.
 
 ## Change the description: amendments
 
