@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from canvod.utils import testing
 
 _TEST_DATA = (
     Path(__file__).resolve().parents[3]
@@ -111,8 +112,8 @@ def _build_store_and_metadata(
             naming_authority="at.ac.tuwien",
         ),
         creator=Creator(
-            name="John Ronald Reuel Tolkien",
-            email="j.r.r.tolkien@the.inklings.org",
+            name=testing.PERSON_NAME,
+            email=testing.PERSON_EMAIL,
             institution="TU Wien",
             institution_ror="https://ror.org/04d836q62",
             department="Geodesy and Geoinformation",

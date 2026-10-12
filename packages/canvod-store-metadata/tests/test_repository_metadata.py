@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import icechunk
 import pytest
 import zarr
+from canvod.utils import testing
 
 from canvod.store_metadata import collect_metadata, metadata_exists, write_metadata
 from canvod.store_metadata.schema import ConfigSnapshot
@@ -45,7 +46,7 @@ def _config(naming_authority: str | None = "at.ac.tuwien") -> MagicMock:
     ):
         setattr(meta_cfg, name, None)
     meta_cfg.naming_authority = naming_authority
-    meta_cfg.store_description = "The forest of Fangorn."
+    meta_cfg.store_description = testing.SITE_DESCRIPTION
 
     proc = MagicMock(spec=["metadata", "references"])
     proc.metadata = meta_cfg
@@ -159,8 +160,10 @@ class TestIdentity:
     def test_a_geodesy_store_has_its_own_id_and_collection(self):
         from canvod.store_metadata.identity import stac_link, store_id
 
-        assert store_id("Fangorn", "geodesy_store") == "fangorn-geodesy"
-        assert stac_link("org.middle-earth", "fangorn-geodesy", "geodesy_store") == (
+        assert store_id(testing.CANOPY_SITE, "geodesy_store") == "fangorn-geodesy"
+        assert stac_link(
+            testing.NAMING_AUTHORITY, "fangorn-geodesy", "geodesy_store"
+        ) == (
             "../../gnss-geodesy/org.middle-earth.fangorn-geodesy/"
             "org.middle-earth.fangorn-geodesy.json"
         )

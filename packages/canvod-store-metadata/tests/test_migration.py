@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 import xarray as xr
 import zarr
+from canvod.utils import testing
 
 from canvod.store_metadata import (
     ensure_metadata,
@@ -25,14 +26,6 @@ from canvod.store_metadata.schema import (
     StoreIdentity,
     StoreMetadata,
     TemporalExtent,
-)
-
-#: The test site's description, from Tolkien's The Two Towers.
-_DESCRIPTION = (
-    "Certainly the forest of Fangorn is perilous — not least to those that "
-    "are too ready with their axes; and Fangorn himself, he is perilous "
-    "too; yet he is wise and kindly nonetheless. But now his long slow "
-    "wrath is brimming over, and all the forest is filled with it."
 )
 
 #: Two epochs of SNR, with attributes as older versions wrote them.
@@ -55,14 +48,14 @@ _SNR_DAY = xr.Dataset(
 
 
 def _old_metadata(
-    naming_authority: str | None = "org.middle-earth", *, complete: bool = True
+    naming_authority: str | None = testing.NAMING_AUTHORITY, *, complete: bool = True
 ) -> StoreMetadata:
     """``complete=False``: without the description and publisher older stores lack."""
     return StoreMetadata(
         identity=StoreIdentity(
             id="Fangorn/gnss_store",
             title="Fangorn Gnss Store",
-            description=_DESCRIPTION if complete else None,
+            description=testing.SITE_DESCRIPTION if complete else None,
             keywords=["GNSS", "SNR"],
             store_type="gnss_store",
             source_format="rinex3",
@@ -74,7 +67,9 @@ def _old_metadata(
             created="2025-01-01T00:00:00+00:00", updated="2025-06-01T00:00:00+00:00"
         ),
         spatial=SpatialExtent(
-            site=SiteInfo(name="Fangorn"), geospatial_lat=-29.12, geospatial_lon=26.21
+            site=SiteInfo(name=testing.CANOPY_SITE),
+            geospatial_lat=testing.LATITUDE,
+            geospatial_lon=testing.LONGITUDE,
         ),
         instruments=Instruments(
             receivers={
@@ -87,7 +82,7 @@ def _old_metadata(
 
 def _old_store(
     tmp_path: Path,
-    naming_authority: str | None = "org.middle-earth",
+    naming_authority: str | None = testing.NAMING_AUTHORITY,
     *,
     complete: bool = True,
 ) -> Path:
@@ -117,7 +112,7 @@ class TestMigration:
     ):
         path = _old_store(tmp_path)
 
-        migrate_metadata(path, who="JRRT")
+        migrate_metadata(path, who=testing.PERSON_INITIALS)
 
         repository = _repo(path).get_metadata()
         identity = repository["identity"]
@@ -135,19 +130,19 @@ class TestMigration:
     def test_migration_keeps_the_old_id_in_its_record(self, tmp_path):
         path = _old_store(tmp_path)
 
-        migrate_metadata(path, who="JRRT")
+        migrate_metadata(path, who=testing.PERSON_INITIALS)
 
         record = _repo(path).get_metadata()["migration"]
         assert record["old_id"] == "Fangorn/gnss_store"
         assert record["old_metadata_version"] == "1.0.0"
-        assert record["who"] == "JRRT"
+        assert record["who"] == testing.PERSON_INITIALS
         assert record["when"]
 
     def test_the_migrated_store_reads_in_the_current_form(self, tmp_path):
         path = _old_store(tmp_path)
         before = _repo(path).lookup_branch("main")
 
-        migrate_metadata(path, who="JRRT")
+        migrate_metadata(path, who=testing.PERSON_INITIALS)
 
         meta = read_metadata(path)
         assert not meta.written_before_migration
@@ -156,7 +151,7 @@ class TestMigration:
 
     def test_writers_accept_the_migrated_store(self, tmp_path):
         path = _old_store(tmp_path)
-        migrate_metadata(path, who="JRRT")
+        migrate_metadata(path, who=testing.PERSON_INITIALS)
 
         def fail():
             msg = "a migrated store needs no new metadata"
@@ -168,13 +163,15 @@ class TestMigration:
         path = _old_store(tmp_path, naming_authority=None)
 
         with pytest.raises(ValueError, match="--naming-authority"):
-            migrate_metadata(path, who="JRRT")
+            migrate_metadata(path, who=testing.PERSON_INITIALS)
         assert not _repo(path).get_metadata()
 
     def test_the_naming_authority_can_be_given(self, tmp_path):
         path = _old_store(tmp_path, naming_authority=None)
 
-        migrate_metadata(path, who="JRRT", naming_authority="eu.canvodpy")
+        migrate_metadata(
+            path, who=testing.PERSON_INITIALS, naming_authority="eu.canvodpy"
+        )
 
         assert _repo(path).get_metadata()["identity"]["id"] == "fangorn-gnss"
         assert (
@@ -190,17 +187,17 @@ class TestMigration:
 
     def test_migrating_twice_is_refused(self, tmp_path):
         path = _old_store(tmp_path)
-        migrate_metadata(path, who="JRRT")
+        migrate_metadata(path, who=testing.PERSON_INITIALS)
 
         with pytest.raises(ValueError, match="already"):
-            migrate_metadata(path, who="JRRT")
+            migrate_metadata(path, who=testing.PERSON_INITIALS)
 
     def test_a_store_without_any_metadata_is_refused(self, tmp_path):
         path = tmp_path / "plain"
         icechunk.Repository.create(storage=icechunk.local_filesystem_storage(str(path)))
 
         with pytest.raises(ValueError, match="no store metadata to migrate"):
-            migrate_metadata(path, who="JRRT")
+            migrate_metadata(path, who=testing.PERSON_INITIALS)
 
 
 class TestMigrationChecks:
@@ -208,7 +205,7 @@ class TestMigrationChecks:
         path = _old_store(tmp_path, complete=False)
 
         with pytest.raises(ValueError, match="would fail the standards checks") as e:
-            migrate_metadata(path, who="JRRT")
+            migrate_metadata(path, who=testing.PERSON_INITIALS)
         assert "summary" in str(e.value)
         assert "publisher.name" in str(e.value)
         assert "publisher.license" in str(e.value)
@@ -219,16 +216,16 @@ class TestMigrationChecks:
 
         migrate_metadata(
             path,
-            who="JRRT",
+            who=testing.PERSON_INITIALS,
             values={
-                "identity.description": _DESCRIPTION,
+                "identity.description": testing.SITE_DESCRIPTION,
                 "publisher.name": "U",
                 "publisher.license": "CC-BY-4.0",
             },
         )
 
         meta = read_metadata(path)
-        assert meta.identity.description == _DESCRIPTION
+        assert meta.identity.description == testing.SITE_DESCRIPTION
         assert not any(validate_all(meta, recommended=False).values())
         assert meta.migration.fields_given == [
             "identity.description",
@@ -240,7 +237,9 @@ class TestMigrationChecks:
         path = _old_store(tmp_path)
 
         with pytest.raises(ValueError, match="fixed field"):
-            migrate_metadata(path, who="JRRT", values={"identity.id": "other"})
+            migrate_metadata(
+                path, who=testing.PERSON_INITIALS, values={"identity.id": "other"}
+            )
         assert not _repo(path).get_metadata()
 
 
@@ -249,7 +248,7 @@ class TestVariableAttributes:
         path = _old_store(tmp_path)
         new = {"long_name": "Signal-to-noise ratio", "units": "dB"}
 
-        migrate_metadata(path, who="JRRT", variable_attrs={"SNR": new})
+        migrate_metadata(path, who=testing.PERSON_INITIALS, variable_attrs={"SNR": new})
 
         root = zarr.open_group(
             _repo(path).readonly_session(branch="main").store, mode="r"
@@ -264,7 +263,7 @@ class TestVariableAttributes:
     def test_without_variable_attrs_nothing_is_replaced(self, tmp_path):
         path = _old_store(tmp_path)
 
-        migrate_metadata(path, who="JRRT")
+        migrate_metadata(path, who=testing.PERSON_INITIALS)
 
         root = zarr.open_group(
             _repo(path).readonly_session(branch="main").store, mode="r"

@@ -5,6 +5,7 @@ from pathlib import Path
 import icechunk
 import pytest
 import zarr
+from canvod.utils import testing
 
 from canvod.store_metadata import (
     amend_metadata,
@@ -70,7 +71,10 @@ def _repository(path: Path) -> dict:
 
 
 def _amend(
-    path: Path, changes: dict, reason: str = "a better title", who: str = "JRRT"
+    path: Path,
+    changes: dict,
+    reason: str = "a better title",
+    who: str = testing.PERSON_INITIALS,
 ) -> str:
     return amend_metadata(path, changes, reason=reason, who=who, config=_CONFIG)
 
@@ -88,7 +92,7 @@ class TestAmend:
         assert record["old"] == "Rosalia GNSS Store"
         assert record["new"] == "Rosalia GNSS"
         assert record["reason"] == "a better title"
-        assert record["who"] == "JRRT"
+        assert record["who"] == testing.PERSON_INITIALS
         assert record["when"]
 
     def test_an_amendment_commits_the_new_root_copy(self, tmp_path):

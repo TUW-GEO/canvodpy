@@ -11,6 +11,8 @@ import typer
 import yaml
 from typer.testing import CliRunner
 
+from canvod.utils import testing
+
 runner = CliRunner()
 
 
@@ -31,8 +33,8 @@ class TestInteractiveWizard:
     def test_writes_all_answers_and_validates_cleanly(self, tmp_path):
         config_dir = tmp_path / "config"
         answers = (
-            "John Ronald Reuel Tolkien\n"
-            "j.r.r.tolkien@the.inklings.org\n"
+            f"{testing.PERSON_NAME}\n"
+            f"{testing.PERSON_EMAIL}\n"
             "TU Wien\n"
             f"{tmp_path / 'stores'}\n"
             f"{tmp_path / 'logs'}\n"
@@ -47,8 +49,8 @@ class TestInteractiveWizard:
         assert "Configuration is valid" in result.output
 
         text = (config_dir / "canvod-settings.yaml").read_text()
-        assert "author: John Ronald Reuel Tolkien" in text
-        assert "email: j.r.r.tolkien@the.inklings.org" in text
+        assert f"author: {testing.PERSON_NAME}" in text
+        assert f"email: {testing.PERSON_EMAIL}" in text
         assert "institution: TU Wien" in text
         assert f"stores_root_dir: {tmp_path / 'stores'}" in text
         assert f"log_dir: {tmp_path / 'logs'}" in text

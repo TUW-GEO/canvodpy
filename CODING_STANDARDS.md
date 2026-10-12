@@ -70,7 +70,8 @@ and only maintainers can create, move or delete release tags (`v*`).
 2. **Tests with the code.** A bug fix gets a test that failed before the
    fix. Expected values come from an independent source (a worked example,
    the specification, measured data), never recomputed the way the code
-   does it.
+   does it. A test that needs a person, a site or a position takes the
+   made-up ones in `canvod.utils.testing`, never real people or sites.
 3. **Docs in the same pull request**: the pages under `docs/` and the
    `AGENTS.md` files, wherever the change makes them wrong. A pull request
    that changes behavior (new logic, new code, changed code) without docs

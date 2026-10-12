@@ -12,6 +12,7 @@ from canvodpy.cli.app import main_app
 from typer.testing import CliRunner
 
 import canvod.config.loader as loader_module
+from canvod.utils import testing
 
 runner = CliRunner()
 
@@ -65,12 +66,12 @@ def _write_synthetic_store(store_path, n_slots: int = 2) -> None:
 
 
 def _write_config(
-    config_dir, stores_root, naming_authority=None, initials="JRRT"
+    config_dir, stores_root, naming_authority=None, initials=testing.PERSON_INITIALS
 ) -> None:
     config_dir.mkdir(parents=True, exist_ok=True)
     metadata = {
-        "author": "John Ronald Reuel Tolkien",
-        "email": "j.r.r.tolkien@the.inklings.org",
+        "author": testing.PERSON_NAME,
+        "email": testing.PERSON_EMAIL,
         "institution": "B",
     }
     if naming_authority is not None:
@@ -549,7 +550,7 @@ class TestStoreMigrateMetadata:
         assert result.exit_code == 0, result.output
         from canvod.store_metadata import read_metadata
 
-        assert read_metadata(store_path).migration.who == "JRRT"
+        assert read_metadata(store_path).migration.who == testing.PERSON_INITIALS
 
     def test_missing_initials_refuse_the_migration(self, tmp_path):
         config_dir, store_path = self._setup(tmp_path)
@@ -828,7 +829,7 @@ class TestStoreAmend:
         meta = read_metadata(path)
         assert meta.identity.title == "TestSite GNSS"
         assert meta.amendments[0].reason == "shorter title"
-        assert meta.amendments[0].who == "JRRT"
+        assert meta.amendments[0].who == testing.PERSON_INITIALS
 
     def test_missing_initials_refuse_the_amendment(self, tmp_path):
         config_dir, path = self._setup(tmp_path)
