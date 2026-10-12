@@ -359,9 +359,11 @@ store's `collection.json`.
 Scan a directory tree for all Icechunk stores and build a Polars DataFrame catalog:
 
 ```python
+from pathlib import Path
+
 from canvod.store_metadata import scan_stores
 
-df = scan_stores(Path("/Volumes/ExtremePro/stores/ExampleSite/"))
+df = scan_stores(Path("/data/stores/"))
 print(df)
 # ┌────────────────────────┬────────────┬─────────────┬──────────────┐
 # │ id                     ┆ store_type ┆ site        ┆ total_epochs │
