@@ -97,6 +97,26 @@ class TestAmend:
         assert record["who"] == testing.PERSON_INITIALS
         assert record["when"]
 
+    def test_a_field_under_an_unset_block_creates_the_block(self, tmp_path):
+        path = _store(tmp_path)
+        assert (
+            _repository(path)["instruments"]["receivers"]["canopy_01"]["antenna"]
+            is None
+        )
+
+        _amend(
+            path,
+            {"instruments.receivers.canopy_01.antenna.height_m": 1.5},
+            reason="antenna height measured",
+        )
+
+        repository = _repository(path)
+        antenna = repository["instruments"]["receivers"]["canopy_01"]["antenna"]
+        assert antenna["height_m"] == 1.5
+        (record,) = repository["amendments"]
+        assert record["old"] is None
+        assert record["new"] == 1.5
+
     def test_an_amendment_commits_the_new_root_copy(self, tmp_path):
         path = _store(tmp_path)
 

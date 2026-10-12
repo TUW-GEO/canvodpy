@@ -17,17 +17,26 @@ ADR 0014: each commit carries
 
 from __future__ import annotations
 
+import copy as copy_module
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import zarr
+from pydantic import ValidationError
 from zarr_cm import license as zarr_license
 from zarr_cm import proj as zarr_proj
 from zarr_cm import stac as zarr_stac
 
-from .schema import _METADATA_KEY, FORM_VERSION, ConfigSnapshot, StoreMetadata
+from .io import _set_field
+from .schema import (
+    _METADATA_KEY,
+    FORM_VERSION,
+    ConfigSnapshot,
+    RepositoryMetadata,
+    StoreMetadata,
+)
 from .summary import _array, summarize_root
 
 #: The conventions the root group follows. CF 1.11 is the newest version
@@ -229,14 +238,15 @@ def _replay_amendments(copy: dict[str, Any], repository: dict[str, Any]) -> bool
     amendments = repository.get("amendments", [])
     if amendments[: len(done)] != done:
         return False
-    replayed = {**copy, "amendments": amendments}
+    replayed = copy_module.deepcopy({**copy, "amendments": amendments})
     for amendment in amendments[len(done) :]:
-        *parents, leaf = amendment["field"].split(".")
-        target = replayed
-        for part in parents:
-            target[part] = dict(target.get(part, {}))
-            target = target[part]
-        target[leaf] = amendment["new"]
+        _set_field(replayed, amendment["field"], amendment["new"])
+    # An amendment under an unset section (e.g. a receiver's antenna) creates
+    # the whole section, with defaults for the fields it does not name.
+    try:
+        replayed = RepositoryMetadata.model_validate(replayed).model_dump(mode="json")
+    except ValidationError:
+        return False
     return replayed == repository
 
 

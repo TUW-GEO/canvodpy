@@ -258,16 +258,28 @@ def apply_updates(metadata: StoreMetadata, updates: dict[str, Any]) -> StoreMeta
     return _apply_updates(metadata, updates)
 
 
+def _set_field(data: dict[str, Any], key: str, value: Any) -> Any:
+    """Set the dotted ``key`` in ``data`` to ``value``; return the old value.
+
+    A section on the way that is missing or unset (``None``, e.g. a
+    receiver's ``antenna``) is created empty; the model check that follows
+    refuses it if it cannot be.
+    """
+    *parents, leaf = key.split(".")
+    target = data
+    for part in parents:
+        if target.get(part) is None:
+            target[part] = {}
+        target = target[part]
+    old = target.get(leaf)
+    target[leaf] = value
+    return old
+
+
 def _apply_updates(metadata: StoreMetadata, updates: dict[str, Any]) -> StoreMetadata:
     data = metadata.model_dump(mode="json")
-
     for key, value in updates.items():
-        parts = key.split(".")
-        target = data
-        for part in parts[:-1]:
-            target = target[part]
-        target[parts[-1]] = value
-
+        _set_field(data, key, value)
     return StoreMetadata.model_validate(data)
 
 

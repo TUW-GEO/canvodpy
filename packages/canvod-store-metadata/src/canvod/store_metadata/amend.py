@@ -16,7 +16,14 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from .io import _field_exists, _open_repo, check_who, commit_lock, commit_with_rebase
+from .io import (
+    _field_exists,
+    _open_repo,
+    _set_field,
+    check_who,
+    commit_lock,
+    commit_with_rebase,
+)
 from .schema import RepositoryMetadata, StoreMetadata
 
 #: Fields that define which store this is; a different value is a
@@ -135,12 +142,7 @@ def amend_metadata(
         data = copy.deepcopy(current)
         old: dict[str, Any] = {}
         for field, value in changes.items():
-            *parents, leaf = field.split(".")
-            target = data
-            for part in parents:
-                target = target.setdefault(part, {})
-            old[field] = target.get(leaf)
-            target[leaf] = value
+            old[field] = _set_field(data, field, value)
         try:
             amended = RepositoryMetadata.model_validate(data).model_dump(mode="json")
         except ValidationError as exc:

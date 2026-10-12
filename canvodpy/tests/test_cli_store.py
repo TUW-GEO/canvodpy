@@ -889,6 +889,43 @@ class TestStoreAmend:
         assert result.exit_code == 1
         assert "create a new one" in result.output
 
+    def test_a_field_under_an_unset_block_is_set(self, tmp_path):
+        config_dir, path = self._setup(tmp_path)
+
+        result = self._amend(
+            config_dir,
+            "--set",
+            "instruments.receivers.canopy_01.antenna.height_m=1.5",
+            "--reason",
+            "antenna height measured",
+            "--yes",
+        )
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata
+
+        antenna = read_metadata(path).instruments.receivers["canopy_01"].antenna
+        assert antenna.height_m == 1.5
+
+    def test_an_invalid_value_under_an_unset_block_is_refused(self, tmp_path):
+        config_dir, path = self._setup(tmp_path)
+
+        result = self._amend(
+            config_dir,
+            "--set",
+            "instruments.receivers.canopy_01.antenna.height_m=tall",
+            "--reason",
+            "antenna height measured",
+            "--yes",
+        )
+
+        assert result.exit_code == 1, result.output
+        assert result.exception is None or isinstance(result.exception, SystemExit)
+        assert "height_m" in result.output
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(path).instruments.receivers["canopy_01"].antenna is None
+
     def test_a_reason_is_required(self, tmp_path):
         config_dir, _ = self._setup(tmp_path)
 

@@ -233,6 +233,19 @@ class TestMigrationChecks:
             "publisher.name",
         ]
 
+    def test_a_field_under_an_unset_block_can_be_given(self, tmp_path):
+        path = _old_store(tmp_path)
+
+        migrate_metadata(
+            path,
+            who=testing.PERSON_INITIALS,
+            values={"instruments.receivers.canopy_01.antenna.height_m": 1.5},
+        )
+
+        antenna = read_metadata(path).instruments.receivers["canopy_01"].antenna
+        assert antenna is not None
+        assert antenna.height_m == 1.5
+
     def test_a_fixed_field_cannot_be_given(self, tmp_path):
         path = _old_store(tmp_path)
 
