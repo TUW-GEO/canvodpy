@@ -20,34 +20,37 @@ DEMO_DIR="$REPO_ROOT/demo"
 OUT_DIR="$REPO_ROOT/docs/notebooks/_build"
 
 NOTEBOOKS=(
-    00_cli_quickstart
-    01_naming_convention
-    02_rinex_reading
-    03_satellite_catalog
-    04_sbf_reading
-    05_ephemeris_coordinates
-    06_hemispheric_grids
-    07_vod_retrieval
-    09_store_metadata
-    10_visualization
-    11_configuration
-    12_api_overview
-    13_site_pipeline
-    14_functional_api
-    15_single_day_python
-    16_batch_processing
-    18_grid_exploration
+    01_cli_pipeline
+    02_configuration
+    03_convenience_speedrun
+    04_naming_convention
+    05_rinex_reading
+    06_sbf_reading
+    07_satellite_catalog
+    08_ephemeris_coordinates
+    09_hemispheric_grids
+    10_vod_retrieval
+    14_visualization
+    15_grid_exploration
+    16_grid_3d_gallery
+    17_api_overview
+    18_site_pipeline
+    19_workflow_single_day
+    20_workflow_batch_processing
 )
 
-# 08_icechunk_store and 17_store_operations are intentionally excluded here:
-# their bundled `rosalia_rinex` store fixture is an empty first-commit
-# snapshot with no populated data, so `marimo export html` fails with
-# `IcechunkError: object not found` before ever reaching this script.
-# Pre-existing, not introduced by this export pipeline -- fix the fixture,
-# then add both names to NOTEBOOKS above.
+# The store notebooks and the plugins notebook need canvodpy code that is
+# not on main yet (`canvodpy run --config-dir`,
+# `validate_all(..., recommended=...)`, `ComponentFactory.register(...,
+# replace=...)`, `canvod.utils.plugins`, all from PR #191): `marimo export
+# html` fails on them until it is merged.
+# Then move them back into NOTEBOOKS above, and give them `_build/` links in
+# docs/notebooks/index.md.
 SKIPPED_NOTEBOOKS=(
-    08_icechunk_store
-    17_store_operations
+    11_icechunk_store
+    12_store_metadata
+    13_workflow_store_operations
+    21_plugins
 )
 
 mkdir -p "$OUT_DIR"
@@ -63,17 +66,10 @@ export CANVOD_CONFIG_DIR="$REPO_ROOT/config"
 echo "== Static HTML exports, code included (${#NOTEBOOKS[@]}) =="
 for nb in "${NOTEBOOKS[@]}"; do
     echo "-- $nb"
-    if [ "$nb" = "00_cli_quickstart" ]; then
-        # This notebook gates its pipeline run behind an mo.ui.run_button(),
-        # which can never be "clicked" during a non-interactive export --
-        # bypass the gate so the static docs page shows a real run.
-        CANVOD_DEMO_RUN_PIPELINE=1 uv run --project "$REPO_ROOT" marimo export html "${nb}.py" -o "$OUT_DIR/${nb}.html"
-    else
-        uv run --project "$REPO_ROOT" marimo export html "${nb}.py" -o "$OUT_DIR/${nb}.html"
-    fi
+    uv run --project "$REPO_ROOT" marimo export html "${nb}.py" -o "$OUT_DIR/${nb}.html"
 done
 
-echo "== Skipped (pre-existing store-fixture failure, see comment above) =="
+echo "== Skipped (need PR #191, see comment above) =="
 for nb in "${SKIPPED_NOTEBOOKS[@]}"; do
     echo "-- $nb (not exported)"
 done

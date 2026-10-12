@@ -273,7 +273,7 @@ flowchart TD
 ---
 
 !!! example "Try it"
-    [06 — Hemispheric Grids](../../notebooks/_build/06_hemispheric_grids.html){target=_blank}
-    ([source](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/06_hemispheric_grids.py))
-    · [18 — Grid Exploration](../../notebooks/_build/18_grid_exploration.html){target=_blank}
-    ([source](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/18_grid_exploration.py))
+    [09 · Hemispheric Grids](../../notebooks/_build/09_hemispheric_grids.html){target=_blank}
+    ([source](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/09_hemispheric_grids.py))
+    · [15 · Grid Exploration](../../notebooks/_build/15_grid_exploration.html){target=_blank}
+    ([source](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/15_grid_exploration.py))

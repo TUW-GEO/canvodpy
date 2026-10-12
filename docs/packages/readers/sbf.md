@@ -566,5 +566,5 @@ the file, before the receiver has broadcast the ChannelStatus block.
 ---
 
 !!! example "Try it"
-    [04 — SBF Reading](../../notebooks/_build/04_sbf_reading.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/04_sbf_reading.py)
+    [06 · SBF Reading](../../notebooks/_build/06_sbf_reading.html){target=_blank}
+    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/06_sbf_reading.py)

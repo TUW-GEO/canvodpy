@@ -168,7 +168,7 @@ cs2 = Colorscale.from_colors(["#0072B2", "#D55E00", "#009E73"])
 
 ## Interactive Grid Exploration
 
-The `demo/20_grid_exploration.py` marimo notebook provides interactive
+The `demo/15_grid_exploration.py` marimo notebook provides interactive
 exploration of per-cell VOD data on the hemispheric grid:
 
 - **3D view** — Plotly Scatter3d with click-to-select cells (anywidget)
@@ -177,7 +177,7 @@ exploration of per-cell VOD data on the hemispheric grid:
 - **Timeseries** — per-cell VOD timeseries plotted for selected cells
 
 ```bash
-uv run marimo edit demo/20_grid_exploration.py
+uv run marimo edit demo/15_grid_exploration.py
 ```
 
 ---
@@ -197,5 +197,5 @@ uv run marimo edit demo/20_grid_exploration.py
 ---
 
 !!! example "Try it"
-    [10 — Visualization](../../notebooks/_build/10_visualization.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/10_visualization.py)
+    [14 · Visualization](../../notebooks/_build/14_visualization.html){target=_blank}
+    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/14_visualization.py)
