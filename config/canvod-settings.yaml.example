@@ -35,11 +35,10 @@ processing:
     department: null                     # Optional
     research_group: null                 # Optional
     website: null                        # Optional
-    license: CC-BY-4.0                   # SPDX identifier
-    publisher: null                      # Optional
+    license: CC-BY-4.0                   # Required to create a store: SPDX identifier
+    publisher: null                      # Required to create a store, e.g. your institution
     publisher_url: null                  # Optional
     naming_authority: null               # Required to create a store, e.g. "at.ac.tuwien"
-    store_description: null              # Required to create a store, e.g. "Beech forest GNSS-T research site"
     initials: null                       # Required to amend or migrate store metadata, e.g. "NFB"
 
   # ---------------------------------------------------------------------------
@@ -252,6 +251,9 @@ processing:
 sites:
   my_site:
     gnss_site_data_root: /path/to/your/gnss/data/my_site
+
+    # What the site's stores hold; required to create a store
+    store_description: null # e.g. "GNSS-T observations below a beech canopy"
 
     # Site geospatial metadata (used by canvod-store-metadata, all optional)
     description: null

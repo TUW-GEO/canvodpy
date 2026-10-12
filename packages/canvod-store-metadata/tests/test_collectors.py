@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from canvod.utils import testing
 
 from canvod.store_metadata.collectors import (
     collect_config_snapshot,
@@ -179,152 +180,127 @@ class TestCollectors:
         assert refs.funding[0].award_title == "SIRENE"
 
     def test_collect_metadata_full(self):
-        meta_cfg = MagicMock(
-            spec=[
-                "author",
-                "email",
-                "institution",
-                "orcid",
-                "institution_ror",
-                "department",
-                "research_group",
-                "website",
-                "publisher",
-                "publisher_url",
-                "license",
-                "naming_authority",
-                "store_description",
-            ]
-        )
-        meta_cfg.author = "Test"
-        meta_cfg.email = "test@example.com"
-        meta_cfg.institution = "TestU"
-        meta_cfg.orcid = None
-        meta_cfg.institution_ror = None
-        meta_cfg.department = None
-        meta_cfg.research_group = None
-        meta_cfg.website = None
-        meta_cfg.publisher = None
-        meta_cfg.publisher_url = None
-        meta_cfg.license = None
-        meta_cfg.naming_authority = "at.ac.tuwien"
-        meta_cfg.store_description = "A test store for TestSite."
-
-        proc = MagicMock(spec=["metadata", "references"])
-        proc.metadata = meta_cfg
-        proc.references = None
-
-        config = MagicMock(spec=["processing", "sids"])
-        config.processing = proc
-        config.sids = MagicMock(spec=[])
-
-        site_cfg = MagicMock(
-            spec=[
-                "latitude",
-                "longitude",
-                "altitude_m",
-                "description",
-                "country",
-                "receivers",
-            ]
-        )
-        site_cfg.latitude = 47.7
-        site_cfg.longitude = 16.3
-        site_cfg.altitude_m = 400.0
-        site_cfg.description = None
-        site_cfg.country = None
-        site_cfg.receivers = {}
-
-        with patch(
-            "canvod.store_metadata.collectors.collect_config_snapshot"
-        ) as mock_snap:
-            from canvod.store_metadata.schema import ConfigSnapshot
-
-            mock_snap.return_value = ConfigSnapshot(config_hash="abc123")
-            meta = collect_metadata(
-                config=config,
-                site_name="TestSite",
-                site_config=site_cfg,
-                store_type="gnss_store",
-                source_format="rinex3",
-                store_path=Path("/tmp/test"),
-            )
-        assert meta.identity.id == "testsite-gnss"
-        assert meta.identity.description == "A test store for TestSite."
-        assert meta.creator.name == "Test"
+        config, site_cfg = _settings()
+        meta = _collect(config, site_cfg)
+        assert meta.identity.id == "fangorn-gnss"
+        assert meta.identity.description == testing.SITE_DESCRIPTION
+        assert meta.creator.name == testing.PERSON_NAME
+        assert meta.publisher.name == testing.PUBLISHER
+        assert meta.publisher.license == "CC-BY-4.0"
         assert meta.processing.python is not None
 
-    def test_collect_metadata_refuses_a_missing_description(self):
-        """A store is not created without a description in the settings."""
-        meta_cfg = MagicMock(
-            spec=[
-                "author",
-                "email",
-                "institution",
-                "orcid",
-                "institution_ror",
-                "department",
-                "research_group",
-                "website",
-                "publisher",
-                "publisher_url",
-                "license",
-                "naming_authority",
-                # store_description intentionally omitted from spec
-            ]
+    @pytest.mark.parametrize(
+        ("missing", "named"),
+        [
+            ("store_description", r"sites\.fangorn\.store_description"),
+            ("publisher", r"processing\.metadata\.publisher"),
+            ("license", r"processing\.metadata\.license"),
+        ],
+    )
+    def test_collect_metadata_refuses_a_missing_required_field(self, missing, named):
+        """A store is not created without description, publisher or license."""
+        config, site_cfg = _settings()
+        owner = (
+            site_cfg if missing == "store_description" else config.processing.metadata
         )
-        meta_cfg.author = "Test"
-        meta_cfg.email = "test@example.com"
-        meta_cfg.institution = "TestU"
-        meta_cfg.orcid = None
-        meta_cfg.institution_ror = None
-        meta_cfg.department = None
-        meta_cfg.research_group = None
-        meta_cfg.website = None
-        meta_cfg.publisher = None
-        meta_cfg.publisher_url = None
-        meta_cfg.license = None
-        meta_cfg.naming_authority = "at.ac.tuwien"
+        setattr(owner, missing, None)
+        with pytest.raises(ValueError, match=named):
+            _collect(config, site_cfg)
 
-        proc = MagicMock(spec=["metadata", "references"])
-        proc.metadata = meta_cfg
-        proc.references = None
+    def test_collect_metadata_names_every_missing_field(self):
+        config, site_cfg = _settings()
+        site_cfg.store_description = None
+        config.processing.metadata.publisher = " "
+        config.processing.metadata.license = None
+        with pytest.raises(ValueError) as err:
+            _collect(config, site_cfg)
+        for name in ("store_description", "publisher", "license"):
+            assert name in str(err.value)
 
-        config = MagicMock(spec=["processing", "sids"])
-        config.processing = proc
-        config.sids = MagicMock(spec=[])
+    def test_collect_metadata_takes_the_deprecated_shared_description(self):
+        """Settings from before the per-site description still create stores."""
+        config, site_cfg = _settings()
+        site_cfg.store_description = None
+        config.processing.metadata.store_description = testing.SITE_DESCRIPTION
+        meta = _collect(config, site_cfg)
+        assert meta.identity.description == testing.SITE_DESCRIPTION
 
-        site_cfg = MagicMock(
-            spec=[
-                "latitude",
-                "longitude",
-                "altitude_m",
-                "description",
-                "country",
-                "receivers",
-            ]
+
+def _settings() -> tuple[MagicMock, MagicMock]:
+    """Settings for a new store at the made-up site, every required field set."""
+    meta_cfg = MagicMock(
+        spec=[
+            "author",
+            "email",
+            "institution",
+            "orcid",
+            "institution_ror",
+            "department",
+            "research_group",
+            "website",
+            "publisher",
+            "publisher_url",
+            "license",
+            "naming_authority",
+            "store_description",
+        ]
+    )
+    meta_cfg.author = testing.PERSON_NAME
+    meta_cfg.email = testing.PERSON_EMAIL
+    meta_cfg.institution = testing.INSTITUTION
+    for name in (
+        "orcid",
+        "institution_ror",
+        "department",
+        "research_group",
+        "website",
+        "publisher_url",
+        "store_description",
+    ):
+        setattr(meta_cfg, name, None)
+    meta_cfg.publisher = testing.PUBLISHER
+    meta_cfg.license = "CC-BY-4.0"
+    meta_cfg.naming_authority = testing.NAMING_AUTHORITY
+
+    proc = MagicMock(spec=["metadata", "references"])
+    proc.metadata = meta_cfg
+    proc.references = None
+
+    config = MagicMock(spec=["processing", "sids"])
+    config.processing = proc
+    config.sids = MagicMock(spec=[])
+
+    site_cfg = MagicMock(
+        spec=[
+            "latitude",
+            "longitude",
+            "altitude_m",
+            "description",
+            "store_description",
+            "country",
+            "receivers",
+        ]
+    )
+    site_cfg.latitude = testing.LATITUDE
+    site_cfg.longitude = testing.LONGITUDE
+    site_cfg.altitude_m = testing.ALTITUDE_M
+    site_cfg.description = None
+    site_cfg.store_description = testing.SITE_DESCRIPTION
+    site_cfg.country = None
+    site_cfg.receivers = {}
+    return config, site_cfg
+
+
+def _collect(config: MagicMock, site_cfg: MagicMock):
+    from canvod.store_metadata.schema import ConfigSnapshot
+
+    with patch("canvod.store_metadata.collectors.collect_config_snapshot") as snap:
+        snap.return_value = ConfigSnapshot(config_hash="abc123")
+        return collect_metadata(
+            config=config,
+            site_name="fangorn",
+            site_config=site_cfg,
+            store_type="gnss_store",
+            source_format="rinex3",
+            store_path=Path("/tmp/test"),
         )
-        site_cfg.latitude = 47.7
-        site_cfg.longitude = 16.3
-        site_cfg.altitude_m = 400.0
-        site_cfg.description = None
-        site_cfg.country = None
-        site_cfg.receivers = {}
-
-        with patch(
-            "canvod.store_metadata.collectors.collect_config_snapshot"
-        ) as mock_snap:
-            from canvod.store_metadata.schema import ConfigSnapshot
-
-            mock_snap.return_value = ConfigSnapshot(config_hash="abc123")
-            with pytest.raises(
-                ValueError, match=r"processing\.metadata\.store_description"
-            ):
-                collect_metadata(
-                    config=config,
-                    site_name="TestSite",
-                    site_config=site_cfg,
-                    store_type="gnss_store",
-                    source_format="rinex3",
-                    store_path=Path("/tmp/test"),
-                )

@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from canvod.config.models import ReceiverConfig, VodAnalysisConfig
+from canvod.utils import testing
 
 _CONFIG_ENV = ("CANVOD_CONFIG_DIR", "CANVOD_CONFIG_FILE")
 
@@ -115,11 +116,11 @@ def rosalia_one_day(tmp_path, monkeypatch):
     # New stores need a naming authority (ADR 0015); don't rely on the
     # local settings having one.
     patched_config.processing.metadata.naming_authority = "at.ac.tuwien"
-    patched_config.processing.metadata.store_description = (
-        "One day of GNSS observations from the Rosalia test data."
-    )
+    patched_config.processing.metadata.publisher = testing.PUBLISHER
+    patched_config.processing.metadata.license = "CC-BY-4.0"
     patched_config.sites.sites["rosalia"] = SiteConfig(
         gnss_site_data_root=str(_ROSALIA_DATA),
+        store_description="One day of GNSS observations from the test data.",
         latitude=47.7,
         longitude=16.3,
         receivers={

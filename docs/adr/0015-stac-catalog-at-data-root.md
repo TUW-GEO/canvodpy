@@ -8,7 +8,7 @@ the canvod-gnssgeodesy extension), with one item per store. An
 item has the site as its point geometry, the time range of the store,
 and one asset per stored dataset (a receiver's observations, its SBF
 metadata, its log book; a VOD analysis and its log book). Every asset
-points at the store and says which group to open. All links and hrefs
+points at the store and says which group to open. All links and `href` values
 are relative, so the same files work on a local disk and on S3, and the
 whole data root can be copied or moved.
 
@@ -41,12 +41,12 @@ releasing part of the data is issue #200.
   store directory, as before). An Icechunk repository directory is not
   a place for other files, nothing links the stores of a network, and a
   release of several stores has nowhere to live.
-- **The catalog in a separate place, with absolute hrefs.** The catalog
+- **The catalog in a separate place, with absolute `href` values.** The catalog
   would need to know every store's location and each store every
   catalog's location; moving the data breaks it. Absolute URLs for a
   copy published elsewhere can be added later as an option.
 - **A STAC API.** A server to run and keep alive; a static catalog is
-  read by pystac, STAC Browser and xpystac and can be loaded into an API
+  read by `pystac`, STAC Browser and `xpystac` and can be loaded into an API
   later.
 - **One collection per site.** Sites differ in receivers, not in what
   they produce; grouping by product (observations, VOD) is what users

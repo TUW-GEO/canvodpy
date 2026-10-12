@@ -275,6 +275,14 @@ class SiteConfig(_StrictModel):
         ..., description="Root directory for site GNSS data"
     )
     description: str | None = Field(None, description="Site description")
+    store_description: str | None = Field(
+        None,
+        description=(
+            "What the site's stores hold (e.g. 'GNSS-T observations below "
+            "a beech canopy'): written to StoreIdentity.description. "
+            "Required when a store of the site is created."
+        ),
+    )
     country: str | None = Field(None, description="Country code (ISO 3166-1)")
     latitude: float | None = Field(None, description="WGS84 latitude")
     longitude: float | None = Field(None, description="WGS84 longitude")

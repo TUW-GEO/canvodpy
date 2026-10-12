@@ -397,20 +397,36 @@ def collect_metadata(
     ------
     ValueError
         If the site name gives no valid store id, the naming authority
-        is missing or not a reverse DNS name, or the store description is
-        missing.
+        is missing or not a reverse DNS name, or the site's store
+        description, the publisher or the license is missing.
     """
     meta_cfg = config.processing.metadata
     sid = store_id(site_name, store_type)
     naming_authority = check_naming_authority(
         getattr(meta_cfg, "naming_authority", None)
     )
-    description = getattr(meta_cfg, "store_description", None)
-    if not description or not description.strip():
+    # The shared processing.metadata.store_description is deprecated; the
+    # setting warns when it is loaded.
+    description = (
+        getattr(site_config, "store_description", None)
+        or getattr(meta_cfg, "store_description", None)
+        or ""
+    ).strip()
+    required = {
+        f"sites.{site_name}.store_description (e.g. 'GNSS-T observations "
+        "below a beech canopy')": description,
+        "processing.metadata.publisher (e.g. your institution)": getattr(
+            meta_cfg, "publisher", None
+        ),
+        "processing.metadata.license (an SPDX identifier, e.g. 'CC-BY-4.0')": (
+            getattr(meta_cfg, "license", None)
+        ),
+    }
+    missing = [name for name, value in required.items() if not (value or "").strip()]
+    if missing:
         msg = (
-            "A store needs a description when it is created: set "
-            "processing.metadata.store_description in the settings "
-            "(e.g. 'Beech forest GNSS-T research site')."
+            "A store needs these settings when it is created; the metadata "
+            "standards (DataCite, STAC) require them: " + "; ".join(missing) + "."
         )
         raise ValueError(msg)
     now = datetime.now(UTC).isoformat()
@@ -420,7 +436,7 @@ def collect_metadata(
             id=sid,
             uuid=new_uuid(),
             title=f"{site_name} {store_type.replace('_', ' ').title()}",
-            description=description.strip(),
+            description=description,
             store_type=store_type,
             source_format=source_format,
             keywords=["GNSS", "VOD", site_name, source_format],

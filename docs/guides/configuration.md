@@ -101,8 +101,8 @@ processing.icechunk.chunk_strategies.vod_stores
 
 ## Minimal working example
 
-A valid `canvod-settings.yaml` needs only these fields; the rest have
-defaults:
+A `canvod-settings.yaml` that can create stores needs only these fields;
+the rest have defaults:
 
 ```yaml
 processing:
@@ -110,6 +110,9 @@ processing:
     author: Jane Scientist
     email: jane.scientist@example.edu
     institution: Example University
+    naming_authority: edu.example
+    publisher: Example University
+    license: CC-BY-4.0
 
   storage:
     stores_root_dir: /data/stores
@@ -120,6 +123,7 @@ processing:
 sites:
   mysite:
     gnss_site_data_root: /data/mysite
+    store_description: GNSS-T observations below a beech canopy
 
     receivers:
       reference_01:
@@ -149,10 +153,11 @@ processing:
     email: your.email@example.com
     institution: Your Institution
     naming_authority: org.example  # your domain in reverse; required to create a store
-    store_description: Example GNSS-T research site  # required to create a store
+    publisher: Example University  # required to create a store
+    license: CC-BY-4.0  # SPDX identifier; required to create a store
     initials: JD  # recorded with each change of store metadata; required to amend or migrate
     # optional: orcid, institution_ror, department, research_group,
-    # website, license, publisher, publisher_url
+    # website, publisher_url
 
   credentials:
     nasa_earthdata_acc_mail: null

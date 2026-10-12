@@ -33,6 +33,7 @@ from canvod.config.models import (
     VodAnalysisConfig,
     reference_store_group,
 )
+from canvod.utils import testing
 
 # ===================================================================
 # MetadataConfig
@@ -56,13 +57,14 @@ class TestMetadataConfig:
         )
         assert m.store_description is None
 
-    def test_store_description_accepts_value(self):
-        m = MetadataConfig(
-            author="Test User",
-            email="test@example.com",
-            institution="Test Uni",
-            store_description="A reference store for TestSite.",
-        )
+    def test_store_description_is_deprecated_but_still_read(self):
+        with pytest.warns(FutureWarning, match=r"sites\.<name>\.store_description"):
+            m = MetadataConfig(
+                author="Test User",
+                email="test@example.com",
+                institution="Test Uni",
+                store_description="A reference store for TestSite.",
+            )
         assert m.store_description == "A reference store for TestSite."
 
     def test_invalid_email_raises(self):
@@ -351,6 +353,10 @@ class TestReceiverConfig:
 
 
 class TestSiteConfig:
+    def test_store_description_per_site(self):
+        site = self._make_site(store_description=testing.SITE_DESCRIPTION)
+        assert site.store_description == testing.SITE_DESCRIPTION
+
     def _make_site(self, **overrides):
         defaults = {
             "gnss_site_data_root": "/data/site",

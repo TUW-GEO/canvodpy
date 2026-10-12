@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import EmailStr, Field, field_validator
+from pydantic import EmailStr, Field, field_validator, model_validator
 
 from .base import _StrictModel
 
@@ -77,8 +77,16 @@ class MetadataConfig(_StrictModel):
         None,
         description="Institution/group website",
     )
-    license: str | None = Field(None, description="SPDX license identifier")
-    publisher: str | None = Field(None, description="Publisher name")
+    license: str | None = Field(
+        None,
+        description=(
+            "SPDX license identifier (e.g. 'CC-BY-4.0'). Required when a "
+            "store is created."
+        ),
+    )
+    publisher: str | None = Field(
+        None, description="Publisher name. Required when a store is created."
+    )
     publisher_url: str | None = Field(None, description="Publisher URL")
     naming_authority: str | None = Field(
         None,
@@ -91,9 +99,8 @@ class MetadataConfig(_StrictModel):
     store_description: str | None = Field(
         None,
         description=(
-            "Human-readable description of the store itself (not the site) -- "
-            "written to StoreIdentity.description. Required when a store is "
-            "created."
+            "Deprecated: one description for the stores of every site. Use "
+            "sites.<name>.store_description instead."
         ),
     )
     initials: str | None = Field(
@@ -103,6 +110,23 @@ class MetadataConfig(_StrictModel):
             "Required to amend or migrate a store's metadata."
         ),
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_store_description(cls, data: object) -> object:
+        if isinstance(data, dict) and data.get("store_description") is not None:
+            import warnings
+
+            warnings.warn(
+                "The setting 'processing.metadata.store_description' is left "
+                "over from development and will be removed with the next major "
+                "version: it gives the stores of every site the same "
+                "description. Set 'store_description' on each site instead "
+                "(sites.<name>.store_description).",
+                FutureWarning,
+                stacklevel=2,
+            )
+        return data
 
     def to_attrs_dict(self) -> dict[str, str]:
         """Convert to a dictionary for xarray attributes.

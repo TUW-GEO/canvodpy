@@ -102,18 +102,22 @@ processing:
     institution: "Example University"
     institution_ror: "https://ror.org/..."  # optional
     department: "Department of Geodesy"     # optional
-    license: "CC-BY-4.0"                 # optional, SPDX identifier
-    publisher: "Example University"      # optional
+    license: "CC-BY-4.0"                 # required to create a store, SPDX identifier
+    publisher: "Example University"      # required to create a store
     naming_authority: "org.example"      # required to create a store
-    store_description: "Example GNSS-T research site"  # required to create a store
     initials: "JD"                       # required to amend or migrate
 ```
 
-The site description and location come from the site:
+DataCite requires the publisher and STAC requires the license, so a
+store isn't created without them.
+
+The description of the site's stores, the site description and the
+location come from the site:
 
 ```yaml
 sites:
   ExampleSite:
+    store_description: "GNSS-T observations below a beech canopy"  # required to create a store
     description: "Example GNSS-T research site"
     country: "AT"            # ISO 3166-1 code
     latitude: 47.70

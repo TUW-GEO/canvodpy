@@ -40,13 +40,13 @@ def _config(naming_authority: str | None = "at.ac.tuwien") -> MagicMock:
         "department",
         "research_group",
         "website",
-        "publisher",
         "publisher_url",
-        "license",
+        "store_description",
     ):
         setattr(meta_cfg, name, None)
+    meta_cfg.publisher = testing.PUBLISHER
+    meta_cfg.license = "CC-BY-4.0"
     meta_cfg.naming_authority = naming_authority
-    meta_cfg.store_description = testing.SITE_DESCRIPTION
 
     proc = MagicMock(spec=["metadata", "references"])
     proc.metadata = meta_cfg
@@ -64,6 +64,7 @@ def _site_config() -> MagicMock:
             "longitude",
             "altitude_m",
             "description",
+            "store_description",
             "country",
             "receivers",
             "vod_analyses",
@@ -77,6 +78,7 @@ def _site_config() -> MagicMock:
     site_cfg.longitude = 16.3
     site_cfg.altitude_m = 400.0
     site_cfg.description = None
+    site_cfg.store_description = testing.SITE_DESCRIPTION
     site_cfg.country = None
     from canvod.config.models import ReceiverConfig
 
