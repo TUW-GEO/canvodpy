@@ -330,7 +330,7 @@ def update_metadata(
 
     In a store with repository metadata (ADR 0014) the snapshot summary
     and the commit metadata are written by every commit, so this only
-    commits; a key naming a repository metadata field is refused.
+    commits, and only without ``updates``: every key is refused.
 
     Returns
     -------
@@ -340,7 +340,7 @@ def update_metadata(
     Raises
     ------
     ValueError
-        If a key names a repository metadata field.
+        If the store has repository metadata and ``updates`` is not empty.
     """
     repo = _open_repo(store_path)
     if repo.get_metadata():
@@ -349,6 +349,13 @@ def update_metadata(
             msg = (
                 f"{', '.join(refused)} belong to the repository metadata of the "
                 f"store at {store_path}; they change only by amendment."
+            )
+            raise ValueError(msg)
+        if updates:
+            msg = (
+                f"{', '.join(sorted(updates))} are computed by every commit "
+                f"to the store at {store_path} (snapshot summary, commit "
+                "metadata) and cannot be set; nothing was committed."
             )
             raise ValueError(msg)
         session = repo.writable_session(branch)

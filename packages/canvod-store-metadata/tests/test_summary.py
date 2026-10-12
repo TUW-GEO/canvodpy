@@ -96,7 +96,7 @@ def test_summary_written_into_metadata(tmp_path):
     store_path = _make_store(tmp_path / "store")
     write_metadata(store_path, _make_metadata())
 
-    update_metadata(store_path, summarize_store(store_path))
+    update_metadata(store_path, {})
 
     meta = read_metadata(store_path)
     assert meta.temporal.collected_start == "2025-01-01T00:00:00Z"

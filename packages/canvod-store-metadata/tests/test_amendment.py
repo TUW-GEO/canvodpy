@@ -224,7 +224,7 @@ class TestDeprecations:
     def test_update_metadata_warns_and_names_amend_metadata(self, tmp_path):
         path = _store(tmp_path)
         with pytest.warns(FutureWarning, match="amend_metadata"):
-            update_metadata(path, {"temporal.updated": "x"})
+            update_metadata(path, {})
 
     def test_apply_updates_warns_and_still_works(self):
         with pytest.warns(FutureWarning, match="amend_metadata"):

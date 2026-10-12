@@ -101,14 +101,32 @@ class TestIO:
             update_metadata(store_path, {"identity.title": "Another title"})
         assert read_metadata(store_path).identity.title == "Test Store"
 
-    def test_update_metadata_commits_summary_fields_as_computed(self, tmp_path):
+    @pytest.mark.parametrize(
+        "key", ["temporal.updated", "summaries.file_count", "processing.software"]
+    )
+    def test_update_metadata_refuses_computed_fields(self, tmp_path, key):
         store_path = _create_store(tmp_path / "store")
         write_metadata(store_path, _make_metadata())
+        repo = icechunk.Repository.open(
+            icechunk.local_filesystem_storage(str(store_path))
+        )
+        tip = repo.lookup_branch("main")
 
-        update_metadata(store_path, {"temporal.updated": "2026-06-01T00:00:00Z"})
+        with pytest.raises(ValueError, match=f"{key}.*computed by every commit"):
+            update_metadata(store_path, {key: 5})
+        assert repo.lookup_branch("main") == tip
 
-        # The commit writes the time it was made, not the value passed.
-        assert read_metadata(store_path).temporal.updated != "2026-06-01T00:00:00Z"
+    def test_update_metadata_without_keys_commits(self, tmp_path):
+        store_path = _create_store(tmp_path / "store")
+        write_metadata(store_path, _make_metadata())
+        repo = icechunk.Repository.open(
+            icechunk.local_filesystem_storage(str(store_path))
+        )
+        tip = repo.lookup_branch("main")
+
+        update_metadata(store_path, {})
+
+        assert repo.lookup_branch("main") != tip
 
     def test_read_missing_raises(self, tmp_path):
         store_path = _create_store(tmp_path / "store")
