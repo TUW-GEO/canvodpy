@@ -13,9 +13,10 @@ Commands
     tag that touched the package's folder. Helps to choose the versions.
 ``prepare NAME=VERSION ...``
     Checks the choice, writes the versions, canvodpy's pins and a changelog
-    section per package (from the commits that touched its folder), runs
-    ``uv lock`` and commits exactly these files on ``release/v<canvodpy
-    version>``. No tag.
+    section per package (from the commits that touched its folder), canvodpy's
+    version and the release date in the citation files (Zenodo reads the
+    version from them), runs ``uv lock`` and commits exactly these files on
+    ``release/v<canvodpy version>``. No tag.
 ``tag``
     On the merged release commit: creates the annotated tags of every package
     whose version has no tag yet (``canvod-store-v1.1.0``; ``v1.1.0`` for
@@ -58,6 +59,16 @@ SUBJECT = re.compile(
     r"^(?P<type>\w+)(?:\((?P<scope>[^)]*)\))?(?P<bang>!)?: (?P<text>.+)$"
 )
 INSERTION_MARKER = "<!-- insertion marker -->"
+
+#: Citation file -> (version field, date field), each a pattern whose group 1
+#: is kept and whose value is replaced. They describe canvodpy as a whole, so
+#: they carry canvodpy's version; Zenodo reads the version of a record from
+#: ``CITATION.cff`` and ``.zenodo.json``.
+CITATION_FIELDS = {
+    "CITATION.cff": (r"(?m)^(version: ).*$", r"(?m)^(date-released: ).*$"),
+    ".zenodo.json": (r'("version": )"[^"]*"', r'("publication_date": )"[^"]*"'),
+    "codemeta.json": (r'("version": )"[^"]*"', r'("datePublished": )"[^"]*"'),
+}
 
 
 @dataclass
@@ -269,8 +280,43 @@ def _set_pin(umbrella: Package, name: str, version: Version) -> None:
     umbrella.pyproject.write_text(new)
 
 
+def _missing_citation_fields(root: Path = ROOT) -> list[str]:
+    """The citation files and fields ``_set_citation`` cannot find."""
+    missing = []
+    for name, fields in CITATION_FIELDS.items():
+        path = root / name
+        if not path.exists():
+            missing.append(f"{name} is missing.")
+            continue
+        text = path.read_text()
+        missing += [
+            f"{name} has no field matching {field!r}."
+            for field in fields
+            if re.search(field, text) is None
+        ]
+    return missing
+
+
+def _set_citation(version: Version, date: dt.date, root: Path = ROOT) -> None:
+    """Write canvodpy's version and the release date into the citation files."""
+    for name, (version_field, date_field) in CITATION_FIELDS.items():
+        path = root / name
+        text = path.read_text()
+        # The date is quoted everywhere; the version only in the JSON files.
+        quoted_version = str(version) if name == "CITATION.cff" else f'"{version}"'
+        values = {version_field: quoted_version, date_field: f'"{date.isoformat()}"'}
+        for field, value in values.items():
+            text, count = re.subn(field, lambda m, v=value: f"{m[1]}{v}", text, count=1)
+            if count != 1:
+                raise SystemExit(
+                    f"{name} has no field matching {field!r}; add it before releasing."
+                )
+        path.write_text(text)
+
+
 def _release_files(packages: dict[str, Package]) -> list[Path]:
     files = [ROOT / "pyproject.toml", ROOT / "uv.lock"]
+    files += [ROOT / name for name in CITATION_FIELDS]
     for pkg in packages.values():
         files += [pkg.pyproject, pkg.changelog]
     return files
@@ -323,6 +369,10 @@ def prepare(packages: dict[str, Package], args: list[str]) -> int:
                     f"{pkg.name} requires {req}, which excludes {req.name} {chosen[req.name]}: "
                     f"check {pkg.name} against the new version and widen its range by hand."
                 )
+    problems += [
+        f"{problem} Zenodo reads the version from it; add it before releasing."
+        for problem in _missing_citation_fields()
+    ]
     dirty = _git(
         "status",
         "--porcelain",
@@ -349,6 +399,7 @@ def prepare(packages: dict[str, Package], args: list[str]) -> int:
                 pkg, _changelog_section(pkg, new, _commits(pkg, _last_tag(pkg)))
             )
     _set_version(umbrella, chosen[UMBRELLA])
+    _set_citation(chosen[UMBRELLA], dt.date.today())
     pins = {req.name: str(req.specifier) for req in umbrella.requirements()}
     commits = _commits(umbrella, _last_tag(umbrella))
     section = _changelog_section(
