@@ -18,7 +18,10 @@ from filelock import FileLock, Timeout
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
+from .icechunk_logs import apply_icechunk_log_filter
 from .schema import _METADATA_KEY, Amendment, RepositoryMetadata, StoreMetadata
+
+apply_icechunk_log_filter()
 
 #: Name of the lock file in the store directory (see :func:`commit_lock`).
 COMMIT_LOCK_NAME = ".canvodpy-commit.lock"
@@ -103,13 +106,17 @@ def commit_with_rebase(
         metadata (written by an older canvodpy or edited by hand).
     """
     with commit_lock(store_path):
-        repository = _open_repo(Path(store_path)).get_metadata()
+        repo = _open_repo(Path(store_path))
+        repository = repo.get_metadata()
         if repository:
             from .snapshot import prepare_commit
 
-            # Rebase first, so the summary describes everything the commit
-            # will hold and the root group is changed by this commit only.
-            session.rebase(icechunk.ConflictDetector())
+            # Rebase first, if the branch moved, so the summary describes
+            # everything the commit will hold and the root group is changed
+            # by this commit only.
+            branch = session.branch
+            if branch is None or repo.lookup_branch(branch) != session.snapshot_id:
+                session.rebase(icechunk.ConflictDetector())
             if config is None:
                 from canvod.config import load_config
 

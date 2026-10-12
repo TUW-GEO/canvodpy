@@ -29,6 +29,7 @@ from canvod.config.models import (
 )
 from canvod.readers.base import validate_vod_dataset
 from canvod.store_metadata import RESERVED_GROUP
+from canvod.store_metadata.icechunk_logs import apply_icechunk_log_filter
 from canvod.store_metadata.io import commit_lock, commit_with_rebase
 from canvod.utils.logging import get_run_id, stage_timer
 from canvod.utils.tools import get_version_from_pyproject, sanitize_directory
@@ -41,21 +42,7 @@ from canvod.store.time_encoding import with_time_units
 from canvod.store.viewer import add_rich_display_to_store
 from canvod.store.zarr_concurrency import scoped_zarr_concurrency
 
-# Two Icechunk warnings that don't apply to canVODpy's stores are hidden;
-# every other Icechunk warning is shown. ``ICECHUNK_LOG``, when set,
-# replaces this filter.
-# - icechunk_arrow_object_store, on every store opened: the local file system
-#   is not safe for concurrent commits. canVODpy runs every commit under
-#   ``commit_lock``.
-# - icechunk_storage::readback, once per process: without
-#   ``unsafe_use_metadata``, a lost reply to a conditional write may surface
-#   as a spurious conflict. Icechunk's local file system storage can't store
-#   that metadata (it refuses ``unsafe_use_metadata=True``) and makes one try
-#   per write, so no reply is lost and retried.
-if "ICECHUNK_LOG" not in os.environ:
-    icechunk.set_logs_filter(
-        "warn,icechunk_arrow_object_store=error,icechunk_storage::readback=error"
-    )
+apply_icechunk_log_filter()  # see canvod.store_metadata.icechunk_logs
 
 if TYPE_CHECKING:
     from canvod.config.models import CanvodConfig

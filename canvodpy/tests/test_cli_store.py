@@ -64,17 +64,16 @@ def _write_synthetic_store(store_path, n_slots: int = 2) -> None:
     loader_module.load_config.cache_clear()
 
 
-def _write_config(config_dir, stores_root) -> None:
+def _write_config(config_dir, stores_root, naming_authority=None) -> None:
     config_dir.mkdir(parents=True, exist_ok=True)
+    metadata = {"author": "A", "email": "a@example.com", "institution": "B"}
+    if naming_authority is not None:
+        metadata["naming_authority"] = naming_authority
     (config_dir / "canvod-settings.yaml").write_text(
         yaml.safe_dump(
             {
                 "processing": {
-                    "metadata": {
-                        "author": "A",
-                        "email": "a@example.com",
-                        "institution": "B",
-                    },
+                    "metadata": metadata,
                     "storage": {"stores_root_dir": str(stores_root)},
                 },
                 "sites": {
@@ -579,6 +578,42 @@ class TestStoreMigrateMetadata:
         from canvod.store_metadata import read_metadata
 
         assert read_metadata(store_path).identity.naming_authority == "com.example"
+
+    def test_the_naming_authority_comes_from_the_settings(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root, naming_authority="org.example")
+        store_path = stores_root / "TestSite" / "rinex"
+        _write_old_form_store(store_path, naming_authority=None)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "gnss", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(store_path).identity.naming_authority == "org.example"
+
+    def test_the_store_keeps_its_own_naming_authority(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root, naming_authority="org.example")
+        store_path = stores_root / "TestSite" / "rinex"
+        _write_old_form_store(store_path, naming_authority="at.ac.tuwien")
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "gnss", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(store_path).identity.naming_authority == "at.ac.tuwien"
 
     def test_missing_fields_refuse_the_migration_and_are_listed(self, tmp_path):
         config_dir = tmp_path / "config"

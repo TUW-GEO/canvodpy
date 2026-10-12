@@ -537,7 +537,9 @@ def migrate_metadata_command(
             "--naming-authority",
             help=(
                 "Your institution's domain in reverse order, for example "
-                "at.ac.tuwien, for a store whose metadata has no naming authority."
+                "at.ac.tuwien, for a store whose metadata has no naming "
+                "authority. Default: processing.metadata.naming_authority in "
+                "the settings."
             ),
         ),
     ] = None,
@@ -582,6 +584,10 @@ def migrate_metadata_command(
         )
         return
 
+    if naming_authority is None and not old.identity.naming_authority:
+        from canvod.config import load_config
+
+        naming_authority = load_config().processing.metadata.naming_authority
     new_id = store_id(old.spatial.site.name, old.identity.store_type)
     console.print(f"\n[bold]{site}[/bold] — {store} store ({path})")
     console.print(f"  Store id:          {old.identity.id} -> {new_id}")
