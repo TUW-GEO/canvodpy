@@ -431,6 +431,18 @@ def store_command(command: str, site_name: str, store_type: str) -> str:
     return f"canvodpy store {command} {site_name} --store {kind}"
 
 
+def _written_before_metadata(repo: icechunk.Repository) -> bool:
+    """Whether a store without repository metadata holds data or old-form
+    metadata, so it predates ADR 0014 and needs migration.
+    """
+    session = repo.readonly_session(branch="main")
+    try:
+        root = zarr.open_group(session.store, mode="r")
+    except zarr_errors.GroupNotFoundError:
+        return False
+    return _METADATA_KEY in root.attrs or next(root.groups(), None) is not None
+
+
 def ensure_metadata(
     store_path: Path,
     collect: Callable[[], StoreMetadata],
@@ -455,14 +467,7 @@ def ensure_metadata(
         existing = repo.get_metadata()
         if existing:
             return existing
-        session = repo.readonly_session(branch="main")
-        try:
-            root = zarr.open_group(session.store, mode="r")
-        except zarr_errors.GroupNotFoundError:
-            root = None
-        if root is not None and (
-            _METADATA_KEY in root.attrs or next(root.groups(), None) is not None
-        ):
+        if _written_before_metadata(repo):
             msg = (
                 f"The store at {store_path} was written before stores kept "
                 "repository metadata; move it to the current form first:\n"

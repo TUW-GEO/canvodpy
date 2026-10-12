@@ -266,3 +266,9 @@ write_stac_catalog(Path("/data/stores/"), output_path=Path("/data/stac/catalog.j
 `<root_dir>/catalog.json`) and a STAC collection next to each store.
 `scan_stores_as_stac()` returns the catalog as a dictionary without writing
 it.
+
+A store written before stores kept repository metadata gets
+`needs_migration` in its row of `scan_stores()`, and `migrate_command`
+gives the command that migrates it. The catalog functions refuse a
+directory with such a store, or with a store that has no metadata at all,
+and name each one: a catalog lists every store or none.

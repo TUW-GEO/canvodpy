@@ -8,7 +8,13 @@ from typing import Any
 
 import polars as pl
 
-from .io import metadata_exists, read_metadata
+from .io import (
+    MIGRATE_COMMAND,
+    _open_repo,
+    _written_before_metadata,
+    read_metadata,
+    store_command,
+)
 from .schema import StoreMetadata
 
 
@@ -59,6 +65,8 @@ def _metadata_to_row(store_path: Path, meta: StoreMetadata) -> dict[str, Any]:
         "file_count": meta.summaries.file_count,
         "store_size_mb": meta.summaries.store_size_mb,
         "path": str(store_path),
+        "needs_migration": False,
+        "migrate_command": None,
     }
 
 
@@ -84,6 +92,8 @@ def _empty_row(store_path: Path) -> dict[str, Any]:
         "file_count": None,
         "store_size_mb": None,
         "path": str(store_path),
+        "needs_migration": False,
+        "migrate_command": None,
     }
 
 
@@ -107,11 +117,69 @@ _SCHEMA = {
     "file_count": pl.Int64,
     "store_size_mb": pl.Float64,
     "path": pl.Utf8,
+    "needs_migration": pl.Boolean,
+    "migrate_command": pl.Utf8,
 }
+
+
+def _store_state(store_path: Path) -> str:
+    """``"current"``, ``"needs_migration"`` or ``"empty"`` (no metadata, no data)."""
+    repo = _open_repo(store_path)
+    if repo.get_metadata():
+        return "current"
+    return "needs_migration" if _written_before_metadata(repo) else "empty"
+
+
+def _row(store_path: Path) -> dict[str, Any]:
+    """A store's catalog row; one needing migration says so, with the command."""
+    state = _store_state(store_path)
+    if state == "empty":
+        return _empty_row(store_path)
+    if state == "current":
+        return _metadata_to_row(store_path, read_metadata(store_path))
+    try:
+        meta = read_metadata(store_path)
+    except KeyError:  # data, but not even old-form metadata
+        row, command = _empty_row(store_path), MIGRATE_COMMAND
+    else:
+        row = _metadata_to_row(store_path, meta)
+        command = store_command(
+            "migrate-metadata", meta.spatial.site.name, meta.identity.store_type
+        )
+    return {**row, "needs_migration": True, "migrate_command": command}
+
+
+def _check_catalog_stores(store_paths: list[Path]) -> None:
+    """Refuse a catalog that would leave out a store.
+
+    Raises
+    ------
+    ValueError
+        If a store needs migration or has no metadata.
+    """
+    problems = []
+    for sp in store_paths:
+        state = _store_state(sp)
+        if state == "needs_migration":
+            problems.append(
+                f"  {sp}: written before stores kept repository metadata; "
+                f"migrate it with {MIGRATE_COMMAND}"
+            )
+        elif state == "empty":
+            problems.append(f"  {sp}: has no metadata and no data")
+    if problems:
+        msg = (
+            "A catalog lists every store under its data root; these stores "
+            "cannot be listed:\n" + "\n".join(problems)
+        )
+        raise ValueError(msg)
 
 
 def scan_stores(root_dir: Path, recursive: bool = True) -> pl.DataFrame:
     """Walk directories, find Icechunk stores, build a catalog.
+
+    A store written before stores kept repository metadata is listed with
+    ``needs_migration`` and the command that migrates it.
 
     Returns
     -------
@@ -119,17 +187,7 @@ def scan_stores(root_dir: Path, recursive: bool = True) -> pl.DataFrame:
         One row per store with metadata columns.
     """
     store_paths = _find_icechunk_stores(root_dir, recursive)
-    rows: list[dict[str, Any]] = []
-
-    for sp in store_paths:
-        if metadata_exists(sp):
-            try:
-                meta = read_metadata(sp)
-                rows.append(_metadata_to_row(sp, meta))
-            except Exception:
-                rows.append(_empty_row(sp))
-        else:
-            rows.append(_empty_row(sp))
+    rows = [_row(sp) for sp in store_paths]
 
     if not rows:
         return pl.DataFrame(schema=_SCHEMA)
@@ -138,17 +196,20 @@ def scan_stores(root_dir: Path, recursive: bool = True) -> pl.DataFrame:
 
 
 def scan_stores_as_stac(root_dir: Path) -> dict[str, Any]:
-    """Build a STAC Catalog JSON dict from stores."""
+    """Build a STAC Catalog JSON dict from stores.
+
+    Raises
+    ------
+    ValueError
+        If a store needs migration or has no metadata: the catalog would
+        leave it out.
+    """
     store_paths = _find_icechunk_stores(root_dir)
+    _check_catalog_stores(store_paths)
     collections: list[dict[str, Any]] = []
 
     for sp in store_paths:
-        if not metadata_exists(sp):
-            continue
-        try:
-            meta = read_metadata(sp)
-        except Exception:
-            continue
+        meta = read_metadata(sp)
 
         collection: dict[str, Any] = {
             "type": "Collection",
@@ -319,6 +380,11 @@ def write_stac_catalog(
     -------
     Path
         The written catalog JSON file path.
+
+    Raises
+    ------
+    ValueError
+        If a store needs migration or has no metadata.
     """
     catalog = scan_stores_as_stac(root_dir)
 
@@ -327,20 +393,14 @@ def write_stac_catalog(
 
     # Rewrite links to point to actual collection.json files
     if write_collections:
-        store_paths = _find_icechunk_stores(root_dir)
-        for sp in store_paths:
-            if not metadata_exists(sp):
-                continue
-            try:
-                coll_path = write_stac_collection(sp)
-                # Update catalog link to relative path
-                rel = coll_path.relative_to(output_path.parent)
-                for link in catalog["links"]:
-                    meta = read_metadata(sp)
-                    if link.get("href") == f"#{meta.identity.id}":
-                        link["href"] = str(rel)
-            except Exception:
-                continue
+        for sp in _find_icechunk_stores(root_dir):
+            coll_path = write_stac_collection(sp)
+            # Update catalog link to relative path
+            rel = coll_path.relative_to(output_path.parent)
+            store_id = read_metadata(sp).identity.id
+            for link in catalog["links"]:
+                if link.get("href") == f"#{store_id}":
+                    link["href"] = str(rel)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(catalog, indent=2, default=str))
