@@ -22,10 +22,10 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/nfb2021/canvodpy/badge)](https://securityscorecards.dev/viewer/?uri=github.com/nfb2021/canvodpy)
 
 
-<h1>
+<h1 align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo/canvodpy_logo_dark_mode.svg">
-    <img alt="canVODpy" src="docs/assets/logo/canvodpy_logo_bright_mode.svg" width="300">
+    <img alt="canVODpy" src="docs/assets/logo/canvodpy_logo_bright_mode.svg" width="390">
   </picture>
 </h1>
 
