@@ -249,7 +249,7 @@ def compute_percell_timeseries(
 
     print(f"📊 Data shape: {data_ds[value_var].shape}")
 
-    # Normalise frequency string for pandas
+    # Normalize frequency string for pandas
     pandas_freq = _normalise_pandas_freq(temporal_resolution)
 
     # Floor to the period boundary (e.g. midnight for "1D"), NOT the raw
@@ -493,7 +493,7 @@ def compute_zenith_percell(
 
 
 def _normalise_pandas_freq(freq_str: str) -> str:
-    """Normalise a frequency string for pandas compatibility."""
+    """Normalize a frequency string for pandas compatibility."""
     if freq_str in ("30T", "30min"):
         return "30min"
     if freq_str in ("15T", "15min"):

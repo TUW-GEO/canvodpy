@@ -28,7 +28,7 @@ class PipelineResult:
         )
 
     def to_metadata_dict(self) -> dict[str, Any]:
-        """Serialise to a dict suitable for ``ds.attrs``."""
+        """Serialize to a dict suitable for ``ds.attrs``."""
         return {
             "preprocessing_ops": [r.to_dict() for r in self.results],
             "preprocessing_total_seconds": self.total_duration_seconds,

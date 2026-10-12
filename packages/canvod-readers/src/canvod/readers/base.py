@@ -293,7 +293,7 @@ class SignalID(BaseModel):
     def _validate_sv(cls, v: str) -> str:
         if not SV_PATTERN.match(v):
             raise ValueError(
-                f"Invalid SV: {v!r} — expected system letter + 2-digit PRN "
+                f"Invalid SV: {v!r}; expected system letter + 2-digit PRN "
                 f"(e.g. 'G01'). Valid systems: G, R, E, C, J, S, I"
             )
         return v
@@ -341,7 +341,7 @@ class SignalID(BaseModel):
         parts = sid_str.split("|")
         if len(parts) != 3:
             raise ValueError(
-                f"Invalid SID format: {sid_str!r} — expected 'SV|band|code'"
+                f"Invalid SID format: {sid_str!r}; expected 'SV|band|code'"
             )
         return cls(sv=parts[0], band=parts[1], code=parts[2])
 

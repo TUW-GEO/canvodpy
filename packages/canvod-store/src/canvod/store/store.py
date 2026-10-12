@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 
 
 class _PatchedAncestryGraph:
-    """Wraps icechunk AncestryGraph to make SVG text readable in both colour schemes."""
+    """Wraps icechunk AncestryGraph to make SVG text readable in both color schemes."""
 
     def __init__(self, graph: "AncestryGraph") -> None:  # noqa: UP037
         self._graph = graph
@@ -1985,7 +1985,7 @@ class MyIcechunkStore:
         name: str,
         branch: str = "main",
     ) -> str:
-        """Append metadata datasets in their own commit — no in-memory concat.
+        """Append metadata datasets in their own commit: no in-memory concat.
 
         Creates *{group_name}/metadata/{name}* if it does not exist yet,
         otherwise appends along ``epoch``. Prefer
@@ -2161,14 +2161,14 @@ class MyIcechunkStore:
             "store_type": self.store_type,
             "compression_level": self.compression_level,
             # icechunk v2's CompressionAlgorithm has no .name attribute
-            # (PyO3 enum wrapper, unlike Python's enum.Enum) — str() gives
+            # (PyO3 enum wrapper, unlike Python's enum.Enum): str() gives
             # "CompressionAlgorithm.Zstd"; take the part after the dot.
             "compression_algorithm": str(self.compression_algorithm).rsplit(".", 1)[-1],
             "total_groups": len(all_group_names),
             "groups": groups,
         }
 
-        # Add group-specific stats (from "main" — get_group_info()'s default branch)
+        # Add group-specific stats (from "main": get_group_info()'s default branch)
         for group_name in groups.get("main", []):
             try:
                 info = self.get_group_info(group_name)
@@ -2499,7 +2499,7 @@ class MyIcechunkStore:
         canonical_name: str | None = None,
         physical_path: str | None = None,
     ) -> None:
-        """Standalone metadata-row append — commits on its own.
+        """Standalone metadata-row append: commits on its own.
 
         For ingest paths (write_initial_group, append_to_group) use
         _append_metadata_row directly inside the data-write session to avoid
@@ -2813,7 +2813,7 @@ class MyIcechunkStore:
         """Write or append a VOD analysis dataset, with its own metadata ledger.
 
         ``group_name`` is expected to be ``{model}/{analysis_name}`` (e.g.
-        ``"tau_omega_zeroth_order/canopy_01_vs_reference_01"``) — the model
+        ``"tau_omega_zeroth_order/canopy_01_vs_reference_01"``): the model
         layer disambiguates results from different VOD calculators sharing
         the same analysis pair. Data write and metadata-row write happen in
         one Icechunk commit, mirroring :meth:`append_to_group`.
@@ -3402,9 +3402,9 @@ class MyIcechunkStore:
 
         Thin public wrapper around :meth:`metadata_row_exists` that returns a
         simple ``(skip, reason)`` pair instead of a DataFrame, suitable for use
-        in Airflow task functions as an early-exit optimisation.
+        in Airflow task functions as an early-exit optimization.
 
-        This method is an early-exit optimisation: it avoids opening a write
+        This method is an early-exit optimization: it avoids opening a write
         session for files that are already present.  Pass ``dedup=True`` to
         :meth:`write_or_append_group` to make the store the authoritative
         final gate (runs the same check again before writing).
@@ -3434,9 +3434,9 @@ class MyIcechunkStore:
         Returns
         -------
         tuple[bool, str]
-            ``(True, "hash_match")`` — exact duplicate, skip.
-            ``(True, "temporal_overlap")`` — overlapping time range, skip.
-            ``(False, "")`` — safe to ingest.
+            ``(True, "hash_match")``: exact duplicate, skip.
+            ``(True, "temporal_overlap")``: overlapping time range, skip.
+            ``(False, "")``: safe to ingest.
         """
         if file_hash is None:
             return False, ""
@@ -3708,7 +3708,7 @@ class MyIcechunkStore:
         lets a caller run GC exactly once via ``maintenance()`` instead of
         twice per call.
 
-        Never invoke this automatically inside the pipeline's write path —
+        Never invoke this automatically inside the pipeline's write path:
         it's an administrative operation, not safe to run casually
         alongside active writes. Use a generous ``days`` margin (weeks to
         months, not hours) so it can never touch anything from an
@@ -3723,7 +3723,7 @@ class MyIcechunkStore:
             Branch to apply expiration on.
         delete_expired_branches : bool, default False
             Whether to delete branches pointing to expired snapshots.
-            Matches Icechunk's own safe default — flip only deliberately.
+            Matches Icechunk's own safe default: flip only deliberately.
         delete_expired_tags : bool, default False
             Whether to delete tags pointing to expired snapshots.
             **Do not set True** if using keeper tags (``create_keeper_tag``)
@@ -4507,7 +4507,7 @@ class MyIcechunkStore:
             Restrict the graph to this branch's linear history.
             When omitted, all branches are shown as a tree.
         plain : bool, optional
-            Render without ANSI colours or SVG fill colours (useful for CI
+            Render without ANSI colors or SVG fill colors (useful for CI
             logs or piping to a file).
 
         Returns
@@ -4645,7 +4645,7 @@ class MyIcechunkStore:
         Run full maintenance on the store: expire, then (optionally) GC.
 
         Must be invoked manually or from a separately scheduled maintenance
-        job — never from the pipeline's own run path, and never on an
+        job: never from the pipeline's own run path, and never on an
         automatic schedule until ``garbage_collect(dry_run=True)`` has been
         checked against the real store and, if using keeper tags,
         ``create_tag()`` cost at scale has been confirmed.

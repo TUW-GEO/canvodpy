@@ -232,7 +232,7 @@ class StorageConfig(_StrictModel):
         if isinstance(v, str):
             if v.strip() in {"/path/to/stores", "/path/to/your/stores"}:
                 raise ValueError(
-                    f"stores_root_dir is set to placeholder {v!r} — "
+                    f"stores_root_dir is set to placeholder {v!r}: "
                     "set a real directory path in canvod-settings.yaml"
                 )
             return Path(v).expanduser()

@@ -67,7 +67,7 @@ class _SvidRange:
 _SVID_RANGES: tuple[_SvidRange, ...] = (
     _SvidRange(1, 37, "G", 0, "GPS G01-G37"),
     _SvidRange(38, 61, "R", 37, "GLONASS R01-R24 (slot number)"),
-    _SvidRange(62, 62, "R", 62, "GLONASS R00 — slot number unknown"),
+    _SvidRange(62, 62, "R", 62, "GLONASS R00; slot number unknown"),
     _SvidRange(63, 68, "R", 38, "GLONASS R25-R30"),
     _SvidRange(71, 106, "E", 70, "Galileo E01-E36"),
     _SvidRange(107, 119, "L", 0, "L-Band MSS (see LBandBeams block)"),
@@ -241,7 +241,7 @@ _RAW: tuple[tuple[Any, ...], ...] = (
     (9,  "L1P",  "R", "G1",  "1P",  "P",  False),
     (10, "L2P",  "R", "G2",  "2P",  "P",  False),
     (11, "L2CA", "R", "G2",  "2C",  "C",  False),
-    (12, "L3",   "R", "G3",  "3Q",  "Q",  False),  # CDMA — fixed freq
+    (12, "L3",   "R", "G3",  "3Q",  "Q",  False),  # CDMA: fixed freq
     # --- BeiDou --------------------------------------------------------
     (13, "B1C",  "C", "B1C", "1P",  "P",  False),
     (14, "B2a",  "C", "B2a", "5P",  "P",  False),
@@ -255,7 +255,7 @@ _RAW: tuple[tuple[Any, ...], ...] = (
     (20, "E5a",  "E", "E5a", "5Q",  "Q",  False),
     (21, "E5b",  "E", "E5b", "7Q",  "Q",  False),
     (22, "E5",   "E", "E5",  "8Q",  "Q",  False),  # AltBOC
-    (23, "LBand","L", "LBd", "NA",  "?",  False),  # L-Band MSS — no fixed freq
+    (23, "LBand","L", "LBd", "NA",  "?",  False),  # L-Band MSS: no fixed freq
     # --- SBAS ----------------------------------------------------------
     (24, "L1CA", "S", "L1",  "1C",  "C",  False),
     (25, "L5",   "S", "L5",  "5I",  "I",  False),

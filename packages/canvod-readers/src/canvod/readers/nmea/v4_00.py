@@ -579,7 +579,7 @@ class NmeaObs(GNSSDataReader, BaseModel):
         # Standard attributes (includes "File Hash")
         ds.attrs.update(self._build_attrs())
 
-        # Normalise string dtypes for Icechunk / Zarr V3 compatibility
+        # Normalize string dtypes for Icechunk / Zarr V3 compatibility
         for name in list(ds.coords) + list(ds.data_vars):
             if ds[name].dtype.kind in ("U", "T"):
                 ds[name] = ds[name].astype(object)
@@ -697,7 +697,7 @@ class NmeaObs(GNSSDataReader, BaseModel):
             for line in relevant_lines
         )
         if not has_gsv:
-            msg = "No GSV sentences found in file — cannot extract SNR data"
+            msg = "No GSV sentences found in file: cannot extract SNR data"
             raise NmeaMissingSentenceError(msg)
 
         return epochs

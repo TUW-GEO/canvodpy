@@ -1,4 +1,4 @@
-"""canvodpy doctor — environment and configuration diagnostics.
+"""canvodpy doctor: environment and configuration diagnostics.
 
 Reports canvodpy's resolved version, Python/uv environment, where config
 was resolved from and why (dev-checkout convenience vs. XDG default, see
@@ -107,7 +107,7 @@ def doctor(
             f"  Templates reachable: [red]❌ not found at {template_dir}[/red]"
         )
         console.print(
-            "    This looks like a broken canvod-config install — reinstall it."
+            "    This looks like a broken canvod-config install; reinstall it."
         )
 
     # --- canvod-settings.yaml ---------------------------------------------------

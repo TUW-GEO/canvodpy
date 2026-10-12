@@ -436,7 +436,7 @@ class Rnxv3ObsEpochRecordCompletenessModel(BaseModel):
             value = UREG.Quantity(value).to(UREG.minutes)  # ty: ignore[invalid-assignment]
         if value not in IGS_RNX_DUMP_INTERVALS:
             _log.debug(
-                "Non-standard dump interval %s (expected one of %s) — processing continues normally.",
+                "Non-standard dump interval %s (expected one of %s); processing continues normally.",
                 value,
                 [str(v) for v in IGS_RNX_DUMP_INTERVALS],
             )

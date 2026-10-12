@@ -270,7 +270,7 @@ class FluentWorkflow:
         Parameters
         ----------
         agency : str
-            Analysis centre for auxiliary products (default ``"COD"``).
+            Analysis center for auxiliary products (default ``"COD"``).
         """
         log = self.log.bind(agency=agency)
 
@@ -301,7 +301,7 @@ class FluentWorkflow:
             Ephemeris source: ``"final"`` (SP3/CLK), ``"rapid"``,
             ``"broadcast"`` (SBF only).
         agency : str
-            Analysis centre code (default ``"COD"``).
+            Analysis center code (default ``"COD"``).
         date : str, optional
             Date in ``YYYYDOY`` format.  If not provided, inferred from
             the most recent ``.read()`` call.
@@ -424,7 +424,7 @@ class FluentWorkflow:
 
     @terminal
     def plot(self) -> Any:
-        """Execute the plan and visualise the result."""
+        """Execute the plan and visualize the result."""
         from canvod.viz import HemisphereVisualizer
 
         viz = HemisphereVisualizer(self._grid)

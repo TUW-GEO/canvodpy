@@ -16,7 +16,7 @@ class FibonacciBuilder(BaseGridBuilder):
     Points are distributed on the sphere using the *Fibonacci lattice*
     (golden-spiral method), which provides one of the most uniform
     point distributions achievable on a sphere without iterative
-    optimisation.  Each point then becomes the centre of a *spherical
+    optimization.  Each point then becomes the center of a *spherical
     Voronoi cell* — the region of the sphere closer to that point than
     to any other.  The resulting tessellation has no polar singularities
     and near-uniform cell areas.
@@ -163,7 +163,7 @@ class FibonacciBuilder(BaseGridBuilder):
         Returns
         -------
         grid : pl.DataFrame
-            One row per Voronoi cell.  Contains phi, theta (centre),
+            One row per Voronoi cell.  Contains phi, theta (center),
             bounding-box limits, ``voronoi_region`` (list of vertex indices
             into the Voronoi vertex array), and ``n_vertices``.
         theta_lims : np.ndarray

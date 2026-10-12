@@ -173,7 +173,7 @@ class IcechunkDataReader:
             _sites = config.sites.sites
             if not _sites:
                 raise ValueError(
-                    "No sites configured — create canvod-settings.yaml "
+                    "No sites configured: create canvod-settings.yaml "
                     "or pass site_name explicitly."
                 )
             site_name = next(iter(_sites))

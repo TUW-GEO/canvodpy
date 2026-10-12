@@ -1,4 +1,4 @@
-"""Pipeline output reporters — plain (non-TTY) and Rich Live (TTY).
+"""Pipeline output reporters: plain (non-TTY) and Rich Live (TTY).
 
 Usage
 -----
@@ -16,7 +16,7 @@ Usage
 Non-TTY (cron, CI, pipes): plain print() — identical to pre-dashboard output.
 TTY: Rich Live display — one progress row per (site, receiver-group), known
 upfront so a multi-site run shows every row from the start; per-day detail
-scrolls above via live.console.print(). There is no aggregate "Overall" bar —
+scrolls above via live.console.print(). There is no aggregate "Overall" bar:
 sites are processed sequentially, so the header panel's "current site" text
 plus the per-row bars are the whole picture.
 """
@@ -50,7 +50,7 @@ def day_count(start: str, end: str) -> int:
 
 
 class PlainReporter:
-    """Writes to stdout via print(). Behaviour identical to pre-dashboard output."""
+    """Writes to stdout via print(). Behavior identical to pre-dashboard output."""
 
     def __init__(self, rows: list[tuple[str, str, int]]) -> None:
         self._rows = rows
@@ -100,7 +100,7 @@ class PlainReporter:
         print(f"  VOD {analysis}: {n_valid}/{n_total} valid ({pct:.0f}%)  {dt:.1f}s")
 
     def on_vod_failed(self, analysis: str, error: str) -> None:
-        print(f"  VOD {analysis}: FAILED — {error}")
+        print(f"  VOD {analysis}: FAILED: {error}")
 
     def on_timing(self, dt_pipeline: float, dt_vod: float, dt_vod_store: float) -> None:
         print(
@@ -252,7 +252,7 @@ class RichReporter:
 
     def on_vod_failed(self, analysis: str, error: str) -> None:
         self._live_obj.console.print(
-            f"[yellow]  VOD {analysis}: FAILED — {error}[/yellow]"
+            f"[yellow]  VOD {analysis}: FAILED: {error}[/yellow]"
         )
 
     def on_timing(self, dt_pipeline: float, dt_vod: float, dt_vod_store: float) -> None:

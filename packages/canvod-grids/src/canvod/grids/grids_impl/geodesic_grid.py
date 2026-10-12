@@ -28,8 +28,8 @@ class GeodesicBuilder(BaseGridBuilder):
     * theta ∈ [0, π/2] – polar angle from zenith (0 = straight up,
       π/2 = horizon)
 
-    Cell centres are computed as the 3D Cartesian mean of the three vertices,
-    re-normalised onto the unit sphere.
+    Cell centers are computed as the 3D Cartesian mean of the three vertices,
+    re-normalized onto the unit sphere.
 
     What ``angular_resolution`` means
     ----------------------------------
@@ -54,11 +54,11 @@ class GeodesicBuilder(BaseGridBuilder):
     Mathematical construction
     -------------------------
     1. **Icosahedron** – 12 vertices placed at the intersections of three
-       mutually perpendicular golden-ratio rectangles, normalised to the
+       mutually perpendicular golden-ratio rectangles, normalized to the
        unit sphere.  20 triangular faces connect them.
     2. **Subdivision** – each triangle is split into 4 by inserting edge
        midpoints.  Each midpoint is projected onto the unit sphere
-       (re-normalised) before the next subdivision.  This is repeated
+       (re-normalized) before the next subdivision.  This is repeated
        ``subdivision_level`` times.
     3. **Hemisphere filter** – faces are kept if their *centroid* (the
        3D Cartesian mean of the three vertices, renormalised to the unit
@@ -188,7 +188,7 @@ class GeodesicBuilder(BaseGridBuilder):
         Returns
         -------
         grid : pl.DataFrame
-            One row per triangular cell.  Columns include phi, theta (centre),
+            One row per triangular cell.  Columns include phi, theta (center),
             bounding-box limits, ``geodesic_vertices`` (3 vertex indices into
             the ``vertices`` array), and ``geodesic_subdivision``.
         theta_lims : np.ndarray
@@ -355,7 +355,7 @@ class GeodesicBuilder(BaseGridBuilder):
     ) -> tuple[np.ndarray, np.ndarray]:
         """Subdivide each triangle into 4 smaller triangles.
 
-        Each edge midpoint is computed, normalised onto the unit sphere, and
+        Each edge midpoint is computed, normalized onto the unit sphere, and
         cached so that shared edges produce only one new vertex.
 
         Parameters

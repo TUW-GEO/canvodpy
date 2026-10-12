@@ -33,7 +33,7 @@ class AuxDataConfig(_StrictModel):
         description=(
             "Download and interpolate CLK clock-correction files alongside "
             "SP3 ephemerides. canvod-vod's VOD formula only needs "
-            "transmittance and polar angle — clock is not consumed "
+            "transmittance and polar angle; clock is not consumed "
             "downstream. Set to False to skip the extra downloads, "
             "parsing, and interpolation."
         ),
@@ -46,7 +46,7 @@ class AuxDataConfig(_StrictModel):
             "writes; None (default) = zarr's own default (10) applies, no "
             "cost for local/fast storage. Set on network-mounted "
             "(CIFS/NFS) shared_aux_cache_dir deployments hitting "
-            "connection-abort errors — separate from "
+            "connection-abort errors; separate from "
             "IcechunkConfig.zarr_async_concurrency since this is a "
             "different store with its own write-frequency profile."
         ),

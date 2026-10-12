@@ -3,7 +3,7 @@
 Provides a unified interface for augmenting GNSS datasets with satellite
 angular coordinates (theta, phi).  Three implementations:
 
-- ``AgencyEphemerisProvider`` — SP3/CLK from analysis centres (COD, ESA, IGS),
+- ``AgencyEphemerisProvider`` — SP3/CLK from analysis centers (COD, ESA, IGS),
   Hermite interpolation.  Extracted from the orchestrator's aux data pipeline.
 - ``SbfBroadcastProvider`` — theta/phi directly from SBF SatVisibility blocks.
 - ``RinexNavProvider`` — (future) parses RINEX NAV files.
@@ -84,7 +84,7 @@ class EphemerisProvider(ABC):
 
 
 class AgencyEphemerisProvider(EphemerisProvider):
-    """SP3/CLK-based ephemeris from analysis centres.
+    """SP3/CLK-based ephemeris from analysis centers.
 
     Downloads final or rapid products from COD, ESA, IGS etc.,
     interpolates via Hermite cubic splines, and computes theta/phi
@@ -93,7 +93,7 @@ class AgencyEphemerisProvider(EphemerisProvider):
     Parameters
     ----------
     agency : str
-        Analysis centre code (``"COD"``, ``"ESA"``, ``"GFZ"``, ``"JPL"``).
+        Analysis center code (``"COD"``, ``"ESA"``, ``"GFZ"``, ``"JPL"``).
     product_type : str
         Product type (``"final"`` or ``"rapid"``).
     aux_data_dir : Path, optional

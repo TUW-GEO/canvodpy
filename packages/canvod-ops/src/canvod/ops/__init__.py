@@ -1,4 +1,4 @@
-"""canvod.ops — Preprocessing operations pipeline for GNSS VOD data."""
+"""canvod.ops: Preprocessing operations pipeline for GNSS VOD data."""
 
 from importlib.metadata import version as _version
 

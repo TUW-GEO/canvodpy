@@ -50,7 +50,7 @@ class EquirectangularBuilder(BaseGridBuilder):
     2. Phi edges are placed at 0, Δθ, 2Δθ, … and a last edge at 2π; the
        last sector is narrower when Δθ does not divide 360°.
     3. Every (theta_band, phi_sector) combination produces one cell.  The
-       cell centre is the midpoint of the rectangle.
+       cell center is the midpoint of the rectangle.
     4. No special zenith cap is created; the band nearest the zenith has
        the same number of phi sectors as all other bands.
 
@@ -110,7 +110,7 @@ class EquirectangularBuilder(BaseGridBuilder):
 
         # The same for the sectors: the last edge is exactly 2*pi, so the last
         # sector (narrower when angular_resolution doesn't divide 360 deg)
-        # has its centre inside it, and rounding in arange adds no
+        # has its center inside it, and rounding in arange adds no
         # zero-width sector at 2*pi.
         phi_edges = np.arange(0, 2 * np.pi, self.angular_resolution_rad)
         phi_edges = np.append(phi_edges, 2 * np.pi)

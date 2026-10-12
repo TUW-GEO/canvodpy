@@ -22,7 +22,7 @@ from .convention import AgencyId, ContentCode, Duration, SiteId
 
 
 class DirectoryLayout(StrEnum):
-    """How receiver data files are organised into subdirectories."""
+    """How receiver data files are organized into subdirectories."""
 
     YYDDD_SUBDIRS = "yyddd_subdirs"  # 25001/, 25002/
     YYYYDDD_SUBDIRS = "yyyyddd_subdirs"  # 2025001/

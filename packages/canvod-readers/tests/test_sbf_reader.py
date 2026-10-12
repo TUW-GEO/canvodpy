@@ -245,7 +245,7 @@ class TestSbfHeader:
 
     def test_header_height_plausible(self, header: SbfHeader) -> None:
         """Rosalia reference station is ~460 m a.s.l.; allow generous 0–4000 m."""
-        h_m = header.height_m.magnitude  # pint.Quantity in metres
+        h_m = header.height_m.magnitude  # pint.Quantity in meters
         assert 0 < h_m < 4000, f"Implausible station height: {h_m:.1f} m"
 
 

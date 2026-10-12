@@ -646,7 +646,7 @@ class IcechunkStoreViewer:
         # xarray-native path: attrs are directly on the dataset
         if "grid_type" in attrs and "grid_metadata" not in attrs:
             result = dict(attrs)
-            # Normalise attr names: new format uses _deg suffix (already
+            # Normalize attr names: new format uses _deg suffix (already
             # in degrees); old format uses bare names (also in degrees
             # for the xarray-native path).
             if "angular_resolution_deg" not in result:

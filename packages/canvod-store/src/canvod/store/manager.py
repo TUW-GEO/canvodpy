@@ -356,7 +356,7 @@ class GnssResearchSite:
             if skipped:
                 self._logger.warning(
                     f"Receiver metadata keys {skipped} already exist in "
-                    f"dataset attrs — skipping (existing attrs take precedence)"
+                    f"dataset attrs; skipping (existing attrs take precedence)"
                 )
             new_attrs = {
                 k: v for k, v in receiver_meta.items() if k not in dataset.attrs
@@ -1082,7 +1082,7 @@ def create_default_site() -> GnssResearchSite:
     _sites = load_config().sites.sites
     if not _sites:
         raise ValueError(
-            "No sites configured — create canvod-settings.yaml "
+            "No sites configured: create canvod-settings.yaml "
             "or pass site_name explicitly."
         )
     return GnssResearchSite(next(iter(_sites)))

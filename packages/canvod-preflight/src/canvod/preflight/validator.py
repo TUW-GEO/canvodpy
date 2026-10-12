@@ -184,14 +184,14 @@ def _format_validation_error(report: ValidationReport, base_dir: Path) -> str:
             lines.append(f"    ... and {len(report.unmatched) - 5} more")
         lines.append(
             "\n  If these ARE your data files, check the 'naming:' section of"
-            " the site in canvod-settings.yaml — the source_pattern or directory_layout may not match"
+            " the site in canvod-settings.yaml: the source_pattern or directory_layout may not match"
             " your filenames."
         )
         return "\n".join(lines)
 
     if report.unmatched:
         lines.append(
-            f"\n  {len(report.unmatched)} file(s) could not be recognised as GNSS data:"
+            f"\n  {len(report.unmatched)} file(s) could not be recognized as GNSS data:"
         )
         for p in report.unmatched[:10]:
             lines.append(f"    - {p.name}")

@@ -41,7 +41,7 @@ class EqualAngleBuilder(BaseGridBuilder):
        the last band is usually narrower than Δθ.
     3. Within every band, the full azimuth is split into ``n_phi`` sectors of
        equal width Δφ = 2π / n_phi.
-    4. Cell centres are at the midpoint of each (phi, theta) rectangle.
+    4. Cell centers are at the midpoint of each (phi, theta) rectangle.
 
     Parameters
     ----------

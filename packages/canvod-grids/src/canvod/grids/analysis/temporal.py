@@ -61,7 +61,7 @@ class TemporalAnalysis:
     site_lon : float or None, optional
         Site longitude in degrees.  Required for solar methods.
     site_elevation : float, optional
-        Site elevation in metres (default 0).
+        Site elevation in meters (default 0).
 
     Raises
     ------
@@ -99,7 +99,7 @@ class TemporalAnalysis:
         site_lon : float | None, optional
             Site longitude in degrees.
         site_elevation : float, default 0.0
-            Site elevation in metres.
+            Site elevation in meters.
 
         """
         self.vod_ds = vod_ds
@@ -151,7 +151,7 @@ class TemporalAnalysis:
         spatial_mask : np.ndarray or None, optional
             Boolean mask of shape ``(grid.ncells,)``; ``True`` = include.
         weights : np.ndarray or None, optional
-            Cell weights of shape ``(grid.ncells,)``; normalised
+            Cell weights of shape ``(grid.ncells,)``; normalized
             internally.  ``None`` → uniform weights.
         aggregate : str, optional
             Pandas-compatible frequency string for temporal resampling.
@@ -244,7 +244,7 @@ class TemporalAnalysis:
             Correction method passed to
             :meth:`SolarPositionCalculator.apply_solar_correction`.
         reference_zenith : float, optional
-            Reference zenith for normalisation (degrees).
+            Reference zenith for normalization (degrees).
         daytime_only : bool, optional
             If ``True``, mask out nighttime epochs.
         twilight_angle : float, optional
@@ -329,7 +329,7 @@ class TemporalAnalysis:
     # ------------------------------------------------------------------
 
     def _prepare_weights(self, weights: np.ndarray | None) -> np.ndarray:
-        """Validate and normalise a weight array.
+        """Validate and normalize a weight array.
 
         Returns uniform weights when *weights* is ``None``.
         """
@@ -345,7 +345,7 @@ class TemporalAnalysis:
         w_sum = weights.sum()
         if w_sum > 0:
             weights = weights / w_sum
-        logger.debug("using provided weights (sum before normalisation=%.4f)", w_sum)
+        logger.debug("using provided weights (sum before normalization=%.4f)", w_sum)
         return weights
 
     def _compute_weighted_timeseries(

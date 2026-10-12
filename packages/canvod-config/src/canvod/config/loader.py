@@ -143,7 +143,7 @@ def get_default_config_dir() -> Path:
     This is the single shared implementation of what used to be three
     separate "find monorepo root, else cwd()/config" copies (here, in
     ``canvodpy/cli/config.py``'s module-level default, and in that same
-    file's ``init`` command) — none of which defaulted to a user-level
+    file's ``init`` command): none of which defaulted to a user-level
     location, so a globally-installed CLI invoked from an arbitrary
     directory always ended up looking for ``./config`` right there.
 

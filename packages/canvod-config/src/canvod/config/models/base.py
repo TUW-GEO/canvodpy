@@ -8,7 +8,7 @@ from pydantic_core import PydanticCustomError
 
 
 class _StrictModel(BaseModel):
-    """Base for all config models — forbids unknown keys so YAML typos are caught.
+    """Base for all config models: forbids unknown keys so YAML typos are caught.
 
     An unknown key fails validation with the closest allowed key as a
     suggestion and the list of allowed keys. Nothing is corrected

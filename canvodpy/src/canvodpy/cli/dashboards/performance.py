@@ -3,7 +3,7 @@ import marimo
 __generated_with = "0.23.13"
 app = marimo.App(
     width="medium",
-    app_title="canvodpy — Performance Dashboard",
+    app_title="canvodpy: Performance Dashboard",
     css_file="canvod_nordic.css",
 )
 
@@ -28,7 +28,7 @@ view of how a pipeline run spent its time. Works while a run is
 still in progress (partial data) or after it's finished.
 
 **Site** is parsed from `run_id` (`{site}-{YYYYMMDD-HHMMSS}`, set by
-`canvodpy run` and by `site.pipeline()`) — multiple sites' logs in the
+`canvodpy run` and by `site.pipeline()`): multiple sites' logs in the
 same directory show up as separate rows and can be filtered below.
 Events logged outside a run carry no `run_id` and show up as
 "(no run ID)".
@@ -192,7 +192,7 @@ def _(events, mo):
     model_filter = mo.ui.multiselect(
         options=_models,
         value=_models,
-        label="VOD model(s) — n/a rows (RINEX stages) always included",
+        label="VOD model(s): n/a rows (RINEX stages) always included",
         full_width=False,
     )
     mo.hstack([site_filter, model_filter], justify="start", gap=2)
@@ -310,7 +310,7 @@ def _(filtered, mo, pl):
 
 @app.cell
 def _(filtered, mo, pl):
-    mo.md("## Exact figures — duration (s) per site × stage × receiver/analysis")
+    mo.md("## Exact figures: duration (s) per site × stage × receiver/analysis")
 
     if filtered.is_empty():
         stats_table = mo.md("_No data yet._")

@@ -1495,7 +1495,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
             ds.attrs.update(self._create_comprehensive_attrs())
         ds.attrs.update(self._build_attrs())
 
-        # Normalise string dtypes for Icechunk / Zarr V3 compatibility
+        # Normalize string dtypes for Icechunk / Zarr V3 compatibility
         for name in list(ds.coords) + list(ds.data_vars):
             if ds[name].dtype.kind in ("U", "T"):
                 ds[name] = ds[name].astype(object)

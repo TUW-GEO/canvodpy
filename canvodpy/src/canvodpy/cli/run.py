@@ -1,4 +1,4 @@
-"""canvodpy CLI — process GNSS observations and compute VOD.
+"""canvodpy CLI: process GNSS observations and compute VOD.
 
 Usage
 -----
@@ -269,7 +269,7 @@ def _compute_vod_for_day(
             if reporter:
                 reporter.on_vod_failed(analysis_name, str(e))
             else:
-                print(f"  VOD {analysis_name}: FAILED — {e}")
+                print(f"  VOD {analysis_name}: FAILED: {e}")
             continue
 
         dt = time.perf_counter() - t0

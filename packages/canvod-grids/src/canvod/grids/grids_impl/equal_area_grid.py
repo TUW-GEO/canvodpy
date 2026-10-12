@@ -52,7 +52,7 @@ class EqualAreaBuilder(BaseGridBuilder):
 
            n_phi = round(Ω_band / Ω_target)
 
-       Each sector spans Δφ = 2π / n_phi.  The cell centre is placed at the
+       Each sector spans Δφ = 2π / n_phi.  The cell center is placed at the
        geometric midpoint of its (phi, theta) rectangle.
 
     Parameters

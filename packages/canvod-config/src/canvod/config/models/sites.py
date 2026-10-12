@@ -28,7 +28,7 @@ class AntennaConfig(_StrictModel):
     model: str | None = Field(None, description="Antenna model, as its IGS name")
     radome: str | None = Field(None, description="Radome, as its IGS name")
     serial_number: str | None = Field(None, description="Antenna serial number")
-    height_m: float | None = Field(None, description="Antenna height in metres")
+    height_m: float | None = Field(None, description="Antenna height in meters")
     choke_ring: bool | None = Field(None, description="Whether a choke ring is used")
     polarization: Literal["RHCP", "LHCP", "dual-pol"] | None = Field(
         None,

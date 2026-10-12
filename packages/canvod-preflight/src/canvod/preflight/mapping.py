@@ -154,7 +154,7 @@ class FilenameMapper:
                 vf = self.map_single_file(path)
                 results.append(vf)
             except ValueError, KeyError:
-                logger.warning("Could not map %s — skipping", path.name)
+                logger.warning("Could not map %s; skipping", path.name)
                 continue
         return results
 
@@ -187,7 +187,7 @@ class FilenameMapper:
                 vf = self.map_single_file(path, year=year, doy=doy)
                 results.append(vf)
             except ValueError, KeyError:
-                logger.warning("Could not map %s — skipping", path.name)
+                logger.warning("Could not map %s; skipping", path.name)
                 continue
         return results
 

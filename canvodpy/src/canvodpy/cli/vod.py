@@ -155,7 +155,7 @@ def vod_reconcile(
     )
 
     if not execute:
-        console.print("Dry run — pass --execute to backfill.")
+        console.print("Dry run: pass --execute to backfill.")
         return
 
     vod_computer = VodComputer(site_obj, calculator=calculator)

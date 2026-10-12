@@ -219,7 +219,7 @@ def _check_files(site: str, yyyydoy: str, reader_format: str | None, kind: str) 
         raise RuntimeError(msg)
 
     logger.info(
-        "check_%s: %s %s — all receivers ready",
+        "check_%s: %s %s, all receivers ready",
         kind.lower(),
         site,
         date_obj.to_str(),
@@ -364,7 +364,7 @@ def validate_data_dirs(site: str) -> dict:
     }
     for name, r in report.receivers.items():
         for warning in r.warnings:
-            logger.warning("validate_data_dirs: %s/%s — %s", site, name, warning)
+            logger.warning("validate_data_dirs: %s/%s: %s", site, name, warning)
 
     if not report.ok:
         problems = report.errors + [
@@ -378,7 +378,7 @@ def validate_data_dirs(site: str) -> dict:
         logger.error(msg)
         raise ValueError(msg)
 
-    logger.info("validate_data_dirs: %s — all receivers valid", site)
+    logger.info("validate_data_dirs: %s, all receivers valid", site)
     return {"site": site, "valid": True, "receivers": receivers_result}
 
 
@@ -418,7 +418,7 @@ def check_sp3_availability(ds: str) -> object:
 
     if age > 30:
         raise AirflowSkipException(
-            f"SP3 not available for {ds} after {age} days — abandoning"
+            f"SP3 not available for {ds} after {age} days; abandoning"
         )
 
     try:
@@ -472,7 +472,7 @@ def fetch_aux_data(
     yyyydoy : str
         Date in ``YYYYDDD`` format **or** Airflow ``ds`` (``YYYY-MM-DD``).
     agency : str, optional
-        Analysis centre code (e.g. ``"COD"``).  Defaults to config value.
+        Analysis center code (e.g. ``"COD"``).  Defaults to config value.
     product_type : str, optional
         ``"final"`` or ``"rapid"``.  Defaults to config value.
     sampling_interval_s : float, optional
@@ -668,7 +668,7 @@ def process_rinex(
                 logger.warning("Header parse failed for %s: %s", ff.name, exc)
 
         if position is None:
-            logger.error("No valid RINEX header for %s — skipping", recv_name)
+            logger.error("No valid RINEX header for %s; skipping", recv_name)
             continue
 
         # Process each file sequentially (Airflow handles parallelism across sites)
@@ -857,7 +857,7 @@ def process_sbf(
                 logger.warning("SBF position extract failed for %s: %s", ff.name, exc)
 
         if position is None:
-            logger.error("No valid position for %s — skipping", recv_name)
+            logger.error("No valid position for %s; skipping", recv_name)
             continue
 
         # Process each SBF file
@@ -1139,7 +1139,7 @@ def validate_ingest(site: str, yyyydoy: str) -> dict:
         logger.error(msg)
         raise RuntimeError(msg)
 
-    logger.info("validate_ingest: %s %s — all checks passed", site, date_obj.to_str())
+    logger.info("validate_ingest: %s %s, all checks passed", site, date_obj.to_str())
     return result
 
 

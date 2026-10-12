@@ -75,7 +75,7 @@ class LoggingConfig(_StrictModel):
         if isinstance(v, str):
             if v.strip() in {"/path/to/logs", "/path/to/your/logs"}:
                 raise ValueError(
-                    f"log_dir is set to placeholder {v!r} — "
+                    f"log_dir is set to placeholder {v!r}: "
                     "set a real directory path in canvod-settings.yaml"
                 )
             return Path(v).expanduser()

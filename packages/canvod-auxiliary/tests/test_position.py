@@ -17,14 +17,14 @@ class TestECEFPositionGuardRail:
     """Regression tests for #111: reject implausible receiver positions.
 
     A zeroed/unpopulated RINEX ``APPROX POSITION XYZ`` header used to be
-    silently accepted as (0, 0, 0) -- the Earth's centre -- and passed on
+    silently accepted as (0, 0, 0) -- the Earth's center -- and passed on
     as the receiver position, corrupting every downstream satellite
     geometry computation without any error or warning.
     """
 
     def test_rejects_exact_origin(self):
         """(0, 0, 0) is never a valid ECEF point, receiver or otherwise."""
-        with pytest.raises(ValidationError, match="Earth's centre"):
+        with pytest.raises(ValidationError, match="Earth's center"):
             ECEFPosition(x=0.0, y=0.0, z=0.0)
 
     def test_rejects_nan_component(self):
@@ -59,7 +59,7 @@ class TestECEFPositionGuardRail:
         corrupted.attrs["APPROX POSITION Y"] = 0.0
         corrupted.attrs["APPROX POSITION Z"] = 0.0
 
-        with pytest.raises(ValidationError, match="Earth's centre"):
+        with pytest.raises(ValidationError, match="Earth's center"):
             ECEFPosition.from_ds_metadata(corrupted)
 
     def test_from_ds_metadata_rejects_implausible_but_finite_position(
@@ -86,7 +86,7 @@ class TestECEFPositionGuardRail:
         ds = xr.Dataset(
             attrs={"Approximate Position": "(X = 0.0 m, Y = 0.0 m, Z = 0.0 m)"}
         )
-        with pytest.raises(ValidationError, match="Earth's centre"):
+        with pytest.raises(ValidationError, match="Earth's center"):
             ECEFPosition.from_ds_metadata(ds)
 
 

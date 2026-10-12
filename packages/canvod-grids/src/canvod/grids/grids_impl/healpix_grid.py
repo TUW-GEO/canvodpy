@@ -66,7 +66,7 @@ class HEALPixBuilder(BaseGridBuilder):
        equatorial belt).
     2. Each base pixel is subdivided into ``nside²`` equal-area children
        using a hierarchical quadtree.
-    3. Pixel centres are returned by ``healpy.pix2ang(nside, ipix)`` in
+    3. Pixel centers are returned by ``healpy.pix2ang(nside, ipix)`` in
        RING ordering (pixels ordered by increasing colatitude).
     4. This builder keeps only pixels with ``theta ≤ π/2 − cutoff_theta``
        (northern hemisphere above the elevation mask).
@@ -168,7 +168,7 @@ class HEALPixBuilder(BaseGridBuilder):
         Returns
         -------
         grid : pl.DataFrame
-            One row per pixel.  Contains phi, theta (centre), approximate
+            One row per pixel.  Contains phi, theta (center), approximate
             bounding-box limits, ``healpix_ipix`` (RING-ordered pixel index),
             and ``healpix_nside``.
         theta_lims : np.ndarray

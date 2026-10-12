@@ -1,4 +1,4 @@
-"""``canvodpy dashboard`` — launch the marimo performance dashboard.
+"""``canvodpy dashboard``: launch the marimo performance dashboard.
 
 Reads `stage_timing` events (see `canvodpy.logging.stage_timer`) from
 `machine/performance*.json` and displays a per-iteration stage breakdown

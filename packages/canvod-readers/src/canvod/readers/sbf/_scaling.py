@@ -164,7 +164,7 @@ def pseudorange_m(misc: ArrayLike, code_lsb: ArrayLike) -> NDArray[np.float64]:
     Returns
     -------
     numpy.ndarray of float
-        Pseudorange in metres; NaN where Do-Not-Use.
+        Pseudorange in meters; NaN where Do-Not-Use.
 
     Notes
     -----
@@ -227,7 +227,7 @@ def phase_cycles(
     Parameters
     ----------
     pr_m : float or array of float
-        Pseudorange in metres of the same sub-block (Type1:
+        Pseudorange in meters of the same sub-block (Type1:
         :func:`pseudorange_m`, Type2: :func:`pr2_m`).
     carrier_msb : int or array of int
         Raw ``i1`` CarrierMSB field.
@@ -318,7 +318,7 @@ def pr2_m(
     Parameters
     ----------
     pr1_m : float or array of float
-        Type1 pseudorange in metres (from :func:`pseudorange_m`).
+        Type1 pseudorange in meters (from :func:`pseudorange_m`).
     code_offset_msb : int or array of int
         3-bit signed CodeOffsetMSB (from :func:`decode_offsets_msb`).
     code_offset_lsb : int or array of int
@@ -327,7 +327,7 @@ def pr2_m(
     Returns
     -------
     numpy.ndarray of float
-        Type2 pseudorange in metres; NaN where Do-Not-Use or where the
+        Type2 pseudorange in meters; NaN where Do-Not-Use or where the
         Type1 pseudorange is NaN.
 
     Notes

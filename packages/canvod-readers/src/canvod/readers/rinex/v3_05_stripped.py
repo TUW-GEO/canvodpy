@@ -7,7 +7,7 @@ only the SNR array (no Pseudorange/Phase/Doppler/LLI/SSI), which is
 significantly cheaper for the multi-hundred-MB daily files this format
 typically produces.
 
-Stripped files are recognised by their ``SYS / # / OBS TYPES`` records — every
+Stripped files are recognized by their ``SYS / # / OBS TYPES`` records — every
 observation code starts with ``S``. Files containing any non-SNR observable
 are rejected with :class:`StrippedRinexError` at load time, since the full
 :class:`Rnxv3Obs` reader is the right tool for those.
@@ -50,7 +50,7 @@ class Rnxv3StrippedObs(Rnxv3Obs):
                 bad[system] = non_snr
         if bad:
             raise StrippedRinexError(
-                f"File {self.fpath.name} is not a stripped RINEX — found "
+                f"File {self.fpath.name} is not a stripped RINEX: found "
                 f"non-SNR observables {bad}. Use Rnxv3Obs for full files."
             )
         return self

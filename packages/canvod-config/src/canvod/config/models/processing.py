@@ -1,4 +1,4 @@
-"""Complete processing configuration — composes the sub-sections below."""
+"""Complete processing configuration; composes the sub-sections below."""
 
 from __future__ import annotations
 

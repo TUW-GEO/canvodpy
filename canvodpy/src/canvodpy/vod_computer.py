@@ -7,7 +7,7 @@ Every entry point computes and stores VOD through this class: the Python
 - ``compute_day()`` / ``compute_day_all()`` — from the per-day datasets
   yielded by ``Pipeline.process_range()``. Loads them into memory, then
   computes.
-- ``compute_bulk()`` — from the site's GNSS Icechunk store. Reads the full
+- ``compute_bulk()``: from the site's GNSS Icechunk store. Reads the full
   (or filtered) time range, drops duplicate epochs, sorts, then computes.
 
 All three share ``_compute()`` (the calculator, which aligns canopy and

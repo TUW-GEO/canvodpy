@@ -18,7 +18,7 @@ Notes
 * Supported weight types: ``solid_angle``, ``observation_count``,
   ``snr``, ``sin_elevation``, ``inverse_variance``, ``custom``.
 * Multiple weights are combined element-wise (multiply or add) and
-  optionally normalised to sum to 1.
+  optionally normalized to sum to 1.
 * Dask-backed datasets are handled efficiently: only scalar statistics
   are computed eagerly; masks stay lazy.
 
@@ -95,7 +95,7 @@ class WeightCalculator:
             ``'snr'``, ``'sin_elevation'``, ``'inverse_variance'``,
             ``'custom'``.
         normalize : bool
-            If ``True``, normalise this component to sum to 1.0 before
+            If ``True``, normalize this component to sum to 1.0 before
             combination.
         **kwargs
             Weight-specific parameters (see individual ``_compute_*``
@@ -152,7 +152,7 @@ class WeightCalculator:
             ``'multiply'`` – element-wise product (default).
             ``'add'``      – element-wise sum.
         normalize_final : bool
-            If ``True``, normalise the final array to sum to 1.0.
+            If ``True``, normalize the final array to sum to 1.0.
 
         Returns
         -------
@@ -349,7 +349,7 @@ class WeightCalculator:
                 if v0[2] < -0.01 or v1[2] < -0.01 or v2[2] < -0.01:
                     continue
 
-                # Normalise to unit sphere
+                # Normalize to unit sphere
                 v0 = v0 / np.linalg.norm(v0)
                 v1 = v1 / np.linalg.norm(v1)
                 v2 = v2 / np.linalg.norm(v2)
@@ -637,7 +637,7 @@ class WeightCalculator:
 
     @staticmethod
     def _normalize_weights(weights: np.ndarray) -> np.ndarray:
-        """Normalise weights to sum to 1.0, handling NaN and zeros."""
+        """Normalize weights to sum to 1.0, handling NaN and zeros."""
         weights = np.nan_to_num(weights, nan=0.0)
         weight_sum = weights.sum()
         if weight_sum > 0:
@@ -676,7 +676,7 @@ def compute_area_weights(grid: GridData, normalize: bool = True) -> np.ndarray:
     grid : GridData
         Grid instance.
     normalize : bool
-        If ``True``, normalise to sum to 1.0.
+        If ``True``, normalize to sum to 1.0.
 
     Returns
     -------

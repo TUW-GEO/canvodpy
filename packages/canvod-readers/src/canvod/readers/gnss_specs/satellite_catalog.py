@@ -419,7 +419,7 @@ class SatelliteCatalog:
                 "satellite_catalog_download_failed",
                 url=url,
                 error=str(exc),
-                hint="Working offline? No problem — stale or bundled copy will be used.",
+                hint="Working offline? No problem; stale or bundled copy will be used.",
             )
             return None
 

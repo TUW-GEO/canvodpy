@@ -81,7 +81,7 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
     invocation just created (never one that already existed), so the known
     placeholder strings are guaranteed present.
     """
-    console.print("\n[bold]Interactive setup[/bold] — answer a few questions:\n")
+    console.print("\n[bold]Interactive setup[/bold]. Answer a few questions:\n")
 
     author = Prompt.ask("  Your name")
     email = Prompt.ask("  Your email")
@@ -129,7 +129,7 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
         console.print(format_validation_error(e))
         console.print()
     else:
-        console.print("[green]✓ Configuration is valid — you're ready to go![/green]\n")
+        console.print("[green]✓ Configuration is valid: you're ready to go![/green]\n")
 
 
 @config_app.command()
@@ -177,7 +177,7 @@ def init(
     config_dir.mkdir(parents=True, exist_ok=True)
 
     # Templates ship as real package data inside canvod-config (see
-    # get_template_dir()'s docstring) — always reachable regardless of
+    # get_template_dir()'s docstring): always reachable regardless of
     # install method or invocation directory, no monorepo search needed.
     template_dir = get_template_dir()
 
@@ -185,9 +185,7 @@ def init(
         console.print(
             f"[red]❌ Template directory not found: {template_dir}[/red]",
         )
-        console.print(
-            "\nThis looks like a broken canvod-config install — reinstall it."
-        )
+        console.print("\nThis looks like a broken canvod-config install; reinstall it.")
         raise typer.Exit(1)
 
     files_created = []
@@ -232,7 +230,7 @@ def init(
 
     if interactive:
         console.print(
-            "\n[yellow]⊘ canvod-settings.yaml already exists — skipping interactive "
+            "\n[yellow]⊘ canvod-settings.yaml already exists; skipping interactive "
             "setup.[/yellow] Use --force to start over.\n"
         )
 

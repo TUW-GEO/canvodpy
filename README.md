@@ -307,7 +307,7 @@ canvodpy/                       # Monorepo root
 │   ├── canvod-vod/             #   VOD retrieval algorithms
 │   ├── canvod-store/           #   Icechunk versioned storage
 │   ├── canvod-store-metadata/  #   Store provenance & compliance
-│   ├── canvod-viz/             #   Visualisation
+│   ├── canvod-viz/             #   Visualization
 │   ├── canvod-ops/             #   Preprocessing pipeline
 │   ├── canvod-config/          #   Configuration management
 │   ├── canvod-utils/           #   Date/time utilities & diagnostics

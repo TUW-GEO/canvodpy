@@ -1,4 +1,4 @@
-"""Top-level CanvodConfig — composes processing, sites, and sids sections."""
+"""Top-level CanvodConfig; composes processing, sites, and sids sections."""
 
 from __future__ import annotations
 

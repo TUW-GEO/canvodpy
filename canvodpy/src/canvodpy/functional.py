@@ -153,7 +153,7 @@ def augment_with_ephemeris(
         Ephemeris source: ``"final"`` (SP3/CLK), ``"rapid"``,
         ``"broadcast"`` (SBF only).
     agency : str
-        Analysis centre for SP3/CLK products.
+        Analysis center for SP3/CLK products.
     date : str, optional
         Date in ``YYYYDOY`` format.  Required for ``"final"``/``"rapid"``.
     site_config : optional
