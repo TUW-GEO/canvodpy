@@ -36,7 +36,7 @@ def test_silent_when_grid_matches_or_is_finer() -> None:
 def test_warns_when_first_epoch_is_outside_named_span() -> None:
     from canvodpy.orchestrator.processor import _warn_if_name_disagrees_with_data
 
-    name = "ROSA01TUW_R_20250010015_15M_05S_AA.rnx"  # 00:15 to 00:30
+    name = "FANA01INK_R_20250010015_15M_05S_AA.rnx"  # 00:15 to 00:30
     log = mock.Mock()
     ok = _epochs(5)  # starts 00:00, outside 00:15 to 00:30
     _warn_if_name_disagrees_with_data(log, Path("f"), name, ok)
@@ -54,7 +54,7 @@ def test_warns_when_epoch_count_differs_from_name() -> None:
         _warn_if_epoch_count_differs_from_name,
     )
 
-    name = "ROSA01TUW_R_20250010015_15M_05S_AA.rnx"  # 180 epochs
+    name = "FANA01INK_R_20250010015_15M_05S_AA.rnx"  # 180 epochs
     log = mock.Mock()
     _warn_if_epoch_count_differs_from_name(log, Path("f"), name, _epochs(5, n=170))
     log.warning.assert_called_once()

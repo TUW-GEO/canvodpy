@@ -23,7 +23,9 @@ from canvodpy.orchestrator.discovery import (
     unprocessed_files,
 )
 
-CANONICAL = "ROSA01TUW_R_20250010000_15M_05S_AA.rnx"
+from canvod.utils import testing
+
+CANONICAL = "FANA01INK_R_20250010000_15M_05S_AA.rnx"
 DAY = "2025001"
 
 
@@ -52,9 +54,9 @@ def test_canonical_name_for() -> None:
 
 
 def test_convention_discovery_by_reader_format(tmp_path: Path) -> None:
-    _touch(tmp_path, CANONICAL, "ROSA01TUW_R_20250010000_15M_05S_AA.sbf", "x.txt")
+    _touch(tmp_path, CANONICAL, "FANA01INK_R_20250010000_15M_05S_AA.sbf", "x.txt")
     assert _names(tmp_path, "rinex3") == [CANONICAL]
-    assert _names(tmp_path, "sbf") == ["ROSA01TUW_R_20250010000_15M_05S_AA.sbf"]
+    assert _names(tmp_path, "sbf") == ["FANA01INK_R_20250010000_15M_05S_AA.sbf"]
     assert len(_names(tmp_path, "auto")) == 2
     found = discover_files(ReceiverDay("rx", tmp_path, DAY), "rinex3")
     assert found[0].canonical_name == CANONICAL
@@ -66,11 +68,11 @@ def test_non_canonical_files_are_ignored(tmp_path: Path) -> None:
         tmp_path,
         CANONICAL,
         "rref001a00.25o",  # RINEX v2 short name
-        "ROSA00AUT_R_20250010000_01D_30S_MO.rnx",  # RINEX v3 long name
+        "FANA00INK_R_20250010000_01D_30S_MO.rnx",  # RINEX v3 long name
         "rosa001a.rnx",
-        "ROSA01TUW_R_20250010045_15M_05S_AA.RNX",  # upper-case extension
-        "ROSA01TUW_R_20250010015_15M_05S_AA.rnx.gz",  # compressed
-        "ROSA01TUW_R_20250010030_15M_05S_AA.ubx",  # no reader
+        "FANA01INK_R_20250010045_15M_05S_AA.RNX",  # upper-case extension
+        "FANA01INK_R_20250010015_15M_05S_AA.rnx.gz",  # compressed
+        "FANA01INK_R_20250010030_15M_05S_AA.ubx",  # no reader
     )
     assert _names(tmp_path) == [CANONICAL]
 
@@ -144,9 +146,9 @@ def test_missing_directory_yields_nothing(tmp_path: Path) -> None:
 
 # -- Folder layouts ------------------------------------------------------------
 
-DAY1 = "ROSA01TUW_R_20250010000_15M_05S_AA.rnx"
-DAY1_LATE = "ROSA01TUW_R_20250012345_15M_05S_AA.rnx"
-DAY2 = "ROSA01TUW_R_20250020000_15M_05S_AA.rnx"
+DAY1 = "FANA01INK_R_20250010000_15M_05S_AA.rnx"
+DAY1_LATE = "FANA01INK_R_20250012345_15M_05S_AA.rnx"
+DAY2 = "FANA01INK_R_20250020000_15M_05S_AA.rnx"
 
 
 @pytest.mark.parametrize(
@@ -187,7 +189,7 @@ def test_same_canonical_name_twice_is_an_error(tmp_path: Path) -> None:
 
 
 def test_several_receivers_in_one_folder_is_an_error(tmp_path: Path) -> None:
-    _touch(tmp_path, DAY1, "ROSR01TUW_R_20250010000_15M_05S_AA.rnx")
+    _touch(tmp_path, DAY1, "FANR01INK_R_20250010000_15M_05S_AA.rnx")
     with pytest.raises(DiscoveryError, match="its own directory"):
         receiver_days("rx", tmp_path)
 
@@ -205,15 +207,15 @@ def test_recipes_are_read_from_the_site_folder_of_the_config_dir(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     pytest.importorskip("canvod.filemap.recipe_files")
-    _touch(tmp_path / "recipes" / "rosalia", "ref.yaml")
+    _touch(tmp_path / "recipes" / "fangorn", "ref.yaml")
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
     assert (
-        recipe_file("rosalia", "ref") == tmp_path / "recipes" / "rosalia" / "ref.yaml"
+        recipe_file("fangorn", "ref") == tmp_path / "recipes" / "fangorn" / "ref.yaml"
     )
-    assert recipe_file("rosalia", None) is None
+    assert recipe_file("fangorn", None) is None
     # No fallback to the checkout's config/recipes/
-    with pytest.raises(DiscoveryError, match="just naming-init rosalia _template"):
-        recipe_file("rosalia", "_template")
+    with pytest.raises(DiscoveryError, match="just naming-init fangorn _template"):
+        recipe_file("fangorn", "_template")
 
 
 def test_recipe_outside_its_site_folder_is_an_error(
@@ -222,8 +224,8 @@ def test_recipe_outside_its_site_folder_is_an_error(
     pytest.importorskip("canvod.filemap.recipe_files")
     _touch(tmp_path / "recipes", "ref.yaml")
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
-    with pytest.raises(DiscoveryError, match=r"Move .* to .*rosalia"):
-        recipe_file("rosalia", "ref")
+    with pytest.raises(DiscoveryError, match=r"Move .* to .*fangorn"):
+        recipe_file("fangorn", "ref")
 
 
 def test_recipe_drives_discovery(
@@ -231,11 +233,11 @@ def test_recipe_drives_discovery(
 ) -> None:
     """A receiver recipe selects non-canonical files and maps their names."""
     pytest.importorskip("canvod.filemap.recipe_files")
-    (tmp_path / "recipes" / "rosalia").mkdir(parents=True)
-    (tmp_path / "recipes" / "rosalia" / "ros_ref.yaml").write_text(
+    (tmp_path / "recipes" / "fangorn").mkdir(parents=True)
+    (tmp_path / "recipes" / "fangorn" / "ros_ref.yaml").write_text(
         "name: ros_ref\n"
-        "site: ROS\n"
-        "agency: TUW\n"
+        "site: FAN\n"
+        "agency: INK\n"
         "receiver_number: 1\n"
         "receiver_type: reference\n"
         "sampling: '05S'\n"
@@ -256,13 +258,13 @@ def test_recipe_drives_discovery(
     _touch(data_dir / "25001", "rref001a15.25o", CANONICAL)
     _touch(data_dir, "rref002a00.25o")  # a different day, outside day folders
 
-    recipe = recipe_file("rosalia", "ros_ref")
+    recipe = recipe_file("fangorn", "ros_ref")
     days = receiver_days("reference_01", data_dir, recipe=recipe)
     assert [d.yyyydoy for d in days] == ["2025001", "2025002"]
     found = discover_files(days[0], "rinex3")
 
     assert [f.path.name for f in found] == ["rref001a15.25o"]
-    assert found[0].canonical_name == "ROSR01TUW_R_20250010015_15M_05S_AA.rnx"
+    assert found[0].canonical_name == "FANR01INK_R_20250010015_15M_05S_AA.rnx"
 
 
 def _recipes(**recipes: SimpleNamespace):
@@ -281,7 +283,10 @@ def _recipes(**recipes: SimpleNamespace):
 
 def _recipe(receiver_type: str, number: int) -> SimpleNamespace:
     return SimpleNamespace(
-        site="ROS", agency="TUW", receiver_type=receiver_type, receiver_number=number
+        site=testing.SITE_ID,
+        agency=testing.AGENCY,
+        receiver_type=receiver_type,
+        receiver_number=number,
     )
 
 
@@ -298,11 +303,11 @@ def test_recipe_receivers_with_distinct_identities_pass(tmp_path: Path) -> None:
         can2=_recipe("canopy", 2),
     )
     with a, b, mock.patch.dict("sys.modules", {"canvod.filemap": SimpleNamespace()}):
-        check_receivers(receivers, tmp_path, "rosalia")
+        check_receivers(receivers, tmp_path, "fangorn")
 
 
 def test_shared_recipe_identity_is_rejected(tmp_path: Path) -> None:
-    """Two canopies sharing one recipe would both be named ROSA01TUW."""
+    """Two canopies sharing one recipe would both be named FANA01INK."""
     receivers = {
         "canopy_01": {"type": "canopy", "directory": "c1", "recipe": "can"},
         "canopy_02": {"type": "canopy", "directory": "c2", "recipe": "can"},
@@ -312,9 +317,9 @@ def test_shared_recipe_identity_is_rejected(tmp_path: Path) -> None:
         a,
         b,
         mock.patch.dict("sys.modules", {"canvod.filemap": SimpleNamespace()}),
-        pytest.raises(DiscoveryError, match="ROSA01TUW"),
+        pytest.raises(DiscoveryError, match="FANA01INK"),
     ):
-        check_receivers(receivers, tmp_path, "rosalia")
+        check_receivers(receivers, tmp_path, "fangorn")
 
 
 def test_recipe_receiver_type_must_match(tmp_path: Path) -> None:
@@ -324,9 +329,9 @@ def test_recipe_receiver_type_must_match(tmp_path: Path) -> None:
         a,
         b,
         mock.patch.dict("sys.modules", {"canvod.filemap": SimpleNamespace()}),
-        pytest.raises(DiscoveryError, match="ROSR01TUW, the identity of a reference"),
+        pytest.raises(DiscoveryError, match="FANR01INK, the identity of a reference"),
     ):
-        check_receivers(receivers, tmp_path, "rosalia")
+        check_receivers(receivers, tmp_path, "fangorn")
 
 
 def test_recipe_without_filemap_is_an_error(tmp_path: Path) -> None:
@@ -338,7 +343,7 @@ def test_recipe_without_filemap_is_an_error(tmp_path: Path) -> None:
         mock.patch.dict("sys.modules", {"canvod.filemap": None}),
         pytest.raises(DiscoveryError, match="uv sync --group filemap") as exc_info,
     ):
-        check_receivers(receivers, tmp_path, "rosalia")
+        check_receivers(receivers, tmp_path, "fangorn")
     assert "canopy_01" in str(exc_info.value)
     assert "reference_01" not in str(exc_info.value)
 
@@ -350,7 +355,7 @@ def test_missing_recipe_file_is_an_error(
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
     receivers = {"canopy_01": {"type": "canopy", "directory": "c", "recipe": "nope"}}
     with pytest.raises(DiscoveryError, match="Recipe file not found for 'nope'"):
-        check_receivers(receivers, tmp_path, "rosalia")
+        check_receivers(receivers, tmp_path, "fangorn")
 
 
 def test_canonical_receivers_with_the_same_identity_are_rejected(
@@ -363,14 +368,14 @@ def test_canonical_receivers_with_the_same_identity_are_rejected(
         "canopy_02": {"type": "canopy", "directory": "c2"},
     }
     with pytest.raises(DiscoveryError, match="'canopy_01' and 'canopy_02'"):
-        check_receivers(receivers, tmp_path, "rosalia")
+        check_receivers(receivers, tmp_path, "fangorn")
 
 
 def test_canonical_receiver_role_must_match_type(tmp_path: Path) -> None:
-    _touch(tmp_path / "r", DAY1)  # ROSA01TUW: a canopy identity
+    _touch(tmp_path / "r", DAY1)  # FANA01INK: a canopy identity
     receivers = {"reference_01": {"type": "reference", "directory": "r"}}
     with pytest.raises(DiscoveryError, match="configured as 'reference'"):
-        check_receivers(receivers, tmp_path, "rosalia")
+        check_receivers(receivers, tmp_path, "fangorn")
 
 
 def test_receivers_without_files_pass(tmp_path: Path) -> None:
@@ -378,13 +383,13 @@ def test_receivers_without_files_pass(tmp_path: Path) -> None:
         "canopy_01": {"type": "canopy", "directory": "absent"},
         "canopy_02": {"type": "canopy", "directory": "absent_too"},
     }
-    check_receivers(receivers, tmp_path, "rosalia")
+    check_receivers(receivers, tmp_path, "fangorn")
 
 
 def test_scan_reports_unrecognized_files(tmp_path: Path) -> None:
     _touch(tmp_path, DAY1, "notes.txt", DAY2 + ".gz")
     scan = scan_directory(tmp_path)
-    assert scan.identity == "ROSA01TUW"
+    assert scan.identity == "FANA01INK"
     assert {p.name for p in scan.unrecognized} == {"notes.txt"}
     assert [p.name for p in scan.compressed] == [DAY2 + ".gz"]
     assert list(scan.days) == ["2025001"]
@@ -396,13 +401,13 @@ def test_scan_reports_unrecognized_files(tmp_path: Path) -> None:
         (DAY1 + ".gz", True),
         ("rosa0010.25o.Z", True),
         ("rosa0010.25o.zip", True),
-        ("ROSA00TUW_R_20250010000_01D_30S_MO.crx", True),
-        ("ROSA00TUW_R_20250010000_01D_30S_MO.crx.gz", True),
+        ("FANA00INK_R_20250010000_01D_30S_MO.crx", True),
+        ("FANA00INK_R_20250010000_01D_30S_MO.crx.gz", True),
         ("rosa0010.25d", True),
         ("rosa0010.25D", True),
         (DAY1, False),
         ("rosa0010.25o", False),
-        ("ROSA01TUW_R_20250010000_15M_05S_AA.sbf", False),
+        ("FANA01INK_R_20250010000_15M_05S_AA.sbf", False),
         ("notes.txt", False),
     ],
 )
@@ -437,14 +442,14 @@ def test_recipe_never_sees_compressed_files(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "extra",
     [
-        "ROSA01TUW_R_20250010000_01D_05S_AA.rnx",  # daily next to sub-daily
-        "ROSA01TUW_R_20250010000_15M_01S_AA.rnx",  # same span, other sampling
-        "ROSA01TUW_R_20250010010_15M_05S_AA.rnx",  # partial overlap
+        "FANA01INK_R_20250010000_01D_05S_AA.rnx",  # daily next to sub-daily
+        "FANA01INK_R_20250010000_15M_01S_AA.rnx",  # same span, other sampling
+        "FANA01INK_R_20250010010_15M_05S_AA.rnx",  # partial overlap
     ],
     ids=["daily", "equal", "partial"],
 )
 def test_overlapping_files_are_an_error(tmp_path: Path, extra: str) -> None:
-    _touch(tmp_path / "25001", DAY1, "ROSA01TUW_R_20250010015_15M_05S_AA.rnx")
+    _touch(tmp_path / "25001", DAY1, "FANA01INK_R_20250010015_15M_05S_AA.rnx")
     _touch(tmp_path / "other", extra)
     with pytest.raises(DiscoveryError, match=r"overlaps .*\n.*not both"):
         receiver_days("rx", tmp_path)

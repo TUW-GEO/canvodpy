@@ -30,8 +30,8 @@ class TestSiteAPI:
         mock_gnss_site.active_vod_analyses = {}
 
         with patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site):
-            site = Site("Rosalia")
-            assert site.name == "Rosalia"
+            site = Site("Fangorn")
+            assert site.name == "Fangorn"
 
     def test_site_has_receivers(self):
         """Site should have receivers property."""
@@ -41,7 +41,7 @@ class TestSiteAPI:
         mock_gnss_site.receivers = {"canopy_01": {"active": True}}
 
         with patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site):
-            site = Site("Rosalia")
+            site = Site("Fangorn")
             assert hasattr(site, "receivers")
             assert isinstance(site.receivers, dict)
 
@@ -53,7 +53,7 @@ class TestSiteAPI:
         mock_gnss_site.active_receivers = {"canopy_01": {"active": True}}
 
         with patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site):
-            site = Site("Rosalia")
+            site = Site("Fangorn")
             assert hasattr(site, "active_receivers")
 
 
@@ -94,9 +94,9 @@ class TestPipelineAPI:
             mock_config.return_value.processing.params = mock_proc
             mock_config.return_value.processing.aux_data.agency = "COD"
 
-            site = Site("Rosalia")
+            site = Site("Fangorn")
             pipeline = Pipeline(site)
-            assert pipeline.site.name == "Rosalia"
+            assert pipeline.site.name == "Fangorn"
 
     def test_pipeline_creation_from_string(self):
         """Should create Pipeline from site name."""
@@ -122,8 +122,8 @@ class TestPipelineAPI:
             mock_config.return_value.processing.params = mock_proc
             mock_config.return_value.processing.aux_data.agency = "COD"
 
-            pipeline = Pipeline("Rosalia")
-            assert pipeline.site.name == "Rosalia"
+            pipeline = Pipeline("Fangorn")
+            assert pipeline.site.name == "Fangorn"
 
     def test_pipeline_has_process_date(self):
         """Pipeline should have process_date method."""
@@ -149,7 +149,7 @@ class TestPipelineAPI:
             mock_config.return_value.processing.params = mock_proc
             mock_config.return_value.processing.aux_data.agency = "COD"
 
-            pipeline = Pipeline("Rosalia")
+            pipeline = Pipeline("Fangorn")
             assert hasattr(pipeline, "process_date")
             assert callable(pipeline.process_date)
 
@@ -184,7 +184,7 @@ class TestNoEffectResourceArguments:
         from canvodpy import Pipeline
 
         with pytest.warns(FutureWarning, match=rf"'{name}' argument of Pipeline\(\)"):
-            Pipeline("Rosalia", **{name: value})
+            Pipeline("Fangorn", **{name: value})
         kwargs = mocked_pipeline_setup.call_args.kwargs
         assert name not in kwargs
 
@@ -199,7 +199,7 @@ class TestNoEffectResourceArguments:
 
         from canvodpy import Site
 
-        site = Site("Rosalia")
+        site = Site("Fangorn")
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             site.pipeline(**{name: value})
@@ -216,7 +216,7 @@ class TestNoEffectResourceArguments:
 
         with warnings.catch_warnings():
             warnings.simplefilter("error", FutureWarning)
-            Pipeline("Rosalia", n_workers=2)
+            Pipeline("Fangorn", n_workers=2)
 
     def test_orchestrator_argument_warns(self):
         from canvodpy.orchestrator.pipeline import PipelineOrchestrator
@@ -318,7 +318,7 @@ class TestDeprecatedVodForDay:
             pytest.warns(FutureWarning) as record,
         ):
             canvodpy.calculate_vod(
-                "Rosalia", "canopy_01", "reference_01", "2025001", write_to_store=False
+                "Fangorn", "canopy_01", "reference_01", "2025001", write_to_store=False
             )
 
         assert len(record) == 1
@@ -345,7 +345,7 @@ class TestAPICoexistence:
         mock_gnss_site.active_vod_analyses = {}
 
         with patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site):
-            site = Site("Rosalia")
+            site = Site("Fangorn")
             workflow = VODWorkflow(site=site, keep_vars=["SNR"])
             assert site.name == workflow.site.name
 
@@ -373,7 +373,7 @@ class TestAPICoexistence:
             mock_config.return_value.processing.params = mock_proc
             mock_config.return_value.processing.aux_data.agency = "COD"
 
-            pipeline = Pipeline("Rosalia")
+            pipeline = Pipeline("Fangorn")
             assert pipeline is not None
 
 

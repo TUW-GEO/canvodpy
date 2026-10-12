@@ -89,11 +89,11 @@ def test_preview_counts_files_like_the_run(tmp_path: Path) -> None:
     sbf_dir = tmp_path / "sbf"
     _touch(
         rnx_dir,
-        "ROSA01TUW_R_20250010000_15M_05S_AA.rnx",
-        "ROSA01TUW_R_20250010015_15M_05S_AA.rnx",
+        "FANA01INK_R_20250010000_15M_05S_AA.rnx",
+        "FANA01INK_R_20250010015_15M_05S_AA.rnx",
         "notes.txt",
     )
-    _touch(sbf_dir, "ROSR01TUW_R_20250010000_15M_05S_AA.sbf")
+    _touch(sbf_dir, "FANR01INK_R_20250010000_15M_05S_AA.sbf")
     grouped = {
         "2025001": {
             "canopy_01": (

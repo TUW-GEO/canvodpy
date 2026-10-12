@@ -17,7 +17,7 @@ from canvod.utils.tools import YYYYDOY
 
 
 def test_process_names_the_replacement(tmp_path: Path) -> None:
-    site = SimpleNamespace(site_name="Rosalia")
+    site = SimpleNamespace(site_name="Fangorn")
     with pytest.warns(FutureWarning, match="process_date"):
         processor = SingleReceiverProcessor(
             receiver_name="canopy_01",
@@ -29,6 +29,6 @@ def test_process_names_the_replacement(tmp_path: Path) -> None:
     with pytest.raises(NotImplementedError) as e:
         processor.process()
     assert (
-        "canvodpy.Site('Rosalia').pipeline().process_date('2025001')['canopy_01']"
+        "canvodpy.Site('Fangorn').pipeline().process_date('2025001')['canopy_01']"
         in str(e.value)
     )

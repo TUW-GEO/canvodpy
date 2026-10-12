@@ -35,17 +35,19 @@ def _metadata(store_type: str = "gnss_store") -> StoreMetadata:
     suffix = "gnss" if store_type == "gnss_store" else "vod"
     return StoreMetadata(
         identity=StoreIdentity(
-            id=f"rosalia-{suffix}",
+            id=f"fangorn-{suffix}",
             uuid="00000000-0000-4000-8000-000000000001",
-            naming_authority="at.ac.tuwien",
+            naming_authority="org.middle-earth",
             stac_link="../../x/x/x.json",
-            title="Rosalia GNSS Store",
+            title="Fangorn GNSS Store",
             store_type=store_type,
             source_format="rinex3",
         ),
         creator=Creator(name="T", email="t@example.org", institution="U"),
         temporal=TemporalExtent(created="2026-01-01T00:00:00Z", updated="x"),
-        spatial=SpatialExtent(site=SiteInfo(name="Rosalia"), geospatial_lat=47.7),
+        spatial=SpatialExtent(
+            site=SiteInfo(name="Fangorn"), geospatial_lat=testing.LATITUDE
+        ),
         instruments=Instruments(
             receivers={"canopy_01": ReceiverInfo(type="canopy", directory="c")}
         ),
@@ -83,14 +85,14 @@ class TestAmend:
     def test_an_amendment_changes_the_field_and_records_it(self, tmp_path):
         path = _store(tmp_path)
 
-        _amend(path, {"identity.title": "Rosalia GNSS"})
+        _amend(path, {"identity.title": "Fangorn GNSS"})
 
         repository = _repository(path)
-        assert repository["identity"]["title"] == "Rosalia GNSS"
+        assert repository["identity"]["title"] == "Fangorn GNSS"
         (record,) = repository["amendments"]
         assert record["field"] == "identity.title"
-        assert record["old"] == "Rosalia GNSS Store"
-        assert record["new"] == "Rosalia GNSS"
+        assert record["old"] == "Fangorn GNSS Store"
+        assert record["new"] == "Fangorn GNSS"
         assert record["reason"] == "a better title"
         assert record["who"] == testing.PERSON_INITIALS
         assert record["when"]
@@ -98,26 +100,29 @@ class TestAmend:
     def test_an_amendment_commits_the_new_root_copy(self, tmp_path):
         path = _store(tmp_path)
 
-        _amend(path, {"identity.title": "Rosalia GNSS"})
+        _amend(path, {"identity.title": "Fangorn GNSS"})
 
         session = icechunk.Repository.open(
             storage=icechunk.local_filesystem_storage(str(path))
         ).readonly_session(branch="main")
-        assert zarr.open_group(session.store, mode="r").attrs["title"] == "Rosalia GNSS"
-        assert read_metadata(path).identity.title == "Rosalia GNSS"
+        assert zarr.open_group(session.store, mode="r").attrs["title"] == "Fangorn GNSS"
+        assert read_metadata(path).identity.title == "Fangorn GNSS"
 
     def test_several_fields_in_one_amendment(self, tmp_path):
         path = _store(tmp_path)
 
         _amend(
             path,
-            {"creator.email": "new@example.org", "spatial.geospatial_lat": 47.71},
+            {
+                "creator.email": "new@example.org",
+                "spatial.geospatial_lat": testing.LATITUDE + 0.01,
+            },
             reason="corrections",
         )
 
         repository = _repository(path)
         assert repository["creator"]["email"] == "new@example.org"
-        assert repository["spatial"]["geospatial_lat"] == 47.71
+        assert repository["spatial"]["geospatial_lat"] == testing.LATITUDE + 0.01
         assert [a["field"] for a in repository["amendments"]] == [
             "creator.email",
             "spatial.geospatial_lat",
@@ -131,7 +136,7 @@ class TestAmend:
             match="a store with a different id is a different store: create a new one",
         ):
             _amend(path, {"identity.id": "other-gnss"})
-        assert _repository(path)["identity"]["id"] == "rosalia-gnss"
+        assert _repository(path)["identity"]["id"] == "fangorn-gnss"
 
     def test_an_amendment_needs_a_reason(self, tmp_path):
         path = _store(tmp_path)

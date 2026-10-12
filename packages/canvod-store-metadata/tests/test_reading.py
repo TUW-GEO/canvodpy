@@ -29,17 +29,17 @@ _CONFIG = {"processing": {"batch_hours": 24}}
 def _metadata() -> StoreMetadata:
     return StoreMetadata(
         identity=StoreIdentity(
-            id="rosalia-gnss",
+            id="fangorn-gnss",
             uuid="00000000-0000-4000-8000-000000000001",
-            naming_authority="at.ac.tuwien",
+            naming_authority="org.middle-earth",
             stac_link="../../x/x/x.json",
-            title="Rosalia GNSS Store",
+            title="Fangorn GNSS Store",
             store_type="gnss_store",
             source_format="rinex3",
         ),
         creator=Creator(name="T", email="t@example.org", institution="U"),
         temporal=TemporalExtent(created="2026-01-01T00:00:00Z", updated="x"),
-        spatial=SpatialExtent(site=SiteInfo(name="Rosalia")),
+        spatial=SpatialExtent(site=SiteInfo(name="Fangorn")),
     )
 
 
@@ -102,13 +102,13 @@ class TestReadSnapshot:
     def test_a_snapshot_reads_as_it_was_after_a_later_amendment(self, tmp_path):
         path = _store(tmp_path)
         before = _commit(path, "canopy_01")
-        _amend_title(path, "Rosalia GNSS")
+        _amend_title(path, "Fangorn GNSS")
         _commit(path, "reference_01")
 
         assert read_metadata(path, snapshot_id=before).identity.title == (
-            "Rosalia GNSS Store"
+            "Fangorn GNSS Store"
         )
-        assert read_metadata(path).identity.title == "Rosalia GNSS"
+        assert read_metadata(path).identity.title == "Fangorn GNSS"
         assert read_metadata(path, branch="main").amendments[0].reason == (
             "clearer title"
         )
@@ -118,7 +118,7 @@ class TestReadSnapshot:
 
         meta = read_metadata(path)
 
-        assert meta.identity.title == "Rosalia GNSS Store"
+        assert meta.identity.title == "Fangorn GNSS Store"
         assert meta.written_before_migration
 
     def test_a_current_snapshot_is_not_marked(self, tmp_path):
@@ -130,7 +130,7 @@ class TestShowMetadata:
     def test_show_names_the_amendments_made_since_the_snapshot(self, tmp_path, capsys):
         path = _store(tmp_path)
         before = _commit(path, "canopy_01")
-        _amend_title(path, "Rosalia GNSS")
+        _amend_title(path, "Fangorn GNSS")
 
         show_metadata(path, snapshot_id=before)
 
@@ -179,7 +179,7 @@ class TestDeprecations:
 
         with pytest.warns(FutureWarning, match="read_metadata"):
             meta = StoreMetadata.from_root_attrs(attrs)
-        assert meta.identity.id == "rosalia-gnss"
+        assert meta.identity.id == "fangorn-gnss"
 
 
 def test_the_reserved_group_is_named_canvod():

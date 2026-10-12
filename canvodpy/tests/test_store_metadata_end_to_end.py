@@ -10,14 +10,14 @@ from canvod.store_metadata import read_metadata
 @pytest.mark.integration
 def test_one_day_leaves_complete_store_metadata(rosalia_one_day):
     config, _ = rosalia_one_day
-    store_path = config.processing.storage.get_gnss_store_path("rosalia")
+    store_path = config.processing.storage.get_gnss_store_path("fangorn")
     repo = icechunk.Repository.open(
         storage=icechunk.local_filesystem_storage(str(store_path))
     )
 
     repository = repo.get_metadata()
-    assert repository["identity"]["id"] == "rosalia-gnss"
-    assert repository["identity"]["naming_authority"] == "at.ac.tuwien"
+    assert repository["identity"]["id"] == "fangorn-gnss"
+    assert repository["identity"]["naming_authority"] == "org.middle-earth"
     assert set(repository["instruments"]["receivers"]) == {
         "canopy_01",
         "reference_01",

@@ -18,17 +18,17 @@ from canvodpy.orchestrator.processor import (
 # physical name -> canonical name
 _FILES = {
     "canopy_01": {
-        "c1_a.sbf": "ROSA01TUW_R_20250012300_15M_05S_AA.sbf",
-        "c1_b.sbf": "ROSA01TUW_R_20250012315_15M_05S_AA.sbf",
+        "c1_a.sbf": "FANA01INK_R_20250012300_15M_05S_AA.sbf",
+        "c1_b.sbf": "FANA01INK_R_20250012315_15M_05S_AA.sbf",
     },
     "canopy_02": {
-        "c2_a.sbf": "ROSA02TUW_R_20250012300_15M_05S_AA.sbf",
-        "c2_b.sbf": "ROSA02TUW_R_20250012315_15M_05S_AA.sbf",
+        "c2_a.sbf": "FANA02INK_R_20250012300_15M_05S_AA.sbf",
+        "c2_b.sbf": "FANA02INK_R_20250012315_15M_05S_AA.sbf",
     },
     "reference_01": {
-        "r_a.sbf": "ROSR01TUW_R_20250012300_15M_05S_AA.sbf",
-        "r_b.sbf": "ROSR01TUW_R_20250012315_15M_05S_AA.sbf",
-        "r_c.sbf": "ROSR01TUW_R_20250012330_15M_05S_AA.sbf",
+        "r_a.sbf": "FANR01INK_R_20250012300_15M_05S_AA.sbf",
+        "r_b.sbf": "FANR01INK_R_20250012315_15M_05S_AA.sbf",
+        "r_c.sbf": "FANR01INK_R_20250012330_15M_05S_AA.sbf",
     },
 }
 

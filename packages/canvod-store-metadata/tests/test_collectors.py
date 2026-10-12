@@ -86,16 +86,21 @@ class TestCollectors:
 
     def test_collect_spatial(self):
         site_cfg = MagicMock()
-        site_cfg.latitude = 47.7
-        site_cfg.longitude = 16.3
-        site_cfg.altitude_m = 400.0
+        site_cfg.latitude = testing.LATITUDE
+        site_cfg.longitude = testing.LONGITUDE
+        site_cfg.altitude_m = testing.ALTITUDE_M
         site_cfg.description = "Test site"
         site_cfg.country = "AT"
 
-        spatial = collect_spatial(site_cfg, "Rosalia")
-        assert spatial.site.name == "Rosalia"
-        assert spatial.geospatial_lat == 47.7
-        assert spatial.bbox == [16.3, 47.7, 16.3, 47.7]
+        spatial = collect_spatial(site_cfg, "Fangorn")
+        assert spatial.site.name == "Fangorn"
+        assert spatial.geospatial_lat == testing.LATITUDE
+        assert spatial.bbox == [
+            testing.LONGITUDE,
+            testing.LATITUDE,
+            testing.LONGITUDE,
+            testing.LATITUDE,
+        ]
 
     def test_collect_config_snapshot(self):
         config = {
@@ -149,10 +154,10 @@ class TestCollectors:
                 "funding",
             ]
         )
-        refs_cfg.software_repository = "https://github.com/nfb2021/canvodpy"
-        refs_cfg.documentation = "https://github.com/nfb2021/canvodpy/tree/main/docs"
+        refs_cfg.software_repository = testing.REPOSITORY
+        refs_cfg.documentation = testing.DOCUMENTATION
         refs_cfg.access_url = "https://example.org/store"
-        refs_cfg.related_stores = ["rosalia_v3_04/vod_store"]
+        refs_cfg.related_stores = ["fangorn/vod_store"]
         refs_cfg.publications = []
 
         funding_entry = MagicMock(
@@ -170,12 +175,10 @@ class TestCollectors:
         config.processing = proc
 
         refs = collect_references(config)
-        assert refs.software_repository == "https://github.com/nfb2021/canvodpy"
-        assert (
-            refs.documentation == "https://github.com/nfb2021/canvodpy/tree/main/docs"
-        )
+        assert refs.software_repository == testing.REPOSITORY
+        assert refs.documentation == testing.DOCUMENTATION
         assert refs.access_url == "https://example.org/store"
-        assert refs.related_stores == ["rosalia_v3_04/vod_store"]
+        assert refs.related_stores == ["fangorn/vod_store"]
         assert refs.funding[0].funder == "European Space Agency (ESA)"
         assert refs.funding[0].award_title == "SIRENE"
 

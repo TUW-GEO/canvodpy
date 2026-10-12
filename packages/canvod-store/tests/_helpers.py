@@ -142,7 +142,7 @@ def make_synthetic_dataset(
         },
         attrs={
             "File Hash": file_hash,
-            "station": "ROST",
+            "station": "FANT",
             "receiver": "canopy_01",
         },
     )

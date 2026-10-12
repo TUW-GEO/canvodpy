@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from canvod.config.models import ReceiverConfig, VodAnalysisConfig
+from canvod.config.models.references import ReferencesConfig
 from canvod.utils import testing
 
 _CONFIG_ENV = ("CANVOD_CONFIG_DIR", "CANVOD_CONFIG_FILE")
@@ -88,7 +89,7 @@ def rosalia_one_day(tmp_path, monkeypatch):
     # GnssResearchSite.__init__ calls load_config() and looks up
     # sites.sites[site_name] to build the store + site config — fully
     # monkeypatch both so this test never depends on the real local
-    # config/canvod-settings.yaml having a "rosalia" site defined (or
+    # config/canvod-settings.yaml having the test site defined (or
     # existing at all). Mutate the already-validated config object directly
     # (models are frozen=False) rather than an env var override —
     # CANVOD__PROCESSING__STORAGE__... env vars replace the whole nested
@@ -113,16 +114,30 @@ def rosalia_one_day(tmp_path, monkeypatch):
     patched_config.processing.storage.aux_data_dir = tmp_path / "aux"
     patched_config.processing.storage.shared_aux_cache_dir = None
     patched_config.processing.logging.log_dir = tmp_path / "logs"
-    # New stores need a naming authority (ADR 0015); don't rely on the
-    # local settings having one.
-    patched_config.processing.metadata.naming_authority = "at.ac.tuwien"
+    # The store metadata name the made-up person and site, never the local
+    # settings' own; new stores need a naming authority (ADR 0015).
+    patched_config.processing.metadata.author = testing.PERSON_NAME
+    patched_config.processing.metadata.email = testing.PERSON_EMAIL
+    patched_config.processing.metadata.institution = testing.INSTITUTION
+    for field in (
+        "orcid",
+        "institution_ror",
+        "department",
+        "research_group",
+        "website",
+        "publisher_url",
+        "store_description",
+    ):
+        setattr(patched_config.processing.metadata, field, None)
+    patched_config.processing.references = ReferencesConfig()
+    patched_config.processing.metadata.naming_authority = testing.NAMING_AUTHORITY
     patched_config.processing.metadata.publisher = testing.PUBLISHER
     patched_config.processing.metadata.license = "CC-BY-4.0"
-    patched_config.sites.sites["rosalia"] = SiteConfig(
+    patched_config.sites.sites[testing.SITE_KEY] = SiteConfig(
         gnss_site_data_root=str(_ROSALIA_DATA),
         store_description="One day of GNSS observations from the test data.",
-        latitude=47.7,
-        longitude=16.3,
+        latitude=testing.LATITUDE,
+        longitude=testing.LONGITUDE,
         receivers={
             "canopy_01": ReceiverConfig(type="canopy", directory="placeholder"),
         },
@@ -131,7 +146,7 @@ def rosalia_one_day(tmp_path, monkeypatch):
         config_loader, "_load_config_cached", lambda *a, **kw: patched_config
     )
 
-    site = GnssResearchSite(site_name="rosalia")
+    site = GnssResearchSite(site_name=testing.SITE_KEY)
 
     # Override site config to use self-contained test data
     site._site_config.gnss_site_data_root = str(_ROSALIA_DATA)

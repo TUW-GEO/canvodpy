@@ -433,7 +433,7 @@ class TestStoreMaintainDue:
 
 def _write_old_form_store(
     store_path,
-    naming_authority="at.ac.tuwien",
+    naming_authority="org.middle-earth",
     *,
     complete=True,
     store_type="gnss_store",
@@ -473,8 +473,8 @@ def _write_old_form_store(
         temporal=TemporalExtent(created="2025-01-01T00:00:00Z", updated="x"),
         spatial=SpatialExtent(
             site=SiteInfo(name="TestSite"),
-            geospatial_lat=47.7 if complete else None,
-            geospatial_lon=16.3 if complete else None,
+            geospatial_lat=testing.LATITUDE if complete else None,
+            geospatial_lon=testing.LONGITUDE if complete else None,
         ),
     )
     repo = icechunk.Repository.create(
@@ -514,7 +514,7 @@ def _write_old_form_store(
 
 
 class TestStoreMigrateMetadata:
-    def _setup(self, tmp_path, naming_authority="at.ac.tuwien"):
+    def _setup(self, tmp_path, naming_authority="org.middle-earth"):
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
@@ -641,7 +641,7 @@ class TestStoreMigrateMetadata:
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root, naming_authority="org.example")
         store_path = stores_root / "TestSite" / "rinex"
-        _write_old_form_store(store_path, naming_authority="at.ac.tuwien")
+        _write_old_form_store(store_path, naming_authority="org.middle-earth")
 
         result = runner.invoke(
             main_app,
@@ -652,7 +652,7 @@ class TestStoreMigrateMetadata:
         assert result.exit_code == 0, result.output
         from canvod.store_metadata import read_metadata
 
-        assert read_metadata(store_path).identity.naming_authority == "at.ac.tuwien"
+        assert read_metadata(store_path).identity.naming_authority == "org.middle-earth"
 
     def test_missing_fields_refuse_the_migration_and_are_listed(self, tmp_path):
         config_dir = tmp_path / "config"
@@ -697,9 +697,9 @@ class TestStoreMigrateMetadata:
                 "--set",
                 "publisher.license=CC-BY-4.0",
                 "--set",
-                "spatial.geospatial_lat=47.7",
+                f"spatial.geospatial_lat={testing.LATITUDE}",
                 "--set",
-                "spatial.geospatial_lon=16.3",
+                f"spatial.geospatial_lon={testing.LONGITUDE}",
                 "--yes",
             ],
             env=_env(config_dir),
@@ -856,7 +856,7 @@ class TestStoreAmend:
         result = self._amend(
             config_dir,
             "--set",
-            "spatial.geospatial_lat=47.71",
+            f"spatial.geospatial_lat={testing.LATITUDE + 0.01}",
             "--reason",
             "surveyed",
             "--yes",
@@ -865,7 +865,7 @@ class TestStoreAmend:
         assert result.exit_code == 0, result.output
         from canvod.store_metadata import read_metadata
 
-        assert read_metadata(path).spatial.geospatial_lat == 47.71
+        assert read_metadata(path).spatial.geospatial_lat == testing.LATITUDE + 0.01
 
     def test_nothing_changes_without_confirmation(self, tmp_path):
         config_dir, path = self._setup(tmp_path)

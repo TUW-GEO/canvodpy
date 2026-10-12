@@ -129,15 +129,15 @@ class TestReferencesConfig:
 
     def test_accepts_software_repository_and_documentation(self):
         r = ReferencesConfig(
-            software_repository="https://github.com/nfb2021/canvodpy",
-            documentation="https://github.com/nfb2021/canvodpy/tree/main/docs",
+            software_repository=testing.REPOSITORY,
+            documentation=testing.DOCUMENTATION,
             access_url="https://example.org/store",
-            related_stores=["rosalia_v3_04/vod_store"],
+            related_stores=["fangorn/vod_store"],
         )
-        assert r.software_repository == "https://github.com/nfb2021/canvodpy"
-        assert r.documentation == "https://github.com/nfb2021/canvodpy/tree/main/docs"
+        assert r.software_repository == testing.REPOSITORY
+        assert r.documentation == testing.DOCUMENTATION
         assert r.access_url == "https://example.org/store"
-        assert r.related_stores == ["rosalia_v3_04/vod_store"]
+        assert r.related_stores == ["fangorn/vod_store"]
 
     def test_accepts_funding(self):
         r = ReferencesConfig(
@@ -326,8 +326,8 @@ class TestReceiverConfig:
         assert rc.paired_canopies == "all"
 
     def test_recipe_only_is_valid(self):
-        rc = ReceiverConfig(type="canopy", directory="can/raw", recipe="rosalia_canopy")
-        assert rc.recipe == "rosalia_canopy"
+        rc = ReceiverConfig(type="canopy", directory="can/raw", recipe="fangorn_canopy")
+        assert rc.recipe == "fangorn_canopy"
         assert rc.naming is None
 
     def test_naming_is_deprecated(self):
@@ -343,7 +343,7 @@ class TestReceiverConfig:
             SiteConfig(
                 gnss_site_data_root="/data",
                 receivers={"canopy_01": {"type": "canopy", "directory": "c"}},
-                naming={"site_id": "ROS", "agency": "TUW"},
+                naming={"site_id": testing.SITE_ID, "agency": testing.AGENCY},
             )
 
 
@@ -564,12 +564,12 @@ class TestSidsConfig:
 class TestStorageConfig:
     def test_store_paths(self, tmp_path):
         sc = StorageConfig(stores_root_dir=tmp_path)
-        gnss = sc.get_gnss_store_path("rosalia")
-        vod = sc.get_vod_store_path("rosalia")
-        rollup = sc.get_rollup_store_path("rosalia")
-        assert gnss == tmp_path / "rosalia" / "rinex"
-        assert vod == tmp_path / "rosalia" / "vod"
-        assert rollup == tmp_path / "rosalia" / "rollup"
+        gnss = sc.get_gnss_store_path("fangorn")
+        vod = sc.get_vod_store_path("fangorn")
+        rollup = sc.get_rollup_store_path("fangorn")
+        assert gnss == tmp_path / "fangorn" / "rinex"
+        assert vod == tmp_path / "fangorn" / "vod"
+        assert rollup == tmp_path / "fangorn" / "rollup"
 
     def test_deprecated_get_rinex_store_path(self, tmp_path):
         import warnings
@@ -577,9 +577,9 @@ class TestStorageConfig:
         sc = StorageConfig(stores_root_dir=tmp_path)
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            result = sc.get_rinex_store_path("rosalia")
+            result = sc.get_rinex_store_path("fangorn")
         assert any(issubclass(x.category, FutureWarning) for x in w)
-        assert result == tmp_path / "rosalia" / "rinex"
+        assert result == tmp_path / "fangorn" / "rinex"
 
     def test_vod_store_strategy_deprecated(self, tmp_path):
         with pytest.warns(FutureWarning, match="'vod_store_strategy' is left over"):
@@ -801,8 +801,8 @@ class TestSitesConfig:
     def test_valid_site(self):
         sites = SitesConfig(
             sites={
-                "rosalia": SiteConfig(
-                    gnss_site_data_root="/data/rosalia",
+                "fangorn": SiteConfig(
+                    gnss_site_data_root="/data/fangorn",
                     receivers={
                         "c1": ReceiverConfig(type="canopy", directory="c1"),
                         "r1": ReceiverConfig(
@@ -812,7 +812,7 @@ class TestSitesConfig:
                 )
             }
         )
-        assert "rosalia" in sites.sites
+        assert "fangorn" in sites.sites
 
 
 # ===================================================================

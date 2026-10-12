@@ -89,10 +89,10 @@ class TestHasRinexFiles:
     @pytest.mark.parametrize(
         "name",
         [
-            "ROSA00TUW_R_20250010000_15M_05S_AA.sbf",
-            "ROSA00TUW_R_20250010000_01D_30S_MO.rnx.gz",
-            "rosa0010.25o.gz",
-            "rosa001a00.25_.gz",
+            "FANA00INK_R_20250010000_15M_05S_AA.sbf",
+            "FANA00INK_R_20250010000_01D_30S_MO.rnx.gz",
+            "fana0010.25o.gz",
+            "fana001a00.25_.gz",
         ],
     )
     def test_dir_with_canonical_or_compressed_files(self, tmp_path, name):

@@ -146,7 +146,7 @@ class TestExplain:
 class _FakeSite:
     """Minimal stand-in for :class:`canvodpy.api.Site`."""
 
-    def __init__(self, name: str = "Rosalia"):
+    def __init__(self, name: str = "Fangorn"):
         self.name = name
 
 
@@ -161,7 +161,7 @@ class TestFluentWorkflowInit:
 
     def test_creates_with_site_object(self):
         fw = _make_workflow()
-        assert fw._site.name == "Rosalia"
+        assert fw._site.name == "Fangorn"
 
     def test_creates_with_empty_plan(self):
         fw = _make_workflow()
@@ -186,7 +186,7 @@ class TestFluentWorkflowInit:
         fw = _make_workflow()
         fw.read("2025001").grid()
         r = repr(fw)
-        assert "Rosalia" in r
+        assert "Fangorn" in r
         assert "pending_steps=2" in r
 
 
@@ -197,6 +197,6 @@ class TestWorkflowConvenienceFunction:
         import canvodpy
 
         with patch("canvodpy.fluent.Site", side_effect=lambda name: _FakeSite(name)):
-            fw = canvodpy.workflow("Rosalia", keep_vars=["SNR"])
+            fw = canvodpy.workflow("Fangorn", keep_vars=["SNR"])
         assert isinstance(fw, FluentWorkflow)
-        assert fw._site.name == "Rosalia"
+        assert fw._site.name == "Fangorn"

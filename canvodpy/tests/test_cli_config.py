@@ -35,10 +35,10 @@ class TestInteractiveWizard:
         answers = (
             f"{testing.PERSON_NAME}\n"
             f"{testing.PERSON_EMAIL}\n"
-            "TU Wien\n"
+            "University of Oxford\n"
             f"{tmp_path / 'stores'}\n"
             f"{tmp_path / 'logs'}\n"
-            "Rosalia\n"
+            "Fangorn\n"
             f"{tmp_path / 'data'}\n"
             "custom_canopy\n"
             "custom_reference\n"
@@ -51,10 +51,10 @@ class TestInteractiveWizard:
         text = (config_dir / "canvod-settings.yaml").read_text()
         assert f"author: {testing.PERSON_NAME}" in text
         assert f"email: {testing.PERSON_EMAIL}" in text
-        assert "institution: TU Wien" in text
+        assert "institution: University of Oxford" in text
         assert f"stores_root_dir: {tmp_path / 'stores'}" in text
         assert f"log_dir: {tmp_path / 'logs'}" in text
-        assert "  Rosalia:" in text
+        assert "  Fangorn:" in text
         assert f"gnss_site_data_root: {tmp_path / 'data'}" in text
         assert "directory: custom_canopy" in text
         assert "directory: custom_reference" in text
@@ -134,7 +134,7 @@ class TestValidateRecipeWithoutFilemap:
         config_dir.mkdir(parents=True)
         receiver = {"type": "canopy", "directory": "02_canopy"}
         if with_recipe:
-            receiver["recipe"] = "rosalia_canopy"
+            receiver["recipe"] = "fangorn_canopy"
         (config_dir / "canvod-settings.yaml").write_text(
             yaml.safe_dump(
                 {
@@ -197,10 +197,10 @@ class TestConfigDirOption:
 
         # Every later lookup in the same process uses that directory
         assert get_default_config_dir() == config_dir.resolve()
-        (config_dir / "recipes" / "rosalia").mkdir(parents=True)
-        (config_dir / "recipes" / "rosalia" / "rx.yaml").write_text("")
-        assert recipe_file("rosalia", "rx") == (
-            config_dir.resolve() / "recipes" / "rosalia" / "rx.yaml"
+        (config_dir / "recipes" / "fangorn").mkdir(parents=True)
+        (config_dir / "recipes" / "fangorn" / "rx.yaml").write_text("")
+        assert recipe_file("fangorn", "rx") == (
+            config_dir.resolve() / "recipes" / "fangorn" / "rx.yaml"
         )
 
     def test_every_command_offers_it(self):

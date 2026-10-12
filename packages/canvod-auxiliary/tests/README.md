@@ -138,11 +138,11 @@ Tests marked with `@pytest.mark.network`:
 
 **ecef_position**
 - ECEFPosition instance
-- TU Wien station coordinates
+- The made-up site (Bloemfontein) from `canvod.utils.testing`
 
 **geodetic_position**
 - GeodeticPosition instance
-- TU Wien station coordinates
+- The made-up site (Bloemfontein) from `canvod.utils.testing`
 
 ## Coverage Goals
 

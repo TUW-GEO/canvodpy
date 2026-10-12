@@ -57,7 +57,7 @@ def test_commits_record_the_settings_the_store_was_given(
             identity=StoreIdentity(
                 id="test-gnss",
                 uuid="00000000-0000-4000-8000-000000000001",
-                naming_authority="at.ac.tuwien",
+                naming_authority="org.middle-earth",
                 stac_link="../../gnss-observations/x/x.json",
                 title="Test",
                 store_type="gnss_store",

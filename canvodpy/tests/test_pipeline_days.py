@@ -33,7 +33,7 @@ def _orchestrator(base: Path, canopy_format: str = "sbf") -> PipelineOrchestrato
     )
     orch = object.__new__(PipelineOrchestrator)
     orch.site = SimpleNamespace(
-        site_name="rosalia",
+        site_name="fangorn",
         _site_config=site_config,
         vod_analyses={
             "a": {"canopy_receiver": "canopy_01", "reference_receiver": "reference_01"}
@@ -49,11 +49,11 @@ def test_days_where_both_receivers_have_files(tmp_path: Path) -> None:
     clear_discovery_cache()
     _touch(
         tmp_path / "canopy",
-        "ROSA01TUW_R_20250010000_15M_05S_AA.sbf",
-        "ROSA01TUW_R_20250020000_15M_05S_AA.sbf",
+        "FANA01INK_R_20250010000_15M_05S_AA.sbf",
+        "FANA01INK_R_20250020000_15M_05S_AA.sbf",
     )
-    _touch(tmp_path / "ref" / "25002", "ROSR01TUW_R_20250020000_15M_05S_AA.sbf")
-    _touch(tmp_path / "ref" / "25003", "ROSR01TUW_R_20250030000_15M_05S_AA.sbf")
+    _touch(tmp_path / "ref" / "25002", "FANR01INK_R_20250020000_15M_05S_AA.sbf")
+    _touch(tmp_path / "ref" / "25003", "FANR01INK_R_20250030000_15M_05S_AA.sbf")
 
     grouped = _orchestrator(tmp_path)._group_by_date_and_receiver()
 
@@ -74,12 +74,12 @@ def test_unprocessed_files_are_warned_about_not_fatal(tmp_path: Path) -> None:
     clear_discovery_cache()
     _touch(
         tmp_path / "canopy",
-        "ROSA01TUW_R_20250020000_15M_05S_AA.sbf",
-        "ROSA01TUW_R_20250020015_15M_05S_AA.rnx",  # canopy reads sbf only
+        "FANA01INK_R_20250020000_15M_05S_AA.sbf",
+        "FANA01INK_R_20250020015_15M_05S_AA.rnx",  # canopy reads sbf only
         "rosa0020.25o",  # not a canonical name, no recipe
         "rosa0030.25o",
     )
-    _touch(tmp_path / "ref", "ROSR01TUW_R_20250020000_15M_05S_AA.sbf")
+    _touch(tmp_path / "ref", "FANR01INK_R_20250020000_15M_05S_AA.sbf")
     orch = _orchestrator(tmp_path)
 
     grouped = orch._group_by_date_and_receiver()
@@ -95,7 +95,7 @@ def test_unprocessed_files_are_warned_about_not_fatal(tmp_path: Path) -> None:
     assert fields["n_files"] == 3
     assert fields["by_file_type"] == {
         ".##o": "2 (e.g. rosa0020.25o)",
-        ".rnx": "1 (e.g. ROSA01TUW_R_20250020015_15M_05S_AA.rnx)",
+        ".rnx": "1 (e.g. FANA01INK_R_20250020015_15M_05S_AA.rnx)",
     }
 
 
@@ -103,8 +103,8 @@ def test_canopy_and_reference_of_different_formats_fail(tmp_path: Path) -> None:
     """A reference detected as SBF next to a RINEX 3 canopy stops the run
     before any file is read (mixed formats are not supported)."""
     clear_discovery_cache()
-    _touch(tmp_path / "canopy", "ROSA01TUW_R_20250020000_15M_05S_AA.rnx")
-    _touch(tmp_path / "ref", "ROSR01TUW_R_20250020000_15M_05S_AA.sbf")
+    _touch(tmp_path / "canopy", "FANA01INK_R_20250020000_15M_05S_AA.rnx")
+    _touch(tmp_path / "ref", "FANR01INK_R_20250020000_15M_05S_AA.sbf")
 
     with pytest.raises(ValueError, match="same file format"):
         _orchestrator(tmp_path, canopy_format="rinex3")._group_by_date_and_receiver()
@@ -113,11 +113,11 @@ def test_canopy_and_reference_of_different_formats_fail(tmp_path: Path) -> None:
 def test_compressed_files_get_their_own_warning(tmp_path: Path) -> None:
     _touch(
         tmp_path / "canopy",
-        "ROSA01TUW_R_20250020000_15M_05S_AA.sbf",
-        "ROSA01TUW_R_20250020015_15M_05S_AA.sbf.gz",
-        "ROSA01TUW_R_20250020030_15M_05S_AA.sbf.zip",
+        "FANA01INK_R_20250020000_15M_05S_AA.sbf",
+        "FANA01INK_R_20250020015_15M_05S_AA.sbf.gz",
+        "FANA01INK_R_20250020030_15M_05S_AA.sbf.zip",
     )
-    _touch(tmp_path / "ref", "ROSR01TUW_R_20250020000_15M_05S_AA.sbf")
+    _touch(tmp_path / "ref", "FANR01INK_R_20250020000_15M_05S_AA.sbf")
     orch = _orchestrator(tmp_path)
 
     grouped = orch._group_by_date_and_receiver()
@@ -131,7 +131,7 @@ def test_compressed_files_get_their_own_warning(tmp_path: Path) -> None:
     assert event == "compressed_files_not_processed"
     assert fields["n_files"] == 2
     assert fields["by_file_type"] == {
-        ".sbf.gz": "1 (e.g. ROSA01TUW_R_20250020015_15M_05S_AA.sbf.gz)",
-        ".sbf.zip": "1 (e.g. ROSA01TUW_R_20250020030_15M_05S_AA.sbf.zip)",
+        ".sbf.gz": "1 (e.g. FANA01INK_R_20250020015_15M_05S_AA.sbf.gz)",
+        ".sbf.zip": "1 (e.g. FANA01INK_R_20250020030_15M_05S_AA.sbf.zip)",
     }
     assert "does not decompress" in fields["hint"]

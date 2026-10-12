@@ -34,8 +34,8 @@ def _make_metadata() -> StoreMetadata:
         identity=StoreIdentity(
             id="test-gnss",
             uuid="00000000-0000-4000-8000-000000000001",
-            naming_authority="at.ac.tuwien",
-            stac_link="../../gnss-observations/at.ac.tuwien.test-gnss/at.ac.tuwien.test-gnss.json",
+            naming_authority="org.middle-earth",
+            stac_link="../../gnss-observations/org.middle-earth.test-gnss/org.middle-earth.test-gnss.json",
             title="Test Store",
             store_type="gnss_store",
             source_format="rinex3",

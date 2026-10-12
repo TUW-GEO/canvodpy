@@ -40,7 +40,7 @@ class TestRunStopsOnPreprocessingMismatch:
             raise PreprocessingMismatchError("Group 'canopy_01' holds data with ...")
 
         monkeypatch.setattr(run_module, "_main_impl", refuse)
-        result = runner.invoke(main_app, ["run", "--site", "rosalia"])
+        result = runner.invoke(main_app, ["run", "--site", "fangorn"])
 
         assert result.exit_code == 1
         assert "Group 'canopy_01' holds data with" in result.output

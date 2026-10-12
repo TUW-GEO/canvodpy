@@ -29,17 +29,17 @@ def _metadata(store_type: str = "gnss_store") -> StoreMetadata:
     suffix = "gnss" if store_type == "gnss_store" else "vod"
     return StoreMetadata(
         identity=StoreIdentity(
-            id=f"rosalia-{suffix}",
+            id=f"fangorn-{suffix}",
             uuid="00000000-0000-4000-8000-000000000001",
-            naming_authority="at.ac.tuwien",
+            naming_authority="org.middle-earth",
             stac_link="../../x/x/x.json",
-            title="Rosalia",
+            title="Fangorn",
             store_type=store_type,
             source_format="rinex3",
         ),
         creator=Creator(name="T", email="t@example.org", institution="U"),
         temporal=TemporalExtent(created="2026-01-01T00:00:00Z", updated="x"),
-        spatial=SpatialExtent(site=SiteInfo(name="Rosalia")),
+        spatial=SpatialExtent(site=SiteInfo(name="Fangorn")),
         instruments=Instruments(
             receivers={
                 "canopy_01": ReceiverInfo(type="canopy", directory="c"),
@@ -67,7 +67,7 @@ def _ensure(path: Path, metadata: StoreMetadata | None = None) -> dict:
     return ensure_metadata(
         path,
         lambda: meta,
-        site_name="Rosalia",
+        site_name="Fangorn",
         store_type=meta.identity.store_type,
     )
 
@@ -78,7 +78,7 @@ class TestEnsureMetadata:
 
         repository = _ensure(path)
 
-        assert repository["identity"]["id"] == "rosalia-gnss"
+        assert repository["identity"]["id"] == "fangorn-gnss"
         assert metadata_exists(path)
 
     def test_a_store_with_metadata_is_not_collected_again(self, tmp_path):
@@ -90,9 +90,9 @@ class TestEnsureMetadata:
             raise AssertionError(msg)
 
         repository = ensure_metadata(
-            path, fail, site_name="Rosalia", store_type="gnss_store"
+            path, fail, site_name="Fangorn", store_type="gnss_store"
         )
-        assert repository["identity"]["id"] == "rosalia-gnss"
+        assert repository["identity"]["id"] == "fangorn-gnss"
 
     def test_a_store_with_old_metadata_is_refused(self, tmp_path):
         path = _new_store(tmp_path)
@@ -102,7 +102,7 @@ class TestEnsureMetadata:
         session.commit("old form")
 
         with pytest.raises(
-            ValueError, match="canvodpy store migrate-metadata Rosalia --store gnss"
+            ValueError, match="canvodpy store migrate-metadata Fangorn --store gnss"
         ):
             _ensure(path)
         assert not metadata_exists(path)
@@ -133,7 +133,7 @@ class TestListedReceivers:
 
         with pytest.raises(ValueError, match="--add-receiver canopy_02") as excinfo:
             check_receivers(repository, ["canopy_02"], store_path=path)
-        assert "canvodpy store amend Rosalia --store gnss" in str(excinfo.value)
+        assert "canvodpy store amend Fangorn --store gnss" in str(excinfo.value)
 
     def test_an_unlisted_vod_analysis_is_refused(self, tmp_path):
         path = _new_store(tmp_path)

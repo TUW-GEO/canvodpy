@@ -1,5 +1,7 @@
 """Test metadata validation against standards."""
 
+from canvod.utils import testing
+
 from canvod.store_metadata.schema import (
     Creator,
     Publisher,
@@ -25,15 +27,15 @@ from canvod.store_metadata.validate import (
 def _make_complete_metadata() -> StoreMetadata:
     return StoreMetadata(
         identity=StoreIdentity(
-            id="rosalia-gnss",
+            id="fangorn-gnss",
             uuid="00000000-0000-4000-8000-000000000001",
-            naming_authority="at.ac.tuwien",
+            naming_authority="org.middle-earth",
             stac_link=(
-                "../../gnss-observations/at.ac.tuwien.rosalia-gnss/"
-                "at.ac.tuwien.rosalia-gnss.json"
+                "../../gnss-observations/org.middle-earth.fangorn-gnss/"
+                "org.middle-earth.fangorn-gnss.json"
             ),
-            title="Rosalia GNSS Store",
-            description="GNSS observations from Rosalia research site",
+            title="Fangorn GNSS Store",
+            description="GNSS observations from Fangorn research site",
             store_type="gnss_store",
             source_format="rinex3",
             keywords=["GNSS", "VOD"],
@@ -41,10 +43,10 @@ def _make_complete_metadata() -> StoreMetadata:
         creator=Creator(
             name="Test User",
             email="test@example.com",
-            institution="TU Wien",
+            institution=testing.INSTITUTION,
         ),
         publisher=Publisher(
-            name="TU Wien",
+            name=testing.PUBLISHER,
             license="CC-BY-4.0",
             license_uri="https://creativecommons.org/licenses/by/4.0/",
         ),
@@ -55,11 +57,16 @@ def _make_complete_metadata() -> StoreMetadata:
             collected_end="2025-12-31T23:59:55Z",
         ),
         spatial=SpatialExtent(
-            site=SiteInfo(name="Rosalia", description="Forest site", country="AT"),
-            geospatial_lat=47.7,
-            geospatial_lon=16.3,
-            geospatial_alt_m=400.0,
-            bbox=[16.3, 47.7, 16.3, 47.7],
+            site=SiteInfo(name="Fangorn", description="Forest site", country="AT"),
+            geospatial_lat=testing.LATITUDE,
+            geospatial_lon=testing.LONGITUDE,
+            geospatial_alt_m=testing.ALTITUDE_M,
+            bbox=[
+                testing.LONGITUDE,
+                testing.LATITUDE,
+                testing.LONGITUDE,
+                testing.LATITUDE,
+            ],
             extent_temporal_interval=[["2025-01-01T00:00:00Z", "2025-12-31T23:59:55Z"]],
         ),
     )
@@ -130,7 +137,7 @@ class TestValidation:
         meta.identity.persistent_identifier = "10.5281/zenodo.1234567"
         meta.references = References(
             access_url="https://example.com/store",
-            related_stores=["Rosalia/sbf_store"],
+            related_stores=["Fangorn/sbf_store"],
             publications=[],
         )
         meta.processing = ProcessingProvenance(
@@ -190,7 +197,7 @@ class TestPassRule:
     def test_the_root_attributes_are_what_a_commit_writes(self):
         attrs = root_attributes(_make_complete_metadata())
         assert attrs["Conventions"] == "CF-1.11, ACDD-1.3"
-        assert attrs["summary"] == "GNSS observations from Rosalia research site"
+        assert attrs["summary"] == "GNSS observations from Fangorn research site"
         assert attrs["license"]["spdx"] == "CC-BY-4.0"
 
     def test_the_acdd_lists_are_complete(self):

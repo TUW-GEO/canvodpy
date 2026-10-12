@@ -89,7 +89,7 @@ def _failures(ds: xr.Dataset, root_attrs: dict[str, Any], path: Path) -> list[st
 
 
 def _store(config) -> tuple[Path, Any]:
-    store_path = config.processing.storage.get_gnss_store_path("rosalia")
+    store_path = config.processing.storage.get_gnss_store_path("fangorn")
     session = icechunk.Repository.open(
         storage=icechunk.local_filesystem_storage(str(store_path))
     ).readonly_session(branch="main")

@@ -26,8 +26,8 @@ from canvodpy.workflows.tasks import (
 
 from canvod.config.models import SiteConfig
 
-CANOPY_RNX = "ROSA01TUW_R_20250010000_15M_05S_AA.rnx"
-REFERENCE_RNX = "ROSR01TUW_R_20250010000_15M_05S_AA.rnx"
+CANOPY_RNX = "FANA01INK_R_20250010000_15M_05S_AA.rnx"
+REFERENCE_RNX = "FANR01INK_R_20250010000_15M_05S_AA.rnx"
 #: First header line of a RINEX 3 file: ``reader_format: auto`` reads it.
 RINEX3_HEADER = (
     "     3.04           OBSERVATION DATA    M                   RINEX VERSION / TYPE\n"
@@ -85,7 +85,7 @@ class TestParseSamplingInterval:
     def test_5_second(self):
         assert (
             parse_sampling_interval_from_filename(
-                "ROSA01TUW_R_20250010000_15M_05S_AA.rnx"
+                "FANA01INK_R_20250010000_15M_05S_AA.rnx"
             )
             == 5.0
         )
@@ -93,14 +93,14 @@ class TestParseSamplingInterval:
     def test_30_second(self):
         assert (
             parse_sampling_interval_from_filename(
-                "ROSA01TUW_R_20250010000_01D_30S_AA.rnx"
+                "FANA01INK_R_20250010000_01D_30S_AA.rnx"
             )
             == 30.0
         )
 
     def test_1_hz(self):
         result = parse_sampling_interval_from_filename(
-            "ROSA01TUW_R_20250010000_01H_01Z_AA.rnx"
+            "FANA01INK_R_20250010000_01H_01Z_AA.rnx"
         )
         assert result == pytest.approx(1.0)
 
@@ -170,7 +170,7 @@ class TestCheckDay:
         """Canopy files in the reference directory are not processed."""
         base = mock_site.sites.sites["TestSite"].get_base_path()
         ref = base / "reference" / "25001" / REFERENCE_RNX
-        ref.rename(ref.with_name(CANOPY_RNX.replace("ROSA01", "ROSA02")))
+        ref.rename(ref.with_name(CANOPY_RNX.replace("FANA01", "FANA02")))
         with patch("canvodpy.workflows.tasks.load_config", return_value=mock_site):
             with pytest.raises(DiscoveryError, match="configured as 'reference'"):
                 check_day("TestSite", "2025001")
@@ -403,7 +403,7 @@ class TestValidateDataDirs:
             result = self._validate(config)
         assert result["valid"] is True
         canopy = result["receivers"]["canopy_01"]
-        assert canopy["identity"] == "ROSA01TUW"
+        assert canopy["identity"] == "FANA01INK"
         assert (canopy["days"], canopy["files"], canopy["unrecognized"]) == (1, 1, 1)
 
     def test_missing_directory_fails(self, tmp_path):

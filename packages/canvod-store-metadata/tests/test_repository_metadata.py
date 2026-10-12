@@ -13,7 +13,7 @@ from canvod.store_metadata import collect_metadata, metadata_exists, write_metad
 from canvod.store_metadata.schema import ConfigSnapshot
 
 
-def _config(naming_authority: str | None = "at.ac.tuwien") -> MagicMock:
+def _config(naming_authority: str | None = "org.middle-earth") -> MagicMock:
     meta_cfg = MagicMock(
         spec=[
             "author",
@@ -74,9 +74,9 @@ def _site_config() -> MagicMock:
     analysis.canopy_receiver = "canopy_01"
     analysis.reference_receiver = "reference_01"
     site_cfg.vod_analyses = {"canopy_01_vs_reference_01": analysis}
-    site_cfg.latitude = 47.7
-    site_cfg.longitude = 16.3
-    site_cfg.altitude_m = 400.0
+    site_cfg.latitude = testing.LATITUDE
+    site_cfg.longitude = testing.LONGITUDE
+    site_cfg.altitude_m = testing.ALTITUDE_M
     site_cfg.description = None
     site_cfg.store_description = testing.SITE_DESCRIPTION
     site_cfg.country = None
@@ -102,9 +102,9 @@ def _site_config() -> MagicMock:
 
 
 def _collect(
-    site_name: str = "Rosalia",
+    site_name: str = "Fangorn",
     store_type: str = "gnss_store",
-    naming_authority: str | None = "at.ac.tuwien",
+    naming_authority: str | None = "org.middle-earth",
 ):
     with patch(
         "canvod.store_metadata.collectors.collect_config_snapshot",
@@ -137,13 +137,13 @@ def _repository_metadata(path: Path) -> dict:
 
 class TestIdentity:
     def test_gnss_store_id_is_the_lowercase_site_name_and_gnss(self):
-        assert _collect("Rosalia").identity.id == "rosalia-gnss"
+        assert _collect("Fangorn").identity.id == "fangorn-gnss"
 
     def test_vod_store_id_ends_in_vod(self):
-        assert _collect("Rosalia", store_type="vod_store").identity.id == "rosalia-vod"
+        assert _collect("Fangorn", store_type="vod_store").identity.id == "fangorn-vod"
 
     def test_underscores_and_digits_are_kept(self):
-        assert _collect("rosalia_v3_04").identity.id == "rosalia_v3_04-gnss"
+        assert _collect("fangorn").identity.id == "fangorn-gnss"
 
     def test_each_store_gets_its_own_uuid(self):
         first, second = _collect().identity.uuid, _collect().identity.uuid
@@ -151,12 +151,12 @@ class TestIdentity:
         assert first != second
 
     def test_stac_link_points_to_the_item_in_the_catalog(self):
-        assert _collect("Rosalia").identity.stac_link == (
-            "../../gnss-observations/at.ac.tuwien.rosalia-gnss/"
-            "at.ac.tuwien.rosalia-gnss.json"
+        assert _collect("Fangorn").identity.stac_link == (
+            "../../gnss-observations/org.middle-earth.fangorn-gnss/"
+            "org.middle-earth.fangorn-gnss.json"
         )
-        assert _collect("Rosalia", store_type="vod_store").identity.stac_link == (
-            "../../vod/at.ac.tuwien.rosalia-vod/at.ac.tuwien.rosalia-vod.json"
+        assert _collect("Fangorn", store_type="vod_store").identity.stac_link == (
+            "../../vod/org.middle-earth.fangorn-vod/org.middle-earth.fangorn-vod.json"
         )
 
     def test_a_geodesy_store_has_its_own_id_and_collection(self):
@@ -170,7 +170,7 @@ class TestIdentity:
             "org.middle-earth.fangorn-geodesy.json"
         )
 
-    @pytest.mark.parametrize("site_name", ["Rosalia Forest", "", "Ros/alia", "site.a"])
+    @pytest.mark.parametrize("site_name", ["Fangorn Forest", "", "Ros/alia", "site.a"])
     def test_a_site_name_that_gives_no_valid_id_is_refused(self, site_name):
         with pytest.raises(ValueError, match="site name") as excinfo:
             _collect(site_name)
@@ -184,19 +184,21 @@ class TestIdentity:
         with pytest.raises(ValueError, match=r"processing\.metadata\.naming_authority"):
             _collect(naming_authority=None)
 
-    @pytest.mark.parametrize("authority", ["tuwien", "https://tuwien.ac.at", "AT.ac"])
+    @pytest.mark.parametrize(
+        "authority", ["inklings", "https://the.inklings.org", "ORG.middle"]
+    )
     def test_a_naming_authority_that_is_not_reverse_dns_is_refused(self, authority):
         with pytest.raises(ValueError, match="reverse DNS"):
             _collect(naming_authority=authority)
 
     def test_a_vod_store_lists_the_vod_analyses_of_the_settings(self):
-        meta = _collect("Rosalia", store_type="vod_store")
+        meta = _collect("Fangorn", store_type="vod_store")
         analysis = meta.vod_analyses["canopy_01_vs_reference_01"]
         assert analysis.canopy_receiver == "canopy_01"
         assert analysis.reference_receiver == "reference_01"
 
     def test_a_gnss_store_lists_no_vod_analyses(self):
-        assert _collect("Rosalia").vod_analyses == {}
+        assert _collect("Fangorn").vod_analyses == {}
 
 
 class TestReceiverSpecs:
@@ -234,9 +236,9 @@ class TestRepositoryMetadata:
         write_metadata(store_path, meta)
 
         stored = _repository_metadata(store_path)
-        assert stored["identity"]["id"] == "rosalia-gnss"
+        assert stored["identity"]["id"] == "fangorn-gnss"
         assert stored["identity"]["uuid"] == meta.identity.uuid
-        assert stored["identity"]["naming_authority"] == "at.ac.tuwien"
+        assert stored["identity"]["naming_authority"] == "org.middle-earth"
         assert stored["identity"]["stac_link"] == meta.identity.stac_link
         assert stored["temporal"]["created"] == meta.temporal.created
 

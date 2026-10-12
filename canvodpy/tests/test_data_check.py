@@ -13,9 +13,9 @@ from canvodpy.orchestrator.data_check import (
 )
 from canvodpy.orchestrator.discovery import clear_discovery_cache
 
-DAY1 = "ROSA01TUW_R_20250010000_15M_05S_AA.rnx"
-DAY1_LATE = "ROSA01TUW_R_20250010015_15M_05S_AA.rnx"
-DAY2 = "ROSA01TUW_R_20250020000_15M_05S_AA.rnx"
+DAY1 = "FANA01INK_R_20250010000_15M_05S_AA.rnx"
+DAY1_LATE = "FANA01INK_R_20250010015_15M_05S_AA.rnx"
+DAY2 = "FANA01INK_R_20250020000_15M_05S_AA.rnx"
 
 
 @pytest.fixture(autouse=True)
@@ -41,7 +41,7 @@ def _check(tmp_path: Path, sampling_s: float | None = None, **cfg):
             "canopy_01",
             cfg,
             tmp_path,
-            "rosalia",
+            "fangorn",
             check_sampling=sampling_s is not None,
         )
     return report, read
@@ -54,7 +54,7 @@ def test_counts_what_a_run_reads(tmp_path: Path) -> None:
     assert report.errors == []
     assert report.days == ["2025001", "2025002"]
     assert report.files == 3
-    assert report.identity == "ROSA01TUW"
+    assert report.identity == "FANA01INK"
     assert report.unrecognized == []
 
 
@@ -150,7 +150,7 @@ def test_unreadable_file_is_a_warning(tmp_path: Path) -> None:
             "canopy_01",
             {"directory": "rx", "reader_format": "rinex3"},
             tmp_path,
-            "rosalia",
+            "fangorn",
         )
     assert report.errors == []
     assert "Could not read" in report.warnings[0]
@@ -162,7 +162,7 @@ def test_unreadable_file_is_a_warning(tmp_path: Path) -> None:
         ("rref129p45.24_", ".##_"),
         ("rref129p45.25p", ".##p"),
         ("rref0000.001", ".###"),
-        ("ROSA01TUW_R_20250010000_15M_05S_AA.rnx.gz", ".rnx.gz"),
+        ("FANA01INK_R_20250010000_15M_05S_AA.rnx.gz", ".rnx.gz"),
         ("README", "(no extension)"),
     ],
 )

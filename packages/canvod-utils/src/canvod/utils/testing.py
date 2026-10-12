@@ -18,9 +18,25 @@ PERSON_NAME = "John Ronald Reuel Tolkien"
 PERSON_INITIALS = "JRRT"
 PERSON_EMAIL = "j.r.r.tolkien@the.inklings.org"
 INSTITUTION = "University of Oxford"
+DEPARTMENT = "English Faculty"
+RESEARCH_GROUP = "The Inklings"
 PUBLISHER = "The Inklings"
+WEBSITE = "https://the.inklings.org"
+#: A made-up software repository and its documentation.
+REPOSITORY = "https://github.com/the-inklings/red-book"
+DOCUMENTATION = "https://github.com/the-inklings/red-book/tree/main/docs"
 #: A valid naming authority (reverse DNS).
 NAMING_AUTHORITY = "org.middle-earth"
+
+#: The site as a key of the settings (``sites.fangorn``) and in store ids.
+SITE_KEY = "fangorn"
+#: The site in file names: 3-letter site ID and 3-letter agency of the
+#: canVOD file name convention (``FANA01INK_R_...`` for a canopy receiver).
+SITE_ID = "FAN"
+AGENCY = "INK"
+#: A second site for file names (``ORTA01MEA_R_...``).
+OTHER_SITE_ID = "ORT"
+OTHER_AGENCY = "MEA"
 
 #: The below-canopy site or receiver.
 CANOPY_SITE = "Fangorn"
@@ -41,3 +57,10 @@ SITE_DESCRIPTION = (
 LATITUDE = -29.12
 LONGITUDE = 26.21
 ALTITUDE_M = 1395.0
+
+#: The same position in WGS84 ECEF (meters), taking ALTITUDE_M as the height
+#: above the ellipsoid. From PROJ (pyproj, EPSG:4979 to EPSG:4978) and the
+#: closed-form WGS84 formula, which agree to the millimeter.
+ECEF_X = 5004115.301
+ECEF_Y = 2463414.934
+ECEF_Z = -3086206.104

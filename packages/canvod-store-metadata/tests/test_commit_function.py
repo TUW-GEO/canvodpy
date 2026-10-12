@@ -6,6 +6,7 @@ import icechunk
 import numpy as np
 import pytest
 import zarr
+from canvod.utils import testing
 
 from canvod.store_metadata import commit_with_rebase, write_metadata
 from canvod.store_metadata.schema import (
@@ -27,31 +28,31 @@ _UUID = "00000000-0000-4000-8000-000000000001"
 def _metadata() -> StoreMetadata:
     return StoreMetadata(
         identity=StoreIdentity(
-            id="rosalia-gnss",
+            id="fangorn-gnss",
             uuid=_UUID,
-            naming_authority="at.ac.tuwien",
+            naming_authority="org.middle-earth",
             stac_link=(
-                "../../gnss-observations/at.ac.tuwien.rosalia-gnss/"
-                "at.ac.tuwien.rosalia-gnss.json"
+                "../../gnss-observations/org.middle-earth.fangorn-gnss/"
+                "org.middle-earth.fangorn-gnss.json"
             ),
-            title="Rosalia GNSS Store",
-            description="GNSS observations at Rosalia",
+            title="Fangorn GNSS Store",
+            description="GNSS observations at Fangorn",
             store_type="gnss_store",
             source_format="rinex3",
             keywords=["GNSS", "VOD"],
         ),
         creator=Creator(
-            name="Jane Doe", email="jane@example.org", institution="TU Wien"
+            name="Jane Doe", email="jane@example.org", institution=testing.INSTITUTION
         ),
-        publisher=Publisher(name="TU Wien", license="CC-BY-4.0"),
+        publisher=Publisher(name=testing.PUBLISHER, license="CC-BY-4.0"),
         temporal=TemporalExtent(
             created="2026-01-01T00:00:00+00:00", updated="2026-01-01T00:00:00+00:00"
         ),
         spatial=SpatialExtent(
-            site=SiteInfo(name="Rosalia"),
-            geospatial_lat=47.7,
-            geospatial_lon=16.3,
-            geospatial_alt_m=400.0,
+            site=SiteInfo(name="Fangorn"),
+            geospatial_lat=testing.LATITUDE,
+            geospatial_lon=testing.LONGITUDE,
+            geospatial_alt_m=testing.ALTITUDE_M,
         ),
         instruments=Instruments(
             receivers={
@@ -115,17 +116,25 @@ class TestRootCopy:
         attrs = _root_attrs(path)
         assert attrs["Conventions"] == "CF-1.11, ACDD-1.3"
         assert attrs["featureType"] == "timeSeries"
-        assert attrs["title"] == "Rosalia GNSS Store"
-        assert attrs["summary"] == "GNSS observations at Rosalia"
-        assert attrs["id"] == "rosalia-gnss"
-        assert attrs["naming_authority"] == "at.ac.tuwien"
+        assert attrs["title"] == "Fangorn GNSS Store"
+        assert attrs["summary"] == "GNSS observations at Fangorn"
+        assert attrs["id"] == "fangorn-gnss"
+        assert attrs["naming_authority"] == "org.middle-earth"
         assert attrs["keywords"] == "GNSS, VOD"
         assert attrs["creator_name"] == "Jane Doe"
         assert attrs["creator_type"] == "person"
         assert attrs["publisher_type"] == "institution"
         assert attrs["date_created"] == "2026-01-01T00:00:00+00:00"
-        assert attrs["geospatial_lat_min"] == attrs["geospatial_lat_max"] == 47.7
-        assert attrs["geospatial_lon_min"] == attrs["geospatial_lon_max"] == 16.3
+        assert (
+            attrs["geospatial_lat_min"]
+            == attrs["geospatial_lat_max"]
+            == testing.LATITUDE
+        )
+        assert (
+            attrs["geospatial_lon_min"]
+            == attrs["geospatial_lon_max"]
+            == testing.LONGITUDE
+        )
 
     def test_root_group_declares_the_zarr_conventions(self, tmp_path):
         path = _store(tmp_path)
@@ -319,12 +328,12 @@ class TestCheck:
         _commit(path, lambda s: _write_receiver(s, "canopy_01", "2025-01-01", 4))
         repo = _repo(path)
         amended = repo.get_metadata()
-        amended["identity"] = {**amended["identity"], "title": "Rosalia GNSS"}
+        amended["identity"] = {**amended["identity"], "title": "Fangorn GNSS"}
         amended["amendments"] = [
             {
                 "field": "identity.title",
-                "old": "Rosalia GNSS Store",
-                "new": "Rosalia GNSS",
+                "old": "Fangorn GNSS Store",
+                "new": "Fangorn GNSS",
                 "reason": "shorter",
                 "who": "jane@host",
                 "when": "2026-02-01T00:00:00+00:00",
@@ -334,7 +343,7 @@ class TestCheck:
 
         _commit(path, lambda s: _write_receiver(s, "reference_01", "2025-01-01", 4))
 
-        assert _root_attrs(path)["title"] == "Rosalia GNSS"
+        assert _root_attrs(path)["title"] == "Fangorn GNSS"
 
     def test_a_store_without_repository_metadata_commits_as_before(self, tmp_path):
         path = tmp_path / "plain"

@@ -13,6 +13,7 @@ from canvod.preflight import (
     match_pattern,
 )
 from canvod.preflight.cli import app
+from canvod.utils import testing
 
 MESSAGE = "left over from development and will be removed with the next major"
 
@@ -20,9 +21,12 @@ MESSAGE = "left over from development and will be removed with the next major"
 @pytest.mark.parametrize(
     ("make", "replacement"),
     [
-        (lambda: SiteNamingConfig(site_id="ROS", agency="TUW"), "recipe"),
+        (
+            lambda: SiteNamingConfig(site_id=testing.SITE_ID, agency=testing.AGENCY),
+            "recipe",
+        ),
         (lambda: ReceiverNamingConfig(receiver_number=1), "recipe"),
-        (lambda: match_pattern("ROSA01TUW_R_20250010000_15M_05S_AA.rnx"), "recipe"),
+        (lambda: match_pattern("FANA01INK_R_20250010000_15M_05S_AA.rnx"), "recipe"),
         (DataDirectoryValidator, "canvodpy config validate"),
     ],
 )
@@ -34,7 +38,7 @@ def test_deprecated_objects_warn(make, replacement) -> None:
 
 @pytest.mark.filterwarnings("ignore:.*NamingConfig:FutureWarning")
 def test_filename_mapper_warns(tmp_path) -> None:
-    site = SiteNamingConfig(site_id="ROS", agency="TUW")
+    site = SiteNamingConfig(site_id=testing.SITE_ID, agency=testing.AGENCY)
     receiver = ReceiverNamingConfig(receiver_number=1)
     with pytest.warns(FutureWarning, match="FilenameMapper is " + MESSAGE):
         FilenameMapper(
@@ -47,4 +51,6 @@ def test_filename_mapper_warns(tmp_path) -> None:
 
 def test_validate_command_warns(tmp_path) -> None:
     with pytest.warns(FutureWarning, match="canvodpy config validate"):
-        CliRunner().invoke(app, [str(tmp_path), "-s", "ROS", "-a", "TUW"])
+        CliRunner().invoke(
+            app, [str(tmp_path), "-s", testing.SITE_ID, "-a", testing.AGENCY]
+        )

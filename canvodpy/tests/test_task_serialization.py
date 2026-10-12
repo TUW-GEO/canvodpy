@@ -11,13 +11,15 @@ from pathlib import Path
 
 import pytest
 
+from canvod.utils import testing
+
 
 @pytest.fixture
 def sample_task_args(tmp_path: Path) -> tuple:
     """Build a representative task_args tuple matching prepare_batch_tasks output."""
     from canvod.auxiliary.position.position import ECEFPosition
 
-    rnx_file = tmp_path / "YELL00CAN_R_20230010000_01D_30S_MO.rnx"
+    rnx_file = tmp_path / "FANA00INK_R_20230010000_01D_30S_MO.rnx"
     rnx_file.touch()
 
     keep_vars: list[str] = ["C1C", "L1C", "S1C"]
@@ -25,9 +27,9 @@ def sample_task_args(tmp_path: Path) -> tuple:
     aux_zarr_path.mkdir()
 
     receiver_position = ECEFPosition(
-        x=-1_224_452.587, y=-2_689_216.073, z=5_633_638.285
+        x=testing.ECEF_X, y=testing.ECEF_Y, z=testing.ECEF_Z
     )
-    receiver_name = "YELL"
+    receiver_name = "FANA"
     keep_sids: list[str] | None = ["G01", "G02", "G03"]
 
     return (
@@ -93,11 +95,11 @@ class TestSamplingIntervalFromFilename:
     @pytest.mark.parametrize(
         "filename, expected",
         [
-            ("ROSA01TUW_R_20250020000_01D_05S_AA.rnx", 5.0),
-            ("ROSR01TUW_R_20250010000_01D_30S_AA.rnx", 30.0),
-            ("YELL00CAN_R_20230010000_01D_01S_MO.rnx", 1.0),
-            ("ROSA01TUW_R_20250020000_01D_15M_AA.rnx", 900.0),
-            ("ROSA01TUW_R_20250020000_01D_01H_AA.rnx", 3600.0),
+            ("FANA01INK_R_20250020000_01D_05S_AA.rnx", 5.0),
+            ("FANR01INK_R_20250010000_01D_30S_AA.rnx", 30.0),
+            ("FANA00INK_R_20230010000_01D_01S_MO.rnx", 1.0),
+            ("FANA01INK_R_20250020000_01D_15M_AA.rnx", 900.0),
+            ("FANA01INK_R_20250020000_01D_01H_AA.rnx", 3600.0),
         ],
     )
     def test_standard_intervals(self, filename: str, expected: float):
@@ -110,5 +112,5 @@ class TestSamplingIntervalFromFilename:
         assert self._parse("readme.txt") is None
 
     def test_full_path(self):
-        result = self._parse("/data/rinex/ROSA01TUW_R_20250020000_01D_05S_AA.rnx")
+        result = self._parse("/data/rinex/FANA01INK_R_20250020000_01D_05S_AA.rnx")
         assert result == 5.0

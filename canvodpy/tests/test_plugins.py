@@ -108,7 +108,7 @@ def test_reader_plugin_reaches_the_run(installed) -> None:
 
     assert ReaderFactory.component_class("my_format").__name__ == "MyFormatReader"
     assert _file_types("my_format") == frozenset({"myf"})
-    name = CanVODFilename.from_filename("ROSR01TUW_R_20250010000_01D_05S_AA.myf")
+    name = CanVODFilename.from_filename("FANR01INK_R_20250010000_01D_05S_AA.myf")
     assert name.file_type == "myf"
     rx = ReceiverConfig(type="canopy", directory="x", reader_format="my_format")
     assert rx.reader_format == "my_format"
@@ -136,7 +136,7 @@ def test_unknown_reader_format_is_refused() -> None:
 
 def test_unknown_file_type_is_not_canonical() -> None:
     with pytest.raises(ValueError, match="Unknown file type 'myf'"):
-        CanVODFilename.from_filename("ROSR01TUW_R_20250010000_01D_05S_AA.myf")
+        CanVODFilename.from_filename("FANR01INK_R_20250010000_01D_05S_AA.myf")
 
 
 @pytest.mark.parametrize(
