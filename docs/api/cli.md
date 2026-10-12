@@ -421,7 +421,7 @@ $ canvodpy store migrate-metadata [OPTIONS] {site}
 **Options**:
 
 * `--store gnss|vod`: Store to migrate.  [default: gnss]
-* `--naming-authority <str>`: Your institution's domain in reverse order, for example at.ac.tuwien, for a store whose metadata has no naming authority. Default: processing.metadata.naming_authority in the settings.
+* `--naming-authority <str>`: Your institution's domain in reverse order, for example at.ac.tuwien. Default: the store's own, if it is a reverse DNS name; otherwise processing.metadata.naming_authority in the settings.
 * `--set field.path=value`: A field the store lacks, for example identity.description=Beech forest site, Rosalia. Repeat for more fields.
 * `--yes`: Migrate without asking.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.

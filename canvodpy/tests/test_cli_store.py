@@ -636,6 +636,42 @@ class TestStoreMigrateMetadata:
 
         assert read_metadata(store_path).identity.naming_authority == "org.example"
 
+    def test_an_invalid_naming_authority_is_replaced_by_the_settings(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root, naming_authority="org.example")
+        store_path = stores_root / "TestSite" / "rinex"
+        _write_old_form_store(store_path, naming_authority="https://www.example.org")
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "gnss", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "org.example (from the settings" in result.output
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(store_path).identity.naming_authority == "org.example"
+
+    def test_an_invalid_naming_authority_without_settings_is_refused(self, tmp_path):
+        config_dir, store_path = self._setup(
+            tmp_path, naming_authority="https://www.example.org"
+        )
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "gnss", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 1
+        assert "--naming-authority" in result.output
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(store_path).written_before_migration
+
     def test_the_store_keeps_its_own_naming_authority(self, tmp_path):
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"

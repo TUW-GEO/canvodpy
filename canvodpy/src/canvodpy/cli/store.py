@@ -537,8 +537,8 @@ def migrate_metadata_command(
             "--naming-authority",
             help=(
                 "Your institution's domain in reverse order, for example "
-                "at.ac.tuwien, for a store whose metadata has no naming "
-                "authority. Default: processing.metadata.naming_authority in "
+                "at.ac.tuwien. Default: the store's own, if it is a reverse "
+                "DNS name; otherwise processing.metadata.naming_authority in "
                 "the settings."
             ),
         ),
@@ -570,7 +570,7 @@ def migrate_metadata_command(
     processing.metadata.initials.
     """
     from canvod.store_metadata import migrate_metadata, read_metadata
-    from canvod.store_metadata.identity import store_id
+    from canvod.store_metadata.identity import check_naming_authority, store_id
 
     path, _ = _store_path(site, store)
     try:
@@ -587,10 +587,19 @@ def migrate_metadata_command(
         return
 
     who = _who()
-    if naming_authority is None and not old.identity.naming_authority:
-        from canvod.config import load_config
+    source = "--naming-authority"
+    if naming_authority is None:
+        source = "the store"
+        try:
+            check_naming_authority(old.identity.naming_authority)
+        except ValueError:
+            # The store has none, or one that is not reverse DNS (older
+            # versions described the field as a URI).
+            from canvod.config import load_config
 
-        naming_authority = load_config().processing.metadata.naming_authority
+            naming_authority = load_config().processing.metadata.naming_authority
+            if naming_authority:
+                source = "the settings, processing.metadata.naming_authority"
     new_id = store_id(old.spatial.site.name, old.identity.store_type)
     console.print(f"\n[bold]{site}[/bold]: {store} store ({path})")
     console.print(f"  Store id:          {old.identity.id} -> {new_id}")
@@ -598,6 +607,7 @@ def migrate_metadata_command(
     console.print(
         "  Naming authority:  "
         f"{naming_authority or old.identity.naming_authority or '(none)'}"
+        f" (from {source})"
     )
     values = _amend_changes(site, old.identity.store_type, set_values or [], [], [])
     for field, value in values.items():
