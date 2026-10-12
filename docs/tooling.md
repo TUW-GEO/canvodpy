@@ -3,7 +3,7 @@ title: Development Tooling
 description: Tools used in canVODpy development
 ---
 
-# Development Tooling
+# Development tooling
 
 canVODpy uses a modern Python toolchain built almost entirely on the [Astral](https://astral.sh/) ecosystem.
 
@@ -42,7 +42,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ---
 
     Task runner with simpler syntax than Make. All common development
-    tasks (test, check, docs, config) are `just <command>` away.
+    tasks (test, check, docs, settings) are `just <command>` away.
 
     [:octicons-arrow-right-24: github.com/casey/just](https://github.com/casey/just)
 
@@ -50,7 +50,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 ---
 
-## Core Tools
+## Core tools
 
 === "uv: package manager"
 
@@ -141,7 +141,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 ---
 
-## Supporting Tools
+## Supporting tools
 
 === "just: task runner"
 
@@ -176,7 +176,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     excluded by default; pass `-m "not integration"` to skip them for a fast
     unit-only run.
 
-=== "pre-commit: Git hooks"
+=== "pre-commit, Git hooks"
 
     ```bash
     just hooks    # Install hooks (run once after clone)
@@ -268,7 +268,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 ---
 
-## Tool Comparison
+## Tool comparison
 
 | Task | Traditional stack | canVODpy |
 |------|------------------|----------|
@@ -296,7 +296,7 @@ canVODpy follows FAIR software principles and OpenSSF best practices:
 
     Certified compliance with open source security best practices.
 
-    [:octicons-arrow-right-24: Application Guide](OPENSSF_BADGE_GUIDE.md)
+    [:octicons-arrow-right-24: badge guide](OPENSSF_BADGE_GUIDE.md)
 
 -   :fontawesome-solid-star: &nbsp; **FAIR Software**
 
@@ -314,8 +314,8 @@ canVODpy follows FAIR software principles and OpenSSF best practices:
 
     Automated security monitoring across 18+ best practice checks.
 
-    **Runs:** Weekly + on every push to main
-    **Results:** GitHub Security tab
+    **Runs:** weekly and on every push to main
+    **Results:** the GitHub Security tab
 
     [:octicons-arrow-right-24: View Scorecard](https://securityscorecards.dev/viewer/?uri=github.com/nfb2021/canvodpy)
 
@@ -345,4 +345,4 @@ All quality checks run automatically:
 
 All workflows must pass before merging to `main`.
 
-**See also:** [Security Policy](SECURITY.md) · [FAIR Compliance](FAIR_IMPLEMENTATION_SUMMARY.md)
+**See also:** [security policy](SECURITY.md) · [FAIR compliance](FAIR_IMPLEMENTATION_SUMMARY.md)

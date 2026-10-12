@@ -3,15 +3,15 @@ title: OIDC Trusted Publishing Explained
 description: Deep dive into how OIDC authentication works for PyPI publishing
 ---
 
-# OIDC Trusted Publishing: How It Works
+# How OIDC trusted publishing works
 
-!!! abstract "TL;DR"
+!!! abstract "Summary"
     OIDC lets GitHub Actions publish to PyPI **without passwords or long-lived tokens**.
     It uses cryptographic JWT proofs that expire in 10 minutes, so no secrets are stored.
 
 ---
 
-## Traditional vs OIDC
+## Traditional versus OIDC
 
 <div class="grid" markdown>
 
@@ -25,7 +25,7 @@ description: Deep dive into how OIDC authentication works for PyPI publishing
 !!! success "OIDC (2026 standard)"
     - Short-lived JWT proof (10 minutes)
     - No stored secrets anywhere
-    - Scoped to a specific repo + workflow
+    - Scoped to a specific repository and workflow
     - Zero rotation overhead
     - Cryptographically verified identity
 
@@ -33,7 +33,7 @@ description: Deep dive into how OIDC authentication works for PyPI publishing
 
 ---
 
-## The Traditional Way (API Tokens)
+## The traditional way (API tokens)
 
 ```
 You → Generate API token on PyPI → Store in GitHub Secrets → Workflow uses token
@@ -48,13 +48,13 @@ You → Generate API token on PyPI → Store in GitHub Secrets → Workflow uses
 
 ---
 
-## The OIDC Way (2026 Standard)
+## The OIDC way (2026 standard)
 
 ### Overview
 
 OIDC (OpenID Connect) is an authentication protocol built on OAuth 2.0. Instead of storing long-lived tokens, it uses **short-lived cryptographic proofs** (JWT tokens).
 
-### The Flow
+### The flow
 
 ```
 ┌─────────────┐
@@ -93,9 +93,9 @@ OIDC (OpenID Connect) is an authentication protocol built on OAuth 2.0. Instead 
 
 ---
 
-## Step-by-Step Breakdown
+## Step by step
 
-### 1. Registration Phase (One-Time Setup)
+### 1. Registration (one-time setup)
 
 You register a **trust relationship** on PyPI:
 
@@ -105,7 +105,7 @@ You register a **trust relationship** on PyPI:
 
 **No secrets exchanged!** This just tells PyPI what to expect.
 
-### 2. Workflow Execution
+### 2. Workflow run
 
 When you push a tag (`v0.1.0-beta.1`), the workflow runs:
 
@@ -114,7 +114,7 @@ permissions:
   id-token: write  # ← Request OIDC JWT capability
 ```
 
-### 3. JWT Token Generation
+### 3. The JWT is issued
 
 GitHub's OIDC provider generates a JWT containing:
 
@@ -137,14 +137,14 @@ GitHub's OIDC provider generates a JWT containing:
 
 **Cryptographically signed** with GitHub's private key.
 
-### 4. Publish Action
+### 4. Publish action
 
 The `pypa/gh-action-pypi-publish` action:
 1. Retrieves the JWT from GitHub's OIDC provider
 2. Bundles it with the package files
 3. Sends to PyPI/TestPyPI upload endpoint
 
-### 5. PyPI Validation
+### 5. PyPI checks the token
 
 PyPI receives the request and validates:
 
@@ -178,9 +178,9 @@ PyPI receives the request and validates:
 
 ---
 
-## Security Properties
+## Security properties
 
-### No Long-Lived Secrets
+### No long-lived secrets
 
 **Traditional tokens:**
 - Valid for months/years
@@ -192,7 +192,7 @@ PyPI receives the request and validates:
 - Automatically expire
 - Scoped to specific workflow + environment + package
 
-### Cryptographic Verification
+### Cryptographic verification
 
 **How JWT signatures work:**
 
@@ -212,21 +212,21 @@ Each trust relationship is scoped to:
 
 | Scope | Example | Purpose |
 |-------|---------|---------|
-| Repository | `nfb2021/canvodpy` | Only this repo can publish |
+| Repository | `nfb2021/canvodpy` | Only this repository can publish |
 | Workflow | `publish_testpypi.yml` | Only this workflow file |
 | Environment | `testpypi` | Only this environment |
 | Package | `canvod-readers` | Only this PyPI package |
 
 **Example attack prevention:**
 
-- Can't use JWT from different repo
+- Can't use a JWT from a different repository
 - Can't use JWT from different workflow
 - Can't use JWT from different environment
 - Can't publish to different package
 - Can't replay expired JWT
 - Can't modify JWT claims (signature breaks)
 
-### Audit Trail
+### Audit trail
 
 GitHub records:
 - Who triggered the workflow
@@ -243,7 +243,7 @@ PyPI records:
 
 ---
 
-## Why Multiple Publishers?
+## Why several publishers?
 
 Each package needs its own trust relationship:
 
@@ -267,13 +267,13 @@ If you only register `canvodpy`, the workflow can't publish `canvod-readers`.
 
 ---
 
-## GitHub Environments
+## GitHub environments
 
 ```yaml
 environment: testpypi  # ← Why this matters
 ```
 
-### Security Benefits
+### Security benefits
 
 **1. Protection Rules**
 - Require manual approval before publish
@@ -297,9 +297,9 @@ environment: testpypi  # ← Why this matters
 
 ---
 
-## Common Misconfigurations
+## Common configuration mistakes
 
-### 1. Mismatched Environment Name
+### 1. Mismatched environment name
 
 **Workflow says:**
 ```yaml
@@ -311,9 +311,9 @@ environment: testpypi
 Environment: test-pypi  # ← Note the dash!
 ```
 
-**Result:** JWT validation fails (environment claim doesn't match)
+**Result:** the JWT is rejected (environment claim doesn't match)
 
-### 2. Mismatched Workflow Filename
+### 2. Mismatched workflow file
 
 **Workflow filename:**
 ```
@@ -325,16 +325,16 @@ Environment: test-pypi  # ← Note the dash!
 Workflow: publish_testpypi.yml  # ← Note the underscore!
 ```
 
-**Result:** JWT validation fails
+**Result:** the JWT is rejected
 
-### 3. Wrong Repository Owner
+### 3. Wrong repository owner
 
 **Your GitHub username:** `nfb2021`
 **PyPI registered with:** `NFB2021` (different case!)
 
-**Result:** JWT validation fails (case-sensitive!)
+**Result:** the JWT is rejected (the check is case-sensitive)
 
-### 4. Forgot to Register Package
+### 4. Package not registered
 
 You set up OIDC for `canvodpy` but forgot `canvod-readers`.
 
@@ -342,9 +342,9 @@ You set up OIDC for `canvodpy` but forgot `canvod-readers`.
 
 ---
 
-## Advantages Over Other Methods
+## Advantages over other methods
 
-### vs. Username/Password
+### Compared with user name and password
 
 | Method | OIDC | Username/Password |
 |--------|------|-------------------|
@@ -354,7 +354,7 @@ You set up OIDC for `canvodpy` but forgot `canvod-readers`.
 | MFA Compatible | Always | Sometimes |
 | Audit Trail | Built-in | Manual logging |
 
-### vs. API Tokens
+### Compared with API tokens
 
 | Method | OIDC | API Token |
 |--------|------|-----------|
@@ -366,7 +366,7 @@ You set up OIDC for `canvodpy` but forgot `canvod-readers`.
 
 ---
 
-## Real-World Analogy
+## An analogy
 
 **API Tokens = House Key**
 - You give someone a key
@@ -384,7 +384,7 @@ You set up OIDC for `canvodpy` but forgot `canvod-readers`.
 
 ---
 
-## Further Reading
+## Further reading
 
 - [PyPI Trusted Publishers Documentation](https://docs.pypi.org/trusted-publishers/)
 - [OIDC Specification](https://openid.net/connect/)
@@ -394,4 +394,4 @@ You set up OIDC for `canvodpy` but forgot `canvod-readers`.
 
 ---
 
-**Questions?** Open an issue or discussion!
+**Questions?** Open an issue or a discussion.

@@ -23,7 +23,7 @@ around.
 ## Installing an extension
 
 Extensions are released on GitHub only, each package under its own tag
-`<package>-v<version>` (e.g. `canvod-filemap-v1.0.0`), never on PyPI.
+`<package>-v<version>` (for example `canvod-filemap-v1.0.0`), never on PyPI.
 
 !!! note "Before the 1.0.0 releases"
     The commands below use the 1.0.0 tags. Until those releases exist, this
@@ -33,7 +33,7 @@ Extensions are released on GitHub only, each package under its own tag
 
 In a clone of this repository, `canvod-filemap` is the dependency group
 `filemap`. The root `pyproject.toml` points it at a release tag of the
-public repo, so
+public repository, so
 
 ```bash
 uv sync --group filemap

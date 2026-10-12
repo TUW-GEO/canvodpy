@@ -4,7 +4,7 @@ Contributions of all kinds are welcome: bug reports, feature implementations, do
 
 ---
 
-## Ways to Contribute
+## Ways to contribute
 
 <div class="grid cards" markdown>
 
@@ -40,7 +40,7 @@ Contributions of all kinds are welcome: bug reports, feature implementations, do
 
 ---
 
-## Required Tools
+## Required tools
 
 Two tools must be installed before `uv sync` (not managed by it):
 
@@ -76,7 +76,7 @@ just check-dev-tools
 
 ---
 
-## Contribution Workflow
+## Contribution workflow
 
 ```bash
 # 1. Fork on GitHub, then clone your fork
@@ -109,7 +109,7 @@ git push origin feature/my-feature
 
 ---
 
-## Commit Message Format
+## Commit message format
 
 ```
 <type>(<scope>): <subject>
@@ -130,7 +130,7 @@ See [Conventional Commits](https://www.conventionalcommits.org/) for the full sp
 
 ---
 
-## Pre-Commit Hooks
+## Pre-commit hooks
 
 When you run `just hooks`, Git hooks are installed that execute automatically on every `git commit`. These hooks enforce code quality and commit message standards. **If a hook fails, the commit is rejected**: your files stay staged, but no commit object is created.
 
@@ -142,7 +142,7 @@ When you run `just hooks`, Git hooks are installed that execute automatically on
 | **ruff format** | Before commit | Formats Python code (indentation, line length, quotes) |
 | **uv-lock** | Before commit | Verifies `uv.lock` matches all `pyproject.toml` files |
 | **trailing-whitespace** | Before commit | Strips trailing whitespace |
-| **check-added-large-files** | Before commit | Blocks files above the size threshold |
+| **check-added-large-files** | Before commit | Blocks files larger than the size threshold |
 | **detect-private-key** | Before commit | Prevents accidental commit of SSH/PGP keys |
 | **end-of-file-fixer** | Before commit | Ensures files end with exactly one newline |
 | **commitizen** | After writing message | Validates `type(scope): subject` format |
@@ -182,33 +182,33 @@ When you run `just hooks`, Git hooks are installed that execute automatically on
 
 ---
 
-## Continuous Integration and Coverage
+## Continuous integration and coverage
 
 Every push and pull request triggers automated CI on GitHub Actions:
 
 - **Code Quality**: ruff linting, formatting, ty type-checking, lockfile consistency
-- **Test with Coverage**: pytest with coverage measurement, results uploaded to [Coveralls](https://coveralls.io/github/nfb2021/canvodpy) and posted as a PR comment
+- **Test with Coverage**: pytest with coverage measurement, results uploaded to [Coveralls](https://coveralls.io/github/nfb2021/canvodpy), and posted as a PR comment
 - **Platform Tests**: test suite across multiple OS and Python versions
 
-The CI runs the **same checks as the pre-commit hooks**, so fixing hook failures locally means your PR will pass CI.
+The CI runs the **same checks as the pre-commit hooks**, so fixing hook failures locally means your PR passes CI.
 
 ---
 
-## Pull Request Guidelines
+## Pull request guidelines
 
 !!! tip "Before opening a PR"
     1. `just test && just check` must pass with no errors.
     1. The change follows `CODING_STANDARDS.md` (rules and per-change checklist); the reasons are in the [decisions](adr/index.md).
-    2. Include tests for all new functionality.
+    2. Include tests for every new feature.
     3. New code must not reduce test coverage. Aim to increase it.
     4. Update the Zensical documentation in `docs/` if adding or changing public API, behavior, or configuration.
     5. Target Python 3.14+.
     6. Add yourself to `CONTRIBUTORS.md` if this is your first contribution.
 ### Test coverage requirement
 
-Every pull request that adds new functionality **must include tests**. The CI
+Every pull request that adds a feature **must include tests**. The CI
 pipeline measures line coverage and posts a report on the PR. While there is no
-hard minimum percentage, reviewers will check that:
+hard minimum percentage, reviewers check that:
 
 - All new public functions and methods have at least one test
 - Edge cases and error paths are covered (empty inputs, invalid parameters)
@@ -240,7 +240,7 @@ just check          # lint + format + type-check (run before committing)
 
 ---
 
-## Deploying (Maintainers)
+## Deploying (maintainers)
 
 ```bash
 just release-status                              # commits per package since its last tag

@@ -40,22 +40,22 @@ Make canvodpy properly citable with a permanent DOI for academic papers using **
 
     ---
 
-    Link your repo once. Every subsequent GitHub release triggers
+    Link your repository once. Every subsequent GitHub release triggers
     automatic archival and DOI minting.
 
 </div>
 
 ---
 
-## How It Works
+## How it works
 
-### 1. Initial Setup (One-Time)
+### 1. Initial setup (once)
 
-You link your GitHub repo to Zenodo:
+You link your GitHub repository to Zenodo:
 - Zenodo watches for new releases
 - No manual uploads needed
 
-### 2. Every Release
+### 2. Every release
 
 ```bash
 just release canvod-store=1.1.0 canvodpy=1.1.0   # release commit on release/v1.1.0: open a PR, merge it
@@ -73,7 +73,7 @@ archives one version per canvodpy release; package tags get none.
 4. Zenodo mints DOI: `10.5281/zenodo.XXXXX`
 5. Zenodo creates citation metadata
 
-### 3. Users Cite Your Work
+### 3. Users cite your work
 
 Researchers can cite:
 ```
@@ -81,14 +81,14 @@ Bader, N. F. (2026). canvodpy: GNSS Vegetation Optical Depth Analysis (v0.1.0).
 Zenodo. https://doi.org/10.5281/zenodo.XXXXX
 ```
 
-**Version-specific DOIs:**
-- v0.1.0 $\rightarrow$ DOI: 10.5281/zenodo.12345
-- v0.2.0 $\rightarrow$ DOI: 10.5281/zenodo.12346
-- Concept DOI $\rightarrow$ DOI: 10.5281/zenodo.12344 (always latest)
+**A DOI for each version:**
+- v0.1.0 $\rightarrow$ DOI: `10.5281/zenodo.12345`
+- v0.2.0 $\rightarrow$ DOI: `10.5281/zenodo.12346`
+- Concept DOI $\rightarrow$ DOI: `10.5281/zenodo.12344` (always latest)
 
 ---
 
-## Step 1: Create CITATION.cff *(Done)*
+## Step 1. Create CITATION.cff *(done)*
 
 `CITATION.cff` enables the **"Cite this repository"** button on GitHub, exports to BibTeX/APA/EndNote, and provides metadata for Zenodo.
 
@@ -98,33 +98,33 @@ Zenodo. https://doi.org/10.5281/zenodo.XXXXX
 
 ---
 
-## Step 2: Connect GitHub to Zenodo
+## Step 2. Connect GitHub to Zenodo
 
-### 2.1: Create Zenodo Account
+### 2.1. Create a Zenodo account
 
 1. Go to: https://zenodo.org
 2. Click "Sign up"
-3. **Important:** Sign up with GitHub!
+3. **Important:** sign up with GitHub.
    - Click "Log in with GitHub"
    - This enables automatic integration
 
-### 2.2: Enable Repository on Zenodo
+### 2.2. Enable the repository on Zenodo
 
 1. After logging in, go to: https://zenodo.org/account/settings/github/
 2. Find `nfb2021/canvodpy` in the list
 3. **Toggle ON** the switch next to it
-4. Zenodo is now watching for releases!
+4. Zenodo now watches for releases.
 
-### 2.3: Verify Connection
+### 2.3. Verify the connection
 
 - Should see: "✓ Enabled" next to canvodpy
-- Zenodo will archive next release
+- Zenodo archives the next release
 
 ---
 
-## Step 3: Create First Release
+## Step 3. Create the first release
 
-### Option A: Test with Beta Release
+### Option A. Test with a beta release
 
 ```bash
 git tag -a v0.1.0b2 -m "Test Zenodo DOI creation"
@@ -135,7 +135,7 @@ git push origin v0.1.0b2
 - Zenodo creates DOI
 - You can test the process safely
 
-### Option B: Production Release
+### Option B. Production release
 
 ```bash
 just release canvodpy=0.1.0 canvod-readers=0.1.0 ...   # open a PR, merge it
@@ -147,7 +147,7 @@ just tag-release && git push origin v0.1.0 canvod-readers-v0.1.0 ...
 - Zenodo creates DOI
 - This is the "real" first citable version
 
-### After Release
+### After the release
 
 1. Go to: https://zenodo.org/account/settings/github/repository/nfb2021/canvodpy
 2. You'll see your release listed
@@ -161,7 +161,7 @@ just tag-release && git push origin v0.1.0 canvod-readers-v0.1.0 ...
 
 ---
 
-## Step 4: Add DOI Badge to README
+## Step 4. Add the DOI badge to the README
 
 Add to `README.md` (after other badges):
 
@@ -171,11 +171,11 @@ Add to `README.md` (after other badges):
 
 Replace `XXXXX` with your actual Zenodo ID.
 
-**Tip:** Use the "concept DOI" (always points to latest version)
+**Tip:** use the "concept DOI" (always points to latest version)
 
 ---
 
-## Step 5: Update Documentation
+## Step 5. Update the documentation
 
 Add citation section to `README.md`:
 
@@ -203,9 +203,9 @@ BibTeX:
 
 ---
 
-## How Citations Work
+## How citations work
 
-### For Researchers Using Your Package
+### For researchers using the package
 
 **From GitHub:**
 1. Click "Cite this repository" (top right)
@@ -217,30 +217,30 @@ BibTeX:
 2. Click "Export" $\rightarrow$ Choose format
 3. Copy citation
 
-### For Papers
+### For papers
 
 Researchers cite specific versions:
 
 **Correct:**
-> "We used canvodpy v0.1.0 (Bader, 2026) for VOD calculations."
+> "VOD was calculated with canvodpy v0.1.0 (Bader, 2026)."
 
 **Reference:**
 > Bader, N. F. (2026). canvodpy v0.1.0. Zenodo. https://doi.org/10.5281/zenodo.12345
 
 **Why version-specific?**
 - Reproducibility: v0.1.0 code is archived forever
-- Transparency: Readers know exactly what was used
-- FAIR principles: Findable specific version
+- Transparency: readers know exactly what was used
+- FAIR principles: the exact version is findable
 
-### Concept DOI vs Version DOI
+### Concept DOI and version DOI
 
-**Concept DOI** (10.5281/zenodo.12344):
+**Concept DOI** (`10.5281/zenodo.12344`):
 - Always points to latest version
-- Use for: General citations, badges
+- Use for: general citations, badges
 
-**Version DOI** (10.5281/zenodo.12345):
+**Version DOI** (`10.5281/zenodo.12345`):
 - Points to specific version (v0.1.0)
-- Use for: Research papers (reproducibility)
+- Use for: research papers (reproducibility)
 
 ---
 
@@ -258,13 +258,13 @@ Researchers cite specific versions:
 
 ## Troubleshooting
 
-??? failure "Repo not visible on Zenodo"
+??? failure "Repository not visible on Zenodo"
     1. Ensure you logged in **with GitHub** (not email)
-    2. Check the repo is **public**: Zenodo only indexes public repos
+    2. Check the repository is **public**: Zenodo only indexes public repositories
     3. Log out and back in; sync can take a few minutes
 
 ??? failure "No DOI created for a release"
-    1. Verify the toggle is **ON** at [zenodo.org/account/settings/github/](https://zenodo.org/account/settings/github/)
+    1. Verify the toggle is **ON** at [Zenodo's GitHub settings](https://zenodo.org/account/settings/github/)
     2. Ensure the GitHub release is **published** (not a draft)
     3. Check your Zenodo email for error notifications
 
@@ -272,13 +272,13 @@ Researchers cite specific versions:
     Update `CITATION.cff`, then create a new release.
     Zenodo reads the updated file for the new DOI automatically.
 
-??? question "Can I get a DOI for old releases?"
+??? question "Do old releases get a DOI?"
     No. Zenodo only archives releases created **after** the integration was enabled.
     You can create new patch/beta releases to archive historical code states.
 
 ---
 
-## Example: How It Looks
+## Example
 
 ### On GitHub
 
@@ -305,11 +305,11 @@ License: Apache-2.0
 [Download] [Cite] [Share] [Export]
 ```
 
-### In Papers
+### In papers
 
 **Methods section:**
 > "VOD was calculated using canvodpy v0.1.0 (Bader, 2026),
-> an open-source Python package for GNSS-based vegetation analysis."
+> an open source Python package for GNSS-based vegetation analysis."
 
 **References:**
 > Bader, N. F. (2026). canvodpy: GNSS Vegetation Optical Depth Analysis (v0.1.0).
@@ -317,9 +317,9 @@ License: Apache-2.0
 
 ---
 
-## Additional Metadata (Optional)
+## Additional metadata (optional)
 
-### .zenodo.json
+### `.zenodo.json`
 
 For advanced metadata customization, create `.zenodo.json`:
 
@@ -342,7 +342,7 @@ For advanced metadata customization, create `.zenodo.json`:
 }
 ```
 
-**Note:** CITATION.cff is usually sufficient!
+**Note:** CITATION.cff is usually enough.
 
 ---
 
@@ -357,7 +357,7 @@ For advanced metadata customization, create `.zenodo.json`:
 
 ---
 
-## Quick Start Checklist
+## Checklist
 
 - [ ] Get ORCID iD (if you don't have one)
 - [ ] Update CITATION.cff with your ORCID
@@ -370,4 +370,4 @@ For advanced metadata customization, create `.zenodo.json`:
 
 ---
 
-**Questions?** Check [Zenodo help](https://help.zenodo.org/) or ask in discussions!
+**Questions?** Check [Zenodo help](https://help.zenodo.org/) or ask in discussions.

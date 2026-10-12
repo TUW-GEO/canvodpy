@@ -1,4 +1,4 @@
-# How the Release Infrastructure Works
+# How the release infrastructure works
 
 This page documents the release chain, from commit message to PyPI upload.
 The steps to follow are in [Releasing](../RELEASING.md); the rules behind
@@ -10,7 +10,7 @@ the versions are in [Versioning](../VERSIONING.md).
 
     ---
 
-    Structured commit messages (`feat`, `fix`, `docs`, ...), checked by
+    Structured commit messages (`feat`, `fix`, `docs` and others), checked by
     commitizen on every commit. They fill the changelogs.
 
     [:octicons-arrow-right-24: Details](#1-conventional-commits)
@@ -56,7 +56,7 @@ the versions are in [Versioning](../VERSIONING.md).
 
 ---
 
-## 1. Conventional Commits
+## 1. Conventional commits
 
 **Format:**
 ```
@@ -123,7 +123,7 @@ a pre-release is `1.1.0rc1`, tagged `v1.1.0rc1`.
 
 ---
 
-## 3. GitHub Releases
+## 3. GitHub releases
 
 `.github/workflows/release.yml` runs when a canvodpy tag (`v*.*.*`) is
 pushed. Package tags (`canvod-store-v1.1.0`) do not match and get no
@@ -151,7 +151,7 @@ Maintainer                          GitHub Actions               GitHub
 
 ---
 
-## 4. PyPI Publishing
+## 4. PyPI publishing
 
 | Workflow | Runs on | Publishes to |
 |----------|---------|--------------|
@@ -160,7 +160,7 @@ Maintainer                          GitHub Actions               GitHub
 
 Both check out the tagged commit with all tags and build exactly the
 packages whose release tag points at that commit
-(`scripts/release.py tagged`): for `v1.1.0` above, canvodpy and
+(`scripts/release.py tagged`): for the `v1.1.0` example, canvodpy and
 canvod-store, nothing else. Tagging and publishing to PyPI are separate
 decisions: a tag is not a promise that PyPI has the version.
 
@@ -178,10 +178,10 @@ The workflows authenticate to (Test)PyPI with OpenID Connect instead of
 stored API tokens:
 
 1. GitHub issues the workflow run a short-lived token (JWT) saying which
-   repository, workflow and environment it is.
+   repository, workflow, and environment it is.
 2. The workflow sends it to PyPI with the upload
    (`pypa/gh-action-pypi-publish`, permission `id-token: write`).
-3. PyPI checks the signature and that repository, workflow and environment
+3. PyPI checks the signature and that repository, workflow, and environment
    match a trusted publisher configured for the project, then accepts the
    upload.
 
@@ -235,7 +235,7 @@ Users then install `uv add canvodpy==1.1.0` (the whole tested mix) or
 ### Commit message rejected
 
 `Commit message does not follow conventional commits format`: write
-`type(scope): subject`, e.g. `git commit --amend -m "fix(vod): correct tau
+`type(scope): subject`, for example `git commit --amend -m "fix(vod): correct tau
 calculation"`.
 
 ### Release refused
@@ -256,6 +256,6 @@ section `## v1.1.0 (...)` on the tagged commit.
 ### OIDC upload failing
 
 `The workflow is not configured for publishing`: check that the project on
-PyPI has the trusted publisher above (each package separately), with the
+PyPI has the trusted publisher described earlier (each package separately), with the
 same workflow file and environment name, and that the workflow has
 `id-token: write`.

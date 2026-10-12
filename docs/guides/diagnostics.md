@@ -152,7 +152,7 @@ The worker processes write to their own files, so search
 the start time in UTC, for example `ExampleSite-20261010-030000`. In
 Python, `site.pipeline()` sets one in the same way; it applies until the
 pipeline is closed, at the end of the `with` block. Every event of the
-run carries it in the `run_id` field, in the main process and in the
+run carries it in the `run_id` field, in the main process, and in the
 workers, so one search finds everything a run logged.
 
 The run ID also goes into the message of each commit the run makes to
@@ -255,4 +255,4 @@ field.
 
 ---
 
-**Next in the trail:** [Parallel processing](parallel-processing.md) · [Configuration](configuration.md) · [Architecture](../architecture.md)
+**Next in the trail:** [parallel processing](parallel-processing.md) · [configuration](configuration.md) · [architecture](../architecture.md)

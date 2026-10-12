@@ -105,3 +105,17 @@ ns
 (ESA|CODE)'s
 add_receivers
 add_vod_analyses
+graphify
+gnssvod
+OAuth
+JWTs
+Bader
+toolchain
+venv
+pylint
+uv_build
+setuptools
+virtualenv
+howfairis
+PRs
+docstrings

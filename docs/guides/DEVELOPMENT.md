@@ -1,10 +1,10 @@
-# Development Guide
+# Development guide
 
 Quick reference for day-to-day canVODpy development.
 
 ---
 
-## Initial Setup
+## Initial setup
 
 ```bash
 git clone https://github.com/nfb2021/canvodpy.git
@@ -42,7 +42,7 @@ just check-dev-tools   # verify both are present
 
 ---
 
-## Configuration Management
+## Configuration management
 
 canVODpy uses three YAML files in `config/`:
 
@@ -126,14 +126,14 @@ its own rule codes.
 ## Logging: add it generously
 
 canvodpy runs unattended on remote machines. When something goes wrong
-there, whatever you logged is the *only* evidence that will ever exist:
+there, whatever you logged is the *only* evidence there is:
 there's no attaching a debugger to a cron job after the fact. Log more than
 feels necessary, especially around: file I/O, external calls (downloads,
 Icechunk writes), anything with a fallback/degraded path, and any place a
 silent skip could hide data loss. See `docs/guides/diagnostics.md` for the
 full picture (the log files, `run_id`, the failure events, `stage_timer`,
-the performance dashboard). This section is the short "how do I add a log
-line" version.
+the performance dashboard). This section is the short version: how to add a log
+line.
 
 **Which logger to use:** every module, in every package, gets its logger
 directly from structlog:
@@ -189,7 +189,7 @@ worker process reach the log and the dashboard only.
 
 ---
 
-## Keeping Your Fork in Sync
+## Keeping your fork in sync
 
 If you are working from a fork (rather than a direct clone), periodically pull updates from the upstream repository:
 
@@ -214,7 +214,7 @@ git remote add upstream git@github.com:nfb2021/canvodpy.git
 
 ---
 
-## Pre-Commit Hooks
+## Pre-commit hooks
 
 `just hooks` installs Git hooks that run **automatically on every commit**. If any hook fails, the commit is rejected: your changes stay staged but no commit is created.
 
@@ -250,7 +250,7 @@ uv sync && git add uv.lock && git commit -m "feat(readers): your message"
 
 ---
 
-## Contributing Workflow
+## Contributing workflow
 
 ```bash
 git checkout -b feature/my-feature
@@ -263,7 +263,7 @@ git push origin feature/my-feature
 # → open pull request on GitHub
 ```
 
-### Conventional Commit Scopes
+### Conventional commit scopes
 
 `readers` · `aux` · `grids` · `vod` · `store` · `viz` · `utils` · `naming` · `ops` · `docs` · `ci` · `deps`
 
@@ -287,7 +287,7 @@ just test-coverage    # generates HTML report
 
 ---
 
-## Private or Local Add-on Packages
+## Private or local add-on packages
 
 You may want to develop an add-on package alongside canVODpy that is not part
 of the public repository, for example a private algorithm, a site-specific
@@ -323,7 +323,7 @@ exclude  = ["packages/canvod-myprivatepackage"]
 ```
 
 This keeps `uv.lock` identical for everyone else.
-CI will never see the directory, so it resolves the same 240 packages with or
+CI never sees the directory, so it resolves the same 240 packages with or
 without your local copy.
 
 **4. Install locally with `uv pip install`**
@@ -353,11 +353,11 @@ git submodule. `actions/checkout@v4` does not initialize submodules by
 default, so CI would still see an empty directory. The trade-off is that the
 `uv.lock` would diverge between users who have initialized the submodule and
 those who have not, requiring everyone to keep the `exclude` in place anyway.
-For a single-developer private add-on the simpler approach above is preferred.
+For a single-developer private add-on the simpler approach is preferred.
 
 ---
 
-## All Just Commands
+## All just commands
 
 ```bash
 just                     # list all commands
@@ -397,7 +397,7 @@ just deps-mermaid        # mermaid dependency graph
     uv sync --all-extras
     ```
 
-??? failure "`uv.lock` needs to be updated: CI fails but local works"
+??? failure "`uv.lock` needs to be updated; CI fails but local works"
     An untracked directory inside `packages/` is being picked up by the
     `packages/*` workspace glob and included in the lock. CI does not have
     the directory and therefore resolves fewer packages, causing a mismatch.

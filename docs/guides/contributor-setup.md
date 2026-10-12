@@ -1,4 +1,4 @@
-# Contributor Setup
+# Contributor setup
 
 This guide walks you through everything you need, from creating a GitHub account to running your first test, so you can start contributing to canVODpy even if you have never used Git, GitHub, or Python tooling before.
 
@@ -50,7 +50,7 @@ Homebrew is the standard package manager for macOS. It lets you install develope
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-Follow the on-screen instructions. When it finishes, it will tell you to run two commands to add Homebrew to your PATH: **copy and run them**. Then verify:
+Follow the on-screen instructions. When it finishes, it tells you to run two commands to add Homebrew to your PATH: **copy and run them**. Then verify:
 
 ```bash
 brew --version
@@ -169,7 +169,7 @@ SSH keys let you securely connect to GitHub without typing your password every t
 
 1. Go to [github.com/settings/keys](https://github.com/settings/keys).
 2. Click **New SSH key**.
-3. Give it a title (for example "My Laptop"), paste the key, and click **Add SSH key**.
+3. Give it a title (for example "Laptop"), paste the key, and click **Add SSH key**.
 
 ### Test the connection
 
@@ -276,7 +276,7 @@ A **fork** is your own copy of the project on GitHub. You make changes in your f
 
 1. Go to [github.com/nfb2021/canvodpy](https://github.com/nfb2021/canvodpy).
 2. Click the **Fork** button in the top-right corner.
-3. GitHub will create a copy at `github.com/YOUR_USERNAME/canvodpy`.
+3. GitHub creates a copy at `github.com/YOUR_USERNAME/canvodpy`.
 
 ### Clone your fork
 
@@ -318,7 +318,7 @@ This pulls:
 - **`packages/canvod-readers/tests/test_data`**: validation test data (falsified/corrupted RINEX files for testing)
 - **`demo`**: clean real-world data for demos and documentation
 
-If you skip this step, tests that require these datasets will be automatically skipped.
+If you skip this step, tests that require these datasets are skipped.
 
 ---
 
@@ -429,14 +429,14 @@ git checkout feature/my-feature
 git rebase main
 ```
 
-Rebasing replays your commits on top of the latest `main`, producing a linear history. If Git reports a **merge conflict** during rebase, it will pause and show you which files conflict. Resolve each conflict by editing the file, then:
+Rebasing replays your commits on top of the latest `main`, producing a linear history. If Git reports a **merge conflict** during rebase, it pauses and shows you which files conflict. Resolve each conflict by editing the file, then:
 
 ```bash
 git add <resolved-file>
 git rebase --continue
 ```
 
-If you want to abort the rebase and return to the state before:
+If you want to stop the rebase and return to the state before:
 
 ```bash
 git rebase --abort
@@ -503,7 +503,7 @@ git checkout team-grids
 
 From here, choose the workflow that fits your team:
 
-=== "Workflow A: Push to the team branch directly"
+=== "Workflow A, push to the team branch directly"
 
     Best for small teams (2–3 people) or when members work on separate files.
 
@@ -523,7 +523,7 @@ From here, choose the workflow that fits your team:
     git push origin team-grids
     ```
 
-=== "Workflow B: Individual feature branches with pull requests"
+=== "Workflow B, feature branches with pull requests"
 
     Best for larger teams or when you want lightweight review within the team.
 
@@ -583,7 +583,7 @@ Commit messages follow the [Conventional Commits](https://www.conventionalcommit
 
 ### Push
 
-Push to your team branch or feature branch (see [Working in teams](#12b-working-in-teams) above).
+Push to your team branch or feature branch (see [Working in teams](#12b-working-in-teams)).
 
 ### Open a pull request
 
@@ -613,7 +613,7 @@ The following checks execute automatically in sequence. If any one fails, the co
 | **check-added-large-files** | `pre-commit`                               | Blocks files larger than the threshold from being committed                                                               | You are trying to commit a large binary, dataset, or log file           |
 | **detect-private-key**      | `pre-commit`                               | Scans for accidentally staged private keys (SSH, PGP)                                                                     | You are about to commit a secret: **do not override this**             |
 | **end-of-file-fixer**       | `pre-commit`                               | Ensures every file ends with exactly one newline                                                                          | A file is missing its final newline or has extra blank lines at the end |
-| **check-agent-docs**        | `pre-commit`                               | Every file path and `just` recipe named in `AGENTS.md` files and task guides exists                                       | You moved or renamed a file or recipe that an instruction file names    |
+| **check-agent-docs**        | `pre-commit`                               | Every path and `just` recipe named in `AGENTS.md` files and task guides exists                                       | You moved or renamed a file or recipe that an instruction file names    |
 | **commitizen**              | `commit-msg` (after you write the message) | Validates that your commit message follows the [Conventional Commits](https://www.conventionalcommits.org/) specification | Your message does not match the `type(scope): subject` format           |
 | **ty type check**           | `pre-push` (before `git push`)             | Type checking of the whole workspace with ty                                                                              | A type error; the push is aborted                                       |
 
@@ -735,7 +735,7 @@ Every push to a branch and every pull request triggers automated checks on GitHu
 | ---------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | **Code Quality**       | Every push and PR, weekly  | Checks lockfile consistency, runs ruff linting, checks formatting, runs type checking with ty, checks the agent instruction files       |
 | **Test with Coverage** | Push to `main`, all pull requests, weekly | Runs `uv run pytest` (coverage is on by default in `pyproject.toml`), uploads results to Coveralls, posts a coverage summary comment on the PR |
-| **Platform Tests**     | Every push and PR, weekly  | Runs the test suite on Linux, macOS and Windows with Python 3.14                                                                       |
+| **Platform Tests**     | Every push and PR, weekly  | Runs the test suite on Linux, macOS, and Windows with Python 3.14                                                                       |
 | **Docs Quality**       | Push to `main`, every pull request, weekly | Checks the language of the docs pages a pull request changes with Vale, and every link of the built site with lychee |
 | **Deploy Docs**        | A published release, or started by hand | Builds and deploys the documentation site                                                                                |
 
@@ -751,7 +751,7 @@ The project uses [Coveralls](https://coveralls.io/) to track test coverage over 
 2. The report is uploaded to [coveralls.io/github/nfb2021/canvodpy](https://coveralls.io/github/nfb2021/canvodpy)
 3. A coverage summary is posted as a comment on the pull request, showing which lines are covered and which are not
 
-Coverage is **not** a gate (your PR will not be blocked by low coverage), but it is visible to reviewers. When adding new code, include tests. This is both good scientific practice (every computation should be verifiable) and a courtesy to future contributors who need to understand what the code does.
+Coverage is **not** a gate (low coverage does not block your PR), but it is visible to reviewers. When adding new code, include tests. This is both good scientific practice (every computation should be verifiable) and a courtesy to future contributors who need to understand what the code does.
 
 To measure coverage locally before pushing:
 
@@ -843,4 +843,4 @@ just test-coverage
 
 ---
 
-**Next in the trail:** [Configuration Guide](configuration.md) · [API Levels](api-levels.md) · [Architecture](../architecture.md) · [AI Development](ai-development.md)
+**Next in the trail:** [configuration](configuration.md) · [API levels](api-levels.md) · [architecture](../architecture.md) · [AI development](ai-development.md)

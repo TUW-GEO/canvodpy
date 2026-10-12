@@ -23,12 +23,12 @@ or an API key.
 |---|---|
 | `AGENTS.md` (root) | Scientific context, packages, the one way to process data, data contracts, the development workflow, guardrails, and the reading order of these docs |
 | `canvodpy/AGENTS.md`, `packages/<package>/AGENTS.md` | Per package: where things live, invariants and decisions, tests |
-| `.claude/skills/<task>/SKILL.md` | Step-by-step guides for recurring tasks: run the pipeline, add a reader or constellation, deprecate code, store safety, the icechunk 2 API, the link to canvodpy-extensions, releasing |
-| `CLAUDE.md` files | One line, `@AGENTS.md`: Claude Code reads `CLAUDE.md`, other agents read `AGENTS.md` |
+| `.claude/skills/<task>/SKILL.md` | Step-by-step guides for recurring tasks: run the pipeline, add a reader or constellation, deprecate code, store safety, the Icechunk 2 API, the link to canvodpy-extensions, releasing |
+| `CLAUDE.md` files | One line, `@AGENTS.md`. Claude Code reads `CLAUDE.md`, other agents read `AGENTS.md` |
 | `CODING_STANDARDS.md` | The rules every change follows and the checklist for each change; reviews check against it |
 | `GLOSSARY.md` | The project's words, and the words to avoid ([Glossary](../glossary.md)) |
 | `docs/adr/` | The decisions behind canVODpy and why they were made ([Decisions](../adr/index.md)) |
-| `docs/agents/` | How the workflow skills below use GitHub issues, triage labels and the glossary |
+| `docs/agents/` | How the workflow skills below use GitHub issues, triage labels, and the glossary |
 | `.claude/settings.json` | Enables the workflow plugin; blocks merging, pushing `main` or tags and bypassing checks (with `scripts/agent_git_guard.py`) |
 
 Claude Code loads the root file at the start of a session, a package's
@@ -41,7 +41,7 @@ copying it, so they go out of date less often.
 
 ### Kept correct by a check
 
-Every file path and `just` recipe named in these files must exist.
+Every path and `just` recipe named in these files must exist.
 `just check-agent-docs` verifies this; it runs in `just check`, as a
 pre-commit hook and in CI. Paths in canvodpy-extensions are written
 `extensions:<path>` and checked at the extensions commit canvodpy is
@@ -52,7 +52,7 @@ same pull request.
 
 ## The development workflow
 
-Contributors develop with one shared workflow: the open-source
+Contributors develop with one shared workflow: the open source
 [mattpocock/skills](https://github.com/mattpocock/skills), a set of
 skills for Claude Code. Each step guards against a typical failure of
 agent-written code: the agent building something other than what you
@@ -62,7 +62,7 @@ writing code without tests, or ignoring the project's rules.
 Claude Code loads the skills when it is started in the canvodpy folder,
 and calls them only by their full name, `/mattpocock-skills:<skill>`; a
 short `/grill-with-docs` is an unknown command, and a short
-`/code-review` runs Claude Code's own review instead.
+The plain `/code-review` command is the review built into Claude Code.
 
 | Situation | Start with | What happens |
 |---|---|---|
@@ -87,8 +87,8 @@ quota.
 
 `just graph` builds a graph of the code with
 [graphify](https://pypi.org/project/graphifyy/): every module, class and
-function, and who calls, imports or subclasses whom. It is built from the
-syntax tree on your machine in about ten seconds, needs no API key and is
+function, and who calls, imports, or subclasses whom. It is built from the
+syntax tree on your machine in about ten seconds, needs no API key, and is
 never committed (`.graphify/`). Git hooks rebuild it in the background
 after each commit, merge and checkout.
 
@@ -103,7 +103,7 @@ caller) and before writing new code (to find an existing implementation).
 Connections marked `INFERRED` are guesses; check them in the code.
 
 graphify can also call paid language-model services. The `just` recipes
-use only its free, local commands and remove API keys from its
+use only its free, local commands, and remove API keys from its
 environment. Don't run other graphify commands (its output suggests
 `graphify cluster-only`, which can call a paid service) or install its
 assistant skill.
@@ -145,7 +145,7 @@ the same skills.
    tags, never force-pushes and never bypasses a check (`--no-verify`,
    skipped hooks, changed settings). Claude Code blocks these through
    `.claude/settings.json` and `scripts/agent_git_guard.py`; don't
-   turn that off. See `CODING_STANDARDS.md`, Git and GitHub.
+   turn that off. See the Git and GitHub section of `CODING_STANDARDS.md`.
 6. **No secrets.** Never give an agent credentials or private data. Hosted
    agents send what they read to their provider.
 
@@ -154,5 +154,5 @@ the same skills.
 ## Related pages
 
 - [Architecture](../architecture.md): packages and data flow
-- [API levels](api-levels.md): the CLI and `Site.pipeline()`
+- [API levels](api-levels.md): the command line and `Site.pipeline()`
 - [Contributor setup](contributor-setup.md): setup and first run

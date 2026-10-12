@@ -1,4 +1,4 @@
-# Your Own Readers and VOD Calculators
+# Your own readers and VOD calculators
 
 `canvodpy run` can read a file format and compute VOD with a model that
 canvodpy does not ship. Both come from a small Python package of your own,
@@ -198,8 +198,9 @@ class MyModel(VODCalculator):
         )
 ```
 
-`canopy_ds` and `sky_ds` are the canopy and the reference receiver's data,
-already restricted to the epochs and signals both have. Return `VOD`,
+`canopy_ds` holds the data of the canopy receiver and `sky_ds` the data of
+the reference receiver. Both are restricted to the epochs and signals they
+share. Return `VOD`,
 `phi` and `theta`, and keep the `cell_id_*` variables that a grid
 assignment (`processing.preprocessing`) added.
 

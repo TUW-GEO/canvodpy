@@ -8,7 +8,7 @@ description: Every option of canvodpy run, and the Site and Pipeline objects tha
 canVODpy runs from Python or from the command line. Both run the same
 code: `canvodpy run` creates a `Site` and processes the days with
 `Site.pipeline()`, so the stores hold the same data either way. Use
-Python to script runs, for example in a notebook or in a loop over
+Python to script runs, for example in a notebook, or in a loop over
 sites; use the command line for scheduled runs.
 
 This page lists the options of both. For a first run, start with
@@ -244,4 +244,4 @@ optional extension; see [Optional extensions](extensions.md).
 
 ---
 
-**Next in the trail:** [Configuration](configuration.md) · [Parallel processing](parallel-processing.md) · [Architecture](../architecture.md)
+**Next in the trail:** [configuration](configuration.md) · [parallel processing](parallel-processing.md) · [architecture](../architecture.md)

@@ -144,4 +144,4 @@ describes the logs.
 
 ---
 
-**Next in the trail:** [Diagnostics](diagnostics.md) · [Configuration](configuration.md) · [Architecture](../architecture.md)
+**Next in the trail:** [diagnostics](diagnostics.md) · [configuration](configuration.md) · [architecture](../architecture.md)
