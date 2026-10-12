@@ -220,6 +220,49 @@ class TestProtectedLists:
         check_vod_analyses(_repository(path), ["a", "b"], store_path=path)
 
 
+def _fail_commits(monkeypatch) -> None:
+    """Make every Icechunk commit fail, as a storage failure would."""
+
+    def fail(*args, **kwargs):
+        raise icechunk.StorageError("disk full")
+
+    monkeypatch.setattr(icechunk.Session, "commit", fail)
+
+
+class TestFailedCommit:
+    def test_an_amendment_whose_commit_is_refused_changes_nothing(self, tmp_path):
+        path = _store(tmp_path)
+        session = icechunk.Repository.open(
+            storage=icechunk.local_filesystem_storage(str(path))
+        ).writable_session("main")
+        root = zarr.open_group(session.store, mode="r+")
+        copy = dict(root.attrs["canvod:repository_metadata"])
+        copy["identity"] = {**copy["identity"], "title": "Edited"}
+        root.attrs["canvod:repository_metadata"] = copy
+        session.commit("hand edit")
+        before = _repository(path)
+
+        with pytest.raises(ValueError, match="edited by hand"):
+            _amend(path, {"identity.title": "Fangorn GNSS"})
+
+        assert _repository(path) == before
+
+    def test_an_amendment_whose_commit_fails_can_be_retried(
+        self, tmp_path, monkeypatch
+    ):
+        path = _store(tmp_path)
+        before = _repository(path)
+
+        with monkeypatch.context() as patch:
+            _fail_commits(patch)
+            with pytest.raises(icechunk.StorageError):
+                _amend(path, {"identity.title": "Fangorn GNSS"})
+        assert _repository(path) == before
+
+        _amend(path, {"identity.title": "Fangorn GNSS"})
+        assert len(_repository(path)["amendments"]) == 1
+
+
 class TestDeprecations:
     def test_update_metadata_warns_and_names_amend_metadata(self, tmp_path):
         path = _store(tmp_path)

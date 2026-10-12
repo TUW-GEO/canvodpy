@@ -173,10 +173,12 @@ def amend_metadata(
                 for field in changes
             ),
         ]
-        repo.set_metadata(amended)
-        return commit_with_rebase(
+        snapshot_id = commit_with_rebase(
             repo.writable_session("main"),
             f"Amend store metadata: {', '.join(changes)} ({reason.strip()})",
             store_path=store_path,
             config=config,
+            repository=amended,
         )
+        repo.set_metadata(amended)
+        return snapshot_id

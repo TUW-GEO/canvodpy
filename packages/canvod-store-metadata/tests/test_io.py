@@ -90,6 +90,23 @@ class TestIO:
         write_metadata(store_path, _make_metadata())
         assert metadata_exists(store_path)
 
+    def test_a_new_store_whose_first_commit_fails_has_no_metadata(
+        self, tmp_path, monkeypatch
+    ):
+        store_path = _create_store(tmp_path / "store")
+
+        def fail(*args, **kwargs):
+            raise icechunk.StorageError("disk full")
+
+        with monkeypatch.context() as patch:
+            patch.setattr(icechunk.Session, "commit", fail)
+            with pytest.raises(icechunk.StorageError):
+                write_metadata(store_path, _make_metadata())
+
+        assert not metadata_exists(store_path)
+        write_metadata(store_path, _make_metadata())
+        assert metadata_exists(store_path)
+
     def test_metadata_exists_no_store(self, tmp_path):
         assert not metadata_exists(tmp_path / "nonexistent")
 

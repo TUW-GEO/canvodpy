@@ -66,6 +66,7 @@ def commit_with_rebase(
     *,
     store_path: Path | str,
     config: Any = None,
+    repository: dict[str, Any] | None = None,
 ) -> str:
     """Commit a session, rebasing it if the branch moved since it was opened.
 
@@ -91,6 +92,12 @@ def commit_with_rebase(
         The settings recorded in the commit metadata: a settings object or a
         :class:`~canvod.store_metadata.schema.ConfigSnapshot`. ``None``
         loads the settings.
+    repository
+        The repository metadata the commit carries, when it is about to
+        change (creation, amendment, migration): the caller writes it with
+        ``Repository.set_metadata`` only after the commit succeeded, so a
+        failed commit leaves the repository metadata as it was. ``None``
+        uses the store's current repository metadata.
 
     Returns
     -------
@@ -105,7 +112,8 @@ def commit_with_rebase(
     """
     with commit_lock(store_path):
         repo = _open_repo(Path(store_path))
-        repository = repo.get_metadata()
+        if repository is None:
+            repository = repo.get_metadata()
         if repository:
             from .snapshot import prepare_commit
 
@@ -187,16 +195,18 @@ def write_metadata(
                 f"(store {store}); open it instead of creating it again."
             )
             raise ValueError(msg)
-        repo.set_metadata(repository_metadata.model_dump(mode="json"))
-
+        repository = repository_metadata.model_dump(mode="json")
         session = repo.writable_session(branch)
         zarr.open_group(session.store, mode="a")
-        return commit_with_rebase(
+        snapshot_id = commit_with_rebase(
             session,
             "Write store metadata",
             store_path=store_path,
             config=metadata.config,
+            repository=repository,
         )
+        repo.set_metadata(repository)
+        return snapshot_id
 
 
 def read_metadata(

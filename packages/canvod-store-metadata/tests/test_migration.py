@@ -246,6 +246,21 @@ class TestMigrationChecks:
         assert antenna is not None
         assert antenna.height_m == 1.5
 
+    def test_a_migration_whose_commit_fails_can_be_retried(self, tmp_path, monkeypatch):
+        path = _old_store(tmp_path)
+
+        def fail(*args, **kwargs):
+            raise icechunk.StorageError("disk full")
+
+        with monkeypatch.context() as patch:
+            patch.setattr(icechunk.Session, "commit", fail)
+            with pytest.raises(icechunk.StorageError):
+                migrate_metadata(path, who=testing.PERSON_INITIALS)
+        assert not _repo(path).get_metadata()
+
+        migrate_metadata(path, who=testing.PERSON_INITIALS)
+        assert not read_metadata(path).written_before_migration
+
     def test_a_fixed_field_cannot_be_given(self, tmp_path):
         path = _old_store(tmp_path)
 

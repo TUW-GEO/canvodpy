@@ -256,9 +256,9 @@ def check_root_copy(
     """Refuse a root group that no longer matches the repository metadata.
 
     The root copy last committed must equal the repository metadata, up to
-    the amendments made since (an amendment changes the repository metadata
-    first; the next commit carries it). Its flat attributes must be the ones
-    derived from it.
+    the amendments made since (the commit of an amendment checks the copy
+    from before it against the amended metadata). Its flat attributes must
+    be the ones derived from it.
 
     Raises
     ------

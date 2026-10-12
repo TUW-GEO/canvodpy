@@ -166,15 +166,18 @@ def migrate_metadata(
                 ),
             }
         )
-        repo.set_metadata(
-            RepositoryMetadata.from_store_metadata(migrated).model_dump(mode="json")
+        repository = RepositoryMetadata.from_store_metadata(migrated).model_dump(
+            mode="json"
         )
-        return commit_with_rebase(
+        snapshot_id = commit_with_rebase(
             session,
             "Migrate store metadata to repository metadata (ADR 0014)",
             store_path=store_path,
             config=old.config,
+            repository=repository,
         )
+        repo.set_metadata(repository)
+        return snapshot_id
 
 
 def _refuse_failures(preview: StoreMetadata, store_path: Path) -> None:
