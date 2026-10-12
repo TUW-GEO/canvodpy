@@ -228,12 +228,10 @@ def validate_fair(metadata: StoreMetadata) -> list[str]:
 
     # F1 — Globally unique, persistent identifier
     if not metadata.identity.id:
-        issues.append(
-            "[F1] identity.id is missing — data must have a unique identifier"
-        )
+        issues.append("[F1] identity.id is missing: data must have a unique identifier")
     if not metadata.identity.persistent_identifier:
         issues.append(
-            "[F1] identity.persistent_identifier is missing — "
+            "[F1] identity.persistent_identifier is missing: "
             "assign a DOI or other persistent identifier for long-term findability"
         )
 
@@ -253,7 +251,7 @@ def validate_fair(metadata: StoreMetadata) -> list[str]:
     if missing_rich > 2:
         issues.append(
             f"[F2] {missing_rich} of {len(rich_fields)} recommended descriptive "
-            "fields are missing — rich metadata improves findability"
+            "fields are missing: rich metadata improves findability"
         )
 
     # F3 — Metadata clearly includes identifier of the data
@@ -263,13 +261,13 @@ def validate_fair(metadata: StoreMetadata) -> list[str]:
     # We can't verify external registration, but we can check STAC readiness
     if metadata.spatial.bbox is None:
         issues.append(
-            "[F4] spatial.bbox is missing — needed for STAC catalog registration"
+            "[F4] spatial.bbox is missing: needed for STAC catalog registration"
         )
 
     # A1 — Retrievable by identifier using standardised protocol
     if not metadata.references.access_url:
         issues.append(
-            "[A1] references.access_url is missing — "
+            "[A1] references.access_url is missing: "
             "provide a URL (S3, HTTP, or local) where data can be accessed"
         )
 
@@ -283,33 +281,33 @@ def validate_fair(metadata: StoreMetadata) -> list[str]:
     # I2 — Use FAIR-compliant vocabularies
     if not metadata.identity.conventions:
         issues.append(
-            "[I2] identity.conventions is missing — "
+            "[I2] identity.conventions is missing: "
             "declare metadata conventions (e.g. ACDD-1.3)"
         )
 
     # I3 — Qualified references to other metadata
     if not metadata.references.related_stores and not metadata.references.publications:
         issues.append(
-            "[I3] No related_stores or publications — "
+            "[I3] No related_stores or publications: "
             "cross-references improve interoperability"
         )
 
     # R1.1 — Clear, accessible data usage license
     if not metadata.publisher.license:
         issues.append(
-            "[R1.1] publisher.license is missing — "
+            "[R1.1] publisher.license is missing: "
             "specify an SPDX license (e.g. CC-BY-4.0) for reusability"
         )
 
     # R1.2 — Detailed provenance
     if not metadata.processing.software:
         issues.append(
-            "[R1.2] processing.software is empty — "
+            "[R1.2] processing.software is empty: "
             "record software versions for provenance"
         )
     if metadata.environment.uv_lock_hash is None:
         issues.append(
-            "[R1.2] environment.uv_lock_hash is missing — "
+            "[R1.2] environment.uv_lock_hash is missing: "
             "store the lock file for environment reproducibility"
         )
 

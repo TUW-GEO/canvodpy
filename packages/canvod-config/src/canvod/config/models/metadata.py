@@ -18,14 +18,14 @@ class MetadataConfig(_StrictModel):
     author: str = Field(
         ...,
         description=(
-            "Your full name — used in dataset metadata and FAIR attribution "
+            "Your full name, used in dataset metadata and FAIR attribution "
             "(e.g. 'Jane Forester'). Wizard prompt: 'Who is running this pipeline?'"
         ),
     )
     email: EmailStr = Field(
         ...,
         description=(
-            "Your contact email — included in DataCite and ACDD metadata records "
+            "Your contact email, included in DataCite and ACDD metadata records "
             "(e.g. 'jane@boku.ac.at'). Wizard prompt: 'Contact email address?'"
         ),
     )
@@ -39,7 +39,7 @@ class MetadataConfig(_StrictModel):
             "Your Name Here",
         }:
             raise ValueError(
-                f"author is set to placeholder {v!r} — "
+                f"author is set to placeholder {v!r}: "
                 "fill in your real name in canvod-settings.yaml"
             )
         return v
@@ -53,7 +53,7 @@ class MetadataConfig(_StrictModel):
             "your.email@example.com",
         }:
             raise ValueError(
-                f"email is set to placeholder {v!r} — "
+                f"email is set to placeholder {v!r}: "
                 "fill in your real email in canvod-settings.yaml"
             )
         return v
@@ -62,7 +62,7 @@ class MetadataConfig(_StrictModel):
     institution: str = Field(
         ...,
         description=(
-            "Your institution or organisation name "
+            "Your institution or organization name "
             "(e.g. 'University of Natural Resources and Life Sciences Vienna'). "
             "Wizard prompt: 'Which institution do you belong to?'"
         ),

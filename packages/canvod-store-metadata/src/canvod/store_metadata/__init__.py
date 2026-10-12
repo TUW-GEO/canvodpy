@@ -1,4 +1,4 @@
-"""canvod-store-metadata — Store-level provenance for Icechunk stores.
+"""canvod-store-metadata: store-level provenance for Icechunk stores.
 
 This package manages *store metadata*: identity, creator, environment,
 software provenance, and standards compliance (DataCite/ACDD/STAC).

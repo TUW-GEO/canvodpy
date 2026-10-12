@@ -1,4 +1,4 @@
-"""Runtime collectors — pure functions that gather metadata."""
+"""Runtime collectors: pure functions that gather metadata."""
 
 from __future__ import annotations
 

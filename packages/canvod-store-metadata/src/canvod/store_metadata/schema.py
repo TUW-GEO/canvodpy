@@ -115,7 +115,7 @@ class Antenna(BaseModel):
     model: str | None = Field(None, description="IGS antenna name")
     radome: str | None = Field(None, description="IGS radome name")
     serial_number: str | None = None
-    height_m: float | None = Field(None, description="Antenna height in metres")
+    height_m: float | None = Field(None, description="Antenna height in meters")
     choke_ring: bool | None = Field(None, description="Whether a choke ring is used")
     polarization: str | None = Field(
         None, description="'RHCP' (the standard), 'LHCP' or 'dual-pol'"

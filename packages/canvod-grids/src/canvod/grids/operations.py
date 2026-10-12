@@ -9,7 +9,7 @@ Cell assignment
 
 Vertex / grid conversion
 ------------------------
-``extract_grid_vertices``      – flat (x, y, z) arrays for 3-D visualisation
+``extract_grid_vertices``      – flat (x, y, z) arrays for 3-D visualization
 ``grid_to_dataset``            – xarray Dataset with vertices and solid angles
 """
 
@@ -269,7 +269,7 @@ def _extract_geodesic_vertices(
     """Extract vertices from geodesic grid triangles.
 
     Uses the shared vertex array and per-cell index column to return
-    actual triangle vertices.  Falls back to cell centres if the shared
+    actual triangle vertices.  Falls back to cell centers if the shared
     vertex data is unavailable.
     """
     shared = grid.vertices  # (n_vertices, 3) from extra_kwargs
@@ -285,7 +285,7 @@ def _extract_geodesic_vertices(
                     all_z.append(max(v[2], 0.0))
         return np.array(all_x), np.array(all_y), np.array(all_z)
 
-    # Fallback: cell centres
+    # Fallback: cell centers
     phi_vals = grid.grid["phi"].to_numpy()
     theta_vals = grid.grid["theta"].to_numpy()
     x = np.sin(theta_vals) * np.cos(phi_vals)
@@ -328,7 +328,7 @@ def _extract_fibonacci_vertices(
 
     Uses per-cell ``voronoi_region`` indices and the
     :class:`~scipy.spatial.SphericalVoronoi` stored on *grid*.
-    Falls back to cell centres if Voronoi data is unavailable.
+    Falls back to cell centers if Voronoi data is unavailable.
     """
     voronoi = grid.voronoi
     if voronoi is not None and "voronoi_region" in grid.grid.columns:
@@ -345,7 +345,7 @@ def _extract_fibonacci_vertices(
                     all_z.append(max(v[2], 0.0))
         return np.array(all_x), np.array(all_y), np.array(all_z)
 
-    # Fallback: cell centres
+    # Fallback: cell centers
     phi_vals = grid.grid["phi"].to_numpy()
     theta_vals = grid.grid["theta"].to_numpy()
     x = np.sin(theta_vals) * np.cos(phi_vals)
@@ -362,8 +362,8 @@ def _extract_fibonacci_vertices(
 def grid_to_dataset(grid: GridData) -> xr.Dataset:
     """Convert a HemiGrid to a unified xarray Dataset with vertices.
 
-    The returned Dataset carries cell centres, NaN-padded vertex arrays,
-    vertex counts, and solid angles — all indexed by ``cell_id``.
+    The returned Dataset carries cell centers, NaN-padded vertex arrays,
+    vertex counts, and solid angles, all indexed by ``cell_id``.
 
     Parameters
     ----------
@@ -430,7 +430,7 @@ def grid_to_dataset(grid: GridData) -> xr.Dataset:
                     vertices_theta[i, j] = np.arccos(np.clip(z, -1, 1))
                     vertices_phi[i, j] = np.mod(np.arctan2(y, x), 2 * np.pi)
         else:
-            # Fallback: use cell centres as single-point "vertices"
+            # Fallback: use cell centers as single-point "vertices"
             n_vertices[:] = 1
             vertices_phi[:, 0] = grid.grid["phi"].to_numpy()
             vertices_theta[:, 0] = grid.grid["theta"].to_numpy()
@@ -448,7 +448,7 @@ def grid_to_dataset(grid: GridData) -> xr.Dataset:
             vertices_theta[i, :] = [theta_min, theta_min, theta_max, theta_max]
 
     elif grid_type == "fibonacci":
-        # Point-based: single vertex per cell (the centre)
+        # Point-based: single vertex per cell (the center)
         max_v = 1
         vertices_phi = grid.grid["phi"].to_numpy().reshape(n_cells, 1)
         vertices_theta = grid.grid["theta"].to_numpy().reshape(n_cells, 1)
@@ -457,7 +457,7 @@ def grid_to_dataset(grid: GridData) -> xr.Dataset:
     else:
         raise ValueError(f"Unknown grid type: {grid_type}")
 
-    # Cell centres
+    # Cell centers
     cell_phi = grid.grid["phi"].to_numpy()
     cell_theta = grid.grid["theta"].to_numpy()
     solid_angles = grid.get_solid_angles()

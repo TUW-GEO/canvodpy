@@ -1,8 +1,8 @@
-"""canvodpy store — inspect Icechunk stores from the terminal.
+"""canvodpy store: inspect Icechunk stores from the terminal.
 
 Thin CLI wrappers around canvod-store's existing MyIcechunkStore methods
 (print_tree, print_history, plot_commit_graph, print_ops_log,
-get_store_stats) — which themselves delegate to icechunk v2's native
+get_store_stats), which themselves delegate to icechunk v2's native
 ancestry_graph()/ops_log(). No new store-introspection logic here except
 _print_group_content, a terminal port of the group-content drill-down that
 canvod-store's marimo/Jupyter-only IcechunkStoreViewer renders as HTML.
@@ -35,7 +35,7 @@ def _store_path(site_name: str, store_kind: str) -> tuple[Path, str]:
     """Resolve a site + store kind (gnss/vod) to its path and store type.
 
     Exits cleanly with an actionable message if the site is unknown or the
-    store hasn't been created yet — matches the rest of the CLI's error
+    store hasn't been created yet; matches the rest of the CLI's error
     style (config.py, doctor.py), not a raw traceback.
     """
     from canvod.config import load_config
@@ -148,7 +148,7 @@ def info(
     icestore = _open_store(site, store)
     stats = icestore.get_store_stats()
 
-    console.print(f"\n[bold]{site}[/bold] — {store} store")
+    console.print(f"\n[bold]{site}[/bold]: {store} store")
     console.print(f"  Path:        {stats['store_path']}")
     console.print(f"  Groups:      {stats['total_groups']}")
     console.print(
@@ -166,7 +166,7 @@ def info(
 
 def _print_group_content(icestore, group_name: str, branch: str) -> None:
     """Terminal port of IcechunkStoreViewer's per-group HTML drill-down:
-    plain-text xarray Dataset repr + metadata table, in a rich.Tree —
+    plain-text xarray Dataset repr + metadata table, in a rich.Tree:
     same content, no browser/notebook required."""
     tree = Tree(f"[bold]{group_name}[/bold] (branch: {branch})")
 
@@ -183,7 +183,7 @@ def _print_group_content(icestore, group_name: str, branch: str) -> None:
             f"[bold]Metadata table[/bold] ({len(metadata_df)} rows)\n{metadata_df}"
         )
     except Exception:
-        pass  # not every group has a metadata table — fine, just skip it
+        pass  # not every group has a metadata table; skip it
 
     console.print(tree)
 
@@ -290,7 +290,7 @@ def maintain(
 
     if not execute:
         console.print(
-            f"\n[bold]{site}[/bold] — {store} store — [yellow]DRY RUN[/yellow] "
+            f"\n[bold]{site}[/bold]: {store} store, [yellow]DRY RUN[/yellow] "
             f"(cutoff: {cutoff.isoformat()})\n"
         )
 
@@ -592,7 +592,7 @@ def migrate_metadata_command(
 
         naming_authority = load_config().processing.metadata.naming_authority
     new_id = store_id(old.spatial.site.name, old.identity.store_type)
-    console.print(f"\n[bold]{site}[/bold] — {store} store ({path})")
+    console.print(f"\n[bold]{site}[/bold]: {store} store ({path})")
     console.print(f"  Store id:          {old.identity.id} -> {new_id}")
     console.print(f"  Who:               {who}")
     console.print(
@@ -797,7 +797,7 @@ def amend(
         raise typer.Exit(1) from None
 
     current = read_repository_metadata(path)
-    table = Table(title=f"{site} — {store} store", show_lines=False)
+    table = Table(title=f"{site}: {store} store", show_lines=False)
     table.add_column("Field")
     table.add_column("Old")
     table.add_column("New")

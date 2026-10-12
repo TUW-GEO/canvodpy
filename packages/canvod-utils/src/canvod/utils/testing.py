@@ -36,7 +36,7 @@ SITE_DESCRIPTION = (
     "wrath is brimming over, and all the forest is filled with it."
 )
 
-#: Bloemfontein: WGS84 decimal degrees, and its elevation in metres
+#: Bloemfontein: WGS84 decimal degrees, and its elevation in meters
 #: (approximate).
 LATITUDE = -29.12
 LONGITUDE = 26.21

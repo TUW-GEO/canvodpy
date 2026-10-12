@@ -1,4 +1,4 @@
-"""Store catalog builder — scan directories for Icechunk stores."""
+"""Store catalog builder: scan directories for Icechunk stores."""
 
 from __future__ import annotations
 

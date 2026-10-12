@@ -1,5 +1,5 @@
 # =============================================================================
-# canVODpy Settings — single unified file
+# canVODpy Settings: single unified file
 # =============================================================================
 # Copy this file to config/canvod-settings.yaml and customize for your setup.
 # Run: canvod config init      (scaffolds canvod-settings.yaml from this template)
@@ -60,7 +60,7 @@ processing:
     agency: COD              # Analysis center: COD, GFZ, IGS, ESA, etc.
     product_type: final      # final, rapid, ultra-rapid
     # ftp_timeout_s: 30      # FTP connection timeout in seconds
-    # fetch_clock: true      # Set false to skip CLK downloads/interpolation — VOD doesn't use clock corrections
+    # fetch_clock: true      # Set false to skip CLK downloads/interpolation; VOD doesn't use clock corrections
 
   # ---------------------------------------------------------------------------
   # Processing Parameters
@@ -70,7 +70,7 @@ processing:
     # GNSS observables to keep
     # Each maps to a GNSS obs code prefix:
     #   SNR         - Signal-to-Noise Ratio (dBHz)   [S-codes: S1C, S2W, ...]
-    #   Pseudorange - Code pseudorange (metres)       [C-codes: C1C, C2W, ...]
+    #   Pseudorange - Code pseudorange (meters)       [C-codes: C1C, C2W, ...]
     #   Phase       - Carrier phase (cycles)          [L-codes: L1C, L2W, ...]
     #   Doppler     - Doppler shift (Hz)              [D-codes: D1C, D2W, ...]
     keep_gnss_observables:
@@ -89,23 +89,23 @@ processing:
     store_delta_snr: false         # Store delta SNR (canopy − reference, dB) in VOD store
     store_radial_diff: false       # Store r_canopy − r_reference (m); requires store_radial_distance: true
 
-    # 'shared'       — all receivers use canopy position (default, enables 1:1 SNR comparison)
-    # 'per_receiver' — each receiver uses its own RINEX header position
+    # 'shared': all receivers use canopy position (default, enables 1:1 SNR comparison)
+    # 'per_receiver': each receiver uses its own RINEX header position
     receiver_position_mode: shared
 
-    # 'complete' — discover files per-receiver independently (all data ingested)
-    # 'paired'   — only process dates where both receivers have data
+    # 'complete': discover files per-receiver independently (all data ingested)
+    # 'paired': only process dates where both receivers have data
     file_pairing: complete
 
-    # 'final'     — satellite coords from SP3/CLK agency products (delayed, high accuracy)
-    # 'broadcast' — broadcast ephemerides from SBF SatVisibility (SBF only, same-day)
+    # 'final': satellite coords from SP3/CLK agency products (delayed, high accuracy)
+    # 'broadcast': broadcast ephemerides from SBF SatVisibility (SBF only, same-day)
     ephemeris_source: final
 
     # How many calendar days to pool per loky wave (ge=1, le=30)
     days_per_batch: 1
 
-    # 'auto'   — auto-detects available cores and memory (personal machines)
-    # 'manual' — hard caps below are enforced (shared servers)
+    # 'auto': auto-detects available cores and memory (personal machines)
+    # 'manual': hard caps below are enforced (shared servers)
     resource_mode: auto
 
     # In auto mode, workers are capped at max(1, cpu_count - 2) to leave headroom.
@@ -226,7 +226,7 @@ sites:
     country: null           # ISO 3166-1 alpha-2 country code, e.g. AT
     latitude: null          # WGS84 latitude (decimal degrees)
     longitude: null         # WGS84 longitude (decimal degrees)
-    altitude_m: null        # Altitude above WGS84 ellipsoid (metres)
+    altitude_m: null        # Altitude above WGS84 ellipsoid (meters)
 
     receivers:
       reference_01:
@@ -249,7 +249,7 @@ sites:
         #   model: null                # IGS antenna name
         #   radome: null               # IGS radome name
         #   serial_number: null
-        #   height_m: null             # antenna height in metres
+        #   height_m: null             # antenna height in meters
         #   choke_ring: null           # true or false
         #   polarization: null         # RHCP (the standard), LHCP or dual-pol
 
@@ -287,16 +287,16 @@ sites:
 # Signal IDs (SIDs)
 # =============================================================================
 # SID Format: PRN|Band|Code
-#   PRN  — G=GPS, E=Galileo, R=GLONASS, C=BeiDou, I=IRNSS, S=SBAS, J=QZSS
-#   Band — L1, L2, E1, E5a, E5b, B1I, B2b, B3I, G1, G2, L5
-#   Code — C=C/A, W=P(Y) codeless, L=L2C, Q=pilot, I=I-channel, A=A-channel
+#   PRN: G=GPS, E=Galileo, R=GLONASS, C=BeiDou, I=IRNSS, S=SBAS, J=QZSS
+#   Band: L1, L2, E1, E5a, E5b, B1I, B2b, B3I, G1, G2, L5
+#   Code: C=C/A, W=P(Y) codeless, L=L2C, Q=pilot, I=I-channel, A=A-channel
 #
 # Example: G01|L1|C = GPS PRN01, L1 band, C/A code
 
 sids:
-  # 'all'    — keep every SID in the RINEX/SBF file (no filtering)
-  # 'preset' — use a named preset (see presets/ directory)
-  # 'custom' — keep only the SIDs listed in custom_sids below
+  # 'all': keep every SID in the RINEX/SBF file (no filtering)
+  # 'preset': use a named preset (see presets/ directory)
+  # 'custom': keep only the SIDs listed in custom_sids below
   mode: preset
   preset: default
 
