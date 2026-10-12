@@ -277,7 +277,7 @@ Every 3D hemisphere plot built with `canvod.viz.HemisphereVisualizer3D` (or the
 
 A 3D plot missing any of these three is not acceptable for this project —
 treat it the same as a plot with no axis labels. See
-`demo/19_grid_3d_gallery.py` for the reference pattern (a small
+`demo/16_grid_3d_gallery.py` for the reference pattern (a small
 `add_reference_frame(fig, viz)` helper wrapping (2) and (3), called on every
 figure right after `plot_hemisphere_surface(..., show_wireframe=True)`).
 

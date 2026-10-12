@@ -124,6 +124,6 @@ site.vod_store._gnss_store_strategy    # → "overwrite" (from config)
 ---
 
 !!! example "Try it"
-    [17 — Store Operations](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/17_store_operations.py)
-    (source link only for now — rendered snapshot pending a test-data
-    fixture fix, see `dev/notebook_docs_integration_plan.md`)
+    [13 · Store Operations](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/13_workflow_store_operations.py)
+    on molab (no rendered copy here yet: it uses canvodpy code that is not
+    released yet)

@@ -245,5 +245,6 @@ sites:
 ---
 
 !!! example "Try it"
-    [09 — Store Metadata](../../notebooks/_build/09_store_metadata.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/09_store_metadata.py)
+    [12 · Store Metadata](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/12_store_metadata.py)
+    on molab (no rendered copy here yet: it uses canvodpy code that is not
+    released yet)

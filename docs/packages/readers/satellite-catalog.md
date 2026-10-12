@@ -327,5 +327,5 @@ print(catalog.summary())
 ---
 
 !!! example "Try it"
-    [03 — Satellite Catalog](../../notebooks/_build/03_satellite_catalog.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_satellite_catalog.py)
+    [07 · Satellite Catalog](../../notebooks/_build/07_satellite_catalog.html){target=_blank}
+    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/07_satellite_catalog.py)

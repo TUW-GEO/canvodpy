@@ -205,5 +205,5 @@ custom pipeline? See the [Python Quickstart](python.md).
 ---
 
 !!! example "Try it"
-    [00 — CLI Quickstart](../notebooks/_build/00_cli_quickstart.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/00_cli_quickstart.py)
+    [01 · Running the Pipeline (CLI)](../notebooks/_build/01_cli_pipeline.html){target=_blank}
+    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/01_cli_pipeline.py)

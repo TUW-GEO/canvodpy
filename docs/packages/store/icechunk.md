@@ -388,6 +388,6 @@ return snapshot
 ---
 
 !!! example "Try it"
-    [08 — Icechunk Store](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/08_icechunk_store.py)
-    (source link only for now — rendered snapshot pending a test-data
-    fixture fix, see `dev/notebook_docs_integration_plan.md`)
+    [11 · Icechunk Store](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/11_icechunk_store.py)
+    on molab (no rendered copy here yet: it uses canvodpy code that is not
+    released yet)

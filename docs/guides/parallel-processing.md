@@ -144,5 +144,5 @@ are never committed.
 ---
 
 !!! example "Try it"
-    [16 — Batch Processing](../notebooks/_build/16_batch_processing.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/16_batch_processing.py)
+    [20 · Batch Processing](../notebooks/_build/20_workflow_batch_processing.html){target=_blank}
+    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/20_workflow_batch_processing.py)
