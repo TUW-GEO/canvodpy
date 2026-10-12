@@ -42,10 +42,10 @@ def _config(naming_authority: str | None = "at.ac.tuwien") -> MagicMock:
         "publisher",
         "publisher_url",
         "license",
-        "store_description",
     ):
         setattr(meta_cfg, name, None)
     meta_cfg.naming_authority = naming_authority
+    meta_cfg.store_description = "The forest of Fangorn."
 
     proc = MagicMock(spec=["metadata", "references"])
     proc.metadata = meta_cfg
@@ -154,6 +154,15 @@ class TestIdentity:
         )
         assert _collect("Rosalia", store_type="vod_store").identity.stac_link == (
             "../../vod/at.ac.tuwien.rosalia-vod/at.ac.tuwien.rosalia-vod.json"
+        )
+
+    def test_a_geodesy_store_has_its_own_id_and_collection(self):
+        from canvod.store_metadata.identity import stac_link, store_id
+
+        assert store_id("Fangorn", "geodesy_store") == "fangorn-geodesy"
+        assert stac_link("org.middle-earth", "fangorn-geodesy", "geodesy_store") == (
+            "../../gnss-geodesy/org.middle-earth.fangorn-geodesy/"
+            "org.middle-earth.fangorn-geodesy.json"
         )
 
     @pytest.mark.parametrize("site_name", ["Rosalia Forest", "", "Ros/alia", "site.a"])

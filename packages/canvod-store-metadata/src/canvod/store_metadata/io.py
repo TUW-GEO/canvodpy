@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import getpass
-import socket
 import threading
 from collections.abc import Callable, Generator, Iterable
 from contextlib import contextmanager
@@ -371,15 +369,31 @@ def metadata_exists(store_path: Path, branch: str = "main") -> bool:
     return bool(repo.get_metadata())
 
 
-def current_user() -> str:
-    """Who changes a store: the operating system user and host."""
-    return f"{getpass.getuser()}@{socket.gethostname()}"
+#: The settings field that says how a metadata change records who made it.
+INITIALS_SETTING = "processing.metadata.initials"
+
+
+def check_who(who: str | None) -> str:
+    """Return who changes a store's metadata, refusing a missing name.
+
+    Raises
+    ------
+    ValueError
+        If ``who`` is missing or blank.
+    """
+    if not who or not who.strip():
+        msg = (
+            "A change of store metadata records who made it: set "
+            f"{INITIALS_SETTING} in the settings (e.g. 'NFB')."
+        )
+        raise ValueError(msg)
+    return who.strip()
 
 
 #: The command that moves a store to the metadata form of ADR 0014.
 MIGRATE_COMMAND = "canvodpy store migrate-metadata"
 
-_STORE_KINDS = {"gnss_store": "gnss", "vod_store": "vod"}
+_STORE_KINDS = {"gnss_store": "gnss", "vod_store": "vod", "geodesy_store": "geodesy"}
 
 
 def store_command(command: str, site_name: str, store_type: str) -> str:

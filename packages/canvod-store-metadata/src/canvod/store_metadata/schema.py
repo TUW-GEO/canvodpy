@@ -15,13 +15,15 @@ from pydantic import BaseModel, Field
 
 # §1 — Identity & Discovery
 class StoreIdentity(BaseModel):
-    id: str = Field(..., description="Store id: {site slug}-{gnss|vod}")
+    id: str = Field(..., description="Store id: {site slug}-{gnss|vod|geodesy}")
     uuid: str | None = Field(
         None, description="Random UUID generated when the store is created"
     )
     title: str = Field(..., description="Human-readable store title")
     description: str | None = Field(None, description="Store description")
-    store_type: str = Field(..., description="Store type: gnss_store, vod_store")
+    store_type: str = Field(
+        ..., description="Store type: gnss_store, vod_store, geodesy_store"
+    )
     source_format: str = Field(
         ..., description="Data source format: rinex3, rinex2, sbf"
     )

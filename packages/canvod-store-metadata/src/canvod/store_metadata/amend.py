@@ -16,7 +16,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from .io import _field_exists, _open_repo, commit_lock, commit_with_rebase, current_user
+from .io import _field_exists, _open_repo, check_who, commit_lock, commit_with_rebase
 from .schema import RepositoryMetadata, StoreMetadata
 
 #: Fields that define which store this is; a different value is a
@@ -79,6 +79,7 @@ def amend_metadata(
     changes: dict[str, Any],
     *,
     reason: str,
+    who: str,
     config: Any = None,
 ) -> str:
     """Change amendable fields of a store's repository metadata.
@@ -92,6 +93,9 @@ def amend_metadata(
         "directory": "..."}}``.
     reason
         Why; recorded with each changed field.
+    who
+        Who changes the fields, e.g. ``"NFB"``; recorded with each changed
+        field.
     config
         The settings recorded in the commit metadata (see
         :func:`~canvod.store_metadata.io.commit_with_rebase`).
@@ -104,12 +108,13 @@ def amend_metadata(
     Raises
     ------
     ValueError
-        If there is no reason or no change, a field is fixed, computed or
+        If there is no reason, no ``who`` or no change, a field is fixed, computed or
         unknown, a value is invalid, or the store has no repository metadata.
     """
     if not reason or not reason.strip():
         msg = "An amendment needs a reason: say why the fields change."
         raise ValueError(msg)
+    who = check_who(who)
     if not changes:
         msg = "An amendment needs at least one change."
         raise ValueError(msg)
@@ -151,7 +156,7 @@ def amend_metadata(
                     msg = f"`{field}` has no field(s) {', '.join(unknown)}."
                     raise ValueError(msg)
 
-        who, when = current_user(), datetime.now(UTC).isoformat()
+        when = datetime.now(UTC).isoformat()
         amended["amendments"] = [
             *current.get("amendments", []),
             *(

@@ -396,14 +396,23 @@ def collect_metadata(
     Raises
     ------
     ValueError
-        If the site name gives no valid store id, or the naming authority
-        is missing or not a reverse DNS name.
+        If the site name gives no valid store id, the naming authority
+        is missing or not a reverse DNS name, or the store description is
+        missing.
     """
     meta_cfg = config.processing.metadata
     sid = store_id(site_name, store_type)
     naming_authority = check_naming_authority(
         getattr(meta_cfg, "naming_authority", None)
     )
+    description = getattr(meta_cfg, "store_description", None)
+    if not description or not description.strip():
+        msg = (
+            "A store needs a description when it is created: set "
+            "processing.metadata.store_description in the settings "
+            "(e.g. 'Beech forest GNSS-T research site')."
+        )
+        raise ValueError(msg)
     now = datetime.now(UTC).isoformat()
 
     return StoreMetadata(
@@ -411,7 +420,7 @@ def collect_metadata(
             id=sid,
             uuid=new_uuid(),
             title=f"{site_name} {store_type.replace('_', ' ').title()}",
-            description=getattr(meta_cfg, "store_description", None),
+            description=description.strip(),
             store_type=store_type,
             source_format=source_format,
             keywords=["GNSS", "VOD", site_name, source_format],

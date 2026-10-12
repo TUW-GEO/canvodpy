@@ -9,7 +9,7 @@ kind of information:
   and position, receivers or VOD analyses, references. It is written
   once, by the call that creates the store. Its **fixed fields** (id,
   UUID, store type, source format, naming authority, creation date)
-  never change. The id is `{site}-{gnss|vod}`, from the site name made
+  never change. The id is `{site}-{gnss|vod|geodesy}`, from the site name made
   lowercase and checked; the UUID is generated when the store is
   created; the naming authority (reverse DNS) is required then (ADR
   0015). Its **amendable fields** change only by **amendment**: one

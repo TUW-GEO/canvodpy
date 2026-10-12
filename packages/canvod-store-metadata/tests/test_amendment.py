@@ -69,8 +69,10 @@ def _repository(path: Path) -> dict:
     ).get_metadata()
 
 
-def _amend(path: Path, changes: dict, reason: str = "a better title") -> str:
-    return amend_metadata(path, changes, reason=reason, config=_CONFIG)
+def _amend(
+    path: Path, changes: dict, reason: str = "a better title", who: str = "JRRT"
+) -> str:
+    return amend_metadata(path, changes, reason=reason, who=who, config=_CONFIG)
 
 
 class TestAmend:
@@ -86,7 +88,7 @@ class TestAmend:
         assert record["old"] == "Rosalia GNSS Store"
         assert record["new"] == "Rosalia GNSS"
         assert record["reason"] == "a better title"
-        assert "@" in record["who"]
+        assert record["who"] == "JRRT"
         assert record["when"]
 
     def test_an_amendment_commits_the_new_root_copy(self, tmp_path):
@@ -132,6 +134,13 @@ class TestAmend:
 
         with pytest.raises(ValueError, match="reason"):
             _amend(path, {"identity.title": "x"}, reason="  ")
+
+    def test_an_amendment_needs_who_makes_it(self, tmp_path):
+        path = _store(tmp_path)
+
+        with pytest.raises(ValueError, match=r"processing\.metadata\.initials"):
+            _amend(path, {"identity.title": "x"}, who=" ")
+        assert not _repository(path)["amendments"]
 
     def test_a_field_computed_by_every_commit_is_refused(self, tmp_path):
         path = _store(tmp_path)

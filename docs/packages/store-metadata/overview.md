@@ -105,6 +105,8 @@ processing:
     license: "CC-BY-4.0"                 # optional, SPDX identifier
     publisher: "Example University"      # optional
     naming_authority: "org.example"      # required to create a store
+    store_description: "Example GNSS-T research site"  # required to create a store
+    initials: "JD"                       # required to amend or migrate
 ```
 
 The site description and location come from the site:

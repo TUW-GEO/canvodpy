@@ -260,7 +260,7 @@ def maintain(
             "--execute",
             help=(
                 "Expire snapshots and collect garbage, after you confirm. "
-                "Without this flag, the command only reports and changes "
+                "Without this flag the command only reports and changes "
                 "nothing."
             ),
         ),
@@ -566,6 +566,8 @@ def migrate_metadata_command(
     migration is refused and lists them. In a VOD store, the attributes of
     VOD are replaced with the current ones: older versions copied the
     attributes of SNR and theta to VOD, among them the valid range of theta.
+    The migration record keeps who migrated the store, the initials set in
+    processing.metadata.initials.
     """
     from canvod.store_metadata import migrate_metadata, read_metadata
     from canvod.store_metadata.identity import store_id
@@ -584,6 +586,7 @@ def migrate_metadata_command(
         )
         return
 
+    who = _who()
     if naming_authority is None and not old.identity.naming_authority:
         from canvod.config import load_config
 
@@ -591,6 +594,7 @@ def migrate_metadata_command(
     new_id = store_id(old.spatial.site.name, old.identity.store_type)
     console.print(f"\n[bold]{site}[/bold] — {store} store ({path})")
     console.print(f"  Store id:          {old.identity.id} -> {new_id}")
+    console.print(f"  Who:               {who}")
     console.print(
         "  Naming authority:  "
         f"{naming_authority or old.identity.naming_authority or '(none)'}"
@@ -610,6 +614,7 @@ def migrate_metadata_command(
     try:
         snapshot_id = migrate_metadata(
             path,
+            who=who,
             naming_authority=naming_authority,
             values=values,
             variable_attrs=variable_attrs,
@@ -618,6 +623,21 @@ def migrate_metadata_command(
         console.print(f"[red]❌ {exc}[/red]")
         raise typer.Exit(1) from None
     console.print(f"[green]✓ Migrated[/green] (snapshot {snapshot_id[:12]})")
+
+
+def _who() -> str:
+    """Who changes a store's metadata: the initials in the settings."""
+    from canvod.config import load_config
+    from canvod.store_metadata.io import INITIALS_SETTING
+
+    who = load_config().processing.metadata.initials
+    if not who or not who.strip():
+        console.print(
+            "[red]❌ A change of store metadata records who made it: set "
+            f"{INITIALS_SETTING} in the settings (e.g. 'NFB').[/red]"
+        )
+        raise typer.Exit(1)
+    return who.strip()
 
 
 def _amend_changes(
@@ -733,7 +753,8 @@ def amend(
     Fixed fields (the store id, UUID, store type, source format, naming
     authority and creation date) never change. Each changed field is
     recorded with its old and new value, the reason, who and when, and a
-    new commit carries the new description.
+    new commit carries the new description. Who is the initials set in
+    processing.metadata.initials.
     """
     import yaml
 
@@ -759,6 +780,7 @@ def amend(
             "[red]❌ An amendment needs --reason (or reason: in the --from file).[/red]"
         )
         raise typer.Exit(1)
+    who = _who()
 
     changes = _amend_changes(site, store_type, set_values, receivers, vod_analyses)
     if not changes:
@@ -786,11 +808,14 @@ def amend(
         table.add_row(field, str(old), str(value))
     console.print(table)
     console.print(f"Reason: {reason}")
+    console.print(f"Who: {who}")
     if not yes and not typer.confirm("Amend the store metadata?"):
         raise typer.Exit(1)
 
     try:
-        snapshot_id = amend_metadata(path, changes, reason=reason, config=load_config())
+        snapshot_id = amend_metadata(
+            path, changes, reason=reason, who=who, config=load_config()
+        )
     except ValueError as exc:
         console.print(f"[red]❌ {exc}[/red]")
         raise typer.Exit(1) from None

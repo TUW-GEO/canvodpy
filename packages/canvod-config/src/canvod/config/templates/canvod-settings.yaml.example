@@ -39,6 +39,8 @@ processing:
     publisher: null                      # Optional
     publisher_url: null                  # Optional
     naming_authority: null               # Required to create a store, e.g. "at.ac.tuwien"
+    store_description: null              # Required to create a store, e.g. "Beech forest GNSS-T research site"
+    initials: null                       # Required to amend or migrate store metadata, e.g. "NFB"
 
   # ---------------------------------------------------------------------------
   # Credentials

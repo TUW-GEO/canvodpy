@@ -29,9 +29,9 @@ from .identity import check_naming_authority, new_uuid, stac_link, store_id
 from .io import (
     _apply_updates,
     _open_repo,
+    check_who,
     commit_lock,
     commit_with_rebase,
-    current_user,
 )
 from .schema import _METADATA_KEY, MigrationRecord, RepositoryMetadata, StoreMetadata
 from .snapshot import preview_metadata
@@ -45,6 +45,7 @@ _ENCODING_ATTRS = frozenset({"_FillValue", "coordinates"})
 def migrate_metadata(
     store_path: Path,
     *,
+    who: str,
     naming_authority: str | None = None,
     values: Mapping[str, Any] | None = None,
     variable_attrs: Mapping[str, Mapping[str, Any]] | None = None,
@@ -54,6 +55,9 @@ def migrate_metadata(
 
     Parameters
     ----------
+    who
+        Who migrates the store, e.g. ``"NFB"``; recorded in the migration
+        record.
     naming_authority
         The naming authority (reverse DNS) for a store whose metadata has
         none; otherwise the store's own is kept.
@@ -77,12 +81,14 @@ def migrate_metadata(
     Raises
     ------
     ValueError
-        If the store is already migrated, holds no store metadata, has no
+        If ``who`` is blank, the store is already migrated, holds no store
+        metadata, has no
         valid naming authority and none is given, a value names a field
         that cannot be amended, or the migrated store would fail the
         standards checks (the message lists the failures). Nothing is
         written then.
     """
+    who = check_who(who)
     store_path = Path(store_path)
     with commit_lock(store_path):
         repo = _open_repo(store_path)
@@ -153,7 +159,7 @@ def migrate_metadata(
                 "migration": MigrationRecord(
                     old_id=old.identity.id,
                     old_metadata_version=old.metadata_version,
-                    who=current_user(),
+                    who=who,
                     when=datetime.now(UTC).isoformat(),
                     fields_given=sorted(values or {}),
                     variables_replaced=replaced,

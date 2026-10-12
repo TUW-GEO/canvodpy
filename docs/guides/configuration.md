@@ -149,6 +149,8 @@ processing:
     email: your.email@example.com
     institution: Your Institution
     naming_authority: org.example  # your domain in reverse; required to create a store
+    store_description: Example GNSS-T research site  # required to create a store
+    initials: JD  # recorded with each change of store metadata; required to amend or migrate
     # optional: orcid, institution_ror, department, research_group,
     # website, license, publisher, publisher_url
 

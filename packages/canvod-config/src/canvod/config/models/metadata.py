@@ -92,7 +92,15 @@ class MetadataConfig(_StrictModel):
         None,
         description=(
             "Human-readable description of the store itself (not the site) -- "
-            "written to StoreIdentity.description."
+            "written to StoreIdentity.description. Required when a store is "
+            "created."
+        ),
+    )
+    initials: str | None = Field(
+        None,
+        description=(
+            "How a store's metadata records who changed it (e.g. 'NFB'). "
+            "Required to amend or migrate a store's metadata."
         ),
     )
 

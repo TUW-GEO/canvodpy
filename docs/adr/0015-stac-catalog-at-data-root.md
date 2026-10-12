@@ -2,8 +2,9 @@
 
 All stores under one data root (the `stores_root_dir` of the settings)
 are described by one static STAC catalog, written as JSON files at that
-root, beside the stores and never inside a store. The catalog has two
-collections, `gnss-observations` and `vod`, with one item per store. An
+root, beside the stores and never inside a store. The catalog has three
+collections, `gnss-observations`, `vod` and `gnss-geodesy` (the stores of
+the canvod-gnssgeodesy extension), with one item per store. An
 item has the site as its point geometry, the time range of the store,
 and one asset per stored dataset (a receiver's observations, its SBF
 metadata, its log book; a VOD analysis and its log book). Every asset
@@ -20,7 +21,7 @@ catalog location except one fixed, relative `stac:link` to where its
 own item will be.
 
 A store has two identifiers, both fixed fields (ADR 0014): a readable id
-`{site}-{gnss|vod}`, which with the required naming authority gives a
+`{site}-{gnss|vod|geodesy}`, which with the required naming authority gives a
 network-unique item id such as `at.ac.tuwien.rosalia-vod`, and a UUID
 generated when the store is created. The UUID is in the item, so opening
 a store from an item can refuse a store that was replaced behind the

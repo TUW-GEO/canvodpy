@@ -111,8 +111,8 @@ def _build_store_and_metadata(
             naming_authority="at.ac.tuwien",
         ),
         creator=Creator(
-            name="Nicolas François Bader",
-            email="support@canvodpy.eu",
+            name="John Ronald Reuel Tolkien",
+            email="j.r.r.tolkien@the.inklings.org",
             institution="TU Wien",
             institution_ror="https://ror.org/04d836q62",
             department="Geodesy and Geoinformation",

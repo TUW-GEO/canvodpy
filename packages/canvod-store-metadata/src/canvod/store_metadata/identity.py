@@ -1,6 +1,6 @@
 """A store's identifiers: id, UUID, naming authority and catalog link.
 
-The id is ``{site slug}-{gnss|vod}``, the slug being the configured site
+The id is ``{site slug}-{gnss|vod|geodesy}``, the slug being the configured site
 name made lowercase; a site name that gives no valid slug is refused, never
 changed into one. With the naming authority (reverse DNS, required when a
 store is created) the id gives the store's network-unique item id in the
@@ -23,6 +23,7 @@ _REVERSE_DNS = re.compile(rf"{_LABEL}(?:\.{_LABEL})+")
 _PRODUCTS = {
     "gnss_store": ("gnss", "gnss-observations"),
     "vod_store": ("vod", "vod"),
+    "geodesy_store": ("geodesy", "gnss-geodesy"),
 }
 
 
@@ -38,7 +39,7 @@ def _product(store_type: str) -> tuple[str, str]:
 
 
 def store_id(site_name: str, store_type: str) -> str:
-    """Return the store id ``{site slug}-{gnss|vod}``.
+    """Return the store id ``{site slug}-{gnss|vod|geodesy}``.
 
     Raises
     ------

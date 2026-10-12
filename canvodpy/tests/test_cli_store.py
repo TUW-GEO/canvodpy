@@ -64,11 +64,19 @@ def _write_synthetic_store(store_path, n_slots: int = 2) -> None:
     loader_module.load_config.cache_clear()
 
 
-def _write_config(config_dir, stores_root, naming_authority=None) -> None:
+def _write_config(
+    config_dir, stores_root, naming_authority=None, initials="JRRT"
+) -> None:
     config_dir.mkdir(parents=True, exist_ok=True)
-    metadata = {"author": "A", "email": "a@example.com", "institution": "B"}
+    metadata = {
+        "author": "John Ronald Reuel Tolkien",
+        "email": "j.r.r.tolkien@the.inklings.org",
+        "institution": "B",
+    }
     if naming_authority is not None:
         metadata["naming_authority"] = naming_authority
+    if initials is not None:
+        metadata["initials"] = initials
     (config_dir / "canvod-settings.yaml").write_text(
         yaml.safe_dump(
             {
@@ -529,6 +537,36 @@ class TestStoreMigrateMetadata:
 
         assert read_metadata(store_path).identity.id == "testsite-gnss"
 
+    def test_the_migration_records_the_initials_of_the_settings(self, tmp_path):
+        config_dir, store_path = self._setup(tmp_path)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "gnss", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(store_path).migration.who == "JRRT"
+
+    def test_missing_initials_refuse_the_migration(self, tmp_path):
+        config_dir, store_path = self._setup(tmp_path)
+        _write_config(config_dir, tmp_path / "stores", initials=None)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", "gnss", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 1, result.output
+        assert "processing.metadata.initials" in result.output
+        from canvod.store_metadata import metadata_exists
+
+        assert not metadata_exists(store_path)
+
     def test_nothing_changes_without_confirmation(self, tmp_path):
         config_dir, store_path = self._setup(tmp_path)
 
@@ -790,6 +828,26 @@ class TestStoreAmend:
         meta = read_metadata(path)
         assert meta.identity.title == "TestSite GNSS"
         assert meta.amendments[0].reason == "shorter title"
+        assert meta.amendments[0].who == "JRRT"
+
+    def test_missing_initials_refuse_the_amendment(self, tmp_path):
+        config_dir, path = self._setup(tmp_path)
+        _write_config(config_dir, tmp_path / "stores", initials=None)
+
+        result = self._amend(
+            config_dir,
+            "--set",
+            "identity.title=TestSite GNSS",
+            "--reason",
+            "shorter title",
+            "--yes",
+        )
+
+        assert result.exit_code == 1, result.output
+        assert "processing.metadata.initials" in result.output
+        from canvod.store_metadata import read_metadata
+
+        assert read_metadata(path).identity.title == "TestSite GNSS Store"
 
     def test_values_are_read_as_yaml(self, tmp_path):
         config_dir, path = self._setup(tmp_path)

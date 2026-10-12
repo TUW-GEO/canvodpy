@@ -343,7 +343,7 @@ $ canvodpy store maintain [OPTIONS] {site}
 * `--store gnss|vod`: Store to open.  [default: gnss]
 * `--expire-days <int>`: Keep the snapshots of this many past days. Use weeks to months, not hours.  [default: 90]
 * `--gc / --no-gc`: Run garbage collection  [default: gc]
-* `--execute`: Expire snapshots and collect garbage, after you confirm. Without this flag, the command only reports and changes nothing.
+* `--execute`: Expire snapshots and collect garbage, after you confirm. Without this flag the command only reports and changes nothing.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 
@@ -405,6 +405,8 @@ lacks, such as its description, are given with --set, otherwise the
 migration is refused and lists them. In a VOD store, the attributes of
 VOD are replaced with the current ones: older versions copied the
 attributes of SNR and theta to VOD, among them the valid range of theta.
+The migration record keeps who migrated the store, the initials set in
+processing.metadata.initials.
 
 **Usage**:
 
@@ -432,7 +434,8 @@ Change the description of a site's store, with a reason.
 Fixed fields (the store id, UUID, store type, source format, naming
 authority and creation date) never change. Each changed field is
 recorded with its old and new value, the reason, who and when, and a
-new commit carries the new description.
+new commit carries the new description. Who is the initials set in
+processing.metadata.initials.
 
 **Usage**:
 

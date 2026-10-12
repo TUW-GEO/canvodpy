@@ -3,6 +3,8 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from canvod.store_metadata.collectors import (
     collect_config_snapshot,
     collect_creator,
@@ -252,10 +254,8 @@ class TestCollectors:
         assert meta.creator.name == "Test"
         assert meta.processing.python is not None
 
-    def test_collect_metadata_description_defaults_to_none(self):
-        """meta_cfg without store_description set must not raise, and
-        identity.description must stay None (regression guard for the
-        getattr(..., None) fallback in collect_metadata)."""
+    def test_collect_metadata_refuses_a_missing_description(self):
+        """A store is not created without a description in the settings."""
         meta_cfg = MagicMock(
             spec=[
                 "author",
@@ -317,12 +317,14 @@ class TestCollectors:
             from canvod.store_metadata.schema import ConfigSnapshot
 
             mock_snap.return_value = ConfigSnapshot(config_hash="abc123")
-            meta = collect_metadata(
-                config=config,
-                site_name="TestSite",
-                site_config=site_cfg,
-                store_type="gnss_store",
-                source_format="rinex3",
-                store_path=Path("/tmp/test"),
-            )
-        assert meta.identity.description is None
+            with pytest.raises(
+                ValueError, match=r"processing\.metadata\.store_description"
+            ):
+                collect_metadata(
+                    config=config,
+                    site_name="TestSite",
+                    site_config=site_cfg,
+                    store_type="gnss_store",
+                    source_format="rinex3",
+                    store_path=Path("/tmp/test"),
+                )

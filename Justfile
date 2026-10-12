@@ -296,9 +296,10 @@ metadata-show STORE_PATH:
 metadata-section STORE_PATH SECTION:
     uv run python -m canvod.store_metadata.show {{ STORE_PATH }} {{ SECTION }}
 
-# validate store metadata against FAIR, DataCite, ACDD, STAC
+# validate store metadata against zarr conventions, ACDD, DataCite, STAC and FAIR;
+# fails on a failure, not on recommendations or FAIR advice
 metadata-validate STORE_PATH:
-    uv run python -c "from pathlib import Path; from canvod.store_metadata import read_metadata, validate_all; meta = read_metadata(Path('{{ STORE_PATH }}')); results = validate_all(meta); [print(f'{std}: {\"PASS\" if not issues else f\"{len(issues)} issues\"}') for std, issues in results.items()]; [print(f'  - {i}') for issues in results.values() for i in issues]"
+    uv run python -c "import sys; from pathlib import Path; from canvod.store_metadata import read_metadata, validate_all; from canvod.store_metadata.show import format_validation; meta = read_metadata(Path('{{ STORE_PATH }}')); print(format_validation(meta)); sys.exit(1 if any(validate_all(meta, recommended=False).values()) else 0)"
 
 # export STAC Collection JSON for a single store
 metadata-stac STORE_PATH:
