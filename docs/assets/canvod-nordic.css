@@ -743,6 +743,16 @@ body{
   line-height: 1.1;
 }
 
+/* The logo is the hero heading (docs/index.md) */
+.hero h1.hero-logo{
+  margin: 0 0 1rem;
+  line-height: 0;
+}
+.hero h1.hero-logo img{
+  height: 11rem;
+  max-width: 100%;
+}
+
 /* Tagline (second paragraph) */
 .hero p:first-of-type{
   font-size: 1.05rem;

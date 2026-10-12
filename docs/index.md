@@ -5,7 +5,10 @@ description: An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrie
 
 <div class="hero" markdown>
 
-# canVODpy
+<h1 class="hero-logo">
+  <img src="assets/logo/canvodpy_logo_bright_mode.svg#only-light" alt="canVODpy">
+  <img src="assets/logo/canvodpy_logo_dark_mode.svg#only-dark" alt="canVODpy">
+</h1>
 
 **An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrievals**
 
