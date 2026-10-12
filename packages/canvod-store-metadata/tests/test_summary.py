@@ -2,6 +2,7 @@
 
 import icechunk
 import numpy as np
+import pytest
 import zarr
 from test_io import _make_metadata
 
@@ -47,9 +48,10 @@ def _make_store(path):
 def test_summarize_store(tmp_path):
     store_path = _make_store(tmp_path / "store")
 
-    updates = summarize_store(
-        store_path, receivers={"canopy_01", "reference_01", "canopy_02"}
-    )
+    with pytest.warns(FutureWarning, match="mapping of receiver name to type"):
+        updates = summarize_store(
+            store_path, receivers={"canopy_01", "reference_01", "canopy_02"}
+        )
 
     assert updates["temporal.time_coverage_start"] == "2025-01-01T00:00:00Z"
     assert updates["temporal.time_coverage_end"] == "2025-01-01T00:59:55Z"
@@ -64,6 +66,30 @@ def test_summarize_store(tmp_path):
     assert updates["instruments.receivers.reference_01.epochs"] == 360
     assert updates["instruments.receivers.reference_01.sids"] == 2
     assert not any(k.startswith("instruments.receivers.canopy_02") for k in updates)
+
+
+def test_summary_keeps_receivers_whose_names_extend_each_other_apart(tmp_path):
+    store_path = _make_store(tmp_path / "store")
+    repo = icechunk.Repository.open(icechunk.local_filesystem_storage(str(store_path)))
+    session = repo.writable_session("main")
+    _write_group(
+        zarr.open_group(session.store, mode="a"), "canopy_01_b", 60, ["G02|L1|C"]
+    )
+    session.commit("second canopy")
+
+    updates = summarize_store(
+        store_path,
+        receivers={
+            "canopy_01": "canopy",
+            "canopy_01_b": "canopy",
+            "reference_01": "reference",
+        },
+    )
+
+    assert updates["instruments.receivers.canopy_01.epochs"] == 720
+    assert updates["instruments.receivers.canopy_01.sids"] == 2
+    assert updates["instruments.receivers.canopy_01_b.epochs"] == 60
+    assert updates["instruments.receivers.reference_01.epochs"] == 360
 
 
 def test_summary_written_into_metadata(tmp_path):

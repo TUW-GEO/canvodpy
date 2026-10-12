@@ -120,7 +120,12 @@ def snapshot_summary(
     root: zarr.Group, repository: dict[str, Any], committed_at: str
 ) -> dict[str, Any]:
     """The snapshot summary of the data under ``root``."""
-    receivers = set(repository.get("instruments", {}).get("receivers", {}))
+    receivers = {
+        name: receiver["type"]
+        for name, receiver in repository.get("instruments", {})
+        .get("receivers", {})
+        .items()
+    }
     updates = summarize_root(root, receivers)
     summary: dict[str, Any] = {
         "metadata_version": FORM_VERSION,

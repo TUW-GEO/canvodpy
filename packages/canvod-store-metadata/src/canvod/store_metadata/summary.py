@@ -8,11 +8,14 @@ being fixed when the store is created.
 from __future__ import annotations
 
 import json
+import warnings
+from collections.abc import Collection, Mapping
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import zarr
+from canvod.config.models.sites import reference_store_group
 
 _CONSTELLATIONS = {
     "G": "GPS",
@@ -157,8 +160,57 @@ def _store_size_mb(store_path: Path) -> float:
     return round(size / 1e6, 3)
 
 
+def receiver_groups(receivers: Mapping[str, str]) -> dict[str, set[str]]:
+    """The store groups that hold each receiver's data.
+
+    ``receivers`` maps each receiver name to its type (``canopy`` or
+    ``reference``). A canopy receiver is stored in the group of its name. A
+    reference receiver is stored once per canopy receiver it is paired with,
+    in the group :func:`~canvod.config.models.sites.reference_store_group`
+    names; its own name is kept as well.
+    """
+    canopies = [name for name, kind in receivers.items() if kind == "canopy"]
+    return {
+        name: {name}
+        | (
+            {reference_store_group(name, canopy) for canopy in canopies}
+            if kind == "reference"
+            else set()
+        )
+        for name, kind in receivers.items()
+    }
+
+
+def _groups_by_receiver(
+    receivers: Mapping[str, str] | Collection[str] | None, names: Collection[str]
+) -> dict[str, set[str]]:
+    """Which of the group ``names`` belong to each receiver."""
+    if receivers is None:
+        return {}
+    if not isinstance(receivers, Mapping):
+        warnings.warn(
+            "Receiver names without their types are left over from development "
+            "and will be removed with the next major version. Pass a mapping "
+            "of receiver name to type (canopy or reference).",
+            FutureWarning,
+            stacklevel=3,
+        )
+        return {
+            receiver: {
+                name
+                for name in names
+                if name == receiver or name.startswith(f"{receiver}_")
+            }
+            for receiver in receivers
+        }
+    return {
+        receiver: groups & set(names)
+        for receiver, groups in receiver_groups(receivers).items()
+    }
+
+
 def summarize_root(
-    root: zarr.Group, receivers: set[str] | None = None
+    root: zarr.Group, receivers: Mapping[str, str] | Collection[str] | None = None
 ) -> dict[str, Any]:
     """Dotted-key updates describing the data under ``root``.
 
@@ -203,14 +255,11 @@ def summarize_root(
         "summaries.temporal_resolution_s": resolution,
         "summaries.file_count": sum(file_counts) if file_counts else None,
     }
-    for receiver in sorted(receivers or ()):
+    by_receiver = _groups_by_receiver(receivers, list(groups))
+    for receiver in sorted(by_receiver):
         # A reference receiver is stored once per canopy it is paired with
         # (e.g. ``reference_01_canopy_01``); combine all of its groups.
-        own = [
-            g
-            for name, g in groups.items()
-            if name == receiver or name.startswith(f"{receiver}_")
-        ]
+        own = [groups[name] for name in sorted(by_receiver[receiver])]
         if not own:
             continue
         r_epochs = np.unique(np.concatenate([g["epochs"] for g in own]))
@@ -226,7 +275,7 @@ def summarize_root(
         positions = {
             file_hash: xyz
             for name, g in data_groups.items()
-            if name == receiver or name.startswith(f"{receiver}_")
+            if name in by_receiver[receiver]
             for file_hash, xyz in _header_positions(g).items()
         }
         if positions:
@@ -239,7 +288,7 @@ def summarize_root(
 def summarize_store(
     store_path: Path,
     branch: str = "main",
-    receivers: set[str] | None = None,
+    receivers: Mapping[str, str] | Collection[str] | None = None,
 ) -> dict[str, Any]:
     """Metadata updates describing the data currently in a store.
 
@@ -249,10 +298,13 @@ def summarize_store(
         Path to the Icechunk store.
     branch : str
         Branch to summarize.
-    receivers : set[str] | None
-        Receiver names present in ``instruments.receivers``. Each receiver
-        with data in the store also gets its per-receiver fields updated,
-        from the group named after it and any ``{receiver}_*`` groups.
+    receivers : Mapping[str, str] | None
+        The receivers in ``instruments.receivers``, by name, with their type
+        (``canopy`` or ``reference``). Each receiver with data in the store
+        also gets its per-receiver fields updated, from the groups
+        :func:`receiver_groups` gives it. A collection of names without types
+        is deprecated; it matches the group named after a receiver and any
+        ``{receiver}_*`` group.
 
     Returns
     -------

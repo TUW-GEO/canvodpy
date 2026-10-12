@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable, Generator, Iterable
+from collections.abc import Callable, Generator, Iterable, Mapping
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -452,18 +452,20 @@ def _amend_command(repository: dict[str, Any]) -> str:
     )
 
 
-def _not_listed(names: Iterable[str], listed: Iterable[str]) -> list[str]:
-    """Names that are not listed and not a listed name's pair group.
+def _not_listed(names: Iterable[str], listed: Mapping[str, Any]) -> list[str]:
+    """Names that are neither a listed receiver nor one of its groups.
 
-    A reference receiver is stored once per canopy it is paired with, in a
-    group named ``{reference}_{canopy}``.
+    A reference receiver is stored once per listed canopy receiver it is
+    paired with (see :func:`~canvod.store_metadata.summary.receiver_groups`).
     """
-    listed = set(listed)
-    return sorted(
-        name
-        for name in set(names)
-        if name not in listed and not any(name.startswith(f"{r}_") for r in listed)
+    from .summary import receiver_groups
+
+    groups = set().union(
+        *receiver_groups(
+            {name: receiver["type"] for name, receiver in listed.items()}
+        ).values()
     )
+    return sorted(set(names) - groups)
 
 
 def check_receivers(

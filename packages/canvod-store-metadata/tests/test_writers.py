@@ -135,6 +135,16 @@ class TestListedReceivers:
             check_receivers(repository, ["canopy_02"], store_path=path)
         assert "canvodpy store amend Fangorn --store gnss" in str(excinfo.value)
 
+    @pytest.mark.parametrize(
+        "name", ["canopy_01_b", "reference_01_b", "reference_01_canopy_02"]
+    )
+    def test_a_name_extending_a_listed_receiver_is_refused(self, tmp_path, name):
+        path = _new_store(tmp_path)
+        repository = _ensure(path)
+
+        with pytest.raises(ValueError, match=f"--add-receiver {name}"):
+            check_receivers(repository, [name], store_path=path)
+
     def test_an_unlisted_vod_analysis_is_refused(self, tmp_path):
         path = _new_store(tmp_path)
         repository = _ensure(path, _metadata("vod_store"))
