@@ -197,6 +197,47 @@ just open-notebook 15_grid_exploration.py
 
 ---
 
+## Interactive selectors in notebooks
+
+`canvod.viz.widgets` provides two interactive hemisphere selectors for
+marimo (and Jupyter) notebooks, built on anywidget. Click the cells of a
+hemisphere grid to select them; hover a cell for its info. The selectors
+need the optional extra:
+
+```bash
+pip install "canvod-viz[widgets]"
+```
+
+```bash
+uv add "canvod-viz[widgets]"
+```
+
+Example (the 3D selector from `demo/15_grid_exploration.py`):
+
+```python
+import marimo as mo
+from canvod.viz.widgets import HemisphereSelector3D
+
+hemisphere_3d = mo.ui.anywidget(
+    HemisphereSelector3D(
+        cell_centers_x=cell_x.tolist(),
+        cell_centers_y=cell_y.tolist(),
+        cell_centers_z=cell_z.tolist(),
+        cell_values=values.tolist(),
+        cell_labels=labels,
+        colorscale="Viridis",
+        marker_size=6,
+    )
+)
+mo.output.replace(hemisphere_3d)
+```
+
+`HemisphereSelector2D` takes `cell_theta`, `cell_phi`, `cell_values` and
+`cell_labels` instead. Both expose `selected_cell_ids` (the indices of the
+selected cells) and `hovered_cell_id`.
+
+---
+
 ## Dependencies
 
 !!! info "Backends"
@@ -204,4 +245,5 @@ just open-notebook 15_grid_exploration.py
     - **Matplotlib** (2D) and **Plotly** (3D), installed with `canvod-viz`
     - **canvod-grids**: grid geometry, installed with `canvod-viz`
     - **anywidget**: only for the interactive hemisphere selectors in the
-      marimo notebooks; not a dependency of `canvod-viz`
+      marimo notebooks; installed only with the optional extra
+      `widgets` (`pip install "canvod-viz[widgets]"`), not by default

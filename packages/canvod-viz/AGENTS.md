@@ -10,6 +10,7 @@
 | `hemisphere_2d.py` | Polar plots |
 | `hemisphere_3d.py` | `HemisphereVisualizer3D`: surface, wireframe, overlays, axes |
 | `styles.py` | Plot styles (publication, interactive) |
+| `widgets/` | `HemisphereSelector2D` and 3D (anywidget), optional extra `widgets`; JS and CSS next to them |
 
 Background: `docs/packages/viz/overview.md`.
 
