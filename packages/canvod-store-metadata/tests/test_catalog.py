@@ -17,6 +17,8 @@ from stac_validator.validate import StacValidate
 from canvod.store_metadata import (
     commit_with_rebase,
     open_repository,
+    read_metadata,
+    validate_all,
     write_catalog,
     write_metadata,
 )
@@ -214,6 +216,37 @@ def test_each_stores_catalog_link_points_at_its_item(data_root):
     item_file = (store / link).resolve()
     assert item_file.is_file()
     assert json.loads(item_file.read_text())["id"] == _item(data_root).id
+
+
+class TestTheCatalogLinkBeforeTheFirstCatalogWrite:
+    """A new store is valid before the first catalog write (ADR 0015)."""
+
+    @staticmethod
+    def _link_issues(store: Path, *, recommended: bool) -> list[str]:
+        issues = validate_all(
+            read_metadata(store), recommended=recommended, store_path=store
+        )
+        return [
+            issue
+            for issues in issues.values()
+            for issue in issues
+            if "stac_link" in issue
+        ]
+
+    def test_a_dangling_link_is_a_warning_not_a_failure(self, data_root):
+        store = data_root / testing.SITE_KEY / "gnss"
+
+        assert self._link_issues(store, recommended=False) == []
+        (warning,) = self._link_issues(store, recommended=True)
+        assert warning.startswith("[warning]")
+        assert "canvodpy stac write" in warning
+
+    def test_no_warning_once_the_catalog_is_written(self, data_root):
+        store = data_root / testing.SITE_KEY / "gnss"
+
+        write_catalog(data_root)
+
+        assert self._link_issues(store, recommended=True) == []
 
 
 def test_an_spdx_license_is_kept_with_a_link_to_its_text(tmp_path):
