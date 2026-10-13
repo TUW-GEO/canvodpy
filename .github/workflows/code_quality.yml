@@ -22,7 +22,6 @@ jobs:
               with:
                   tool: just
             - name: Check uv.lock is up to date
-              if: github.actor != 'dependabot[bot]'
               run: just check-lock
 
     linting:
