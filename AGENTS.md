@@ -50,7 +50,7 @@ files (RINEX/SBF) -> reader -> Dataset(epoch, sid)
 | canvod-ops | `canvod.ops` | Optional preprocessing (temporal aggregation, grid assignment) | `packages/canvod-ops/AGENTS.md` |
 | canvod-vod | `canvod.vod` | VOD calculators | `packages/canvod-vod/AGENTS.md` |
 | canvod-store | `canvod.store` | Icechunk stores: writes, dedup, maintenance | `packages/canvod-store/AGENTS.md` |
-| canvod-store-metadata | `canvod.store_metadata` | DataCite/ACDD/STAC metadata of a store | `packages/canvod-store-metadata/AGENTS.md` |
+| canvod-store-metadata | `canvod.store_metadata` | DataCite/ACDD metadata of a store; the STAC catalog and releases of all stores | `packages/canvod-store-metadata/AGENTS.md` |
 | canvod-config | `canvod.config` | Settings models and the settings file loader | `packages/canvod-config/AGENTS.md` |
 | canvod-preflight | `canvod.preflight` | The canonical file name convention | `packages/canvod-preflight/AGENTS.md` |
 | canvod-utils | `canvod.utils` | Dates, file hashes, deprecation decorator, logging context | `packages/canvod-utils/AGENTS.md` |

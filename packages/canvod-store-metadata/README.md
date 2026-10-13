@@ -1,8 +1,9 @@
 # canvod-store-metadata
 
-Rich metadata lifecycle for canvod Icechunk stores. Defines, collects, writes, reads,
-validates, and catalogs metadata aligned with **DataCite 4.5**, **ACDD 1.3**, and
-**STAC 1.1**.
+Rich metadata lifecycle for canvod Icechunk stores. Defines, collects, writes, reads
+and validates metadata aligned with **DataCite 4.5**, **ACDD 1.3**, and
+**STAC 1.1**, and writes the STAC catalog and the releases of all stores
+under a data root.
 
 ## Installation
 
@@ -347,7 +348,7 @@ sub-principle to the fields and features that satisfy it:
 | **A1** | Retrievable by standard protocol | Zarr/Icechunk (local, S3, HTTP); `references.access_url` |
 | **A1.1** | Protocol is open and free | Zarr v3 + Icechunk — open specifications |
 | **A1.2** | Protocol allows authentication | Icechunk supports S3/GCS credentials |
-| **A2** | Metadata accessible if data gone | Repository metadata outlives every snapshot; STAC JSON is independent |
+| **A2** | Metadata accessible if data gone | Repository metadata outlives every snapshot; the STAC catalog is plain JSON beside the stores |
 | **I1** | Formal knowledge representation | JSON with Pydantic v2 schema |
 | **I2** | FAIR-compliant vocabularies | ACDD conventions, SPDX licenses |
 | **I3** | Qualified cross-references | `references.related_stores`, `references.publications` |
@@ -392,9 +393,14 @@ store's catalog link has no item file until the first catalog write;
 `validate_all(meta, store_path=store_path)` shows that as a warning, not a
 failure.
 
+A release is a named, fixed state of all stores: `create_release(data_root,
+tag)` (or `canvodpy stac release TAG`) tags every store and writes the
+catalog of that tag under `releases/<tag>/`, each store pinned to its
+snapshot. A release catalog is never changed afterwards.
+
 ## Store inventory
 
-Scan a directory tree for all Icechunk stores and build a Polars DataFrame catalog:
+Scan a directory tree for all Icechunk stores and list them in a Polars DataFrame:
 
 ```python
 from pathlib import Path

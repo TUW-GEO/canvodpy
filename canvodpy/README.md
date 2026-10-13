@@ -79,7 +79,7 @@ Installing `canvodpy` provides access to all 10 sub-packages:
 | `canvod-auxiliary` | `canvod.auxiliary` | Ephemeris augmentation (SP3/CLK and broadcast) |
 | `canvod-grids` | `canvod.grids` | Equal-area hemisphere grid operations |
 | `canvod-store` | `canvod.store` | Icechunk/Zarr versioned storage layer |
-| `canvod-store-metadata` | `canvod.store_metadata` | FAIR/DataCite/ACDD/STAC metadata lifecycle |
+| `canvod-store-metadata` | `canvod.store_metadata` | FAIR/DataCite/ACDD metadata of a store; the STAC catalog and releases of all stores |
 | `canvod-vod` | `canvod.vod` | Tau-Omega VOD retrieval algorithms |
 | `canvod-viz` | `canvod.viz` | 2D polar and 3D interactive visualization |
 | `canvod-config` | `canvod.config` | Configuration management: YAML loading, Pydantic validation |

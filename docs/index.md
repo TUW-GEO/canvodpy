@@ -94,7 +94,8 @@ with an unobstructed view of the sky.
     ---
 
     Each release has a DOI. Each store records where its data came from,
-    in metadata that follows DataCite, ACDD, and STAC.
+    in metadata that follows DataCite and ACDD, and a STAC catalog
+    describes all stores.
 
     [:octicons-arrow-right-24: Store metadata](packages/store-metadata/overview.md)
 
