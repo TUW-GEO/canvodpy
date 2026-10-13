@@ -45,6 +45,10 @@ Rich provenance metadata for Icechunk stores, aligned with DataCite 4.5, ACDD 1.
 
 ::: canvod.store_metadata.validate
 
+## Catalog
+
+::: canvod.store_metadata.catalog
+
 ## Inventory
 
 ::: canvod.store_metadata.inventory

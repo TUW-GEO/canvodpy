@@ -125,3 +125,5 @@ HTM
 2D
 3D
 ruleset
+pystac
+xpystac
