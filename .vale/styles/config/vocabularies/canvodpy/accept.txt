@@ -127,3 +127,10 @@ HTM
 ruleset
 pystac
 xpystac
+Findability
+Impressum
+[Ll]ibre
+redistributable
+Reusability
+Sigstore
+Wiedner

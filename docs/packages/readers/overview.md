@@ -311,10 +311,10 @@ Two parsers fill these arrays:
 - **`validated`** (default): checks every epoch and drops the epochs that fail. The reader logs how many and at which lines (`rinex_epochs_rejected`). An epoch is dropped if:
     - its epoch line doesn't match the RINEX 3 format (Pydantic epoch line model);
     - a satellite line has an invalid satellite ID (Pydantic satellite model), or a system without a `SYS / # / OBS TYPES` header record;
-    - an observation field isn't blank but holds no readable value;
+    - an observation field is neither blank nor in the standard RINEX form: a value in F14.3 with the decimal point in its fixed column, followed by the LLI and the SSI flag; each flag is blank or a single digit. A field with stray characters, null bytes or a shifted decimal point is malformed; the reader never guesses a value from it. A fully blank field is a missing observation;
     - the satellite count of the epoch line differs from the number of satellite lines (Pydantic epoch record model).
 
-    Every field of a satellite line is checked, also the fields of variables that `keep_data_vars` leaves out, so the kept epochs don't depend on `keep_data_vars`. The values go into the arrays directly, without a Pydantic object per observation; `iter_epochs()` applies the same checks and also returns an `Observation` model per field.
+    `to_ds()` reads and checks only the fields that the variables in `keep_data_vars` need. `SNR` needs the `S` fields, `Pseudorange` the `C` fields, `Phase` the `L` fields, `Doppler` the `D` fields, `LLI` the `L` fields and `SSI` the `L` and `C` fields. Fields of other observation types are never stored, so they aren't read. A malformed field of a variable that `keep_data_vars` leaves out therefore doesn't drop its epoch, and an SNR-only read can keep epochs that a read of all variables drops. The values go into the arrays directly, without a Pydantic object per observation; `iter_epochs()` reads and checks every field and also returns an `Observation` model per field.
 - **`unvalidated_fast`**: slices fixed columns without any check.
 
 Both share the SID space, the array allocation, the epoch-time conversion and the dataset assembly. For a valid file they give the identical dataset (`test_rinex_v3_path_parity.py`).

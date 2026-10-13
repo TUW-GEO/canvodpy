@@ -3,9 +3,13 @@
 include_fragments = "full"
 cache = true
 max_cache_age = "1d"
-max_retries = 2
-timeout = 20
-accept = ["200..=299", "429"]
+# External servers (Zenodo, doi.org) are slow at times: wait and retry longer.
+max_retries = 4
+retry_wait_time = 5
+timeout = 40
+# 502 to 504: the server or its gateway is down, not the link (a dead link
+# answers 404). Zenodo answered 504 for a day in October 2026.
+accept = ["200..=299", "429", "502..=504"]
 # site/ and its HTML are git-ignored; lychee skips ignored files otherwise.
 no_ignore = true
 # Pages are folders with an index.html (users/cli/ -> users/cli/index.html).
@@ -24,6 +28,9 @@ exclude = [
   "^https://doi\\.org/10\\.3233/",
   "^https://doi\\.org/10\\.7717/",
   "^https://claude\\.ai/",
+  "^https://opensource\\.org/",
+  # Needs a login; times out for automated requests.
+  "^https://zenodo\\.org/account/",
   # Certificates the CI runner does not trust, although browsers do.
   "^https://www\\.softwareheritage\\.org/",
   "^https://customersupport\\.septentrio\\.com/",

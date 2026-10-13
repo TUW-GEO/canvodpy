@@ -24,6 +24,9 @@ canvod-adapters = { git = "https://github.com/nfb2021/canvodpy-extensions.git", 
 canvod-preflight = { workspace = true }
 
 [tool.uv]
+# Everyone, CI included, uses the same uv minor version, so uv.lock is
+# written the same way everywhere. setup-uv reads this range.
+required-version = ">=0.13.0,<0.14"
 override-dependencies = ["canvod-preflight"]
 
 # ============================================================================

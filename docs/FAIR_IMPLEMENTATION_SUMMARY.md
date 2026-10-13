@@ -40,7 +40,7 @@ Automated security best practices scanning:
 Comprehensive security documentation including:
 - Supported versions policy
 - Vulnerability reporting process (private GitHub advisories + email)
-- Response timelines (48h initial, 7-90 days fix based on severity)
+- Response timelines (48 hours initial, 7-90 days fix based on severity)
 - Security best practices for users
 - Known security considerations (file parsers, cloud storage, dependencies)
 - Current security features and planned enhancements
@@ -60,7 +60,7 @@ Enhanced with:
 
 Step-by-step guide for obtaining the OpenSSF badge:
 - Overview of badge levels (Passing, Silver, Gold)
-- Complete application process walkthrough
+- The application process, step by step
 - Current compliance estimate (~70% already passing)
 - Checklist of what's done vs. what's needed
 - Quick wins for addressing remaining gaps
@@ -74,14 +74,14 @@ Added new "Security & FAIR" section with:
 
 ## Current FAIR Compliance Status
 
-### ✅ All 5 FAIR Recommendations Met + OpenSSF Badge!
+### ✅ All 5 FAIR Recommendations Met + OpenSSF Badge
 
 | # | Recommendation | Status | Evidence |
 |---|----------------|--------|----------|
-| 1 | **Repository** | ✅ Pass | Public GitHub repo with version control |
+| 1 | **Repository** | ✅ Pass | Public GitHub repository with version control |
 | 2 | **License** | ✅ Pass | Apache 2.0 in LICENSE file |
 | 3 | **Registry** | ✅ Pass | Published to PyPI ([canvodpy](https://pypi.org/project/canvodpy/) + 11 sub-packages, v0.2.1+) |
-| 4 | **Citation** | ✅ Pass | CITATION.cff + Zenodo DOI (10.5281/zenodo.19445061) |
+| 4 | **Citation** | ✅ Pass | CITATION.cff + Zenodo DOI (`10.5281/zenodo.19445061`) |
 | 5 | **Checklist** | ✅ Pass | **OpenSSF Best Practices badge obtained!** ([Project 12329](https://www.bestpractices.dev/projects/12329)) |
 
 **Overall:** 🟢 **5/5 complete**
@@ -125,7 +125,7 @@ Modified:
 - ✅ Security best practices scanning
 - ✅ Clear vulnerability reporting process
 - ✅ Increased trust and credibility
-- ✅ Better discoverability (OpenSSF public API)
+- ✅ Easier to find (OpenSSF public API)
 
 ### For Contributors
 - ✅ Clear security guidelines
@@ -147,7 +147,7 @@ Modified:
 ### Manual (Periodic)
 - Review Scorecard findings monthly
 - Update SECURITY.md if practices change
-- Respond to vulnerability reports within 48h
+- Respond to vulnerability reports within 48 hours
 - Update OpenSSF badge annually (once obtained)
 
 ## Resources
