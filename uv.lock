@@ -522,7 +522,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
-    { name = "stac-validator" },
+    { name = "stac-valid" },
     { name = "ty" },
 ]
 
@@ -547,7 +547,7 @@ dev = [
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
     { name = "ruff", specifier = ">=0.14" },
-    { name = "stac-validator", specifier = ">=4.1" },
+    { name = "stac-valid", specifier = ">=4.6" },
     { name = "ty", specifier = ">=0.0.9" },
 ]
 
@@ -4064,7 +4064,7 @@ wheels = [
 
 [[package]]
 name = "stac-valid"
-version = "4.2.1"
+version = "4.6.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -4075,27 +4075,9 @@ dependencies = [
     { name = "requests" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c3/dd/c127d7b9a997c453b4eba42def3ce695b9b1824a08d6d04ed0e3c90a40ca/stac_valid-4.2.1.tar.gz", hash = "sha256:b785cc035ce1430e5a399c70aa22c4dd01d582e738fad219c37e4b3c1cd5b227", size = 77538, upload-time = "2026-04-27T16:29:36.641Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/54/4a/eb40e1904ceff773247ec664d7d036e16362e341cf2bece1e2984b32c45f/stac_valid-4.6.1.tar.gz", hash = "sha256:6abab3b9a3292e51eea17424a0dd500360a5214c2bbf2552ec6d1e9d49a9d789", size = 102754, upload-time = "2026-09-04T15:09:38.446Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/1c/38b4731a5fb5b9e009f0dea0a70b1c8b95544e7b7fbe62b5ca4351abe9c6/stac_valid-4.2.1-py3-none-any.whl", hash = "sha256:340112cbaf6e71c6c5733eb99cac135e3c0be9e6c249b795290a06d1f49c47bb", size = 45970, upload-time = "2026-04-27T16:29:34.858Z" },
-]
-
-[[package]]
-name = "stac-validator"
-version = "4.1.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "jsonschema" },
-    { name = "pyyaml" },
-    { name = "referencing" },
-    { name = "requests" },
-    { name = "stac-valid" },
-    { name = "tqdm" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/2c/67/905687aabbadfdf742f3457fe95798a5252973a1dfa232c813e18897ce8f/stac_validator-4.1.2.tar.gz", hash = "sha256:0c81ebec6c79c390644b672047b874564f1463290212abc488bb83243c5f25ed", size = 67364, upload-time = "2026-04-27T16:37:39.885Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/b7/b768b1752d46c4d633438a9dcfc0652bff6869182ba8203b8aaa5a281ee8/stac_validator-4.1.2-py3-none-any.whl", hash = "sha256:14917325d05e6c3de2f632286fa475129b57e0e0ed15a17343f148be7a49dc17", size = 40038, upload-time = "2026-04-27T16:37:38.167Z" },
+    { url = "https://files.pythonhosted.org/packages/05/41/6ea44aaa739ed070b2457a42e09d9ba056fc80765843e98c33b43039f38f/stac_valid-4.6.1-py3-none-any.whl", hash = "sha256:0c1ef9905adcd45b07e6980b6531b3480f9a2826860e978e2724eef4eda00abf", size = 58844, upload-time = "2026-09-04T15:09:37.147Z" },
 ]
 
 [[package]]

@@ -19,7 +19,7 @@ import pystac
 import zarr
 from pystac.extensions.xarray_assets import XarrayAssetsExtension
 
-from .identity import _PRODUCTS
+from .identity import _product
 from .inventory import _find_icechunk_stores
 from .io import read_metadata
 from .location import open_repository
@@ -42,7 +42,7 @@ def _item_id(meta: StoreMetadata) -> str:
 
 
 def _collection_id(meta: StoreMetadata) -> str:
-    return _PRODUCTS[meta.identity.store_type][1]
+    return _product(meta.identity.store_type)[1]
 
 
 def _geometry(meta: StoreMetadata) -> tuple[dict[str, Any], list[float]]:

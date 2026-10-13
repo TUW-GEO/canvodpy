@@ -20,8 +20,9 @@ from canvod.store_metadata import (
     write_catalog,
     write_metadata,
 )
+from canvod.store_metadata.identity import stac_link, store_id
 from canvod.store_metadata.schema import Publisher
-from canvod.store_metadata.testing import give_test_metadata, made_up_metadata
+from canvod.store_metadata.testing import made_up_metadata
 
 _SCHEMAS = Path(__file__).parent / "stac_schemas"
 
@@ -73,8 +74,8 @@ def _assert_valid(path: Path) -> None:
     assert validator.run(), json.dumps(validator.message, indent=2)
 
 
-def _observations(n_epochs: int = 12) -> xr.Dataset:
-    epochs = pd.date_range("2025-01-01", periods=n_epochs, freq="5s")
+def _observations(n_epochs: int = 12, start: str = "2025-01-01") -> xr.Dataset:
+    epochs = pd.date_range(start, periods=n_epochs, freq="5s")
     sids = ["G01|L1|C", "E11|E1|C"]
     return xr.Dataset(
         {"SNR": (("epoch", "sid"), np.full((n_epochs, len(sids)), 40.0, "f4"))},
@@ -87,18 +88,28 @@ def _gnss_store(
     receivers: tuple[str, ...] = ("canopy_01",),
     *,
     publisher: Publisher | None = None,
+    site: str = testing.SITE_KEY,
+    start: str = "2025-01-01",
 ) -> Path:
-    """A GNSS store of the made-up site holding observations per receiver."""
-    if publisher is None:
-        give_test_metadata(path)
-    else:
-        open_repository(path, create=True)
-        write_metadata(
-            path, made_up_metadata().model_copy(update={"publisher": publisher})
+    """A GNSS store holding observations per receiver.
+
+    Of the made-up site, unless ``site`` names another one (same position,
+    another store id).
+    """
+    meta = made_up_metadata()
+    if publisher is not None:
+        meta.publisher = publisher
+    if site != testing.SITE_KEY:
+        meta.spatial.site.name = site
+        meta.identity.id = store_id(site, "gnss_store")
+        meta.identity.stac_link = stac_link(
+            testing.NAMING_AUTHORITY, meta.identity.id, "gnss_store"
         )
+    open_repository(path, create=True)
+    write_metadata(path, meta)
     session = open_repository(path).writable_session("main")
     for receiver in receivers:
-        _observations().to_zarr(
+        _observations(start=start).to_zarr(
             session.store, group=receiver, mode="w", consolidated=False
         )
     commit_with_rebase(session, "observations", store_path=path)
@@ -113,16 +124,23 @@ def data_root(tmp_path: Path) -> Path:
 
 
 def test_write_catalog_writes_a_valid_catalog_of_the_gnss_stores(data_root):
+    _gnss_store(data_root / "orthanc" / "gnss", site="orthanc", start="2025-03-01")
+
     catalog_path = write_catalog(data_root)
 
     assert catalog_path == data_root / "catalog.json"
     _assert_valid(catalog_path)
     catalog = pystac.Catalog.from_file(catalog_path)
     collection = catalog.get_child("gnss-observations")
-    assert collection is not None
-    items = list(collection.get_items())
-    assert [item.id for item in items] == [
-        f"{testing.NAMING_AUTHORITY}.{testing.SITE_KEY}-gnss"
+    assert isinstance(collection, pystac.Collection)
+    assert sorted(item.id for item in collection.get_items()) == [
+        f"{testing.NAMING_AUTHORITY}.{testing.SITE_KEY}-gnss",
+        f"{testing.NAMING_AUTHORITY}.orthanc-gnss",
+    ]
+    interval = collection.extent.temporal.intervals[0]
+    assert [t.isoformat() for t in interval] == [
+        "2025-01-01T00:00:00+00:00",
+        "2025-03-01T00:00:55+00:00",
     ]
 
 
@@ -179,6 +197,25 @@ def test_each_stores_catalog_link_points_at_its_item(data_root):
     item_file = (store / link).resolve()
     assert item_file.is_file()
     assert json.loads(item_file.read_text())["id"] == _item(data_root).id
+
+
+def test_an_spdx_license_is_kept_with_a_link_to_its_text(tmp_path):
+    root = tmp_path / "stores"
+    _gnss_store(
+        root / testing.SITE_KEY / "gnss",
+        publisher=Publisher(
+            license="CC-BY-4.0",
+            license_uri="https://creativecommons.org/licenses/by/4.0/",
+        ),
+    )
+
+    write_catalog(root)
+
+    item = _item(root)
+    assert item.properties["license"] == "CC-BY-4.0"
+    assert [link.href for link in item.links if link.rel == "license"] == [
+        "https://creativecommons.org/licenses/by/4.0/"
+    ]
 
 
 def test_a_license_outside_spdx_is_other_with_a_link_to_its_text(tmp_path):

@@ -380,3 +380,7 @@ ds = xr.open_dataset(session.store, **asset.extra_fields["xarray:open_kwargs"])
 The media type of an asset is `application/vnd.zarr; version=3`, as the
 STAC best practices for Zarr recommend. xpystac can't open these assets:
 it opens Icechunk only from S3, and only the root group.
+
+The older functions `write_stac_catalog()`, `write_stac_collection()` and
+`scan_stores_as_stac()` write one collection per store and a
+`collection.json` inside each store. Use `write_catalog()` instead.
