@@ -380,11 +380,11 @@ def _format_reproduce_instructions(meta: StoreMetadata) -> str:
             from pathlib import Path
 
             meta = read_metadata(Path("your/store"))
-            Path("pyproject.toml").write_text(
-                meta.environment.pyproject_toml_text
+            Path("pyproject.toml").write_bytes(
+                meta.environment.pyproject_toml_text.encode()
             )
-            Path("uv.lock").write_text(
-                meta.environment.uv_lock_text
+            Path("uv.lock").write_bytes(
+                meta.environment.uv_lock_text.encode()
             )
 
         2. Create the virtual environment:
@@ -435,8 +435,12 @@ def extract_env(
         msg = "uv.lock not stored in this metadata"
         raise ValueError(msg)
 
-    (output_dir / "pyproject.toml").write_text(meta.environment.pyproject_toml_text)
-    (output_dir / "uv.lock").write_text(meta.environment.uv_lock_text)
+    # Bytes, not text mode: on Windows text mode writes \r\n, and the
+    # restored uv.lock would no longer match its recorded hash.
+    (output_dir / "pyproject.toml").write_bytes(
+        meta.environment.pyproject_toml_text.encode()
+    )
+    (output_dir / "uv.lock").write_bytes(meta.environment.uv_lock_text.encode())
     return output_dir
 
 
