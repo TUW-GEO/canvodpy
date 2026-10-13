@@ -70,7 +70,7 @@ from canvod.readers.gnss_specs.models import (
     Satellite,
 )
 from canvod.readers.gnss_specs.signals import SignalIDMapper
-from canvod.utils.tools import bytes_hash
+from canvod.utils.tools import bytes_hash, deprecated
 
 log = structlog.get_logger(__name__)
 
@@ -114,8 +114,11 @@ _OBS_VAL_END = 14
 # A satellite line: the SV in columns 0-2, then one 16-character field per
 # observation type of the system's SYS / # / OBS TYPES record.
 _OBS_FIELD_LEN = 16
+# The value of the standard field form (RINEX 3.04 Table A3: F14.3), so the
+# decimal point is in column 10; ASCII digits only.
+_OBS_VALUE_RE = re.compile(r" *-?[0-9]*\.[0-9]{3}")
 # LLI and SSI characters of the standard field form (RINEX 3.04 Table A3:
-# I1, blank if not known); any other character goes to the flexible parser.
+# I1, blank if not known); any other character makes the field malformed.
 _FLAG_OF_CHAR: dict[str, int | None] = {" ": None} | {str(d): d for d in range(10)}
 _NOT_A_FLAG = -1
 
@@ -1116,6 +1119,12 @@ class Rnxv3Obs(GNSSDataReader):
         ]
         return self._cached_epoch_batches
 
+    @deprecated(
+        "`Rnxv3Obs.parse_observation_slice` is left over from development and "
+        "will be removed with the next major version. Observation fields are "
+        "read strictly by `Rnxv3Obs.iter_epochs()` and `Rnxv3Obs.to_ds()`; "
+        "use those instead."
+    )
     def parse_observation_slice(
         self,
         slice_text: str,
@@ -1216,32 +1225,28 @@ class Rnxv3Obs(GNSSDataReader):
     def _read_observation_field(self, field: str) -> ObsField:
         """Return the (value, LLI, SSI) of one 16-character observation field.
 
-        Gives the result of :meth:`parse_observation_slice`: a field in the
-        standard form (F14.3 with the decimal point in column 10, LLI and
-        SSI blank or a digit) is read directly, any other field by
-        :meth:`parse_observation_slice`.
+        A field in the standard form (F14.3 with the decimal point in column
+        10, then LLI and SSI, each blank or a digit) gives its value and
+        flags. A fully blank field is a missing observation.
 
         Raises
         ------
         InvalidEpochError
-            If the field is not blank but holds no readable value.
+            If the field is neither blank nor in the standard form.
 
         """
-        if field[10] == ".":
-            lli = _FLAG_OF_CHAR.get(field[14], _NOT_A_FLAG)
-            ssi = _FLAG_OF_CHAR.get(field[15], _NOT_A_FLAG)
-            if lli != _NOT_A_FLAG and ssi != _NOT_A_FLAG:
-                try:
-                    return float(field[:_OBS_VAL_END]), lli, ssi
-                except ValueError:
-                    pass
-        elif field.isspace():
+        if field.isspace():
             return None, None, None
-        value, lli, ssi = self.parse_observation_slice(field)
-        if value is None and field.strip():
-            msg = f"Unreadable observation field: {field!r}"
+        lli = _FLAG_OF_CHAR.get(field[14], _NOT_A_FLAG)
+        ssi = _FLAG_OF_CHAR.get(field[15], _NOT_A_FLAG)
+        if (
+            lli == _NOT_A_FLAG
+            or ssi == _NOT_A_FLAG
+            or _OBS_VALUE_RE.fullmatch(field, 0, _OBS_VAL_END) is None
+        ):
+            msg = f"Malformed observation field: {field!r}"
             raise InvalidEpochError(msg)
-        return value, lli, ssi
+        return float(field[:_OBS_VAL_END]), lli, ssi
 
     def _read_satellite_line(self, line: str) -> tuple[Satellite, list[ObsField]]:
         """Return the satellite and the (value, LLI, SSI) per observation type.
@@ -1260,7 +1265,7 @@ class Rnxv3Obs(GNSSDataReader):
             ``ValidationError``).
         InvalidEpochError
             If the system has no ``SYS / # / OBS TYPES`` record, or a field
-            is not blank but holds no readable value.
+            is neither blank nor in the standard form.
 
         """
         sv = line[:3].strip()
@@ -1285,8 +1290,8 @@ class Rnxv3Obs(GNSSDataReader):
         """Process satellite data line into a Satellite object with observations.
 
         Reads the line with the rules of the dataset builder (see
-        :meth:`_read_satellite_line`); a field that is not blank but holds no
-        readable value raises :class:`InvalidEpochError`.
+        :meth:`_read_satellite_line`); a field that is neither blank nor in
+        the standard form raises :class:`InvalidEpochError`.
         """
         satellite, fields = self._read_satellite_line(s)
         self._add_observations(satellite, fields)

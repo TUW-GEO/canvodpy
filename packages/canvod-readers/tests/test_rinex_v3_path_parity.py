@@ -213,12 +213,15 @@ def test_epoch_seconds_out_of_range_raise(seconds):
 @pytest.mark.parametrize(
     ("name", "rejected_lines", "n_kept"),
     [
+        ("bitflip_numeric.25o", [61], 1),
+        ("extra_long_sat_line.25o", [61], 1),
         ("huge_satellite_count.25o", [61], 1),
         ("invalid_satellite_id.25o", [61], 1),
         ("misaligned_observations.25o", [61], 1),
         ("mixed_valid_corrupt.25o", [97], 2),
         ("negative_seconds.25o", [61], 1),
         ("non_numeric_observations.25o", [61], 0),
+        ("null_bytes.25o", [61], 1),
         ("satellite_count_mismatch.25o", [61], 1),
         ("truncated_mid_epoch.25o", [61], 0),
         ("zero_satellites.25o", [61], 1),
@@ -235,38 +238,70 @@ def test_rejected_epochs_by_line(name, rejected_lines, n_kept):
 
 
 @needs_invalid
-def test_unreadable_field_rejects_its_epoch():
-    """A field that is not blank but holds no readable value rejects the epoch."""
+def test_malformed_field_rejects_its_epoch():
+    """A field that is neither blank nor in the standard form rejects the epoch."""
     obs = Rnxv3Obs(
         fpath=INVALID_DIR / "non_numeric_observations.25o", completeness_mode="off"
     )
-    with pytest.raises(InvalidEpochError, match="Unreadable observation field"):
+    with pytest.raises(InvalidEpochError, match="Malformed observation field"):
         obs.process_satellite_data(obs._lines[61])
+
+
+@needs_v304
+@pytest.mark.parametrize(
+    ("field", "expected"),
+    [
+        ("  23456789.123 7", (23456789.123, None, 7)),
+        ("  23456789.12345", (23456789.123, 4, 5)),
+        ("        45.250  ", (45.25, None, None)),
+        ("      -123.456 1", (-123.456, None, 1)),
+        ("         -.456  ", (-0.456, None, None)),
+        ("                ", (None, None, None)),
+    ],
+)
+def test_standard_field_is_read(field, expected):
+    """A field in the standard form gives its value and flags; blank is missing."""
+    obs = Rnxv3Obs(fpath=V304_FILE, completeness_mode="off")
+    assert obs._read_observation_field(field) == expected
 
 
 @needs_v304
 @pytest.mark.parametrize(
     "field",
     [
-        "  23456789.123 7",  # standard form
-        "  23456789.12345",  # LLI and SSI digits
-        "        45.250  ",  # no flags
-        "      -123.456 1",  # negative value
-        "                ",  # blank
         "  23456789.123X7",  # LLI not a digit
-        "  23456789.123 ²",  # SSI a non-ASCII digit
+        "  23456789.123 \u00b2",  # SSI a non-ASCII digit
         "999999.999 9  99",  # decimal point not in column 10
         "         12345  ",  # no decimal point
         "  1234_5678.1 7 ",  # underscore
+        "  2282\u00b2963.723  ",  # non-ASCII digit in the value
         "  ABCDEFGHIJKL 7",  # no value
+        "  23456789.123\x00 ",  # null byte
+        "            .1 7",  # one decimal instead of three
+        "              7 ",  # flags without a value
     ],
 )
-def test_field_reading_matches_flexible_parser(field):
-    """The direct read of a field gives the result of parse_observation_slice."""
+def test_malformed_field_raises(field):
+    """A field neither blank nor in the standard form raises InvalidEpochError."""
     obs = Rnxv3Obs(fpath=V304_FILE, completeness_mode="off")
-    expected = obs.parse_observation_slice(field)
-    if expected[0] is None and field.strip():
-        with pytest.raises(InvalidEpochError):
-            obs._read_observation_field(field)
-    else:
-        assert obs._read_observation_field(field) == expected
+    with pytest.raises(InvalidEpochError, match="Malformed observation field"):
+        obs._read_observation_field(field)
+
+
+@needs_v304
+def test_flexible_field_parser_is_deprecated():
+    obs = Rnxv3Obs(fpath=V304_FILE, completeness_mode="off")
+    with pytest.warns(FutureWarning, match="left over from development.*to_ds"):
+        obs.parse_observation_slice("  23456789.123 7")
+
+
+@needs_invalid
+@pytest.mark.parametrize(
+    "name", ["bitflip_numeric.25o", "extra_long_sat_line.25o", "null_bytes.25o"]
+)
+def test_to_ds_drops_the_epoch_of_a_malformed_field(name):
+    """Only the clean epoch reaches the dataset; no guessed value does."""
+    obs = Rnxv3Obs(fpath=INVALID_DIR / name, completeness_mode="off")
+    ds = obs.to_ds()
+    assert ds.sizes["epoch"] == 1
+    assert ds["epoch"].values[0] == np.datetime64("2025-01-01T00:00:05", "ns")

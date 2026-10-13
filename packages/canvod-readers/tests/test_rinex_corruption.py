@@ -349,8 +349,9 @@ class TestObservationLineStructure:
         _skip_if_missing(fpath)
         obs = Rnxv3Obs(fpath=fpath, completeness_mode="off")
         epochs = list(obs.iter_epochs())
-        # Extra data should be ignored; both epochs should parse
-        assert len(epochs) >= 1
+        # A field of the long line has its decimal point in the wrong column,
+        # which rejects its epoch; the clean epoch survives
+        assert len(epochs) == 1
 
     def test_misaligned_observations(self):
         """Observation values shifted by 2 chars from expected fixed-width positions."""
@@ -438,12 +439,9 @@ class TestEncodingCorruption:
         fpath = INVALID_DIR / "null_bytes.25o"
         _skip_if_missing(fpath)
         obs = Rnxv3Obs(fpath=fpath, completeness_mode="off")
-        try:
-            epochs = list(obs.iter_epochs())
-            # If it parses, at least the clean epoch should survive
-            assert len(epochs) >= 1
-        except ValueError, RinexError, UnicodeDecodeError:
-            pass  # Also acceptable
+        epochs = list(obs.iter_epochs())
+        # The field with null bytes rejects its epoch; the clean epoch survives
+        assert len(epochs) == 1
 
     def test_crlf_line_endings(self):
         """Windows CRLF line endings — common when files transfer between OS."""
@@ -528,10 +526,10 @@ class TestRealWorldCorruption:
         assert len(epochs) == 1
 
     def test_bitflip_in_numeric_field(self):
-        """Single bit-flip turns digit into non-ASCII — value should be None or epoch skipped."""
+        """Single bit-flip turns a digit into non-ASCII, which rejects its epoch."""
         fpath = INVALID_DIR / "bitflip_numeric.25o"
         _skip_if_missing(fpath)
         obs = Rnxv3Obs(fpath=fpath, completeness_mode="off")
         epochs = list(obs.iter_epochs())
-        # At minimum the second clean epoch should survive
-        assert len(epochs) >= 1
+        # The malformed field rejects its epoch; the clean epoch survives
+        assert len(epochs) == 1
