@@ -577,13 +577,20 @@ dependencies = [
     { name = "plotly" },
 ]
 
+[package.optional-dependencies]
+widgets = [
+    { name = "anywidget" },
+]
+
 [package.metadata]
 requires-dist = [
+    { name = "anywidget", marker = "extra == 'widgets'", specifier = ">=0.11.0" },
     { name = "canvod-grids", editable = "packages/canvod-grids" },
     { name = "matplotlib", specifier = ">=3.8.0" },
     { name = "numpy", specifier = ">=1.26.0" },
     { name = "plotly", specifier = ">=5.18.0" },
 ]
+provides-extras = ["widgets"]
 
 [[package]]
 name = "canvod-vod"

@@ -24,6 +24,10 @@ dependencies = [
     "canvod-grids>=0.4.0,<2",
 ]
 
+[project.optional-dependencies]
+# Interactive hemisphere selectors (canvod.viz.widgets)
+widgets = ["anywidget>=0.11.0"]
+
 [tool.uv.sources]
 canvod-grids = { workspace = true }
 
