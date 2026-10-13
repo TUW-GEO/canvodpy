@@ -68,7 +68,7 @@ observations, which for canVODpy is GPS time.
 
 !!! example "Try it in a notebook"
 
-    Open [Naming convention](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/01_naming_convention.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Naming convention](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/04_naming_convention.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 

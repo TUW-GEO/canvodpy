@@ -123,7 +123,7 @@ Without credentials, canvodpy uses ESA GSSC (no authentication required).
 
 ## Documentation
 
-Full documentation: [nfb2021.github.io/canvodpy](https://nfb2021.github.io/canvodpy/)
+Full documentation: [canvodpy.eu](https://canvodpy.eu/)
 
 ## Development
 

@@ -1,5 +1,12 @@
 {% extends "base.html" %}
 
+{% block extrahead %}
+  <link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: light)"
+        href="{{ 'assets/logo/canvodpy_favicon_bright_mode.svg' | url }}">
+  <link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: dark)"
+        href="{{ 'assets/logo/canvodpy_favicon_dark_mode.svg' | url }}">
+{% endblock %}
+
 {% block libs %}
   <script>
     // Patch mermaid to use "base" theme instead of "default" (blue).

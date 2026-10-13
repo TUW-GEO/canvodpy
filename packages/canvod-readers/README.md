@@ -83,7 +83,7 @@ just check
 ## Documentation
 
 - Interactive examples: `docs/examples.py` (marimo notebook)
-- [Full documentation](https://nfb2021.github.io/canvodpy/packages/readers/overview/)
+- [Full documentation](https://canvodpy.eu/packages/readers/overview/)
 
 ## License
 

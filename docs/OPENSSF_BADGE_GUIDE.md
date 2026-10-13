@@ -25,7 +25,7 @@ The OpenSSF Best Practices Badge (formerly CII Best Practices) is a certificatio
 The badge requires filling out criteria in these categories:
 
 #### Basics (13 criteria)
-- [x] Project website (https://nfb2021.github.io/canvodpy/)
+- [x] Project website (https://canvodpy.eu/)
 - [x] Basic documentation (README.md with clear description)
 - [x] FLOSS license (Apache 2.0)
 - [ ] Change control (public version control - GitHub)

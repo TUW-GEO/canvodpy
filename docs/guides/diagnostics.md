@@ -221,7 +221,7 @@ The memory, CPU, and disk use of a run are in the `memory_stats` and
 
 !!! example "Try it in a notebook"
 
-    Open [Batch processing](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/17_workflow_batch_processing.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Batch processing](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/20_workflow_batch_processing.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 

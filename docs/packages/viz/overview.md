@@ -181,7 +181,7 @@ cs2 = Colorscale.from_colors(["#0072B2", "#D55E00", "#009E73"])
 
 ## Interactive grid exploration
 
-The `demo/19_grid_exploration.py` marimo notebook shows interactive
+The `demo/15_grid_exploration.py` marimo notebook shows interactive
 exploration of per-cell VOD on the hemispheric grid, with synthetic data
 (real per-cell time series come from
 `canvod.store.AnalysisStorage.load_percell_timeseries()`):
@@ -192,7 +192,7 @@ exploration of per-cell VOD on the hemispheric grid, with synthetic data
 - **Time series**: per-cell VOD time series plotted for selected cells
 
 ```bash
-just open-notebook 19_grid_exploration.py
+just open-notebook 15_grid_exploration.py
 ```
 
 ---

@@ -79,7 +79,7 @@ canvod-filemap = { path = "../canvodpy-extensions/packages/canvod-filemap" }
     everyone else.
     Keep the git source in version control; only override it locally.
 
-See [canvod-filemap's overview](https://nfb2021.github.io/canvodpy-extensions/packages/filemap/overview/)
+See [canvod-filemap's overview](https://extensions.canvodpy.eu/packages/filemap/overview/)
 for the recipe format and mapping API.
 
 `canvod-airflow` is installed directly (it depends on `canvodpy`, not the
@@ -89,7 +89,7 @@ other way around):
 uv add "canvod-airflow[airflow] @ git+https://github.com/nfb2021/canvodpy-extensions.git@canvod-airflow-v1.0.0#subdirectory=packages/canvod-airflow"
 ```
 
-See [canvod-airflow's overview](https://nfb2021.github.io/canvodpy-extensions/packages/airflow/overview/)
+See [canvod-airflow's overview](https://extensions.canvodpy.eu/packages/airflow/overview/)
 for DAG structure, deployment, and configuration.
 
 `canvod-adapters` is installed directly wherever you exchange data with
@@ -99,7 +99,7 @@ another program:
 uv add "canvod-adapters[store] @ git+https://github.com/nfb2021/canvodpy-extensions.git@canvod-adapters-v1.0.0#subdirectory=packages/canvod-adapters"
 ```
 
-See [canvod-adapters's overview](https://nfb2021.github.io/canvodpy-extensions/packages/adapters/overview/)
+See [canvod-adapters's overview](https://extensions.canvodpy.eu/packages/adapters/overview/)
 for the gnssvod conversion, including how merged VOD bands are imported.
 
 ## What happens if an extension isn't installed

@@ -12,7 +12,7 @@
 site_name = "canVODpy"
 site_description = "GNSS Transmissometry (GNSS-T) analysis framework for Python"
 site_author = "Nicolas Bader"
-site_url = "https://nfb2021.github.io/canvodpy/"
+site_url = "https://canvodpy.eu/"
 copyright = "Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose."
 
 repo_url = "https://github.com/nfb2021/canvodpy"
@@ -207,6 +207,11 @@ custom_checkbox = true
 # --------------------------------------------------------------------------
 [project.theme]
 language = "en"
+# The header is dark green in both color schemes, so it takes the light
+# (dark mode) logo. The favicon follows the browser's color scheme
+# (overrides/main.html adds the dark one).
+logo = "assets/logo/canvodpy_logo_dark_mode.svg"
+favicon = "assets/logo/canvodpy_favicon_bright_mode.svg"
 # Template overrides; outside docs/ so they are not published as pages.
 custom_dir = "overrides"
 

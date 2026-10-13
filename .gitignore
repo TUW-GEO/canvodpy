@@ -257,6 +257,8 @@ temp/
 # Images (generated diagrams, plots)
 *.png
 *.svg
+# ...but the logo and favicon are tracked
+!docs/assets/logo/*.svg
 
 # Custom plotting outputs
 .vod_plotly_plots/

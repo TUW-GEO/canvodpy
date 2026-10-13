@@ -51,7 +51,7 @@ site = GnssResearchSite(site_name="ExampleSite")
 
 ## Documentation
 
-[Full documentation](https://nfb2021.github.io/canvodpy/packages/store/overview/)
+[Full documentation](https://canvodpy.eu/packages/store/overview/)
 
 ## License
 

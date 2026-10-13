@@ -66,7 +66,7 @@ os.environ["CANVOD_CONFIG_DIR"] = "/path/to/config"
 
 !!! example "Try it in a notebook"
 
-    Open [Site pipeline](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/14_site_pipeline.py?mode=edit), [Running the pipeline from the command line](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/13_cli_pipeline.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Site pipeline](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/18_site_pipeline.py?mode=edit), [Running the pipeline from the command line](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/01_cli_pipeline.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
@@ -205,7 +205,7 @@ model and its output.
 
 !!! example "Try it in a notebook"
 
-    Open [VOD retrieval](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/07_vod_retrieval.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [VOD retrieval](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/10_vod_retrieval.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
@@ -245,7 +245,7 @@ optional extension; see [Optional extensions](extensions.md).
 
 !!! example "Try it in a notebook"
 
-    Open [API overview](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/12_api_overview.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [API overview](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/17_api_overview.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
