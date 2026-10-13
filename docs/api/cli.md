@@ -37,6 +37,7 @@ $ canvodpy [OPTIONS] COMMAND [ARGS]...
 * `dashboard`: Launch the marimo performance dashboard...
 * `config`: Create, check, show, and edit...
 * `store`: Inspect the Icechunk stores of the sites...
+* `stac`: Write the STAC catalog of every store...
 
 ## `canvodpy run`
 
@@ -456,5 +457,39 @@ $ canvodpy store amend [OPTIONS] {site}
 * `--from <path>`: YAML file with the keys reason, set (field paths and values), and the lists add_receivers and add_vod_analyses.
 * `--reason <str>`: Why the fields change; recorded with each one.
 * `--yes`: Amend without asking.
+* `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--help`: Show this message and exit.
+
+## `canvodpy stac`
+
+Write the STAC catalog of every store under the data root.
+
+**Usage**:
+
+```console
+$ canvodpy stac [OPTIONS] COMMAND [ARGS]...
+```
+
+**Options**:
+
+* `--help`: Show this message and exit.
+
+**Commands**:
+
+* `write`: Write the latest catalog of every store...
+
+### `canvodpy stac write`
+
+Write the latest catalog of every store under the data root.
+
+**Usage**:
+
+```console
+$ canvodpy stac write [OPTIONS]
+```
+
+**Options**:
+
+* `--root <path>`: Data root to catalog. Default: storage.stores_root_dir in the settings.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.

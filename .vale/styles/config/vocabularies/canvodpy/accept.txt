@@ -119,3 +119,5 @@ virtualenv
 howfairis
 PRs
 docstrings
+pystac
+xpystac

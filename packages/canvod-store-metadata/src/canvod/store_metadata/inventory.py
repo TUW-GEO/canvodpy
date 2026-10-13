@@ -14,20 +14,16 @@ from .io import (
     read_metadata,
     store_command,
 )
-from .location import StoreLocation, open_repository
+from .location import StoreLocation, open_repository, store_exists
 from .schema import StoreMetadata
 
 
-def _is_icechunk_store(path: Path) -> bool:
-    """Return True if path looks like an Icechunk ≥2.0 store.
-
-    Icechunk 2.x layout: snapshots/ + transactions/ directories at the root.
-    """
-    return (path / "snapshots").is_dir() and (path / "transactions").is_dir()
-
-
 def _find_icechunk_stores(root_dir: Path, recursive: bool = True) -> list[Path]:
-    """Find Icechunk stores under root_dir by their layout markers."""
+    """Find the Icechunk stores under root_dir.
+
+    A folder with a ``snapshots`` folder is a candidate; Icechunk decides
+    whether it holds a repository.
+    """
     stores: list[Path] = []
     if not root_dir.is_dir():
         return stores
@@ -37,7 +33,7 @@ def _find_icechunk_stores(root_dir: Path, recursive: bool = True) -> list[Path]:
     pattern = "**/snapshots" if recursive else "*/snapshots"
     for marker in root_dir.glob(pattern):
         candidate = marker.parent
-        if _is_icechunk_store(candidate):
+        if store_exists(candidate):
             stores.append(candidate)
 
     return sorted(set(stores))
@@ -402,7 +398,7 @@ def write_stac_catalog(
             store_id = read_metadata(sp).identity.id
             for link in catalog["links"]:
                 if link.get("href") == f"#{store_id}":
-                    link["href"] = str(rel)
+                    link["href"] = rel.as_posix()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(catalog, indent=2, default=str))
