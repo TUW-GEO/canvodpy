@@ -100,11 +100,16 @@ duplicate data.
 | `site.vod_analyses` | The receiver pairs under `vod_analyses` |
 | `site.gnss_store` | The GNSS store: observations and satellite angles |
 | `site.vod_store` | The VOD store |
+| `site.gnss_store_path`, `site.vod_store_path` | Where the stores are, from the settings; read-only |
 | `site.vod` | Computes VOD; see [Compute VOD](#compute-vod) |
 | `site.pipeline()` | Creates a `Pipeline` for this site |
 
 Both stores are [Icechunk](https://icechunk.io/) repositories; see
 [Storage](../packages/store/overview.md).
+
+A run creates a site's stores when it first writes data. Before that,
+`site.gnss_store` and `site.vod_store` raise a `FileNotFoundError`; the
+paths tell you where a run puts them.
 
 ---
 
