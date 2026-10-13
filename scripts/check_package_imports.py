@@ -9,6 +9,10 @@ does not declare in its ``pyproject.toml`` (e.g. canvod-auxiliary imported
 workspace ``.venv`` such a gap stays hidden, because the other packages
 install everything.
 
+Optional extras are not installed by this check, so a submodule that an
+optional extra provides (``canvod.viz.widgets`` behind the ``widgets``
+extra) is skipped rather than reported as a missing declared dependency.
+
 Usage: ``python scripts/check_package_imports.py [package ...]`` (default:
 all packages). Exits non-zero if any module fails to import.
 """
@@ -31,8 +35,11 @@ try:
 except Exception as exc:
     print(f"  {sys.argv[1]}: {type(exc).__name__}: {exc}")
     sys.exit(1)
+excluded = sys.argv[2:]
 failed = 0
 for mod in pkgutil.walk_packages(pkg.__path__, sys.argv[1] + "."):
+    if any(mod.name == prefix or mod.name.startswith(prefix + ".") for prefix in excluded):
+        continue
     try:
         importlib.import_module(mod.name)
     except Exception as exc:
@@ -51,6 +58,21 @@ def _packages() -> dict[str, str]:
     return found
 
 
+def _optional_excludes(dist_name: str, import_name: str) -> list[str]:
+    """Submodule prefixes behind a package's optional extras.
+
+    An optional extra is not installed by this check (``--no-dev``), so a
+    submodule it provides would fail to import on purpose. We skip any
+    submodule named ``<import name>.<extra>`` (the extra name with ``-``
+    mapped to ``_``), which matches e.g. the ``widgets`` extra of
+    canvod-viz and its ``canvod.viz.widgets`` subpackage.
+    """
+    pyproject = ROOT / "packages" / dist_name / "pyproject.toml"
+    data = tomllib.loads(pyproject.read_text())
+    extras = data.get("project", {}).get("optional-dependencies", {})
+    return [f"{import_name}.{extra.replace('-', '_')}" for extra in extras]
+
+
 def main(argv: list[str]) -> int:
     packages = _packages()
     selected = argv or list(packages)
@@ -61,11 +83,13 @@ def main(argv: list[str]) -> int:
 
     failed = []
     for name in selected:
+        import_name = packages[name]
         result = subprocess.run(
             [
                 "uv", "run", "--frozen", "--isolated", "--quiet",
                 "--package", name, "--no-dev",
-                "python", "-c", IMPORT_ALL, packages[name],
+                "python", "-c", IMPORT_ALL, import_name,
+                *_optional_excludes(name, import_name),
             ],
             cwd=ROOT,
             capture_output=True,
