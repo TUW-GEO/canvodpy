@@ -5,11 +5,13 @@ from pathlib import Path
 
 import icechunk
 import pytest
+from canvod.config.models.compression import IcechunkConfig
 
 from canvod.store_metadata import (
     commit_lock,
     open_repository,
     read_store_uuid,
+    repository_config,
     store_location,
 )
 from canvod.store_metadata.io import (
@@ -110,6 +112,42 @@ class TestOpenRepository:
         repo = open_repository(tmp_path / "store", create=True, config=config)
 
         assert repo.config.inline_chunk_threshold_bytes == 17
+
+    def test_refuses_to_create_where_other_files_are(self, tmp_path: Path) -> None:
+        store = tmp_path / "store"
+        store.mkdir()
+        (store / "notes.txt").write_text("Entmoot, day 3")
+
+        with pytest.raises(ValueError, match="holds files but no store"):
+            open_repository(store, create=True)
+
+        assert sorted(p.name for p in store.iterdir()) == ["notes.txt"]
+
+
+class TestRepositoryConfig:
+    def test_a_new_store_keeps_the_settings_configuration(self, tmp_path: Path) -> None:
+        settings = IcechunkConfig(inline_chunk_threshold_bytes=17)
+
+        open_repository(
+            tmp_path / "store", create=True, config=repository_config(settings)
+        )
+
+        reopened = open_repository(tmp_path / "store")
+        assert reopened.config.inline_chunk_threshold_bytes == 17
+
+    def test_an_unset_cache_size_keeps_the_icechunk_default(self) -> None:
+        config = repository_config(IcechunkConfig(cache_num_bytes_chunks=1024))
+
+        default = icechunk.CachingConfig.default()  # ty: ignore[unresolved-attribute]
+        assert config.caching.num_bytes_chunks == 1024
+        assert config.caching.num_chunk_refs == default.num_chunk_refs
+
+    def test_a_compression_level_overrides_the_settings(self) -> None:
+        config = repository_config(
+            IcechunkConfig(compression_level=3), compression_level=9
+        )
+
+        assert config.compression.level == 9
 
 
 class TestCommitLockTakesALocation:

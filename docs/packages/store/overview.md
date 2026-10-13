@@ -163,14 +163,23 @@ ds_range = site.gnss_store.read_group(
 value is needed. For more about reading, chunks, and earlier states of a
 store, see [Versioning with Icechunk](icechunk.md).
 
-To open a store by its path, use `create_gnss_store()` or
-`create_vod_store()`:
+To open a store by its path, use `open_gnss_store()` or
+`open_vod_store()`:
 
 ```python
-from canvod.store import create_gnss_store
+from canvod.store import open_gnss_store
 
-store = create_gnss_store("/data/stores/ExampleSite/rinex")
+store = open_gnss_store("/data/stores/ExampleSite/rinex")
 ```
+
+Opening a store never creates one: a path without a store raises a
+`FileNotFoundError` that names the path. A run creates a site's stores
+when it first writes data, together with their metadata (see
+[canvod-store-metadata](../store-metadata/overview.md)). `Site` opens its
+stores only when you first use them, so a new site has no stores until a
+run writes to it. `create_gnss_store()` and `create_vod_store()` are left
+over from development: they open a store as well, and are removed with
+the next major version.
 
 ## History
 

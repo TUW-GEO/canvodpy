@@ -15,6 +15,8 @@ from canvod.store.store import (
     MyIcechunkStore,
     create_gnss_store,
     create_vod_store,
+    open_gnss_store,
+    open_vod_store,
 )
 from canvod.store.zarr_concurrency import scoped_zarr_concurrency
 
@@ -27,6 +29,8 @@ __all__ = [
     "MyIcechunkStore",
     "create_gnss_store",
     "create_vod_store",
+    "open_gnss_store",
+    "open_vod_store",
     "load_grid",
     "scoped_zarr_concurrency",
     "store_grid",

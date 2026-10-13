@@ -70,9 +70,7 @@ class TestAirflowTasks:
         from canvodpy.workflows import tasks
 
         site = GnssResearchSite(testing.SITE_KEY)
-        give_test_metadata(
-            site.gnss_store.store_path, receivers={"canopy_01": "canopy"}
-        )
+        give_test_metadata(site.gnss_store_path, receivers={"canopy_01": "canopy"})
 
         with (
             pytest.warns(FutureWarning),
@@ -87,6 +85,29 @@ class TestAirflowTasks:
 
 
 class TestResearchSite:
+    def test_a_new_site_has_no_stores_until_a_run_creates_them(self, site_settings):
+        site = GnssResearchSite(testing.SITE_KEY)
+
+        assert not site.gnss_store_path.exists()
+        assert not site.vod_store_path.exists()
+        with pytest.raises(FileNotFoundError, match="a run creates a store"):
+            _ = site.gnss_store
+
+    def test_a_run_creates_the_store_with_the_settings_configuration(
+        self, site_settings
+    ):
+        from canvod.config import load_config
+
+        site = GnssResearchSite(testing.SITE_KEY)
+
+        site.ingest_receiver_data(_observations(), "canopy_01", "first day")
+
+        reopened = icechunk.Repository.open(
+            icechunk.local_filesystem_storage(str(site.gnss_store_path))
+        )
+        expected = load_config().processing.icechunk.inline_chunk_threshold_bytes
+        assert reopened.config.inline_chunk_threshold_bytes == expected
+
     def test_ingested_data_lands_in_a_store_with_metadata(self, site_settings):
         site = GnssResearchSite(testing.SITE_KEY)
 
@@ -98,7 +119,7 @@ class TestResearchSite:
 
     def test_vod_of_an_unlisted_analysis_is_refused(self, site_settings):
         site = GnssResearchSite(testing.SITE_KEY)
-        give_test_metadata(site.vod_store.store_path, "vod_store", vod_analyses={})
+        give_test_metadata(site.vod_store_path, "vod_store", vod_analyses={})
 
         with pytest.raises(
             ValueError, match="--add-vod-analysis canopy_01_vs_reference_01"

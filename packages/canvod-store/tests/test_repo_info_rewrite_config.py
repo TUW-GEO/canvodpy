@@ -16,6 +16,7 @@ from types import SimpleNamespace
 
 import pytest
 from canvod.config.models import IcechunkConfig
+from canvod.store_metadata.testing import create_test_store
 
 from canvod.store import MyIcechunkStore
 
@@ -38,7 +39,7 @@ def test_default_config_leaves_repo_info_knobs_untouched(
     monkeypatch.setattr(
         "canvod.config.load_config", lambda: _fake_cfg(IcechunkConfig())
     )
-    store = MyIcechunkStore(tmp_path / "site" / "gnss_store")
+    store = MyIcechunkStore(create_test_store(tmp_path / "site" / "gnss_store"))
     assert store.config.num_updates_per_repo_info_file is None
     assert store.config.repo_update_retries is None
 
@@ -48,7 +49,7 @@ def test_num_updates_per_repo_info_file_is_threaded(
 ) -> None:
     ic_cfg = IcechunkConfig(num_updates_per_repo_info_file=50)
     monkeypatch.setattr("canvod.config.load_config", lambda: _fake_cfg(ic_cfg))
-    store = MyIcechunkStore(tmp_path / "site" / "gnss_store")
+    store = MyIcechunkStore(create_test_store(tmp_path / "site" / "gnss_store"))
     assert store.config.num_updates_per_repo_info_file == 50
 
 
@@ -60,7 +61,7 @@ def test_repo_update_retries_partial_settings_are_threaded(
     # default), not silently coerced to some other value.
     ic_cfg = IcechunkConfig(repo_update_max_tries=5)
     monkeypatch.setattr("canvod.config.load_config", lambda: _fake_cfg(ic_cfg))
-    store = MyIcechunkStore(tmp_path / "site" / "gnss_store")
+    store = MyIcechunkStore(create_test_store(tmp_path / "site" / "gnss_store"))
 
     retries = store.config.repo_update_retries
     assert retries is not None
@@ -78,7 +79,7 @@ def test_repo_update_retries_full_settings_roundtrip(
         repo_update_max_backoff_ms=5_000,
     )
     monkeypatch.setattr("canvod.config.load_config", lambda: _fake_cfg(ic_cfg))
-    store = MyIcechunkStore(tmp_path / "site" / "gnss_store")
+    store = MyIcechunkStore(create_test_store(tmp_path / "site" / "gnss_store"))
 
     retries = store.config.repo_update_retries
     assert retries is not None

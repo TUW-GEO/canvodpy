@@ -1444,7 +1444,7 @@ class RinexDataProcessor:
 
         resources = self._config.processing.params.resolve_resources()
         ensure_store_metadata(
-            self.site.gnss_store.store_path,
+            self.site.gnss_store_path,
             config=self._config,
             site_name=self.site.site_name,
             store_type="gnss_store",

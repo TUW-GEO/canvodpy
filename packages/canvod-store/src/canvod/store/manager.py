@@ -7,6 +7,7 @@ for a research site and provides high-level operations across them.
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
@@ -26,10 +27,11 @@ from canvod.utils.tools import deprecated
 
 from canvod.store.prepare import prepare_write
 from canvod.store.store import (
+    MyIcechunkStore,
     VodWriteItem,
     VodWriteResult,
-    create_gnss_store,
-    create_vod_store,
+    open_gnss_store,
+    open_vod_store,
 )
 
 
@@ -87,18 +89,38 @@ class GnssResearchSite:
         self._site_config = sites[site_name]
         self._logger = structlog.get_logger(__name__).bind(site=site_name)
 
-        gnss_store_path = config.processing.storage.get_gnss_store_path(site_name)
-        vod_store_path = config.processing.storage.get_vod_store_path(site_name)
-
-        # Initialize stores using paths from the processing: settings
-        self.gnss_store = create_gnss_store(gnss_store_path)
-        self.vod_store = create_vod_store(vod_store_path)
+        # The stores open on first use: a run creates them first
+        # (ensure_store_metadata), so a new site has none yet.
+        self.gnss_store_path = config.processing.storage.get_gnss_store_path(site_name)
+        self.vod_store_path = config.processing.storage.get_vod_store_path(site_name)
 
         self._logger.info(
             f"Initialized GNSS research site: {site_name}",
-            gnss_store=str(gnss_store_path),
-            vod_store=str(vod_store_path),
+            gnss_store=str(self.gnss_store_path),
+            vod_store=str(self.vod_store_path),
         )
+
+    @functools.cached_property
+    def gnss_store(self) -> MyIcechunkStore:
+        """The site's GNSS store, opened on first use.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the store doesn't exist yet; a run creates it.
+        """
+        return open_gnss_store(self.gnss_store_path)
+
+    @functools.cached_property
+    def vod_store(self) -> MyIcechunkStore:
+        """The site's VOD store, opened on first use.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the store doesn't exist yet; a run creates it.
+        """
+        return open_vod_store(self.vod_store_path)
 
     @property
     def site_config(self) -> dict[str, Any]:
@@ -356,9 +378,11 @@ class GnssResearchSite:
         """
         from canvod.store_metadata import ensure_store_metadata
 
-        store = self.vod_store if store_type == "vod_store" else self.gnss_store
+        store_path = (
+            self.vod_store_path if store_type == "vod_store" else self.gnss_store_path
+        )
         return ensure_store_metadata(
-            store.store_path,
+            store_path,
             config=self._config,
             site_name=self.site_name,
             store_type=store_type,
@@ -949,8 +973,8 @@ class GnssResearchSite:
                 "vod_groups": vod_groups,
             },
             "stores": {
-                "gnss_store_path": str(self.gnss_store.store_path),
-                "vod_store_path": str(self.vod_store.store_path),
+                "gnss_store_path": str(self.gnss_store_path),
+                "vod_store_path": str(self.vod_store_path),
             },
         }
 

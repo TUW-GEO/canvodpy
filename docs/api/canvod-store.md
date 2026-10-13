@@ -8,8 +8,8 @@ Versioned data storage using Icechunk.
     options:
       members:
         - MyIcechunkStore
-        - create_gnss_store
-        - create_vod_store
+        - open_gnss_store
+        - open_vod_store
         - GnssResearchSite
         - store_grid
         - load_grid

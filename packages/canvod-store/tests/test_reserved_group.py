@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import zarr
 from canvod.store_metadata import RESERVED_GROUP
+from canvod.store_metadata.testing import create_test_store
 
 from canvod.store import MyIcechunkStore
 
 
 def test_group_listings_leave_out_the_reserved_group(tmp_path):
-    store = MyIcechunkStore(tmp_path / "store")
+    store = MyIcechunkStore(create_test_store(tmp_path / "store"))
     with store.writable_session() as session:
         root = zarr.open_group(session.store, mode="w")
         root.require_group(f"{RESERVED_GROUP}/environments")

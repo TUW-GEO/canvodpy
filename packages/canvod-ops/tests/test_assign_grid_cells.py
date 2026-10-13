@@ -17,9 +17,9 @@ from canvod.config.models import (
 )
 from canvod.grids import add_cell_ids_to_ds_fast, create_hemigrid
 from canvod.ops import assign_grid_cells_in_store, preprocess_files
-from canvod.store import create_gnss_store
+from canvod.store import open_gnss_store
 from canvod.store.prepare import GroupVariablesMismatchError
-from canvod.store_metadata.testing import give_test_metadata
+from canvod.store_metadata.testing import create_test_store, give_test_metadata
 
 _GROUP = "canopy_01"
 _CELLS = "cell_id_equal_area_10.0deg"
@@ -52,7 +52,7 @@ def _file(day: int, preprocessing: PreprocessingConfig | None) -> xr.Dataset:
 
 @pytest.fixture
 def store(tmp_path):
-    store = create_gnss_store(tmp_path / "site" / "gnss_store")
+    store = open_gnss_store(create_test_store(tmp_path / "site" / "gnss_store"))
     give_test_metadata(store.store_path)
     store.write_initial_group(_file(1, None), _GROUP)
     store.append_to_group(_file(2, None), _GROUP)

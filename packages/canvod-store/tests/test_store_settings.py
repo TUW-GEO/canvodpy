@@ -15,6 +15,7 @@ from canvod.store_metadata.schema import (
     StoreMetadata,
     TemporalExtent,
 )
+from canvod.store_metadata.testing import create_test_store
 
 from canvod.store import MyIcechunkStore
 
@@ -41,7 +42,7 @@ def no_settings_loading(monkeypatch):
 def test_the_store_uses_the_settings_it_is_given(
     tmp_path, settings, no_settings_loading
 ):
-    store = MyIcechunkStore(tmp_path / "store", config=settings)
+    store = MyIcechunkStore(create_test_store(tmp_path / "store"), config=settings)
 
     assert store.chunk_strategy["epoch"] == 7
 

@@ -1,12 +1,12 @@
 """Stores with made-up repository metadata, for tests.
 
-A store takes no data without its repository metadata (ADR 0014). Tests
-that write to a store directly, without a run, give it metadata first:
+A store takes no data without its repository metadata (ADR 0014), and
+opening a store never creates it. Tests that write to a store directly,
+without a run, create it with metadata first:
 
     from canvod.store_metadata.testing import give_test_metadata
 
-    store = MyIcechunkStore(tmp_path / "store")
-    give_test_metadata(store.store_path)
+    store = MyIcechunkStore(give_test_metadata(tmp_path / "store"))
 
 The metadata describes the made-up site of :mod:`canvod.utils.testing`.
 """
@@ -97,6 +97,22 @@ def made_up_metadata(
         if store_type == "vod_store"
         else {},
     )
+
+
+def create_test_store(store_path: Path | str) -> Path:
+    """Create an empty store at ``store_path``, without repository metadata.
+
+    For tests that don't write data, or that test a store without
+    metadata; tests that write data use :func:`give_test_metadata`.
+
+    Returns
+    -------
+    Path
+        ``store_path``.
+    """
+    path = Path(store_path)
+    open_repository(path, create=True)
+    return path
 
 
 def give_test_metadata(

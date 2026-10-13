@@ -15,8 +15,9 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import zarr
+from canvod.store_metadata.testing import create_test_store
 
-from canvod.store import create_vod_store
+from canvod.store import open_vod_store
 
 
 class TestExpireOldSnapshotsDefaults:
@@ -165,7 +166,7 @@ class TestGarbageCollectWrapper:
 class TestCreateKeeperTag:
     def test_creates_tag_on_real_store(self, tmp_path: Path) -> None:
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
@@ -181,7 +182,7 @@ class TestCreateKeeperTag:
 
     def test_duplicate_tag_returns_false_without_raising(self, tmp_path: Path) -> None:
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
@@ -233,7 +234,7 @@ class TestMaintenanceDue:
 
     def test_never_maintained_expire_due_gc_not_due(self, tmp_path: Path) -> None:
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
             root.create_group("canopy")
@@ -254,7 +255,7 @@ class TestMaintenanceDue:
         snapshots are protected) -- so due-checking doesn't need to special
         -case "nothing was actually expired"."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
             root.create_group("canopy")
@@ -271,7 +272,7 @@ class TestMaintenanceDue:
         self, tmp_path: Path
     ) -> None:
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
             root.create_group("canopy")
@@ -290,7 +291,7 @@ class TestMaintenanceDue:
         empirically: garbage_collect(dry_run=True) writes no GCRan entry) --
         only a real GC should clear gc_due."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
             root.create_group("canopy")
@@ -322,7 +323,7 @@ class TestManifestCompaction:
         from icechunk.xarray import to_icechunk
 
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
         with store.writable_session() as session:
             for i in range(n_commits):
                 ds = xr.Dataset(

@@ -50,12 +50,10 @@ def build_store(store_path: Path) -> dict:
 
     if store_path.exists():
         shutil.rmtree(store_path)
-    store_path.mkdir(parents=True)
 
-    store = MyIcechunkStore(store_path)
     # A store takes no data without repository metadata (ADR 0014); its
     # commit is the first of the history.
-    give_test_metadata(store_path)
+    store = MyIcechunkStore(give_test_metadata(store_path))
     datasets = [make_synthetic_dataset(slot=i) for i in range(4)]
 
     # Write slot 0 as initial, append slots 1-3.

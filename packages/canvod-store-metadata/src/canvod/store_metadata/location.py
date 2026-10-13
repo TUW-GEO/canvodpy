@@ -10,8 +10,12 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING
 
 import icechunk
+
+if TYPE_CHECKING:
+    from canvod.config.models.compression import IcechunkConfig
 
 #: The command that moves a store to the metadata form of ADR 0014.
 MIGRATE_COMMAND = "canvodpy store migrate-metadata"
@@ -160,6 +164,96 @@ def store_location(location: StoreLocation | Path | str) -> StoreLocation:
     return S3StoreLocation(bucket, prefix)
 
 
+def repository_config(
+    settings: IcechunkConfig, *, compression_level: int | None = None
+) -> icechunk.RepositoryConfig:
+    """The repository configuration ``processing.icechunk`` asks for.
+
+    A store's repository and the step that creates it use this one
+    configuration, so a new store records the settings, not Icechunk's
+    defaults.
+
+    Parameters
+    ----------
+    settings
+        The ``processing.icechunk`` settings.
+    compression_level
+        A compression level other than the one in ``settings``.
+    """
+    config = icechunk.RepositoryConfig.default()
+    config.compression = icechunk.CompressionConfig(
+        level=compression_level or settings.compression_level,
+        algorithm=icechunk.CompressionAlgorithm.Zstd,
+    )
+    config.inline_chunk_threshold_bytes = settings.inline_chunk_threshold_bytes
+    config.get_partial_values_concurrency = settings.get_partial_values_concurrency
+    if settings.max_concurrent_requests is not None:
+        config.max_concurrent_requests = settings.max_concurrent_requests
+
+    if (
+        settings.cache_num_chunk_refs is not None
+        or settings.cache_num_bytes_chunks is not None
+    ):
+        # None keeps Icechunk's default for that cache
+        config.caching = icechunk.CachingConfig(
+            num_chunk_refs=settings.cache_num_chunk_refs,
+            num_bytes_chunks=settings.cache_num_bytes_chunks,
+        )
+
+    preload = None
+    if settings.manifest_preload_enabled:
+        preload = icechunk.ManifestPreloadConfig(
+            max_total_refs=settings.manifest_preload_max_refs,
+            max_arrays_to_scan=settings.manifest_preload_max_arrays_to_scan,
+            preload_if=icechunk.ManifestPreloadCondition.name_matches(
+                settings.manifest_preload_pattern
+            ),
+        )
+
+    splitting = None
+    if settings.manifest_splitting_enabled:
+        # Split every array with an "epoch" dimension every
+        # manifest_splitting_epoch_range indices; arrays without that
+        # dimension (for example coordinates) are left whole.
+        splitting = icechunk.ManifestSplittingConfig.from_dict(
+            {
+                icechunk.ManifestSplitCondition.name_matches(".*"): {
+                    icechunk.ManifestSplitDimCondition.DimensionName(
+                        "epoch"
+                    ): settings.manifest_splitting_epoch_range,
+                },
+            }
+        )
+
+    if settings.num_updates_per_repo_info_file is not None:
+        config.num_updates_per_repo_info_file = settings.num_updates_per_repo_info_file
+
+    if (
+        settings.repo_update_max_tries is not None
+        or settings.repo_update_initial_backoff_ms is not None
+        or settings.repo_update_max_backoff_ms is not None
+    ):
+        # RepoUpdateRetryConfig is documented as
+        # `icechunk.config.RepoUpdateRetryConfig` but not re-exported there
+        # or at `icechunk` as of icechunk==2.1.1, an upstream gap. Prefer
+        # the public path in case a later release adds it.
+        try:
+            from icechunk import RepoUpdateRetryConfig
+        except ImportError:
+            from icechunk._icechunk_python import RepoUpdateRetryConfig
+        config.repo_update_retries = RepoUpdateRetryConfig(
+            default=icechunk.StorageRetriesSettings(
+                max_tries=settings.repo_update_max_tries,
+                initial_backoff_ms=settings.repo_update_initial_backoff_ms,
+                max_backoff_ms=settings.repo_update_max_backoff_ms,
+            )
+        )
+
+    if preload is not None or splitting is not None:
+        config.manifest = icechunk.ManifestConfig(preload=preload, splitting=splitting)
+    return config
+
+
 def open_repository(
     location: StoreLocation | Path | str,
     *,
@@ -193,8 +287,9 @@ def open_repository(
     FileExistsError
         If ``create`` is true and a repository is already at ``location``.
     ValueError
-        If ``expected_uuid`` is given and the store has another UUID or no
-        repository metadata.
+        If ``create`` is true and ``location`` holds files but no
+        repository, or if ``expected_uuid`` is given and the store has
+        another UUID or no repository metadata.
     """
     where = store_location(location)
     storage = where.storage()
@@ -207,7 +302,19 @@ def open_repository(
         if exists:
             msg = f"A store already exists at {where}; it was not created again."
             raise FileExistsError(msg)
-        return icechunk.Repository.create(storage=storage, config=config)
+        try:
+            return icechunk.Repository.create(storage=storage, config=config)
+        except icechunk.InvalidInputError as error:
+            # Icechunk creates only in an empty location. Another process
+            # may have created the store since the check above.
+            if icechunk.Repository.exists(storage):
+                msg = f"A store already exists at {where}; it was not created again."
+                raise FileExistsError(msg) from error
+            msg = (
+                f"{where} holds files but no store; a store is created only "
+                "in an empty location. Nothing was created."
+            )
+            raise ValueError(msg) from error
     if not exists:
         msg = (
             f"No store at {where}. Check the path; a run creates a store "

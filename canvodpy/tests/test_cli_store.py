@@ -50,8 +50,7 @@ def _write_synthetic_store(store_path, n_slots: int = 2) -> None:
     from canvod.store import MyIcechunkStore
     from canvod.store_metadata.testing import give_test_metadata
 
-    icestore = MyIcechunkStore(store_path, store_type="gnss_store")
-    give_test_metadata(store_path)
+    icestore = MyIcechunkStore(give_test_metadata(store_path), store_type="gnss_store")
     for slot in range(n_slots):
         icestore.write_or_append_group(
             _make_dataset(slot),

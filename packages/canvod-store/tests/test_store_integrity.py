@@ -17,15 +17,16 @@ import numpy as np
 import pytest
 import xarray as xr
 import zarr
+from canvod.store_metadata.testing import create_test_store
 
-from canvod.store import create_vod_store
+from canvod.store import open_vod_store
 
 
 @pytest.fixture
 def vod_store(tmp_path: Path):
     """Create temporary VOD store for testing."""
     store_path = tmp_path / "test_site" / "vod_store"
-    return create_vod_store(store_path)
+    return open_vod_store(create_test_store(store_path))
 
 
 class TestDatatypePreservation:

@@ -30,11 +30,11 @@ checkout, point it at a settings file with:
 ## Quick Start
 
 ```python
-from canvod.store import create_gnss_store, GnssResearchSite
+from canvod.store import open_gnss_store, GnssResearchSite
 from pathlib import Path
 
-# Create stores
-gnss_store = create_gnss_store(Path("./gnss_store"))
+# Open a store; a run creates it when it first writes data
+gnss_store = open_gnss_store(Path("./gnss_store"))
 
 # Or use site manager
 site = GnssResearchSite(site_name="ExampleSite")
@@ -42,7 +42,7 @@ site = GnssResearchSite(site_name="ExampleSite")
 
 ## Features
 
-- Automatic repository creation/connection
+- Opening a store never creates one, so a mistyped path fails
 - Group management with validation
 - Session management with context managers
 - Integrated logging and metadata tracking

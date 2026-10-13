@@ -197,19 +197,15 @@ def new_gnss_store(path: Path):
     """
     from canvod.store_metadata.testing import give_test_metadata
 
-    from canvod.store import create_gnss_store
+    from canvod.store import open_gnss_store
 
-    store = create_gnss_store(path)
-    give_test_metadata(store.store_path, "gnss_store")
-    return store
+    return open_gnss_store(give_test_metadata(path, "gnss_store"))
 
 
 def new_vod_store(path: Path):
     """A new VOD store with the made-up site's repository metadata."""
     from canvod.store_metadata.testing import give_test_metadata
 
-    from canvod.store import create_vod_store
+    from canvod.store import open_vod_store
 
-    store = create_vod_store(path)
-    give_test_metadata(store.store_path, "vod_store")
-    return store
+    return open_vod_store(give_test_metadata(path, "vod_store"))

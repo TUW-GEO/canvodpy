@@ -85,7 +85,7 @@ namespace `canvod`:
 from canvod.readers import Rnxv3Obs
 from canvod.grids import create_hemigrid
 from canvod.vod import TauOmegaZerothOrder
-from canvod.store import create_gnss_store
+from canvod.store import open_gnss_store
 ```
 
 [Namespace packages](namespace-packages.md) explains how separate

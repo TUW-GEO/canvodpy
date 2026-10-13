@@ -14,6 +14,7 @@ from canvod.store_metadata import (
     ensure_metadata,
     ensure_store_metadata,
     metadata_exists,
+    open_repository,
 )
 from canvod.store_metadata.schema import (
     Creator,
@@ -76,6 +77,23 @@ def _ensure(path: Path, metadata: StoreMetadata | None = None) -> dict:
 
 
 class TestEnsureMetadata:
+    def test_a_missing_store_is_created_with_the_configuration(self, tmp_path):
+        config = icechunk.RepositoryConfig.default()
+        config.inline_chunk_threshold_bytes = 17
+        meta = _metadata()
+
+        repository = ensure_metadata(
+            tmp_path / "store",
+            lambda: meta,
+            site_name="Fangorn",
+            store_type=meta.identity.store_type,
+            config=config,
+        )
+
+        assert repository["identity"]["id"] == "fangorn-gnss"
+        reopened = open_repository(tmp_path / "store")
+        assert reopened.config.inline_chunk_threshold_bytes == 17
+
     def test_a_new_store_gets_its_metadata(self, tmp_path):
         path = _new_store(tmp_path)
 

@@ -36,8 +36,13 @@ from canvod.store_metadata.io import (
     rewrite_manifests,
     store_command,
 )
+from canvod.store_metadata.location import open_repository, repository_config
 from canvod.utils.logging import get_run_id, stage_timer
-from canvod.utils.tools import get_version_from_pyproject, sanitize_directory
+from canvod.utils.tools import (
+    deprecated,
+    get_version_from_pyproject,
+    sanitize_directory,
+)
 from icechunk.session import ForkSession
 from icechunk.xarray import to_icechunk
 from zarr.dtype import VariableLengthUTF8
@@ -466,104 +471,27 @@ class MyIcechunkStore:
         self._log_path_depth = _log_path_depth
         self._zarr_async_concurrency = ic_cfg.zarr_async_concurrency
 
-        # Configure repository
-        self.config = icechunk.RepositoryConfig.default()
-        self.config.compression = icechunk.CompressionConfig(
-            level=self.compression_level, algorithm=self.compression_algorithm
+        # The same repository configuration a run creates a new store with
+        self.config = repository_config(
+            ic_cfg, compression_level=self.compression_level
         )
-        self.config.inline_chunk_threshold_bytes = ic_cfg.inline_chunk_threshold_bytes
-        self.config.get_partial_values_concurrency = (
-            ic_cfg.get_partial_values_concurrency
-        )
-
-        if ic_cfg.max_concurrent_requests is not None:
-            self.config.max_concurrent_requests = ic_cfg.max_concurrent_requests
-
-        if (
-            ic_cfg.cache_num_chunk_refs is not None
-            or ic_cfg.cache_num_bytes_chunks is not None
-        ):  # noqa: E501
-            caching = icechunk.CachingConfig.default()
-            if ic_cfg.cache_num_chunk_refs is not None:
-                caching.num_chunk_refs = ic_cfg.cache_num_chunk_refs
-            if ic_cfg.cache_num_bytes_chunks is not None:
-                caching.num_bytes_chunks = ic_cfg.cache_num_bytes_chunks
-            self.config.caching = caching
-
-        preload_cfg = None
         if ic_cfg.manifest_preload_enabled:
-            preload_cfg = icechunk.ManifestPreloadConfig(
-                max_total_refs=ic_cfg.manifest_preload_max_refs,
-                max_arrays_to_scan=ic_cfg.manifest_preload_max_arrays_to_scan,
-                preload_if=icechunk.ManifestPreloadCondition.name_matches(
-                    ic_cfg.manifest_preload_pattern
-                ),
-            )
             self._logger.info(
                 "Manifest preload enabled: "
                 f"pattern={ic_cfg.manifest_preload_pattern!r}, "
                 f"max_refs={ic_cfg.manifest_preload_max_refs}"
             )
-
-        splitting_cfg = None
         if ic_cfg.manifest_splitting_enabled:
-            from icechunk import (
-                ManifestSplitCondition,
-                ManifestSplitDimCondition,
-                ManifestSplittingConfig,
-            )
-
-            _n_ep = ic_cfg.manifest_splitting_epoch_range
-            # Split all arrays that have an "epoch" dimension every _n_ep indices.
-            # Arrays without that dimension (e.g. coordinate arrays) are unaffected.
-            splitting_cfg = ManifestSplittingConfig.from_dict(
-                {
-                    ManifestSplitCondition.name_matches(".*"): {
-                        ManifestSplitDimCondition.DimensionName("epoch"): _n_ep,
-                    },
-                }
-            )
-            self._logger.info(f"Manifest splitting enabled: epoch_range={_n_ep}")
-
-        if ic_cfg.num_updates_per_repo_info_file is not None:
-            self.config.num_updates_per_repo_info_file = (
-                ic_cfg.num_updates_per_repo_info_file
-            )
-
-        if (
-            ic_cfg.repo_update_max_tries is not None
-            or ic_cfg.repo_update_initial_backoff_ms is not None
-            or ic_cfg.repo_update_max_backoff_ms is not None
-        ):
-            # RepoUpdateRetryConfig is documented (and self-reports its own
-            # __repr__ path as) `icechunk.config.RepoUpdateRetryConfig`, but
-            # is not actually re-exported at either `icechunk` or
-            # `icechunk.config` as of icechunk==2.1.1 -- an upstream gap, not
-            # intentional privacy. Prefer the public path in case a future
-            # release fixes it; fall back to the private module otherwise.
-            try:
-                from icechunk import RepoUpdateRetryConfig
-            except ImportError:
-                from icechunk._icechunk_python import RepoUpdateRetryConfig
-            self.config.repo_update_retries = RepoUpdateRetryConfig(
-                default=icechunk.StorageRetriesSettings(
-                    max_tries=ic_cfg.repo_update_max_tries,
-                    initial_backoff_ms=ic_cfg.repo_update_initial_backoff_ms,
-                    max_backoff_ms=ic_cfg.repo_update_max_backoff_ms,
-                )
-            )
-
-        if preload_cfg is not None or splitting_cfg is not None:
-            self.config.manifest = icechunk.ManifestConfig(
-                preload=preload_cfg,
-                splitting=splitting_cfg,
+            self._logger.info(
+                "Manifest splitting enabled: "
+                f"epoch_range={ic_cfg.manifest_splitting_epoch_range}"
             )
 
         self._repo = None
 
         # Remove .DS_Store files that corrupt icechunk ref listing on macOS
         self._clean_ds_store()
-        self._ensure_store_exists()
+        self._open()
 
     def _to_icechunk_throttled(
         self, dataset: xr.Dataset, session, *, throttle: bool | None = None, **kwargs
@@ -750,23 +678,26 @@ class MyIcechunkStore:
                 ds[name] = ds[name].compute()
         return ds
 
-    def _ensure_store_exists(self) -> None:
-        """Ensure the store exists, creating if necessary."""
-        storage = icechunk.local_filesystem_storage(str(self.store_path))
+    def _open(self) -> None:
+        """Open the store's repository; never create it.
 
-        if self.store_path.exists() and any(self.store_path.iterdir()):
-            self._logger.info(f"Opening existing Icechunk store at {self.store_path}")
-            self._repo = icechunk.Repository.open(storage=storage, config=self.config)
-        else:
-            self._logger.info(f"Creating new Icechunk store at {self.store_path}")
-            self.store_path.mkdir(parents=True, exist_ok=True)
-            self._repo = icechunk.Repository.create(storage=storage, config=self.config)
+        Only the step every run takes first (``ensure_store_metadata``)
+        creates a store, so a mistyped path fails here instead of leaving
+        an empty store behind.
+
+        Raises
+        ------
+        FileNotFoundError
+            If no store is at ``store_path``.
+        """
+        self._logger.info(f"Opening Icechunk store at {self.store_path}")
+        self._repo = open_repository(self.store_path, config=self.config)
 
     @property
     def repo(self) -> icechunk.Repository:
         """Get the repository instance."""
         if self._repo is None:
-            self._ensure_store_exists()
+            self._open()
         return self._repo
 
     @property
@@ -4733,35 +4664,47 @@ class MyIcechunkStore:
 
 
 # Factory functions for common use cases
-def create_gnss_store(store_path: Path) -> MyIcechunkStore:
-    """
-    Create a RINEX Icechunk store with appropriate configuration.
+def open_gnss_store(store_path: Path) -> MyIcechunkStore:
+    """Open the GNSS store at ``store_path``; never create it.
 
-    Parameters
-    ----------
-    store_path : Path
-        Path to the store directory.
+    A run creates a site's stores when it first writes to them.
 
-    Returns
-    -------
-    MyIcechunkStore
-        Configured store for RINEX data.
+    Raises
+    ------
+    FileNotFoundError
+        If no store is at ``store_path``.
     """
     return MyIcechunkStore(store_path=store_path, store_type="gnss_store")
 
 
-def create_vod_store(store_path: Path) -> MyIcechunkStore:
-    """
-    Create a VOD Icechunk store with appropriate configuration.
+def open_vod_store(store_path: Path) -> MyIcechunkStore:
+    """Open the VOD store at ``store_path``; never create it.
 
-    Parameters
-    ----------
-    store_path : Path
-        Path to the store directory.
+    A run creates a site's stores when it first writes to them.
 
-    Returns
-    -------
-    MyIcechunkStore
-        Configured store for VOD analysis data.
+    Raises
+    ------
+    FileNotFoundError
+        If no store is at ``store_path``.
     """
     return MyIcechunkStore(store_path=store_path, store_type="vod_store")
+
+
+@deprecated(
+    "create_gnss_store() is left over from development and will be removed "
+    "with the next major version. "
+    "It opens a store and never creates one; use open_gnss_store() instead."
+)
+def create_gnss_store(store_path: Path) -> MyIcechunkStore:
+    """Deprecated: use :func:`open_gnss_store`, which this calls."""
+    return open_gnss_store(store_path)
+
+
+@deprecated(
+    "create_vod_store() is left over from development and will be removed "
+    "with the next major version. "
+    "It opens a store and never creates one; use open_vod_store() instead."
+)
+def create_vod_store(store_path: Path) -> MyIcechunkStore:
+    """Deprecated: use :func:`open_vod_store`, which this calls."""
+    return open_vod_store(store_path)

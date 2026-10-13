@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Callable, Generator, Iterable, Mapping
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -22,6 +22,7 @@ from .location import (
     MIGRATE_COMMAND,
     StoreLocation,
     open_repository,
+    repository_config,
     store_location,
 )
 from .schema import _METADATA_KEY, Amendment, RepositoryMetadata, StoreMetadata
@@ -520,19 +521,33 @@ def ensure_metadata(
     *,
     site_name: str,
     store_type: str,
+    config: icechunk.RepositoryConfig | None = None,
 ) -> dict[str, Any]:
-    """Return a store's repository metadata, writing it for a new store.
+    """Return a store's repository metadata; create a missing store first.
 
     Writers call this before they write data, so a store never holds data
-    without its metadata. ``collect`` builds the metadata of a new store
-    (``collect_metadata``); it is called only for a store that has none.
+    without its metadata, and this is the only step that creates a store.
+    ``collect`` builds the metadata of a new store (``collect_metadata``);
+    it is called only for a store that has none.
+
+    Parameters
+    ----------
+    config
+        The repository configuration a new store is created with
+        (:func:`~.location.repository_config`); Icechunk keeps it with the
+        store. ``None`` uses Icechunk's defaults.
 
     Raises
     ------
     ValueError
         If the store holds data or old-form metadata but no repository
-        metadata: it predates ADR 0014 and must be migrated first.
+        metadata: it predates ADR 0014 and must be migrated first. Also if
+        the location holds files but no store.
     """
+    # Created before the lock: Icechunk creates a store only in an empty
+    # location, and the lock file lives in the store's directory.
+    with suppress(FileExistsError):
+        open_repository(store_path, create=True, config=config)
     with commit_lock(store_path):
         repo = open_repository(store_path)
         existing = repo.get_metadata()
@@ -610,7 +625,11 @@ def ensure_store_metadata(
         )
 
     repository = ensure_metadata(
-        store_path, collect, site_name=site_name, store_type=store_type
+        store_path,
+        collect,
+        site_name=site_name,
+        store_type=store_type,
+        config=repository_config(config.processing.icechunk),
     )
     if store_type == "vod_store":
         check_vod_analyses(repository, names, store_path=store_path)
