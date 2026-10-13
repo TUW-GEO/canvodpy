@@ -72,6 +72,51 @@ def _iso_duration(seconds: float) -> str:
     return f"PT{np.format_float_positional(seconds, trim='-')}S"
 
 
+def day_cadences(epochs: np.ndarray) -> dict[np.datetime64, float]:
+    """The cadence of each day in ``epochs``, in seconds, by day.
+
+    A day's cadence is the median step between its consecutive epochs, so
+    missing epochs do not change it; steps into the next day are not counted.
+    ``epochs`` may be in any order (day blocks are stored in the order they
+    were written). A day with a single epoch has no cadence and is left out.
+    Cadences are rounded to the millisecond.
+    """
+    epochs = np.unique(np.asarray(epochs).astype("M8[ns]"))
+    days = epochs.astype("M8[D]")
+    same_day = days[1:] == days[:-1]
+    steps = (np.diff(epochs) / np.timedelta64(1, "s"))[same_day]
+    step_days = days[:-1][same_day]
+    return {
+        day: round(float(np.median(steps[step_days == day])), 3)
+        for day in np.unique(step_days)
+    }
+
+
+def cadence_ranges(epochs: np.ndarray) -> list[dict[str, Any]]:
+    """The time ranges of ``epochs`` at one cadence, in time order.
+
+    Consecutive days at the same cadence (see :func:`day_cadences`) form one
+    range, from its first to its last epoch. Each range is
+    ``{"start": ISO, "end": ISO, "cadence_s": float}``.
+    """
+    epochs = np.unique(np.asarray(epochs).astype("M8[ns]"))
+    days = epochs.astype("M8[D]")
+    ranges: list[dict[str, Any]] = []
+    for day, cadence in sorted(day_cadences(epochs).items()):
+        on_day = epochs[days == day]
+        if ranges and ranges[-1]["cadence_s"] == cadence:
+            ranges[-1]["end"] = _iso(on_day[-1])
+        else:
+            ranges.append(
+                {
+                    "start": _iso(on_day[0]),
+                    "end": _iso(on_day[-1]),
+                    "cadence_s": cadence,
+                }
+            )
+    return ranges
+
+
 def _data_groups(root: zarr.Group) -> dict[str, zarr.Group]:
     """Groups holding data (an ``epoch`` array), keyed by their path."""
     return {
@@ -229,8 +274,9 @@ def summarize_root(
 
     epochs = np.unique(np.concatenate([g["epochs"] for g in groups.values()]))
     start, end = _iso(epochs[0]), _iso(epochs[-1])
-    steps = np.diff(epochs).astype("m8[ns]").astype("i8") / 1e9
-    resolution = float(np.median(steps)) if steps.size else None
+    # The finest cadence of any day in any group.
+    cadences = [c for g in groups.values() for c in day_cadences(g["epochs"]).values()]
+    resolution = min(cadences) if cadences else None
     systems = set().union(*(g["systems"] for g in groups.values()))
     file_counts = [
         n
@@ -274,6 +320,7 @@ def summarize_root(
             set().union(*(g["variables"] for g in own))
         )
         updates[f"{prefix}.temporal_range"] = [_iso(r_epochs[0]), _iso(r_epochs[-1])]
+        updates[f"{prefix}.cadences"] = cadence_ranges(r_epochs)
         # A file stored in several groups (a reference paired with several
         # canopies) counts once.
         positions = {

@@ -510,6 +510,14 @@ class Antenna(BaseModel):
     )
 
 
+class CadenceRange(BaseModel):
+    """A time range of a receiver's data at one cadence."""
+
+    start: str = Field(..., description="First epoch, ISO")
+    end: str = Field(..., description="Last epoch, ISO")
+    cadence_s: float = Field(..., description="Time between epochs, seconds")
+
+
 class ReceiverInfo(BaseModel):
     type: str = Field(..., description="reference or canopy")
     directory: str = Field(..., description="Data subdirectory")
@@ -520,6 +528,9 @@ class ReceiverInfo(BaseModel):
     sids: int | None = Field(None, description="Number of SIDs observed")
     variables: list[str] | None = Field(None, description="Variable names")
     temporal_range: list[str] | None = Field(None, description="[start, end] ISO")
+    cadences: list[CadenceRange] | None = Field(
+        None, description="Time ranges at one cadence, in time order"
+    )
     position_ecef_m: list[float] | None = Field(
         None,
         description=("Median of the stored files' header positions [X, Y, Z], ECEF, m"),

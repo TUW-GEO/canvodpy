@@ -68,9 +68,9 @@ Every other field of the repository metadata is **amendable**.
 | `identity` | `StoreIdentity` | ID, UUID, naming authority, catalog link, title, description, store type, source format, keywords | Repository metadata |
 | `creator` | `Creator` | Name, email, ORCID, institution and its ROR ID, department, research group, website | Repository metadata |
 | `publisher` | `Publisher` | Name, URL, license (SPDX identifier or `other`), license URI | Repository metadata |
-| `temporal` | `TemporalExtent` | Created; updated, first and last stored epoch, duration, resolution | Created: repository metadata; the rest: snapshot summary |
+| `temporal` | `TemporalExtent` | Created; updated, first and last stored epoch, duration, resolution (the finest cadence of any day) | Created: repository metadata; the rest: snapshot summary |
 | `spatial` | `SpatialExtent` | Site name, description and country, latitude, longitude, altitude (WGS84); bounding box | Site and position: repository metadata; bounding box: snapshot summary |
-| `instruments` | `Instruments` | Platform; per receiver: type, directory, reader format, hardware, antenna; epochs, signals, variables, time range, position | Receiver description: repository metadata; counts, time range, position: snapshot summary |
+| `instruments` | `Instruments` | Platform; per receiver: type, directory, reader format, hardware, antenna; epochs, signals, variables, time range, cadence per time range, position | Receiver description: repository metadata; counts, time range, cadences, position: snapshot summary |
 | `vod_analyses` | `VodAnalysisInfo` | Per VOD analysis of a VOD store: its canopy and reference receiver | Repository metadata |
 | `references` | `References` | Repository, documentation, publications, funding | Repository metadata |
 | `summaries` | `Summaries` | Number of epochs and signals, constellations, variables, number of files | Snapshot summary |
