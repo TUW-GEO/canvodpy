@@ -212,7 +212,7 @@ hard minimum percentage, reviewers check that:
 
 - All new public functions and methods have at least one test
 - Edge cases and error paths are covered (empty inputs, invalid parameters)
-- Coverage does not decrease compared to the base branch
+- Coverage doesn't decrease compared to the base branch
 
 Run `just test-coverage` locally to inspect which lines are covered before pushing.
 
@@ -221,7 +221,7 @@ Run `just test-coverage` locally to inspect which lines are covered before pushi
 canVODpy is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 By submitting a pull request, you agree that your contribution is licensed under
 the same terms. The `LICENSE` and `NOTICE` files at the repository root apply to
-all source files. Per-file license headers are not required.
+all source files. Per-file license headers aren't required.
 
 ---
 
@@ -249,6 +249,6 @@ just release canvod-store=1.1.0 canvodpy=1.1.0   # tests, versions, release comm
 
 Each package has its own version; the maintainer chooses them, and canvodpy
 is part of every release. Then open a pull request for the release branch;
-after it is merged, a maintainer runs `just tag-release` on `main`, pushes
+after it's merged, a maintainer runs `just tag-release` on `main`, pushes
 the tags and starts the PyPI publish. The full
 steps are in `docs/RELEASING.md`.
