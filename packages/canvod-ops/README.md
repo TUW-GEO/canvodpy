@@ -52,7 +52,7 @@ ds_out, result = pipeline(ds)
 
 ## Documentation
 
-[Full documentation](https://nfb2021.github.io/canvodpy/packages/ops/overview/)
+[Full documentation](https://canvodpy.eu/packages/ops/overview/)
 
 ## License
 

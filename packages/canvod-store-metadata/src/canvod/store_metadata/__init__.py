@@ -38,10 +38,12 @@ from .io import (
 )
 from .location import (
     LocalStoreLocation,
+    S3StoreLocation,
     StoreLocation,
     open_repository,
     read_store_uuid,
     repository_config,
+    store_exists,
     store_location,
 )
 from .migration import migrate_metadata
@@ -56,6 +58,7 @@ __all__ = [
     "LocalStoreLocation",
     "MIGRATE_COMMAND",
     "RESERVED_GROUP",
+    "S3StoreLocation",
     "StoreLocation",
     "StoreMetadata",
     "amend_metadata",
@@ -75,6 +78,7 @@ __all__ = [
     "metadata_exists",
     "migrate_metadata",
     "open_repository",
+    "store_exists",
     "read_metadata",
     "read_repository_metadata",
     "read_store_uuid",

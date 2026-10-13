@@ -21,6 +21,7 @@ import datetime
 
 import polars as pl
 
+from canvod.store_metadata import store_exists
 from canvod.utils.tools import YYYYDOY
 from canvodpy.api import Site
 
@@ -135,14 +136,16 @@ def find_vod_backfill_gaps(
     rinex_group = cfg.reference_store_group
     vod_group = f"{calculator_name}/{analysis_name}"
 
-    if not site.gnss_store.group_exists(rinex_group):
+    if not store_exists(site.gnss_store_path) or not site.gnss_store.group_exists(
+        rinex_group
+    ):
         return []
     with site.gnss_store.readonly_session() as session:
         rinex_df = site.gnss_store.read_metadata_table(session, rinex_group)
     rinex_dates = _dates_covered(rinex_df) if not rinex_df.is_empty() else set()
 
     vod_dates: set[str] = set()
-    if site.vod_store.group_exists(vod_group):
+    if store_exists(site.vod_store_path) and site.vod_store.group_exists(vod_group):
         with site.vod_store.readonly_session() as session:
             vod_df = site.vod_store.read_metadata_table(session, vod_group)
         vod_dates = _dates_covered(vod_df) if not vod_df.is_empty() else set()

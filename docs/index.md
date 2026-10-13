@@ -8,7 +8,10 @@ hide:
 
 <div class="hero" markdown>
 
-# canVODpy
+<h1 class="hero-logo">
+  <img src="assets/logo/canvodpy_logo_bright_mode.svg#only-light" alt="canVODpy">
+  <img src="assets/logo/canvodpy_logo_dark_mode.svg#only-dark" alt="canVODpy">
+</h1>
 
 **An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrievals**
 
@@ -28,6 +31,7 @@ with an unobstructed view of the sky.
 
 [Retrieve VOD from your GNSS data :fontawesome-solid-arrow-right:](users/index.md){ .md-button .md-button--primary }
 [Contribute to canVODpy :fontawesome-solid-arrow-right:](CONTRIBUTING.md){ .md-button }
+[See canVODpy at work in molab :fontawesome-solid-arrow-up-right-from-square:](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_convenience_speedrun.py){ .md-button target=_blank }
 
 </div>
 

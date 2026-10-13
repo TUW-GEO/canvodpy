@@ -208,9 +208,16 @@ location and these sources.
 
 Every function opens a store with `open_repository()`. Opening never
 creates a store, so a mistyped location fails instead of leaving an
-empty store behind. With `expected_uuid=`, a store with another UUID is
+empty store behind. `store_exists()` says whether a location holds a
+store, without opening it. With `expected_uuid=`, a store with another UUID is
 refused, so a store replaced at the same location is never taken for
 the old one.
+
+`open_repository(location, create=True)` creates a store. Without a
+`config=`, the new store gets the defaults of the `processing.icechunk`
+settings, the same as a store a run creates, not Icechunk's own
+defaults. Opening a store without a `config=` uses the configuration
+Icechunk keeps with the store.
 
 On a local directory, commits hold a lock file in the store's directory,
 because Icechunk on a local file system can lose one of two concurrent

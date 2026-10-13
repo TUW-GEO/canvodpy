@@ -66,7 +66,7 @@ os.environ["CANVOD_CONFIG_DIR"] = "/path/to/config"
 
 !!! example "Try it in a notebook"
 
-    Open [Site pipeline](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/14_site_pipeline.py?mode=edit), [Running the pipeline from the command line](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/13_cli_pipeline.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Site pipeline](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/18_site_pipeline.py?mode=edit), [Running the pipeline from the command line](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/01_cli_pipeline.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
@@ -100,11 +100,16 @@ duplicate data.
 | `site.vod_analyses` | The receiver pairs under `vod_analyses` |
 | `site.gnss_store` | The GNSS store: observations and satellite angles |
 | `site.vod_store` | The VOD store |
+| `site.gnss_store_path`, `site.vod_store_path` | Where the stores are, from the settings; read-only |
 | `site.vod` | Computes VOD; see [Compute VOD](#compute-vod) |
 | `site.pipeline()` | Creates a `Pipeline` for this site |
 
 Both stores are [Icechunk](https://icechunk.io/) repositories; see
 [Storage](../packages/store/overview.md).
+
+A run creates a site's stores when it first writes data. Before that,
+`site.gnss_store` and `site.vod_store` raise a `FileNotFoundError`; the
+paths tell you where a run puts them.
 
 ---
 
@@ -200,7 +205,7 @@ model and its output.
 
 !!! example "Try it in a notebook"
 
-    Open [VOD retrieval](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/07_vod_retrieval.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [VOD retrieval](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/10_vod_retrieval.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
@@ -240,7 +245,7 @@ optional extension; see [Optional extensions](extensions.md).
 
 !!! example "Try it in a notebook"
 
-    Open [API overview](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/12_api_overview.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [API overview](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/17_api_overview.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 

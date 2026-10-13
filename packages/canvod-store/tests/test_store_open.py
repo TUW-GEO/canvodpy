@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from canvod.store_metadata.testing import give_test_metadata
 
@@ -19,7 +21,7 @@ from canvod.store import (
 def test_a_missing_store_is_refused_and_nothing_is_created(tmp_path, open_store):
     path = tmp_path / "fangorn" / "gnss"
 
-    with pytest.raises(FileNotFoundError, match=str(path)) as error:
+    with pytest.raises(FileNotFoundError, match=re.escape(str(path))) as error:
         open_store(path)
 
     assert "a run creates a store" in str(error.value)

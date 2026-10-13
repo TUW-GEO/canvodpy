@@ -140,7 +140,7 @@ class DiscoveryError(ValueError):
 FILEMAP_INSTALL_HINT = (
     "Install it in the canvodpy repository with: uv sync --group filemap; "
     "elsewhere from GitHub, see "
-    "https://nfb2021.github.io/canvodpy-extensions/packages/filemap/overview/"
+    "https://extensions.canvodpy.eu/packages/filemap/overview/"
 )
 
 

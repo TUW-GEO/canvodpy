@@ -12,6 +12,7 @@ from canvod.store_metadata import (
     open_repository,
     read_store_uuid,
     repository_config,
+    store_exists,
     store_location,
 )
 from canvod.store_metadata.io import (
@@ -124,6 +125,21 @@ class TestOpenRepository:
         assert sorted(p.name for p in store.iterdir()) == ["notes.txt"]
 
 
+class TestStoreExists:
+    def test_a_missing_location_holds_no_store(self, tmp_path: Path) -> None:
+        assert not store_exists(tmp_path / "fangorn")
+        assert not (tmp_path / "fangorn").exists()
+
+    def test_an_empty_directory_holds_no_store(self, tmp_path: Path) -> None:
+        assert not store_exists(tmp_path)
+
+    def test_a_created_store_exists(self, tmp_path: Path) -> None:
+        open_repository(tmp_path / "store", create=True)
+
+        assert store_exists(tmp_path / "store")
+        assert store_exists(str(tmp_path / "store"))
+
+
 class TestRepositoryConfig:
     def test_a_new_store_keeps_the_settings_configuration(self, tmp_path: Path) -> None:
         settings = IcechunkConfig(inline_chunk_threshold_bytes=17)
@@ -141,6 +157,20 @@ class TestRepositoryConfig:
         default = icechunk.CachingConfig.default()  # ty: ignore[unresolved-attribute]
         assert config.caching.num_bytes_chunks == 1024
         assert config.caching.num_chunk_refs == default.num_chunk_refs
+
+    def test_a_store_created_without_a_configuration_gets_the_settings_defaults(
+        self, tmp_path: Path
+    ) -> None:
+        """Not Icechunk's defaults, which split no manifests along "epoch"."""
+        open_repository(tmp_path / "store", create=True)
+
+        reopened = open_repository(tmp_path / "store")
+        defaults = repository_config(IcechunkConfig())
+        assert reopened.config.manifest == defaults.manifest
+        assert (
+            reopened.config.get_partial_values_concurrency
+            == defaults.get_partial_values_concurrency
+        )
 
     def test_a_compression_level_overrides_the_settings(self) -> None:
         config = repository_config(
@@ -236,6 +266,24 @@ class TestS3Locations:
         location = store_location("s3://fangorn/stores") / "fangorn" / "gnss"
 
         assert str(location) == "s3://fangorn/stores/fangorn/gnss"
+
+    def test_join_resolves_a_relative_href(self) -> None:
+        """S3 doesn't resolve ``..``, so the join does (a catalog item's href)."""
+        catalog = store_location("s3://fangorn/catalog/gnss-observations/fangorn")
+
+        location = catalog / "../../../stores/fangorn/gnss"
+
+        assert location == S3StoreLocation("fangorn", "stores/fangorn/gnss")
+
+    @pytest.mark.parametrize("relative", ["../..", "../../elsewhere", "gnss/../.."])
+    def test_join_out_of_the_bucket_prefix_is_refused(self, relative: str) -> None:
+        with pytest.raises(ValueError, match="s3://fangorn/stores"):
+            _ = store_location("s3://fangorn/stores") / relative
+
+    @pytest.mark.parametrize("location", ["s3://fangorn/stores", "/srv/stores"])
+    def test_join_of_an_absolute_path_is_refused(self, location: str) -> None:
+        with pytest.raises(ValueError, match="relative path"):
+            _ = store_location(location) / "/fangorn/gnss"
 
     def test_s3_has_no_local_directory_and_no_commit_lock(self) -> None:
         location = store_location("s3://fangorn/stores/gnss")

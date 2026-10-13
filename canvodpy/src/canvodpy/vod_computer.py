@@ -76,7 +76,7 @@ def ensure_vod_store_metadata(
     from canvod.store_metadata import ensure_store_metadata
 
     ensure_store_metadata(
-        site._site.vod_store_path,
+        site.vod_store_path,
         config=load_config(),
         site_name=site.name,
         store_type="vod_store",
@@ -135,7 +135,10 @@ class VodComputer:
         """
         from canvod.config import load_config
         from canvod.ops import planned_settings
+        from canvod.store_metadata import store_exists
 
+        if not store_exists(self._site.vod_store_path):
+            return  # a first run: no results yet to compare with
         settings = planned_settings(load_config().processing.preprocessing)
         vod_store = self._site._site.vod_store
         for analysis_name in analysis_names:

@@ -46,6 +46,7 @@ import typer
 import xarray as xr
 
 from canvod.config.models import reference_store_group
+from canvod.store_metadata import store_exists
 from canvod.utils.logging import (
     new_run_id,
     record_stage_timing,
@@ -199,7 +200,11 @@ def _resolve_date_range(args, site) -> tuple[str, str]:
     if args.start:
         start = args.start
     else:
-        last = _last_processed_date(site.gnss_store)
+        last = (
+            _last_processed_date(site.gnss_store)
+            if store_exists(site.gnss_store_path)
+            else None
+        )
         if last is not None:
             # Start from the day after the last processed date
             # (the skip strategy handles overlap, but this avoids

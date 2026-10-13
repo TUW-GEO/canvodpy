@@ -497,7 +497,7 @@ class TestCompactionRecordsCommitMetadata:
         project = tmp_path / "fangorn"
         project.mkdir()
         (project / "pyproject.toml").write_text('[project]\nname = "fangorn"\n')
-        (project / "uv.lock").write_text("version = 1\nrevision = 3\n")
+        (project / "uv.lock").write_bytes(b"version = 1\nrevision = 3\n")
         monkeypatch.chdir(project)
 
         store.compact_manifests(branch="main")

@@ -29,7 +29,7 @@ canvod-grids = { workspace = true }
 
 [project.urls]
 Homepage = "https://github.com/nfb2021/canvodpy"
-Documentation = "https://nfb2021.github.io/canvodpy/packages/viz/overview/"
+Documentation = "https://canvodpy.eu/packages/viz/overview/"
 Repository = "https://github.com/nfb2021/canvodpy"
 Issues = "https://github.com/nfb2021/canvodpy/issues"
 

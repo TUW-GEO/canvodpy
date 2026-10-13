@@ -6,6 +6,7 @@ new kind of storage is added in one place: a new :class:`StoreLocation`.
 
 from __future__ import annotations
 
+import posixpath
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -30,7 +31,13 @@ class StoreLocation(ABC):
 
     @abstractmethod
     def __truediv__(self, relative: str | Path) -> StoreLocation:
-        """The location ``relative`` below this one, of the same kind."""
+        """The location ``relative`` below this one, of the same kind.
+
+        Raises
+        ------
+        ValueError
+            If ``relative`` is an absolute path.
+        """
 
     @property
     @abstractmethod
@@ -58,7 +65,7 @@ class LocalStoreLocation(StoreLocation):
         return icechunk.local_filesystem_storage(str(self.path))
 
     def __truediv__(self, relative: str | Path) -> LocalStoreLocation:
-        return LocalStoreLocation(self.path / relative)
+        return LocalStoreLocation(self.path / _relative(self, relative))
 
     @property
     def needs_commit_lock(self) -> bool:
@@ -98,8 +105,27 @@ class S3StoreLocation(StoreLocation):
         )
 
     def __truediv__(self, relative: str | Path) -> S3StoreLocation:
-        prefix = PurePosixPath(self.prefix) / PurePosixPath(str(relative))
-        return S3StoreLocation(self.bucket, str(prefix))
+        """The location ``relative`` below this one, ``..`` resolved.
+
+        S3 keys are plain names: S3 itself doesn't resolve ``..``, so a
+        catalog item's relative href is resolved here.
+
+        Raises
+        ------
+        ValueError
+            If ``relative`` is an absolute path, or leads to the bucket's
+            root or out of the bucket.
+        """
+        prefix = posixpath.normpath(
+            posixpath.join(self.prefix, str(_relative(self, relative)))
+        )
+        if prefix == "." or prefix.startswith(".."):
+            msg = (
+                f"{relative} leads out of {self} to the root of the bucket "
+                "or outside it, where no store can be."
+            )
+            raise ValueError(msg)
+        return S3StoreLocation(self.bucket, prefix)
 
     @property
     def needs_commit_lock(self) -> bool:
@@ -123,6 +149,18 @@ class S3StoreLocation(StoreLocation):
 
     def __str__(self) -> str:
         return f"s3://{self.bucket}/{self.prefix}"
+
+
+def _relative(location: StoreLocation, relative: str | Path) -> PurePosixPath:
+    """``relative`` as a path below ``location``; an absolute one is refused."""
+    path = PurePosixPath(str(relative))
+    if path.is_absolute():
+        msg = (
+            f"{relative} can't be joined to {location}: give a relative path, "
+            "such as a site or a catalog item's href."
+        )
+        raise ValueError(msg)
+    return path
 
 
 _SCHEME = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*)://(.*)$")
@@ -254,6 +292,30 @@ def repository_config(
     return config
 
 
+def _exists(where: StoreLocation, storage: icechunk.Storage) -> bool:
+    try:
+        return icechunk.Repository.exists(storage)
+    except icechunk.StorageError as error:
+        msg = f"The storage at {where} can't be reached. {where.access_hint}"
+        raise OSError(msg) from error
+
+
+def store_exists(location: StoreLocation | Path | str) -> bool:
+    """Whether a store's repository is at ``location``.
+
+    A run creates a site's stores when it first writes data, so checks
+    made before that, such as a resume or a comparison with stored
+    results, ask this first instead of opening a store that isn't there.
+
+    Raises
+    ------
+    OSError
+        If the storage at ``location`` can't be reached.
+    """
+    where = store_location(location)
+    return _exists(where, where.storage())
+
+
 def open_repository(
     location: StoreLocation | Path | str,
     *,
@@ -271,8 +333,11 @@ def open_repository(
     create
         Create a new repository instead of opening one.
     config
-        The repository configuration (compression, caching, concurrency);
-        ``None`` uses Icechunk's defaults.
+        The repository configuration (compression, caching, concurrency).
+        ``None`` creates a store with the defaults of the
+        ``processing.icechunk`` settings (:func:`repository_config`), so it
+        matches a store a run creates, and opens one with the configuration
+        Icechunk kept with the store.
     expected_uuid
         The UUID of the store the caller expects, for example from a
         catalog item.
@@ -293,28 +358,28 @@ def open_repository(
     """
     where = store_location(location)
     storage = where.storage()
-    try:
-        exists = icechunk.Repository.exists(storage)
-    except icechunk.StorageError as error:
-        msg = f"The storage at {where} can't be reached. {where.access_hint}"
-        raise OSError(msg) from error
+    exists = _exists(where, storage)
     if create:
-        if exists:
-            msg = f"A store already exists at {where}; it was not created again."
-            raise FileExistsError(msg)
-        try:
-            return icechunk.Repository.create(storage=storage, config=config)
-        except icechunk.InvalidInputError as error:
-            # Icechunk creates only in an empty location. Another process
-            # may have created the store since the check above.
-            if icechunk.Repository.exists(storage):
-                msg = f"A store already exists at {where}; it was not created again."
-                raise FileExistsError(msg) from error
-            msg = (
-                f"{where} holds files but no store; a store is created only "
-                "in an empty location. Nothing was created."
-            )
-            raise ValueError(msg) from error
+        if config is None:
+            from canvod.config.models.compression import IcechunkConfig
+
+            config = repository_config(IcechunkConfig())
+        refused = None
+        if not exists:
+            try:
+                return icechunk.Repository.create(storage=storage, config=config)
+            except icechunk.InvalidInputError as error:
+                # Icechunk creates only in an empty location. Another
+                # process may have created the store since the check above.
+                if not icechunk.Repository.exists(storage):
+                    msg = (
+                        f"{where} holds files but no store; a store is created "
+                        "only in an empty location. Nothing was created."
+                    )
+                    raise ValueError(msg) from error
+                refused = error
+        msg = f"A store already exists at {where}; it was not created again."
+        raise FileExistsError(msg) from refused
     if not exists:
         msg = (
             f"No store at {where}. Check the path; a run creates a store "
