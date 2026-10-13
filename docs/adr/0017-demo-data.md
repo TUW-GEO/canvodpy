@@ -7,7 +7,8 @@ single downloaded file (`uvx marimo edit --sandbox <file or URL>`, also in
 VS Code or a container), and on molab. A notebook therefore imports
 nothing that sits next to it: none of the helper modules of the
 canvodpy-demo repository (paths, downloads, live store, widgets). The only file it may reference is
-its style sheet, which marimo loads from a URL.
+its style sheet: marimo reads it from a local path only, so a notebook
+run as a single file runs without it.
 
 Their input is **demo data**: a small, published subset of the test data
 (one day of RINEX 3.04 for both receivers of the Rosalia site, SBF from
