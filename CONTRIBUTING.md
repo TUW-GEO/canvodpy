@@ -16,6 +16,10 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 brew install uv
 ```
 
+The repository needs uv 0.13 (`required-version` in `pyproject.toml`), so
+every machine writes `uv.lock` the same way. Install a 0.13 release if uv
+refuses to start.
+
 [uv documentation](https://docs.astral.sh/uv/)
 
 ### just (Command Runner)

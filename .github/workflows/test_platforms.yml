@@ -48,9 +48,6 @@ jobs:
                   enable-cache: true
             - name: Set up Python
               run: uv python install
-            - name: Update lock file (Dependabot only)
-              if: github.actor == 'dependabot[bot]'
-              run: uv lock
             - name: Install the Project
               # healpy (canvod-grids' HEALPix grid builder, canvod-grids'
               # `optional` group) ships no Windows wheels on PyPI, so it's
