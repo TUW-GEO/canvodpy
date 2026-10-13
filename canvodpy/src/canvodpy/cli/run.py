@@ -20,6 +20,9 @@ Usage
     # Preview what would be processed
     uv run canvodpy run --site ExampleSite --dry-run
 
+    # Write the STAC catalog of the data root once the run's data is committed
+    uv run canvodpy run --site ExampleSite --write-catalog
+
     # Launch the performance dashboard alongside the run (reachable at
     # http://<host>:<port>; its own marimo startup output is redirected to
     # <log_dir>/machine/dashboard.log so it doesn't clutter run's progress)
@@ -668,6 +671,16 @@ def run(
         VodCalculatorChoice,  # ty: ignore[invalid-type-form]
         typer.Option("--vod-calculator", help="VOD calculator to use."),
     ] = VodCalculatorChoice["tau_omega"],
+    write_catalog: Annotated[
+        bool,
+        typer.Option(
+            "--write-catalog",
+            help=(
+                "After the run, write the latest STAC catalog of every "
+                "store under the data root, as `canvodpy stac write` does."
+            ),
+        ),
+    ] = False,
     dashboard: Annotated[
         bool,
         typer.Option(
@@ -736,7 +749,29 @@ def run(
         # what to change.
         print(f"Error: {e}", file=sys.stderr)
         code = 1
+    if code == 0 and write_catalog and not dry_run:
+        code = _write_catalog(config)
     raise typer.Exit(code=code)
+
+
+def _write_catalog(config: str | None) -> int:
+    """Write the latest catalog of the data root, after a successful run."""
+    from canvod.config import load_config
+    from canvod.store_metadata import write_catalog
+
+    settings = load_config(config_file=Path(config) if config else None)
+    try:
+        catalog = write_catalog(settings.processing.storage.stores_root_dir)
+    except ValueError as e:
+        # The run's commits stand; only the catalog is missing.
+        print(
+            f"Error: {e}\n\nThe run's data is committed; only the catalog is "
+            f"missing. Fix these stores, then run 'canvodpy stac write'.",
+            file=sys.stderr,
+        )
+        return 1
+    print(f"Catalog written: {catalog}")
+    return 0
 
 
 if __name__ == "__main__":

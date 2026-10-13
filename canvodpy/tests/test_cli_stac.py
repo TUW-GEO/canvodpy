@@ -163,3 +163,101 @@ def test_stac_release_refuses_a_tag_with_a_slash_and_exits_1(tmp_path):
 
     assert result.exit_code == 1
     assert "Release tag 'keep/v1' is refused" in result.output.replace("\n", " ")
+
+
+def _run_without_processing(monkeypatch):
+    """Replace the processing of ``canvodpy run`` by a run that succeeds."""
+    from canvodpy.cli import run as run_module
+
+    monkeypatch.setattr(run_module, "_main_impl", lambda _args: 0)
+
+
+def test_run_with_write_catalog_writes_the_catalog_after_the_run(tmp_path, monkeypatch):
+    _run_without_processing(monkeypatch)
+    stores_root = tmp_path / "stores"
+    stores_root.mkdir()
+    config_dir = _config_dir(tmp_path, stores_root)
+
+    result = runner.invoke(
+        main_app,
+        ["run", "--site", testing.SITE_KEY, "--write-catalog"],
+        env={"CANVOD_CONFIG_DIR": str(config_dir)},
+    )
+
+    assert result.exit_code == 0, result.output
+    catalog = stores_root / "catalog.json"
+    assert json.loads(catalog.read_text())["type"] == "Catalog"
+    assert str(catalog) in result.output.replace("\n", "")
+
+
+def test_run_without_write_catalog_writes_no_catalog(tmp_path, monkeypatch):
+    _run_without_processing(monkeypatch)
+    stores_root = tmp_path / "stores"
+    stores_root.mkdir()
+    config_dir = _config_dir(tmp_path, stores_root)
+
+    result = runner.invoke(
+        main_app,
+        ["run", "--site", testing.SITE_KEY],
+        env={"CANVOD_CONFIG_DIR": str(config_dir)},
+    )
+
+    assert result.exit_code == 0, result.output
+    assert not (stores_root / "catalog.json").exists()
+
+
+def test_run_dry_run_writes_no_catalog(tmp_path, monkeypatch):
+    _run_without_processing(monkeypatch)
+    stores_root = tmp_path / "stores"
+    stores_root.mkdir()
+    config_dir = _config_dir(tmp_path, stores_root)
+
+    result = runner.invoke(
+        main_app,
+        ["run", "--site", testing.SITE_KEY, "--dry-run", "--write-catalog"],
+        env={"CANVOD_CONFIG_DIR": str(config_dir)},
+    )
+
+    assert result.exit_code == 0, result.output
+    assert not (stores_root / "catalog.json").exists()
+
+
+def test_run_failing_writes_no_catalog(tmp_path, monkeypatch):
+    from canvodpy.cli import run as run_module
+
+    monkeypatch.setattr(run_module, "_main_impl", lambda _args: 1)
+    stores_root = tmp_path / "stores"
+    stores_root.mkdir()
+    config_dir = _config_dir(tmp_path, stores_root)
+
+    result = runner.invoke(
+        main_app,
+        ["run", "--site", testing.SITE_KEY, "--write-catalog"],
+        env={"CANVOD_CONFIG_DIR": str(config_dir)},
+    )
+
+    assert result.exit_code == 1
+    assert not (stores_root / "catalog.json").exists()
+
+
+def test_run_with_a_refused_catalog_keeps_the_data_and_exits_1(tmp_path, monkeypatch):
+    from canvod.store_metadata.testing import create_test_store
+
+    _run_without_processing(monkeypatch)
+    stores_root = tmp_path / "stores"
+    create_test_store(stores_root / "rohan" / "gnss")
+    config_dir = _config_dir(tmp_path, stores_root)
+
+    result = runner.invoke(
+        main_app,
+        ["run", "--site", testing.SITE_KEY, "--write-catalog"],
+        env={"CANVOD_CONFIG_DIR": str(config_dir)},
+    )
+
+    assert result.exit_code == 1
+    output = result.output.replace("\n", " ")
+    assert "The run's data is committed" in output
+    assert "rohan/gnss: has no metadata" in output
+    assert "canvodpy stac write" in output
+    assert "Traceback" not in result.output
+    assert not (stores_root / "catalog.json").exists()

@@ -31,7 +31,8 @@ just run <site> <YYYYDOY> <YYYYDOY>
 
 The recipe and the `canvodpy run` command are the same code. Without
 `--start`, `canvodpy run` resumes after the last day in the store; other
-options (`--no-vod`, `--workers`, `--ephemeris-source`, `--config`) are in
+options (`--no-vod`, `--workers`, `--ephemeris-source`, `--config`,
+`--write-catalog`) are in
 `docs/guides/api-levels.md`. A settings folder other than the default:
 `just config_dir=<folder> run ...`.
 
@@ -47,6 +48,11 @@ deprecated surfaces (`FluentWorkflow`, `process_date()`, `VODWorkflow`,
   `compressed_files_not_processed`). Report them to the user.
 - `just store-info <site>` and `just store-log <site>` show what the
   store holds and its history.
+- With `--write-catalog`, the run writes the STAC catalog of the data
+  root after its last commit. If a store can't be described, the run
+  exits with code 1, its data stays committed, and the error lists each
+  store with its reason. Fix those stores, then run
+  `uv run canvodpy stac write`.
 
 ## VOD only
 

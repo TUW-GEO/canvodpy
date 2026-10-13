@@ -62,6 +62,7 @@ $ canvodpy run [OPTIONS]
 * `--config <str>`: Settings file whose values replace those of canvod-settings.yaml.
 * `--ephemeris-source <final|broadcast>`: Where the satellite orbits and clocks come from: final uses the SP3 and CLK products of an analysis center, broadcast uses the SatVisibility blocks of the SBF files. Default: from canvod-settings.yaml.
 * `--vod-calculator <tau_omega>`: VOD calculator to use.  [default: tau_omega]
+* `--write-catalog`: After the run, write the latest STAC catalog of every store under the data root, as `canvodpy stac write` does.
 * `--dashboard`: Start the marimo performance dashboard next to this run, in a process of its own. Its startup messages go to a log file, not to this terminal.
 * `--dashboard-host <str>`: Host for --dashboard to bind to.  [default: 127.0.0.1]
 * `--dashboard-port <int>`: Port for --dashboard to bind to. Default: a free port that the operating system picks.

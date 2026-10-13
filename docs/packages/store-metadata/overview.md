@@ -369,7 +369,14 @@ It is written only when you ask for it:
 canvodpy stac write              # the data root of the settings
 canvodpy stac write --root /data/stores/
 just stac-write
+canvodpy run --site ExampleSite --write-catalog   # after the run's last commit
 ```
+
+`canvodpy run --write-catalog` writes the catalog of the settings' data
+root once every site of the run is processed. If the catalog is refused
+(see below), the run's data stays committed and the run exits with code 1;
+fix the stores it names, then run `canvodpy stac write`. A run without
+the option, a dry run and a failed run write no catalog.
 
 ```python
 from pathlib import Path
