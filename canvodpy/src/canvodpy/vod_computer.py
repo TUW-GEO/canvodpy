@@ -76,7 +76,7 @@ def ensure_vod_store_metadata(
     from canvod.store_metadata import ensure_store_metadata
 
     ensure_store_metadata(
-        site._site.vod_store_path,
+        site.vod_store_path,
         config=load_config(),
         site_name=site.name,
         store_type="vod_store",

@@ -40,6 +40,7 @@ from canvodpy.orchestrator.resources import deprecate_no_effect_arguments
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
+    from pathlib import Path
 
     import xarray as xr
 
@@ -128,6 +129,16 @@ class Site:
     def vod_store(self) -> MyIcechunkStore:
         """Access VOD results store."""
         return self._site.vod_store
+
+    @property
+    def gnss_store_path(self) -> Path:
+        """Where the site's GNSS store is, from the settings; read-only."""
+        return self._site.gnss_store_path
+
+    @property
+    def vod_store_path(self) -> Path:
+        """Where the site's VOD store is, from the settings; read-only."""
+        return self._site.vod_store_path
 
     @deprecate_no_effect_arguments
     def pipeline(

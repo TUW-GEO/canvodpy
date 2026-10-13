@@ -93,6 +93,18 @@ class TestResearchSite:
         with pytest.raises(FileNotFoundError, match="a run creates a store"):
             _ = site.gnss_store
 
+    def test_a_site_names_its_store_paths_and_keeps_them(self, site_settings):
+        from canvod.config import load_config
+        from canvodpy import Site
+
+        storage = load_config().processing.storage
+        site = Site(testing.SITE_KEY)
+
+        assert site.gnss_store_path == storage.get_gnss_store_path(testing.SITE_KEY)
+        assert site.vod_store_path == storage.get_vod_store_path(testing.SITE_KEY)
+        with pytest.raises(AttributeError):
+            site.vod_store_path = site_settings  # ty: ignore[invalid-assignment]
+
     def test_a_run_creates_the_store_with_the_settings_configuration(
         self, site_settings
     ):
