@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import polars as pl
 import pydantic_core
 import structlog
@@ -60,10 +61,18 @@ from canvod.ops import preprocess_files
 from canvod.readers import DataDirMatcher, MatchedDirs
 from canvod.readers.gnss_specs.exceptions import NmeaError, RinexError
 from canvod.store import GnssResearchSite, scoped_zarr_concurrency
+from canvod.store.day_blocks import (
+    AGGREGATION_SETTING,
+    CadenceError,
+    add_day_block,
+    write_file_region,
+)
 from canvod.store.prepare import prepare_write
 from canvod.store.store import _with_run_id
 from canvod.store.time_encoding import with_time_units
 from canvod.store_metadata.io import commit_with_rebase
+from canvod.store_metadata.layout import is_day_block_group
+from canvod.store_metadata.location import store_exists
 from canvod.utils.logging import (
     get_run_id,
     record_stage_timing,
@@ -1383,6 +1392,7 @@ class RinexDataProcessor:
         exists: bool,
         rel_path: str,
         action: str,
+        epochs: int = -1,
     ) -> dict[str, Any]:
         """Build one ingest log-book row for a GNSS file.
 
@@ -1394,6 +1404,8 @@ class RinexDataProcessor:
         the commit that contains the row has been made. The row's commit is
         recovered from the repository ancestry: its message equals
         ``commit_msg`` and its metadata lists the row's ``rinex_hash``.
+        ``epochs`` counts the file's epochs a day-block write stored (-1 if
+        not counted); the store summary of day-block groups adds them up.
         """
         canonical_name = ds.attrs.get("canonical_name") or self._canonical_name(fname)
         _warn_if_name_disagrees_with_data(self._logger, fname, canonical_name, ds)
@@ -1408,6 +1420,7 @@ class RinexDataProcessor:
             "canonical_name": canonical_name,
             "physical_path": ds.attrs.get("physical_path") or str(fname),
             "action": action,
+            "epochs": epochs,
             "write_strategy": self._gnss_store_strategy,
             "run_id": get_run_id() or "",
             "commit_msg": "",
@@ -3001,6 +3014,309 @@ class RinexDataProcessor:
 
         return results
 
+    # ── Day-block writes (ADR 0016) ────────────────────────────────────────
+
+    def _writes_day_blocks(self) -> bool:
+        """Whether this run writes day blocks into the GNSS store.
+
+        A store not created yet, without receiver groups, or whose groups are
+        all made of day blocks, gets day blocks. A store whose groups were written by
+        appending keeps appending until it is moved to day blocks.
+        """
+        # Before self.site.gnss_store, which opens the store.
+        if not store_exists(self.site.gnss_store_path):
+            return True
+        store = self.site.gnss_store
+        groups = store.list_groups() or []
+        if not groups:
+            return True
+        with store.readonly_session("main") as session:
+            root = zarr.open_group(session.store, mode="r")
+            return all(
+                is_day_block_group(root[name].attrs) for name in groups if name in root
+            )
+
+    def _day_block_cadence_s(
+        self, receiver_name: str, augmented_datasets: list[tuple[Path, xr.Dataset]]
+    ) -> float:
+        """The cadence of a receiver's day blocks, in seconds.
+
+        The bin length of ``processing.preprocessing.temporal_aggregation``
+        when it is set and enabled; otherwise the finest sampling interval
+        the files' canonical names give.
+
+        Raises
+        ------
+        CadenceError
+            If a file has no canonical name to take its sampling from.
+        """
+        from canvod.preflight.convention import CanVODFilename
+
+        preprocessing = self._config.processing.preprocessing
+        aggregation = (
+            None if preprocessing is None else preprocessing.temporal_aggregation
+        )
+        if aggregation is not None and aggregation.enabled:
+            return pd.Timedelta(aggregation.freq).total_seconds()
+        intervals = []
+        for fname, ds in augmented_datasets:
+            canonical = ds.attrs.get("canonical_name") or self._canonical_name(fname)
+            if not canonical:
+                msg = (
+                    f"{fname.name} of receiver '{receiver_name}' has no canonical "
+                    "name, so its sampling interval, which sets the cadence of "
+                    f"the day's slots, is unknown. Name the file by the canVOD "
+                    f"convention or set {AGGREGATION_SETTING}."
+                )
+                raise CadenceError(msg)
+            interval = CanVODFilename.from_filename(canonical).sampling_interval
+            intervals.append(interval.total_seconds())
+        return min(intervals)
+
+    def _write_day_blocks(
+        self,
+        group_inputs: Sequence[
+            tuple[
+                str,  # receiver_name
+                list[tuple[Path, xr.Dataset]],  # augmented_datasets
+                list[Path],  # rinex_files
+                dict[Path, dict[str, xr.Dataset]] | None,  # aux_datasets
+                dict[str, list[str]] | None,  # sid_issues
+                str | None,  # reader_format
+            ]
+        ],
+    ) -> dict[str, GroupWriteResult]:
+        """Write a batch's receiver groups as day blocks, in one commit.
+
+        One session, the groups one after the other: each day the files
+        touch gets a block (:func:`~canvod.store.day_blocks.add_day_block`),
+        then each file is written into its slots
+        (:func:`~canvod.store.day_blocks.write_file_region`). The data, the
+        ``sbf_obs`` of new files and the log-book rows (with each file's
+        epoch count) go into one commit; no temporary branch is needed,
+        since writing a file again replaces its slots.
+
+        Files already stored (by hash or by time, see
+        :meth:`_check_existing_with_temporal_overlap`) are skipped with
+        ``gnss_store_strategy: skip`` and written again into their slots
+        otherwise (action ``overwritten``). A file that fails is logged and
+        left out, with no log-book row, so the next run tries it again.
+
+        Raises
+        ------
+        CadenceError, LayoutError
+            A cadence the slots cannot have, or a group written by
+            appending: the run stops.
+        """
+        self._ensure_gnss_store_metadata(
+            [name for name, *_ in group_inputs],
+            next((fmt for *_, fmt in group_inputs if fmt), None),
+        )
+        log = self._logger
+        version = get_version_from_pyproject()
+        yyyydoy = str(self.matched_data_dirs.yyyydoy)
+        store = self.site.gnss_store
+        epoch_chunk = int((store.chunk_strategy or {}).get("epoch", 180))
+        results: dict[str, GroupWriteResult] = {}
+        rows_by_group: dict[str, list[dict[str, Any]]] = {}
+
+        with store.writable_session("main") as session:
+            for (
+                receiver_name,
+                augmented_datasets,
+                _rinex_files,
+                aux_datasets,
+                _sid_issues,
+                reader_format,
+            ) in group_inputs:
+                t_start = time.perf_counter()
+                result = GroupWriteResult(
+                    receiver_name=receiver_name,
+                    fork=None,
+                    aux_datasets=aux_datasets,
+                    reader_format=reader_format,
+                )
+                result.actions["overwritten"] = 0
+                results[receiver_name] = result
+                hashed = [
+                    (fname, ds)
+                    for fname, ds in augmented_datasets
+                    if ds.attrs.get("File Hash")
+                ]
+                if not hashed:
+                    continue
+
+                self._check_preprocessing(receiver_name, hashed)
+                file_hash_map = {
+                    fname: ds.attrs.get("File Hash") for fname, ds in hashed
+                }
+                existing_hashes = self._check_existing_with_temporal_overlap(
+                    receiver_name, hashed, file_hash_map
+                )
+                result.existing_hashes = existing_hashes
+                is_new_group = receiver_name not in (store.list_groups() or [])
+
+                to_write = [
+                    (fname, ds)
+                    for fname, ds in hashed
+                    if file_hash_map[fname] not in existing_hashes
+                    or self._gnss_store_strategy != "skip"
+                ]
+                if to_write:
+                    cadence_s = self._day_block_cadence_s(receiver_name, to_write)
+                    template = store._normalize_encodings(
+                        store._cleanse_dataset_attrs(to_write[0][1])
+                    )
+                    days = np.unique(
+                        np.concatenate(
+                            [ds.epoch.values.astype("M8[D]") for _, ds in to_write]
+                        )
+                    )
+                    for day in days:
+                        add_day_block(
+                            session,
+                            receiver_name,
+                            day,
+                            cadence_s,
+                            template,
+                            epoch_chunk=epoch_chunk,
+                        )
+
+                new_fnames: list[Path] = []
+                for idx, (fname, ds) in enumerate(hashed):
+                    rinex_hash = str(file_hash_map[fname])
+                    exists = rinex_hash in existing_hashes
+                    rel_path = store.rel_path_for_commit(fname)
+                    t_file = time.perf_counter()
+                    n_epochs = -1
+                    if exists and self._gnss_store_strategy == "skip":
+                        action = "skipped"
+                        log.debug("Skipped: %s", rel_path)
+                    else:
+                        try:
+                            region = write_file_region(
+                                session,
+                                receiver_name,
+                                store._normalize_encodings(
+                                    store._cleanse_dataset_attrs(ds)
+                                ),
+                            )
+                        except (OSError, RuntimeError, ValueError):  # fmt: skip
+                            log.exception("Failed to write %s", fname.name)
+                            continue
+                        n_epochs = region.epochs
+                        if exists:
+                            action = "overwritten"
+                        elif is_new_group and not new_fnames:
+                            action = "initial"
+                        else:
+                            action = "written"
+                        if not exists:
+                            new_fnames.append(fname)
+                        log.debug("%s: %s", action.capitalize(), rel_path)
+                    result.actions[action] += 1
+                    rows_by_group.setdefault(receiver_name, []).append(
+                        self._logbook_row(
+                            fname, ds, rinex_hash, exists, rel_path, action, n_epochs
+                        )
+                    )
+                    dt_file = time.perf_counter() - t_file
+                    result.file_append_seconds.append(dt_file)
+                    result.total_epochs += max(n_epochs, 0)
+                    result.total_nbytes += int(ds.nbytes)
+                    self._icechunk_log.info(
+                        "icechunk.file_append",
+                        duration_seconds=round(dt_file, 4),
+                        receiver=receiver_name,
+                        date=yyyydoy,
+                        file=fname.name,
+                        file_index=idx,
+                        action=action,
+                        n_epochs=n_epochs,
+                        n_sids=int(ds.sizes.get("sid", 0)),
+                    )
+
+                # The sbf_obs of files written again stay as first stored.
+                self._write_sbf_obs(session, receiver_name, aux_datasets, new_fnames)
+                result.metadata_records = rows_by_group.get(receiver_name, [])
+                result.duration_seconds = time.perf_counter() - t_start
+
+            written = {name: r for name, r in results.items() if r.metadata_records}
+            if not written:
+                return results
+            summary = ", ".join(
+                f"{name}({', '.join(f'{k}={v}' for k, v in r.actions.items() if v)})"
+                for name, r in written.items()
+            )
+            commit_msg = _with_run_id(
+                f"[v{version}] {yyyydoy}: {len(written)} groups: {summary}"
+            )
+            agg_metadata: dict[str, Any] = {
+                "date": yyyydoy,
+                "receivers": ",".join(written),
+                "total_files": str(
+                    sum(len(r.metadata_records) for r in written.values())
+                ),
+            }
+            for name, r in written.items():
+                for row in r.metadata_records:
+                    row["commit_msg"] = commit_msg
+                # No commit without the log-book rows: a file stored without
+                # its row is not recognized as stored by the next run.
+                store.append_metadata_bulk(
+                    group_name=name, rows=r.metadata_records, session=session
+                )
+                agg_metadata[f"group__{name}"] = json.dumps(
+                    {
+                        "receiver": name,
+                        "start": str(min(rec["start"] for rec in r.metadata_records)),
+                        "end": str(max(rec["end"] for rec in r.metadata_records)),
+                        "rinex_hashes": ",".join(
+                            str(rec["rinex_hash"]) for rec in r.metadata_records
+                        ),
+                        "canonical_names": ",".join(
+                            str(rec["canonical_name"])
+                            for rec in r.metadata_records
+                            if rec.get("canonical_name")
+                        ),
+                    }
+                )
+            snapshot_id = commit_with_rebase(
+                session,
+                commit_msg,
+                metadata=agg_metadata,
+                store_path=store.store_path,
+                config=self._config,
+            )
+            log.info(
+                "Committed day blocks %s (snapshot: %s...)", yyyydoy, snapshot_id[:8]
+            )
+            for r in written.values():
+                r.snapshot_id = snapshot_id
+
+        for name, r in written.items():
+            if self._keeper_tags_enabled:
+                store.create_keeper_tag(name, yyyydoy, str(r.snapshot_id))
+            self._icechunk_log.info(
+                "batch_write_complete",
+                receiver=name,
+                date=yyyydoy,
+                snapshot_id=str(r.snapshot_id)[:12],
+                total_files=len(r.metadata_records),
+                total_epochs=r.total_epochs,
+                total_nbytes=r.total_nbytes,
+                duration_seconds=round(r.duration_seconds, 2),
+                actions=r.actions,
+            )
+
+        if store.source_format is None:
+            first = next(iter(written.values()))
+            reader_fmt = first.reader_format or self._reader_name
+            store.set_root_attrs({"source_format": reader_fmt}, branch="main")
+            log.info("Set store source_format='%s'", reader_fmt)
+
+        return results
+
     def _append_to_icechunk(
         self,
         augmented_datasets: list[tuple[Path, xr.Dataset]],
@@ -3024,7 +3340,24 @@ class RinexDataProcessor:
         4. Gives a new store its metadata first; the commit writes the
            root copy and snapshot summary (ADR 0014)
         5. Writes any auxiliary datasets (e.g. SBF metadata) after commit
+
+        A new store, or one made of day blocks (ADR 0016), is written by
+        :meth:`_write_day_blocks` instead, with the same return value.
         """
+        if self._writes_day_blocks():
+            results = self._write_day_blocks(
+                [
+                    (
+                        receiver_name,
+                        augmented_datasets,
+                        rinex_files,
+                        aux_datasets,
+                        sid_issues,
+                        reader_format,
+                    )
+                ]
+            )
+            return results[receiver_name].existing_hashes
         _ = rinex_files
         log = self._logger
         self._ensure_gnss_store_metadata([receiver_name], reader_format)
@@ -4344,6 +4677,10 @@ class RinexDataProcessor:
         # ====================================================================
         # PHASE 3 — writes + yields
         # ====================================================================
+        # A new store, or one made of day blocks (ADR 0016), gets all groups
+        # written as day blocks in one session and one commit, whatever the
+        # strategy (`_write_day_blocks`). A store written by appending keeps
+        # appending:
         # "overwrite" keeps the sequential per-group loop: each receiver is
         # staged on a temp branch and promoted with
         # `MyIcechunkStore.promote_branch` (refused if main moved meanwhile).
@@ -4358,8 +4695,9 @@ class RinexDataProcessor:
         time_range = (start_time, end_time)
 
         n_written = 0
+        day_blocks = self._writes_day_blocks()
 
-        if self._gnss_store_strategy == "overwrite":
+        if self._gnss_store_strategy == "overwrite" and not day_blocks:
             for name, rtype, data_dir, _pos, fmt in normalized_configs:
                 if name in skipped:
                     continue
@@ -4404,7 +4742,7 @@ class RinexDataProcessor:
                 n_written += 1
                 yield name, daily_dataset, total_s
 
-        else:  # "skip" or "unsafe_append"
+        else:  # day blocks, or appending with "skip" or "unsafe_append"
             group_inputs = []
             rinex_files_by_name: dict[str, list[Path]] = {}
             for name, rtype, data_dir, _pos, fmt in normalized_configs:
@@ -4419,7 +4757,9 @@ class RinexDataProcessor:
 
             t_batch_start = time.perf_counter()
             results: dict[str, GroupWriteResult] = {}
-            if group_inputs:
+            if group_inputs and day_blocks:
+                results = self._write_day_blocks(group_inputs)
+            elif group_inputs:
                 results = self._write_receiver_batch_forked(group_inputs)
             t_batch_end = time.perf_counter()
             self._logger.info(

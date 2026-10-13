@@ -48,6 +48,7 @@ from icechunk.session import ForkSession
 from icechunk.xarray import to_icechunk
 from zarr.dtype import VariableLengthUTF8
 
+from canvod.store.day_blocks import drop_empty_slots, holds_day_blocks, load_group
 from canvod.store.prepare import prepare_write
 from canvod.store.time_encoding import with_time_units
 from canvod.store.viewer import add_rich_display_to_store
@@ -253,6 +254,10 @@ def _append_log_rows(zmeta: zarr.Group, df: pl.DataFrame) -> None:
         """(dtype, fill value) of a log-book column."""
         if col_name == "index":
             return "i8", 0
+        if col_name == "epochs":
+            # Epochs with data in the file; -1 in rows written before the
+            # column existed.
+            return "i8", -1
         if col_name in ("start", "end"):
             return "M8[ns]", np.datetime64("NaT", "ns")
         # strings / jsons / ids
@@ -262,7 +267,7 @@ def _append_log_rows(zmeta: zarr.Group, df: pl.DataFrame) -> None:
         col_data = df_with_index[col_name]
         dtype, fill = _column_spec(col_name)
 
-        if col_name in ("index", "start", "end"):
+        if col_name in ("index", "epochs", "start", "end"):
             arr = col_data.to_numpy().astype(dtype)
         else:
             arr = col_data.to_list()
@@ -1243,9 +1248,15 @@ class MyIcechunkStore:
         time_slice: slice | None = None,
         date: str | None = None,
         chunks: dict[str, Any] | None = None,
+        drop_empty: bool = False,
     ) -> xr.Dataset:
         """
-        Read data from a group.
+        Read data from a group, its epochs in time order.
+
+        A group made of day blocks (ADR 0016) has a slot for every epoch of
+        a day at the day's cadence; slots without data hold missing values
+        (NaN, or the ``_FillValue`` of integer variables) at their grid
+        times.
 
         Parameters
         ----------
@@ -1260,6 +1271,10 @@ class MyIcechunkStore:
             Converted to a ``time_slice``; mutually exclusive with ``time_slice``.
         chunks : dict[str, Any] | None, optional
             Dask chunks for reading. If None, the chunks stored in the group.
+        drop_empty : bool, default False
+            Drop the empty slots of the epochs read, after ``time_slice``
+            (a group written by appending has none; see
+            :func:`~canvod.store.day_blocks.drop_empty_slots`).
 
         Returns
         -------
@@ -1277,16 +1292,14 @@ class MyIcechunkStore:
         with self.readonly_session(branch) as session:
             # The stored chunks, not chunk_strategy: a group keeps the chunks
             # it was written with, which the settings may no longer match.
-            ds = xr.open_zarr(
-                session.store,
-                group=group_name,
-                chunks={} if chunks is None else chunks,
-                consolidated=False,
-            )
+            ds = load_group(session.store, group_name, chunks=chunks)
+            day_blocked = holds_day_blocks(session.store, group_name)
 
             if time_slice is not None:
                 ds = ds.sel(epoch=time_slice)
                 self._logger.debug(f"Applied time slice: {time_slice}")
+            if drop_empty and day_blocked:
+                ds = drop_empty_slots(ds, group_name)
 
             self._logger.info(
                 f"Successfully read group '{group_name}' - shape: {dict(ds.sizes)}"
@@ -1300,6 +1313,7 @@ class MyIcechunkStore:
         keep: str = "last",
         time_slice: slice | None = None,
         chunks: dict[str, Any] | None = None,
+        drop_empty: bool = False,
     ) -> xr.Dataset:
         """
         Read data from a group with automatic deduplication.
@@ -1319,6 +1333,8 @@ class MyIcechunkStore:
             Optional time slice for filtering.
         chunks : dict[str, Any] | None, optional
             Chunking specification (uses config defaults if None).
+        drop_empty : bool, default False
+            Drop the empty slots of a day-block group (see :meth:`read_group`).
 
         Returns
         -------
@@ -1333,7 +1349,11 @@ class MyIcechunkStore:
 
         # First, read the raw data
         ds = self.read_group(
-            group_name, branch=branch, time_slice=time_slice, chunks=chunks
+            group_name,
+            branch=branch,
+            time_slice=time_slice,
+            chunks=chunks,
+            drop_empty=drop_empty,
         )
 
         # Then deduplicate using metadata table intelligence
@@ -1618,8 +1638,8 @@ class MyIcechunkStore:
             for col_name in df.columns:
                 col_data = df[col_name]
 
-                if col_name == "index":
-                    # Index column as int64
+                if col_name in ("index", "epochs"):
+                    # Index and epoch-count columns as int64
                     arr = col_data.to_numpy().astype("i8")
                     dtype = "i8"
                 elif col_name in ("start", "end"):

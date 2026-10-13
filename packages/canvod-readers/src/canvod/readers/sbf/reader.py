@@ -52,6 +52,7 @@ from canvod.readers.gnss_specs.metadata import (
     CN0_METADATA,
     COORDS_METADATA,
     DTYPES,
+    INTEGER_FILL_VALUE,
     OBSERVABLES_METADATA,
     epoch_coord_attrs,
 )
@@ -1792,8 +1793,8 @@ class SbfReader(GNSSDataReader):
         dop_arr = _grid(obs.doppler_hz, DTYPES["Doppler"], np.nan)
         # ObsInfo flags: -1 = no observation, 0 = flag clear, 1 = flag set.
         # Bit 0 = smoothing, bit 2 = half-cycle ambiguity (p.262).
-        smoothing_arr = _grid(obs.obs_info & 0x01, np.int8, -1)
-        half_cycle_arr = _grid((obs.obs_info >> 2) & 0x01, np.int8, -1)
+        smoothing_arr = _grid(obs.obs_info & 0x01, np.int8, INTEGER_FILL_VALUE)
+        half_cycle_arr = _grid((obs.obs_info >> 2) & 0x01, np.int8, INTEGER_FILL_VALUE)
         # SBF has no native RINEX-style SSI field: derive it from C/N0.
         ssi_arr = _snr_dbhz_to_ssi(snr_arr).astype(DTYPES["SSI"])
 

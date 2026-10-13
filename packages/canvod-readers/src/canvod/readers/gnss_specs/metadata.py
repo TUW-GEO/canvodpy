@@ -36,6 +36,10 @@ import numpy as np
 
 from canvod.readers.gnss_specs.constants import FREQ_UNIT
 
+#: Value of an integer variable (e.g. LLI, SSI) where nothing was recorded;
+#: floating-point variables use NaN.
+INTEGER_FILL_VALUE: Final[int] = -1
+
 # -------------------
 # Observable metadata
 # -------------------
@@ -105,7 +109,7 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
             "-1 = no indicator recorded. Table A3 defines no further bits, so "
             "7 is the largest defined value."
         ),
-        "_FillValue": -1,
+        "_FillValue": INTEGER_FILL_VALUE,
     },
     "SSI": {
         "long_name": "Signal Strength Indicator",
@@ -118,7 +122,7 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
             "S/N ratio, 9 = maximum possible signal strength. 0 = not known, "
             "-1 = no indicator recorded."
         ),
-        "_FillValue": -1,
+        "_FillValue": INTEGER_FILL_VALUE,
     },
 }
 

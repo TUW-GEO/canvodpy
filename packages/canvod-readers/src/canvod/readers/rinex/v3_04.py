@@ -54,6 +54,7 @@ from canvod.readers.gnss_specs.metadata import (
     CN0_METADATA,
     COORDS_METADATA,
     DTYPES,
+    INTEGER_FILL_VALUE,
     OBSERVABLES_METADATA,
     SNR_METADATA,
     epoch_coord_attrs,
@@ -222,7 +223,7 @@ def _allocate_obs_arrays(
     arrays: dict[str, np.ndarray] = {}
     for var in _OBS_VAR_ORDER:
         if var in kept_vars:
-            fill = -1 if var in ("LLI", "SSI") else np.nan
+            fill = INTEGER_FILL_VALUE if var in ("LLI", "SSI") else np.nan
             arrays[var] = np.full((n_epochs, n_sids), fill, dtype=DTYPES[var])
     if "SSI" in arrays:
         arrays[_SSI_RANK_KEY] = np.zeros((n_epochs, n_sids), dtype=np.int8)

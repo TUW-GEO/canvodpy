@@ -475,10 +475,13 @@ class GnssResearchSite:
         )
 
     def read_receiver_data(
-        self, receiver_name: str, time_range: tuple[datetime, datetime] | None = None
+        self,
+        receiver_name: str,
+        time_range: tuple[datetime, datetime] | None = None,
+        drop_empty: bool = True,
     ) -> xr.Dataset:
         """
-        Read data from a specific receiver.
+        Read data from a specific receiver, its epochs in time order.
 
         Parameters
         ----------
@@ -486,6 +489,10 @@ class GnssResearchSite:
             Name of the receiver.
         time_range : tuple of datetime, optional
             (start_time, end_time) for filtering the data.
+        drop_empty : bool, default True
+            Drop the empty slots of the epochs read: the receiver's epochs
+            with data. ``False`` keeps every slot of a day-block group (see
+            :meth:`MyIcechunkStore.read_group`).
 
         Returns
         -------
@@ -506,23 +513,20 @@ class GnssResearchSite:
 
         self._logger.info(f"Reading data for receiver '{receiver_name}'")
 
-        if self.gnss_store._gnss_store_strategy == "unsafe_append":
-            ds = self.gnss_store.read_group_deduplicated(receiver_name, keep="last")
-        else:
-            ds = self.gnss_store.read_group(receiver_name)
-
-        # Apply time filtering if specified
-        if time_range is not None:
-            start_time, end_time = time_range
-            ds = ds.where(
-                (ds.epoch >= np.datetime64(start_time, "ns"))
-                & (ds.epoch <= np.datetime64(end_time, "ns")),
-                drop=True,
+        time_slice = (
+            None
+            if time_range is None
+            else slice(
+                np.datetime64(time_range[0], "ns"), np.datetime64(time_range[1], "ns")
             )
-
-            self._logger.debug(f"Applied time filter: {start_time} to {end_time}")
-
-        return ds
+        )
+        if self.gnss_store._gnss_store_strategy == "unsafe_append":
+            return self.gnss_store.read_group_deduplicated(
+                receiver_name, keep="last", time_slice=time_slice, drop_empty=drop_empty
+            )
+        return self.gnss_store.read_group(
+            receiver_name, time_slice=time_slice, drop_empty=drop_empty
+        )
 
     def store_vod_analysis(
         self,
