@@ -33,12 +33,17 @@ recipes run these from the command line (`just metadata-show <store>`,
   that write to a store directly give it made-up metadata first with
   `canvod.store_metadata.testing.give_test_metadata`.
 - Rules from the standards (the license is SPDX or `other` with
-  `license_uri`; vendored list in `standards/`) live in the pydantic
-  models, not in their users. New metadata breaking one fails. Metadata
+  `license_uri`, vendored list in `standards/`; ORCID, ROR, DOI,
+  coordinates, durations, URLs, the creator and publisher types, the
+  store types; the list is in the store-metadata docs) live in the
+  pydantic models, as annotated types in `schema.py` (the license rule,
+  which reads two fields, as a model validator of `Publisher`), not in their
+  users. `ACDD_TYPES` (`schema.py`) and `STORE_TYPES` (`identity.py`)
+  are the one list of their values. New metadata breaking one fails. Metadata
   read from a store goes through `validate_existing` in `schema.py`: the
   value is kept with a `MetadataRuleWarning`, and `amend_metadata` is
   strict only on the fields it changes; a migration is strict on all of
-  them. A new read path of stored metadata uses `validate_existing`,
+  them except `COMPUTED_FIELDS`, which its commit computes again. A new read path of stored metadata uses `validate_existing`,
   never a plain `model_validate`. `context=READ_CONTEXT` directly only
   where the metadata was read, and warned about, already (amendment
   replay) or where the breaks are reported otherwise (`validate_all`,

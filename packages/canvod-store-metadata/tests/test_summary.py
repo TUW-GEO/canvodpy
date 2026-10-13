@@ -15,11 +15,13 @@ from canvod.store_metadata import (
 )
 
 
-def _write_group(root: zarr.Group, name: str, n_epochs: int, sids: list[str]) -> None:
+def _write_group(
+    root: zarr.Group, name: str, n_epochs: int, sids: list[str], step_s: int = 5
+) -> None:
     """A receiver group with CF-encoded epochs, as xarray writes it."""
     g = root.create_group(name)
     epoch = g.create_array("epoch", shape=(n_epochs,), dtype="i8")
-    epoch[:] = np.arange(n_epochs) * 5
+    epoch[:] = np.arange(n_epochs) * step_s
     epoch.attrs["units"] = "seconds since 2025-01-01 00:00:00"
     g.create_array("sid", shape=(len(sids),), dtype=str)[:] = np.array(sids)
     g.create_array("system", shape=(len(sids),), dtype=str)[:] = np.array(
@@ -66,6 +68,21 @@ def test_summarize_store(tmp_path):
     assert updates["instruments.receivers.reference_01.epochs"] == 360
     assert updates["instruments.receivers.reference_01.sids"] == 2
     assert not any(k.startswith("instruments.receivers.canopy_02") for k in updates)
+
+
+def test_long_durations_are_iso_8601_without_exponents(tmp_path):
+    repo = icechunk.Repository.create(
+        icechunk.local_filesystem_storage(str(tmp_path / "store"))
+    )
+    session = repo.writable_session("main")
+    root = zarr.open_group(session.store, mode="w")
+    _write_group(root, "canopy_01", 3, ["G01|L1|C"], step_s=15 * 86400)
+    session.commit("data")
+
+    updates = summarize_store(tmp_path / "store", receivers={"canopy_01": "canopy"})
+
+    assert updates["temporal.time_coverage_duration"] == "PT2592000S"
+    assert updates["temporal.time_coverage_resolution"] == "PT1296000S"
 
 
 def test_summary_keeps_receivers_whose_names_extend_each_other_apart(tmp_path):

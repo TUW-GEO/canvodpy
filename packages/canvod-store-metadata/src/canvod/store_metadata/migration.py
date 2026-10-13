@@ -28,7 +28,7 @@ from zarr import errors as zarr_errors
 from .amend import check_amendable
 from .identity import check_naming_authority, new_uuid, stac_link, store_id
 from .io import (
-    _apply_updates,
+    _set_field,
     check_who,
     commit_lock,
     commit_with_rebase,
@@ -36,11 +36,13 @@ from .io import (
 from .location import StoreLocation, open_repository, store_location
 from .schema import (
     _METADATA_KEY,
+    COMPUTED_FIELDS,
     MigrationRecord,
     RepositoryMetadata,
     StoreMetadata,
     describe_rule_breaks,
     rule_breaks,
+    validate_existing,
 )
 from .snapshot import preview_metadata
 from .validate import validate_all
@@ -196,22 +198,29 @@ def _with_values(
     """``old`` with ``values`` set; refused if it breaks a rule of a standard.
 
     Reading an old store only warns about a broken rule; the migrated
-    store is new metadata, so the value must be fixed now.
+    store's repository metadata is new metadata, so the value must be
+    fixed now. A field the migration commit computes again only warns.
     """
+    data = old.model_dump(mode="json")
+    for field, value in values.items():
+        _set_field(data, field, value)
     try:
-        return _apply_updates(old, values)
+        return StoreMetadata.model_validate(data)
     except ValidationError as error:
-        broken = rule_breaks(error)
-        if not broken:
+        breaks = rule_breaks(error)
+        if len(breaks) < error.error_count():
             raise
-        fields = sorted({b.field for b in broken})
+    refused = [b for b in breaks if b.field not in COMPUTED_FIELDS]
+    if refused:
+        fields = sorted({b.field for b in refused})
         msg = (
             f"The store at {store_path} cannot be migrated: "
-            f"{describe_rule_breaks(broken)}. Give the value with "
+            f"{describe_rule_breaks(refused)}. Give the value with "
             f"{' '.join(f'--set {f}=VALUE' for f in fields)} (in Python: "
             "values=)."
         )
-        raise ValueError(msg) from None
+        raise ValueError(msg)
+    return validate_existing(StoreMetadata, data)
 
 
 def _refuse_failures(

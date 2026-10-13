@@ -7,25 +7,32 @@ checks the fields against them and the FAIR principles.
 from __future__ import annotations
 
 import functools
+import re
 import warnings
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from importlib import resources
-from typing import Any, Self
+from typing import Annotated, Any, Self
 
 from canvod.utils.tools import deprecated
 from pydantic import (
+    AfterValidator,
     BaseModel,
     Field,
+    HttpUrl,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     model_validator,
 )
 from pydantic_core import PydanticCustomError
 
+from .identity import STORE_TYPES
+
 # ── Rules from the standards ────────────────────────────────────────────────
 #
-# A field that follows a standard (SPDX, ...) is checked by its model. New
+# A field that follows a standard (SPDX, ORCID, ...) is checked by its
+# model. New
 # metadata breaking a rule fails; metadata read from an existing store is
 # validated with ``context=READ_CONTEXT`` and keeps the value, with a
 # MetadataRuleWarning, so the store still opens and the value can be fixed
@@ -38,6 +45,27 @@ RULE_ERROR = "metadata_rule"
 #: Where the SPDX license identifiers are listed.
 SPDX_LIST_URL = "https://spdx.org/licenses/"
 _AMEND_HINT = "fix it with canvodpy store amend SITE --store gnss|vod"
+#: Fields every commit computes from the data (snapshot summary).
+COMPUTED_FIELDS = frozenset(
+    {
+        "temporal.time_coverage_duration",
+        "temporal.time_coverage_resolution",
+        "spatial.geospatial_lat_min",
+        "spatial.geospatial_lat_max",
+        "spatial.geospatial_lon_min",
+        "spatial.geospatial_lon_max",
+        "spatial.bbox",
+    }
+)
+_RECOMPUTE_HINT = "the next commit to the store computes it again"
+#: ACDD ``creator_type`` / ``publisher_type`` for each creator or publisher
+#: type the metadata takes.
+ACDD_TYPES = {
+    "Personal": "person",
+    "Organizational": "institution",
+    "Institutional": "institution",
+    **{t: t for t in ("person", "group", "institution", "position")},
+}
 
 
 class MetadataRuleWarning(UserWarning):
@@ -57,13 +85,173 @@ def spdx_license_ids() -> frozenset[str]:
     )
 
 
-def _refuse_rule_break(info: ValidationInfo, field: str, rule: str) -> None:
-    """Refuse ``field`` breaking ``rule``, unless the metadata is read."""
+def _refuse_rule_break(
+    info: ValidationInfo, rule: str, *, field: str | None = None
+) -> None:
+    """Refuse a value breaking ``rule``, unless the metadata is read.
+
+    ``field`` names the field when a model validator checks it; a field's
+    own validator leaves it out. The error's context holds the name the
+    message shows (``shown``) and that ``field``, which ``rule_breaks``
+    adds to the error's location (``checked``).
+    """
     if info.context and info.context.get("existing"):
         return
     raise PydanticCustomError(
-        RULE_ERROR, "`{field}` {rule}", {"field": field, "rule": rule}
+        RULE_ERROR,
+        "`{shown}` {rule}",
+        {"shown": field or info.field_name, "checked": field or "", "rule": rule},
     )
+
+
+def _rule[T](check: Callable[[T], str | None]) -> AfterValidator:
+    """A validator refusing a value for which ``check`` says what is wrong."""
+
+    def validate(value: T, info: ValidationInfo) -> T:
+        broken = check(value)
+        if broken is not None:
+            _refuse_rule_break(info, f"{value!r} {broken}")
+        return value
+
+    return AfterValidator(validate)
+
+
+_ORCID = re.compile(r"(?:https://orcid\.org/)?(\d{4}-\d{4}-\d{4}-\d{3}[\dX])")
+
+
+def _orcid(value: str) -> str | None:
+    """ORCID iD: 16 digits in groups of four, the last a check digit.
+
+    The check digit is ISO 7064 11,2, as ORCID computes it.
+    """
+    match = _ORCID.fullmatch(value)
+    rule = (
+        "is not an ORCID iD: 0000-0000-0000-000X or https://orcid.org/ followed "
+        "by it, the last character a check digit"
+    )
+    if not match:
+        return rule
+    digits = match[1].replace("-", "")
+    total = 0
+    for digit in digits[:-1]:
+        total = (total + int(digit)) * 2
+    check = (12 - total % 11) % 11
+    if digits[-1] != ("X" if check == 10 else str(check)):
+        return f"{rule} (the check digit is wrong)"
+    return None
+
+
+_ROR = re.compile(r"(?:https://ror\.org/)?0[a-hj-km-np-tv-z0-9]{6}\d{2}")
+
+
+def _ror(value: str) -> str | None:
+    """ROR id: ``0``, six letters or digits, two digits."""
+    if _ROR.fullmatch(value):
+        return None
+    return (
+        "is not a ROR id: 0, six letters or digits and two digits, or "
+        "https://ror.org/ followed by them"
+    )
+
+
+_DOI_FORMS = re.compile(r"(?:doi:|https?://(?:dx\.)?doi\.org/)?(.*)", re.IGNORECASE)
+_DOI = re.compile(r"10\.\d{4,}(?:\.\d+)*/\S+")
+
+
+def _doi(value: str) -> str | None:
+    """A DOI, when the identifier is given as one (DataCite)."""
+    form = _DOI_FORMS.fullmatch(value)
+    doi = form[1] if form else value
+    given_as_doi = doi != value or value.startswith("10.")
+    if not given_as_doi or _DOI.fullmatch(doi):
+        return None
+    return "is not a DOI: 10.<registrant>/<suffix>, e.g. 10.5281/zenodo.1234567"
+
+
+def _one_of(values: Iterable[str]) -> Callable[[str], str | None]:
+    known = tuple(values)
+
+    def check(value: str) -> str | None:
+        if value in known:
+            return None
+        return f"is not one of {', '.join(known)}"
+
+    return check
+
+
+def _within(low: float, high: float, what: str) -> Callable[[float], str | None]:
+    def check(value: float) -> str | None:
+        if low <= value <= high:
+            return None
+        return f"is outside {low:g} to {high:g} ({what}, WGS84)"
+
+    return check
+
+
+_latitude = _within(-90, 90, "latitude")
+_longitude = _within(-180, 180, "longitude")
+
+
+def _bbox(value: list[float]) -> str | None:
+    """STAC bbox: [W, S, E, N] in WGS84."""
+    if len(value) != 4:
+        return f"has {len(value)} values, not 4: W, S, E, N (STAC)"
+    west, south, east, north = value
+    broken = [
+        rule
+        for rule in (
+            _longitude(west),
+            _latitude(south),
+            _longitude(east),
+            _latitude(north),
+        )
+        if rule
+    ]
+    if broken:
+        return "; ".join(broken)
+    if west > east:
+        return "is not W, S, E, N with W <= E (STAC)"
+    if south > north:
+        return "is not W, S, E, N with S <= N (STAC)"
+    return None
+
+
+_NUMBER = r"\d+(?:\.\d+)?"
+_DURATION = re.compile(
+    rf"P(?!$)(?:{_NUMBER}Y)?(?:{_NUMBER}M)?(?:{_NUMBER}W)?(?:{_NUMBER}D)?"
+    rf"(?:T(?=\d)(?:{_NUMBER}H)?(?:{_NUMBER}M)?(?:{_NUMBER}S)?)?"
+)
+
+
+def _duration(value: str) -> str | None:
+    """ISO 8601 duration (ACDD), e.g. ``P1D`` or ``PT5S``."""
+    if _DURATION.fullmatch(value):
+        return None
+    return "is not an ISO 8601 duration (ACDD), e.g. P1D or PT5S"
+
+
+_HTTP_URL = TypeAdapter(HttpUrl)
+
+
+def _url(value: str) -> str | None:
+    """An http or https URL; the metadata keeps the text as given."""
+    try:
+        _HTTP_URL.validate_python(value)
+    except ValidationError:
+        return "is not a URL starting with http:// or https://"
+    return None
+
+
+Orcid = Annotated[str, _rule(_orcid)]
+Ror = Annotated[str, _rule(_ror)]
+PersistentIdentifier = Annotated[str, _rule(_doi)]
+AgentType = Annotated[str, _rule(_one_of(ACDD_TYPES))]
+StoreType = Annotated[str, _rule(_one_of(STORE_TYPES))]
+Latitude = Annotated[float, _rule(_latitude)]
+Longitude = Annotated[float, _rule(_longitude)]
+BBox = Annotated[list[float], _rule(_bbox)]
+Duration = Annotated[str, _rule(_duration)]
+Url = Annotated[str, _rule(_url)]
 
 
 @dataclass(frozen=True)
@@ -85,7 +273,10 @@ def rule_breaks(error: ValidationError) -> list[RuleBreak]:
         if item["type"] != RULE_ERROR:
             continue
         ctx = item["ctx"]
-        field = ".".join([*(str(p) for p in item["loc"]), ctx["field"]])
+        path = [str(p) for p in item["loc"]]
+        if ctx["checked"]:
+            path.append(ctx["checked"])
+        field = ".".join(path)
         breaks.append(RuleBreak(field, ctx["rule"]))
     return breaks
 
@@ -154,8 +345,9 @@ def validate_existing[M: BaseModel](
         msg = describe_rule_breaks(refused) + "."
         raise ValueError(msg)
     for rule_break in breaks:
+        hint = _RECOMPUTE_HINT if rule_break.field in COMPUTED_FIELDS else _AMEND_HINT
         warnings.warn(
-            f"{rule_break}. The store opens anyway; {_AMEND_HINT}.",
+            f"{rule_break}. The store opens anyway; {hint}.",
             MetadataRuleWarning,
             stacklevel=3,
         )
@@ -170,7 +362,7 @@ class StoreIdentity(BaseModel):
     )
     title: str = Field(..., description="Human-readable store title")
     description: str | None = Field(None, description="Store description")
-    store_type: str = Field(
+    store_type: StoreType = Field(
         ..., description="Store type: gnss_store, vod_store, geodesy_store"
     )
     source_format: str = Field(
@@ -184,7 +376,7 @@ class StoreIdentity(BaseModel):
     stac_link: str | None = Field(
         None, description="Link to the store's item in the catalog, relative"
     )
-    persistent_identifier: str | None = Field(
+    persistent_identifier: PersistentIdentifier | None = Field(
         None, description="DOI or other persistent identifier (FAIR F1)"
     )
     standard_name_vocabulary: str | None = Field(None)
@@ -194,20 +386,22 @@ class StoreIdentity(BaseModel):
 class Creator(BaseModel):
     name: str = Field(..., description="Creator name")
     email: str = Field(..., description="Creator email")
-    orcid: str | None = Field(None, description="ORCID identifier")
-    type: str = Field("Personal", description="Creator type: Personal, Organizational")
+    orcid: Orcid | None = Field(None, description="ORCID identifier")
+    type: AgentType = Field(
+        "Personal", description="Creator type: Personal, Organizational"
+    )
     institution: str = Field(..., description="Institution name")
-    institution_ror: str | None = Field(None, description="ROR identifier")
+    institution_ror: Ror | None = Field(None, description="ROR identifier")
     department: str | None = Field(None)
     research_group: str | None = Field(None)
-    website: str | None = Field(None)
+    website: Url | None = Field(None)
 
 
 # §3 — Publisher & Rights
 class Publisher(BaseModel):
     name: str | None = Field(None, description="Publisher name")
-    type: str = Field("Institutional", description="Publisher type")
-    url: str | None = Field(None, description="Publisher URL")
+    type: AgentType = Field("Institutional", description="Publisher type")
+    url: Url | None = Field(None, description="Publisher URL")
     license: str | None = Field(
         None,
         description=(
@@ -215,7 +409,7 @@ class Publisher(BaseModel):
             "(then license_uri names its text)"
         ),
     )
-    license_uri: str | None = Field(None, description="License URI")
+    license_uri: Url | None = Field(None, description="License URI")
 
     @model_validator(mode="after")
     def _license_rule(self, info: ValidationInfo) -> Self:
@@ -231,8 +425,8 @@ class Publisher(BaseModel):
             if not self.license_uri:
                 _refuse_rule_break(
                     info,
-                    "license_uri",
-                    "is missing: a license outside SPDX ('other') needs the "
+                    field="license_uri",
+                    rule="is missing: a license outside SPDX ('other') needs the "
                     "URI of its text",
                 )
             return self
@@ -246,7 +440,9 @@ class Publisher(BaseModel):
             "with license_uri"
         )
         _refuse_rule_break(
-            info, "license", f"{license_!r} is not an SPDX license identifier{hint}"
+            info,
+            field="license",
+            rule=f"{license_!r} is not an SPDX license identifier{hint}",
         )
         return self
 
@@ -259,8 +455,12 @@ class TemporalExtent(BaseModel):
     collected_end: str | None = Field(None, description="Latest data epoch")
     time_coverage_start: str | None = Field(None)
     time_coverage_end: str | None = Field(None)
-    time_coverage_duration: str | None = Field(None, description="ISO 8601 duration")
-    time_coverage_resolution: str | None = Field(None, description="ISO 8601 duration")
+    time_coverage_duration: Duration | None = Field(
+        None, description="ISO 8601 duration"
+    )
+    time_coverage_resolution: Duration | None = Field(
+        None, description="ISO 8601 duration"
+    )
 
 
 # §5 — Spatial Extent & Site
@@ -272,15 +472,15 @@ class SiteInfo(BaseModel):
 
 class SpatialExtent(BaseModel):
     site: SiteInfo
-    geospatial_lat: float | None = Field(None, description="WGS84 latitude")
-    geospatial_lon: float | None = Field(None, description="WGS84 longitude")
+    geospatial_lat: Latitude | None = Field(None, description="WGS84 latitude")
+    geospatial_lon: Longitude | None = Field(None, description="WGS84 longitude")
     geospatial_alt_m: float | None = Field(None, description="Altitude in meters")
-    geospatial_lat_min: float | None = Field(None)
-    geospatial_lat_max: float | None = Field(None)
-    geospatial_lon_min: float | None = Field(None)
-    geospatial_lon_max: float | None = Field(None)
+    geospatial_lat_min: Latitude | None = Field(None)
+    geospatial_lat_max: Latitude | None = Field(None)
+    geospatial_lon_min: Longitude | None = Field(None)
+    geospatial_lon_max: Longitude | None = Field(None)
     geospatial_vertical_crs: str = Field("EPSG:4979", description="Vertical CRS")
-    bbox: list[float] | None = Field(None, description="STAC bbox [W, S, E, N]")
+    bbox: BBox | None = Field(None, description="STAC bbox [W, S, E, N]")
     extent_temporal_interval: list[list[str | None]] | None = Field(
         None, description="STAC temporal interval"
     )
@@ -551,14 +751,14 @@ class StoreMetadata(BaseModel):
 class RepositoryIdentity(BaseModel):
     id: str
     uuid: str
-    store_type: str
+    store_type: StoreType
     source_format: str
     naming_authority: str
     stac_link: str
     title: str
     description: str | None = None
     keywords: list[str] = Field(default_factory=list)
-    persistent_identifier: str | None = None
+    persistent_identifier: PersistentIdentifier | None = None
 
 
 class RepositoryTemporal(BaseModel):
@@ -567,8 +767,8 @@ class RepositoryTemporal(BaseModel):
 
 class RepositorySpatial(BaseModel):
     site: SiteInfo
-    geospatial_lat: float | None = None
-    geospatial_lon: float | None = None
+    geospatial_lat: Latitude | None = None
+    geospatial_lon: Longitude | None = None
     geospatial_alt_m: float | None = None
     geospatial_vertical_crs: str = "EPSG:4979"
 

@@ -25,6 +25,8 @@ _PRODUCTS = {
     "vod_store": ("vod", "vod"),
     "geodesy_store": ("geodesy", "gnss-geodesy"),
 }
+#: The known store types.
+STORE_TYPES = tuple(_PRODUCTS)
 
 
 def _product(store_type: str) -> tuple[str, str]:
