@@ -31,6 +31,8 @@ exclude = [
   "^https://opensource\\.org/",
   # Needs a login; times out for automated requests.
   "^https://zenodo\\.org/account/",
+  # Often times out for the CI runner (October 2026), while browsers load it.
+  "^https://www\\.gnu\\.org/",
   # Certificates the CI runner does not trust, although browsers do.
   "^https://www\\.softwareheritage\\.org/",
   "^https://customersupport\\.septentrio\\.com/",
