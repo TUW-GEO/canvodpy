@@ -291,5 +291,6 @@ class TestCommitLock:
     def test_reentrant_in_one_thread(self, tmp_path):
         store_path = _create_store(tmp_path / "store")
         with commit_lock(store_path), commit_lock(store_path):
-            pass
-        assert (store_path / COMMIT_LOCK_NAME).exists()
+            # The lock file exists while the lock is held; on Windows,
+            # filelock deletes it again on release.
+            assert (store_path / COMMIT_LOCK_NAME).exists()

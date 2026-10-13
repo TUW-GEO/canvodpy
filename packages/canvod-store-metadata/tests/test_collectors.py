@@ -317,7 +317,7 @@ def _project(path: Path, lock: str = "version = 1\n") -> Path:
     """A uv project: pyproject.toml and uv.lock."""
     path.mkdir(parents=True, exist_ok=True)
     (path / "pyproject.toml").write_text('[project]\nname = "fangorn"\n')
-    (path / "uv.lock").write_text(lock)
+    (path / "uv.lock").write_bytes(lock.encode())
     return path
 
 
@@ -393,7 +393,7 @@ class TestOncePerProcess:
         assert reads.count("uv.lock") == 1
         assert first.uv_lock_hash == second.uv_lock_hash
 
-        (project / "uv.lock").write_text("version = 1\nrevision = 3\n")
+        (project / "uv.lock").write_bytes(b"version = 1\nrevision = 3\n")
         third = collect_environment()
         assert reads.count("uv.lock") == 2
         assert third.uv_lock_text == "version = 1\nrevision = 3\n"
