@@ -6,9 +6,10 @@ new kind of storage is added in one place: a new :class:`StoreLocation`.
 
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import icechunk
 
@@ -37,6 +38,11 @@ class StoreLocation(ABC):
     def local_path(self) -> Path | None:
         """The directory on this machine, or ``None`` for remote storage."""
 
+    @property
+    @abstractmethod
+    def access_hint(self) -> str:
+        """What to check when the storage can't be reached."""
+
 
 @dataclass(frozen=True)
 class LocalStoreLocation(StoreLocation):
@@ -60,19 +66,98 @@ class LocalStoreLocation(StoreLocation):
     def local_path(self) -> Path:
         return self.path
 
+    @property
+    def access_hint(self) -> str:
+        return "Check that the directory exists and can be read."
+
     def __str__(self) -> str:
         return str(self.path)
+
+
+@dataclass(frozen=True)
+class S3StoreLocation(StoreLocation):
+    """A store under a prefix in an S3 bucket.
+
+    Credentials come only from the environment (the ``AWS_*`` variables,
+    ``AWS_PROFILE``) or the shared AWS files (``~/.aws/credentials``,
+    ``~/.aws/config``), as do region and endpoint (``AWS_REGION``,
+    ``AWS_ENDPOINT_URL``): never from the settings or the store metadata,
+    and they are never logged.
+    """
+
+    bucket: str
+    prefix: str
+
+    def storage(self) -> icechunk.Storage:
+        return icechunk.s3_storage(
+            bucket=self.bucket, prefix=self.prefix, from_env=True
+        )
+
+    def __truediv__(self, relative: str | Path) -> S3StoreLocation:
+        prefix = PurePosixPath(self.prefix) / PurePosixPath(str(relative))
+        return S3StoreLocation(self.bucket, str(prefix))
+
+    @property
+    def needs_commit_lock(self) -> bool:
+        """No: Icechunk's conditional writes on S3 keep two commits from
+        overwriting each other, and there is no local directory to hold a
+        lock file."""
+        return False
+
+    @property
+    def local_path(self) -> None:
+        return None
+
+    @property
+    def access_hint(self) -> str:
+        return (
+            "Credentials come from the AWS_ACCESS_KEY_ID and "
+            "AWS_SECRET_ACCESS_KEY environment variables, AWS_PROFILE or "
+            "~/.aws/credentials; region and endpoint from AWS_REGION and "
+            "AWS_ENDPOINT_URL."
+        )
+
+    def __str__(self) -> str:
+        return f"s3://{self.bucket}/{self.prefix}"
+
+
+_SCHEME = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*)://(.*)$")
 
 
 def store_location(location: StoreLocation | Path | str) -> StoreLocation:
     """The store location ``location`` names.
 
-    A :class:`StoreLocation` is returned as it is; a path or a string is a
-    local directory (``~`` expanded).
+    A :class:`StoreLocation` is returned as it is; ``s3://bucket/prefix``
+    is a store on S3; any other path or string is a local directory (``~``
+    expanded).
+
+    Raises
+    ------
+    ValueError
+        If an ``s3://`` URL lacks the bucket or the prefix (Icechunk creates
+        no repository at a bucket's root), or the URL has another scheme.
     """
     if isinstance(location, StoreLocation):
         return location
-    return LocalStoreLocation(Path(location).expanduser())
+    match = _SCHEME.match(str(location)) if isinstance(location, str) else None
+    if match is None:
+        return LocalStoreLocation(Path(location).expanduser())
+    scheme, rest = match.groups()
+    if scheme.lower() != "s3":
+        msg = (
+            f"Stores can't be opened at {location}: only local directories "
+            "and s3://bucket/prefix are supported."
+        )
+        raise ValueError(msg)
+    bucket, _, prefix = rest.partition("/")
+    prefix = prefix.strip("/")
+    if not bucket or not prefix:
+        msg = (
+            f"{location} names no store: give it as s3://bucket/prefix, with "
+            "both a bucket and a prefix."
+        )
+        raise ValueError(msg)
+    return S3StoreLocation(bucket, prefix)
 
 
 def open_repository(
@@ -113,7 +198,11 @@ def open_repository(
     """
     where = store_location(location)
     storage = where.storage()
-    exists = icechunk.Repository.exists(storage)
+    try:
+        exists = icechunk.Repository.exists(storage)
+    except icechunk.StorageError as error:
+        msg = f"The storage at {where} can't be reached. {where.access_hint}"
+        raise OSError(msg) from error
     if create:
         if exists:
             msg = f"A store already exists at {where}; it was not created again."

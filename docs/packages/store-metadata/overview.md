@@ -183,6 +183,42 @@ as a string.
 To recreate the Python environment that wrote a store, `extract_env()`
 writes the stored `pyproject.toml` and `uv.lock` to a directory.
 
+## Stores on S3
+
+The functions that read or write the metadata take a store location:
+a local directory, or an `s3://bucket/prefix` URL. A URL without a
+bucket or a prefix is refused, and so are other schemes such as `gs://`.
+
+```python
+from canvod.store_metadata import read_metadata, show_metadata
+
+meta = read_metadata("s3://example-bucket/stores/ExampleSite/gnss")
+show_metadata("s3://example-bucket/stores/ExampleSite/gnss")
+```
+
+Credentials, region and endpoint come only from the environment or the
+shared AWS files, never from the settings or the store metadata:
+
+- `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, or `AWS_PROFILE`;
+- `~/.aws/credentials` and `~/.aws/config`;
+- `AWS_REGION`, and `AWS_ENDPOINT_URL` for storage that isn't AWS.
+
+Without a credential, opening fails with an error that names the
+location and these sources.
+
+Every function opens a store with `open_repository()`. Opening never
+creates a store, so a mistyped location fails instead of leaving an
+empty store behind. With `expected_uuid=`, a store with another UUID is
+refused, so a store replaced at the same location is never taken for
+the old one.
+
+On a local directory, commits hold a lock file in the store's directory,
+because Icechunk on a local file system can lose one of two concurrent
+commits without an error. On S3 there is no lock: Icechunk's
+conditional writes keep two commits from overwriting each other.
+
+Processing still writes stores to local directories only.
+
 ## Check against the standards
 
 ```python

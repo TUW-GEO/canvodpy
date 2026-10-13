@@ -11,11 +11,14 @@ import json
 import warnings
 from collections.abc import Collection, Mapping
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import zarr
 from canvod.config.models.sites import reference_store_group
+
+if TYPE_CHECKING:
+    from .location import StoreLocation
 
 _CONSTELLATIONS = {
     "G": "GPS",
@@ -286,7 +289,7 @@ def summarize_root(
 
 
 def summarize_store(
-    store_path: Path,
+    store_path: StoreLocation | Path | str,
     branch: str = "main",
     receivers: Mapping[str, str] | Collection[str] | None = None,
 ) -> dict[str, Any]:
@@ -310,12 +313,15 @@ def summarize_store(
     -------
     dict[str, Any]
         Dotted-key updates of the snapshot summary's fields, plus
-        ``summaries.store_size_mb``. Empty if the store holds no data yet.
+        ``summaries.store_size_mb`` for a local store. Empty if the store
+        holds no data yet.
     """
-    from .location import open_repository
+    from .location import open_repository, store_location
 
-    session = open_repository(store_path).readonly_session(branch=branch)
+    location = store_location(store_path)
+    session = open_repository(location).readonly_session(branch=branch)
     updates = summarize_root(zarr.open_group(session.store, mode="r"), receivers)
-    if updates:
-        updates["summaries.store_size_mb"] = _store_size_mb(store_path)
+    # The size on disk; a store on S3 has no directory to measure.
+    if updates and location.local_path is not None:
+        updates["summaries.store_size_mb"] = _store_size_mb(location.local_path)
     return updates

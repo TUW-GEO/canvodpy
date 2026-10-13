@@ -164,7 +164,7 @@ def commit_with_rebase(
 
 
 def rewrite_manifests(
-    store_path: Path | str,
+    store_path: StoreLocation | Path | str,
     message: str,
     *,
     branch: str = "main",
@@ -215,13 +215,13 @@ def rewrite_manifests(
         )
 
 
-def read_repository_metadata(store_path: Path) -> dict[str, Any]:
+def read_repository_metadata(store_path: StoreLocation | Path | str) -> dict[str, Any]:
     """The store's repository metadata as stored (empty for a store without)."""
     return open_repository(store_path).get_metadata()
 
 
 def write_metadata(
-    store_path: Path,
+    store_path: StoreLocation | Path | str,
     metadata: StoreMetadata,
     branch: str = "main",
 ) -> str:
@@ -280,7 +280,7 @@ def write_metadata(
 
 
 def read_metadata(
-    store_path: Path,
+    store_path: StoreLocation | Path | str,
     branch: str = "main",
     *,
     snapshot_id: str | None = None,
@@ -320,7 +320,9 @@ def read_metadata(
     return combined_metadata(root, snapshot.metadata)
 
 
-def amendments_since(store_path: Path, metadata: StoreMetadata) -> list[Amendment]:
+def amendments_since(
+    store_path: StoreLocation | Path | str, metadata: StoreMetadata
+) -> list[Amendment]:
     """Amendments made to the store after the snapshot ``metadata`` was read from."""
     current = open_repository(store_path).get_metadata().get("amendments", [])
     return [Amendment.model_validate(a) for a in current[len(metadata.amendments) :]]
@@ -400,7 +402,7 @@ def _repository_fields(key: str) -> bool:
     "change a store's description with amend_metadata()."
 )
 def update_metadata(
-    store_path: Path,
+    store_path: StoreLocation | Path | str,
     updates: dict[str, Any],
     branch: str = "main",
 ) -> str:
@@ -455,7 +457,9 @@ def update_metadata(
     return commit_with_rebase(session, "Update store metadata", store_path=store_path)
 
 
-def metadata_exists(store_path: Path, branch: str = "main") -> bool:
+def metadata_exists(
+    store_path: StoreLocation | Path | str, branch: str = "main"
+) -> bool:
     """Check if the store has repository metadata.
 
     ``branch`` is not used: repository metadata is on no branch. It stays
@@ -511,7 +515,7 @@ def _written_before_metadata(repo: icechunk.Repository) -> bool:
 
 
 def ensure_metadata(
-    store_path: Path,
+    store_path: StoreLocation | Path | str,
     collect: Callable[[], StoreMetadata],
     *,
     site_name: str,
@@ -640,7 +644,10 @@ def _not_listed(names: Iterable[str], listed: Mapping[str, Any]) -> list[str]:
 
 
 def check_receivers(
-    repository: dict[str, Any], receivers: Iterable[str], *, store_path: Path | str
+    repository: dict[str, Any],
+    receivers: Iterable[str],
+    *,
+    store_path: StoreLocation | Path | str,
 ) -> None:
     """Refuse receivers the store's repository metadata does not list.
 
@@ -665,7 +672,10 @@ def check_receivers(
 
 
 def check_vod_analyses(
-    repository: dict[str, Any], analyses: Iterable[str], *, store_path: Path | str
+    repository: dict[str, Any],
+    analyses: Iterable[str],
+    *,
+    store_path: StoreLocation | Path | str,
 ) -> None:
     """Refuse VOD analyses the VOD store's repository metadata does not list.
 

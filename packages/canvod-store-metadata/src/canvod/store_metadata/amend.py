@@ -23,7 +23,7 @@ from .io import (
     commit_lock,
     commit_with_rebase,
 )
-from .location import open_repository
+from .location import StoreLocation, open_repository, store_location
 from .schema import RepositoryMetadata, StoreMetadata
 
 #: Fields that define which store this is; a different value is a
@@ -82,7 +82,7 @@ def check_amendable(field: str) -> None:
 
 
 def amend_metadata(
-    store_path: Path,
+    store_path: StoreLocation | Path | str,
     changes: dict[str, Any],
     *,
     reason: str,
@@ -128,7 +128,7 @@ def amend_metadata(
     for field in changes:
         check_amendable(field)
 
-    store_path = Path(store_path)
+    store_path = store_location(store_path)
     with commit_lock(store_path):
         repo = open_repository(store_path)
         current = repo.get_metadata()

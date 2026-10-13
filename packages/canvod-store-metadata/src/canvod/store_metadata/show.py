@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from .io import amendments_since, read_metadata
-from .location import open_repository
+from .location import StoreLocation, open_repository, store_location
 from .schema import StoreMetadata
 from .validate import validate_all
 
@@ -405,7 +405,7 @@ def _format_reproduce_instructions(meta: StoreMetadata) -> str:
 
 
 def extract_env(
-    store_path: Path,
+    store_path: StoreLocation | Path | str,
     output_dir: Path,
     branch: str = "main",
 ) -> Path:
@@ -440,7 +440,9 @@ def extract_env(
     return output_dir
 
 
-def _commit_log(store_path: Path, snapshot_id: str, limit: int = 20) -> list[str]:
+def _commit_log(
+    store_path: StoreLocation | Path | str, snapshot_id: str, limit: int = 20
+) -> list[str]:
     """The newest commits up to ``snapshot_id``: time, message, settings hash."""
     lines = []
     for i, snapshot in enumerate(
@@ -477,7 +479,7 @@ def show_metadata(
     snapshot_id : str | None
         Show this snapshot instead of a branch tip.
     """
-    path = Path(store_path)
+    path = store_location(store_path)
     try:
         meta = read_metadata(path, branch, snapshot_id=snapshot_id)
     except KeyError:

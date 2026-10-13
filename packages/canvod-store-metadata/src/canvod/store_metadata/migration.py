@@ -32,7 +32,7 @@ from .io import (
     commit_lock,
     commit_with_rebase,
 )
-from .location import open_repository
+from .location import StoreLocation, open_repository, store_location
 from .schema import _METADATA_KEY, MigrationRecord, RepositoryMetadata, StoreMetadata
 from .snapshot import preview_metadata
 from .validate import validate_all
@@ -43,7 +43,7 @@ _ENCODING_ATTRS = frozenset({"_FillValue", "coordinates"})
 
 
 def migrate_metadata(
-    store_path: Path,
+    store_path: StoreLocation | Path | str,
     *,
     who: str,
     naming_authority: str | None = None,
@@ -89,7 +89,7 @@ def migrate_metadata(
         written then.
     """
     who = check_who(who)
-    store_path = Path(store_path)
+    store_path = store_location(store_path)
     with commit_lock(store_path):
         repo = open_repository(store_path)
         existing = repo.get_metadata()
@@ -180,7 +180,9 @@ def migrate_metadata(
         return snapshot_id
 
 
-def _refuse_failures(preview: StoreMetadata, store_path: Path) -> None:
+def _refuse_failures(
+    preview: StoreMetadata, store_path: StoreLocation | Path | str
+) -> None:
     """Refuse a migration whose result would fail the standards checks."""
     failures = [
         issue

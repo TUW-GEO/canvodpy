@@ -1,5 +1,6 @@
 """One function opens a store's repository from its location (#235)."""
 
+import os
 from pathlib import Path
 
 import icechunk
@@ -11,8 +12,17 @@ from canvod.store_metadata import (
     read_store_uuid,
     store_location,
 )
-from canvod.store_metadata.io import COMMIT_LOCK_NAME, read_repository_metadata
-from canvod.store_metadata.location import LocalStoreLocation, StoreLocation
+from canvod.store_metadata.io import (
+    COMMIT_LOCK_NAME,
+    metadata_exists,
+    read_metadata,
+    read_repository_metadata,
+)
+from canvod.store_metadata.location import (
+    LocalStoreLocation,
+    S3StoreLocation,
+    StoreLocation,
+)
 from canvod.store_metadata.testing import give_test_metadata
 
 
@@ -159,3 +169,72 @@ class TestExpectedStore:
 
         with pytest.raises(ValueError, match="migrate-metadata"):
             read_store_uuid(store)
+
+
+class TestS3Locations:
+    """Metadata functions open stores on S3 (#237). No network: no MinIO."""
+
+    def test_an_s3_url_names_bucket_and_prefix(self) -> None:
+        location = store_location("s3://fangorn/stores/gnss/")
+
+        assert location == S3StoreLocation(bucket="fangorn", prefix="stores/gnss")
+        assert str(location) == "s3://fangorn/stores/gnss"
+
+    @pytest.mark.parametrize("url", ["s3://fangorn", "s3://fangorn/", "s3:///gnss"])
+    def test_an_s3_url_without_bucket_or_prefix_is_refused(self, url: str) -> None:
+        with pytest.raises(ValueError, match="s3://bucket/prefix"):
+            store_location(url)
+
+    @pytest.mark.parametrize(
+        "url", ["gs://fangorn/gnss", "az://fangorn/gnss", "http://fangorn/gnss"]
+    )
+    def test_other_schemes_are_refused_naming_the_supported_ones(
+        self, url: str
+    ) -> None:
+        with pytest.raises(ValueError, match="s3://"):
+            store_location(url)
+
+    def test_join_keeps_s3(self) -> None:
+        location = store_location("s3://fangorn/stores") / "fangorn" / "gnss"
+
+        assert str(location) == "s3://fangorn/stores/fangorn/gnss"
+
+    def test_s3_has_no_local_directory_and_no_commit_lock(self) -> None:
+        location = store_location("s3://fangorn/stores/gnss")
+
+        assert location.local_path is None
+        assert not location.needs_commit_lock
+
+    def test_the_commit_lock_does_nothing_on_s3(self, tmp_path: Path) -> None:
+        with commit_lock("s3://fangorn/stores/gnss"):
+            pass
+
+        assert not any(tmp_path.iterdir())
+
+    @pytest.fixture
+    def no_aws_credentials(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """No credentials anywhere: Icechunk fails before it contacts the
+        endpoint. (An endpoint that can't be reached is retried for half a
+        minute, so it is not tested here.)"""
+        for name in [n for n in os.environ if n.startswith("AWS_")]:
+            monkeypatch.delenv(name)
+        monkeypatch.setenv("AWS_CONFIG_FILE", "/nonexistent/config")
+        monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", "/nonexistent/credentials")
+        monkeypatch.setenv("AWS_EC2_METADATA_DISABLED", "true")
+        monkeypatch.setenv("AWS_ENDPOINT_URL", "http://127.0.0.1:9")
+        monkeypatch.setenv("AWS_REGION", "eu-central-1")
+
+    @pytest.mark.usefixtures("no_aws_credentials")
+    def test_a_missing_credential_names_where_credentials_come_from(self) -> None:
+        with pytest.raises(OSError, match="s3://fangorn/stores/gnss") as error:
+            open_repository("s3://fangorn/stores/gnss")
+
+        assert "~/.aws/credentials" in str(error.value)
+
+    @pytest.mark.usefixtures("no_aws_credentials")
+    @pytest.mark.parametrize(
+        "read", [read_repository_metadata, read_metadata, metadata_exists]
+    )
+    def test_metadata_functions_open_s3_through_the_opener(self, read) -> None:
+        with pytest.raises(OSError, match="s3://fangorn/stores/gnss"):
+            read("s3://fangorn/stores/gnss")

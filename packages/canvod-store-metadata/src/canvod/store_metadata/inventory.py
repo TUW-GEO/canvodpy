@@ -14,7 +14,7 @@ from .io import (
     read_metadata,
     store_command,
 )
-from .location import open_repository
+from .location import StoreLocation, open_repository
 from .schema import StoreMetadata
 
 
@@ -43,7 +43,9 @@ def _find_icechunk_stores(root_dir: Path, recursive: bool = True) -> list[Path]:
     return sorted(set(stores))
 
 
-def _metadata_to_row(store_path: Path, meta: StoreMetadata) -> dict[str, Any]:
+def _metadata_to_row(
+    store_path: StoreLocation | Path | str, meta: StoreMetadata
+) -> dict[str, Any]:
     """Convert metadata to a flat dict for a DataFrame row."""
     return {
         "id": meta.identity.id,
@@ -70,7 +72,7 @@ def _metadata_to_row(store_path: Path, meta: StoreMetadata) -> dict[str, Any]:
     }
 
 
-def _empty_row(store_path: Path) -> dict[str, Any]:
+def _empty_row(store_path: StoreLocation | Path | str) -> dict[str, Any]:
     """Row for a store without metadata."""
     return {
         "id": None,
@@ -122,7 +124,7 @@ _SCHEMA = {
 }
 
 
-def _store_state(store_path: Path) -> str:
+def _store_state(store_path: StoreLocation | Path | str) -> str:
     """``"current"``, ``"needs_migration"`` or ``"empty"`` (no metadata, no data)."""
     repo = open_repository(store_path)
     if repo.get_metadata():
@@ -130,7 +132,7 @@ def _store_state(store_path: Path) -> str:
     return "needs_migration" if _written_before_metadata(repo) else "empty"
 
 
-def _row(store_path: Path) -> dict[str, Any]:
+def _row(store_path: StoreLocation | Path | str) -> dict[str, Any]:
     """A store's catalog row; one needing migration says so, with the command."""
     state = _store_state(store_path)
     if state == "empty":
