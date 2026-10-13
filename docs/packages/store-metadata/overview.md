@@ -300,21 +300,83 @@ Snapshots from before the migration stay readable.
 ```python
 from pathlib import Path
 
-from canvod.store_metadata import scan_stores, write_stac_catalog
+from canvod.store_metadata import scan_stores
 
 df = scan_stores(Path("/data/stores/"))
 # Polars DataFrame, one row per store: id, title, store type, source format, site, ...
-
-write_stac_catalog(Path("/data/stores/"), output_path=Path("/data/stac/catalog.json"))
 ```
-
-`write_stac_catalog()` writes a STAC catalog (by default
-`<root_dir>/catalog.json`) and a STAC collection next to each store.
-`scan_stores_as_stac()` returns the catalog as a dictionary without writing
-it.
 
 A store written before stores kept repository metadata gets
 `needs_migration` in its row of `scan_stores()`, and `migrate_command`
-gives the command that migrates it. The catalog functions refuse a
-directory with such a store, or with a store that has no metadata at all,
-and name each one: a catalog lists every store or none.
+gives the command that migrates it.
+
+## Write the STAC catalog
+
+The catalog describes every store under the data root
+(`storage.stores_root_dir`) in [STAC](https://stacspec.org) 1.1, so that
+STAC Browser, pystac and other STAC tools can find the data (ADR 0015).
+It is written only when you ask for it:
+
+```bash
+canvodpy stac write              # the data root of the settings
+canvodpy stac write --root /data/stores/
+just stac-write
+```
+
+```python
+from pathlib import Path
+
+from canvod.store_metadata import write_catalog
+
+write_catalog(Path("/data/stores/"))  # returns /data/stores/catalog.json
+```
+
+The catalog sits beside the stores, never inside one:
+
+```text
+/data/stores/
+├── catalog.json
+├── gnss-observations/
+│   ├── collection.json
+│   └── at.ac.tuwien.rosalia-gnss/at.ac.tuwien.rosalia-gnss.json
+├── vod/
+│   ├── collection.json
+│   └── at.ac.tuwien.rosalia-vod/at.ac.tuwien.rosalia-vod.json
+└── Rosalia/
+    ├── rinex/                   the GNSS store
+    └── vod/                     the VOD store
+```
+
+There is one collection per product and one item per store. The item id
+is the naming authority and the store id, for example `at.ac.tuwien.rosalia-gnss`.
+Every link is relative, so the whole data root can be copied or moved and
+the catalog still works. The store's catalog link (`identity.stac_link`)
+points at its item.
+
+An item has the site as a point (longitude, latitude, ellipsoidal height),
+the time range of the data, the store's license and its UUID
+(`canvod:uuid`). A license outside SPDX is `other`, with a `license` link
+to its text. Each receiver's observations are one asset. An asset names
+everything needed to open it: the store (`href`), the group
+(`xarray:open_kwargs`) and the snapshot it describes
+(`canvod:snapshot_id`):
+
+```python
+import icechunk
+import pystac
+import xarray as xr
+
+item = pystac.Item.from_file(
+    "/data/stores/gnss-observations/at.ac.tuwien.rosalia-gnss/at.ac.tuwien.rosalia-gnss.json"
+)
+asset = item.assets["canopy_01"]
+repo = icechunk.Repository.open(
+    icechunk.local_filesystem_storage(asset.get_absolute_href())
+)
+session = repo.readonly_session(snapshot_id=asset.extra_fields["canvod:snapshot_id"])
+ds = xr.open_dataset(session.store, **asset.extra_fields["xarray:open_kwargs"])
+```
+
+The media type of an asset is `application/vnd.zarr; version=3`, as the
+STAC best practices for Zarr recommend. xpystac can't open these assets:
+it opens Icechunk only from S3, and only the root group.

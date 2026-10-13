@@ -8,6 +8,7 @@ Not to be confused with the *file registry* in ``canvod.store``
 """
 
 from .amend import amend_metadata
+from .catalog import build_catalog, store_item, write_catalog
 from .collectors import collect_config_snapshot, collect_metadata
 from .inventory import (
     scan_stores,
@@ -59,6 +60,7 @@ __all__ = [
     "StoreMetadata",
     "amend_metadata",
     "amendments_since",
+    "build_catalog",
     "apply_updates",
     "check_receivers",
     "check_vod_analyses",
@@ -81,6 +83,7 @@ __all__ = [
     "scan_stores",
     "scan_stores_as_stac",
     "show_metadata",
+    "store_item",
     "store_location",
     "summarize_store",
     "to_stac_collection",
@@ -89,6 +92,7 @@ __all__ = [
     "validate_all",
     "validate_datacite",
     "validate_fair",
+    "write_catalog",
     "write_metadata",
     "write_stac_catalog",
     "write_stac_collection",

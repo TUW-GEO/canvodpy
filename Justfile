@@ -284,6 +284,10 @@ store-log SITE STORE="gnss":
 store-ops SITE STORE="gnss":
     uv run canvodpy store log {{ SITE }} --store {{ STORE }} --ops {{ config_flag }}
 
+# write the STAC catalog of every store under the data root (storage.stores_root_dir), beside the stores
+stac-write:
+    uv run canvodpy stac write {{ config_flag }}
+
 # ============================================================================
 # Store Metadata
 # ============================================================================

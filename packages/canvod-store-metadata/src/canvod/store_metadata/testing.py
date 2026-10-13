@@ -19,11 +19,13 @@ from pathlib import Path
 
 from canvod.utils import testing
 
+from .identity import stac_link
 from .io import write_metadata
 from .location import open_repository
 from .schema import (
     Creator,
     Instruments,
+    Publisher,
     ReceiverInfo,
     SiteInfo,
     SpatialExtent,
@@ -66,7 +68,7 @@ def made_up_metadata(
             id=store_id,
             uuid="00000000-0000-4000-8000-000000000001",
             naming_authority=testing.NAMING_AUTHORITY,
-            stac_link=f"../../{suffix}/{store_id}/{store_id}.json",
+            stac_link=stac_link(testing.NAMING_AUTHORITY, store_id, store_type),
             title=f"{testing.CANOPY_SITE} {suffix.upper()} store",
             store_type=store_type,
             source_format="rinex3",
@@ -76,6 +78,7 @@ def made_up_metadata(
             email=testing.PERSON_EMAIL,
             institution=testing.INSTITUTION,
         ),
+        publisher=Publisher(name=testing.PUBLISHER, license="CC-BY-4.0"),
         temporal=TemporalExtent(
             created="2026-01-01T00:00:00Z", updated="2026-01-01T00:00:00Z"
         ),
@@ -83,6 +86,7 @@ def made_up_metadata(
             site=SiteInfo(name=testing.SITE_KEY),
             geospatial_lat=testing.LATITUDE,
             geospatial_lon=testing.LONGITUDE,
+            geospatial_alt_m=testing.ALTITUDE_M,
         ),
         instruments=Instruments(
             receivers={
