@@ -8,7 +8,7 @@ catalog is written beside the stores, at the data root
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, NoReturn
 
 import typer
 from rich.console import Console
@@ -18,7 +18,7 @@ from canvodpy.cli.options import CONFIG_DIR_OPTION
 
 stac_app = typer.Typer(
     name="stac",
-    help="Write the STAC catalog of every store under the data root.",
+    help="Write the STAC catalog of every store under the data root, or a release.",
     no_args_is_help=True,
 )
 
@@ -54,9 +54,39 @@ def write(
     try:
         catalog = write_catalog(_data_root(root))
     except ValueError as error:
-        first, *rest = str(error).splitlines()
-        console.print(f"[red]❌ {escape(first)}[/red]", soft_wrap=True)
-        for line in rest:
-            console.print(line, markup=False, highlight=False, soft_wrap=True)
-        raise typer.Exit(1) from None
+        _refused(error)
     console.print(f"[green]✓ Catalog written:[/green] {catalog}")
+
+
+@stac_app.command("release")
+def release(
+    tag: Annotated[
+        str, typer.Argument(help="Release tag, for example v2026.1; no '/'.")
+    ],
+    root: Annotated[Path | None, ROOT_OPTION] = None,
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+) -> None:
+    """Publish a release: tag every store under the data root and write its catalog.
+
+    Every store gets the Icechunk tag TAG on its current main, and
+    releases/TAG/ gets the catalog of that tag, each asset pinned to the
+    tag and its snapshot. A release catalog is never changed afterwards.
+    Nothing is tagged if a store cannot be described or already has the
+    tag; if every store has the tag but the catalog is missing, only the
+    catalog is written.
+    """
+    from canvod.store_metadata import create_release
+
+    try:
+        catalog = create_release(_data_root(root), tag)
+    except ValueError as error:
+        _refused(error)
+    console.print(f"[green]✓ Release {escape(tag)} written:[/green] {catalog}")
+
+
+def _refused(error: ValueError) -> NoReturn:
+    first, *rest = str(error).splitlines()
+    console.print(f"[red]❌ {escape(first)}[/red]", soft_wrap=True)
+    for line in rest:
+        console.print(line, markup=False, highlight=False, soft_wrap=True)
+    raise typer.Exit(1) from None

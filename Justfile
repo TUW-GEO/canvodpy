@@ -288,6 +288,10 @@ store-ops SITE STORE="gnss":
 stac-write:
     uv run canvodpy stac write {{ config_flag }}
 
+# publish a release: tag every store under the data root with TAG and write releases/TAG/ (no '/' in TAG)
+stac-release TAG:
+    uv run canvodpy stac release {{ TAG }} {{ config_flag }}
+
 # ============================================================================
 # Store Metadata
 # ============================================================================

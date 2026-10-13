@@ -8,7 +8,7 @@ Not to be confused with the *file registry* in ``canvod.store``
 """
 
 from .amend import amend_metadata
-from .catalog import build_catalog, store_item, write_catalog
+from .catalog import build_catalog, create_release, store_item, write_catalog
 from .collectors import collect_config_snapshot, collect_metadata
 from .inventory import (
     scan_stores,
@@ -72,6 +72,7 @@ __all__ = [
     "collect_metadata",
     "commit_lock",
     "commit_with_rebase",
+    "create_release",
     "ensure_metadata",
     "ensure_store_metadata",
     "extract_env",

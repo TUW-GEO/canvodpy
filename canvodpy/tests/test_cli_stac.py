@@ -111,3 +111,55 @@ def test_stac_write_lists_the_stores_it_cannot_describe_and_exits_1(tmp_path):
     assert "Traceback" not in result.output
     assert result.exception is None or isinstance(result.exception, SystemExit)
     assert not (stores_root / "catalog.json").exists()
+
+
+def test_stac_release_tags_the_stores_and_writes_the_release(tmp_path):
+    import numpy as np
+    import pandas as pd
+    import xarray as xr
+
+    from canvod.store_metadata import (
+        commit_with_rebase,
+        open_repository,
+        write_metadata,
+    )
+    from canvod.store_metadata.testing import made_up_metadata
+
+    stores_root = tmp_path / "stores"
+    store = stores_root / testing.SITE_KEY / "gnss"
+    open_repository(store, create=True)
+    write_metadata(store, made_up_metadata())
+    session = open_repository(store).writable_session("main")
+    xr.Dataset(
+        {"SNR": (("epoch", "sid"), np.full((3, 1), 40.0, "f4"))},
+        coords={
+            "epoch": pd.date_range("2025-01-01", periods=3, freq="5s"),
+            "sid": ["G01|L1|C"],
+        },
+    ).to_zarr(session.store, group="canopy_01", consolidated=False)
+    commit_with_rebase(session, "observations", store_path=store)
+    config_dir = _config_dir(tmp_path, stores_root)
+
+    result = runner.invoke(
+        main_app,
+        ["stac", "release", "v1"],
+        env={"CANVOD_CONFIG_DIR": str(config_dir)},
+    )
+
+    assert result.exit_code == 0, result.output
+    assert open_repository(store).list_tags() == {"v1"}
+    catalog = stores_root / "releases" / "v1" / "catalog.json"
+    assert str(catalog) in result.output.replace("\n", "")
+
+
+def test_stac_release_refuses_a_tag_with_a_slash_and_exits_1(tmp_path):
+    config_dir = _config_dir(tmp_path, tmp_path / "stores")
+
+    result = runner.invoke(
+        main_app,
+        ["stac", "release", "keep/v1"],
+        env={"CANVOD_CONFIG_DIR": str(config_dir)},
+    )
+
+    assert result.exit_code == 1
+    assert "Release tag 'keep/v1' is refused" in result.output.replace("\n", " ")

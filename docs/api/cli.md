@@ -462,7 +462,7 @@ $ canvodpy store amend [OPTIONS] {site}
 
 ## `canvodpy stac`
 
-Write the STAC catalog of every store under the data root.
+Write the STAC catalog of every store under the data root, or a release.
 
 **Usage**:
 
@@ -477,6 +477,7 @@ $ canvodpy stac [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `write`: Write the latest catalog of every store...
+* `release`: Publish a release: tag every store under...
 
 ### `canvodpy stac write`
 
@@ -490,6 +491,33 @@ every such store with its reason and exits with code 1.
 ```console
 $ canvodpy stac write [OPTIONS]
 ```
+
+**Options**:
+
+* `--root <path>`: Data root to catalog. Default: storage.stores_root_dir in the settings.
+* `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--help`: Show this message and exit.
+
+### `canvodpy stac release`
+
+Publish a release: tag every store under the data root and write its catalog.
+
+Every store gets the Icechunk tag TAG on its current main, and
+releases/TAG/ gets the catalog of that tag, each asset pinned to the
+tag and its snapshot. A release catalog is never changed afterwards.
+Nothing is tagged if a store cannot be described or already has the
+tag; if every store has the tag but the catalog is missing, only the
+catalog is written.
+
+**Usage**:
+
+```console
+$ canvodpy stac release [OPTIONS] {tag}
+```
+
+**Arguments**:
+
+* `tag`: Release tag, for example v2026.1; no '/'.  [required]
 
 **Options**:
 
