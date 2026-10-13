@@ -144,6 +144,18 @@ def test_write_catalog_writes_a_valid_catalog_of_the_gnss_stores(data_root):
     ]
 
 
+def test_a_folder_that_only_looks_like_a_store_is_left_out(data_root):
+    lookalike = data_root / "orthanc" / "gnss"
+    (lookalike / "snapshots").mkdir(parents=True)
+    (lookalike / "transactions").mkdir()
+
+    catalog = pystac.Catalog.from_file(write_catalog(data_root))
+
+    assert [item.id for item in catalog.get_items(recursive=True)] == [
+        f"{testing.NAMING_AUTHORITY}.{testing.SITE_KEY}-gnss"
+    ]
+
+
 def _item(catalog_root: Path) -> pystac.Item:
     catalog = pystac.Catalog.from_file(catalog_root / "catalog.json")
     return next(catalog.get_items(recursive=True))
