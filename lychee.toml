@@ -24,6 +24,7 @@ exclude = [
   "^https://doi\\.org/10\\.3233/",
   "^https://doi\\.org/10\\.7717/",
   "^https://claude\\.ai/",
+  "^https://opensource\\.org/",
   # Certificates the CI runner does not trust, although browsers do.
   "^https://www\\.softwareheritage\\.org/",
   "^https://customersupport\\.septentrio\\.com/",
