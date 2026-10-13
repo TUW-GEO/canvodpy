@@ -18,7 +18,12 @@ from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
 from .icechunk_logs import apply_icechunk_log_filter
-from .location import StoreLocation, open_repository, store_location
+from .location import (
+    MIGRATE_COMMAND,
+    StoreLocation,
+    open_repository,
+    store_location,
+)
 from .schema import _METADATA_KEY, Amendment, RepositoryMetadata, StoreMetadata
 
 apply_icechunk_log_filter()
@@ -483,9 +488,6 @@ def check_who(who: str | None) -> str:
         raise ValueError(msg)
     return who.strip()
 
-
-#: The command that moves a store to the metadata form of ADR 0014.
-MIGRATE_COMMAND = "canvodpy store migrate-metadata"
 
 _STORE_KINDS = {"gnss_store": "gnss", "vod_store": "vod", "geodesy_store": "geodesy"}
 

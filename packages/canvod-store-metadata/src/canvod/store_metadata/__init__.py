@@ -39,6 +39,7 @@ from .location import (
     LocalStoreLocation,
     StoreLocation,
     open_repository,
+    read_store_uuid,
     store_location,
 )
 from .migration import migrate_metadata
@@ -73,6 +74,7 @@ __all__ = [
     "open_repository",
     "read_metadata",
     "read_repository_metadata",
+    "read_store_uuid",
     "rewrite_manifests",
     "scan_stores",
     "scan_stores_as_stac",

@@ -5,7 +5,12 @@ from pathlib import Path
 import icechunk
 import pytest
 
-from canvod.store_metadata import commit_lock, open_repository, store_location
+from canvod.store_metadata import (
+    commit_lock,
+    open_repository,
+    read_store_uuid,
+    store_location,
+)
 from canvod.store_metadata.io import COMMIT_LOCK_NAME, read_repository_metadata
 from canvod.store_metadata.location import LocalStoreLocation, StoreLocation
 from canvod.store_metadata.testing import give_test_metadata
@@ -106,3 +111,51 @@ class TestCommitLockTakesALocation:
         # Re-entrant in one thread: the same lock, whichever form names it.
         with commit_lock(tmp_path), commit_lock(store_location(str(tmp_path))):
             pass
+
+
+class TestExpectedStore:
+    """A store replaced behind the same location is never taken for the old one."""
+
+    def test_opens_the_expected_store(self, tmp_path: Path) -> None:
+        store = give_test_metadata(tmp_path / "store")
+        uuid = read_store_uuid(store)
+
+        repo = open_repository(store, expected_uuid=uuid)
+
+        assert repo.get_metadata()["identity"]["uuid"] == uuid
+
+    def test_refuses_another_store_naming_both(self, tmp_path: Path) -> None:
+        store = give_test_metadata(tmp_path / "store")
+        found = read_store_uuid(store)
+        expected = "00000000-0000-4000-8000-00000000beef"
+
+        with pytest.raises(ValueError, match="not the store expected") as error:
+            open_repository(store, expected_uuid=expected)
+
+        assert expected in str(error.value)
+        assert found in str(error.value)
+        assert str(store) in str(error.value)
+
+    def test_refuses_a_store_without_metadata(self, tmp_path: Path) -> None:
+        store = tmp_path / "store"
+        open_repository(store, create=True)
+
+        with pytest.raises(ValueError, match="migrate-metadata"):
+            open_repository(store, expected_uuid="00000000-0000-4000-8000-000000000001")
+
+    def test_reads_the_uuid_from_the_repository_metadata(self, tmp_path: Path) -> None:
+        store = give_test_metadata(tmp_path / "store")
+
+        assert (
+            read_store_uuid(store)
+            == (read_repository_metadata(store)["identity"]["uuid"])
+        )
+
+    def test_reading_the_uuid_of_a_store_without_metadata_fails(
+        self, tmp_path: Path
+    ) -> None:
+        store = tmp_path / "store"
+        open_repository(store, create=True)
+
+        with pytest.raises(ValueError, match="migrate-metadata"):
+            read_store_uuid(store)

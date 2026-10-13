@@ -12,6 +12,9 @@ from pathlib import Path
 
 import icechunk
 
+#: The command that moves a store to the metadata form of ADR 0014.
+MIGRATE_COMMAND = "canvodpy store migrate-metadata"
+
 
 class StoreLocation(ABC):
     """Where a store's repository lives."""
@@ -77,6 +80,7 @@ def open_repository(
     *,
     create: bool = False,
     config: icechunk.RepositoryConfig | None = None,
+    expected_uuid: str | None = None,
 ) -> icechunk.Repository:
     """Open the repository of the store at ``location``.
 
@@ -90,6 +94,12 @@ def open_repository(
     config
         The repository configuration (compression, caching, concurrency);
         ``None`` uses Icechunk's defaults.
+    expected_uuid
+        The UUID of the store the caller expects, for example from a
+        catalog item.
+        A store with another UUID, or without repository metadata, is
+        refused, so a store replaced behind the same location is never
+        taken for the old one.
 
     Raises
     ------
@@ -97,6 +107,9 @@ def open_repository(
         If ``create`` is false and no repository is at ``location``.
     FileExistsError
         If ``create`` is true and a repository is already at ``location``.
+    ValueError
+        If ``expected_uuid`` is given and the store has another UUID or no
+        repository metadata.
     """
     where = store_location(location)
     storage = where.storage()
@@ -112,4 +125,38 @@ def open_repository(
             "when it first writes data to it."
         )
         raise FileNotFoundError(msg)
-    return icechunk.Repository.open(storage=storage, config=config)
+    repo = icechunk.Repository.open(storage=storage, config=config)
+    if expected_uuid is not None:
+        found = _uuid(repo, where)
+        if found != expected_uuid:
+            msg = (
+                f"The store at {where} is not the store expected: its UUID is "
+                f"{found}, expected {expected_uuid}. The store at this location "
+                "was replaced; nothing was opened."
+            )
+            raise ValueError(msg)
+    return repo
+
+
+def read_store_uuid(location: StoreLocation | Path | str) -> str:
+    """The UUID of the store at ``location``, from its repository metadata.
+
+    Raises
+    ------
+    ValueError
+        If the store has no repository metadata.
+    """
+    where = store_location(location)
+    return _uuid(open_repository(where), where)
+
+
+def _uuid(repo: icechunk.Repository, where: StoreLocation) -> str:
+    uuid = repo.get_metadata().get("identity", {}).get("uuid")
+    if not uuid:
+        msg = (
+            f"The store at {where} has no repository metadata, so it has no "
+            "UUID. Move it to the current form with:\n"
+            f"  {MIGRATE_COMMAND} SITE --store gnss|vod"
+        )
+        raise ValueError(msg)
+    return uuid

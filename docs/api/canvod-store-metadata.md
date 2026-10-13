@@ -15,6 +15,7 @@ Rich provenance metadata for Icechunk stores, aligned with DataCite 4.5, ACDD 1.
         - migrate_metadata
         - metadata_exists
         - open_repository
+        - read_store_uuid
         - store_location
         - validate_all
         - scan_stores
