@@ -36,7 +36,7 @@ from .schema import (
     VodAnalysisInfo,
 )
 
-_SUFFIX = {"gnss_store": "gnss", "vod_store": "vod"}
+_SUFFIX = {"gnss_store": "gnss", "vod_store": "vod", "geodesy_store": "geodesy"}
 
 #: The receivers of the made-up site, by name and type.
 RECEIVERS = {"canopy_01": "canopy", "reference_01": "reference"}
@@ -55,7 +55,7 @@ def made_up_metadata(
     Parameters
     ----------
     store_type
-        ``"gnss_store"`` or ``"vod_store"``.
+        ``"gnss_store"``, ``"vod_store"`` or ``"geodesy_store"``.
     receivers
         Receiver name to type (``"canopy"`` or ``"reference"``).
     vod_analyses

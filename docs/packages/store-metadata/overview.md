@@ -390,13 +390,20 @@ The catalog sits beside the stores, never inside one:
 ├── vod/
 │   ├── collection.json
 │   └── at.ac.tuwien.rosalia-vod/at.ac.tuwien.rosalia-vod.json
+├── gnss-geodesy/                only with geodesy stores
 └── Rosalia/
     ├── rinex/                   the GNSS store
     └── vod/                     the VOD store
 ```
 
-There is one collection per product and one item per store. The item id
-is the naming authority and the store id, for example `at.ac.tuwien.rosalia-gnss`.
+There is one collection per product (`gnss-observations`, `vod`,
+`gnss-geodesy`) and one item per store. The item id is the naming
+authority and the store id, for example `at.ac.tuwien.rosalia-gnss`. The
+items of one site (its GNSS, VOD and geodesy stores, same naming authority
+and site name) link each other (`related`). A collection's extent covers
+all its items: their points and their time ranges. If its items have
+different licenses, the collection's license is `other`, with a link to
+the text of each.
 Every link is relative, so the whole data root can be copied or moved and
 the catalog still works. The store's catalog link (`identity.stac_link`)
 points at its item. A new store has the link before its item exists:
@@ -419,11 +426,33 @@ SPDX, or `other` without `license_uri`). `canvodpy stac write` then
 exits with code 1.
 
 An item has the site as a point (longitude, latitude, ellipsoidal height),
-the time range of the data, the store's license and its UUID
-(`canvod:uuid`). A license outside SPDX is `other`, with a `license` link
-to its text (`license_uri`). Each receiver's observations are one asset. An asset names
-everything needed to open it: the store (`href`), the group
-(`xarray:open_kwargs`) and the snapshot it describes
+the time range of the data, the store's license, its UUID
+(`canvod:uuid`), the site name (`canvod:site`) and the receivers with
+their type and position (`canvod:receivers`). A license outside SPDX is
+`other`, with a `license` link to its text (`license_uri`).
+
+Each stored dataset is one asset. Asset keys join the parts of the group
+path with a dot, because some tools read a `/` in a key as a path:
+
+| Asset key | What it holds | Role |
+|---|---|---|
+| `canopy_01` | a receiver's observations (group `canopy_01`) | `data` |
+| `canopy_01.sbf_obs` | its SBF metadata, if any (`canopy_01/metadata/sbf_obs`) | `metadata` |
+| `canopy_01.log_book` | its log book (`canopy_01/metadata/table`) | `metadata` |
+| `tau_omega_zeroth_order.canopy_01_vs_reference_01` | a VOD analysis | `data` |
+| `tau_omega_zeroth_order.canopy_01_vs_reference_01.log_book` | its log book | `metadata` |
+
+The group `canvod` (environments, kept by canvodpy) is no asset. A
+receiver's asset carries the receiver's position as stored: the median of
+its files' header positions, ECEF X, Y, Z in meters
+(`canvod:position_ecef_m`). The assets of observations, of VOD analyses,
+and of SBF metadata list their dimensions and variables (the STAC
+`datacube` extension: `cube:dimensions`, `cube:variables`). A coordinate
+that is no dimension, such as the satellite of each SID, is an
+`auxiliary` variable.
+
+An asset names everything needed to open it: the store (`href`), the
+group (`xarray:open_kwargs`) and the snapshot it describes
 (`canvod:snapshot_id`):
 
 ```python
