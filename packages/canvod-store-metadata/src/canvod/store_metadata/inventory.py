@@ -18,25 +18,27 @@ from .location import StoreLocation, open_repository, store_exists
 from .schema import StoreMetadata
 
 
-def _find_icechunk_stores(root_dir: Path, recursive: bool = True) -> list[Path]:
-    """Find the Icechunk stores under root_dir.
+def _store_candidates(root_dir: Path, recursive: bool = True) -> list[Path]:
+    """The folders under root_dir that may hold an Icechunk store.
 
     A folder with a ``snapshots`` folder is a candidate; Icechunk decides
-    whether it holds a repository.
+    whether it holds a repository (:func:`store_exists`).
     """
-    stores: list[Path] = []
     if not root_dir.is_dir():
-        return stores
-
+        return []
     # snapshots/ is always non-empty and reliably findable; refs/ may be empty
     # in v2 so we glob on snapshots/ only.
     pattern = "**/snapshots" if recursive else "*/snapshots"
-    for marker in root_dir.glob(pattern):
-        candidate = marker.parent
-        if store_exists(candidate):
-            stores.append(candidate)
+    return sorted({marker.parent for marker in root_dir.glob(pattern)})
 
-    return sorted(set(stores))
+
+def _find_icechunk_stores(root_dir: Path, recursive: bool = True) -> list[Path]:
+    """Find the Icechunk stores under root_dir."""
+    return [
+        candidate
+        for candidate in _store_candidates(root_dir, recursive)
+        if store_exists(candidate)
+    ]
 
 
 def _metadata_to_row(

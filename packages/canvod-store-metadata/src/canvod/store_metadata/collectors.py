@@ -258,6 +258,7 @@ def collect_publisher(metadata_config: Any) -> Publisher:
         name=getattr(metadata_config, "publisher", None),
         url=getattr(metadata_config, "publisher_url", None),
         license=getattr(metadata_config, "license", None),
+        license_uri=getattr(metadata_config, "license_uri", None),
     )
 
 

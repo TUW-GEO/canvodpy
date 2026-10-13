@@ -14,7 +14,7 @@ from typing import Any
 
 import zarr_cm
 
-from .schema import RepositoryMetadata, StoreMetadata
+from .schema import RepositoryMetadata, StoreMetadata, check_rules
 from .snapshot import root_copy
 
 #: ACDD 1.3 global attributes (https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery_1-3).
@@ -106,9 +106,9 @@ def root_attributes(metadata: StoreMetadata) -> dict[str, Any]:
             "migrate-metadata."
         )
         raise ValueError(msg)
-    repository = RepositoryMetadata.from_store_metadata(metadata).model_dump(
-        mode="json"
-    )
+    repository = RepositoryMetadata.from_store_metadata(
+        metadata, existing=True
+    ).model_dump(mode="json")
     temporal = metadata.temporal.model_dump(
         include={
             "updated",
@@ -322,6 +322,9 @@ def validate_all(
 ) -> dict[str, list[str]]:
     """Run all validators, return issues grouped by standard.
 
+    ``rules`` lists the fields that break a rule of their standard (e.g. a
+    license outside SPDX), which a store read from disk may hold.
+
     Parameters
     ----------
     recommended
@@ -329,6 +332,7 @@ def validate_all(
         failures are listed: a store created in the current form has none.
     """
     return {
+        "rules": [str(rule_break) for rule_break in check_rules(metadata)],
         "zarr_conventions": validate_zarr_conventions(metadata),
         "acdd": validate_acdd(metadata, recommended=recommended),
         "datacite": validate_datacite(metadata),

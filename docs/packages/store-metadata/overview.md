@@ -67,7 +67,7 @@ Every other field of the repository metadata is **amendable**.
 |---|---|---|---|
 | `identity` | `StoreIdentity` | ID, UUID, naming authority, catalog link, title, description, store type, source format, keywords | Repository metadata |
 | `creator` | `Creator` | Name, email, ORCID, institution and its ROR ID, department, research group, website | Repository metadata |
-| `publisher` | `Publisher` | Name, URL, license (SPDX identifier), license URI | Repository metadata |
+| `publisher` | `Publisher` | Name, URL, license (SPDX identifier or `other`), license URI | Repository metadata |
 | `temporal` | `TemporalExtent` | Created; updated, first and last stored epoch, duration, resolution | Created: repository metadata; the rest: snapshot summary |
 | `spatial` | `SpatialExtent` | Site name, description and country, latitude, longitude, altitude (WGS84); bounding box | Site and position: repository metadata; bounding box: snapshot summary |
 | `instruments` | `Instruments` | Platform; per receiver: type, directory, reader format, hardware, antenna; epochs, signals, variables, time range, position | Receiver description: repository metadata; counts, time range, position: snapshot summary |
@@ -135,6 +135,7 @@ processing:
     institution_ror: "https://ror.org/..."  # optional
     department: "Department of Geodesy"     # optional
     license: "CC-BY-4.0"                 # required to create a store, SPDX identifier
+    license_uri: null                    # the license text; required when license is "other"
     publisher: "Example University"      # required to create a store
     naming_authority: "org.example"      # required to create a store
     initials: "JD"                       # required to amend or migrate
@@ -142,6 +143,12 @@ processing:
 
 DataCite requires the publisher and STAC requires the license, so a
 store isn't created without them.
+
+The license is an identifier from the [SPDX license list](https://spdx.org/licenses/)
+(a copy of version 3.27.0 comes with the package), as STAC 1.1 asks. A
+license outside SPDX is `other`, with `license_uri` naming its text.
+Any other value is refused when a store is created or the license is
+amended; the error names the field and points to the SPDX list.
 
 The description of the site's stores, the site description, and the
 location come from the site:
@@ -232,12 +239,18 @@ Processing still writes stores to local directories only.
 from canvod.store_metadata import validate_all
 
 failures = validate_all(meta, recommended=False)
-# {"zarr_conventions": [], "acdd": [], "datacite": [], "stac": [], "fair": []}
+# {"rules": [], "zarr_conventions": [], "acdd": [], "datacite": [], "stac": [], "fair": []}
 
 issues = validate_all(meta)  # also recommendations and FAIR advice
 ```
 
-`validate_all()` returns a list of messages per standard. With
+`validate_all()` returns a list of messages per standard.
+
+A store written before a rule existed may hold a value that breaks it.
+The store still opens: reading its metadata gives a
+`MetadataRuleWarning` that names the field, `rules` lists it, and an
+amendment of that field fixes it. An amendment of another field keeps
+the old value and warns again. With
 `recommended=False` it lists only failures: what a standard requires, or
 for ACDD 1.3 what it highly recommends. A store created by canVODpy has
 none. Without it, the lists also hold the ACDD recommendations, marked
@@ -245,6 +258,7 @@ none. Without it, the lists also hold the ACDD recommendations, marked
 
 | Key | What is checked |
 |---|---|
+| `rules` | Fields that break a rule of their standard, such as a license outside SPDX |
 | `zarr_conventions` | The `proj`, `license` and `stac` attributes of the root group, with `zarr-cm` |
 | `acdd` | The ACDD 1.3 global attributes of the root group |
 | `datacite` | Identifier, title, creator, creation date, store type, publisher |
@@ -298,7 +312,9 @@ The migration writes the repository metadata, gives the store its new id
 and a UUID, and keeps the old id in the migration record, with who
 migrated it and when. A migrated store must pass the standards checks
 like a new one. Fields it lacks, such as its description, are given with
-`--set`; otherwise the migration is refused and lists them. In a VOD
+`--set`; otherwise the migration is refused and lists them. A license
+outside SPDX is refused too, naming the field to give, for example
+`--set publisher.license=Apache-2.0`. In a VOD
 store, the attributes of `VOD` are replaced with the current ones.
 Snapshots from before the migration stay readable.
 
@@ -360,10 +376,25 @@ Every link is relative, so the whole data root can be copied or moved and
 the catalog still works. The store's catalog link (`identity.stac_link`)
 points at its item.
 
+No store is left out silently. Every store under the root is read first.
+If any of them can't be described, nothing is written, and one error
+lists each such store with its reason:
+
+```text
+❌ No catalog was written: 2 store(s) under /data/stores cannot be described.
+  Moria/rinex: needs migration to the current metadata form (ADR 0014): canvodpy store migrate-metadata Moria --store gnss
+  Mordor/rinex: `publisher.license` 'Apache 2' is not an SPDX license identifier (see https://spdx.org/licenses/); a license outside SPDX is 'other' with license_uri; fix it with canvodpy store amend Mordor --store gnss
+```
+
+The reasons: the store can't be opened, has no metadata, needs
+migration, has no site position, or has no usable license (none, not
+SPDX, or `other` without `license_uri`). `canvodpy stac write` then
+exits with code 1.
+
 An item has the site as a point (longitude, latitude, ellipsoidal height),
 the time range of the data, the store's license and its UUID
 (`canvod:uuid`). A license outside SPDX is `other`, with a `license` link
-to its text. Each receiver's observations are one asset. An asset names
+to its text (`license_uri`). Each receiver's observations are one asset. An asset names
 everything needed to open it: the store (`href`), the group
 (`xarray:open_kwargs`) and the snapshot it describes
 (`canvod:snapshot_id`):

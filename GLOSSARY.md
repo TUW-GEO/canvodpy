@@ -188,6 +188,13 @@ A recorded change to an amendable field: old and new value, reason, who
 and when.
 _Avoid_: edit, update (for repository metadata)
 
+**Metadata rule**:
+A rule a standard sets for a metadata field, such as the license being an
+SPDX identifier. New metadata that breaks one is refused; a store that
+already breaks one still opens, with a warning, until an amendment fixes
+the field.
+_Avoid_: constraint, policy
+
 **Catalog**:
 The STAC description of all stores under one data root, kept beside
 them: one item per store, grouped into GNSS observations and VOD.

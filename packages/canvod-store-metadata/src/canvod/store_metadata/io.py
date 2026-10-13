@@ -25,7 +25,14 @@ from .location import (
     repository_config,
     store_location,
 )
-from .schema import _METADATA_KEY, Amendment, RepositoryMetadata, StoreMetadata
+from .schema import (
+    _METADATA_KEY,
+    Amendment,
+    RepositoryMetadata,
+    StoreMetadata,
+    describe_rule_breaks,
+    rule_breaks,
+)
 
 apply_icechunk_log_filter()
 
@@ -241,12 +248,20 @@ def write_metadata(
     Raises
     ------
     ValueError
-        If the store already has repository metadata, or ``metadata``
-        lacks a fixed field (build it with ``collect_metadata``).
+        If the store already has repository metadata, ``metadata`` lacks a
+        fixed field (build it with ``collect_metadata``), or a field breaks
+        a rule of its standard (e.g. a license outside SPDX).
     """
     try:
         repository_metadata = RepositoryMetadata.from_store_metadata(metadata)
     except ValidationError as exc:
+        broken = rule_breaks(exc)
+        if broken:
+            msg = (
+                f"{describe_rule_breaks(broken)}. A store is not created with "
+                "metadata that breaks a rule of its standard."
+            )
+            raise ValueError(msg) from exc
         missing = sorted(
             ".".join(str(part) for part in error["loc"]) for error in exc.errors()
         )

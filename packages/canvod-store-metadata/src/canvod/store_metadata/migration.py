@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 import zarr
+from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
 from .amend import check_amendable
@@ -33,7 +34,14 @@ from .io import (
     commit_with_rebase,
 )
 from .location import StoreLocation, open_repository, store_location
-from .schema import _METADATA_KEY, MigrationRecord, RepositoryMetadata, StoreMetadata
+from .schema import (
+    _METADATA_KEY,
+    MigrationRecord,
+    RepositoryMetadata,
+    StoreMetadata,
+    describe_rule_breaks,
+    rule_breaks,
+)
 from .snapshot import preview_metadata
 from .validate import validate_all
 
@@ -129,7 +137,7 @@ def migrate_metadata(
         new_id = store_id(old.spatial.site.name, store_type)
         for field in values or {}:
             check_amendable(field)
-        given = _apply_updates(old, dict(values or {}))
+        given = _with_values(old, dict(values or {}), store_path)
         identity = given.identity.model_copy(
             update={
                 "id": new_id,
@@ -178,6 +186,32 @@ def migrate_metadata(
         )
         repo.set_metadata(repository)
         return snapshot_id
+
+
+def _with_values(
+    old: StoreMetadata,
+    values: dict[str, Any],
+    store_path: StoreLocation | Path | str,
+) -> StoreMetadata:
+    """``old`` with ``values`` set; refused if it breaks a rule of a standard.
+
+    Reading an old store only warns about a broken rule; the migrated
+    store is new metadata, so the value must be fixed now.
+    """
+    try:
+        return _apply_updates(old, values)
+    except ValidationError as error:
+        broken = rule_breaks(error)
+        if not broken:
+            raise
+        fields = sorted({b.field for b in broken})
+        msg = (
+            f"The store at {store_path} cannot be migrated: "
+            f"{describe_rule_breaks(broken)}. Give the value with "
+            f"{' '.join(f'--set {f}=VALUE' for f in fields)} (in Python: "
+            "values=)."
+        )
+        raise ValueError(msg) from None
 
 
 def _refuse_failures(

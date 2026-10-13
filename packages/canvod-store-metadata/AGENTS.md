@@ -32,6 +32,20 @@ recipes run these from the command line (`just metadata-show <store>`,
 - `commit_with_rebase` refuses a store without repository metadata. Tests
   that write to a store directly give it made-up metadata first with
   `canvod.store_metadata.testing.give_test_metadata`.
+- Rules from the standards (the license is SPDX or `other` with
+  `license_uri`; vendored list in `standards/`) live in the pydantic
+  models, not in their users. New metadata breaking one fails. Metadata
+  read from a store goes through `validate_existing` in `schema.py`: the
+  value is kept with a `MetadataRuleWarning`, and `amend_metadata` is
+  strict only on the fields it changes; a migration is strict on all of
+  them. A new read path of stored metadata uses `validate_existing`,
+  never a plain `model_validate`. `context=READ_CONTEXT` directly only
+  where the metadata was read, and warned about, already (amendment
+  replay) or where the breaks are reported otherwise (`validate_all`,
+  under `rules`).
+  Tests make such stores with `testing.write_unchecked`.
+- The catalog reads every store before it writes: if one can't be
+  described, one `ValueError` lists them all and nothing is written.
 - A store created by canVODpy has no validation failures:
   `validate_all(meta, recommended=False)` is empty. CF 1.11 and ACDD 1.3
   are checked on a netCDF export by IOOS compliance-checker in

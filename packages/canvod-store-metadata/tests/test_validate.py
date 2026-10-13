@@ -115,7 +115,14 @@ class TestValidation:
     def test_validate_all_returns_all_standards(self):
         meta = _make_complete_metadata()
         result = validate_all(meta)
-        assert set(result) == {"zarr_conventions", "acdd", "datacite", "stac", "fair"}
+        assert set(result) == {
+            "rules",
+            "zarr_conventions",
+            "acdd",
+            "datacite",
+            "stac",
+            "fair",
+        }
 
     def test_fair_complete_metadata_reports_expected_issues(self):
         meta = _make_complete_metadata()
@@ -154,6 +161,7 @@ class TestPassRule:
     def test_complete_metadata_has_no_failures(self):
         result = validate_all(_make_complete_metadata(), recommended=False)
         assert result == {
+            "rules": [],
             "zarr_conventions": [],
             "acdd": [],
             "datacite": [],

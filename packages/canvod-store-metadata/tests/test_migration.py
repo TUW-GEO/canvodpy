@@ -85,16 +85,19 @@ def _old_store(
     naming_authority: str | None = testing.NAMING_AUTHORITY,
     *,
     complete: bool = True,
+    license_: str = "CC-BY-4.0",
 ) -> Path:
+    """``license_``: the publisher license as written, rules unchecked."""
     path = tmp_path / "store"
     repo = icechunk.Repository.create(
         storage=icechunk.local_filesystem_storage(str(path))
     )
     session = repo.writable_session("main")
     root = zarr.open_group(session.store, mode="w")
-    root.attrs.update(
-        _old_metadata(naming_authority, complete=complete).to_root_attrs()
-    )
+    attrs = _old_metadata(naming_authority, complete=complete).to_root_attrs()
+    if complete:
+        attrs["canvod_metadata"]["publisher"]["license"] = license_
+    root.attrs.update(attrs)
     _SNR_DAY.to_zarr(session.store, group="canopy_01", consolidated=False)
     session.commit("data and metadata, old form")
     return path
@@ -269,6 +272,27 @@ class TestMigrationChecks:
                 path, who=testing.PERSON_INITIALS, values={"identity.id": "other"}
             )
         assert not _repo(path).get_metadata()
+
+
+class TestMigrationLicenseRule:
+    def test_a_license_outside_spdx_is_refused_naming_the_field(self, tmp_path):
+        path = _old_store(tmp_path, license_="Apache 2")
+
+        with pytest.raises(ValueError, match="publisher.license") as e:
+            migrate_metadata(path, who=testing.PERSON_INITIALS)
+        assert "--set publisher.license=" in str(e.value)
+        assert not _repo(path).get_metadata()
+
+    def test_the_license_can_be_given_at_migration_time(self, tmp_path):
+        path = _old_store(tmp_path, license_="Apache 2")
+
+        migrate_metadata(
+            path,
+            who=testing.PERSON_INITIALS,
+            values={"publisher.license": "Apache-2.0"},
+        )
+
+        assert read_metadata(path).publisher.license == "Apache-2.0"
 
 
 class TestVariableAttributes:

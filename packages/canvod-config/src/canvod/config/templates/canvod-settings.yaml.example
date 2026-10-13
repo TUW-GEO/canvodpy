@@ -35,7 +35,8 @@ processing:
     department: null                     # Optional
     research_group: null                 # Optional
     website: null                        # Optional
-    license: CC-BY-4.0                   # Required to create a store: SPDX identifier
+    license: CC-BY-4.0                   # Required to create a store: SPDX identifier, or "other"
+    license_uri: null                    # The license text's URI; required when license is "other"
     publisher: null                      # Required to create a store, e.g. your institution
     publisher_url: null                  # Optional
     naming_authority: null               # Required to create a store, e.g. "at.ac.tuwien"

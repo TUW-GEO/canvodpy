@@ -24,7 +24,7 @@ from .io import (
     commit_with_rebase,
 )
 from .location import StoreLocation, open_repository, store_location
-from .schema import RepositoryMetadata, StoreMetadata
+from .schema import RepositoryMetadata, StoreMetadata, validate_existing
 
 #: Fields that define which store this is; a different value is a
 #: different store.
@@ -144,12 +144,17 @@ def amend_metadata(
         for field, value in changes.items():
             old[field] = _set_field(data, field, value)
         try:
-            amended = RepositoryMetadata.model_validate(data).model_dump(mode="json")
+            amended = validate_existing(
+                RepositoryMetadata, data, changed=changes
+            ).model_dump(mode="json")
         except ValidationError as exc:
             fields = sorted(
                 ".".join(str(p) for p in error["loc"]) for error in exc.errors()
             )
             msg = f"Invalid value for {', '.join(fields)}; nothing was changed."
+            raise ValueError(msg) from exc
+        except ValueError as exc:  # a changed field breaks a rule
+            msg = f"{exc} Nothing was changed."
             raise ValueError(msg) from exc
         for field, value in changes.items():
             if isinstance(value, dict):

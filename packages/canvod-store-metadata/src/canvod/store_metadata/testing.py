@@ -13,13 +13,15 @@ The metadata describes the made-up site of :mod:`canvod.utils.testing`.
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 from canvod.utils import testing
 
 from .identity import stac_link
-from .io import ensure_metadata
+from .io import _set_field, commit_with_rebase, ensure_metadata
 from .location import open_repository
 from .schema import (
     Creator,
@@ -145,4 +147,48 @@ def give_test_metadata(
         site_name=testing.SITE_KEY,
         store_type=store_type,
     )
+    return path
+
+
+def write_unchecked(store_path: Path | str, changes: Mapping[str, Any]) -> Path:
+    """Change repository metadata fields without the model's rules.
+
+    For tests of stores that hold values a rule now refuses, as written by
+    an older canvodpy or edited by hand: the changes are committed and
+    recorded like an amendment, but not checked.
+
+    Parameters
+    ----------
+    store_path
+        The store's directory.
+    changes
+        New values by dotted field path, e.g. ``{"publisher.license": "x"}``.
+
+    Returns
+    -------
+    Path
+        ``store_path``.
+    """
+    path = Path(store_path)
+    repo = open_repository(path)
+    repository = copy.deepcopy(repo.get_metadata())
+    for field, value in changes.items():
+        old = _set_field(repository, field, value)
+        repository["amendments"].append(
+            {
+                "field": field,
+                "old": old,
+                "new": value,
+                "reason": "unchecked change (test)",
+                "who": "test",
+                "when": "2026-01-01T00:00:00+00:00",
+            }
+        )
+    commit_with_rebase(
+        repo.writable_session("main"),
+        "Unchecked metadata change (test)",
+        store_path=path,
+        repository=repository,
+    )
+    repo.set_metadata(repository)
     return path

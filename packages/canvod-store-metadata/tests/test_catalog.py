@@ -22,7 +22,11 @@ from canvod.store_metadata import (
 )
 from canvod.store_metadata.identity import stac_link, store_id
 from canvod.store_metadata.schema import Publisher
-from canvod.store_metadata.testing import made_up_metadata
+from canvod.store_metadata.testing import (
+    create_test_store,
+    made_up_metadata,
+    write_unchecked,
+)
 
 _SCHEMAS = Path(__file__).parent / "stac_schemas"
 
@@ -235,7 +239,9 @@ def test_a_license_outside_spdx_is_other_with_a_link_to_its_text(tmp_path):
     root = tmp_path / "stores"
     _gnss_store(
         root / testing.SITE_KEY / "gnss",
-        publisher=Publisher(license_uri="https://the.inklings.org/data-licence"),
+        publisher=Publisher(
+            license="other", license_uri="https://the.inklings.org/data-licence"
+        ),
     )
 
     write_catalog(root)
@@ -246,3 +252,75 @@ def test_a_license_outside_spdx_is_other_with_a_link_to_its_text(tmp_path):
     assert [link.href for link in item.links if link.rel == "license"] == [
         "https://the.inklings.org/data-licence"
     ]
+
+
+def _old_form_store(path: Path) -> Path:
+    """A store written before stores kept repository metadata (ADR 0014)."""
+    import zarr
+
+    session = open_repository(path, create=True).writable_session("main")
+    root = zarr.open_group(session.store, mode="w")
+    root.attrs.update(made_up_metadata().to_root_attrs())
+    _observations().to_zarr(session.store, group="canopy_01", consolidated=False)
+    session.commit("data and metadata, old form")
+    return path
+
+
+def _files(root: Path) -> set[Path]:
+    return {path for path in root.rglob("*")}
+
+
+class TestStoresTheCatalogCannotDescribe:
+    @pytest.fixture
+    def root_with_bad_stores(self, data_root: Path) -> Path:
+        """The good store of ``data_root`` and one bad store per reason."""
+        broken = _gnss_store(data_root / "isengard" / "gnss", site="isengard")
+        (broken / "repo").write_bytes(b"not an icechunk repository")
+        _old_form_store(data_root / "moria" / "gnss")
+        create_test_store(data_root / "rohan" / "gnss")
+        write_unchecked(
+            _gnss_store(data_root / "gondor" / "gnss", site="gondor"),
+            {"spatial.geospatial_lat": None, "spatial.geospatial_lon": None},
+        )
+        write_unchecked(
+            _gnss_store(data_root / "mordor" / "gnss", site="mordor"),
+            {"publisher.license": "Apache 2"},
+        )
+        write_unchecked(
+            _gnss_store(data_root / "shire" / "gnss", site="shire"),
+            {"publisher.license": None},
+        )
+        return data_root
+
+    def test_one_error_names_every_bad_store_with_its_reason(
+        self, root_with_bad_stores
+    ):
+        with pytest.raises(ValueError) as caught:
+            write_catalog(root_with_bad_stores)
+
+        lines = str(caught.value).splitlines()
+
+        def reason(store: str) -> str:
+            return next(line for line in lines if f"{store}/gnss" in line)
+
+        assert "cannot be opened" in reason("isengard")
+        assert "needs migration" in reason("moria")
+        assert "no metadata" in reason("rohan")
+        assert "no site position" in reason("gondor")
+        assert "'Apache 2' is not an SPDX license identifier" in reason("mordor")
+        assert "no license" in reason("shire")
+        assert not any(f"{testing.SITE_KEY}/gnss" in line for line in lines)
+
+    def test_a_store_needing_migration_is_named_with_the_migrate_command(
+        self, root_with_bad_stores
+    ):
+        with pytest.raises(ValueError, match="canvodpy store migrate-metadata"):
+            write_catalog(root_with_bad_stores)
+
+    def test_nothing_is_written(self, root_with_bad_stores):
+        before = _files(root_with_bad_stores)
+
+        with pytest.raises(ValueError):
+            write_catalog(root_with_bad_stores)
+
+        assert _files(root_with_bad_stores) == before

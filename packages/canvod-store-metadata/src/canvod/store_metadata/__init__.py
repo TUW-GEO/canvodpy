@@ -47,7 +47,7 @@ from .location import (
     store_location,
 )
 from .migration import migrate_metadata
-from .schema import StoreMetadata
+from .schema import MetadataRuleWarning, StoreMetadata
 from .show import extract_env, format_metadata, show_metadata
 from .snapshot import RESERVED_GROUP
 from .summary import summarize_store
@@ -57,6 +57,7 @@ __all__ = [
     "COMMIT_LOCK_NAME",
     "LocalStoreLocation",
     "MIGRATE_COMMAND",
+    "MetadataRuleWarning",
     "RESERVED_GROUP",
     "S3StoreLocation",
     "StoreLocation",
