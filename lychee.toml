@@ -16,7 +16,7 @@ exclude_path = [
 ]
 exclude = [
   # The published site itself (canonical links): checked locally instead.
-  "^https://nfb2021\\.github\\.io/canvodpy/",
+  "^https://canvodpy\\.eu/",
   # Answer automated requests with 403 although the pages exist.
   "^https://coveralls\\.io/",
   "^https://github\\.com/signup",
