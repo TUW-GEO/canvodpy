@@ -301,17 +301,9 @@ metadata-section STORE_PATH SECTION:
     uv run python -m canvod.store_metadata.show {{ STORE_PATH }} {{ SECTION }}
 
 # validate store metadata against zarr conventions, ACDD, DataCite, STAC and FAIR;
-# fails on a failure, not on recommendations or FAIR advice
+# fails on a failure, not on recommendations, FAIR advice or warnings
 metadata-validate STORE_PATH:
-    uv run python -c "import sys; from pathlib import Path; from canvod.store_metadata import read_metadata, validate_all; from canvod.store_metadata.show import format_validation; meta = read_metadata(Path('{{ STORE_PATH }}')); print(format_validation(meta)); sys.exit(1 if any(validate_all(meta, recommended=False).values()) else 0)"
-
-# export STAC Collection JSON for a single store
-metadata-stac STORE_PATH:
-    uv run python -c "from pathlib import Path; from canvod.store_metadata import write_stac_collection; p = write_stac_collection(Path('{{ STORE_PATH }}')); print(f'Written: {p}')"
-
-# export STAC Catalog JSON for all stores under a directory
-metadata-stac-catalog ROOT_DIR:
-    uv run python -c "from pathlib import Path; from canvod.store_metadata import write_stac_catalog; p = write_stac_catalog(Path('{{ ROOT_DIR }}')); print(f'Written: {p}')"
+    uv run python -c "import sys; from pathlib import Path; from canvod.store_metadata import read_metadata, validate_all; from canvod.store_metadata.show import format_validation; meta = read_metadata(Path('{{ STORE_PATH }}')); print(format_validation(meta, Path('{{ STORE_PATH }}'))); sys.exit(1 if any(validate_all(meta, recommended=False).values()) else 0)"
 
 # scan a directory for stores and print inventory table
 metadata-inventory ROOT_DIR:

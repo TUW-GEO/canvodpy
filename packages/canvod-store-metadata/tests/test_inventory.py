@@ -25,6 +25,12 @@ from canvod.store_metadata.schema import (
     TemporalExtent,
 )
 
+# The old STAC functions are deprecated (#243); the tests below still check
+# what they return, TestOldStacFunctionsAreDeprecated checks the warnings.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*removed with the next major version:FutureWarning"
+)
+
 
 def _metadata(store_id: str) -> StoreMetadata:
     return StoreMetadata(
@@ -244,3 +250,58 @@ class TestStacCollection:
         assert output_path == tmp_path / "collection.json"
         written = json.loads(output_path.read_text())
         assert written == to_stac_collection(meta)
+
+
+class TestOldStacFunctionsAreDeprecated:
+    """Each old STAC function still works and names its replacement."""
+
+    @pytest.fixture
+    def store(self, tmp_path):
+        path = tmp_path / "site" / "store"
+        _create_store_with_metadata(path, "site/store")
+        return path
+
+    def test_scan_stores_as_stac(self, store):
+        with pytest.warns(FutureWarning, match="build_catalog"):
+            catalog = scan_stores_as_stac(store.parent.parent)
+
+        assert catalog["collections"][0]["id"] == "site/store"
+
+    def test_to_stac_collection(self, store):
+        meta = read_metadata(store)
+
+        with pytest.warns(FutureWarning, match="store_item"):
+            collection = to_stac_collection(meta)
+
+        assert collection["id"] == "site/store"
+
+    def test_to_stac_collection_json(self, store):
+        meta = read_metadata(store)
+
+        with pytest.warns(FutureWarning, match="store_item"):
+            as_json = to_stac_collection_json(meta)
+
+        assert json.loads(as_json)["id"] == "site/store"
+
+    def test_write_stac_collection(self, store):
+        with pytest.warns(FutureWarning, match="write_catalog"):
+            path = write_stac_collection(store)
+
+        assert json.loads(path.read_text())["id"] == "site/store"
+
+    def test_write_stac_catalog(self, store):
+        with pytest.warns(FutureWarning, match="write_catalog"):
+            path = write_stac_catalog(store.parent.parent)
+
+        assert json.loads(path.read_text())["type"] == "Catalog"
+
+    def test_each_old_function_warns_once(self, store):
+        with pytest.warns(FutureWarning) as record:
+            write_stac_catalog(store.parent.parent)
+
+        assert len(record) == 1
+
+    def test_scan_stores_is_not_deprecated(self, store, recwarn):
+        scan_stores(store.parent.parent)
+
+        assert not [w for w in recwarn if w.category is FutureWarning]

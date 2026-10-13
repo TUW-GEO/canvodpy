@@ -399,7 +399,9 @@ There is one collection per product and one item per store. The item id
 is the naming authority and the store id, for example `at.ac.tuwien.rosalia-gnss`.
 Every link is relative, so the whole data root can be copied or moved and
 the catalog still works. The store's catalog link (`identity.stac_link`)
-points at its item.
+points at its item. A new store has the link before its item exists:
+until the first catalog write, `validate_all(meta, store_path=...)` and
+`just metadata-validate` show a warning for it, not a failure.
 
 No store is left out silently. Every store under the root is read first.
 If any of them can't be described, nothing is written, and one error
@@ -443,7 +445,3 @@ ds = xr.open_dataset(session.store, **asset.extra_fields["xarray:open_kwargs"])
 The media type of an asset is `application/vnd.zarr; version=3`, as the
 STAC best practices for Zarr recommend. xpystac can't open these assets:
 it opens Icechunk only from S3, and only the root group.
-
-The older functions `write_stac_catalog()`, `write_stac_collection()` and
-`scan_stores_as_stac()` write one collection per store and a
-`collection.json` inside each store. Use `write_catalog()` instead.
