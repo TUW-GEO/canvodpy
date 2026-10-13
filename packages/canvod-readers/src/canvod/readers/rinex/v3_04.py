@@ -261,6 +261,21 @@ def _store_observation(
 _VAR_OF_OBS_TYPE = {"S": "SNR", "C": "Pseudorange", "L": "Phase", "D": "Doppler"}
 
 
+def _obs_types_to_read(kept_vars: frozenset[str]) -> frozenset[str]:
+    """Return the observation types whose fields the kept variables need.
+
+    A variable needs the fields of its own type; the LLI those of the phase,
+    the SSI those of the phase and the code (see :func:`_store_observation`).
+    Fields of other types are never stored, so they are not read.
+    """
+    types = {t for t, var in _VAR_OF_OBS_TYPE.items() if var in kept_vars}
+    if "LLI" in kept_vars:
+        types.add("L")
+    if "SSI" in kept_vars:
+        types.update(_SSI_SOURCE_RANK)
+    return frozenset(types)
+
+
 def _epoch_datetime64(
     year: int, month: int, day: int, hour: int, minute: int, seconds: float
 ) -> np.datetime64:
@@ -1248,7 +1263,9 @@ class Rnxv3Obs(GNSSDataReader):
             raise InvalidEpochError(msg)
         return float(field[:_OBS_VAL_END]), lli, ssi
 
-    def _read_satellite_line(self, line: str) -> tuple[Satellite, list[ObsField]]:
+    def _read_satellite_line(
+        self, line: str, obs_types: frozenset[str] | None = None
+    ) -> tuple[Satellite, list[ObsField]]:
         """Return the satellite and the (value, LLI, SSI) per observation type.
 
         The :class:`Satellite` model validates the SV; its observations are
@@ -1257,6 +1274,15 @@ class Rnxv3Obs(GNSSDataReader):
         One entry per observation type of the system's ``SYS / # / OBS
         TYPES`` record, in its order. Fields missing at the end of a short
         line are empty; text beyond the last field is ignored.
+
+        Parameters
+        ----------
+        line : str
+            The satellite line.
+        obs_types : frozenset of str or None
+            If given, only the fields whose observation type (first letter of
+            the code) is in it are read and checked; the others are returned
+            empty. ``None`` reads every field.
 
         Raises
         ------
@@ -1278,8 +1304,11 @@ class Rnxv3Obs(GNSSDataReader):
         data_part = line[3:]
         n_chars = len(data_part)
         fields: list[ObsField] = []
-        for col in range(0, len(obs_codes) * _OBS_FIELD_LEN, _OBS_FIELD_LEN):
-            if col >= n_chars:
+        for i, obs_code in enumerate(obs_codes):
+            col = i * _OBS_FIELD_LEN
+            if col >= n_chars or (
+                obs_types is not None and obs_code[0] not in obs_types
+            ):
                 fields.append((None, None, None))
             else:
                 field = data_part[col : col + _OBS_FIELD_LEN].ljust(_OBS_FIELD_LEN)
@@ -1354,7 +1383,7 @@ class Rnxv3Obs(GNSSDataReader):
             yield record
 
     def _iter_checked_epochs(
-        self, rejected: list[int] | None
+        self, rejected: list[int] | None, obs_types: frozenset[str] | None = None
     ) -> Iterator[tuple[Rnxv3ObsEpochRecord, list[list[ObsField]]]]:
         """Yield each valid epoch and the read fields of its satellite lines.
 
@@ -1375,6 +1404,10 @@ class Rnxv3Obs(GNSSDataReader):
         rejected : list of int or None
             If given, the 0-based line index of each rejected epoch record is
             appended to it.
+        obs_types : frozenset of str or None
+            If given, only the observation fields of these types are read and
+            checked (see :meth:`_read_satellite_line`); ``None`` reads every
+            field.
 
         """
         lines = self._load_file()
@@ -1386,7 +1419,7 @@ class Rnxv3Obs(GNSSDataReader):
                 if info.epoch_flag > 1:
                     continue
                 read = [
-                    self._read_satellite_line(line)
+                    self._read_satellite_line(line, obs_types)
                     for line in lines[start + 1 : end]
                     if line.strip()
                 ]
@@ -1792,8 +1825,10 @@ class Rnxv3Obs(GNSSDataReader):
         Uses the checks of :meth:`_iter_checked_epochs`, the same as
         :meth:`iter_epochs`: pydantic models for the epoch line, the
         satellites and the epoch record, but no model object per
-        observation. Epochs that fail are dropped and logged with their
-        line numbers. Values are stored with the same rules as
+        observation. Only the observation fields the kept variables need are
+        read and checked (:func:`_obs_types_to_read`), so a malformed field
+        of a left-out variable does not drop its epoch. Epochs that fail are
+        dropped and logged with their line numbers. Values are stored with the same rules as
         :meth:`_create_dataset_unvalidated_fast`, so both give the same
         dataset for a valid file.
 
@@ -1807,8 +1842,11 @@ class Rnxv3Obs(GNSSDataReader):
         sid_to_idx = {sid: i for i, sid in enumerate(sorted_sids)}
         obs_lut = self._obs_code_lut()
 
+        kept_vars = self._kept_vars(keep_data_vars)
         rejected: list[int] = []
-        records = list(self._iter_checked_epochs(rejected))
+        records = list(
+            self._iter_checked_epochs(rejected, _obs_types_to_read(kept_vars))
+        )
         if rejected:
             log.warning(
                 "rinex_epochs_rejected",
@@ -1819,9 +1857,7 @@ class Rnxv3Obs(GNSSDataReader):
                 "satellite count or observation field)",
             )
 
-        arrays = _allocate_obs_arrays(
-            len(records), len(sorted_sids), self._kept_vars(keep_data_vars)
-        )
+        arrays = _allocate_obs_arrays(len(records), len(sorted_sids), kept_vars)
         timestamps = np.empty(len(records), dtype="datetime64[ns]")
         for t_idx, (record, fields_per_satellite) in enumerate(records):
             info = record.info
@@ -2117,7 +2153,10 @@ class Rnxv3Obs(GNSSDataReader):
         keep_data_vars : list of str or None, optional
             Data variables to include in dataset. ``None`` includes all
             available. A run passes the
-            ``processing.params.keep_gnss_observables`` setting.
+            ``processing.params.keep_gnss_observables`` setting. The
+            validated parser reads and checks only the observation fields
+            these variables need, so a malformed field of a left-out
+            variable does not drop its epoch.
         write_global_attrs : bool, default False
             If True, adds comprehensive global attributes
         pad_global_sid : bool, default True
@@ -2131,8 +2170,9 @@ class Rnxv3Obs(GNSSDataReader):
             If None and pad_global_sid=True, pads to all possible SIDs.
         parser : {"validated", "unvalidated_fast"}, default "validated"
             ``"validated"`` checks every epoch (epoch line, satellite IDs,
-            satellite count, observation fields) and drops (and logs) epochs
-            that fail; see :meth:`_iter_checked_epochs`.
+            satellite count, the observation fields of the kept variables)
+            and drops (and logs) epochs that fail; see
+            :meth:`_create_dataset_validated`.
             ``"unvalidated_fast"`` is DANGEROUS: it slices fixed columns
             without any check, so corrupted records can enter the dataset as
             partial or wrong values; canVODpy takes no responsibility for its

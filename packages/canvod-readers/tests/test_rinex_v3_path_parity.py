@@ -305,3 +305,98 @@ def test_to_ds_drops_the_epoch_of_a_malformed_field(name):
     ds = obs.to_ds()
     assert ds.sizes["epoch"] == 1
     assert ds["epoch"].values[0] == np.datetime64("2025-01-01T00:00:05", "ns")
+
+
+@needs_invalid
+@pytest.mark.parametrize(
+    ("keep_data_vars", "n_kept"),
+    [
+        (["SNR"], 2),
+        (["Phase"], 2),
+        (["Doppler"], 2),
+        (["LLI"], 2),
+        (["Pseudorange"], 1),
+        (["SSI"], 1),
+        (["SNR", "Pseudorange"], 1),
+    ],
+)
+def test_to_ds_reads_only_the_fields_of_kept_variables(keep_data_vars, n_kept):
+    """A damaged code field rejects its epoch only if a kept variable needs it.
+
+    The damage in bitflip_numeric.25o sits in a C1C field (line 63): it is
+    read for Pseudorange and for SSI (code SSI when no phase), not for SNR,
+    Phase, Doppler or LLI.
+    """
+    obs = Rnxv3Obs(fpath=INVALID_DIR / "bitflip_numeric.25o", completeness_mode="off")
+    ds = obs.to_ds(keep_data_vars=keep_data_vars)
+    assert ds.sizes["epoch"] == n_kept
+
+
+@needs_invalid
+@pytest.mark.parametrize(
+    "name", ["bitflip_numeric.25o", "extra_long_sat_line.25o", "null_bytes.25o"]
+)
+def test_snr_only_keeps_the_epoch_of_a_damaged_non_snr_field(name):
+    """The all-variables read rejects the epoch, the SNR-only read keeps it."""
+    obs = Rnxv3Obs(fpath=INVALID_DIR / name, completeness_mode="off")
+    assert obs.to_ds().sizes["epoch"] == 1
+
+    ds = obs.to_ds(keep_data_vars=["SNR"])
+
+    assert list(ds["epoch"].values) == [
+        np.datetime64("2025-01-01T00:00:00", "ns"),
+        np.datetime64("2025-01-01T00:00:05", "ns"),
+    ]
+    assert list(ds.data_vars) == ["SNR"]
+
+
+@needs_invalid
+def test_snr_only_keeps_the_snr_value_of_the_damaged_line():
+    """bitflip_numeric.25o line 63: G32 S1C is 41.809, next to the damaged C1C."""
+    obs = Rnxv3Obs(fpath=INVALID_DIR / "bitflip_numeric.25o", completeness_mode="off")
+    ds = obs.to_ds(keep_data_vars=["SNR"])
+    value = ds["SNR"].sel(epoch=np.datetime64("2025-01-01T00:00:00"), sid="G32|L1|C")
+    assert float(value) == pytest.approx(41.809)
+
+
+@needs_invalid
+def test_snr_only_rejects_an_epoch_with_a_damaged_snr_field():
+    """misaligned_observations.25o shifts the S fields too, so SNR still rejects."""
+    obs = Rnxv3Obs(
+        fpath=INVALID_DIR / "misaligned_observations.25o", completeness_mode="off"
+    )
+    assert obs.to_ds(keep_data_vars=["SNR"]).sizes["epoch"] == 1
+
+
+@needs_invalid
+@pytest.mark.parametrize(
+    "name", ["bitflip_numeric.25o", "extra_long_sat_line.25o", "null_bytes.25o"]
+)
+def test_iter_epochs_still_checks_every_field(name):
+    obs = Rnxv3Obs(fpath=INVALID_DIR / name, completeness_mode="off")
+    assert len(list(obs.iter_epochs())) == 1
+
+
+@needs_v304
+@pytest.mark.parametrize(
+    "keep_data_vars",
+    [
+        ["SNR", "Pseudorange", "Phase", "Doppler", "LLI", "SSI"],
+        ["LLI", "SSI"],
+        ["LLI"],
+        ["SSI"],
+        ["SNR", "Doppler"],
+    ],
+)
+def test_kept_variables_have_the_values_of_the_full_read(keep_data_vars):
+    """On a valid file every kept variable equals that of the all-variables read.
+
+    LLI and SSI kept without Phase or Pseudorange still come from the phase
+    and code fields, with the phase's SSI ranked first.
+    """
+    obs = Rnxv3Obs(fpath=V304_FILE, completeness_mode="off")
+    full = obs.to_ds()
+    subset = obs.to_ds(keep_data_vars=keep_data_vars)
+    for ds in (full, subset):
+        ds.attrs.pop("Created", None)
+    xr.testing.assert_identical(subset, full[keep_data_vars])
