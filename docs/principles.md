@@ -52,7 +52,7 @@ leave out what the check requires.
 Before a run reads a file, it finds the files of every receiver and checks
 them. The run stops, and lists the files concerned, if:
 
-- two files map to the same canonical name;
+- two files map to the same canVOD file name;
 - two files of the same type cover overlapping time spans, for example a
   daily file next to the 15-minute files of the same day;
 - one folder holds the files of more than one receiver.
@@ -122,17 +122,17 @@ canVODpy package.
 
 One exception remains: `VODCalculator.from_icechunkstore()` in
 `canvod-vod` imports `canvod-store`, which `canvod-vod` doesn't declare.
-The method is left over from development and will be removed with the
+The method is left over from development and is removed with the
 next major version. The old names `store_grid`, `load_grid`, and
 `AnalysisStorage` in `canvod-grids` also import `canvod-store`; they
-moved to `canvod-store` and will be removed with the next major version
+moved to `canvod-store` and are removed with the next major version
 as well.
 
 ---
 
 ## The filename says what the file holds
 
-A canonical filename holds everything that identifies the file: site,
+A canVOD file name holds everything that identifies the file: site,
 receiver, date and start time, the time span the file covers, the
 sampling interval, and the file format. No database is needed to know what
 a file holds or which receiver recorded it, and that information survives
@@ -151,8 +151,8 @@ the settings, under `vod_analyses`, not read from the names.
 The convention is defined in `canvod-preflight` (`CanVODFilename`). Files
 with other names are read through a naming recipe of the optional
 `canvod-filemap` extension (see [Optional extensions](guides/extensions.md)).
-The recipe gives each file a canonical name and never renames the file
-itself. All later steps use the canonical name; the file's own path is
+The recipe gives each file a canVOD file name and never renames the file
+itself. All later steps use the canVOD file name; the file's own path is
 used only to open it. The fields of the name are listed in
 [canvod-preflight](packages/naming/overview.md#the-canvod-filename-convention).
 
@@ -221,6 +221,6 @@ create it, not halfway through a run.
 
 ---
 
-**Next:** [Architecture](architecture.md) · [API levels](guides/api-levels.md) ·
-[Contributor setup](guides/contributor-setup.md) ·
-[Developing with coding agents](guides/ai-development.md)
+**Next:** [architecture](architecture.md) · [API levels](guides/api-levels.md) ·
+[contributor setup](guides/contributor-setup.md) ·
+[developing with coding agents](guides/ai-development.md)
