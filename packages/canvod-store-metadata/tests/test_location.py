@@ -237,6 +237,24 @@ class TestS3Locations:
 
         assert str(location) == "s3://fangorn/stores/fangorn/gnss"
 
+    def test_join_resolves_a_relative_href(self) -> None:
+        """S3 doesn't resolve ``..``, so the join does (a catalog item's href)."""
+        catalog = store_location("s3://fangorn/catalog/gnss-observations/fangorn")
+
+        location = catalog / "../../../stores/fangorn/gnss"
+
+        assert location == S3StoreLocation("fangorn", "stores/fangorn/gnss")
+
+    @pytest.mark.parametrize("relative", ["../..", "../../elsewhere", "gnss/../.."])
+    def test_join_out_of_the_bucket_prefix_is_refused(self, relative: str) -> None:
+        with pytest.raises(ValueError, match="s3://fangorn/stores"):
+            _ = store_location("s3://fangorn/stores") / relative
+
+    @pytest.mark.parametrize("location", ["s3://fangorn/stores", "/srv/stores"])
+    def test_join_of_an_absolute_path_is_refused(self, location: str) -> None:
+        with pytest.raises(ValueError, match="relative path"):
+            _ = store_location(location) / "/fangorn/gnss"
+
     def test_s3_has_no_local_directory_and_no_commit_lock(self) -> None:
         location = store_location("s3://fangorn/stores/gnss")
 

@@ -6,6 +6,7 @@ new kind of storage is added in one place: a new :class:`StoreLocation`.
 
 from __future__ import annotations
 
+import posixpath
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -30,7 +31,13 @@ class StoreLocation(ABC):
 
     @abstractmethod
     def __truediv__(self, relative: str | Path) -> StoreLocation:
-        """The location ``relative`` below this one, of the same kind."""
+        """The location ``relative`` below this one, of the same kind.
+
+        Raises
+        ------
+        ValueError
+            If ``relative`` is an absolute path.
+        """
 
     @property
     @abstractmethod
@@ -58,7 +65,7 @@ class LocalStoreLocation(StoreLocation):
         return icechunk.local_filesystem_storage(str(self.path))
 
     def __truediv__(self, relative: str | Path) -> LocalStoreLocation:
-        return LocalStoreLocation(self.path / relative)
+        return LocalStoreLocation(self.path / _relative(self, relative))
 
     @property
     def needs_commit_lock(self) -> bool:
@@ -98,8 +105,27 @@ class S3StoreLocation(StoreLocation):
         )
 
     def __truediv__(self, relative: str | Path) -> S3StoreLocation:
-        prefix = PurePosixPath(self.prefix) / PurePosixPath(str(relative))
-        return S3StoreLocation(self.bucket, str(prefix))
+        """The location ``relative`` below this one, ``..`` resolved.
+
+        S3 keys are plain names: S3 itself doesn't resolve ``..``, so a
+        catalog item's relative href is resolved here.
+
+        Raises
+        ------
+        ValueError
+            If ``relative`` is an absolute path, or leads to the bucket's
+            root or out of the bucket.
+        """
+        prefix = posixpath.normpath(
+            posixpath.join(self.prefix, str(_relative(self, relative)))
+        )
+        if prefix == "." or prefix.startswith(".."):
+            msg = (
+                f"{relative} leads out of {self} to the root of the bucket "
+                "or outside it, where no store can be."
+            )
+            raise ValueError(msg)
+        return S3StoreLocation(self.bucket, prefix)
 
     @property
     def needs_commit_lock(self) -> bool:
@@ -123,6 +149,18 @@ class S3StoreLocation(StoreLocation):
 
     def __str__(self) -> str:
         return f"s3://{self.bucket}/{self.prefix}"
+
+
+def _relative(location: StoreLocation, relative: str | Path) -> PurePosixPath:
+    """``relative`` as a path below ``location``; an absolute one is refused."""
+    path = PurePosixPath(str(relative))
+    if path.is_absolute():
+        msg = (
+            f"{relative} can't be joined to {location}: give a relative path, "
+            "such as a site or a catalog item's href."
+        )
+        raise ValueError(msg)
+    return path
 
 
 _SCHEME = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*)://(.*)$")
