@@ -71,6 +71,9 @@ def _schema_map() -> dict[str, str]:
     mapping["https://stac-extensions.github.io/xarray-assets/v1.0.0/schema.json"] = str(
         _SCHEMAS / "xarray-assets-v1.0.0.json"
     )
+    mapping["https://stac-extensions.github.io/datacube/v2.2.0/schema.json"] = str(
+        _SCHEMAS / "datacube-v2.2.0.json"
+    )
     return mapping
 
 
@@ -97,15 +100,18 @@ def _gnss_store(
     publisher: Publisher | None = None,
     site: str = testing.SITE_KEY,
     start: str = "2025-01-01",
+    longitude: float | None = None,
 ) -> Path:
     """A GNSS store holding observations per receiver.
 
     Of the made-up site, unless ``site`` names another one (same position,
-    another store id).
+    unless ``longitude`` moves it; another store id).
     """
     meta = made_up_metadata()
     if publisher is not None:
         meta.publisher = publisher
+    if longitude is not None:
+        meta.spatial.geospatial_lon = longitude
     if site != testing.SITE_KEY:
         meta.spatial.site.name = site
         meta.identity.id = store_id(site, "gnss_store")
@@ -357,3 +363,265 @@ class TestStoresTheCatalogCannotDescribe:
             write_catalog(root_with_bad_stores)
 
         assert _files(root_with_bad_stores) == before
+
+
+# --- Every product and every stored dataset (#244) ----------------------------
+
+_VOD_GROUP = "tau_omega_zeroth_order/canopy_01_vs_reference_01"
+_HEADER = {
+    "APPROX POSITION X": testing.ECEF_X,
+    "APPROX POSITION Y": testing.ECEF_Y,
+    "APPROX POSITION Z": testing.ECEF_Z,
+}
+
+
+def _log_book(n_files: int = 1) -> xr.Dataset:
+    """A log book of ``n_files`` stored files, each with the site's header position."""
+    rows = range(n_files)
+    return xr.Dataset(
+        {
+            "rinex_hash": ("row", [f"hash{i}" for i in rows]),
+            "action": ("row", ["initial"] * n_files),
+            "attrs": ("row", [json.dumps(_HEADER)] * n_files),
+        }
+    )
+
+
+def _sbf_obs(n_epochs: int = 12) -> xr.Dataset:
+    epochs = pd.date_range("2025-01-01", periods=n_epochs, freq="5s")
+    sids = ["G01|L1|C", "E11|E1|C"]
+    return xr.Dataset(
+        {
+            "broadcast_theta": (("epoch", "sid"), np.full((n_epochs, 2), 0.5, "f4")),
+            "pdop": ("epoch", np.full(n_epochs, 1.5, "f4")),
+        },
+        coords={"epoch": epochs, "sid": sids, "sv": ("sid", ["G01", "E11"])},
+    )
+
+
+def _store(
+    path: Path,
+    store_type: str,
+    groups: dict[str, xr.Dataset],
+    *,
+    naming_authority: str = testing.NAMING_AUTHORITY,
+) -> Path:
+    """A store of the made-up site holding ``groups``."""
+    meta = made_up_metadata(store_type)
+    meta.identity.naming_authority = naming_authority
+    open_repository(path, create=True)
+    write_metadata(path, meta)
+    session = open_repository(path).writable_session("main")
+    for group, ds in groups.items():
+        ds.to_zarr(session.store, group=group, mode="w", consolidated=False)
+    commit_with_rebase(session, "data", store_path=path)
+    return path
+
+
+@pytest.fixture
+def every_product(tmp_path: Path) -> Path:
+    """A data root with a GNSS store (with SBF metadata), a VOD store and a
+    geodesy store of the made-up site."""
+    root = tmp_path / "stores"
+    site = root / testing.SITE_KEY
+    _store(
+        site / "gnss",
+        "gnss_store",
+        {
+            "canopy_01": _observations(),
+            "canopy_01/metadata/sbf_obs": _sbf_obs(),
+            "canopy_01/metadata/table": _log_book(),
+            "reference_01": _observations(),
+            "reference_01/metadata/table": _log_book(),
+        },
+    )
+    vod = _observations().rename({"SNR": "VOD"})
+    vod["theta"] = vod["VOD"] * 0 + 0.3
+    _store(
+        site / "vod",
+        "vod_store",
+        {_VOD_GROUP: vod, f"{_VOD_GROUP}/metadata/table": _log_book()},
+    )
+    _store(site / "geodesy", "geodesy_store", {"canopy_01": _observations()})
+    return root
+
+
+def _items(root: Path) -> dict[str, pystac.Item]:
+    """The items of the catalog at ``root``, by collection."""
+    catalog = pystac.Catalog.from_file(root / "catalog.json")
+    return {
+        collection.id: next(collection.get_items())
+        for collection in catalog.get_collections()
+    }
+
+
+class TestEveryProductAndDataset:
+    def test_each_product_has_its_collection_and_the_catalog_is_valid(
+        self, every_product
+    ):
+        _assert_valid(write_catalog(every_product))
+
+        assert sorted(_items(every_product)) == [
+            "gnss-geodesy",
+            "gnss-observations",
+            "vod",
+        ]
+
+    def test_gnss_assets_are_the_receivers_their_sbf_metadata_and_log_books(
+        self, every_product
+    ):
+        write_catalog(every_product)
+
+        assets = _items(every_product)["gnss-observations"].assets
+        assert {key: asset.roles for key, asset in assets.items()} == {
+            "canopy_01": ["data", "latest-version"],
+            "canopy_01.sbf_obs": ["metadata", "latest-version"],
+            "canopy_01.log_book": ["metadata", "latest-version"],
+            "reference_01": ["data", "latest-version"],
+            "reference_01.log_book": ["metadata", "latest-version"],
+        }
+
+    def test_vod_assets_are_the_analysis_and_its_log_book(self, every_product):
+        write_catalog(every_product)
+
+        assets = _items(every_product)["vod"].assets
+        key = _VOD_GROUP.replace("/", ".")
+        assert {k: a.roles for k, a in assets.items()} == {
+            key: ["data", "latest-version"],
+            f"{key}.log_book": ["metadata", "latest-version"],
+        }
+        ds = _open_asset(assets[key])
+        assert ds.sizes == {"epoch": 12, "sid": 2}
+        assert "VOD" in ds
+
+    def test_no_key_holds_a_slash_and_the_reserved_group_is_no_asset(
+        self, every_product
+    ):
+        write_catalog(every_product)
+
+        keys = [k for item in _items(every_product).values() for k in item.assets]
+        assert not [k for k in keys if "/" in k]
+        assert not [k for k in keys if k.split(".")[0] == "canvod"]
+
+    def test_the_log_book_and_sbf_assets_open_their_groups(self, every_product):
+        write_catalog(every_product)
+
+        assets = _items(every_product)["gnss-observations"].assets
+        assert "pdop" in _open_asset(assets["canopy_01.sbf_obs"])
+        assert "rinex_hash" in _open_asset(assets["canopy_01.log_book"])
+
+    def test_a_sites_gnss_and_vod_items_are_related(self, every_product):
+        write_catalog(every_product)
+
+        items = _items(every_product)
+        gnss, vod = items["gnss-observations"], items["vod"]
+
+        def related(item: pystac.Item) -> set[str]:
+            return {
+                Path(link.get_absolute_href()).name
+                for link in item.get_links("related")
+            }
+
+        assert f"{vod.id}.json" in related(gnss)
+        assert f"{gnss.id}.json" in related(vod)
+
+    def test_a_namesake_site_of_another_authority_is_not_related(self, tmp_path):
+        root = tmp_path / "stores"
+        _store(root / "a" / "gnss", "gnss_store", {"canopy_01": _observations()})
+        _store(
+            root / "b" / "vod",
+            "vod_store",
+            {_VOD_GROUP: _observations().rename({"SNR": "VOD"})},
+            naming_authority="org.example.isengard",
+        )
+
+        write_catalog(root)
+
+        assert not [
+            link for item in _items(root).values() for link in item.get_links("related")
+        ]
+
+    def test_receivers_carry_their_header_position(self, every_product):
+        write_catalog(every_product)
+
+        item = _items(every_product)["gnss-observations"]
+        expected = pytest.approx([testing.ECEF_X, testing.ECEF_Y, testing.ECEF_Z])
+        assert item.assets["canopy_01"].extra_fields["canvod:position_ecef_m"] == (
+            expected
+        )
+        receivers = item.properties["canvod:receivers"]
+        assert receivers["canopy_01"]["position_ecef_m"] == expected
+        assert receivers["canopy_01"]["type"] == "canopy"
+
+    def test_datacube_fields_describe_dimensions_and_variables(self, every_product):
+        write_catalog(every_product)
+
+        assets = _items(every_product)["gnss-observations"].assets
+        observations = assets["canopy_01"].extra_fields
+        assert set(observations["cube:dimensions"]) == {"epoch", "sid"}
+        assert observations["cube:dimensions"]["epoch"]["type"] == "temporal"
+        assert observations["cube:variables"]["SNR"]["dimensions"] == ["epoch", "sid"]
+        assert observations["cube:variables"]["SNR"]["type"] == "data"
+        sbf = assets["canopy_01.sbf_obs"].extra_fields
+        assert sbf["cube:variables"]["pdop"]["dimensions"] == ["epoch"]
+        assert sbf["cube:variables"]["sv"] == {
+            "dimensions": ["sid"],
+            "type": "auxiliary",
+        }
+        assert "cube:dimensions" not in assets["canopy_01.log_book"].extra_fields
+
+
+class TestCollections:
+    def test_a_collection_extent_covers_all_its_items(self, tmp_path):
+        root = tmp_path / "stores"
+        _gnss_store(root / testing.SITE_KEY / "gnss")
+        _gnss_store(
+            root / "orthanc" / "gnss",
+            site="orthanc",
+            start="2025-03-01",
+            longitude=testing.LONGITUDE + 1.0,
+        )
+
+        write_catalog(root)
+
+        catalog = pystac.Catalog.from_file(root / "catalog.json")
+        collection = catalog.get_child("gnss-observations")
+        assert isinstance(collection, pystac.Collection)
+        (interval,) = collection.extent.temporal.intervals
+        starts, ends = zip(
+            *(
+                (item.common_metadata.start_datetime, item.common_metadata.end_datetime)
+                for item in collection.get_items()
+            ),
+            strict=True,
+        )
+        assert interval == [min(starts), max(ends)]
+        (bbox,) = collection.extent.spatial.bboxes
+        half = len(bbox) // 2  # 2D or 3D: minima first, then maxima
+        assert bbox[0] == pytest.approx(testing.LONGITUDE)
+        assert bbox[half] == pytest.approx(testing.LONGITUDE + 1.0)
+
+    def test_several_licenses_give_other_and_a_link_to_each(self, tmp_path):
+        root = tmp_path / "stores"
+        _gnss_store(root / testing.SITE_KEY / "gnss")  # CC-BY-4.0
+        _gnss_store(
+            root / "orthanc" / "gnss",
+            site="orthanc",
+            publisher=Publisher(
+                license="other",
+                license_uri="https://orthanc.example/license",
+            ),
+        )
+
+        write_catalog(root)
+
+        catalog = pystac.Catalog.from_file(root / "catalog.json")
+        collection = catalog.get_child("gnss-observations")
+        assert isinstance(collection, pystac.Collection)
+        assert collection.license == "other"
+        assert sorted(
+            link.href for link in collection.get_links(pystac.RelType.LICENSE)
+        ) == [
+            "https://orthanc.example/license",
+            "https://spdx.org/licenses/CC-BY-4.0.html",
+        ]
