@@ -143,6 +143,17 @@ The record a store keeps of what was written to each group: source files,
 their hashes, and the preprocessing applied.
 _Avoid_: metadata table, registry
 
+**Day block**:
+The part of a group that holds one receiver-day (or one day of a VOD
+analysis): every possible epoch of that day at its cadence, with or
+without data.
+_Avoid_: day chunk, partition
+
+**Cadence**:
+The time between the epochs a day block holds: the sampling interval of
+the day's files, or the aggregation interval when aggregation is set.
+_Avoid_: resolution, frequency
+
 **Snapshot**:
 One committed state of a store, which can be read again later.
 _Avoid_: version (for a store state), checkpoint
