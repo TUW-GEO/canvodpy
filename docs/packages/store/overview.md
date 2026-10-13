@@ -29,6 +29,12 @@ Each site has its own GNSS store and VOD store, both under
 The GNSS store holds data from every reader format (RINEX, SBF, and NMEA),
 although its default directory name is `rinex`.
 
+A store knows its site from its own metadata, not from the folder it
+sits in: `store.site_name` stays the same when the folder is moved or
+renamed. A store written before stores kept repository metadata has no
+site name; reading it raises an error that names
+`canvodpy store migrate-metadata`.
+
 ```mermaid
 graph TD
     A["GNSS files of a receiver"] --> B["Reader"]

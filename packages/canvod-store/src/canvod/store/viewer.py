@@ -948,8 +948,16 @@ class IcechunkStoreViewer:
             branches_html = ""
             footer = ""
         else:
-            # Use configured site name (or fallback to store path name)
-            site_name = self.store.site_name
+            # The site name comes from the store metadata; a store without
+            # it is still shown, with the command that migrates it.
+            try:
+                site_name = self.store.site_name
+                missing_metadata = ""
+            except ValueError as error:
+                site_name = "site unknown"
+                missing_metadata = (
+                    f'<div class="icechunk-error">{escape(str(error))}</div>'
+                )
 
             branch_label = "branch" if summary["branches"] == 1 else "branches"
             is_vod = self.store.store_type == "vod_store"
@@ -966,6 +974,7 @@ class IcechunkStoreViewer:
                     {escape(display_type)} MyIcechunkStore: {escape(site_name)}
                 </div>
                 <div class="icechunk-path">{escape(summary["path"])}</div>
+                {missing_metadata}
                 <div class="icechunk-stats">
                     <span class="stat-badge">
                         📊 {summary["branches"]} {branch_label}

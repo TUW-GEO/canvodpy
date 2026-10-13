@@ -34,6 +34,7 @@ from canvod.store_metadata.io import (
     commit_lock,
     commit_with_rebase,
     rewrite_manifests,
+    store_command,
 )
 from canvod.utils.logging import get_run_id, stage_timer
 from canvod.utils.tools import get_version_from_pyproject, sanitize_directory
@@ -445,8 +446,6 @@ class MyIcechunkStore:
 
         self.store_path = Path(store_path)
         self.store_type = store_type
-        # Site name is parent directory name
-        self.site_name = self.store_path.parent.name
 
         # Compression — icechunk v2 only supports zstd
         self.compression_level = compression_level or ic_cfg.compression_level
@@ -769,6 +768,30 @@ class MyIcechunkStore:
         if self._repo is None:
             self._ensure_store_exists()
         return self._repo
+
+    @property
+    def site_name(self) -> str:
+        """The site this store was written for, from its repository metadata.
+
+        Never the name of the directory the store sits in, so moving or
+        renaming the directory doesn't change it.
+
+        Raises
+        ------
+        ValueError
+            If the store has no repository metadata.
+        """
+        site = self.repo.get_metadata().get("spatial", {}).get("site", {})
+        name = site.get("name")
+        if not name:
+            msg = (
+                f"The store at {self.store_path} has no repository metadata, "
+                "so it doesn't say which site it holds. Move it to the "
+                "current form with:\n"
+                f"  {store_command('migrate-metadata', 'SITE', self.store_type)}"
+            )
+            raise ValueError(msg)
+        return name
 
     @contextlib.contextmanager
     def readonly_session(
