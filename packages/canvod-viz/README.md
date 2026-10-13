@@ -30,6 +30,13 @@ ical data.
 uv add canvod-viz
 ```
 
+For the interactive hemisphere selectors (`canvod.viz.widgets`), install
+the optional extra:
+
+```bash
+uv add "canvod-viz[widgets]"
+```
+
 ## Quick Start
 
 ### 2D Polar Visualization

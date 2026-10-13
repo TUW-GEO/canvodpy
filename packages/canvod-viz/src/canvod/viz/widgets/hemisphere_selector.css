@@ -1,0 +1,30 @@
+/* Shared styles for hemisphere selector widgets */
+.hemisphere-container {
+  position: relative;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hemisphere-container {
+    border-color: #444;
+    background: #1a1a1a;
+  }
+}
+
+.hemisphere-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  white-space: pre;
+  z-index: 100;
+  display: none;
+}
