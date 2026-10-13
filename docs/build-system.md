@@ -3,13 +3,13 @@ title: Build System
 description: Package building and distribution for canVODpy
 ---
 
-# Build System
+# Build system
 
 canVODpy uses `uv_build` as its build backend: a modern, fast backend from the Astral ecosystem with native namespace package support.
 
 ---
 
-## Distribution Formats
+## Distribution formats
 
 === "Wheel (preferred)"
 
@@ -33,7 +33,7 @@ canVODpy uses `uv_build` as its build backend: a modern, fast backend from the A
 
 ---
 
-## Build Configuration
+## Build configuration
 
 ```toml
 # packages/canvod-readers/pyproject.toml
@@ -68,7 +68,7 @@ just dist
 
 ---
 
-## Package Metadata
+## Package metadata
 
 ```toml
 [project]
@@ -130,7 +130,7 @@ Issues     = "https://github.com/nfb2021/canvodpy/issues"
 
 ---
 
-## Version Management
+## Version management
 
 Each package has its own version, following
 [Semantic Versioning](https://semver.org/); `canvodpy` pins every package

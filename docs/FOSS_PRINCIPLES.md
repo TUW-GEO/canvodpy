@@ -1,12 +1,12 @@
-# Free and Open Source Software (FOSS) Principles
+# Free and open source software (FOSS) principles
 
 ## Overview
 
 **canvodpy** is developed as Free and Open Source Software (FOSS) following the principles established by the Free Software Foundation[^1] and endorsed by the Open Source Initiative.[^2] This commitment ensures the software remains freely accessible, modifiable, and redistributable, enabling transparent scientific research and fostering collaborative development within the GNSS and atmospheric science communities.
 
-## Definitions and Distinctions
+## Definitions and distinctions
 
-### Free Software
+### Free software
 
 Free software, as defined by the Free Software Foundation, guarantees users four essential freedoms:[^1]
 
@@ -17,7 +17,7 @@ Free software, as defined by the Free Software Foundation, guarantees users four
 
 The term "free" refers to liberty (*libre*), not price (*gratis*), emphasizing user autonomy over software control.
 
-### Open Source Software
+### Open source software
 
 Open source software, as characterized by the Open Source Initiative, emphasizes development methodology and source code availability.[^2] The Open Source Definition requires:
 
@@ -28,7 +28,7 @@ Open source software, as characterized by the Open Source Initiative, emphasizes
 - License distribution without requiring additional agreements
 - Technology neutrality
 
-### Relationship and Convergence
+### Relationship and convergence
 
 While historically distinguished by philosophical emphasis (free software prioritizing user freedom, open source emphasizing practical benefits), the vast majority of licenses satisfy both definitions.[^3] Modern practice increasingly treats these as complementary perspectives on the same software licensing paradigm, hence the unified term "FOSS" (Free and Open Source Software) or "FLOSS" (Free/Libre and Open Source Software).
 
@@ -36,7 +36,7 @@ While historically distinguished by philosophical emphasis (free software priori
 
 **canvodpy** is licensed under the **Apache License, Version 2.0**,[^4] a permissive FOSS license approved by both the Free Software Foundation[^5] and Open Source Initiative.[^6]
 
-### Key Provisions
+### Key provisions
 
 The Apache 2.0 license provides:
 
@@ -47,7 +47,7 @@ The Apache 2.0 license provides:
 - **Attribution requirements**: Copyright and license notices must be retained
 - **No copyleft**: Modified versions may use different licenses
 
-### Rationale for Selection
+### Rationale for selection
 
 Apache 2.0 was selected for several reasons relevant to scientific software:
 
@@ -55,9 +55,9 @@ Apache 2.0 was selected for several reasons relevant to scientific software:
 2. **Clear terms**: Well-documented license reduces legal ambiguity[^4]
 3. **Permissive integration**: Compatible with most other FOSS licenses, enabling ecosystem integration
 
-## FOSS Compliance Frameworks
+## FOSS compliance frameworks
 
-### FAIR Software Principles
+### FAIR software principles
 
 The FAIR principles, originally developed for research data[^17], have been adapted for research software[^18] to enhance:
 
@@ -79,7 +79,7 @@ The FAIR principles, originally developed for research data[^17], have been adap
 
 **Reference**: [FAIR Software Compliance Summary](FAIR_IMPLEMENTATION_SUMMARY.md)
 
-### OpenSSF Best Practices
+### OpenSSF best practices
 
 The Open Source Security Foundation (OpenSSF) Best Practices badge program[^19] establishes security and quality criteria for FOSS projects. The program promotes:
 
@@ -100,13 +100,13 @@ The Open Source Security Foundation (OpenSSF) Best Practices badge program[^19] 
 
 **Reference**: [OpenSSF Badge Implementation Guide](OPENSSF_BADGE_GUIDE.md)
 
-### Software Heritage Archival
+### Software Heritage archival
 
 Software Heritage[^20] provides permanent archival of public source code, ensuring long-term preservation independently of hosting platform stability. Anyone can ask Software Heritage to archive a public repository with [Save Code Now](https://archive.softwareheritage.org/save/).
 
-## Community and Governance
+## Community and governance
 
-### Contribution Model
+### Contribution model
 
 **canvodpy** welcomes contributions following established FOSS development patterns:
 
@@ -118,7 +118,7 @@ Software Heritage[^20] provides permanent archival of public source code, ensuri
 
 **Reference**: [CONTRIBUTING.md](CONTRIBUTING.md)
 
-### Maintenance and Support
+### Maintenance and support
 
 The project is actively maintained with:
 
@@ -127,7 +127,7 @@ The project is actively maintained with:
 - Semantic versioning for API stability
 - Long-term support considerations for published research
 
-### Attribution and Citation
+### Attribution and citation
 
 Academic users should cite **canvodpy** using the provided citation metadata:
 
@@ -136,9 +136,9 @@ Academic users should cite **canvodpy** using the provided citation metadata:
 
 Proper citation ensures software developers receive academic credit, addressing a key sustainability challenge for research software.[^15]
 
-## Future Directions
+## Future directions
 
-### Planned Enhancements
+### Planned enhancements
 
 - **PyPI publication**: Complete 5/5 FAIR compliance with package registry distribution
 - **Silver badge**: Pursue OpenSSF Best Practices silver level certification
@@ -156,7 +156,7 @@ Proper citation ensures software developers receive academic credit, addressing 
 
 ---
 
-## Additional Resources
+## Additional resources
 
 - **FAIR Software**: [fair-software.eu](https://fair-software.eu/)
 - **OpenSSF**: [openssf.org](https://openssf.org/)

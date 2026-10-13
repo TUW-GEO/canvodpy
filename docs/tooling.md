@@ -284,7 +284,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 ---
 
-## Quality & Security
+## Quality & security
 
 canVODpy follows FAIR software principles and OpenSSF best practices:
 
@@ -330,7 +330,7 @@ canVODpy follows FAIR software principles and OpenSSF best practices:
 
 </div>
 
-### Continuous Integration
+### Continuous integration
 
 All quality checks run automatically:
 

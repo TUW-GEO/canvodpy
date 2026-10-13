@@ -1,4 +1,4 @@
-# Versioning Strategy
+# Versioning strategy
 
 Each canVODpy package has its own version
 ([ADR 0010](adr/0010-per-package-versions.md)). A package used on its own
@@ -30,7 +30,7 @@ canvodpy version names exactly the mix of packages it installs.
 
 ---
 
-## Semantic Versioning
+## Semantic versioning
 
 Following [Semantic Versioning 2.0.0](https://semver.org/), for each
 package on its own:
@@ -131,7 +131,7 @@ and the tag `vX.Y.Z`.
 
 ---
 
-## Creating Releases
+## Creating releases
 
 The maintainer chooses the packages and versions;
 [Releasing](RELEASING.md) has the steps.
@@ -144,7 +144,7 @@ just tag-release                                  # on the merged commit on main
 
 ---
 
-## Deprecation Policy
+## Deprecation policy
 
 Superseded public code is deprecated with the `deprecated` decorator of
 canvod-utils and removed only with the next major version

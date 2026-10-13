@@ -25,7 +25,7 @@ depends only on packages in its own layer or in the layers below it.
 | Presentation | `canvod-viz` | Hemisphere plots in 2D and 3D |
 | Persistence | `canvod-store`, `canvod-store-metadata` | The Icechunk stores and their log books; the description of a store, with field names that follow DataCite, ACDD, and STAC |
 | Computation | `canvod-vod`, `canvod-grids`, `canvod-ops` | VOD retrieval, hemisphere grids and the assignment of observations to their cells, and the optional preprocessing |
-| Data input | `canvod-readers`, `canvod-auxiliary`, `canvod-preflight` | Readers for RINEX 2 and 3, SBF, and NMEA; orbits and clocks, and the angles of each satellite seen from the receiver; the canonical filename convention |
+| Data input | `canvod-readers`, `canvod-auxiliary`, `canvod-preflight` | Readers for RINEX 2 and 3, SBF, and NMEA; orbits and clocks, and the angles of each satellite seen from the receiver; the canVOD file name convention |
 | Foundation | `canvod-config`, `canvod-utils` | The settings and how they're loaded; dates, file hashes, the deprecation decorators, the plugin loader, and the run identifier |
 
 The arrows point from a package to the packages it declares as
@@ -126,9 +126,9 @@ flowchart TD
    stops the run with a message that names it. See
    [Configuration](guides/configuration.md).
 2. **Find and check the files.** The run finds the files of every
-   receiver in any folder layout. It recognizes them by their canonical
-   names or through a naming recipe. It stops before it reads anything if two files have the
-   same canonical name, if files overlap in time, or if one folder holds
+   receiver in any folder layout. It recognizes them by their canVOD
+   file names or through a naming recipe. It stops before it reads anything if two files have the
+   same canVOD file name, if files overlap in time, or if one folder holds
    the files of more than one receiver. The reader comes from
    `reader_format` in the settings of the receiver, or is detected from the
    files.
@@ -200,6 +200,6 @@ See [Parallel processing](guides/parallel-processing.md) for the settings.
 
 ---
 
-**Next:** [Design principles](principles.md) ·
-[Package dependencies](dependencies.md) ·
-[Contributor setup](guides/contributor-setup.md)
+**Next:** [design principles](principles.md) ·
+[package dependencies](dependencies.md) ·
+[contributor setup](guides/contributor-setup.md)

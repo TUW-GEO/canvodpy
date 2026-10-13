@@ -1,4 +1,4 @@
-# Release Process
+# Release process
 
 !!! warning "Maintainers only"
     This guide is for repository maintainers with push access to the main branch.
@@ -22,7 +22,7 @@ Before starting a release:
 
 ---
 
-## Release Types
+## Release types
 
 Each package has its own version ([Versioning](VERSIONING.md)); choose the
 increment of each package you release:
@@ -42,7 +42,7 @@ the stages and when to choose which. The steps below are the same.
 
 ---
 
-## Step-by-Step
+## Step-by-step
 
 ### 1. Prepare
 
@@ -123,7 +123,7 @@ git push origin v1.1.0 canvod-store-v1.1.0 canvod-grids-v1.0.1
 `just tag-release` creates an annotated tag for every package version that
 has no tag yet, and prints the push command; it does not push.
 
-### 7. Publish GitHub Release
+### 7. Publish GitHub release
 
 The `.github/workflows/release.yml` workflow detects the canvodpy tag
 (`v1.1.0`) and creates a **draft** release whose notes are canvodpy's
@@ -163,7 +163,7 @@ tag existing is not a promise that PyPI has it.
 ??? failure "Tests fail during release"
     Fix the failing tests on `main` before retrying `just release`.
 
-??? failure "Not released: ..."
+??? failure "Not released"
     `just release` names every problem it found; nothing was changed.
     Typical ones:
 

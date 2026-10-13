@@ -64,7 +64,7 @@ with an unobstructed view of the sky.
 
     ---
 
-    Before it appends, canVODpy skips each file that is already in the
+    Before it appends, canVODpy skips each file that's already in the
     store, by its SHA-256 hash, and each file whose time span overlaps data
     already stored.
 
@@ -74,7 +74,7 @@ with an unobstructed view of the sky.
 
     ---
 
-    Seven grids divide the sky above the receiver into cells, among them
+    Seven grids divide the sky seen from the receiver into cells, among them
     equal-area, equal-angle, HEALPix, and geodesic grids. Each observation
     goes to the cell that contains it.
 
@@ -84,7 +84,7 @@ with an unobstructed view of the sky.
 
     ---
 
-    Files are read and processed in parallel worker processes. canVODpy
+    canVODpy reads and processes files in parallel worker processes, and
     sizes the workers to the machine, or to the limits you set.
 
     [:octicons-arrow-right-24: Parallel processing](guides/parallel-processing.md)
