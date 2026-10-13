@@ -37,6 +37,7 @@ from .io import (
 )
 from .location import (
     LocalStoreLocation,
+    S3StoreLocation,
     StoreLocation,
     open_repository,
     read_store_uuid,
@@ -55,6 +56,7 @@ __all__ = [
     "LocalStoreLocation",
     "MIGRATE_COMMAND",
     "RESERVED_GROUP",
+    "S3StoreLocation",
     "StoreLocation",
     "StoreMetadata",
     "amend_metadata",

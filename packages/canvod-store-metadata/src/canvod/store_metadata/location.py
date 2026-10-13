@@ -337,22 +337,22 @@ def open_repository(
         msg = f"The storage at {where} can't be reached. {where.access_hint}"
         raise OSError(msg) from error
     if create:
-        if exists:
-            msg = f"A store already exists at {where}; it was not created again."
-            raise FileExistsError(msg)
-        try:
-            return icechunk.Repository.create(storage=storage, config=config)
-        except icechunk.InvalidInputError as error:
-            # Icechunk creates only in an empty location. Another process
-            # may have created the store since the check above.
-            if icechunk.Repository.exists(storage):
-                msg = f"A store already exists at {where}; it was not created again."
-                raise FileExistsError(msg) from error
-            msg = (
-                f"{where} holds files but no store; a store is created only "
-                "in an empty location. Nothing was created."
-            )
-            raise ValueError(msg) from error
+        refused = None
+        if not exists:
+            try:
+                return icechunk.Repository.create(storage=storage, config=config)
+            except icechunk.InvalidInputError as error:
+                # Icechunk creates only in an empty location. Another
+                # process may have created the store since the check above.
+                if not icechunk.Repository.exists(storage):
+                    msg = (
+                        f"{where} holds files but no store; a store is created "
+                        "only in an empty location. Nothing was created."
+                    )
+                    raise ValueError(msg) from error
+                refused = error
+        msg = f"A store already exists at {where}; it was not created again."
+        raise FileExistsError(msg) from refused
     if not exists:
         msg = (
             f"No store at {where}. Check the path; a run creates a store "
