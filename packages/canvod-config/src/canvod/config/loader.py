@@ -84,20 +84,6 @@ def find_monorepo_root() -> Path:
         if git_path.exists():
             return parent
 
-    # Fallback: if this file is in
-    # packages/canvod-config/src/canvod/config/loader.py then monorepo root
-    # is 6 levels up.
-    try:
-        loader_file = Path(__file__).resolve()
-        # loader.py -> config -> canvod -> src -> canvod-config ->
-        # packages -> root.
-        monorepo_root = loader_file.parent.parent.parent.parent.parent.parent
-        git_path = monorepo_root / ".git"
-        if git_path.exists():
-            return monorepo_root
-    except Exception:
-        pass
-
     raise RuntimeError("Cannot find monorepo root (no .git entry found)")
 
 

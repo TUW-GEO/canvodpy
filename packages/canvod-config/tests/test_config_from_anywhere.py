@@ -93,6 +93,22 @@ def test_config_loader_from_directory(test_dir: str):
     )
 
 
+class TestFindMonorepoRoot:
+    """The root is found from the working directory only."""
+
+    def test_finds_the_checkout_from_inside_it(self, monkeypatch):
+        monkeypatch.chdir(MONOREPO_ROOT / "packages" / "canvod-config")
+        assert loader_module.find_monorepo_root() == MONOREPO_ROOT
+
+    def test_raises_outside_any_checkout(self, tmp_path, monkeypatch):
+        """No guess from where loader.py is installed (a wheel, another project)."""
+        if any((p / ".git").exists() for p in [tmp_path, *tmp_path.parents]):
+            pytest.skip("the temporary directory lies inside a git checkout")
+        monkeypatch.chdir(tmp_path)
+        with pytest.raises(RuntimeError, match=r"no \.git entry"):
+            loader_module.find_monorepo_root()
+
+
 class TestGetTemplateDir:
     """Templates ship as real package data — always reachable, no search needed."""
 
