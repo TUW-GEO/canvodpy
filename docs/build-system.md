@@ -38,7 +38,7 @@ canVODpy uses `uv_build` as its build backend: a modern, fast backend from the A
 ```toml
 # packages/canvod-readers/pyproject.toml
 [build-system]
-requires      = ["uv_build>=0.9.17,<0.10.0"]
+requires      = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
