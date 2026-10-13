@@ -18,6 +18,7 @@ from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
 from .icechunk_logs import apply_icechunk_log_filter
+from .location import StoreLocation, open_repository, store_location
 from .schema import _METADATA_KEY, Amendment, RepositoryMetadata, StoreMetadata
 
 apply_icechunk_log_filter()
@@ -31,7 +32,7 @@ _locks_guard = threading.Lock()
 
 
 @contextmanager
-def commit_lock(store_path: Path | str) -> Generator[None]:
+def commit_lock(store_path: StoreLocation | Path | str) -> Generator[None]:
     """Let only one commit at a time change the store at ``store_path``.
 
     Icechunk on a local file system is not safe for concurrent commits:
@@ -44,7 +45,14 @@ def commit_lock(store_path: Path | str) -> Generator[None]:
     The lock is re-entrant in one thread. The operating system releases it
     when the process that holds it ends.
     """
-    path = Path(store_path).resolve()
+    location = store_location(store_path)
+    if not location.needs_commit_lock:
+        yield
+        return
+    if location.local_path is None:
+        msg = f"The commit lock needs a local directory; {location} is not one."
+        raise ValueError(msg)
+    path = location.local_path.resolve()
     with _locks_guard:
         lock = _locks.get(path)
         if lock is None:
@@ -65,7 +73,7 @@ def commit_with_rebase(
     message: str,
     metadata: dict[str, Any] | None = None,
     *,
-    store_path: Path | str,
+    store_path: StoreLocation | Path | str,
     config: Any = None,
     repository: dict[str, Any] | None = None,
 ) -> str:
@@ -115,7 +123,7 @@ def commit_with_rebase(
         metadata (written by an older canvodpy or edited by hand).
     """
     with commit_lock(store_path):
-        repo = _open_repo(Path(store_path))
+        repo = open_repository(store_path)
         if repository is None:
             repository = repo.get_metadata()
         if not repository:
@@ -176,7 +184,7 @@ def rewrite_manifests(
         Snapshot ID of the compaction commit.
     """
     with commit_lock(store_path):
-        repo = _open_repo(Path(store_path))
+        repo = open_repository(store_path)
         repository = repo.get_metadata()
         metadata = None
         if repository:
@@ -202,15 +210,9 @@ def rewrite_manifests(
         )
 
 
-def _open_repo(store_path: Path) -> icechunk.Repository:
-    """Open an existing Icechunk repository."""
-    storage = icechunk.local_filesystem_storage(str(store_path))
-    return icechunk.Repository.open(storage=storage)
-
-
 def read_repository_metadata(store_path: Path) -> dict[str, Any]:
     """The store's repository metadata as stored (empty for a store without)."""
-    return _open_repo(store_path).get_metadata()
+    return open_repository(store_path).get_metadata()
 
 
 def write_metadata(
@@ -249,7 +251,7 @@ def write_metadata(
         raise ValueError(msg) from exc
 
     with commit_lock(store_path):
-        repo = _open_repo(store_path)
+        repo = open_repository(store_path)
         existing = repo.get_metadata()
         if existing:
             store = existing.get("identity", {}).get("id", "unknown id")
@@ -300,7 +302,7 @@ def read_metadata(
     """
     from .snapshot import REPOSITORY_METADATA_ATTR, combined_metadata
 
-    repo = _open_repo(store_path)
+    repo = open_repository(store_path)
     session = (
         repo.readonly_session(snapshot_id=snapshot_id)
         if snapshot_id is not None
@@ -315,7 +317,7 @@ def read_metadata(
 
 def amendments_since(store_path: Path, metadata: StoreMetadata) -> list[Amendment]:
     """Amendments made to the store after the snapshot ``metadata`` was read from."""
-    current = _open_repo(store_path).get_metadata().get("amendments", [])
+    current = open_repository(store_path).get_metadata().get("amendments", [])
     return [Amendment.model_validate(a) for a in current[len(metadata.amendments) :]]
 
 
@@ -415,7 +417,7 @@ def update_metadata(
     ValueError
         If the store has repository metadata and ``updates`` is not empty.
     """
-    repo = _open_repo(store_path)
+    repo = open_repository(store_path)
     if repo.get_metadata():
         refused = sorted(key for key in updates if _repository_fields(key))
         if refused:
@@ -455,8 +457,8 @@ def metadata_exists(store_path: Path, branch: str = "main") -> bool:
     for callers that pass it.
     """
     try:
-        repo = _open_repo(store_path)
-    except icechunk.IcechunkError:
+        repo = open_repository(store_path)
+    except FileNotFoundError, icechunk.IcechunkError:
         return False
     return bool(repo.get_metadata())
 
@@ -526,7 +528,7 @@ def ensure_metadata(
         metadata: it predates ADR 0014 and must be migrated first.
     """
     with commit_lock(store_path):
-        repo = _open_repo(store_path)
+        repo = open_repository(store_path)
         existing = repo.get_metadata()
         if existing:
             return existing
@@ -538,7 +540,7 @@ def ensure_metadata(
             )
             raise ValueError(msg)
         write_metadata(store_path, collect())
-    return _open_repo(store_path).get_metadata()
+    return open_repository(store_path).get_metadata()
 
 
 def ensure_store_metadata(

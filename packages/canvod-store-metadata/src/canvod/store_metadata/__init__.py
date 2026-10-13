@@ -35,6 +35,12 @@ from .io import (
     update_metadata,
     write_metadata,
 )
+from .location import (
+    LocalStoreLocation,
+    StoreLocation,
+    open_repository,
+    store_location,
+)
 from .migration import migrate_metadata
 from .schema import StoreMetadata
 from .show import extract_env, format_metadata, show_metadata
@@ -44,8 +50,10 @@ from .validate import validate_all, validate_datacite, validate_fair
 
 __all__ = [
     "COMMIT_LOCK_NAME",
+    "LocalStoreLocation",
     "MIGRATE_COMMAND",
     "RESERVED_GROUP",
+    "StoreLocation",
     "StoreMetadata",
     "amend_metadata",
     "amendments_since",
@@ -62,12 +70,14 @@ __all__ = [
     "format_metadata",
     "metadata_exists",
     "migrate_metadata",
+    "open_repository",
     "read_metadata",
     "read_repository_metadata",
     "rewrite_manifests",
     "scan_stores",
     "scan_stores_as_stac",
     "show_metadata",
+    "store_location",
     "summarize_store",
     "to_stac_collection",
     "to_stac_collection_json",

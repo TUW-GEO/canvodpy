@@ -30,6 +30,7 @@ from zarr_cm import proj as zarr_proj
 from zarr_cm import stac as zarr_stac
 
 from .io import _set_field
+from .location import StoreLocation, store_location
 from .schema import (
     _METADATA_KEY,
     FORM_VERSION,
@@ -251,7 +252,9 @@ def _replay_amendments(copy: dict[str, Any], repository: dict[str, Any]) -> bool
 
 
 def check_root_copy(
-    attrs: dict[str, Any], repository: dict[str, Any], store_path: Path | str
+    attrs: dict[str, Any],
+    repository: dict[str, Any],
+    store_path: StoreLocation | Path | str,
 ) -> None:
     """Refuse a root group that no longer matches the repository metadata.
 
@@ -288,7 +291,10 @@ def check_root_copy(
 
 
 def commit_metadata(
-    repository: dict[str, Any], config: Any, store_path: Path | str, committed_at: str
+    repository: dict[str, Any],
+    config: Any,
+    store_path: StoreLocation | Path | str,
+    committed_at: str,
 ) -> tuple[dict[str, Any], dict[str, str | None]]:
     """The commit metadata, and the lockfile texts it refers to by hash.
 
@@ -306,7 +312,7 @@ def commit_metadata(
         identity["store_type"], identity["source_format"]
     )
     processing.datetime = committed_at
-    environment = collect_environment(Path(store_path))
+    environment = collect_environment(store_location(store_path).local_path)
     snapshot = (
         config
         if isinstance(config, ConfigSnapshot)
@@ -351,7 +357,7 @@ def prepare_commit(
     root: zarr.Group,
     repository: dict[str, Any],
     *,
-    store_path: Path | str,
+    store_path: StoreLocation | Path | str,
     config: Any,
 ) -> dict[str, Any]:
     """Write the root copy, summary and lockfile text; return the commit metadata.

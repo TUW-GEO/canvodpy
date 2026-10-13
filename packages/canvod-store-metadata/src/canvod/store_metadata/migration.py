@@ -28,11 +28,11 @@ from .amend import check_amendable
 from .identity import check_naming_authority, new_uuid, stac_link, store_id
 from .io import (
     _apply_updates,
-    _open_repo,
     check_who,
     commit_lock,
     commit_with_rebase,
 )
+from .location import open_repository
 from .schema import _METADATA_KEY, MigrationRecord, RepositoryMetadata, StoreMetadata
 from .snapshot import preview_metadata
 from .validate import validate_all
@@ -91,7 +91,7 @@ def migrate_metadata(
     who = check_who(who)
     store_path = Path(store_path)
     with commit_lock(store_path):
-        repo = _open_repo(store_path)
+        repo = open_repository(store_path)
         existing = repo.get_metadata()
         if existing:
             msg = (

@@ -10,11 +10,11 @@ import polars as pl
 
 from .io import (
     MIGRATE_COMMAND,
-    _open_repo,
     _written_before_metadata,
     read_metadata,
     store_command,
 )
+from .location import open_repository
 from .schema import StoreMetadata
 
 
@@ -124,7 +124,7 @@ _SCHEMA = {
 
 def _store_state(store_path: Path) -> str:
     """``"current"``, ``"needs_migration"`` or ``"empty"`` (no metadata, no data)."""
-    repo = _open_repo(store_path)
+    repo = open_repository(store_path)
     if repo.get_metadata():
         return "current"
     return "needs_migration" if _written_before_metadata(repo) else "empty"

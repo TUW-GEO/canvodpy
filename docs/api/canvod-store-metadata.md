@@ -14,6 +14,8 @@ Rich provenance metadata for Icechunk stores, aligned with DataCite 4.5, ACDD 1.
         - amend_metadata
         - migrate_metadata
         - metadata_exists
+        - open_repository
+        - store_location
         - validate_all
         - scan_stores
 
@@ -24,6 +26,10 @@ Rich provenance metadata for Icechunk stores, aligned with DataCite 4.5, ACDD 1.
 ## Collectors
 
 ::: canvod.store_metadata.collectors
+
+## Store locations
+
+::: canvod.store_metadata.location
 
 ## Store I/O
 

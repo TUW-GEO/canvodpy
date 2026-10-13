@@ -13,13 +13,14 @@ The metadata describes the made-up site of :mod:`canvod.utils.testing`.
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Mapping
 from pathlib import Path
 
-import icechunk
 from canvod.utils import testing
 
 from .io import write_metadata
+from .location import open_repository
 from .schema import (
     Creator,
     Instruments,
@@ -115,9 +116,8 @@ def give_test_metadata(
         ``store_path``.
     """
     path = Path(store_path)
-    storage = icechunk.local_filesystem_storage(str(path))
-    if not icechunk.Repository.exists(storage):
-        icechunk.Repository.create(storage=storage)
+    with contextlib.suppress(FileExistsError):
+        open_repository(path, create=True)
     write_metadata(
         path,
         made_up_metadata(store_type, receivers=receivers, vod_analyses=vod_analyses),

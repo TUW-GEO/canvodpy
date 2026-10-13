@@ -18,12 +18,12 @@ from pydantic import ValidationError
 
 from .io import (
     _field_exists,
-    _open_repo,
     _set_field,
     check_who,
     commit_lock,
     commit_with_rebase,
 )
+from .location import open_repository
 from .schema import RepositoryMetadata, StoreMetadata
 
 #: Fields that define which store this is; a different value is a
@@ -130,7 +130,7 @@ def amend_metadata(
 
     store_path = Path(store_path)
     with commit_lock(store_path):
-        repo = _open_repo(store_path)
+        repo = open_repository(store_path)
         current = repo.get_metadata()
         if not current:
             msg = (

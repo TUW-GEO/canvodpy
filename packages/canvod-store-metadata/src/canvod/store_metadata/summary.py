@@ -312,9 +312,9 @@ def summarize_store(
         Dotted-key updates of the snapshot summary's fields, plus
         ``summaries.store_size_mb``. Empty if the store holds no data yet.
     """
-    from .io import _open_repo
+    from .location import open_repository
 
-    session = _open_repo(store_path).readonly_session(branch=branch)
+    session = open_repository(store_path).readonly_session(branch=branch)
     updates = summarize_root(zarr.open_group(session.store, mode="r"), receivers)
     if updates:
         updates["summaries.store_size_mb"] = _store_size_mb(store_path)

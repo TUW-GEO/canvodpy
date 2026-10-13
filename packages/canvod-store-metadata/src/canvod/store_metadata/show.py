@@ -16,7 +16,8 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-from .io import _open_repo, amendments_since, read_metadata
+from .io import amendments_since, read_metadata
+from .location import open_repository
 from .schema import StoreMetadata
 from .validate import validate_all
 
@@ -443,7 +444,7 @@ def _commit_log(store_path: Path, snapshot_id: str, limit: int = 20) -> list[str
     """The newest commits up to ``snapshot_id``: time, message, settings hash."""
     lines = []
     for i, snapshot in enumerate(
-        _open_repo(store_path).ancestry(snapshot_id=snapshot_id)
+        open_repository(store_path).ancestry(snapshot_id=snapshot_id)
     ):
         if i == limit:
             lines.append(f"  ... older commits not shown (the {limit} newest are)")
@@ -482,7 +483,7 @@ def show_metadata(
     except KeyError:
         print(f"No metadata found in {path}")
         return
-    repo = _open_repo(path)
+    repo = open_repository(path)
     # Native and inlined chunks: what the store itself holds.
     meta.summaries.store_size_mb = round(
         repo.chunk_storage_stats().non_virtual_bytes() / 1e6, 3
