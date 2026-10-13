@@ -68,7 +68,7 @@ def release(
 ) -> None:
     """Publish a release: tag every store under the data root and write its catalog.
 
-    Every store gets the Icechunk tag TAG on its current main, and
+    TAG becomes an Icechunk tag on the current main of every store, and
     releases/TAG/ gets the catalog of that tag, each asset pinned to the
     tag and its snapshot. A release catalog is never changed afterwards.
     Nothing is tagged if a store cannot be described or already has the

@@ -331,6 +331,10 @@ class TestStoresTheCatalogCannotDescribe:
             _gnss_store(data_root / "shire" / "gnss", site="shire"),
             {"publisher.license": None},
         )
+        # Metadata, but no data: a run that created the store and stopped.
+        empty = data_root / "erebor" / "gnss"
+        open_repository(empty, create=True)
+        write_metadata(empty, made_up_metadata())
         return data_root
 
     def test_one_error_names_every_bad_store_with_its_reason(
@@ -350,6 +354,7 @@ class TestStoresTheCatalogCannotDescribe:
         assert "no site position" in reason("gondor")
         assert "'Apache 2' is not an SPDX license identifier" in reason("mordor")
         assert "no license" in reason("shire")
+        assert "holds no data" in reason("erebor")
         assert not any(f"{testing.SITE_KEY}/gnss" in line for line in lines)
 
     def test_a_store_needing_migration_is_named_with_the_migrate_command(

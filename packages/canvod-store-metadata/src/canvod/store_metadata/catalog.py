@@ -132,8 +132,20 @@ def _license(meta: StoreMetadata) -> str:
     return license_
 
 
-def _datetime(value: str | None) -> Any:
-    return pystac.utils.str_to_datetime(value) if value else None
+def _period(meta: StoreMetadata) -> tuple[Any, Any]:
+    """The start and end of the store's data, from its time coverage."""
+    temporal = meta.temporal
+    if not (temporal.time_coverage_start and temporal.time_coverage_end):
+        msg = (
+            "holds no data (no temporal.time_coverage_start, "
+            "temporal.time_coverage_end); a store gets its time coverage from "
+            "the run that writes its data"
+        )
+        raise _RefusedError(msg)
+    return (
+        pystac.utils.str_to_datetime(temporal.time_coverage_start),
+        pystac.utils.str_to_datetime(temporal.time_coverage_end),
+    )
 
 
 def _dimension(group: zarr.Group, name: str, size: int) -> dict[str, Any]:
@@ -156,7 +168,9 @@ def _datacube(group: zarr.Group) -> dict[str, Any]:
     sizes: dict[str, int] = {}
     variables: dict[str, Any] = {}
     coordinates: set[str] = set()
-    for name, array in group.arrays():
+    # By name: the store lists its arrays in no fixed order, and the same
+    # store must give the same catalog file.
+    for name, array in sorted(group.arrays(), key=lambda pair: pair[0]):
         # Stores are Zarr 3, whose arrays name their dimensions.
         dims = [str(d) for d in getattr(array.metadata, "dimension_names", None) or ()]
         sizes.update(zip(dims, array.shape, strict=True))
@@ -366,8 +380,8 @@ def _store_item(store_path: Path, release: str | None = None) -> _Described:
     _RefusedError
         If the store cannot be described: it cannot be opened, has no
         metadata or needs migration, has no site position, its license
-        is missing or breaks the license rule, or it has no tag
-        ``release``.
+        is missing or breaks the license rule, it holds no data (no time
+        coverage), or it has no tag ``release``.
     """
     try:
         repo = open_repository(store_path)
@@ -386,14 +400,14 @@ def _store_item(store_path: Path, release: str | None = None) -> _Described:
     meta = _read_quietly(store_path, snapshot_id=snapshot_id)
     geometry, bbox = _geometry(meta)
     license_ = _license(meta)
-    temporal = meta.temporal
+    start, end = _period(meta)
     item = pystac.Item(
         id=_item_id(meta),
         geometry=geometry,
         bbox=bbox,
         datetime=None,
-        start_datetime=_datetime(temporal.time_coverage_start),
-        end_datetime=_datetime(temporal.time_coverage_end),
+        start_datetime=start,
+        end_datetime=end,
         properties={
             "title": meta.identity.title,
             "license": license_,

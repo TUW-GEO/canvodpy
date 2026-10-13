@@ -428,8 +428,9 @@ lists each such store with its reason:
 ```
 
 The reasons: the store can't be opened, has no metadata, needs
-migration, has no site position, or has no usable license (none, not
-SPDX, or `other` without `license_uri`). `canvodpy stac write` then
+migration, has no site position, has no usable license (none, not
+SPDX, or `other` without `license_uri`), or holds no data yet (no time
+coverage: a run created the store and stopped before writing). `canvodpy stac write` then
 exits with code 1.
 
 An item has the site as a point (longitude, latitude, ellipsoidal height),
