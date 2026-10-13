@@ -27,7 +27,7 @@ repos:
         stages: [pre-commit]
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.12.22
+    rev: 0.13.0
     hooks:
       # Update the uv lockfile
       - id: uv-lock
@@ -46,7 +46,7 @@ repos:
         stages: [pre-commit]
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.19.0
+    rev: v4.19.2
     hooks:
       - id: commitizen
         stages: [commit-msg]
