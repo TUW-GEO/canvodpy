@@ -44,7 +44,7 @@ from canvod.store_metadata import (
     format_metadata,
     validate_all,
     extract_env,
-    write_stac_collection,
+    write_catalog,
     scan_stores,
 )
 
@@ -61,10 +61,10 @@ print(format_metadata(meta))
 print(format_metadata(meta, section="env"))
 
 # Validate against the zarr conventions, ACDD, DataCite, STAC, FAIR
-issues = validate_all(meta)
+issues = validate_all(meta, store_path=store_path)
 
-# Export STAC Collection JSON
-write_stac_collection(store_path)
+# Write the STAC catalog of every store under the data root
+write_catalog(data_root)
 
 # Reproduce the exact Python environment
 extract_env(store_path, Path("repro_env/"))
@@ -342,7 +342,7 @@ sub-principle to the fields and features that satisfy it:
 | **F1** | Globally unique persistent identifier | `identity.id` (local) + `identity.persistent_identifier` (DOI) |
 | **F2** | Rich metadata | 14 sections |
 | **F3** | Metadata includes data identifier | `identity.id` and `identity.uuid` are in the repository metadata and in the root copy of every snapshot |
-| **F4** | Registered in searchable resource | `scan_stores()`, STAC catalog export |
+| **F4** | Registered in searchable resource | `scan_stores()`, the STAC catalog (`write_catalog()`) |
 | **A1** | Retrievable by standard protocol | Zarr/Icechunk (local, S3, HTTP); `references.access_url` |
 | **A1.1** | Protocol is open and free | Zarr v3 + Icechunk — open specifications |
 | **A1.2** | Protocol allows authentication | Icechunk supports S3/GCS credentials |
@@ -372,23 +372,24 @@ for standard, issues in validate_all(meta).items():
     print(f"{standard}: {'PASS' if not issues else f'{len(issues)} issues'}")
 ```
 
-## STAC JSON export
+## STAC catalog
 
-Each store can be exported as a standalone STAC Collection JSON file:
+One STAC catalog at the data root describes every store under it (ADR
+0015): one collection per product, one item per store.
 
 ```python
-from canvod.store_metadata import write_stac_collection, write_stac_catalog
+from canvod.store_metadata import build_catalog, store_item, write_catalog
 
-# Single store → collection.json
-write_stac_collection(store_path)  # writes store_path/collection.json
-write_stac_collection(store_path, Path("out.json"))  # custom path
-
-# Scan directory → catalog.json + per-store collection.json files
-write_stac_catalog(root_dir)
+item = store_item(store_path)  # one store's item (pystac.Item), in memory
+catalog = build_catalog(data_root)  # the whole catalog (pystac.Catalog)
+write_catalog(data_root)  # writes data_root/catalog.json and the rest
 ```
 
-The catalog output is a valid STAC Catalog with child links pointing to each
-store's `collection.json`.
+From the command line: `canvodpy stac write`. A store that can't be
+described stops the write, and one error lists every such store. A new
+store's catalog link has no item file until the first catalog write;
+`validate_all(meta, store_path=store_path)` shows that as a warning, not a
+failure.
 
 ## Store inventory
 
@@ -420,5 +421,6 @@ print(df)
 | `amend.py` | Amendments of amendable fields |
 | `migration.py` | Moving stores from before ADR 0014 |
 | `validate.py` | Compliance checking (DataCite, ACDD, STAC) |
-| `inventory.py` | Directory scanning, catalog building, STAC export |
+| `inventory.py` | Directory scanning (`scan_stores`) |
+| `catalog.py` | The STAC catalog at the data root |
 | `show.py` | Human-readable formatting, env extraction, CLI |

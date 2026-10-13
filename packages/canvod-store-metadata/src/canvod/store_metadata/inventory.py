@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import polars as pl
+from canvod.utils.tools import deprecated
 
 from .io import (
     MIGRATE_COMMAND,
@@ -176,7 +177,7 @@ def _check_catalog_stores(store_paths: list[Path]) -> None:
 
 
 def scan_stores(root_dir: Path, recursive: bool = True) -> pl.DataFrame:
-    """Walk directories, find Icechunk stores, build a catalog.
+    """List the Icechunk stores under a directory, one row per store.
 
     A store written before stores kept repository metadata is listed with
     ``needs_migration`` and the command that migrates it.
@@ -195,7 +196,7 @@ def scan_stores(root_dir: Path, recursive: bool = True) -> pl.DataFrame:
     return pl.DataFrame(rows)
 
 
-def scan_stores_as_stac(root_dir: Path) -> dict[str, Any]:
+def _scan_stores_as_stac(root_dir: Path) -> dict[str, Any]:
     """Build a STAC Catalog JSON dict from stores.
 
     Raises
@@ -250,7 +251,7 @@ def scan_stores_as_stac(root_dir: Path) -> dict[str, Any]:
     }
 
 
-def to_stac_collection(meta: StoreMetadata) -> dict[str, Any]:
+def _to_stac_collection(meta: StoreMetadata) -> dict[str, Any]:
     """Convert a single StoreMetadata to a STAC 1.1 Collection dict, in-memory.
 
     Parameters
@@ -262,7 +263,7 @@ def to_stac_collection(meta: StoreMetadata) -> dict[str, Any]:
     -------
     dict[str, Any]
         A STAC Collection object, ready to ``json.dumps()`` or inspect
-        directly -- no file I/O. See ``write_stac_collection()`` to also
+        directly -- no file I/O. See ``_write_stac_collection()`` to also
         persist it to disk.
     """
     collection: dict[str, Any] = {
@@ -306,10 +307,10 @@ def to_stac_collection(meta: StoreMetadata) -> dict[str, Any]:
     return collection
 
 
-def to_stac_collection_json(meta: StoreMetadata, indent: int = 2) -> str:
+def _to_stac_collection_json(meta: StoreMetadata, indent: int = 2) -> str:
     """Convert a single StoreMetadata to a STAC 1.1 Collection JSON string.
 
-    Convenience wrapper around ``to_stac_collection()`` for callers who want
+    Convenience wrapper around ``_to_stac_collection()`` for callers who want
     the serialized form directly (e.g. to display, hash, or send over the
     wire) without touching the filesystem.
 
@@ -325,10 +326,10 @@ def to_stac_collection_json(meta: StoreMetadata, indent: int = 2) -> str:
     str
         The STAC Collection, serialized as JSON.
     """
-    return json.dumps(to_stac_collection(meta), indent=indent, default=str)
+    return json.dumps(_to_stac_collection(meta), indent=indent, default=str)
 
 
-def write_stac_collection(
+def _write_stac_collection(
     store_path: Path,
     output_path: Path | None = None,
     branch: str = "main",
@@ -350,7 +351,7 @@ def write_stac_collection(
         The written JSON file path.
     """
     meta = read_metadata(store_path, branch)
-    collection = to_stac_collection(meta)
+    collection = _to_stac_collection(meta)
 
     if output_path is None:
         output_path = store_path / "collection.json"
@@ -360,7 +361,7 @@ def write_stac_collection(
     return output_path
 
 
-def write_stac_catalog(
+def _write_stac_catalog(
     root_dir: Path,
     output_path: Path | None = None,
     write_collections: bool = True,
@@ -386,7 +387,7 @@ def write_stac_catalog(
     ValueError
         If a store needs migration or has no metadata.
     """
-    catalog = scan_stores_as_stac(root_dir)
+    catalog = _scan_stores_as_stac(root_dir)
 
     if output_path is None:
         output_path = root_dir / "catalog.json"
@@ -394,7 +395,7 @@ def write_stac_catalog(
     # Rewrite links to point to actual collection.json files
     if write_collections:
         for sp in _find_icechunk_stores(root_dir):
-            coll_path = write_stac_collection(sp)
+            coll_path = _write_stac_collection(sp)
             # Update catalog link to relative path
             rel = coll_path.relative_to(output_path.parent)
             store_id = read_metadata(sp).identity.id
@@ -405,3 +406,66 @@ def write_stac_catalog(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(catalog, indent=2, default=str))
     return output_path
+
+
+@deprecated(
+    "`scan_stores_as_stac` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.store_metadata.build_catalog` instead: it builds the STAC "
+    "catalog of every store under the data root."
+)
+def scan_stores_as_stac(root_dir: Path) -> dict[str, Any]:
+    """Build a STAC Catalog JSON dict from stores (deprecated)."""
+    return _scan_stores_as_stac(root_dir)
+
+
+@deprecated(
+    "`to_stac_collection` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.store_metadata.store_item(store_path)` instead: it gives "
+    "the STAC item of one store."
+)
+def to_stac_collection(meta: StoreMetadata) -> dict[str, Any]:
+    """Convert a StoreMetadata to a STAC 1.1 Collection dict (deprecated)."""
+    return _to_stac_collection(meta)
+
+
+@deprecated(
+    "`to_stac_collection_json` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.store_metadata.store_item(store_path)` instead: it gives "
+    "the STAC item of one store; `json.dumps(item.to_dict())` is its JSON."
+)
+def to_stac_collection_json(meta: StoreMetadata, indent: int = 2) -> str:
+    """Convert a StoreMetadata to STAC 1.1 Collection JSON (deprecated)."""
+    return _to_stac_collection_json(meta, indent)
+
+
+@deprecated(
+    "`write_stac_collection` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.store_metadata.write_catalog` (or `canvodpy stac write`) "
+    "instead: it writes each store's item into the catalog at the data root."
+)
+def write_stac_collection(
+    store_path: Path,
+    output_path: Path | None = None,
+    branch: str = "main",
+) -> Path:
+    """Write a STAC Collection JSON file for one store (deprecated)."""
+    return _write_stac_collection(store_path, output_path, branch)
+
+
+@deprecated(
+    "`write_stac_catalog` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.store_metadata.write_catalog` (or `canvodpy stac write`) "
+    "instead: it writes the catalog at the data root."
+)
+def write_stac_catalog(
+    root_dir: Path,
+    output_path: Path | None = None,
+    write_collections: bool = True,
+) -> Path:
+    """Write a STAC Catalog JSON and per-store Collections (deprecated)."""
+    return _write_stac_catalog(root_dir, output_path, write_collections)

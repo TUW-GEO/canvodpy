@@ -15,7 +15,7 @@ canvod-store (`{group}/metadata/table`).
 | `io.py` | Write a new store's metadata, read a snapshot's; `commit_with_rebase`, the one commit function |
 | `snapshot.py` | What every commit writes: root copy, snapshot summary, commit metadata, lockfile text in the reserved group `canvod` |
 | `validate.py` | Checks against the schema and the standards |
-| `catalog.py` | The STAC catalog of all stores under a data root (ADR 0015), on pystac: `write_catalog`, `build_catalog`, `store_item`. The STAC functions in `inventory.py` are the older per-store form |
+| `catalog.py` | The STAC catalog of all stores under a data root (ADR 0015), on pystac: `write_catalog`, `build_catalog`, `store_item`. The STAC functions in `inventory.py` are the older per-store form, deprecated and removed in v2.0.0 (#243); `validate_all(store_path=)` warns about a catalog link without its item |
 | `inventory.py`, `show.py`, `summary.py` | Several stores at once; reports |
 | `testing.py` | Stores with the made-up site's metadata, for tests |
 

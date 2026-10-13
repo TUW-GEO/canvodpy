@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import functools
 from importlib import resources
+from pathlib import Path
 from typing import Any
 
 import zarr_cm
@@ -317,8 +318,26 @@ def validate_fair(metadata: StoreMetadata) -> list[str]:
     return issues
 
 
+def _catalog_link_warnings(metadata: StoreMetadata, store_path: Path) -> list[str]:
+    """A warning when the store's catalog link has no item file yet.
+
+    The link is written when the store is created and dangles until the
+    first catalog write, so a dangling link is no failure (ADR 0015).
+    """
+    link = metadata.identity.stac_link
+    if not link or (store_path / link).exists():
+        return []
+    return [
+        f"[warning] identity.stac_link points to {link}, which has no item "
+        "file yet: write the catalog with canvodpy stac write"
+    ]
+
+
 def validate_all(
-    metadata: StoreMetadata, *, recommended: bool = True
+    metadata: StoreMetadata,
+    *,
+    recommended: bool = True,
+    store_path: Path | None = None,
 ) -> dict[str, list[str]]:
     """Run all validators, return issues grouped by standard.
 
@@ -328,15 +347,22 @@ def validate_all(
     Parameters
     ----------
     recommended
-        Also list ACDD recommendations and FAIR advice. With ``False`` only
-        failures are listed: a store created in the current form has none.
+        Also list ACDD recommendations, FAIR advice and warnings. With
+        ``False`` only failures are listed: a store created in the current
+        form has none.
+    store_path
+        The local store ``metadata`` was read from. Given, the STAC check
+        also warns when the store's catalog link has no item file yet.
     """
+    stac = validate_stac(metadata, recommended=recommended)
+    if recommended and store_path is not None:
+        stac += _catalog_link_warnings(metadata, store_path)
     return {
         "rules": [str(rule_break) for rule_break in check_rules(metadata)],
         "zarr_conventions": validate_zarr_conventions(metadata),
         "acdd": validate_acdd(metadata, recommended=recommended),
         "datacite": validate_datacite(metadata),
-        "stac": validate_stac(metadata, recommended=recommended),
+        "stac": stac,
         "fair": validate_fair(metadata) if recommended else [],
     }
 

@@ -17,7 +17,12 @@ from pathlib import Path
 from typing import Any
 
 from .io import amendments_since, read_metadata
-from .location import StoreLocation, open_repository, store_location
+from .location import (
+    LocalStoreLocation,
+    StoreLocation,
+    open_repository,
+    store_location,
+)
 from .schema import StoreMetadata
 from .validate import validate_all
 
@@ -265,10 +270,15 @@ def format_summaries(meta: StoreMetadata) -> str:
     return "\n".join(lines)
 
 
-def format_validation(meta: StoreMetadata) -> str:
-    """Failures per standard, then the recommendations and FAIR advice."""
+def format_validation(meta: StoreMetadata, store_path: Path | None = None) -> str:
+    """Failures per standard, then the recommendations, FAIR advice and
+    warnings.
+
+    ``store_path``, the local store ``meta`` comes from, adds the warning
+    about a catalog link without an item file (:func:`validate_all`).
+    """
     failures = validate_all(meta, recommended=False)
-    results = validate_all(meta)
+    results = validate_all(meta, store_path=store_path)
     lines = [_section("FAIR & Compliance Validation")]
     for standard, issues in results.items():
         failed = failures[standard]
@@ -282,26 +292,29 @@ def format_validation(meta: StoreMetadata) -> str:
     return "\n".join(lines)
 
 
-# Section name → formatter mapping
-_SECTIONS: dict[str, Any] = {
-    "identity": format_identity,
-    "creator": format_creator,
-    "publisher": format_publisher,
-    "temporal": format_temporal,
-    "spatial": format_spatial,
-    "instruments": format_instruments,
-    "processing": format_processing,
-    "env": format_environment,
-    "config": format_config,
-    "references": format_references,
-    "summaries": format_summaries,
-    "validation": format_validation,
-}
+def _sections(store_path: Path | None = None) -> dict[str, Any]:
+    """Section name to formatter; ``store_path`` goes to the validation."""
+    return {
+        "identity": format_identity,
+        "creator": format_creator,
+        "publisher": format_publisher,
+        "temporal": format_temporal,
+        "spatial": format_spatial,
+        "instruments": format_instruments,
+        "processing": format_processing,
+        "env": format_environment,
+        "config": format_config,
+        "references": format_references,
+        "summaries": format_summaries,
+        "validation": lambda meta: format_validation(meta, store_path),
+    }
 
 
 def format_metadata(
     meta: StoreMetadata,
     section: str | None = None,
+    *,
+    store_path: Path | None = None,
 ) -> str:
     """Format metadata as a human-readable string.
 
@@ -314,9 +327,13 @@ def format_metadata(
         - "uv" / "uv.lock": dump raw uv.lock content
         - "toml" / "pyproject": dump raw pyproject.toml content
         - "env-reproduce": print instructions to reproduce env
-        - Any key from _SECTIONS: show that section only
+        - Any section name of :func:`_sections`: show that section only
         If None, show full report.
+    store_path : Path | None
+        The local store ``meta`` comes from, for the validation section
+        (:func:`format_validation`).
     """
+    sections = _sections(store_path)
     if section in ("uv", "uv.lock"):
         if meta.environment.uv_lock_text:
             return meta.environment.uv_lock_text
@@ -331,9 +348,9 @@ def format_metadata(
         return _format_reproduce_instructions(meta)
 
     if section is not None:
-        formatter = _SECTIONS.get(section)
+        formatter = sections.get(section)
         if formatter is None:
-            available = ", ".join(list(_SECTIONS.keys()) + ["uv", "toml", "reproduce"])
+            available = ", ".join(list(sections) + ["uv", "toml", "reproduce"])
             return f"Unknown section '{section}'. Available: {available}"
         return formatter(meta)
 
@@ -344,7 +361,7 @@ def format_metadata(
         f"  Schema version: {meta.metadata_version}",
         f"{'=' * 72}",
     ]
-    for formatter in _SECTIONS.values():
+    for formatter in sections.values():
         parts.append("")
         parts.append(formatter(meta))
     parts.append("")
@@ -495,7 +512,8 @@ def show_metadata(
             "This snapshot was written before migration: the store kept its "
             "metadata in one attribute then (canvodpy store migrate-metadata)."
         )
-    print(format_metadata(meta, section))
+    local = path.path if isinstance(path, LocalStoreLocation) else None
+    print(format_metadata(meta, section, store_path=local))
     if section is not None:
         return
     since = [] if meta.written_before_migration else amendments_since(path, meta)
@@ -515,7 +533,7 @@ def show_metadata(
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python -m canvod.store_metadata.show <store_path> [section]")
-        print(f"Sections: {', '.join(_SECTIONS.keys())}, uv, toml, reproduce")
+        print(f"Sections: {', '.join(_sections())}, uv, toml, reproduce")
         sys.exit(1)
 
     store = sys.argv[1]
