@@ -2,7 +2,7 @@
 
 Each canVODpy package has its own version
 ([ADR 0010](adr/0010-per-package-versions.md)). A package used on its own
-(e.g. canvod-readers) changes its version only when its code changes. The
+(for example canvod-readers) changes its version only when its code changes. The
 umbrella package `canvodpy` pins every package to an exact version, so a
 canvodpy version names exactly the mix of packages it installs.
 
@@ -106,7 +106,7 @@ For each package in a release:
   major version (`canvod-config>=1.0.0,<2`). The lower bound is the
   version that has what the package uses; raise it by hand when the package
   starts to use something newer.
-- A major release of a package (e.g. canvod-config 2.0.0) is outside the
+- A major release of a package (for example canvod-config 2.0.0) is outside the
   ranges of the packages that require it: the release is refused until
   each of them is checked against the new version and its range widened by
   hand.
@@ -119,8 +119,8 @@ For each package in a release:
 
 | Package | Tag | GitHub release |
 |---------|-----|----------------|
-| canvodpy | `vX.Y.Z` (e.g. `v1.1.0`) | yes, drafted from `CHANGELOG.md` |
-| any other package | `<package>-vX.Y.Z` (e.g. `canvod-store-v1.1.0`) | no |
+| canvodpy | `vX.Y.Z` (for example `v1.1.0`) | yes, drafted from `CHANGELOG.md` |
+| any other package | `<package>-vX.Y.Z` (for example `canvod-store-v1.1.0`) | no |
 
 Every package has its own `CHANGELOG.md` in its folder; canvodpy's is the
 one at the repository root, and each of its sections lists the package
