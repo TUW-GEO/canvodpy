@@ -75,7 +75,7 @@ The FAIR principles, originally developed for research data[^17], have been adap
 - OpenSSF Best Practices certification
 - Automated FAIR compliance checking
 
-**Status**: 4/5 FAIR recommendations met (pending PyPI registration for v1.0)
+**Status**: 5/5 FAIR recommendations met
 
 **Reference**: [FAIR Software Compliance Summary](FAIR_IMPLEMENTATION_SUMMARY.md)
 

@@ -47,10 +47,6 @@ include     = ["src/canvod/readers/data/*.dat"]
 exclude     = ["src/canvod/readers/tests/"]
 ```
 
-!!! note "canvod-utils exception"
-    `canvod-utils` uses `hatchling` as its build backend, the only
-    package in the monorepo that does not use `uv_build`.
-
 ---
 
 ## Building

@@ -116,9 +116,9 @@ canvodpy loads Python configuration files:
 - ✅ SPDX license compliance (REUSE 3.3)
 - ✅ Pinned dependencies in `uv.lock`
 - ✅ Pre-commit hooks (ruff linting & formatting, ty type checking, conventional commits)
-- ✅ Continuous integration (8 workflows: tests, coverage, code quality, audit, FAIR checks)
-- ✅ Static analysis (ruff with 50+ rule sets)
-- ✅ Type checking (ty with type budget enforcement)
+- ✅ Continuous integration (GitHub Actions: tests, coverage, code quality, CodeQL, FAIR checks)
+- ✅ Static analysis (ruff, CodeQL)
+- ✅ Type checking (ty, in the pre-push hook and in CI)
 - ✅ Dynamic analysis (pytest test suite with coverage tracking)
 - ✅ Input validation framework for GNSS data files
 

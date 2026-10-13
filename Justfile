@@ -117,6 +117,10 @@ check-format-only:
 check-types:
     uv run ty check
 
+# check that every file has its license and copyright (REUSE 3.3)
+check-reuse:
+    uvx --from 'reuse[charset-normalizer]' reuse lint
+
 # check that AGENTS.md files and skills name only existing paths and recipes
 check-agent-docs:
     uv run --no-sync python scripts/check_agent_docs.py

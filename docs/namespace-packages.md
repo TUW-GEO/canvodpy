@@ -5,7 +5,7 @@ description: Implementation of Python implicit namespace packages in canVODpy
 
 # Namespace packages
 
-canVODpy uses Python 3.3+ **implicit namespace packages** to let ten independent packages share the `canvod.*` import prefix: a unified API backed by separately installable wheels.
+canVODpy uses Python 3.3+ **implicit namespace packages** to let eleven independent packages share the `canvod.*` import prefix: a unified API backed by separately installable wheels.
 
 ```python
 from canvod.readers import Rnxv3Obs

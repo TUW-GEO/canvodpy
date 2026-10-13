@@ -110,7 +110,7 @@ Modified:
 ### Completed (short term)
 - ✅ OpenSSF Best Practices badge obtained ([Project 12329](https://www.bestpractices.dev/projects/12329))
 - ✅ GitHub Security Features enabled (secret scanning, private vulnerability reporting)
-- ✅ REUSE 3.3 compliant (`uv run reuse lint` passes)
+- ✅ REUSE 3.3 compliant (`just check-reuse` passes)
 
 ### Medium term (before v1.0.0)
 1. **Consider Additional Security Enhancements**

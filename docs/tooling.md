@@ -64,7 +64,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ```
 
     `uv sync` resolves `uv.lock` and creates or updates the shared workspace
-    `.venv` at the repo root; all 13 packages share a single environment.
+    `.venv` at the repo root; all 12 packages share a single environment.
 
     Configuration in `pyproject.toml`:
 
@@ -90,7 +90,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     module-name = "canvod.readers"   # dot → namespace package
     ```
 
-    All 13 workspace packages use `uv_build` as their build backend.
+    All 12 workspace packages use `uv_build` as their build backend.
 
 === "ruff: linter + formatter"
 
@@ -133,11 +133,11 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     python-version = "3.14"
     ```
 
-    !!! info "Non-blocking in canVODpy"
-        Type checking is **informational and does not block commits or PRs**.
-        `ty` runs in CI with `continue-on-error: true`, and errors are tracked
-        as a budget ratchet (lowered ~10 per PR). Use `just check-types` to
-        view the current diagnostic count.
+    !!! info "Blocking in canVODpy"
+        `ty` runs in the pre-push hook and in CI (the `type_consistency`
+        job of `code_quality.yml`). A type error blocks the push and the
+        pull request. `[tool.ty.src]` in `pyproject.toml` lists the files
+        it leaves out. Run `just check-types` to see the errors.
 
 ---
 
