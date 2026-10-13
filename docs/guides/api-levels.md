@@ -44,6 +44,7 @@ Dates are `YYYYDDD`: the year and the day of year, for example
 | `--start`, `--end` | `process_range(start, end)`, `process_date(date)` | First and last day, both included; see [Which days a run processes](#which-days-a-run-processes). |
 | `--no-vod` | Leave out `site.vod` | Write the observations to the GNSS store and compute no VOD. |
 | `--dry-run` | `pipeline.preview(start, end)` | List the days, receivers and files a run would process, without processing them. |
+| `--write-catalog` | `write_catalog(stores_root_dir)` after the run | After a successful run, write the [STAC catalog](../packages/store-metadata/overview.md#write-the-stac-catalog) of every store under the data root. Without it, a run writes no catalog. |
 | `--workers` | `site.pipeline(n_workers=...)` | Number of worker processes. |
 | `--days-per-batch` | `site.pipeline(days_per_batch=...)` | Number of days the workers process together. |
 | `--config-dir`, `-c` | `CANVOD_CONFIG_DIR` | Folder that holds `canvod-settings.yaml` and `recipes/`; see [Where canVODpy finds the settings](configuration.md#where-canvodpy-finds-the-settings). |
