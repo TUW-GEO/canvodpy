@@ -201,6 +201,7 @@ GNSS equipment and per-receiver ingestion stats.
 | `sids` | int? | Number of satellite IDs observed |
 | `variables` | list[str]? | Variable names in the store group |
 | `temporal_range` | list[str]? | `[start, end]` ISO timestamps |
+| `cadences` | list[dict]? | Time ranges at one cadence, in time order: `start`, `end` (ISO), `cadence_s` |
 | `metadata` | dict? | Freeform receiver metadata |
 
 ### 7. Software Provenance
@@ -288,7 +289,7 @@ Aggregate statistics about the store contents.
 | `total_sids` | int? | Total satellite IDs across all constellations |
 | `constellations` | list[str]? | GNSS constellations present (G, R, E, C, ...) |
 | `variables` | list[str]? | Data variable names |
-| `temporal_resolution_s` | float? | Temporal resolution in seconds |
+| `temporal_resolution_s` | float? | The finest cadence of any day, in seconds |
 | `file_count` | int? | Number of source files ingested |
 | `store_size_mb` | float? | Store size on disk in MB |
 | `history` | list[str] | Deprecated: only in snapshots from before the migration; the history of a store is its commit log |

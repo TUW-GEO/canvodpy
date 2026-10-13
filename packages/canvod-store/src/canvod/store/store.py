@@ -37,6 +37,7 @@ from canvod.store_metadata.io import (
     store_command,
 )
 from canvod.store_metadata.location import open_repository, repository_config
+from canvod.store_metadata.summary import cadence_ranges
 from canvod.utils.logging import get_run_id, stage_timer
 from canvod.utils.tools import (
     deprecated,
@@ -1828,7 +1829,7 @@ class MyIcechunkStore:
                 "start": str(ds.epoch.min().values),
                 "end": str(ds.epoch.max().values),
                 "count": ds.sizes["epoch"],
-                "resolution": str(ds.epoch.diff("epoch").median().values),
+                **_cadence_info(ds.epoch.values),
             }
 
         return info
@@ -2058,7 +2059,7 @@ class MyIcechunkStore:
                 "start": str(ds.epoch.min().values),
                 "end": str(ds.epoch.max().values),
                 "count": ds.sizes["epoch"],
-                "resolution": str(ds.epoch.diff("epoch").median().values),
+                **_cadence_info(ds.epoch.values),
             }
         return info
 
@@ -4664,6 +4665,21 @@ class MyIcechunkStore:
 
 
 # Factory functions for common use cases
+def _cadence_info(epochs: np.ndarray) -> dict[str, Any]:
+    """A group's cadence for its description.
+
+    ``cadences`` lists the time ranges at one cadence (each day block has
+    its own); ``resolution`` is the finest of them, or None when no day
+    has two epochs.
+    """
+    cadences = cadence_ranges(epochs)
+    finest = min((c["cadence_s"] for c in cadences), default=None)
+    return {
+        "resolution": None if finest is None else f"{finest:g} s",
+        "cadences": cadences,
+    }
+
+
 def open_gnss_store(store_path: Path) -> MyIcechunkStore:
     """Open the GNSS store at ``store_path``; never create it.
 
