@@ -18,6 +18,11 @@ item files of the previous write that the new one has no use for are
 removed, and only those. Any other file stays, and ``releases/`` is never
 touched. Each file is replaced in one step, so a reader or a second
 writer never sees half a file; of two writers at once, the last one wins.
+
+A release (:func:`create_release`) tags ``main`` in every store with the
+same Icechunk tag and writes the catalog of that tag under
+``releases/<tag>/``: the same tree, each asset pinned to the tag and the
+snapshot it points at. A release catalog is never changed afterwards.
 """
 
 from __future__ import annotations
@@ -26,6 +31,7 @@ import json
 import os
 import uuid
 import warnings
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -65,6 +71,17 @@ _COLLECTION_TITLES = {
 
 class _RefusedError(ValueError):
     """Why a store cannot be described in the catalog."""
+
+
+@dataclass(frozen=True)
+class _Described:
+    """A store as the catalog describes it: at one snapshot, in one collection."""
+
+    path: Path
+    snapshot_id: str
+    collection_id: str
+    site: tuple[str | None, str]
+    item: pystac.Item
 
 
 def _item_id(meta: StoreMetadata) -> str:
@@ -115,8 +132,20 @@ def _license(meta: StoreMetadata) -> str:
     return license_
 
 
-def _datetime(value: str | None) -> Any:
-    return pystac.utils.str_to_datetime(value) if value else None
+def _period(meta: StoreMetadata) -> tuple[Any, Any]:
+    """The start and end of the store's data, from its time coverage."""
+    temporal = meta.temporal
+    if not (temporal.time_coverage_start and temporal.time_coverage_end):
+        msg = (
+            "holds no data (no temporal.time_coverage_start, "
+            "temporal.time_coverage_end); a store gets its time coverage from "
+            "the run that writes its data"
+        )
+        raise _RefusedError(msg)
+    return (
+        pystac.utils.str_to_datetime(temporal.time_coverage_start),
+        pystac.utils.str_to_datetime(temporal.time_coverage_end),
+    )
 
 
 def _dimension(group: zarr.Group, name: str, size: int) -> dict[str, Any]:
@@ -139,7 +168,9 @@ def _datacube(group: zarr.Group) -> dict[str, Any]:
     sizes: dict[str, int] = {}
     variables: dict[str, Any] = {}
     coordinates: set[str] = set()
-    for name, array in group.arrays():
+    # By name: the store lists its arrays in no fixed order, and the same
+    # store must give the same catalog file.
+    for name, array in sorted(group.arrays(), key=lambda pair: pair[0]):
         # Stores are Zarr 3, whose arrays name their dimensions.
         dims = [str(d) for d in getattr(array.metadata, "dimension_names", None) or ()]
         sizes.update(zip(dims, array.shape, strict=True))
@@ -163,16 +194,22 @@ def _asset(
     *,
     title: str,
     role: str,
+    release: str | None,
     extra: dict[str, Any] | None = None,
 ) -> pystac.Asset:
-    """An asset of the dataset in ``group``: the store, snapshot and group."""
+    """An asset of the dataset in ``group``: the store, snapshot and group.
+
+    A release asset also names its tag; only a latest-catalog asset has the
+    role ``latest-version``.
+    """
     return pystac.Asset(
         href=str(store_path.resolve()),
         title=title,
         media_type=ZARR_MEDIA_TYPE,
-        roles=[role, "latest-version"],
+        roles=[role] if release else [role, "latest-version"],
         extra_fields={
             "canvod:snapshot_id": snapshot_id,
+            **({"canvod:tag": release} if release else {}),
             # xarray-assets extension: what xarray needs on the snapshot's
             # store (an Icechunk session) to open the group.
             "xarray:open_kwargs": {
@@ -207,7 +244,7 @@ def _positions(meta: StoreMetadata) -> dict[str, list[float]]:
 
 
 def _assets(
-    store_path: Path, snapshot_id: str, meta: StoreMetadata
+    store_path: Path, snapshot_id: str, meta: StoreMetadata, release: str | None
 ) -> dict[str, pystac.Asset]:
     """One asset per stored dataset of a snapshot, by key.
 
@@ -236,6 +273,7 @@ def _assets(
             path,
             title=f"{path}: data",
             role="data",
+            release=release,
             extra=_datacube(data_groups[path]) | position,
         )
         sbf_obs = f"{path}/metadata/sbf_obs"
@@ -246,6 +284,7 @@ def _assets(
                 sbf_obs,
                 title=f"{path}: SBF metadata",
                 role="metadata",
+                release=release,
                 extra=_datacube(data_groups[sbf_obs]),
             )
         log_book = f"{path}/metadata/table"
@@ -256,6 +295,7 @@ def _assets(
                 log_book,
                 title=f"{path}: log book",
                 role="metadata",
+                release=release,
             )
     return assets
 
@@ -292,7 +332,7 @@ def store_item(store_path: Path | str) -> pystac.Item:
     """
     store_path = Path(store_path)
     try:
-        return _store_item(store_path)[2]
+        return _store_item(store_path).item
     except _RefusedError as refused:
         msg = f"The store at {store_path} {refused}"
         raise ValueError(msg) from refused
@@ -329,8 +369,8 @@ def _license_link(href: str) -> pystac.Link:
     return pystac.Link(rel=pystac.RelType.LICENSE, target=href, title="License")
 
 
-def _store_item(store_path: Path) -> tuple[str, tuple[str | None, str], pystac.Item]:
-    """The collection a store belongs to, its site, and its item.
+def _store_item(store_path: Path, release: str | None = None) -> _Described:
+    """A store described at ``main``, or at the tag ``release``.
 
     The site is the naming authority and the site name: two networks may
     name a site alike. The item is described at :func:`store_item`.
@@ -339,27 +379,35 @@ def _store_item(store_path: Path) -> tuple[str, tuple[str | None, str], pystac.I
     ------
     _RefusedError
         If the store cannot be described: it cannot be opened, has no
-        metadata or needs migration, has no site position, or its license
-        is missing or breaks the license rule.
+        metadata or needs migration, has no site position, its license
+        is missing or breaks the license rule, it holds no data (no time
+        coverage), or it has no tag ``release``.
     """
     try:
         repo = open_repository(store_path)
-        snapshot_id = repo.lookup_branch("main")
     except (icechunk.IcechunkError, OSError) as error:
+        raise _cannot_open(error) from error
+    try:
+        snapshot_id = (
+            repo.lookup_tag(release) if release else repo.lookup_branch("main")
+        )
+    except icechunk.IcechunkError as error:
+        if release:
+            raise _RefusedError(f"has no tag {release!r}") from error
         raise _cannot_open(error) from error
     if not repo.get_metadata():
         raise _RefusedError(_without_metadata(store_path, repo))
     meta = _read_quietly(store_path, snapshot_id=snapshot_id)
     geometry, bbox = _geometry(meta)
     license_ = _license(meta)
-    temporal = meta.temporal
+    start, end = _period(meta)
     item = pystac.Item(
         id=_item_id(meta),
         geometry=geometry,
         bbox=bbox,
         datetime=None,
-        start_datetime=_datetime(temporal.time_coverage_start),
-        end_datetime=_datetime(temporal.time_coverage_end),
+        start_datetime=start,
+        end_datetime=end,
         properties={
             "title": meta.identity.title,
             "license": license_,
@@ -372,10 +420,10 @@ def _store_item(store_path: Path) -> tuple[str, tuple[str | None, str], pystac.I
         item.add_link(_license_link(meta.publisher.license_uri))
     XarrayAssetsExtension.add_to(item)
     DatacubeExtension.add_to(item)
-    for key, asset in _assets(store_path, snapshot_id, meta).items():
+    for key, asset in _assets(store_path, snapshot_id, meta, release).items():
         item.add_asset(key, asset)
     site = (meta.identity.naming_authority, meta.spatial.site.name)
-    return _collection_id(meta), site, item
+    return _Described(store_path, snapshot_id, _collection_id(meta), site, item)
 
 
 def _license_text(item: pystac.Item) -> str:
@@ -437,9 +485,9 @@ def _holds_store(candidate: Path) -> bool:
         raise _cannot_open(error) from error
 
 
-def _refusal(root: Path, refused: dict[Path, str]) -> str:
+def _refusal(root: Path, refused: dict[Path, str], what: str = "catalog") -> str:
     lines = [
-        f"No catalog was written: {len(refused)} store(s) under {root} cannot "
+        f"No {what} was written: {len(refused)} store(s) under {root} cannot "
         "be described.",
         *(
             f"  {path.relative_to(root).as_posix()}: {reason}"
@@ -449,57 +497,85 @@ def _refusal(root: Path, refused: dict[Path, str]) -> str:
     return "\n".join(lines)
 
 
-def build_catalog(root: Path | str) -> pystac.Catalog:
+def _describe(root: Path, release: str | None = None) -> list[_Described]:
+    """Every store under ``root``, described at ``main`` or at ``release``.
+
+    Raises
+    ------
+    ValueError
+        Listing every store that cannot be described, with its reason.
+    """
+    described: list[_Described] = []
+    refused: dict[Path, str] = {}
+    for candidate in _store_candidates(root):
+        try:
+            if _holds_store(candidate):
+                described.append(_store_item(candidate, release))
+        except _RefusedError as reason:
+            refused[candidate] = str(reason)
+    if refused:
+        what = f"release {release!r}" if release else "catalog"
+        raise ValueError(_refusal(root, refused, what))
+    return described
+
+
+def build_catalog(root: Path | str, *, release: str | None = None) -> pystac.Catalog:
     """The catalog of every store under ``root``, in memory.
 
     Parameters
     ----------
     root
         The data root (``storage.stores_root_dir``).
+    release
+        A release tag: the catalog of every store at that tag, each asset
+        naming the tag. ``None``: the latest catalog, of ``main``.
 
     Raises
     ------
     ValueError
         Listing every store that cannot be described, with its reason: it
         cannot be opened, has no metadata, needs migration (with the
-        migrate command), has no site position, or its license is missing
-        or not usable (not SPDX, or ``other`` without ``license_uri``).
+        migrate command), has no site position, its license is missing
+        or not usable (not SPDX, or ``other`` without ``license_uri``), or
+        it has no tag ``release``.
     """
-    root = Path(root)
+    return _catalog(_describe(Path(root), release), release)
+
+
+def _catalog(described: list[_Described], release: str | None) -> pystac.Catalog:
     by_collection: dict[str, list[pystac.Item]] = {}
     by_site: dict[tuple[str | None, str], list[pystac.Item]] = {}
-    refused: dict[Path, str] = {}
-    for candidate in _store_candidates(root):
-        try:
-            if not _holds_store(candidate):
-                continue
-            collection_id, site, item = _store_item(candidate)
-        except _RefusedError as reason:
-            refused[candidate] = str(reason)
-            continue
-        by_collection.setdefault(collection_id, []).append(item)
-        by_site.setdefault(site, []).append(item)
-    if refused:
-        raise ValueError(_refusal(root, refused))
+    for store in described:
+        by_collection.setdefault(store.collection_id, []).append(store.item)
+        by_site.setdefault(store.site, []).append(store.item)
     _relate_sites(by_site)
 
     catalog = pystac.Catalog(
         id=_CATALOG_ID,
-        title="canVODpy stores",
-        description="Every store under this data root, by product.",
+        title=f"canVODpy stores, release {release}" if release else "canVODpy stores",
+        description=(
+            f"Every store under this data root at the release tag {release}, "
+            "by product."
+            if release
+            else "Every store under this data root, by product."
+        ),
     )
     for collection_id in sorted(by_collection):
         catalog.add_child(_collection(collection_id, by_collection[collection_id]))
     return catalog
 
 
-def write_catalog(root: Path | str) -> Path:
+def write_catalog(root: Path | str, *, release: str | None = None) -> Path:
     """Write the latest catalog of every store under ``root``, beside them.
 
     Parameters
     ----------
     root
         The data root (``storage.stores_root_dir``).
+    release
+        A release tag the stores already have: write the catalog of that
+        release under ``releases/<tag>/`` instead. :func:`create_release`
+        tags the stores and calls this.
 
     Returns
     -------
@@ -510,21 +586,115 @@ def write_catalog(root: Path | str) -> Path:
     ------
     ValueError
         Listing every store that cannot be described (see
-        :func:`build_catalog`); nothing is written.
+        :func:`build_catalog`); nothing is written. With ``release``, also
+        if the tag is not a single folder name or its catalog exists
+        already: a release catalog is never changed.
     """
     root = Path(root).resolve()
+    if release is not None:
+        _check_tag(release)
+        _refuse_written_release(root, release)
+        return _save_release(root, release, _describe(root, release))
     catalog = build_catalog(root)
     previous = _written_files(root)
-    catalog.normalize_hrefs(str(root))
-    catalog.make_all_asset_hrefs_relative()
-    catalog.save(
-        catalog_type=pystac.CatalogType.SELF_CONTAINED, stac_io=_ReplacingStacIO()
-    )
+    _save(catalog, root)
     current = {Path(obj.self_href).resolve() for obj in _catalog_objects(catalog)}
     for path in sorted(previous - current):
         path.unlink(missing_ok=True)
         _remove_empty_folders(path.parent, root)
     return root / "catalog.json"
+
+
+def create_release(root: Path | str, tag: str) -> Path:
+    """Tag ``main`` in every store under ``root`` and write the release catalog.
+
+    Every store gets the Icechunk tag ``tag`` on the snapshot of ``main``
+    the release describes, and ``releases/<tag>/`` gets the catalog of
+    that tag: the latest catalog's tree, each asset naming the tag and its
+    snapshot. If the stores have the tag already (a release whose catalog
+    write failed), only the catalog is written.
+
+    Parameters
+    ----------
+    root
+        The data root (``storage.stores_root_dir``).
+    tag
+        The release tag, for example ``v2026.1``. It holds no ``/``: that
+        keeps it apart from the keeper tags (``keep/<receiver>/<date>``),
+        and ``releases/<tag>/`` one folder deep.
+
+    Returns
+    -------
+    Path
+        The release's ``catalog.json``.
+
+    Raises
+    ------
+    ValueError
+        Before anything is tagged or written: the tag holds a ``/``, the
+        release catalog exists already, a store cannot be described (see
+        :func:`build_catalog`, all of them listed), no store is under
+        ``root``, or some stores have the tag and others don't (those that
+        have it listed).
+    """
+    root = Path(root).resolve()
+    _check_tag(tag)
+    _refuse_written_release(root, tag)
+    stores = _describe(root)
+    if not stores:
+        msg = f"No release was written: no store under {root}."
+        raise ValueError(msg)
+    tagged = [store.path for store in stores if tag in _tags(store.path)]
+    if tagged and len(tagged) < len(stores):
+        lines = [
+            f"Release tag {tag!r} exists already in {len(tagged)} store(s) under "
+            f"{root}; no store was tagged:",
+            *(f"  {path.relative_to(root).as_posix()}" for path in sorted(tagged)),
+        ]
+        raise ValueError("\n".join(lines))
+    if not tagged:
+        for store in stores:
+            open_repository(store.path).create_tag(tag, store.snapshot_id)
+    return _save_release(root, tag, _describe(root, tag))
+
+
+def _tags(store_path: Path) -> set[str]:
+    return set(open_repository(store_path).list_tags())
+
+
+def _check_tag(tag: str) -> None:
+    if "/" in tag or "\\" in tag or tag in {"", ".", ".."}:
+        msg = (
+            f"Release tag {tag!r} is refused: a release tag holds no '/' "
+            "(keeper tags are keep/<receiver>/<date>) and names one folder "
+            f"under {_RELEASES}/."
+        )
+        raise ValueError(msg)
+
+
+def _refuse_written_release(root: Path, tag: str) -> None:
+    catalog_file = root / _RELEASES / tag / "catalog.json"
+    if catalog_file.exists():
+        msg = (
+            f"Release {tag!r} exists: {catalog_file}. A release catalog is "
+            "never changed; choose another tag."
+        )
+        raise ValueError(msg)
+
+
+def _save_release(root: Path, tag: str, described: list[_Described]) -> Path:
+    folder = root / _RELEASES / tag
+    _save(_catalog(described, tag), folder)
+    return folder / "catalog.json"
+
+
+def _save(catalog: pystac.Catalog, folder: Path) -> None:
+    """Save ``catalog`` under ``folder``, self-contained, all hrefs relative."""
+    catalog.normalize_hrefs(str(folder))
+    catalog.make_all_asset_hrefs_relative()
+    catalog.save(
+        catalog_type=pystac.CatalogType.SELF_CONTAINED, stac_io=_ReplacingStacIO()
+    )
 
 
 class _ReplacingStacIO(pystac.stac_io.DefaultStacIO):

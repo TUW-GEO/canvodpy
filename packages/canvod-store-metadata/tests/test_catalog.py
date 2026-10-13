@@ -17,6 +17,7 @@ from stac_validator.validate import StacValidate
 
 from canvod.store_metadata import (
     commit_with_rebase,
+    create_release,
     open_repository,
     read_metadata,
     validate_all,
@@ -330,6 +331,10 @@ class TestStoresTheCatalogCannotDescribe:
             _gnss_store(data_root / "shire" / "gnss", site="shire"),
             {"publisher.license": None},
         )
+        # Metadata, but no data: a run that created the store and stopped.
+        empty = data_root / "erebor" / "gnss"
+        open_repository(empty, create=True)
+        write_metadata(empty, made_up_metadata())
         return data_root
 
     def test_one_error_names_every_bad_store_with_its_reason(
@@ -349,6 +354,7 @@ class TestStoresTheCatalogCannotDescribe:
         assert "no site position" in reason("gondor")
         assert "'Apache 2' is not an SPDX license identifier" in reason("mordor")
         assert "no license" in reason("shire")
+        assert "holds no data" in reason("erebor")
         assert not any(f"{testing.SITE_KEY}/gnss" in line for line in lines)
 
     def test_a_store_needing_migration_is_named_with_the_migrate_command(
@@ -705,3 +711,154 @@ class TestEachWriteReplacesTheLatestCatalog:
         write_catalog(two_sites)
 
         assert _catalog_files(two_sites) == before
+
+
+# --- Releases (#247) -----------------------------------------------------------
+
+
+def _tags(store: Path) -> dict[str, str]:
+    """Each tag of a store with the snapshot it points at."""
+    repo = open_repository(store)
+    return {tag: repo.lookup_tag(tag) for tag in repo.list_tags()}
+
+
+def _stores(root: Path) -> list[Path]:
+    return sorted(path.parent for path in root.rglob("repo"))
+
+
+def _release_items(root: Path, tag: str) -> list[pystac.Item]:
+    catalog = pystac.Catalog.from_file(root / "releases" / tag / "catalog.json")
+    return list(catalog.get_items(recursive=True))
+
+
+def _open_release_asset(asset: pystac.Asset) -> xr.Dataset:
+    """Open a release asset by its tag, as a data user would."""
+    import icechunk
+
+    storage = icechunk.local_filesystem_storage(asset.get_absolute_href())
+    session = icechunk.Repository.open(storage).readonly_session(
+        tag=asset.extra_fields["canvod:tag"]
+    )
+    return xr.open_dataset(session.store, **asset.extra_fields["xarray:open_kwargs"])
+
+
+class TestReleases:
+    @pytest.fixture
+    def two_sites(self, data_root: Path) -> Path:
+        _gnss_store(data_root / "orthanc" / "gnss", site="orthanc")
+        return data_root
+
+    def test_a_release_tags_every_store_and_writes_a_valid_catalog(self, every_product):
+        catalog_path = create_release(every_product, "v1")
+
+        assert catalog_path == every_product / "releases" / "v1" / "catalog.json"
+        _assert_valid(catalog_path)
+        stores = _stores(every_product)
+        assert len(stores) == 3
+        for store in stores:
+            assert list(_tags(store)) == ["v1"]
+        items = _release_items(every_product, "v1")
+        assert len(items) == 3
+        for item in items:
+            for asset in item.assets.values():
+                store = Path(asset.get_absolute_href())
+                assert asset.extra_fields["canvod:tag"] == "v1"
+                assert asset.extra_fields["canvod:snapshot_id"] == _tags(store)["v1"]
+                assert "latest-version" not in asset.roles
+
+    def test_a_release_asset_gives_the_released_data_after_new_commits(self, two_sites):
+        create_release(two_sites, "v1")
+        store = two_sites / testing.SITE_KEY / "gnss"
+        session = open_repository(store).writable_session("main")
+        _observations(n_epochs=24).to_zarr(
+            session.store, group="canopy_01", mode="w", consolidated=False
+        )
+        commit_with_rebase(session, "more observations", store_path=store)
+
+        item = next(
+            item
+            for item in _release_items(two_sites, "v1")
+            if item.id.endswith(f"{testing.SITE_KEY}-gnss")
+        )
+
+        assert _open_release_asset(item.assets["canopy_01"]).sizes["epoch"] == 12
+        assert _open_asset(item.assets["canopy_01"]).sizes["epoch"] == 12
+
+    def test_a_tag_with_a_slash_is_refused_before_any_store_is_read(self, two_sites):
+        broken = _gnss_store(two_sites / "isengard" / "gnss", site="isengard")
+        (broken / "repo").write_bytes(b"not an icechunk repository")
+        before = _files(two_sites)
+
+        with pytest.raises(ValueError, match="'keep/v1'.*'/'") as caught:
+            create_release(two_sites, "keep/v1")
+
+        assert "isengard" not in str(caught.value)
+        assert _files(two_sites) == before
+
+    def test_a_tag_that_exists_in_one_store_is_refused_naming_it(self, two_sites):
+        taken = two_sites / "orthanc" / "gnss"
+        repo = open_repository(taken)
+        repo.create_tag("v1", repo.lookup_branch("main"))
+
+        with pytest.raises(ValueError, match="orthanc/gnss"):
+            create_release(two_sites, "v1")
+
+        assert _tags(two_sites / testing.SITE_KEY / "gnss") == {}
+        assert not (two_sites / "releases").exists()
+
+    def test_a_bad_store_stops_the_release_before_any_tag(self, two_sites):
+        write_unchecked(
+            _gnss_store(two_sites / "mordor" / "gnss", site="mordor"),
+            {"publisher.license": "Apache 2"},
+        )
+
+        with pytest.raises(ValueError, match="mordor/gnss"):
+            create_release(two_sites, "v1")
+
+        assert all(_tags(store) == {} for store in _stores(two_sites))
+        assert not (two_sites / "releases").exists()
+
+    def test_a_rerun_after_tagging_writes_only_the_catalog(self, two_sites):
+        for store in _stores(two_sites):
+            repo = open_repository(store)
+            repo.create_tag("v1", repo.lookup_branch("main"))
+        tags = {store: _tags(store) for store in _stores(two_sites)}
+
+        catalog_path = create_release(two_sites, "v1")
+
+        _assert_valid(catalog_path)
+        assert {store: _tags(store) for store in _stores(two_sites)} == tags
+        assert len(_release_items(two_sites, "v1")) == 2
+
+    def test_a_written_release_is_refused(self, two_sites):
+        create_release(two_sites, "v1")
+        before = _catalog_files(two_sites)
+
+        with pytest.raises(ValueError, match="'v1' exists"):
+            create_release(two_sites, "v1")
+
+        assert _catalog_files(two_sites) == before
+
+    def test_a_second_release_leaves_the_first_unchanged_and_openable(self, two_sites):
+        create_release(two_sites, "v1")
+        first = _catalog_files(two_sites / "releases" / "v1")
+        _gnss_store(two_sites / "rohan" / "gnss", site="rohan")
+
+        create_release(two_sites, "v2")
+        write_catalog(two_sites)
+
+        assert _catalog_files(two_sites / "releases" / "v1") == first
+        assert len(_release_items(two_sites, "v1")) == 2
+        assert len(_release_items(two_sites, "v2")) == 3
+        for item in _release_items(two_sites, "v1"):
+            for asset in item.assets.values():
+                assert _open_release_asset(asset).sizes["epoch"] == 12
+
+    def test_the_latest_catalog_keeps_its_latest_version_role(self, two_sites):
+        create_release(two_sites, "v1")
+
+        write_catalog(two_sites)
+
+        for asset in _item(two_sites).assets.values():
+            assert asset.roles == ["data", "latest-version"]
+            assert "canvod:tag" not in asset.extra_fields

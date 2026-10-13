@@ -30,6 +30,10 @@ Background: `docs/packages/store/overview.md`,
   `packages/canvod-config/src/canvod/config/models/storage.py`; keep code
   and that description in step.
 - **VOD writes** check `validate_vod_dataset` (canvod-readers) first.
+- **Release tags** (no `/`) belong to the release command
+  (`create_release` in canvod-store-metadata, `canvodpy stac release`);
+  this package never creates, moves or deletes one. Its own tags hold a
+  `/` (`keep/{receiver}/{yyyydoy}`).
 - **Preprocessing record**: a dataset carries its record in memory
   (`PREPROCESSING_ATTR`, canvod-config); every write drops it from the data
   (`prepare.prepare_write`, call it before every `to_icechunk`/`to_zarr`;

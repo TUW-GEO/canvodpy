@@ -414,7 +414,7 @@ Each write replaces the catalog fully. It describes the stores under the
 root at that moment: the item of a store that is gone is removed, and so
 is the collection of a product with no store left. Only files the
 previous write made are removed; any other file stays, and `releases/`
-is never touched. Each file is replaced in one step, so nobody reads half
+(see [Publish a release](#publish-a-release)) is never touched. Each file is replaced in one step, so nobody reads half
 a file. If two writes run at once, the last one wins.
 
 No store is left out silently. Every store under the root is read first.
@@ -428,8 +428,9 @@ lists each such store with its reason:
 ```
 
 The reasons: the store can't be opened, has no metadata, needs
-migration, has no site position, or has no usable license (none, not
-SPDX, or `other` without `license_uri`). `canvodpy stac write` then
+migration, has no site position, has no usable license (none, not
+SPDX, or `other` without `license_uri`), or holds no data yet (no time
+coverage: a run created the store and stopped before writing). `canvodpy stac write` then
 exits with code 1.
 
 An item has the site as a point (longitude, latitude, ellipsoidal height),
@@ -481,3 +482,63 @@ ds = xr.open_dataset(session.store, **asset.extra_fields["xarray:open_kwargs"])
 The media type of an asset is `application/vnd.zarr; version=3`, as the
 STAC best practices for Zarr recommend. xpystac can't open these assets:
 it opens Icechunk only from S3, and only the root group.
+
+## Publish a release
+
+A release is a version of the data that never changes. A paper or a
+data publication can cite it. It tags `main` in every store under the data root with
+the same Icechunk tag and writes the catalog of that tag under
+`releases/<tag>/`:
+
+```bash
+canvodpy stac release v2026.1    # the data root of the settings
+canvodpy stac release v2026.1 --root /data/stores/
+just stac-release v2026.1
+```
+
+```python
+from pathlib import Path
+
+from canvod.store_metadata import create_release
+
+create_release(Path("/data/stores/"), "v2026.1")
+# returns /data/stores/releases/v2026.1/catalog.json
+```
+
+The release catalog has the same tree as the latest catalog, one folder
+deeper:
+
+```text
+/data/stores/
+├── catalog.json                 the latest catalog
+└── releases/
+    └── v2026.1/
+        ├── catalog.json
+        ├── gnss-observations/
+        └── vod/
+```
+
+Each asset of a release names the tag (`canvod:tag`) and the snapshot the
+tag points at (`canvod:snapshot_id`), and has no `latest-version` role:
+that role tells the latest catalog's assets apart. Opening an asset by its
+tag gives the released data, whatever was written to `main` since:
+
+```python
+session = repo.readonly_session(tag=asset.extra_fields["canvod:tag"])
+```
+
+A release refuses, before it tags anything:
+
+- a tag with a `/`: those are canvod-store's own tags
+  (`keep/<receiver>/<yyyydoy>`), and `releases/<tag>/` stays one folder
+  deep;
+- a store that can't be described, with the same error as
+  `canvodpy stac write`;
+- a tag that exists in some of the stores already, naming them;
+- a tag whose release catalog exists: a release catalog is never changed.
+
+If every store has the tag but `releases/<tag>/` is missing (the catalog
+write failed after tagging), running the release again writes only the
+catalog. Later catalog writes and later releases leave
+`releases/` as it is. Release tags are written by this command only; don't create
+or delete them by hand.

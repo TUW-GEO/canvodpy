@@ -29,6 +29,12 @@ For the icechunk API itself see the `icechunk` guide.
    run writes to that store.
 5. **Preprocessing** must match what the group already holds; the store
    refuses a mix.
+6. **Release tags** (no `/`, for example `v2026.1`) are written by
+   `canvodpy stac release` only (`just stac-release TAG`), which tags every
+   store under the data root and writes `releases/<tag>/`. Never create,
+   move or delete a release tag by hand: a published release catalog
+   points at it. Tags with a `/` (`keep/<receiver>/<yyyydoy>`) are
+   canvod-store's own.
 
 ## Inspect
 
