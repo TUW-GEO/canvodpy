@@ -154,10 +154,10 @@ processing:
     institution: Your Institution
     naming_authority: org.example  # your domain in reverse; required to create a store
     publisher: Example University  # required to create a store
-    license: CC-BY-4.0  # SPDX identifier; required to create a store
+    license: CC-BY-4.0  # SPDX identifier, or "other"; required to create a store
     initials: JD  # recorded with each change of store metadata; required to amend or migrate
     # optional: orcid, institution_ror, department, research_group,
-    # website, publisher_url
+    # website, publisher_url, license_uri (required when license is "other")
 
   credentials:
     nasa_earthdata_acc_mail: null

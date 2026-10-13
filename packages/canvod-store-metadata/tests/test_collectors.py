@@ -196,6 +196,16 @@ class TestCollectors:
         assert meta.publisher.license == "CC-BY-4.0"
         assert meta.processing.python is not None
 
+    def test_a_license_outside_spdx_comes_with_the_uri_of_its_text(self):
+        config, site_cfg = _settings()
+        config.processing.metadata.license = "other"
+        config.processing.metadata.license_uri = "https://the.inklings.org/licence"
+
+        meta = _collect(config, site_cfg)
+
+        assert meta.publisher.license == "other"
+        assert meta.publisher.license_uri == "https://the.inklings.org/licence"
+
     @pytest.mark.parametrize(
         ("missing", "named"),
         [
@@ -248,6 +258,7 @@ def _settings() -> tuple[MagicMock, MagicMock]:
             "publisher",
             "publisher_url",
             "license",
+            "license_uri",
             "naming_authority",
             "store_description",
         ]
@@ -262,6 +273,7 @@ def _settings() -> tuple[MagicMock, MagicMock]:
         "research_group",
         "website",
         "publisher_url",
+        "license_uri",
         "store_description",
     ):
         setattr(meta_cfg, name, None)

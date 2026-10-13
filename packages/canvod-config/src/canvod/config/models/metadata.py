@@ -80,9 +80,14 @@ class MetadataConfig(_StrictModel):
     license: str | None = Field(
         None,
         description=(
-            "SPDX license identifier (e.g. 'CC-BY-4.0'). Required when a "
-            "store is created."
+            "SPDX license identifier (e.g. 'CC-BY-4.0'), or 'other' for a "
+            "license outside SPDX (then license_uri is required). Required "
+            "when a store is created."
         ),
+    )
+    license_uri: str | None = Field(
+        None,
+        description="URI of the license text; required when license is 'other'",
     )
     publisher: str | None = Field(
         None, description="Publisher name. Required when a store is created."

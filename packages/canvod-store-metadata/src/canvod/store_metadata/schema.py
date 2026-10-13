@@ -6,11 +6,160 @@ checks the fields against them and the FAIR principles.
 
 from __future__ import annotations
 
+import functools
 import warnings
-from typing import Any
+from collections.abc import Iterable
+from dataclasses import dataclass
+from importlib import resources
+from typing import Any, Self
 
 from canvod.utils.tools import deprecated
-from pydantic import BaseModel, Field
+from pydantic import (
+    BaseModel,
+    Field,
+    ValidationError,
+    ValidationInfo,
+    model_validator,
+)
+from pydantic_core import PydanticCustomError
+
+# ── Rules from the standards ────────────────────────────────────────────────
+#
+# A field that follows a standard (SPDX, ...) is checked by its model. New
+# metadata breaking a rule fails; metadata read from an existing store is
+# validated with ``context=READ_CONTEXT`` and keeps the value, with a
+# MetadataRuleWarning, so the store still opens and the value can be fixed
+# with an amendment.
+
+#: Validation context for metadata read from a store: rules don't fail.
+READ_CONTEXT = {"existing": True}
+#: The pydantic error type of a broken rule.
+RULE_ERROR = "metadata_rule"
+#: Where the SPDX license identifiers are listed.
+SPDX_LIST_URL = "https://spdx.org/licenses/"
+_AMEND_HINT = "fix it with canvodpy store amend SITE --store gnss|vod"
+
+
+class MetadataRuleWarning(UserWarning):
+    """Metadata read from a store breaks a rule of its standard."""
+
+
+@functools.cache
+def spdx_license_ids() -> frozenset[str]:
+    """The SPDX license identifiers of the list vendored here."""
+    text = (
+        resources.files("canvod.store_metadata")
+        .joinpath("standards/spdx_license_ids_v3.27.0.txt")
+        .read_text()
+    )
+    return frozenset(
+        line for line in text.splitlines() if line and not line.startswith("#")
+    )
+
+
+def _refuse_rule_break(info: ValidationInfo, field: str, rule: str) -> None:
+    """Refuse ``field`` breaking ``rule``, unless the metadata is read."""
+    if info.context and info.context.get("existing"):
+        return
+    raise PydanticCustomError(
+        RULE_ERROR, "`{field}` {rule}", {"field": field, "rule": rule}
+    )
+
+
+@dataclass(frozen=True)
+class RuleBreak:
+    """A rule broken by a metadata field."""
+
+    field: str
+    """The field, as a dotted path (e.g. ``publisher.license``)."""
+    rule: str
+
+    def __str__(self) -> str:
+        return f"`{self.field}` {self.rule}"
+
+
+def rule_breaks(error: ValidationError) -> list[RuleBreak]:
+    """The broken rules among the errors of ``error``."""
+    breaks = []
+    for item in error.errors():
+        if item["type"] != RULE_ERROR:
+            continue
+        ctx = item["ctx"]
+        field = ".".join([*(str(p) for p in item["loc"]), ctx["field"]])
+        breaks.append(RuleBreak(field, ctx["rule"]))
+    return breaks
+
+
+def describe_rule_breaks(breaks: Iterable[RuleBreak]) -> str:
+    """``breaks`` in one line, for a message."""
+    return "; ".join(map(str, breaks))
+
+
+def check_rules(metadata: BaseModel) -> list[RuleBreak]:
+    """The rules ``metadata`` breaks (one read from a store may break some)."""
+    try:
+        type(metadata).model_validate(metadata.model_dump(mode="json"))
+    except ValidationError as error:
+        return rule_breaks(error)
+    return []
+
+
+def validate_existing[M: BaseModel](
+    model: type[M], data: Any, *, changed: Iterable[str] = ()
+) -> M:
+    """Validate metadata of an existing store.
+
+    A rule broken by a field in ``changed`` fails, as for new metadata; a
+    rule broken by another field warns, and the value is kept.
+
+    Parameters
+    ----------
+    model
+        The model to validate with.
+    data
+        The metadata, as read from the store (and changed, for an
+        amendment).
+    changed
+        Dotted fields being changed now (an amendment); ``()`` when the
+        metadata is only read.
+
+    Returns
+    -------
+    M
+        The validated metadata, keeping values that break a rule.
+
+    Raises
+    ------
+    ValueError
+        If a field in ``changed`` breaks a rule; naming each.
+    pydantic.ValidationError
+        If ``data`` is invalid for another reason.
+    """
+    try:
+        return model.model_validate(data)
+    except ValidationError as error:
+        breaks = rule_breaks(error)
+        if len(breaks) < error.error_count():
+            raise
+    changed = tuple(changed)
+    refused = [
+        b
+        for b in breaks
+        if any(
+            b.field == c or b.field.startswith(f"{c}.") or c.startswith(f"{b.field}.")
+            for c in changed
+        )
+    ]
+    if refused:
+        msg = describe_rule_breaks(refused) + "."
+        raise ValueError(msg)
+    for rule_break in breaks:
+        warnings.warn(
+            f"{rule_break}. The store opens anyway; {_AMEND_HINT}.",
+            MetadataRuleWarning,
+            stacklevel=3,
+        )
+    return model.model_validate(data, context=READ_CONTEXT)
 
 
 # §1 — Identity & Discovery
@@ -59,8 +208,47 @@ class Publisher(BaseModel):
     name: str | None = Field(None, description="Publisher name")
     type: str = Field("Institutional", description="Publisher type")
     url: str | None = Field(None, description="Publisher URL")
-    license: str | None = Field(None, description="SPDX license identifier")
+    license: str | None = Field(
+        None,
+        description=(
+            "SPDX license identifier, or 'other' for a license outside SPDX "
+            "(then license_uri names its text)"
+        ),
+    )
     license_uri: str | None = Field(None, description="License URI")
+
+    @model_validator(mode="after")
+    def _license_rule(self, info: ValidationInfo) -> Self:
+        """SPDX identifier, or ``other`` with the URI of the license text.
+
+        STAC 1.1 takes an SPDX identifier, or ``other`` with a link to the
+        license text.
+        """
+        license_ = self.license
+        if license_ is None:
+            return self
+        if license_ == "other":
+            if not self.license_uri:
+                _refuse_rule_break(
+                    info,
+                    "license_uri",
+                    "is missing: a license outside SPDX ('other') needs the "
+                    "URI of its text",
+                )
+            return self
+        if license_ in spdx_license_ids():
+            return self
+        same = [i for i in spdx_license_ids() if i.lower() == license_.lower()]
+        hint = (
+            f"; the identifier is spelled {same[0]!r}"
+            if same
+            else f" (see {SPDX_LIST_URL}); a license outside SPDX is 'other' "
+            "with license_uri"
+        )
+        _refuse_rule_break(
+            info, "license", f"{license_!r} is not an SPDX license identifier{hint}"
+        )
+        return self
 
 
 # §4 — Temporal Extent
@@ -338,7 +526,7 @@ class StoreMetadata(BaseModel):
     def _from_old_root_attrs(cls, attrs: dict[str, Any]) -> StoreMetadata:
         """Read a snapshot written before ADR 0014 (one ``canvod_metadata``)."""
         data = {**attrs[_METADATA_KEY], "written_before_migration": True}
-        return cls.model_validate(data)
+        return validate_existing(cls, data)
 
     @classmethod
     @deprecated(
@@ -418,8 +606,19 @@ class RepositoryMetadata(BaseModel):
     migration: MigrationRecord | None = None
 
     @classmethod
-    def from_store_metadata(cls, metadata: StoreMetadata) -> RepositoryMetadata:
-        """Take the repository part of ``metadata``, in the current form."""
+    def from_store_metadata(
+        cls, metadata: StoreMetadata, *, existing: bool = False
+    ) -> RepositoryMetadata:
+        """Take the repository part of ``metadata``, in the current form.
+
+        Parameters
+        ----------
+        metadata
+            Store metadata, in any form.
+        existing
+            ``metadata`` was read from a store: a value breaking a rule is
+            kept (reading warned about it already).
+        """
         data = metadata.model_dump(mode="json")
         data["metadata_version"] = FORM_VERSION
-        return cls.model_validate(data)
+        return cls.model_validate(data, context=READ_CONTEXT if existing else None)

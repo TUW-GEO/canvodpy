@@ -12,6 +12,7 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 
 from canvodpy.cli.options import CONFIG_DIR_OPTION
 
@@ -43,8 +44,19 @@ def write(
     root: Annotated[Path | None, ROOT_OPTION] = None,
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Write the latest catalog of every store under the data root."""
+    """Write the latest catalog of every store under the data root.
+
+    If a store cannot be described, nothing is written: the command lists
+    every such store with its reason and exits with code 1.
+    """
     from canvod.store_metadata import write_catalog
 
-    catalog = write_catalog(_data_root(root))
+    try:
+        catalog = write_catalog(_data_root(root))
+    except ValueError as error:
+        first, *rest = str(error).splitlines()
+        console.print(f"[red]❌ {escape(first)}[/red]", soft_wrap=True)
+        for line in rest:
+            console.print(line, markup=False, highlight=False, soft_wrap=True)
+        raise typer.Exit(1) from None
     console.print(f"[green]✓ Catalog written:[/green] {catalog}")

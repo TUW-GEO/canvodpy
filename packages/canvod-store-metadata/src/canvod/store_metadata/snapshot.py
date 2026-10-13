@@ -34,9 +34,11 @@ from .location import StoreLocation, store_location
 from .schema import (
     _METADATA_KEY,
     FORM_VERSION,
+    READ_CONTEXT,
     ConfigSnapshot,
     RepositoryMetadata,
     StoreMetadata,
+    validate_existing,
 )
 from .summary import _array, summarize_root
 
@@ -220,7 +222,7 @@ def root_copy(repository: dict[str, Any], summary: dict[str, Any]) -> dict[str, 
         attrs,
         zarr_proj.create(code=spatial.get("geospatial_vertical_crs", "EPSG:4979")),
     )
-    if publisher.get("license"):
+    if publisher.get("license") not in (None, "other"):
         attrs = zarr_license.insert(
             attrs, zarr_license.create(spdx=publisher["license"])
         )
@@ -245,7 +247,9 @@ def _replay_amendments(copy: dict[str, Any], repository: dict[str, Any]) -> bool
     # An amendment under an unset section (e.g. a receiver's antenna) creates
     # the whole section, with defaults for the fields it does not name.
     try:
-        replayed = RepositoryMetadata.model_validate(replayed).model_dump(mode="json")
+        replayed = RepositoryMetadata.model_validate(
+            replayed, context=READ_CONTEXT
+        ).model_dump(mode="json")
     except ValidationError:
         return False
     return replayed == repository
@@ -412,7 +416,7 @@ def combined_metadata(
             **data["environment"],
             **_environment_texts(root, data["environment"].get("uv_lock_hash")),
         }
-    return StoreMetadata.model_validate(data)
+    return validate_existing(StoreMetadata, data)
 
 
 def preview_metadata(root: zarr.Group, repository: dict[str, Any]) -> StoreMetadata:
