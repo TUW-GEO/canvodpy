@@ -12,6 +12,7 @@ from canvod.store_metadata import (
     open_repository,
     read_store_uuid,
     repository_config,
+    store_exists,
     store_location,
 )
 from canvod.store_metadata.io import (
@@ -122,6 +123,21 @@ class TestOpenRepository:
             open_repository(store, create=True)
 
         assert sorted(p.name for p in store.iterdir()) == ["notes.txt"]
+
+
+class TestStoreExists:
+    def test_a_missing_location_holds_no_store(self, tmp_path: Path) -> None:
+        assert not store_exists(tmp_path / "fangorn")
+        assert not (tmp_path / "fangorn").exists()
+
+    def test_an_empty_directory_holds_no_store(self, tmp_path: Path) -> None:
+        assert not store_exists(tmp_path)
+
+    def test_a_created_store_exists(self, tmp_path: Path) -> None:
+        open_repository(tmp_path / "store", create=True)
+
+        assert store_exists(tmp_path / "store")
+        assert store_exists(str(tmp_path / "store"))
 
 
 class TestRepositoryConfig:

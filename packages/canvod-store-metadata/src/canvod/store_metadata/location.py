@@ -292,6 +292,30 @@ def repository_config(
     return config
 
 
+def _exists(where: StoreLocation, storage: icechunk.Storage) -> bool:
+    try:
+        return icechunk.Repository.exists(storage)
+    except icechunk.StorageError as error:
+        msg = f"The storage at {where} can't be reached. {where.access_hint}"
+        raise OSError(msg) from error
+
+
+def store_exists(location: StoreLocation | Path | str) -> bool:
+    """Whether a store's repository is at ``location``.
+
+    A run creates a site's stores when it first writes data, so checks
+    made before that, such as a resume or a comparison with stored
+    results, ask this first instead of opening a store that isn't there.
+
+    Raises
+    ------
+    OSError
+        If the storage at ``location`` can't be reached.
+    """
+    where = store_location(location)
+    return _exists(where, where.storage())
+
+
 def open_repository(
     location: StoreLocation | Path | str,
     *,
@@ -334,11 +358,7 @@ def open_repository(
     """
     where = store_location(location)
     storage = where.storage()
-    try:
-        exists = icechunk.Repository.exists(storage)
-    except icechunk.StorageError as error:
-        msg = f"The storage at {where} can't be reached. {where.access_hint}"
-        raise OSError(msg) from error
+    exists = _exists(where, storage)
     if create:
         if config is None:
             from canvod.config.models.compression import IcechunkConfig

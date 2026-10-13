@@ -42,6 +42,7 @@ from .location import (
     open_repository,
     read_store_uuid,
     repository_config,
+    store_exists,
     store_location,
 )
 from .migration import migrate_metadata
@@ -75,6 +76,7 @@ __all__ = [
     "metadata_exists",
     "migrate_metadata",
     "open_repository",
+    "store_exists",
     "read_metadata",
     "read_repository_metadata",
     "read_store_uuid",

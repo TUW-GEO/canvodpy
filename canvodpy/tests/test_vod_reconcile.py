@@ -115,6 +115,14 @@ class TestGroupIntoRanges:
 
 
 class TestFindVodBackfillGaps:
+    @pytest.fixture(autouse=True)
+    def stores_exist(self, monkeypatch):
+        """Both mocked stores exist; a first run without them is tested in
+        test_metadata_first.py."""
+        monkeypatch.setattr(
+            "canvodpy.orchestrator.vod_reconcile.store_exists", lambda _: True
+        )
+
     def test_unknown_analysis_raises(self):
         site = _make_site(vod_analyses={})
         with pytest.raises(ValueError, match="not configured"):

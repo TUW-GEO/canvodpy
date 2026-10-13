@@ -33,6 +33,7 @@ from canvod.ops import planned_settings, preprocess_files
 from canvod.readers import MatchedDirs
 from canvod.readers.gnss_specs.constants import UREG
 from canvod.store import GnssResearchSite
+from canvod.store_metadata import store_exists
 from canvod.utils.logging import get_run_id, new_run_id, reset_run_id, set_run_id
 from canvod.utils.tools import YYYYDOY, deprecated
 from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
@@ -1213,6 +1214,8 @@ class PipelineOrchestrator:
         PreprocessingMismatchError
             If a group holds data preprocessed differently.
         """
+        if not store_exists(self.site.gnss_store_path):
+            return  # a first run: the store holds nothing to compare with
         settings = planned_settings(self._config.processing.preprocessing)
         for group in sorted({group for _, receivers in dates for group in receivers}):
             self.site.gnss_store.check_settings_match(group, settings)

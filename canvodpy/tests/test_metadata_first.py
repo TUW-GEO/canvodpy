@@ -143,3 +143,62 @@ class TestResearchSite:
                 source_file_hashes={"canopy_01": "a", "reference_01": "b"},
                 source_gnss_stores={},
             )
+
+
+class TestFirstRun:
+    """The checks a run makes before its first write find no store yet."""
+
+    def test_the_preprocessing_check_passes_without_a_vod_store(self, site_settings):
+        from canvodpy.vod_computer import VodComputer
+
+        from canvodpy import Site
+
+        site = Site(testing.SITE_KEY)
+
+        VodComputer(site).check_preprocessing(list(site.vod_analyses))
+
+        assert not site.vod_store_path.exists()
+
+    def test_a_new_site_has_no_vod_gaps(self, site_settings):
+        from canvodpy.orchestrator.vod_reconcile import find_vod_backfill_gaps
+
+        from canvodpy import Site
+
+        site = Site(testing.SITE_KEY)
+
+        for analysis_name in site.vod_analyses:
+            assert find_vod_backfill_gaps(site, analysis_name, "tau_omega") == []
+        assert not site.gnss_store_path.exists()
+
+    def test_a_run_without_a_start_date_scans_all_data(self, site_settings):
+        from types import SimpleNamespace
+
+        from canvodpy.cli.run import _resolve_date_range
+
+        from canvodpy import Site
+
+        site = Site(testing.SITE_KEY)
+
+        start, end = _resolve_date_range(
+            SimpleNamespace(start=None, end="2025002"), site
+        )
+
+        assert (start, end) == ("2000001", "2025002")
+        assert not site.gnss_store_path.exists()
+
+    def test_the_pipeline_preprocessing_check_passes_without_a_gnss_store(
+        self, site_settings
+    ):
+        from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+
+        from canvod.config import load_config
+
+        orchestrator = PipelineOrchestrator.__new__(PipelineOrchestrator)
+        orchestrator.site = GnssResearchSite(testing.SITE_KEY)
+        orchestrator._config = load_config()
+
+        orchestrator._check_preprocessing_before_run(
+            [("2025001", {"canopy_01": ()})]  # ty: ignore[invalid-argument-type]
+        )
+
+        assert not orchestrator.site.gnss_store_path.exists()

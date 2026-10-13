@@ -51,7 +51,8 @@ def test_orchestrator_checks_every_group_it_writes(monkeypatch):
 
     store = _Store()
     orchestrator = PipelineOrchestrator.__new__(PipelineOrchestrator)
-    orchestrator.site = SimpleNamespace(gnss_store=store)
+    monkeypatch.setattr("canvodpy.orchestrator.pipeline.store_exists", lambda _: True)
+    orchestrator.site = SimpleNamespace(gnss_store=store, gnss_store_path=None)
     orchestrator._config = SimpleNamespace(
         processing=SimpleNamespace(preprocessing=CONFIG)
     )
@@ -76,8 +77,11 @@ def test_vod_computer_checks_each_analysis_group(monkeypatch):
     import canvod.config
 
     _settings(monkeypatch, canvod.config)
+    monkeypatch.setattr("canvod.store_metadata.store_exists", lambda _: True)
     store = _Store(refuse="tau_omega/canopy_01_vs_reference_01")
-    site = SimpleNamespace(name="fangorn", _site=SimpleNamespace(vod_store=store))
+    site = SimpleNamespace(
+        name="fangorn", vod_store_path=None, _site=SimpleNamespace(vod_store=store)
+    )
     computer = VodComputer(site, calculator="tau_omega")
     with pytest.raises(PreprocessingMismatchError):
         computer.check_preprocessing(["canopy_01_vs_reference_01"])
