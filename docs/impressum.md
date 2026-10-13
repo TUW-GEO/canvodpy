@@ -30,7 +30,7 @@ Geoinformation, TU Wien.
 
 ## Liability for content
 
-canVODpy is an open-source community project. Its software and documentation have
+canVODpy is an open source community project. Its software and documentation have
 been prepared with care, but are provided **"as is"** without warranty of any kind,
 express or implied. No warranty or guarantee is given as to the correctness,
 completeness, or timeliness of the information provided.
@@ -55,11 +55,11 @@ linked pages is always responsible for their content. The linked pages were chec
 for possible legal violations at the time of linking. Illegal content was not
 apparent at the time of linking. Permanent monitoring of linked pages is
 unreasonable without concrete evidence of a legal violation. Upon notification of
-violations, such links will be removed immediately.
+violations, such links are removed immediately.
 
 ---
 
-## Use of Artificial Intelligence
+## Use of artificial intelligence
 
 Portions of this software and its documentation were developed with the assistance
 of AI-based tools, specifically [Claude Code](https://claude.ai/) by
