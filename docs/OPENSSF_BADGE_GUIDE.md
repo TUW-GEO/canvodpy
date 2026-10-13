@@ -46,7 +46,7 @@ The badge requires filling out criteria in these categories:
 - [x] Continuous integration (8 GitHub Actions workflows)
 
 #### Security (21 criteria)
-- [x] Security policy (SECURITY.md) ✨ Just added!
+- [x] Security policy (SECURITY.md) ✨ Just added
 - [x] Vulnerability disclosure process (SECURITY.md)
 - [ ] Secure development knowledge (document that developers know secure coding)
 - [x] Static analysis (ruff, audit.yml)
@@ -88,11 +88,11 @@ Based on canvodpy's current state:
 - ✅ Pre-commit hooks (ruff, ty, conventional commits)
 
 **Security:**
-- ✅ Vulnerability disclosure (SECURITY.md) ✨ New!
+- ✅ Vulnerability disclosure (SECURITY.md) ✨ New
 - ✅ Dependency updates (Dependabot + uv.lock)
 - ✅ Static analysis (ruff linting + audit.yml)
 - ✅ Type safety (ty type checker)
-- ✅ OpenSSF Scorecard (scorecard.yml) ✨ New!
+- ✅ OpenSSF Scorecard (scorecard.yml) ✨ New
 
 ### 📝 Needs Documentation
 
@@ -189,4 +189,4 @@ Replace `XXXXX` with your project ID from the badge system.
 
 ---
 
-**Note:** With the SECURITY.md and scorecard.yml we just added, canvodpy is now much closer to meeting all criteria!
+**Note:** With the SECURITY.md and scorecard.yml we just added, canvodpy is now much closer to meeting all criteria.
