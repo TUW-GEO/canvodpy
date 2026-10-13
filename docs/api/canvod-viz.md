@@ -1,4 +1,4 @@
-# canvod.viz API Reference
+# `canvod.viz` API reference
 
 2D and 3D hemispheric visualization tools.
 
@@ -18,15 +18,15 @@
         - create_publication_style
         - create_interactive_style
 
-## Unified Visualizer
+## Unified visualizer
 
 ::: canvod.viz.visualizer
 
-## 2D Visualization
+## 2D plots
 
 ::: canvod.viz.hemisphere_2d
 
-## 3D Visualization
+## 3D plots
 
 ::: canvod.viz.hemisphere_3d
 

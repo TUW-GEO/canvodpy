@@ -119,3 +119,9 @@ virtualenv
 howfairis
 PRs
 docstrings
+SP3
+CLK
+HTM
+2D
+3D
+ruleset

@@ -1,4 +1,4 @@
-# canvod.vod API Reference
+# `canvod.vod` API reference
 
 Vegetation optical depth estimation using the tau-omega radiative transfer model.
 

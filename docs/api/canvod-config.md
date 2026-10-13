@@ -1,6 +1,6 @@
-# canvod.config API Reference
+# `canvod.config` API reference
 
-Configuration management: YAML loading, Pydantic validation, and defaults.
+Settings: loading the settings file, Pydantic validation, and defaults.
 
 ## Loading
 

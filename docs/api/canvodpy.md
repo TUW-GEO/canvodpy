@@ -1,12 +1,12 @@
-# canvodpy API Reference
+# `canvodpy` API reference
 
-Umbrella package for the canVODpy framework. One supported surface, plus the
-CLI on top of it — see [API Levels](../guides/api-levels.md).
+Umbrella package of canVODpy: one supported surface, and the command-line
+tool on top of it. See [API levels](../guides/api-levels.md).
 
-## Site and Pipeline (recommended — Python-native pipeline runs)
+## Site and pipeline (recommended)
 
 Stateful orchestrator with factory integration and structured logging. What
-the CLI builds internally.
+the command-line tool builds internally.
 
 ::: canvodpy.Site
 ::: canvodpy.Pipeline

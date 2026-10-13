@@ -1,4 +1,4 @@
-# canvod.readers API Reference
+# `canvod.readers` API reference
 
 RINEX observation file parsing with validation and GNSS signal specifications.
 
@@ -23,15 +23,15 @@ RINEX observation file parsing with validation and GNSS signal specifications.
 
 ::: canvod.readers.rinex.v3_04
 
-## Base Reader
+## Base reader
 
 ::: canvod.readers.base
 
-## Dataset Builder
+## Dataset builder
 
 ::: canvod.readers.builder
 
-## GNSS Specifications
+## GNSS specifications
 
 ::: canvod.readers.gnss_specs
     options:
@@ -43,6 +43,6 @@ RINEX observation file parsing with validation and GNSS signal specifications.
         - metadata
         - models
 
-## Directory Matching
+## Directory matching
 
 ::: canvod.readers.matching

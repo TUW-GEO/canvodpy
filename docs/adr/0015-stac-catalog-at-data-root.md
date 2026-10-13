@@ -2,7 +2,7 @@
 
 All stores under one data root (the `stores_root_dir` of the settings)
 are described by one static STAC catalog, written as JSON files at that
-root, beside the stores and never inside a store. The catalog has three
+root: beside the stores, never inside a store. The catalog has three
 collections, `gnss-observations`, `vod` and `gnss-geodesy` (the stores of
 the canvod-gnssgeodesy extension), with one item per store. An
 item has the site as its point geometry, the time range of the store,
@@ -18,7 +18,7 @@ write replaces the previous one, rebuilt from every store. If any store
 cannot be read, nothing is written and one error lists every such store
 (ADR 0004). Links go from the catalog to the stores; a store records no
 catalog location except one fixed, relative `stac:link` to where its
-own item will be.
+own item is.
 
 A store has two identifiers, both fixed fields (ADR 0014): a readable id
 `{site}-{gnss|vod|geodesy}`, which with the required naming authority gives a

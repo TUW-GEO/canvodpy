@@ -1,4 +1,4 @@
-# canvod.auxiliary API Reference
+# `canvod.auxiliary` API reference
 
 SP3 ephemeris and CLK clock correction processing, interpolation, coordinate
 transformations, and the GNSS product registry.
@@ -31,16 +31,17 @@ transformations, and the GNSS product registry.
 
 ## Clock (CLK)
 
-Optional — gated by `aux_data.fetch_clock` (default `true`); unused by the
-VOD formula. Disable to skip CLK download/parsing/interpolation entirely.
+Optional: only when `aux_data.fetch_clock` is `true` (the default); the VOD
+formula doesn't use them. Set it to `false` to skip downloading, reading and
+interpolating clock files.
 
 ::: canvod.auxiliary.clock
 
-## Position and Coordinates
+## Position and coordinates
 
 ::: canvod.auxiliary.position
 
-## Product Registry
+## Product registry
 
 ::: canvod.auxiliary.products
     options:
