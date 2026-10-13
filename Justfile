@@ -366,21 +366,11 @@ tag-release:
 
 # Build all packages (outputs to workspace root dist/)
 build-all:
-    @echo "🔨 Building all 11 packages..."
+    @echo "🔨 Building every workspace package..."
     @rm -rf dist/
     @mkdir -p dist/
-    uv build --package canvod-readers --out-dir dist/
-    uv build --package canvod-auxiliary --out-dir dist/
-    uv build --package canvod-grids --out-dir dist/
-    uv build --package canvod-store --out-dir dist/
-    uv build --package canvod-store-metadata --out-dir dist/
-    uv build --package canvod-utils --out-dir dist/
-    uv build --package canvod-viz --out-dir dist/
-    uv build --package canvod-preflight --out-dir dist/
-    uv build --package canvod-vod --out-dir dist/
-    uv build --package canvod-ops --out-dir dist/
-    uv build --package canvodpy --out-dir dist/
-    @echo "✅ Built 11 packages to dist/"
+    uv build --all-packages --out-dir dist/
+    @echo "✅ Built $(ls dist/*.whl | wc -l | tr -d ' ') wheels to dist/"
     @ls -lh dist/*.whl
 
 # Publish all packages to TestPyPI (requires credentials)
