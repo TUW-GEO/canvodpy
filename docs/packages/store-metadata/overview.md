@@ -410,6 +410,13 @@ points at its item. A new store has the link before its item exists:
 until the first catalog write, `validate_all(meta, store_path=...)` and
 `just metadata-validate` show a warning for it, not a failure.
 
+Each write replaces the catalog fully. It describes the stores under the
+root at that moment: the item of a store that is gone is removed, and so
+is the collection of a product with no store left. Only files the
+previous write made are removed; any other file stays, and `releases/`
+is never touched. Each file is replaced in one step, so nobody reads half
+a file. If two writes run at once, the last one wins.
+
 No store is left out silently. Every store under the root is read first.
 If any of them can't be described, nothing is written, and one error
 lists each such store with its reason:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.resources
 import json
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -625,3 +626,82 @@ class TestCollections:
             "https://orthanc.example/license",
             "https://spdx.org/licenses/CC-BY-4.0.html",
         ]
+
+
+def _catalog_files(root: Path) -> dict[str, bytes]:
+    """Every file under ``root`` outside the stores, by relative path."""
+    stores = {path.parent for path in root.rglob("repo")}
+    return {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in root.rglob("*")
+        if path.is_file() and not any(store in path.parents for store in stores)
+    }
+
+
+class TestEachWriteReplacesTheLatestCatalog:
+    @pytest.fixture
+    def two_sites(self, data_root: Path) -> Path:
+        _gnss_store(data_root / "orthanc" / "gnss", site="orthanc")
+        write_catalog(data_root)
+        return data_root
+
+    def test_a_removed_stores_item_is_gone(self, two_sites):
+        removed = f"{testing.NAMING_AUTHORITY}.orthanc-gnss"
+        item_folder = two_sites / "gnss-observations" / removed
+        assert (item_folder / f"{removed}.json").is_file()
+
+        shutil.rmtree(two_sites / "orthanc")
+        write_catalog(two_sites)
+
+        assert not item_folder.exists()
+        catalog = pystac.Catalog.from_file(two_sites / "catalog.json")
+        assert [item.id for item in catalog.get_items(recursive=True)] == [
+            f"{testing.NAMING_AUTHORITY}.{testing.SITE_KEY}-gnss"
+        ]
+
+    def test_a_product_without_stores_loses_its_collection(self, two_sites):
+        _store(
+            two_sites / "orthanc" / "vod", "vod_store", {"canopy_01": _observations()}
+        )
+        write_catalog(two_sites)
+        assert (two_sites / "vod" / "collection.json").is_file()
+
+        shutil.rmtree(two_sites / "orthanc" / "vod")
+        write_catalog(two_sites)
+
+        assert not (two_sites / "vod").exists()
+        catalog = pystac.Catalog.from_file(two_sites / "catalog.json")
+        assert [child.id for child in catalog.get_children()] == ["gnss-observations"]
+
+    def test_a_file_it_did_not_write_survives(self, two_sites):
+        removed = f"{testing.NAMING_AUTHORITY}.orthanc-gnss"
+        notes = two_sites / "gnss-observations" / "notes.txt"
+        notes.write_text("Gandalf was here")
+        kept = two_sites / "gnss-observations" / removed / "README.md"
+        kept.write_text("Do not remove")
+
+        shutil.rmtree(two_sites / "orthanc")
+        write_catalog(two_sites)
+
+        assert notes.read_text() == "Gandalf was here"
+        assert kept.read_text() == "Do not remove"
+        assert not (kept.parent / f"{removed}.json").exists()
+
+    def test_releases_are_never_touched(self, two_sites):
+        release = two_sites / "releases" / "v1"
+        (release / "gnss-observations").mkdir(parents=True)
+        (release / "catalog.json").write_text('{"id": "the-first-release"}')
+        (release / "gnss-observations" / "collection.json").write_text("{}")
+        before = _catalog_files(two_sites / "releases")
+
+        shutil.rmtree(two_sites / "orthanc")
+        write_catalog(two_sites)
+
+        assert _catalog_files(two_sites / "releases") == before
+
+    def test_writing_twice_without_a_change_gives_the_same_files(self, two_sites):
+        before = _catalog_files(two_sites)
+
+        write_catalog(two_sites)
+
+        assert _catalog_files(two_sites) == before

@@ -12,10 +12,19 @@ group (``xarray:open_kwargs``) and the snapshot (``canvod:snapshot_id``).
 The catalog never leaves a store out silently: every store under the root
 is read first, and if any cannot be described, one error lists them all
 and nothing is written.
+
+Each write replaces the latest catalog fully: the catalog, collection and
+item files of the previous write that the new one has no use for are
+removed, and only those. Any other file stays, and ``releases/`` is never
+touched. Each file is replaced in one step, so a reader or a second
+writer never sees half a file; of two writers at once, the last one wins.
 """
 
 from __future__ import annotations
 
+import json
+import os
+import uuid
 import warnings
 from pathlib import Path
 from typing import Any
@@ -46,6 +55,7 @@ from .summary import _array, _data_groups, _decode_epochs, _iso, receiver_groups
 ZARR_MEDIA_TYPE = "application/vnd.zarr; version=3"
 
 _CATALOG_ID = "canvod-catalog"
+_RELEASES = "releases"
 _COLLECTION_TITLES = {
     "gnss-observations": "GNSS observations",
     "vod": "Vegetation optical depth",
@@ -504,7 +514,83 @@ def write_catalog(root: Path | str) -> Path:
     """
     root = Path(root).resolve()
     catalog = build_catalog(root)
+    previous = _written_files(root)
     catalog.normalize_hrefs(str(root))
     catalog.make_all_asset_hrefs_relative()
-    catalog.save(catalog_type=pystac.CatalogType.SELF_CONTAINED)
+    catalog.save(
+        catalog_type=pystac.CatalogType.SELF_CONTAINED, stac_io=_ReplacingStacIO()
+    )
+    current = {Path(obj.self_href).resolve() for obj in _catalog_objects(catalog)}
+    for path in sorted(previous - current):
+        path.unlink(missing_ok=True)
+        _remove_empty_folders(path.parent, root)
     return root / "catalog.json"
+
+
+class _ReplacingStacIO(pystac.stac_io.DefaultStacIO):
+    """Writes each file beside its target first, then replaces it in one step."""
+
+    def write_text_to_href(self, href: str, txt: str) -> None:
+        target = Path(href)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        # Not tempfile.mkstemp: its files are readable by the owner only.
+        temporary = target.with_name(f".{target.name}.{uuid.uuid4().hex}.tmp")
+        try:
+            temporary.write_text(txt, encoding="utf-8")
+            os.replace(temporary, target)
+        except BaseException:
+            temporary.unlink(missing_ok=True)
+            raise
+
+
+def _catalog_objects(catalog: pystac.Catalog) -> list[pystac.STACObject]:
+    collections = list(catalog.get_children())
+    items = [item for child in collections for item in child.get_items()]
+    return [catalog, *collections, *items]
+
+
+def _linked(path: Path, rel: str) -> list[Path]:
+    """The files a catalog file links as ``rel``; none if it cannot be read."""
+    try:
+        links = json.loads(path.read_text(encoding="utf-8")).get("links", [])
+    except OSError, ValueError, AttributeError:
+        return []
+    return [
+        (path.parent / link["href"]).resolve()
+        for link in links
+        if isinstance(link, dict)
+        and link.get("rel") == rel
+        and isinstance(link.get("href"), str)
+        and "://" not in link["href"]
+    ]
+
+
+def _written_files(root: Path) -> set[Path]:
+    """The collection and item files the previous write left under ``root``.
+
+    Found by following the links of the previous ``catalog.json``, so a file
+    it did not write is never among them; nothing under ``releases/`` is.
+    """
+    catalog_file = root / "catalog.json"
+    try:
+        if (
+            json.loads(catalog_file.read_text(encoding="utf-8")).get("id")
+            != _CATALOG_ID
+        ):
+            return set()
+    except OSError, ValueError, AttributeError:
+        return set()
+    collections = _linked(catalog_file, "child")
+    items = [item for collection in collections for item in _linked(collection, "item")]
+    releases = root / _RELEASES
+    return {
+        path
+        for path in (*collections, *items)
+        if root in path.parents and releases not in path.parents
+    }
+
+
+def _remove_empty_folders(folder: Path, root: Path) -> None:
+    while folder != root and root in folder.parents and not any(folder.iterdir()):
+        folder.rmdir()
+        folder = folder.parent
