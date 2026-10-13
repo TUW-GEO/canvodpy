@@ -192,7 +192,7 @@ _Avoid_: edit, update (for repository metadata)
 A rule a standard sets for a metadata field, such as the license being an
 SPDX identifier. New metadata that breaks one is refused; a store that
 already breaks one still opens, with a warning, until an amendment fixes
-the field.
+the field, or, for a value computed from the data, the next commit.
 _Avoid_: constraint, policy
 
 **Catalog**:

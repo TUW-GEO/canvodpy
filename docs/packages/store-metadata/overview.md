@@ -130,9 +130,9 @@ processing:
   metadata:
     author: "Jane Doe"
     email: "jane.doe@example.org"
-    orcid: "0000-0000-0000-0000"         # optional
+    orcid: "0000-0002-1825-0097"         # optional, ORCID's test person
     institution: "Example University"
-    institution_ror: "https://ror.org/..."  # optional
+    # institution_ror: "https://ror.org/<id>"  # optional
     department: "Department of Geodesy"     # optional
     license: "CC-BY-4.0"                 # required to create a store, SPDX identifier
     license_uri: null                    # the license text; required when license is "other"
@@ -149,6 +149,27 @@ The license is an identifier from the [SPDX license list](https://spdx.org/licen
 license outside SPDX is `other`, with `license_uri` naming its text.
 Any other value is refused when a store is created or the license is
 amended; the error names the field and points to the SPDX list.
+
+The license is one of the metadata rules: rules that a standard sets for
+a field. The models of the package check them when metadata is made,
+so a store isn't created, and a field isn't amended, with a value that
+breaks one. The error names the field, the value, and the rule.
+
+| Field | Rule | Standard |
+|---|---|---|
+| `publisher.license` | SPDX identifier, or `other` with `license_uri` | SPDX, STAC 1.1 |
+| `creator.orcid` | `0000-0000-0000-000X`, alone or after `https://orcid.org/`, with a valid check digit | ORCID |
+| `creator.institution_ror` | Nine characters starting with `0`, alone or after `https://ror.org/` | ROR |
+| `identity.persistent_identifier` | A DOI (`10.<registrant>/<suffix>`), when given as one: starting with `10.`, `doi:` or `https://doi.org/`; other identifiers aren't checked | DataCite |
+| `creator.type`, `publisher.type` | `Personal`, `Organizational`, `Institutional`, or an ACDD type (`person`, `group`, `institution`, `position`) | DataCite, ACDD 1.3 |
+| `identity.store_type` | `gnss_store`, `vod_store` or `geodesy_store` | canVODpy |
+| `spatial.geospatial_lat`, `_lat_min`, `_lat_max` | -90 to 90 | WGS84 |
+| `spatial.geospatial_lon`, `_lon_min`, `_lon_max` | -180 to 180 | WGS84 |
+| `spatial.bbox` | Four values, W, S, E, N (STAC 1.1), with W <= E and S <= N (a site never spans the 180° meridian) | STAC 1.1, canvodpy |
+| `temporal.time_coverage_duration`, `time_coverage_resolution` | ISO 8601 duration, such as `PT5S` | ACDD 1.3 |
+| `publisher.license_uri`, `publisher.url`, `creator.website` | A URL starting with `http://` or `https://`, kept as written | |
+
+The source format, the timestamps and the email address have no rule.
 
 The description of the site's stores, the site description, and the
 location come from the site:
@@ -250,7 +271,9 @@ A store written before a rule existed may hold a value that breaks it.
 The store still opens: reading its metadata gives a
 `MetadataRuleWarning` that names the field, `rules` lists it, and an
 amendment of that field fixes it. An amendment of another field keeps
-the old value and warns again. With
+the old value and warns again. The durations, the bounding box, and the
+latitude and longitude ranges are computed from the data; the next
+commit to the store computes them again. With
 `recommended=False` it lists only failures: what a standard requires, or
 for ACDD 1.3 what it highly recommends. A store created by canVODpy has
 none. Without it, the lists also hold the ACDD recommendations, marked
@@ -313,8 +336,10 @@ and a UUID, and keeps the old id in the migration record, with who
 migrated it and when. A migrated store must pass the standards checks
 like a new one. Fields it lacks, such as its description, are given with
 `--set`; otherwise the migration is refused and lists them. A license
-outside SPDX is refused too, naming the field to give, for example
-`--set publisher.license=Apache-2.0`. In a VOD
+outside SPDX, or another value that breaks a metadata rule, is refused
+too, naming the field to give, for example
+`--set publisher.license=Apache-2.0`. A computed value that breaks a
+rule, such as a duration, only warns: the migration computes it again. In a VOD
 store, the attributes of `VOD` are replaced with the current ones.
 Snapshots from before the migration stay readable.
 

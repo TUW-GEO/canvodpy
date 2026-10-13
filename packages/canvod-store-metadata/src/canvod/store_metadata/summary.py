@@ -68,7 +68,8 @@ def _iso(t: np.datetime64) -> str:
 
 
 def _iso_duration(seconds: float) -> str:
-    return f"PT{seconds:g}S"
+    """ISO 8601 duration in seconds, never in exponent notation."""
+    return f"PT{np.format_float_positional(seconds, trim='-')}S"
 
 
 def _data_groups(root: zarr.Group) -> dict[str, zarr.Group]:

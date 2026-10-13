@@ -21,6 +21,12 @@ PERSON_NAME = "John Ronald Reuel Tolkien"
 PERSON_INITIALS = "JRRT"
 PERSON_EMAIL = "j.r.r.tolkien@the.inklings.org"
 INSTITUTION = "University of Oxford"
+#: A made-up ORCID iD with a valid check digit (ORCID issues none from
+#: 0000-0000), and one whose check digit is X.
+PERSON_ORCID = "0000-0000-0000-1231"
+OTHER_ORCID = "0000-0000-0000-001X"
+#: A made-up ROR id in the ROR format.
+INSTITUTION_ROR = "0mddrth01"
 DEPARTMENT = "English Faculty"
 RESEARCH_GROUP = "The Inklings"
 PUBLISHER = "The Inklings"

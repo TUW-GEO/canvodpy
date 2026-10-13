@@ -1,6 +1,7 @@
 """Moving a store written before ADR 0014 to repository metadata (#206)."""
 
 from pathlib import Path
+from typing import Any
 
 import icechunk
 import numpy as np
@@ -15,10 +16,12 @@ from canvod.store_metadata import (
     read_metadata,
     validate_all,
 )
+from canvod.store_metadata.io import _set_field
 from canvod.store_metadata.schema import (
     ConfigSnapshot,
     Creator,
     Instruments,
+    MetadataRuleWarning,
     Publisher,
     ReceiverInfo,
     SiteInfo,
@@ -85,9 +88,9 @@ def _old_store(
     naming_authority: str | None = testing.NAMING_AUTHORITY,
     *,
     complete: bool = True,
-    license_: str = "CC-BY-4.0",
+    changes: dict[str, Any] | None = None,
 ) -> Path:
-    """``license_``: the publisher license as written, rules unchecked."""
+    """``changes``: dotted fields as written, rules unchecked."""
     path = tmp_path / "store"
     repo = icechunk.Repository.create(
         storage=icechunk.local_filesystem_storage(str(path))
@@ -95,8 +98,8 @@ def _old_store(
     session = repo.writable_session("main")
     root = zarr.open_group(session.store, mode="w")
     attrs = _old_metadata(naming_authority, complete=complete).to_root_attrs()
-    if complete:
-        attrs["canvod_metadata"]["publisher"]["license"] = license_
+    for field, value in (changes or {}).items():
+        _set_field(attrs["canvod_metadata"], field, value)
     root.attrs.update(attrs)
     _SNR_DAY.to_zarr(session.store, group="canopy_01", consolidated=False)
     session.commit("data and metadata, old form")
@@ -276,7 +279,7 @@ class TestMigrationChecks:
 
 class TestMigrationLicenseRule:
     def test_a_license_outside_spdx_is_refused_naming_the_field(self, tmp_path):
-        path = _old_store(tmp_path, license_="Apache 2")
+        path = _old_store(tmp_path, changes={"publisher.license": "Apache 2"})
 
         with pytest.raises(ValueError, match="publisher.license") as e:
             migrate_metadata(path, who=testing.PERSON_INITIALS)
@@ -284,7 +287,7 @@ class TestMigrationLicenseRule:
         assert not _repo(path).get_metadata()
 
     def test_the_license_can_be_given_at_migration_time(self, tmp_path):
-        path = _old_store(tmp_path, license_="Apache 2")
+        path = _old_store(tmp_path, changes={"publisher.license": "Apache 2"})
 
         migrate_metadata(
             path,
@@ -293,6 +296,27 @@ class TestMigrationLicenseRule:
         )
 
         assert read_metadata(path).publisher.license == "Apache-2.0"
+
+
+class TestMigrationFieldRules:
+    def test_a_bad_orcid_is_refused_naming_the_field(self, tmp_path):
+        path = _old_store(tmp_path, changes={"creator.orcid": "Treebeard"})
+
+        with pytest.raises(ValueError, match=r"creator\.orcid.*ORCID") as e:
+            migrate_metadata(path, who=testing.PERSON_INITIALS)
+        assert "--set creator.orcid=" in str(e.value)
+
+    def test_a_bad_computed_value_does_not_stop_the_migration(self, tmp_path):
+        path = _old_store(
+            tmp_path, changes={"temporal.time_coverage_duration": "PT2.592e+06S"}
+        )
+
+        with pytest.warns(MetadataRuleWarning, match="computes it again"):
+            migrate_metadata(path, who=testing.PERSON_INITIALS)
+
+        duration = read_metadata(path).temporal.time_coverage_duration
+        assert duration is not None
+        assert "e" not in duration
 
 
 class TestVariableAttributes:

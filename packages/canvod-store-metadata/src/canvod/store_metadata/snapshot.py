@@ -33,6 +33,7 @@ from .io import _set_field
 from .location import StoreLocation, store_location
 from .schema import (
     _METADATA_KEY,
+    ACDD_TYPES,
     FORM_VERSION,
     READ_CONTEXT,
     ConfigSnapshot,
@@ -54,14 +55,6 @@ ENVIRONMENTS_GROUP = f"{RESERVED_GROUP}/environments"
 REPOSITORY_METADATA_ATTR = "canvod:repository_metadata"
 SNAPSHOT_SUMMARY_ATTR = "canvod:snapshot_summary"
 UUID_ATTR = "canvod:uuid"
-
-# ACDD creator_type / publisher_type values for the schema's types.
-_ACDD_TYPES = {
-    "Personal": "person",
-    "Organizational": "institution",
-    "Institutional": "institution",
-    **{t: t for t in ("person", "group", "institution", "position")},
-}
 
 # Every root attribute the root copy may write; a commit replaces them all.
 _ROOT_COPY_KEYS = (
@@ -108,17 +101,15 @@ _ROOT_COPY_KEYS = (
 )
 
 
-def _acdd_type(value: str | None, field: str) -> str | None:
+def _acdd_type(value: str | None) -> str | None:
+    """The ACDD word for a creator or publisher type.
+
+    A value outside ``ACDD_TYPES`` is kept: the model refuses it in new
+    metadata, and a store already holding one warns when read.
+    """
     if value is None:
         return None
-    try:
-        return _ACDD_TYPES[value]
-    except KeyError:
-        msg = (
-            f"{field} {value!r} has no ACDD equivalent; use one of "
-            f"{sorted(_ACDD_TYPES)}."
-        )
-        raise ValueError(msg) from None
+    return ACDD_TYPES.get(value, value)
 
 
 def _acdd_keywords(keywords: list[str]) -> str | None:
@@ -192,12 +183,12 @@ def root_copy(repository: dict[str, Any], summary: dict[str, Any]) -> dict[str, 
         "creator_name": creator["name"],
         "creator_email": creator["email"],
         "creator_url": creator.get("website"),
-        "creator_type": _acdd_type(creator.get("type"), "creator.type"),
+        "creator_type": _acdd_type(creator.get("type")),
         "creator_institution": creator.get("institution"),
         "institution": creator.get("institution"),
         "publisher_name": publisher.get("name"),
         "publisher_url": publisher.get("url"),
-        "publisher_type": _acdd_type(publisher.get("type"), "publisher.type"),
+        "publisher_type": _acdd_type(publisher.get("type")),
         "geospatial_lat_min": lat,
         "geospatial_lat_max": lat,
         "geospatial_lon_min": lon,
