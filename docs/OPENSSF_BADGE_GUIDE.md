@@ -40,16 +40,16 @@ The badge requires filling out criteria in these categories:
 
 #### Quality (17 criteria)
 - [x] Coding standards (ruff, PEP 8)
-- [x] Automated test suite (pytest, 8 workflows)
+- [x] Automated test suite (pytest on Linux, macOS and Windows)
 - [x] Code coverage (test_coverage.yml workflow)
 - [x] Build reproducibility (uv.lock, pinned dependencies)
-- [x] Continuous integration (8 GitHub Actions workflows)
+- [x] Continuous integration (GitHub Actions, `.github/workflows/`)
 
 #### Security (21 criteria)
 - [x] Security policy (SECURITY.md) ✨ newly added
 - [x] Vulnerability disclosure process (SECURITY.md)
 - [ ] Secure development knowledge (document that developers know secure coding)
-- [x] Static analysis (ruff, audit.yml)
+- [x] Static analysis (ruff in `code_quality.yml`, CodeQL in `codeql.yml`)
 - [x] Dynamic analysis (pytest, integration tests)
 - [x] Dependency management (uv, Dependabot)
 
@@ -81,16 +81,16 @@ Based on canvodpy's current state:
 **Quality:**
 - ✅ Coding standards (ruff with 50+ rule sets, PEP 8 compliant)
 - ✅ Type checking (ty with type budget enforcement)
-- ✅ Test suite (pytest with 8 test workflows)
+- ✅ Test suite (pytest on Linux, macOS and Windows, with coverage)
 - ✅ Test coverage (test_coverage.yml)
-- ✅ CI/CD (8 workflows: tests, coverage, code quality, audit, FAIR, releases)
+- ✅ CI/CD (GitHub Actions: tests, coverage, code quality, CodeQL, docs quality, FAIR, releases)
 - ✅ Reproducible builds (uv.lock with pinned dependencies)
 - ✅ Pre-commit hooks (ruff, ty, conventional commits)
 
 **Security:**
 - ✅ Vulnerability disclosure (SECURITY.md) ✨ New
 - ✅ Dependency updates (Dependabot + uv.lock)
-- ✅ Static analysis (ruff linting + audit.yml)
+- ✅ Static analysis (ruff linting, CodeQL)
 - ✅ Type safety (ty type checker)
 - ✅ OpenSSF Scorecard (scorecard.yml) ✨ New
 
@@ -141,7 +141,7 @@ Document that developers follow secure coding practices:
 
 ### 4. Verify REUSE compliance
 ```bash
-uv run reuse lint
+just check-reuse
 ```
 
 ### 5. Add release verification

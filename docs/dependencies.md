@@ -62,11 +62,11 @@ graph TD
 
 ## Coupling
 
-12 packages, 31 dependencies between them.
+12 packages, 32 dependencies between them.
 
 | Layer | Package | Depends on (Ce) | Depended on by (Ca) | Instability |
 |---|---|:-:|:-:|:-:|
-| Foundation | `canvod-utils` | 0 | 8 | 0.00 |
+| Foundation | `canvod-utils` | 0 | 9 | 0.00 |
 | Foundation | `canvod-config` | 1 | 6 | 0.14 |
 | Data input | `canvod-readers` | 2 | 3 | 0.40 |
 | Data input | `canvod-auxiliary` | 3 | 2 | 0.60 |
@@ -74,7 +74,7 @@ graph TD
 | Computation | `canvod-vod` | 1 | 2 | 0.33 |
 | Computation | `canvod-grids` | 1 | 4 | 0.20 |
 | Computation | `canvod-ops` | 2 | 1 | 0.67 |
-| Persistence | `canvod-store-metadata` | 1 | 2 | 0.33 |
+| Persistence | `canvod-store-metadata` | 2 | 2 | 0.50 |
 | Persistence | `canvod-store` | 7 | 1 | 0.88 |
 | Presentation | `canvod-viz` | 1 | 1 | 0.50 |
 | Orchestration | `canvodpy` | 11 | 0 | 1.00 |
@@ -84,7 +84,7 @@ graph TD
 - **Instability**: Ce / (Ce + Ca). A package with 0 depends on no other
   package; a package with 1 has no package that depends on it.
 
-`canvod-utils` and `canvod-config` have the most dependents (Ca = 8 and 6):
+`canvod-utils` and `canvod-config` have the most dependents (Ca = 9 and 6):
 a change there affects the most packages.
 
 ## Install a package on its own
