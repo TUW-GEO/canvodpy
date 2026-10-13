@@ -3,7 +3,7 @@ title: Namespace Packages
 description: Implementation of Python implicit namespace packages in canVODpy
 ---
 
-# Namespace Packages
+# Namespace packages
 
 canVODpy uses Python 3.3+ **implicit namespace packages** to let ten independent packages share the `canvod.*` import prefix: a unified API backed by separately installable wheels.
 
@@ -16,7 +16,7 @@ from canvod.store import MyIcechunkStore
 
 ---
 
-## How It Works
+## How it works
 
 A namespace package is created by **omitting `__init__.py`** from the shared parent directory. Python treats a directory without `__init__.py` as a namespace that multiple packages can contribute to.
 
@@ -69,7 +69,7 @@ A namespace package is created by **omitting `__init__.py`** from the shared par
 
 ---
 
-## Build Configuration
+## Build configuration
 
 The `uv_build` backend uses a dotted `module-name` to produce the correct wheel structure:
 
@@ -90,7 +90,7 @@ The dot in `"canvod.readers"` tells uv_build:
 
 ---
 
-## Wheel Contents
+## Wheel contents
 
 ```
 canvod_readers-0.1.0-py3-none-any.whl
@@ -110,7 +110,7 @@ canvod_readers-0.1.0-py3-none-any.whl
 
 ---
 
-## Import Resolution
+## Import resolution
 
 When Python processes `from canvod.readers import Rnxv3Obs`:
 
@@ -120,7 +120,7 @@ When Python processes `from canvod.readers import Rnxv3Obs`:
 
 ---
 
-## Independent Installation
+## Independent installation
 
 Because each sub-package is self-contained, users install only what they need:
 
@@ -146,7 +146,7 @@ print(readers.__file__)  # e.g. …/site-packages/canvod/readers/__init__.py
 
 ---
 
-## Common Pitfalls
+## Common pitfalls
 
 !!! failure "Adding `__init__.py` to the namespace directory"
     `src/canvod/__init__.py` converts the namespace into a regular package,
