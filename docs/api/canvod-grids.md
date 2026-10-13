@@ -1,4 +1,4 @@
-# canvod.grids API Reference
+# `canvod.grids` API reference
 
 Hemispheric grid implementations and spatial analysis tools.
 
@@ -20,43 +20,43 @@ Hemispheric grid implementations and spatial analysis tools.
         - HTMBuilder
         - CellAggregator
 
-## Grid Core
+## Grid core
 
 ::: canvod.grids.core.grid_builder
 ::: canvod.grids.core.grid_data
 ::: canvod.grids.core.grid_types
 
-## Grid Builders
+## Grid builders
 
-### Equal-Area Grid
+### Equal-area grid
 
 ::: canvod.grids.grids_impl.equal_area_grid
 
-### Equal-Angle Grid
+### Equal-angle grid
 
 ::: canvod.grids.grids_impl.equal_angle_grid
 
-### Equirectangular Grid
+### Equirectangular grid
 
 ::: canvod.grids.grids_impl.equirectangular_grid
 
-### HEALPix Grid
+### HEALPix grid
 
 ::: canvod.grids.grids_impl.healpix_grid
 
-### Geodesic Grid
+### Geodesic grid
 
 ::: canvod.grids.grids_impl.geodesic_grid
 
-### Fibonacci Grid
+### Fibonacci grid
 
 ::: canvod.grids.grids_impl.fibonacci_grid
 
-### HTM Grid
+### HTM grid
 
 ::: canvod.grids.grids_impl.htm_grid
 
-## Grid Operations
+## Grid operations
 
 ::: canvod.grids.operations
 
@@ -70,7 +70,7 @@ Hemispheric grid implementations and spatial analysis tools.
 
 ::: canvod.grids.analysis.filtering
 
-### Per-Cell Filtering
+### Per-cell filtering
 
 ::: canvod.grids.analysis.per_cell_filtering
 
@@ -82,18 +82,18 @@ Hemispheric grid implementations and spatial analysis tools.
 
 ::: canvod.grids.analysis.weighting
 
-### Solar Geometry
+### Solar geometry
 
 ::: canvod.grids.analysis.solar
 
-### Temporal Analysis
+### Temporal analysis
 
 ::: canvod.grids.analysis.temporal
 
-### Spatial Analysis
+### Spatial analysis
 
 ::: canvod.grids.analysis.spatial
 
-### Per-Cell VOD Analysis
+### Per-cell VOD analysis
 
 ::: canvod.grids.analysis.per_cell_analysis

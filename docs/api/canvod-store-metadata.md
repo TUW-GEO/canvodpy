@@ -1,4 +1,4 @@
-# canvod.store_metadata API Reference
+# `canvod.store_metadata` API reference
 
 Rich provenance metadata for Icechunk stores, aligned with DataCite 4.5, ACDD 1.3, and STAC 1.1.
 
@@ -37,7 +37,7 @@ Rich provenance metadata for Icechunk stores, aligned with DataCite 4.5, ACDD 1.
 
 ::: canvod.store_metadata.location
 
-## Store I/O
+## Reading and writing
 
 ::: canvod.store_metadata.io
 

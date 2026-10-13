@@ -1,4 +1,4 @@
-# canvod.utils API Reference
+# `canvod.utils` API reference
 
 Shared date/time utilities and processing diagnostics. Configuration
 management lives in [canvod.config](canvod-config.md) instead.

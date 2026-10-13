@@ -3,7 +3,7 @@
 Most contributors are scientists who develop with coding agents. A fixed
 workflow raises the quality of what they build: an interview before any
 code, recorded decisions and terms, tests first, and a review against the
-coding standards and the request. canVODpy adopts the open-source
+coding standards and the request. canVODpy adopts the open source
 [mattpocock/skills](https://github.com/mattpocock/skills) (MIT) for this.
 `.claude/settings.json` declares its author's GitHub marketplace and
 enables the plugin; `just agent-skills` installs or updates it. Its

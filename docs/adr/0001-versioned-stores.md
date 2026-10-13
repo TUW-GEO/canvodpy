@@ -1,4 +1,4 @@
-# Data live in versioned Icechunk stores, one GNSS store and one VOD store per site
+# Data live in versioned Icechunk stores: one GNSS store and one VOD store per site
 
 Every write to a store is a commit in an Icechunk repository, so any
 earlier state of the data can be read again, and a dataset can be cited

@@ -19,7 +19,7 @@ kind of information:
   reason, who and when.
 - The **snapshot summary** (time coverage, per-receiver counts,
   ranges and position, constellations, variables, size) describes what
-  one snapshot holds. It is computed when data are written and stored in the root
+  one snapshot holds. It is computed when data is written and stored in the root
   group in the same commit, so it cannot disagree with the data.
 - **Commit metadata** (Icechunk's per-commit metadata) records how a
   commit was made: software versions, environment, the settings and

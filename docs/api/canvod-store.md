@@ -1,4 +1,4 @@
-# canvod.store API Reference
+# `canvod.store` API reference
 
 Versioned data storage using Icechunk.
 
@@ -15,19 +15,19 @@ Versioned data storage using Icechunk.
         - load_grid
         - AnalysisStorage
 
-## Store Manager
+## Store manager
 
 ::: canvod.store.manager
 
-## Data Store
+## Data store
 
 ::: canvod.store.store
 
-## Grid Storage
+## Grid storage
 
 ::: canvod.store.grid_storage
 
-## Analysis Storage
+## Analysis storage
 
 ::: canvod.store.analysis_storage
 

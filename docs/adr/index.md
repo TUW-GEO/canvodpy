@@ -7,7 +7,7 @@ description: The decisions behind canVODpy that are hard to reverse or surprisin
 
 Each page records one decision about canVODpy that is hard to reverse,
 would surprise a reader of the code, and was a real choice between
-alternatives: what was decided and why. Read the ones that touch your
+alternatives: what was decided and why. Read the ones about your
 change before you start; if your change contradicts one, say so in the
 issue or pull request rather than working around it.
 
@@ -19,7 +19,7 @@ that names the decision replacing it.
 
 | | Decision |
 |---|---|
-| [0001](0001-versioned-stores.md) | Data live in versioned Icechunk stores, one GNSS store and one VOD store per site |
+| [0001](0001-versioned-stores.md) | Data live in versioned Icechunk stores: one GNSS store and one VOD store per site |
 | [0002](0002-gps-time.md) | All stored epochs are GPS time |
 | [0003](0003-receivers-share-a-file-format.md) | The canopy and the reference receiver record the same file format |
 | [0004](0004-explicit-over-implicit.md) | Explicit over implicit: fail loudly, no hidden defaults |

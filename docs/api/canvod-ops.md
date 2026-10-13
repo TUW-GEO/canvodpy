@@ -1,4 +1,4 @@
-# canvod.ops API Reference
+# `canvod.ops` API reference
 
 Configurable preprocessing pipeline for GNSS observation datasets.
 
