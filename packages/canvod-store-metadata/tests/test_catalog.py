@@ -70,7 +70,8 @@ def _schema_map() -> dict[str, str]:
 
 def _assert_valid(path: Path) -> None:
     """Every file reachable from ``path`` validates against its schemas."""
-    validator = StacValidate(str(path), recursive=True, schema_map=_schema_map())
+    # stac-validator finds children by splitting the path at "/".
+    validator = StacValidate(path.as_posix(), recursive=True, schema_map=_schema_map())
     assert validator.run(), json.dumps(validator.message, indent=2)
 
 

@@ -398,7 +398,7 @@ def write_stac_catalog(
             store_id = read_metadata(sp).identity.id
             for link in catalog["links"]:
                 if link.get("href") == f"#{store_id}":
-                    link["href"] = str(rel)
+                    link["href"] = rel.as_posix()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(catalog, indent=2, default=str))
