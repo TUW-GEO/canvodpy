@@ -482,6 +482,9 @@ $ canvodpy stac [OPTIONS] COMMAND [ARGS]...
 
 Write the latest catalog of every store under the data root.
 
+If a store cannot be described, nothing is written: the command lists
+every such store with its reason and exits with code 1.
+
 **Usage**:
 
 ```console
