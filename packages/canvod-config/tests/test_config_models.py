@@ -593,6 +593,24 @@ class TestStorageConfig:
             sc = StorageConfig(stores_root_dir=tmp_path)
         assert sc.vod_store_strategy is None
 
+    @pytest.mark.parametrize(
+        "url", ["s3://fangorn/stores", "S3://fangorn/stores", "gs://fangorn/stores"]
+    )
+    def test_a_url_as_stores_root_dir_is_refused(self, url):
+        """Processing writes stores to local directories only (#240)."""
+        with pytest.raises(ValueError, match="local directory") as error:
+            StorageConfig(stores_root_dir=url)
+        assert url in str(error.value)
+        assert "S3" in str(error.value)
+
+    def test_a_string_path_is_expanded(self):
+        sc = StorageConfig(stores_root_dir="~/fangorn")
+        assert sc.stores_root_dir == Path.home() / "fangorn"
+
+    def test_the_placeholder_is_refused(self):
+        with pytest.raises(ValueError, match="placeholder"):
+            StorageConfig(stores_root_dir="/path/to/stores")
+
     def test_placeholder_path_not_validated(self):
         """Placeholder paths starting with /path/ skip existence check."""
         sc = StorageConfig(stores_root_dir=Path("/path/to/stores"))

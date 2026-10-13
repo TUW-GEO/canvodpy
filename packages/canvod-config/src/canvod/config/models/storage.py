@@ -228,8 +228,18 @@ class StorageConfig(_StrictModel):
     @field_validator("stores_root_dir", mode="before")
     @classmethod
     def validate_stores_dir(cls, v: object) -> object:
-        """Expand ~ and reject placeholder values in stores_root_dir."""
+        """Expand ~ and reject placeholder values and URLs in stores_root_dir.
+
+        Checked before the value becomes a ``Path``, which would turn
+        ``s3://bucket/prefix`` into the local path ``s3:/bucket/prefix``.
+        """
         if isinstance(v, str):
+            if "://" in v:
+                raise ValueError(
+                    f"stores_root_dir is set to {v!r}: processing writes "
+                    "stores to a local directory only; writing stores to S3 "
+                    "comes later. Set a local directory in canvod-settings.yaml."
+                )
             if v.strip() in {"/path/to/stores", "/path/to/your/stores"}:
                 raise ValueError(
                     f"stores_root_dir is set to placeholder {v!r}: "
