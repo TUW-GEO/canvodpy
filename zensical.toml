@@ -110,6 +110,7 @@ nav = [
       { "0013 Agents never merge" = "adr/0013-agents-never-merge.md" },
       { "0014 Store metadata" = "adr/0014-store-metadata-split.md" },
       { "0015 STAC catalog and releases" = "adr/0015-stac-catalog-at-data-root.md" },
+      { "0016 Day blocks and parallel writes" = "adr/0016-day-blocks-and-forked-writes.md" },
     ]},
     { "Glossary" = "glossary.md" },
     { "Build and tooling" = [
