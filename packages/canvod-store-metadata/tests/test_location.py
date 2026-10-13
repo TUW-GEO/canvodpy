@@ -142,6 +142,20 @@ class TestRepositoryConfig:
         assert config.caching.num_bytes_chunks == 1024
         assert config.caching.num_chunk_refs == default.num_chunk_refs
 
+    def test_a_store_created_without_a_configuration_gets_the_settings_defaults(
+        self, tmp_path: Path
+    ) -> None:
+        """Not Icechunk's defaults, which split no manifests along "epoch"."""
+        open_repository(tmp_path / "store", create=True)
+
+        reopened = open_repository(tmp_path / "store")
+        defaults = repository_config(IcechunkConfig())
+        assert reopened.config.manifest == defaults.manifest
+        assert (
+            reopened.config.get_partial_values_concurrency
+            == defaults.get_partial_values_concurrency
+        )
+
     def test_a_compression_level_overrides_the_settings(self) -> None:
         config = repository_config(
             IcechunkConfig(compression_level=3), compression_level=9

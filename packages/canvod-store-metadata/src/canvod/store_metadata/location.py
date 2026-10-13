@@ -309,8 +309,11 @@ def open_repository(
     create
         Create a new repository instead of opening one.
     config
-        The repository configuration (compression, caching, concurrency);
-        ``None`` uses Icechunk's defaults.
+        The repository configuration (compression, caching, concurrency).
+        ``None`` creates a store with the defaults of the
+        ``processing.icechunk`` settings (:func:`repository_config`), so it
+        matches a store a run creates, and opens one with the configuration
+        Icechunk kept with the store.
     expected_uuid
         The UUID of the store the caller expects, for example from a
         catalog item.
@@ -337,6 +340,10 @@ def open_repository(
         msg = f"The storage at {where} can't be reached. {where.access_hint}"
         raise OSError(msg) from error
     if create:
+        if config is None:
+            from canvod.config.models.compression import IcechunkConfig
+
+            config = repository_config(IcechunkConfig())
         refused = None
         if not exists:
             try:

@@ -535,7 +535,8 @@ def ensure_metadata(
     config
         The repository configuration a new store is created with
         (:func:`~.location.repository_config`); Icechunk keeps it with the
-        store. ``None`` uses Icechunk's defaults.
+        store. ``None`` uses the defaults of the ``processing.icechunk``
+        settings.
 
     Raises
     ------
