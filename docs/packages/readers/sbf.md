@@ -160,7 +160,7 @@ geometry still works, since it uses `sbf_obs` in memory.
 | `n_sv` | PVTGeodetic | `1` | Number of SVs used in fix |
 | `h_accuracy_m` | PVTGeodetic | `m` | 2DRMS horizontal accuracy (~95 %) |
 | `v_accuracy_m` | PVTGeodetic | `m` | $2\sigma$ vertical accuracy (~95 %) |
-| `pvt_mode` | PVTGeodetic | `1` | Fix type (see flag table) |
+| `pvt_mode` | PVTGeodetic | `1` | Fix type (see flag table, -1 unknown) |
 | `mean_corr_age_s` | PVTGeodetic | `s` | Age of differential corrections |
 | `cpu_load` | ReceiverStatus | `percent` | Receiver CPU utilisation (-1 unknown) |
 | `temperature_c` | ReceiverStatus | `degC` | Receiver temperature |
@@ -170,10 +170,10 @@ geometry still works, since it uses `sbf_obs` in memory.
 | `qual_rf_main` | QualityInd | `1` | RF power level, main antenna |
 | `qual_cpu` | QualityInd | `1` | CPU headroom |
 | `qual_scintillation` | QualityInd | `1` | Scintillation score (firmware $\geq$ 4.15.1) |
-| `spoofing_flag` | RFStatus | `1` | 1 = signals may not be authentic |
-| `nma_fail_flag` | RFStatus | `1` | 1 = non-authentic navigation message detected (NMA) |
+| `spoofing_flag` | RFStatus | `1` | 1 = signals may not be authentic (-1 unknown) |
+| `nma_fail_flag` | RFStatus | `1` | 1 = non-authentic navigation message detected (NMA, -1 unknown) |
 
-`cpu_load` and the `qual_*` variables declare their unknown value `-1` as `_FillValue`, so tools that follow CF conventions read it as missing.
+Every variable that stores `-1` for unknown declares it as `_FillValue`, so tools that follow CF conventions read it as missing: `cpu_load`, `pvt_mode`, the `qual_*` variables, the two RFStatus flags, and the per-signal `broadcast_angle_source` and `rise_set`.
 
 **Per-signal variables** (dimensions: `epoch × sid`):
 
@@ -182,7 +182,7 @@ geometry still works, since it uses `sbf_obs` in memory.
 | `broadcast_theta` | SatVisibility | `rad` | Polar angle $\theta$ (0 = overhead, $\pi/2$ = horizon) |
 | `broadcast_phi` | SatVisibility | `rad` | Geographic azimuth $\varphi$ (0 = North, clockwise) |
 | `broadcast_angle_source` | SatVisibility | `1` | Orbit data behind $\theta$ and $\varphi$: 1 = almanac, 2 = ephemeris, -1 unknown |
-| `rise_set` | SatVisibility | `1` | 1 = rising, 0 = setting |
+| `rise_set` | SatVisibility | `1` | 1 = rising, 0 = setting, -1 unknown |
 | `mp_correction_m` | MeasExtra | `m` | Pseudorange multipath correction |
 | `smoothing_corr_m` | MeasExtra | `m` | Hatch-filter smoothing correction on pseudorange |
 | `code_var` | MeasExtra | `m^2` | Code-phase noise variance |

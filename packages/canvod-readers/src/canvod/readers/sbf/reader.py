@@ -345,6 +345,7 @@ _RISE_SET_ATTRS: dict[str, object] = {
         "SatVisibility block (Block 4012), SatInfo sub-block, field RiseSet, p.400. "
         "Raw field: u1, scale 1; 0=setting, 1=rising, 255=unknown (→ stored as -1)."
     ),
+    "_FillValue": -1,
 }
 
 _BROADCAST_ANGLE_SOURCE_ATTRS: dict[str, object] = {
@@ -366,6 +367,7 @@ _BROADCAST_ANGLE_SOURCE_ATTRS: dict[str, object] = {
         "SatelliteInfo, p.400. Raw field: u1; 1=almanac, 2=ephemeris, "
         "255=unknown (→ stored as -1)."
     ),
+    "_FillValue": -1,
 }
 
 _MP_CORRECTION_ATTRS: dict[str, object] = {
@@ -716,6 +718,7 @@ _PVT_MODE_ATTRS: dict[str, object] = {
         "Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide, "
         "PVTGeodetic block (Block 4007), field Mode, p.337."
     ),
+    "_FillValue": -1,
 }
 
 _MEAN_CORR_AGE_ATTRS: dict[str, object] = {
@@ -921,6 +924,7 @@ _SPOOFING_FLAG_ATTRS: dict[str, object] = {
         "Septentrio AsteRx SB3 ProBase Firmware v4.14.x Reference Guide, "
         "RFStatus block (Block 4092), field Flags bit 0."
     ),
+    "_FillValue": -1,
 }
 _NMA_FAIL_ATTRS: dict[str, object] = {
     "long_name": "Navigation message authentication failure flag",
@@ -937,6 +941,7 @@ _NMA_FAIL_ATTRS: dict[str, object] = {
         "Septentrio AsteRx SB3 ProBase Firmware v4.14.x Reference Guide, "
         "RFStatus block (Block 4092), field Flags bit 1."
     ),
+    "_FillValue": -1,
 }
 
 # ---------------------------------------------------------------------------

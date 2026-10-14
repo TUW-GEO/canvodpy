@@ -693,6 +693,11 @@ class TestSbfObsUnknownMarker:
         "qual_rf_main",
         "qual_cpu",
         "qual_scintillation",
+        "pvt_mode",
+        "spoofing_flag",
+        "nma_fail_flag",
+        "rise_set",
+        "broadcast_angle_source",
     )
 
     def test_unknown_marker_is_declared(self, meta_ds: xr.Dataset) -> None:
