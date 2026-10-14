@@ -61,6 +61,7 @@ from canvodpy.orchestrator.resources import (
     deprecate_no_effect_arguments,
 )
 from canvodpy.orchestrator.store_retry import STORE_ERROR_TYPES, call_with_store_retries
+from canvodpy.run_history import ActiveRun, DayResult
 
 # Old-style TypeVar (not PEP 695 `def f[T](...)`): CodeQL's Python analysis
 # doesn't yet understand the newer generic syntax and flags T as a
@@ -213,6 +214,10 @@ class PipelineOrchestrator:
         instances on the same terminal corrupt each other's output, so
         display ownership belongs entirely to the caller. Default None
         (no-op) for standalone/programmatic use.
+    run : ActiveRun | None
+        The run recorded in the run history (``Pipeline`` starts it): the
+        orchestrator records the receiver-days it plans and finishes.
+        ``None``: nothing is recorded.
 
     """
 
@@ -229,6 +234,7 @@ class PipelineOrchestrator:
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
         config: CanvodConfig | None = None,
+        run: ActiveRun | None = None,
     ) -> None:
         if config is None:
             warnings.warn(
@@ -258,6 +264,7 @@ class PipelineOrchestrator:
         self.dry_run = dry_run
         self.days_per_batch = days_per_batch
         self._on_group_written = on_group_written
+        self._run = run
         self._batch_duration: pint.Quantity = days_per_batch * 24 * UREG.hour
         self._threads_per_worker = threads_per_worker
         self._memory_monitor = MemoryMonitor()
@@ -1019,6 +1026,7 @@ class PipelineOrchestrator:
                                 receiver=receiver_name,
                                 batch_index=batch_idx + 1,
                             )
+                            self._finish_receiver_day(receiver_name, date_key, "failed")
                             continue
 
                         processor = doy_contexts[date_key][0]
@@ -1061,8 +1069,16 @@ class PipelineOrchestrator:
                                 date=date_key,
                                 receiver=receiver_name,
                             )
+                            self._finish_receiver_day(receiver_name, date_key, "failed")
                             continue
                         t_write_end = _time.monotonic()
+                        # Data of files already stored were not written again.
+                        bytes_added = sum(
+                            int(ds.nbytes)
+                            for _, ds in augmented
+                            if ds.attrs.get("File Hash") not in skipped
+                        )
+                        day_result: DayResult = "written" if bytes_added else "skipped"
 
                         # Build the daily dataset: from in-memory parts when
                         # nothing was skipped by dedup (avoids a full store
@@ -1101,6 +1117,12 @@ class PipelineOrchestrator:
                                     date=date_key,
                                     receiver=receiver_name,
                                 )
+                                self._finish_receiver_day(
+                                    receiver_name,
+                                    date_key,
+                                    "failed",
+                                    bytes_added=bytes_added,
+                                )
                                 continue
                             assembly_source = "store"
                         t_read_end = _time.monotonic()
@@ -1115,6 +1137,9 @@ class PipelineOrchestrator:
                             total_seconds=round(t_read_end - t_write_start, 2),
                         )
 
+                        self._finish_receiver_day(
+                            receiver_name, date_key, day_result, bytes_added=bytes_added
+                        )
                         if self._on_group_written is not None:
                             self._on_group_written(receiver_name)
                         date_datasets[date_key][receiver_name] = daily_ds
@@ -1220,6 +1245,18 @@ class PipelineOrchestrator:
         for group in sorted({group for _, receivers in dates for group in receivers}):
             self.site.gnss_store.check_settings_match(group, settings)
 
+    def _finish_receiver_day(
+        self,
+        receiver: str,
+        date_key: str,
+        result: DayResult,
+        *,
+        bytes_added: int | None = None,
+    ) -> None:
+        """Record a finished receiver-day in the run history, if recorded."""
+        if self._run is not None:
+            self._run.finish(receiver, date_key, result, bytes_added=bytes_added)
+
     def process_by_date(
         self,
         keep_vars: list[str] | None = None,
@@ -1264,6 +1301,12 @@ class PipelineOrchestrator:
             return
 
         self._check_preprocessing_before_run(filtered_dates)
+        if self._run is not None:
+            self._run.plan(
+                (group, date_key)
+                for date_key, groups in filtered_dates
+                for group in groups
+            )
 
         self._logger.info(
             "process_by_date_started",

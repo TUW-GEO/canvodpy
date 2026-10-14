@@ -480,6 +480,7 @@ def _main_impl(args: SimpleNamespace) -> int:
                     days_per_batch=args.days_per_batch,
                     dry_run=False,
                     on_group_written=_on_group_written,
+                    label=args.label,
                 ) as pipeline:
                     gen = pipeline.process_range(start=start, end=end)
                     while True:
@@ -620,6 +621,16 @@ def run(
             help="Skip the VOD calculation: only write the observations to the GNSS store.",
         ),
     ] = False,
+    label: Annotated[
+        str | None,
+        typer.Option(
+            "--label",
+            help=(
+                "Free-text label of the run, stored in the run history, for "
+                "example to group the repetitions of a benchmark."
+            ),
+        ),
+    ] = None,
     dry_run: Annotated[
         bool,
         typer.Option(
@@ -710,6 +721,7 @@ def run(
         start=start,
         end=end,
         no_vod=no_vod,
+        label=label,
         dry_run=dry_run,
         workers=workers,
         days_per_batch=days_per_batch,

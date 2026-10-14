@@ -31,6 +31,8 @@ Low-level (full control):
 
 from __future__ import annotations
 
+import sys
+from contextlib import ExitStack
 from typing import TYPE_CHECKING
 
 from canvod.utils.tools import deprecated
@@ -41,6 +43,7 @@ from canvodpy.orchestrator.resources import deprecate_no_effect_arguments
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
     from pathlib import Path
+    from types import TracebackType
 
     import xarray as xr
 
@@ -153,6 +156,7 @@ class Site:
         nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
+        label: str | None = None,
     ) -> Pipeline:
         """Create a processing pipeline for this site.
 
@@ -183,6 +187,9 @@ class Site:
             one day finishes writing to Icechunk. Lets a caller drive its own
             progress display (e.g. the CLI's per-site/receiver rows) without
             this class owning any display itself.
+        label : str, optional
+            Free-text label of the run, stored in the run history (for
+            example to group the repetitions of a benchmark).
 
         Returns
         -------
@@ -205,6 +212,7 @@ class Site:
             days_per_batch=days_per_batch,
             threads_per_worker=threads_per_worker,
             on_group_written=on_group_written,
+            label=label,
         )
 
     def __repr__(self) -> str:
@@ -250,6 +258,13 @@ class Pipeline:
         Called with the receiver-group name each time a group's data for one
         day finishes writing to Icechunk. Lets a caller drive its own
         progress display without this class owning any display itself.
+    label : str, optional
+        Free-text label of the run, stored in the run history.
+
+    A pipeline that is not a dry run is a run: it records itself in the run
+    history of the log folder (ADR 0018) from its creation until
+    :meth:`close` (or the end of its ``with`` block), and ends as failed
+    with the error when processing raises.
 
     Examples
     --------
@@ -283,6 +298,7 @@ class Pipeline:
         nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
+        label: str | None = None,
     ) -> None:
         # Handle both Site object and string
         if isinstance(site, str):
@@ -332,17 +348,36 @@ class Pipeline:
 
         # Lazy import to avoid circular dependency
         from canvodpy.orchestrator import PipelineOrchestrator
+        from canvodpy.run_history import recorded_run
 
-        # Use proven orchestrator implementation
-        self._orchestrator = PipelineOrchestrator(
-            site=site._site,
-            n_max_workers=n_workers,
-            dry_run=dry_run,
-            days_per_batch=days_per_batch,
-            threads_per_worker=threads_per_worker,
-            on_group_written=on_group_written,
-            config=config,
-        )
+        self._run = ExitStack()
+        active_run = None
+        if not dry_run:
+            active_run = self._run.enter_context(
+                recorded_run(
+                    site.name,
+                    log_dir=config.processing.logging.get_log_dir(),
+                    settings=config.model_dump(mode="json"),
+                    workers=n_workers,
+                    disks=[site.gnss_store_path, site.vod_store_path],
+                    label=label,
+                )
+            )
+        try:
+            # Use proven orchestrator implementation
+            self._orchestrator = PipelineOrchestrator(
+                site=site._site,
+                n_max_workers=n_workers,
+                dry_run=dry_run,
+                days_per_batch=days_per_batch,
+                threads_per_worker=threads_per_worker,
+                on_group_written=on_group_written,
+                config=config,
+                run=active_run,
+            )
+        except Exception:
+            self._run.__exit__(*sys.exc_info())
+            raise
 
         self.log.info(
             "pipeline_initialized",
@@ -355,14 +390,28 @@ class Pipeline:
         )
 
     def close(self) -> None:
-        """Release orchestrator resources (loky's reusable executor is shared and left running)."""
+        """End the run and release orchestrator resources.
+
+        loky's reusable executor is shared and left running.
+        """
         self._orchestrator.close()
+        self._run.close()
 
     def __enter__(self) -> Pipeline:
         return self
 
-    def __exit__(self, *exc: object) -> None:
-        self.close()
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        self._orchestrator.close()
+        self._run.__exit__(exc_type, exc, tb)
+
+    def _fail(self) -> None:
+        """End the run as failed with the exception being handled."""
+        self._run.__exit__(*sys.exc_info())
 
     def process_date(self, date: str) -> dict[str, xr.Dataset]:
         """Process RINEX data for one date.
@@ -394,17 +443,21 @@ class Pipeline:
         log.info("date_processing_started")
 
         # Use proven orchestrator logic
-        for _date_key, datasets, _timing in self._orchestrator.process_by_date(
-            keep_vars=self.keep_vars,
-            start_from=date,
-            end_at=date,
-        ):
-            log.info(
-                "date_processing_complete",
-                receivers=len(datasets),
-                receiver_names=list(datasets.keys()),
-            )
-            return datasets  # Return first (only) date
+        try:
+            for _date_key, datasets, _timing in self._orchestrator.process_by_date(
+                keep_vars=self.keep_vars,
+                start_from=date,
+                end_at=date,
+            ):
+                log.info(
+                    "date_processing_complete",
+                    receivers=len(datasets),
+                    receiver_names=list(datasets.keys()),
+                )
+                return datasets  # Return first (only) date
+        except Exception:
+            self._fail()
+            raise
 
         log.warning("no_data_processed", date=date)
         return {}  # No data processed
@@ -439,12 +492,16 @@ class Pipeline:
 
         """
         # Use proven orchestrator logic
-        for date_key, datasets, _timing in self._orchestrator.process_by_date(
-            keep_vars=self.keep_vars,
-            start_from=start,
-            end_at=end,
-        ):
-            yield date_key, datasets
+        try:
+            for date_key, datasets, _timing in self._orchestrator.process_by_date(
+                keep_vars=self.keep_vars,
+                start_from=start,
+                end_at=end,
+            ):
+                yield date_key, datasets
+        except Exception:
+            self._fail()
+            raise
 
     @deprecated(
         "Pipeline.calculate_vod() is left over from development and will be "

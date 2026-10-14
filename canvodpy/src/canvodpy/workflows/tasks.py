@@ -204,8 +204,22 @@ def check_day(site: str, yyyydoy: str) -> dict:
         If the receivers' files cannot be assigned unambiguously, e.g. two
         files cover the same time. Retrying does not help; the data
         directory has to be fixed.
+
+    Notes
+    -----
+    The check is recorded as a run in the run history (ADR 0018), failed
+    when files are missing.
     """
-    return _check_files(site, yyyydoy, None, "GNSS")
+    from canvodpy.run_history import recorded_run
+
+    config = load_config()
+    with recorded_run(
+        site,
+        log_dir=config.processing.logging.get_log_dir(),
+        settings=config.model_dump(mode="json"),
+        workers=None,
+    ):
+        return _check_files(site, yyyydoy, None, "GNSS")
 
 
 def _check_files(site: str, yyyydoy: str, reader_format: str | None, kind: str) -> dict:
@@ -987,7 +1001,8 @@ def process_day(site: str, yyyydoy: str) -> dict:
     ``canvodpy run``: file discovery, auxiliary data, reader, receiver
     position, satellite geometry, ``processing.preprocessing`` and the
     store write with its log book. Each receiver is read with the
-    ``reader_format`` of its site configuration.
+    ``reader_format`` of its site configuration. The run is recorded in
+    the run history like one of ``canvodpy run``.
 
     Parameters
     ----------
@@ -1011,11 +1026,12 @@ def process_day(site: str, yyyydoy: str) -> dict:
     from canvodpy.api import Site
 
     date_obj = _resolve_date(yyyydoy)
+    # Inside the block, so the run history records the run as failed.
     with Site(site).pipeline() as pipeline:
         datasets = pipeline.process_date(date_obj.to_str())
-    if not datasets:
-        msg = f"Nothing processed for {site} {date_obj.to_str()}; see the log"
-        raise RuntimeError(msg)
+        if not datasets:
+            msg = f"Nothing processed for {site} {date_obj.to_str()}; see the log"
+            raise RuntimeError(msg)
 
     return {
         "site": site,

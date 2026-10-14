@@ -33,6 +33,7 @@ import structlog
 from canvod.config import load_config
 from canvod.utils.logging import get_run_id
 from canvod.utils.tools import deprecated, deprecated_argument
+from canvodpy.logging.run_history_handler import RunHistoryHandler
 
 # Log folder that file logging currently writes to; None while console only.
 _active_log_dir: Path | None = None
@@ -344,6 +345,8 @@ def _reset_root_logger() -> logging.Logger:
     """Remove all handlers from the root logger and let it accept all levels."""
     logging.basicConfig(level=logging.DEBUG, format="%(message)s")
     root_logger = logging.getLogger()
+    for handler in root_logger.handlers:
+        handler.close()  # releases files and the run history
     root_logger.handlers.clear()
     root_logger.setLevel(logging.DEBUG)
     return root_logger
@@ -637,6 +640,8 @@ def configure_logging(
     root_logger.addHandler(perf_handler)
     for handler in component_handlers:
         root_logger.addHandler(handler)
+    # The warnings and errors of recorded runs, in the run history.
+    root_logger.addHandler(RunHistoryHandler(log_dir))
 
     _configure_structlog(shared_processors)
     logger = structlog.get_logger("canvodpy")
