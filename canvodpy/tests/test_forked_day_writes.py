@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import pickle
+import time
 from concurrent.futures import Future
 from pathlib import Path
 from types import SimpleNamespace
@@ -34,6 +35,7 @@ from test_day_block_write import _config, _DayBlockProcessor, _inputs
 
 from canvod.config.models import PreprocessingConfig
 from canvod.store import MyIcechunkStore
+from canvod.store.day_blocks import ChunkOwnershipError
 from canvod.store_metadata.io import read_metadata
 from canvod.utils.tools import YYYYDOY
 
@@ -294,7 +296,7 @@ def test_a_day_whose_write_failed_is_recorded_failed(seeded) -> None:
     write.set_exception(icechunk.ConflictError("lost twice"))
     pipe = _orchestrator(seeded)
 
-    done = pipe._finish_forked_day(_DATE_KEY, proc, planned, write, set())
+    done = pipe._finish_forked_day(_DATE_KEY, planned, write)
 
     assert done == {}
     assert pipe._run.days == [(_GROUP, _DATE_KEY, "failed")]
@@ -358,3 +360,113 @@ def test_a_group_keeps_its_chunks_when_the_settings_change(store, files) -> None
     assert _commits(store) == before + 1
     stored = store.read_group(_GROUP, drop_empty=True)
     np.testing.assert_array_equal(stored["S1C"].values, _day(files)["S1C"].values)
+
+
+def _finished(pipe, planned, out) -> list[tuple[str, str, str]]:
+    """The run history's receiver-days after finishing a written day."""
+    write: Future = Future()
+    write.set_result(out)
+    pipe._finish_forked_day(_DATE_KEY, planned, write)
+    return pipe._run.days
+
+
+def test_files_that_fail_in_the_retry_round_fail_the_day(seeded, files) -> None:
+    proc = _Processor(seeded, strategy="overwrite")
+    planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
+    assert planned is not None
+    results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
+    _write_day(_Processor(seeded, strategy="overwrite"))
+
+    def failing(_job: _ForkJob) -> Future:
+        future: Future = Future()
+        future.set_exception(OSError("the worker lost the data drive"))
+        return future
+
+    pipe = _orchestrator(seeded)
+    out = pipe._write_forked_day(
+        proc, planned, _descriptors(range(_FILES_PER_DAY)), results, failing, 1
+    )
+
+    assert out[_GROUP].failed_files == _FILES_PER_DAY
+    assert _finished(pipe, planned, out) == [(_GROUP, _DATE_KEY, "failed")]
+
+
+def test_a_deferred_file_that_fails_fails_the_day(seeded, monkeypatch) -> None:
+    def beyond(*_args, **_kwargs):
+        msg = "beyond the task's chunks"
+        raise ChunkOwnershipError(msg)
+
+    def broken(_session, _numbers):
+        msg = "the writer thread could not write it"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(forked_writes, "write_file_region", beyond)
+    proc = _Processor(seeded)
+    monkeypatch.setattr(proc, "_write_deferred", broken)
+    # Without the seed's file, which would be skipped and so give a row.
+    planned = proc.plan_forked_day(_descriptors(range(1, _FILES_PER_DAY)))
+    assert planned is not None
+    results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
+
+    out = proc._commit_forked_day(planned, results)
+
+    assert out[_GROUP].failed_files == _FILES_PER_DAY - 1
+    pipe = _orchestrator(seeded)
+    assert _finished(pipe, planned, out) == [(_GROUP, _DATE_KEY, "failed")]
+
+
+def test_a_day_without_a_calendar_date_is_refused_when_planned(seeded) -> None:
+    # Refused before any fork runs, not when the writer thread finishes it.
+    proc = _Processor(seeded)
+    proc.matched_data_dirs = SimpleNamespace(
+        yyyydoy=SimpleNamespace(date=None, to_str=lambda: _DATE_KEY)
+    )
+
+    with pytest.raises(ValueError, match="no calendar date"):
+        proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
+
+
+def test_a_batch_that_breaks_waits_for_the_day_being_committed(
+    seeded, monkeypatch
+) -> None:
+    # The day's commit is running in the writer thread when the batch
+    # breaks: the error leaves the batch only after the commit finished.
+    pipe = _orchestrator(seeded)
+    pipe.days_per_batch = 1
+    pipe.n_max_workers = 1
+    pipe._threads_per_worker = 1
+    pipe._memory_monitor = MemoryMonitor()
+    resources = {"nice_priority": None, "cpu_affinity": None}
+    pipe._config = SimpleNamespace(
+        processing=SimpleNamespace(
+            params=SimpleNamespace(resolve_resources=lambda: resources)
+        )
+    )
+
+    def prepare(date_key, _receivers, _keep_vars):
+        file_map = [(_GROUP, [Path(_name(i)) for i in range(_FILES_PER_DAY)])]
+        return _Processor(seeded), _descriptors(range(_FILES_PER_DAY)), file_map
+
+    def completions(_submit_task, tasks, _window):
+        for task in tasks:
+            if isinstance(task[1], _ForkJob):
+                yield task, _submit(task[1])
+        msg = "the worker pool broke"
+        raise RuntimeError(msg)
+
+    committed: list[str] = []
+
+    def commit(_processor, planned, *_args):
+        time.sleep(0.5)
+        committed.append(planned.date_key)
+        return {}
+
+    monkeypatch.setattr(pipe, "_prepare_single_date", prepare)
+    monkeypatch.setattr(pipe, "_grow_day_blocks", lambda *_: None)
+    monkeypatch.setattr(pipe, "_write_forked_day", commit)
+    monkeypatch.setattr(pipeline_module, "_loky_reusable", lambda **_: None)
+    monkeypatch.setattr(pipeline_module, "_windowed_completions", completions)
+
+    with pytest.raises(RuntimeError, match="worker pool broke"):
+        list(pipe._process_multi_day_batches([(_DATE_KEY, {})], None))
+    assert committed == [_DATE_KEY]

@@ -1111,11 +1111,7 @@ class PipelineOrchestrator:
                     )
                 return _pool.submit(preprocess_with_hermite_aux, *task_args[:-1])
 
-            # One thread commits the forked days, one at a time, while the
-            # pool works on and this thread writes the other days.
-            day_writer = ThreadPoolExecutor(max_workers=1)
             fork_results: dict[str, list[ForkResult]] = defaultdict(list)
-            fork_failures: dict[str, set[str]] = defaultdict(set)
             fork_jobs_left = {
                 date_key: len(planned.tasks)
                 for date_key, planned in forked_days.items()
@@ -1166,7 +1162,13 @@ class PipelineOrchestrator:
                     f.stat().st_size / 1_048_576 for f in files if f.exists()
                 )
 
-            with _processing_progress(disable=True) as _progress_inner:
+            # One thread commits the forked days, one at a time, while the
+            # pool works on and this thread writes the other days. Leaving
+            # the block, also by an error, waits for the day it commits.
+            with (
+                ThreadPoolExecutor(max_workers=1) as day_writer,
+                _processing_progress(disable=True) as _progress_inner,
+            ):
                 # Stub tasks on the disabled inner progress (no-ops for rendering)
                 _progress_inner.add_task(
                     f"[bold]batch {batch_idx + 1}",
@@ -1180,10 +1182,6 @@ class PipelineOrchestrator:
                         fork_result = self._fork_result(
                             date_key, task_args, fut, batch_idx + 1
                         )
-                        if fork_result.failed:
-                            fork_failures[date_key].update(
-                                group for group, _, _ in fork_result.failed
-                            )
                         if fork_result.files or not fork_result.failed:
                             tasks_succeeded += 1
                         else:
@@ -1394,14 +1392,11 @@ class PipelineOrchestrator:
                         )
                         groups_written.add(group_key)
 
-            day_writer.shutdown(wait=True)
             for date_key in sorted(day_writes):
                 groups_done = self._finish_forked_day(
                     date_key,
-                    doy_contexts[date_key][0],
                     forked_days[date_key],
                     day_writes[date_key],
-                    fork_failures.get(date_key, set()),
                 )
                 for receiver_name, (daily_ds, seconds) in groups_done.items():
                     date_datasets[date_key][receiver_name] = daily_ds
@@ -1594,10 +1589,8 @@ class PipelineOrchestrator:
     def _finish_forked_day(
         self,
         date_key: str,
-        processor: RinexDataProcessor,
         planned: ForkedDay,
         write: Future,
-        failed_groups: set[str],
     ) -> dict[str, tuple[xr.Dataset, float]]:
         """Record a forked day's groups and read back the written ones.
 
@@ -1619,19 +1612,15 @@ class PipelineOrchestrator:
             self._fail_receiver_days(date_key, groups, exc)
             return {}
 
-        date_obj = processor.matched_data_dirs.yyyydoy.date
-        if date_obj is None:
-            msg = f"Day {date_key} has no calendar date."
-            raise ValueError(msg)
         time_range = (
-            datetime.combine(date_obj, datetime.min.time()),
-            datetime.combine(date_obj, datetime.max.time()),
+            datetime.combine(planned.date, datetime.min.time()),
+            datetime.combine(planned.date, datetime.max.time()),
         )
         done: dict[str, tuple[xr.Dataset, float]] = {}
         for receiver_name in groups:
             result = outcome[receiver_name]
             if not result.metadata_records:
-                if receiver_name in failed_groups:
+                if result.failed_files:
                     self._logger.warning(
                         "receiver_all_tasks_failed",
                         date=date_key,

@@ -1059,6 +1059,9 @@ class GroupWriteResult:
     reader_format: str | None = None
     duration_seconds: float = 0.0
     snapshot_id: str | None = None
+    # Files of a forked write that could not be read or written: they get
+    # no log-book row, so the next run tries them again.
+    failed_files: int = 0
 
 
 # ============================================================================
@@ -3557,7 +3560,14 @@ class RinexDataProcessor:
         if not all_groups or not all_groups <= set(store.list_groups() or []):
             return None
 
-        day = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
+        date_obj = self.matched_data_dirs.yyyydoy.date
+        if date_obj is None:
+            msg = (
+                f"Day {self.matched_data_dirs.yyyydoy.to_str()} has no calendar "
+                "date, so its files have no place in the day's blocks."
+            )
+            raise ValueError(msg)
+        day = np.datetime64(date_obj, "D")
         session = store.repo.writable_session("main")
         blocks: dict[str, dict[np.datetime64, DayBlock]] = {}
         # The chunks each group has, not the settings: a group keeps the
@@ -3582,6 +3592,7 @@ class RinexDataProcessor:
 
         planned = ForkedDay(
             date_key=self.matched_data_dirs.yyyydoy.to_str(),
+            date=date_obj,
             session=session,
             tasks=[],
         )
@@ -3721,6 +3732,7 @@ class RinexDataProcessor:
             out[group].actions["overwritten"] = 0
         for r in results:
             for group, fname, error in r.failed:
+                out[group].failed_files += 1
                 log.error(
                     "file_not_written",
                     date=yyyydoy,
@@ -3760,6 +3772,7 @@ class RinexDataProcessor:
                         log.exception(
                             "file_write_failed", file=n.fname.name, group=n.group
                         )
+                        out[n.group].failed_files += 1
                         continue
                     n.deferred = None
                 kept.append(n)

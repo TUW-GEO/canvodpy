@@ -21,6 +21,7 @@ from __future__ import annotations
 import time
 from collections.abc import Hashable, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -138,6 +139,7 @@ class ForkedDay:
     """
 
     date_key: str
+    date: date
     session: Session
     tasks: list[tuple[ForkTask, ForkSession]]
 
