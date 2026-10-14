@@ -1267,8 +1267,9 @@ class MyIcechunkStore:
         time_slice : slice | None, optional
             Optional label-based time slice for filtering (passed to ``ds.sel``).
         date : str | None, optional
-            YYYYDOY string (e.g. ``"2025001"``) selecting a single calendar day.
-            Converted to a ``time_slice``; mutually exclusive with ``time_slice``.
+            YYYYDOY string (e.g. ``"2025001"``) selecting a single calendar day,
+            from 00:00 up to, not including, 00:00 of the next day. Converted
+            to a ``time_slice``; mutually exclusive with ``time_slice``.
         chunks : dict[str, Any] | None, optional
             Dask chunks for reading. If None, the chunks stored in the group.
         drop_empty : bool, default False
@@ -1286,8 +1287,13 @@ class MyIcechunkStore:
         if date is not None:
             from canvod.utils.tools.date_utils import YYYYDOY
 
-            _d = YYYYDOY.from_str(date).date
-            time_slice = slice(str(_d), str(_d + timedelta(days=1)))
+            _d = np.datetime64(YYYYDOY.from_str(date).date, "ns")
+            # Up to the last nanosecond of the day: a label slice includes its
+            # end, and the date string of the next day would be read as the
+            # whole next day.
+            time_slice = slice(
+                _d, _d + np.timedelta64(1, "D") - np.timedelta64(1, "ns")
+            )
 
         with self.readonly_session(branch) as session:
             # The stored chunks, not chunk_strategy: a group keeps the chunks
