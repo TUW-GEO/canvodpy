@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 from canvodpy.cli.app import main_app
+from canvodpy.cli.run import _discovery_callbacks
 from typer.testing import CliRunner
 
 import canvod.config.loader as loader_module
@@ -98,6 +99,26 @@ def test_run_dry_run_says_what_it_is_finding(tmp_path: Path) -> None:
     # One before and one after line per receiver.
     assert "Finding files of receiver canopy_01 in" in result.output
     assert "can take minutes on a network drive" in result.output
-    assert "Found 1 files on 1 days for receiver canopy_01" in result.output
+    assert "Found 1 file on 1 day for receiver canopy_01" in result.output
     assert "Finding files of receiver reference_01 in" in result.output
-    assert "Found 1 files on 1 days for receiver reference_01" in result.output
+    assert "Found 1 file on 1 day for receiver reference_01" in result.output
+
+
+def test_discovery_callbacks_singular_and_plural() -> None:
+    """The helper pluralizes the count words for one file or one day."""
+    lines: list[str] = []
+    on_start, on_end = _discovery_callbacks(lines.append)
+    on_start("canopy_01", Path("/data/canopy"))
+    on_end("canopy_01", 1, 1, 0.5)
+    on_end("canopy_01", 2, 1, 0.5)
+    on_end("canopy_01", 1, 3, 0.5)
+    on_end("canopy_01", 96, 120, 0.5)
+
+    assert lines[0] == (
+        "  Finding files of receiver canopy_01 in /data/canopy "
+        "(can take minutes on a network drive)..."
+    )
+    assert lines[1] == "  Found 1 file on 1 day for receiver canopy_01 (0.5 s)."
+    assert lines[2] == "  Found 2 files on 1 day for receiver canopy_01 (0.5 s)."
+    assert lines[3] == "  Found 1 file on 3 days for receiver canopy_01 (0.5 s)."
+    assert lines[4] == "  Found 96 files on 120 days for receiver canopy_01 (0.5 s)."
