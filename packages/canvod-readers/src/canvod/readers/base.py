@@ -417,8 +417,10 @@ class GNSSDataReader(BaseModel, ABC):
     def source_format(self) -> str:
         """Return the format identifier for this reader (e.g. ``"rinex3"``, ``"sbf"``).
 
-        The orchestrator writes it to the GNSS store as the ``source_format``
-        root attribute.
+        A run puts it on each file's dataset (attribute ``"Source Format"``)
+        and the GNSS store records it as its ``source_format``: the root
+        attribute and ``identity.source_format`` of the store's metadata.
+        A run refuses files of different formats in one store.
         """
 
     @property

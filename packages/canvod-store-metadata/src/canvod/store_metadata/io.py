@@ -586,7 +586,7 @@ def ensure_store_metadata(
     config: Any,
     site_name: str,
     store_type: str,
-    source_format: str,
+    source_format: str | None,
     names: Iterable[str],
     dask_workers: int | None = None,
     dask_threads_per_worker: int | None = None,
@@ -604,8 +604,10 @@ def ensure_store_metadata(
     config
         The settings of the run.
     source_format
-        The reader format (GNSS store) or VOD calculator (VOD store) a new
-        store records.
+        The format of the reader that read the data (GNSS store) or the
+        VOD calculator (VOD store) a new store records. ``None`` when it
+        is unknown: then only a store that already has its metadata is
+        accepted.
     names
         The groups the run will write.
 
@@ -617,11 +619,14 @@ def ensure_store_metadata(
     Raises
     ------
     ValueError
-        If the site is not in the settings, the store predates repository
+        If the site is not in the settings, the store is new and
+        ``source_format`` is ``None``, the store predates repository
         metadata (names the migrate command), or a name is not listed in
         the metadata (names the amend command).
     """
     from .collectors import collect_metadata
+
+    names = list(names)
 
     site_config = config.sites.sites.get(site_name)
     if site_config is None:
@@ -629,6 +634,12 @@ def ensure_store_metadata(
         raise ValueError(msg)
 
     def collect() -> StoreMetadata:
+        if source_format is None:
+            msg = (
+                f"The new {store_type} at {store_path} cannot record its "
+                f"source_format: no format is known for {', '.join(names)}."
+            )
+            raise ValueError(msg)
         return collect_metadata(
             config=config,
             site_name=site_name,
