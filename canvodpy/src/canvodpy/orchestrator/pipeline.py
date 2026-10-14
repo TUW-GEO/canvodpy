@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextvars
 import gc
 import os
 import time as _time
@@ -20,7 +21,7 @@ from datetime import datetime
 from functools import partial
 from itertools import zip_longest
 from pathlib import Path
-from typing import TypeVar
+from typing import TypeVar, cast
 
 import pint
 import structlog
@@ -68,6 +69,9 @@ from canvodpy.run_history import ActiveRun, DayResult
 # potentially-uninitialized local inside the nested _submit() closure below.
 # A module-level TypeVar is unambiguous to both type checkers and CodeQL.
 T = TypeVar("T")
+
+# A day prepared in Phase 1: its processor, file tasks and files per receiver.
+_PreparedDate = tuple[RinexDataProcessor, list[tuple], list[tuple[str, list[Path]]]]
 
 
 def _windowed_completions(  # noqa: UP047 -- see TypeVar comment above
@@ -657,7 +661,7 @@ class PipelineOrchestrator:
         date_key: str,
         receivers: dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]],
         keep_vars: list[str] | None,
-    ) -> tuple[RinexDataProcessor, list[tuple], list[tuple[str, list[Path]]]] | None:
+    ) -> _PreparedDate | None:
         """Prepare one DOY for flat loky submission (Phase 1 helper).
 
         Thread-safe: each date downloads different SP3/CLK files,
@@ -684,6 +688,19 @@ class PipelineOrchestrator:
         if not task_descriptors:
             return None
         return processor, task_descriptors, receiver_file_map
+
+    def _prepare_in_context(
+        self,
+        context: contextvars.Context,
+        date_key: str,
+        receivers: dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]],
+        keep_vars: list[str] | None,
+    ) -> _PreparedDate | None:
+        """:meth:`_prepare_single_date` in *context*, a copy of the caller's."""
+        return cast(
+            "_PreparedDate | None",
+            context.run(self._prepare_single_date, date_key, receivers, keep_vars),
+        )
 
     def _process_multi_day_batches(
         self,
@@ -761,9 +778,15 @@ class PipelineOrchestrator:
             phase1_workers = len(batch)
             batch_receivers_by_date = dict(batch)
             with ThreadPoolExecutor(max_workers=phase1_workers) as tp:
+                # Each thread runs in a copy of this context, so its log
+                # events carry the run ID like those of the main thread.
                 futures = {
                     tp.submit(
-                        self._prepare_single_date, date_key, receivers, keep_vars
+                        self._prepare_in_context,
+                        contextvars.copy_context(),
+                        date_key,
+                        receivers,
+                        keep_vars,
                     ): date_key
                     for date_key, receivers in batch
                 }

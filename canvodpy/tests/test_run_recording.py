@@ -1,12 +1,15 @@
-"""Every run records itself in the run history (#296, ADR 0018).
+"""Every run records itself in the run history (#296, #297, ADR 0018).
 
 A run from ``Site.pipeline()``, ``canvodpy run`` or a scheduler task
 records its start (settings, version, machine, label), the receiver-days
-it plans and finishes, its warnings and errors, and its end. Tests read
+it plans and finishes, the time of its stages, its warnings and errors,
+and its end. Tests read
 the run history only through its queries.
 """
 
 from __future__ import annotations
+
+import os
 
 import pytest
 import structlog
@@ -61,6 +64,18 @@ def test_site_pipeline_records_its_run(rosalia_site) -> None:
     run, receiver_days, _ = _only_run(config)
     _assert_finished_run(run, receiver_days, "python-run")
     assert {r.receiver for r in receiver_days} == set(datasets)
+
+    # Stage timings (#297): from the main process and the worker processes.
+    with _history(config) as history:
+        timings = history.stage_timings(run.run_id)
+    stages = {t.stage for t in timings}
+    assert {"finding_files", "auxiliary_data", "reading", "writing"} <= stages
+    main_stages = {t.stage for t in timings if t.pid == os.getpid()}
+    worker_stages = {t.stage for t in timings if t.pid != os.getpid()}
+    assert {"finding_files", "auxiliary_data", "writing"} <= main_stages
+    assert "reading" in worker_stages
+    assert all(t.seconds >= 0 for t in timings)
+    assert any(t.day == DAY for t in timings)
 
 
 @pytest.mark.integration

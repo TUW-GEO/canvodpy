@@ -1119,25 +1119,29 @@ class RinexDataProcessor:
                 aux_file_path = Path(self.site.site_config["gnss_site_data_root"])
 
         t1 = time.perf_counter()
-        pipeline = AuxDataPipeline.create_standard(
-            matched_dirs=self.matched_data_dirs,
-            aux_file_path=aux_file_path,
-            agency=self._agency,
-            product_type=self._product_type,
-            ftp_server=self._ftp_server,
-            user_email=user_email,
-            keep_sids=self.keep_sids,
-            aggregate_glonass_fdma=config.processing.params.aggregate_glonass_fdma,
-        )
-        t2 = time.perf_counter()
+        # Downloading (or reading the cached) orbit and clock files.
+        with stage_timer(
+            "auxiliary_data", date_key=self.matched_data_dirs.yyyydoy.to_str()
+        ):
+            pipeline = AuxDataPipeline.create_standard(
+                matched_dirs=self.matched_data_dirs,
+                aux_file_path=aux_file_path,
+                agency=self._agency,
+                product_type=self._product_type,
+                ftp_server=self._ftp_server,
+                user_email=user_email,
+                keep_sids=self.keep_sids,
+                aggregate_glonass_fdma=config.processing.params.aggregate_glonass_fdma,
+            )
+            t2 = time.perf_counter()
 
-        self._logger.info(
-            "aux_pipeline_create_standard_complete",
-            duration_seconds=round(t2 - t1, 2),
-        )
+            self._logger.info(
+                "aux_pipeline_create_standard_complete",
+                duration_seconds=round(t2 - t1, 2),
+            )
 
-        # Load all auxiliary files into memory
-        pipeline.load_all()
+            # Load all auxiliary files into memory
+            pipeline.load_all()
         t3 = time.perf_counter()
 
         self._logger.info(
@@ -3297,6 +3301,9 @@ class RinexDataProcessor:
         for name, r in written.items():
             if self._keeper_tags_enabled:
                 store.create_keeper_tag(name, yyyydoy, str(r.snapshot_id))
+            record_stage_timing(
+                "writing", r.duration_seconds, receiver=name, date_key=yyyydoy
+            )
             self._icechunk_log.info(
                 "batch_write_complete",
                 receiver=name,

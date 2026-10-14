@@ -46,6 +46,8 @@ from typing import Any
 
 from natsort import natsorted
 
+from canvod.utils.logging import timed_stage
+
 #: Suffixes of general-purpose compression, compared in lower case.
 COMPRESSION_SUFFIXES = frozenset(
     {".gz", ".z", ".zip", ".bz2", ".xz", ".zst", ".7z", ".tgz", ".tar", ".rar"}
@@ -376,6 +378,7 @@ def scan_directory(directory: Path, recipe: Path | None = None) -> DirectoryScan
 
 
 @lru_cache(maxsize=64)
+@timed_stage("finding_files")  # inside the cache: only real scans are timed
 def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
     from canvod.preflight.convention import CanVODFilename, find_overlaps
 

@@ -1,8 +1,9 @@
-"""Log handler that records a run's warnings and errors in the run history.
+"""Log handler that records a run's stage timings and problems in the run history.
 
 Installed by :func:`~canvodpy.logging.logging_config.configure_logging` in
-the main process and in every worker process, so the problems of a run
-reach the run history (ADR 0018) wherever they happen. A record counts
+the main process and in every worker process, so the ``stage_timing``
+events (:mod:`canvod.utils.logging.stage_timer`) and the warnings and
+errors of a run reach the run history (ADR 0018) wherever they happen. A record counts
 when it has the run ID of a run the run history holds; others are left
 to the log files.
 """
@@ -10,6 +11,7 @@ to the log files.
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -19,7 +21,7 @@ from canvodpy.run_history import RunHistory
 
 
 class RunHistoryHandler(logging.Handler):
-    """Write warnings and errors of recorded runs to the run history.
+    """Write stage timings, warnings and errors of recorded runs to the run history.
 
     The run history is opened at the first record that counts. If it
     cannot be opened or written, the handler stops: the log files still
@@ -32,7 +34,8 @@ class RunHistoryHandler(logging.Handler):
     """
 
     def __init__(self, log_dir: Path) -> None:
-        super().__init__(level=logging.WARNING)
+        # stage_timing events are logged at INFO.
+        super().__init__(level=logging.INFO)
         self._log_dir = log_dir
         self._history: RunHistory | None = None
         self._known_runs: set[str] = set()
@@ -42,6 +45,9 @@ class RunHistoryHandler(logging.Handler):
         if self._broken:
             return
         event = record.msg if isinstance(record.msg, dict) else {}
+        is_timing = event.get("event") == "stage_timing"
+        if not is_timing and record.levelno < logging.WARNING:
+            return
         run_id = event.get("run_id") or get_run_id()
         if run_id is None:
             return
@@ -49,13 +55,24 @@ class RunHistoryHandler(logging.Handler):
             history = self._open()
             if not self._is_recorded(history, run_id):
                 return
-            history.record_problem(
-                run_id,
-                level=record.levelname.lower(),
-                message=_plain_message(record, event),
-                receiver=event.get("receiver"),
-                day=_day(event),
-            )
+            if is_timing:
+                history.record_stage(
+                    run_id,
+                    str(event.get("stage")),
+                    float(event.get("duration_seconds", 0.0)),
+                    str(event.get("status", "ok")),
+                    receiver=event.get("receiver") or event.get("group"),
+                    day=_day(event),
+                    pid=os.getpid(),
+                )
+            else:
+                history.record_problem(
+                    run_id,
+                    level=record.levelname.lower(),
+                    message=_plain_message(record, event),
+                    receiver=event.get("receiver"),
+                    day=_day(event),
+                )
         except Exception:
             self._broken = True
             self.handleError(record)

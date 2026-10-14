@@ -200,8 +200,22 @@ the end of the `with` block) and of the Airflow tasks `check_day` and
 - the receiver-days it plans, and for each one it finishes: `written`,
   `skipped` (every file already in the store) or `failed`, and the size
   of the data written (in memory, before compression);
+- the time of each stage, with the process that ran it (see the table
+  below);
 - its warnings and errors, in words, with their receiver and day;
 - its end: `finished`, or `failed` with the error.
+
+The stages a run records, from every `stage_timing` event of the run:
+
+| Stage | Process | One per |
+|---|---|---|
+| `finding_files` | main | receiver folder scanned |
+| `auxiliary_data` | main | day: downloading or reading the orbit and clock files |
+| `rinex.process_file` | worker | file: everything below, together |
+| `reading`, `validating`, `augmenting` | worker | file: reading it, checking its signals, adding positions and geometry |
+| `writing` | main | receiver-day: writing to the GNSS store |
+| `icechunk.write` | main | group write of a store made before day blocks |
+| `vod_calc`, `vod_store` | main | VOD analysis and day (`canvodpy run` only) |
 
 A run that has no end and whose process is gone shows as `interrupted`.
 Two runs of a site that start in the same second get one run ID each:
