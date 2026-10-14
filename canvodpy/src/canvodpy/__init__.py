@@ -62,6 +62,7 @@ from canvodpy.api import (
     preview_processing,
     process_date,
 )
+from canvodpy.demo import demo_data
 
 # Factories (for community extensions)
 from canvodpy.factories import (
@@ -192,6 +193,8 @@ __all__ = [  # noqa: RUF022
     "process_date",
     "calculate_vod",
     "preview_processing",
+    # Demo data
+    "demo_data",
     # New workflow API
     "VODWorkflow",
     # Fluent workflow API

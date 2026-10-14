@@ -120,6 +120,15 @@ _Avoid_: name mapping, pattern
 The setting that tells a run which reader reads a receiver's files.
 _Avoid_: file format (for the setting)
 
+**Test data**:
+The full set of receiver and auxiliary files the tests run on.
+_Avoid_: demo data
+
+**Demo data**:
+The small, published set of files the demo notebooks work with: part of
+one day of the test data, plus reference stores built from it.
+_Avoid_: test data, example data, sample data
+
 ## Processing and storage
 
 **Run**:

@@ -48,6 +48,31 @@ You need:
 - **An internet connection** during processing, to download the
   satellite orbits and clocks.
 
+??? tip "No data of your own yet? Use the demo data"
+
+    `canvodpy.demo_data()` downloads one day of the Rosalia site from
+    Zenodo: a receiver below the canopy and a reference receiver, on
+    2025-01-01. It downloads only the kind of data you ask for, checks each
+    archive against its md5, and keeps the files in your user cache
+    folder, so a second call needs no network.
+
+    ```python
+    from canvodpy import demo_data
+
+    root = demo_data("rinex")  # RINEX v3.04, the whole day
+    root = demo_data("sbf")  # SBF, 00:00 to 02:00
+    root = demo_data("aux")  # SP3 orbits, CLK clocks, auxiliary store
+    ```
+
+    All three return the same folder. In it, the RINEX files of the two
+    receivers are in `rinex_v3_04/01_Rosalia/01_reference` and
+    `rinex_v3_04/01_Rosalia/02_canopy`, the SBF files in
+    `sbf/01_Rosalia/01_reference` and `sbf/01_Rosalia/02_canopy`. Use
+    the site folder as `gnss_site_data_root` and the receiver folders as
+    `directory` in [step 3](#3-point-canvodpy-to-your-data). The
+    pipeline still downloads the orbits and clocks from the agencies; the
+    `"aux"` files are a copy for when that fails.
+
 ---
 
 ## 1. Install canVODpy
