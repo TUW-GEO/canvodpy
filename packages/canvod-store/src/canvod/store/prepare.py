@@ -15,7 +15,10 @@ from canvod.store.time_encoding import prepare_times
 
 
 class GroupVariablesMismatchError(Exception):
-    """An append does not carry the same variables as the store group.
+    """A write does not carry the same variables as the store group.
+
+    Raised for an append, and for a file written into the day blocks of a
+    group (:mod:`canvod.store.day_blocks`).
 
     Appending a dataset that lacks a variable of the group, or has one the
     group lacks, leaves that variable shorter than the others along the
@@ -29,7 +32,10 @@ class GroupVariablesMismatchError(Exception):
 
 
 class GroupCoordinatesMismatchError(Exception):
-    """An append does not carry the same labels as the store group.
+    """A write does not carry the same labels as the store group.
+
+    Raised for an append, and for a file written into the day blocks of a
+    group (:mod:`canvod.store.day_blocks`).
 
     The labels of every dimension but the append dimension (e.g. ``sid``)
     are stored once for the whole group. An append with other labels of the
@@ -172,9 +178,11 @@ def check_epoch_time_system(ds: xr.Dataset, store: Any, group: str) -> None:
 def check_append_variables(
     ds: xr.Dataset, store: Any, group: str, append_dim: str
 ) -> None:
-    """Refuse an append whose variables along ``append_dim`` differ from the group's.
+    """Refuse a write whose variables along ``append_dim`` differ from the group's.
 
-    A group that does not exist yet is not checked (the append creates it).
+    Checks an append, and a file written into the day blocks of a group.
+
+    A group that does not exist yet is not checked (the write creates it).
 
     Raises
     ------
@@ -207,7 +215,7 @@ def check_append_variables(
         if extra:
             parts.append(f"have {extra}, which the group lacks")
         msg = (
-            f"Cannot append to group '{group}': the new data "
+            f"Cannot write to group '{group}': the new data "
             + " and ".join(parts)
             + f" along '{append_dim}'. The variable would no longer be as long "
             "as the others, and the group could no longer be opened. Restore "
@@ -220,7 +228,9 @@ def check_append_variables(
 def check_append_coordinates(
     ds: xr.Dataset, store: Any, group: str, append_dim: str
 ) -> None:
-    """Refuse an append whose labels differ from the group's.
+    """Refuse a write whose labels differ from the group's.
+
+    Checks an append, and a file written into the day blocks of a group.
 
     Compares the coordinate of every dimension of ``ds`` but ``append_dim``
     (e.g. ``sid``) with the one stored in the group, label by label and in
@@ -258,9 +268,9 @@ def check_append_coordinates(
                 f"{len(stored)} positions (e.g. {examples})"
             )
         msg = (
-            f"Cannot append to group '{group}': the new '{dim}' coordinate "
+            f"Cannot write to group '{group}': the new '{dim}' coordinate "
             f"has {what}. The labels are stored once for the whole group, so "
-            "the append would relabel the data already in it. Restore the "
+            "the write would relabel the data already in it. Restore the "
             "settings the group was written with (e.g. "
             "processing.params.aggregate_glonass_fdma or the sid selection), "
             "or write to a new store."

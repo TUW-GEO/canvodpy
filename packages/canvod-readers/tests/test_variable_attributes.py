@@ -53,8 +53,15 @@ def test_signal_strength_is_a_measurement():
     assert metadata.CN0_METADATA["coverage_content_type"] == "physicalMeasurement"
 
 
-@pytest.mark.parametrize("name", ["Pseudorange", "Doppler"])
+@pytest.mark.parametrize("name", ["Pseudorange"])
 def test_valid_min_of_a_float_variable_is_a_float(name):
     # CF: valid_min has the type of the variable.
     assert isinstance(metadata.OBSERVABLES_METADATA[name]["valid_min"], float)
     assert isinstance(metadata.SNR_METADATA["valid_min"], float)
+
+
+def test_doppler_has_no_lower_bound() -> None:
+    """RINEX 3.04 gives no range for Doppler, so canvodpy declares none."""
+    attrs = metadata.OBSERVABLES_METADATA["Doppler"]
+    assert "valid_min" not in attrs
+    assert "valid_range" not in attrs

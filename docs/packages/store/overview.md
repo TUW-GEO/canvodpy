@@ -203,7 +203,10 @@ ds_range = site.gnss_store.read_group(
 ```
 
 `read_group()` returns an `xarray.Dataset` that reads its data only when a
-value is needed. For more about reading, chunks, and earlier states of a
+value is needed, its epochs in time order. `date="2025001"` selects that
+day only: from 00:00 up to, not including, 00:00 of the next day. A
+`time_slice` includes both of its ends, and an end written as a date
+(`"2025-01-15"`) means the whole of that day. For more about reading, chunks, and earlier states of a
 store, see [Versioning with Icechunk](icechunk.md).
 
 To open a store by its path, use `open_gnss_store()` or

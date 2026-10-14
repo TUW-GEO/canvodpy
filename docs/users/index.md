@@ -363,6 +363,11 @@ Files that are already in the store are skipped.
 By default, canVODpy uses all but two of the machine's CPU cores. To set
 limits, see [Parallel processing](../guides/parallel-processing.md).
 
+To follow a long run while it's in progress, add `--dashboard`. It opens the
+performance dashboard, which shows how long each step took per day and
+receiver. The diagnostics guide explains it under
+[See where a run spends its time](../guides/diagnostics.md#see-where-a-run-spends-its-time).
+
 !!! example "Try it in a notebook"
 
     Open [Batch processing](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/20_workflow_batch_processing.py?mode=edit) in molab, the online notebook service of marimo.
@@ -409,6 +414,8 @@ canvodpy store log ExampleSite --store vod   # the history of its writes
   `canvodpy run`, and the `Site` and `Pipeline` objects in detail.
 - [Command line reference](../api/cli.md): every `canvodpy` command and
   option.
+- [Diagnostics](../guides/diagnostics.md): the log files, what to do when
+  a run fails, and the performance dashboard.
 - [Hemispheric grids](../packages/grids/overview.md): assign the VOD to
   cells of the sky.
 - [Storage](../packages/store/overview.md): the history of a store, and

@@ -33,6 +33,7 @@ exclude = [
   "^https://zenodo\\.org/account/",
   # Often times out for the CI runner (October 2026), while browsers load it.
   "^https://www\\.gnu\\.org/",
+  "^https://hal\\.science/",
   # Certificates the CI runner does not trust, although browsers do.
   "^https://www\\.softwareheritage\\.org/",
   "^https://customersupport\\.septentrio\\.com/",
