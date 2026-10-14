@@ -83,9 +83,17 @@ A new GNSS store is written as day blocks
 ([ADR 0016](../../adr/0016-day-blocks-and-forked-writes.md)). The `epoch`
 axis of a group holds one block per day, with one slot for every epoch of
 the day at the day's cadence: 17280 slots for a day at 5 s, 86400 at 1 s.
-A block is added the first time a run writes a file of that day, so the
-blocks are stored in the order the days were first written; reading a
+Blocks are stored in the order the days were first processed; reading a
 group returns its epochs in time order.
+
+A run adds the blocks of a batch of days (`days_per_batch`) in one small
+commit, after it has prepared the days and before it reads any file. Only
+days whose orbit and clock products are ready get a block; the cadence
+comes from the filenames, so the run reads no file for this. If the files of a
+day then fail, its block stays empty and the next run of that day uses
+it. A group's first write creates the group and its first blocks. If
+another run added blocks to the store in the meantime, the run reads the
+store again, uses the blocks already there, and adds the rest.
 
 - Each epoch of a file goes into its nearest slot: 00:00 of the day plus a
   multiple of the cadence. The `epoch` coordinate keeps the epoch's real
