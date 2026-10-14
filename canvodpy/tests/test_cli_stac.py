@@ -240,6 +240,27 @@ def test_run_failing_writes_no_catalog(tmp_path, monkeypatch):
     assert not (stores_root / "catalog.json").exists()
 
 
+def test_run_with_failed_days_still_writes_the_catalog_and_exits_3(
+    tmp_path, monkeypatch
+):
+    """The days a run did write are committed: catalog them (#334)."""
+    from canvodpy.cli import run as run_module
+
+    monkeypatch.setattr(run_module, "_main_impl", lambda _args: 3)
+    stores_root = tmp_path / "stores"
+    stores_root.mkdir()
+    config_dir = _config_dir(tmp_path, stores_root)
+
+    result = runner.invoke(
+        main_app,
+        ["run", "--site", testing.SITE_KEY, "--write-catalog"],
+        env={"CANVOD_CONFIG_DIR": str(config_dir)},
+    )
+
+    assert result.exit_code == 3, result.output
+    assert (stores_root / "catalog.json").exists()
+
+
 def test_run_with_a_refused_catalog_keeps_the_data_and_exits_1(tmp_path, monkeypatch):
     from canvod.store_metadata.testing import create_test_store
 

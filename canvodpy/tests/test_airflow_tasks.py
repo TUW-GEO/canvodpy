@@ -444,6 +444,7 @@ class TestProcessDay:
             "canopy_01": xr.Dataset(coords={"epoch": np.arange(3)}),
             "reference_01_canopy_01": xr.Dataset(coords={"epoch": np.arange(2)}),
         }
+        pipeline.failed_receiver_days = ()
         site = MagicMock()
         site.pipeline.return_value = pipeline
         with patch("canvodpy.api.Site", return_value=site) as site_cls:

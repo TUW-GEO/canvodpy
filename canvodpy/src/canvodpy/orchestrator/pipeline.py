@@ -1365,6 +1365,22 @@ class PipelineOrchestrator:
         for group in sorted({group for _, receivers in dates for group in receivers}):
             self.site.gnss_store.check_settings_match(group, settings)
 
+    #: Receiver-days of this run that ended "failed", as ``(receiver,
+    #: YYYYDOY)``. A class default, so an orchestrator made without
+    #: ``__init__`` (tests) has it too.
+    _failed_receiver_days: tuple[tuple[str, str], ...] = ()
+
+    @property
+    def failed_receiver_days(self) -> tuple[tuple[str, str], ...]:
+        """Receiver-days of this run that failed (#334).
+
+        ``(receiver, YYYYDOY)`` pairs, in the order they failed: every file
+        failed, the write failed, or reading the written day back failed
+        (``receiver_all_tasks_failed``, ``icechunk_write_failed``,
+        ``read_back_failed``).
+        """
+        return self._failed_receiver_days
+
     def _finish_receiver_day(
         self,
         receiver: str,
@@ -1374,6 +1390,11 @@ class PipelineOrchestrator:
         bytes_added: int | None = None,
     ) -> None:
         """Record a finished receiver-day in the run history, if recorded."""
+        if result == "failed":
+            self._failed_receiver_days = (
+                *self._failed_receiver_days,
+                (receiver, date_key),
+            )
         if self._run is not None:
             self._run.finish(receiver, date_key, result, bytes_added=bytes_added)
 

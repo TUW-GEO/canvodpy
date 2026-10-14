@@ -97,6 +97,11 @@ Most failures don't stop a run. The run logs an error event and goes on:
 These events carry the date (`date` or `date_key`) and the receiver, and
 `human/errors.log` holds their tracebacks.
 
+After `receiver_all_tasks_failed`, `icechunk_write_failed` and
+`read_back_failed`, the receiver-day counts as failed: `canvodpy run`
+names it at the end and exits with code 3, and `process_day` raises an
+error.
+
 When a store write or read fails with a file system or Icechunk error,
 for example because a network drive lost its connection, the run tries
 again up to four times, after 5, 15, 45, and 90 seconds. Each retry logs

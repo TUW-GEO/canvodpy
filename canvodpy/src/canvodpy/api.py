@@ -410,6 +410,16 @@ class Pipeline:
             threads_per_worker=threads_per_worker,
         )
 
+    @property
+    def failed_receiver_days(self) -> tuple[tuple[str, str], ...]:
+        """Receiver-days of this run that failed.
+
+        ``(receiver, YYYYDOY)`` pairs, empty while every receiver-day is
+        written or skipped. ``canvodpy run`` exits with code 3 when a run
+        has any; the log says why each one failed.
+        """
+        return self._orchestrator.failed_receiver_days
+
     def close(self) -> None:
         """End the run and release orchestrator resources.
 
