@@ -212,3 +212,64 @@ def test_opening_on_a_network_drive_is_refused(tmp_path, monkeypatch):
     with pytest.raises(NetworkDriveError, match=r"processing\.logging\.log_dir"):
         RunHistory.open(tmp_path)
     assert not run_history.run_history_path(tmp_path).exists()
+
+
+# -- the file index (#299) -----------------------------------------------------
+
+
+def _listings():
+    from canvodpy.run_history import FolderListing
+
+    return {
+        ".": FolderListing(files=(), folders=("25001", "25002"), newest_day=None),
+        "25001": FolderListing(
+            files=("FANA01INK_R_20250010000_15M_05S_AA.rnx", "notes.txt"),
+            folders=(),
+            newest_day="2025001",
+        ),
+    }
+
+
+def test_a_file_index_reads_back_as_saved(tmp_path):
+    root = tmp_path / "data" / "canopy"
+    with RunHistory.open(tmp_path) as history:
+        history.save_file_index(root, None, _listings())
+    with RunHistory.open(tmp_path) as history:
+        assert history.file_index(root, None) == _listings()
+        # Another receiver directory, or the same one with a recipe, has its own.
+        assert history.file_index(tmp_path / "data" / "reference", None) == {}
+        assert history.file_index(root, tmp_path / "recipe.yaml") == {}
+
+
+def test_saving_a_file_index_replaces_the_previous_one(tmp_path):
+    from canvodpy.run_history import FolderListing
+
+    root = tmp_path / "data"
+    with RunHistory.open(tmp_path) as history:
+        history.save_file_index(root, None, _listings())
+        only_root = {".": FolderListing(files=("a.rnx",), folders=(), newest_day=None)}
+        history.save_file_index(root, None, only_root)
+        assert history.file_index(root, None) == only_root
+
+
+def test_a_corrupt_file_index_reads_as_empty(tmp_path):
+    import sqlite3
+
+    root = tmp_path / "data"
+    with RunHistory.open(tmp_path) as history:
+        history.save_file_index(root, None, _listings())
+    with sqlite3.connect(run_history.run_history_path(tmp_path)) as db:
+        db.execute("UPDATE file_index SET files = 'not json'")
+    with RunHistory.open(tmp_path) as history:
+        assert history.file_index(root, None) == {}
+
+
+def test_a_run_history_of_schema_version_1_gets_the_file_index(tmp_path, monkeypatch):
+    with monkeypatch.context() as m:
+        m.setattr(run_history, "SCHEMA_VERSION", 1)
+        with RunHistory.open(tmp_path) as history:
+            _start(history)
+    with RunHistory.open(tmp_path) as history:
+        history.save_file_index(tmp_path, None, _listings())
+        assert history.file_index(tmp_path, None) == _listings()
+        assert len(history.runs()) == 1

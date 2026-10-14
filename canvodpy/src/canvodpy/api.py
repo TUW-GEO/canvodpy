@@ -159,6 +159,7 @@ class Site:
         label: str | None = None,
         on_discovery_start: Callable[[str, Path], None] | None = None,
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
+        rescan: bool = False,
     ) -> Pipeline:
         """Create a processing pipeline for this site.
 
@@ -199,6 +200,11 @@ class Site:
             Called with the receiver name, the number of files found, the
             number of days and the elapsed seconds when the run has found
             them.
+        rescan : bool, default False
+            List every folder of the receiver directories. Without it, a
+            run takes folders whose files are all older than 30 days from
+            the file index in the run history, so a file added to such a
+            folder is found only with ``rescan=True``.
 
         Returns
         -------
@@ -224,6 +230,7 @@ class Site:
             label=label,
             on_discovery_start=on_discovery_start,
             on_discovery_end=on_discovery_end,
+            rescan=rescan,
         )
 
     def __repr__(self) -> str:
@@ -277,6 +284,11 @@ class Pipeline:
     on_discovery_end : Callable[[str, int, int, float], None], optional
         Called with the receiver name, the number of files found, the number
         of days and the elapsed seconds when the run has found them.
+    rescan : bool, default False
+        List every folder of the receiver directories. Without it, a run
+        takes folders whose files are all older than 30 days from the file
+        index in the run history, so a file added to such a folder is found
+        only with ``rescan=True``.
 
     A pipeline that is not a dry run is a run: it records itself in the run
     history of the log folder (ADR 0018) from its creation until
@@ -318,6 +330,7 @@ class Pipeline:
         label: str | None = None,
         on_discovery_start: Callable[[str, Path], None] | None = None,
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
+        rescan: bool = False,
     ) -> None:
         # Handle both Site object and string
         if isinstance(site, str):
@@ -395,6 +408,7 @@ class Pipeline:
                 on_discovery_end=on_discovery_end,
                 config=config,
                 run=active_run,
+                rescan=rescan,
             )
         except Exception:
             self._run.__exit__(*sys.exc_info())

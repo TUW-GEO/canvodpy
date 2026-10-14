@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -151,7 +152,7 @@ DAY1_LATE = "FANA01INK_R_20250012345_15M_05S_AA.rnx"
 DAY2 = "FANA01INK_R_20250020000_15M_05S_AA.rnx"
 
 
-@pytest.mark.parametrize(
+LAYOUTS = pytest.mark.parametrize(
     "layout",
     [
         {"": [DAY1, DAY1_LATE, DAY2]},  # flat
@@ -162,6 +163,9 @@ DAY2 = "FANA01INK_R_20250020000_15M_05S_AA.rnx"
     ],
     ids=["flat", "yyddd", "yyyyddd", "nested", "misfiled"],
 )
+
+
+@LAYOUTS
 def test_day_comes_from_filename_not_folder(
     tmp_path: Path, layout: dict[str, list[str]]
 ) -> None:
@@ -502,3 +506,175 @@ def test_overlapping_files_are_an_error(tmp_path: Path, extra: str) -> None:
 def test_sbf_next_to_its_rinex_is_no_overlap(tmp_path: Path) -> None:
     _touch(tmp_path, DAY1, DAY1.replace(".rnx", ".sbf"))
     assert _names(tmp_path, "sbf") == [DAY1.replace(".rnx", ".sbf")]
+
+
+# -- the file index (#299) -----------------------------------------------------
+
+
+def _day_name(day: date) -> str:
+    return f"FANA01INK_R_{day.year:04d}{day.timetuple().tm_yday:03d}0000_15M_05S_AA.rnx"
+
+
+def _archive(root: Path) -> tuple[date, date]:
+    """A receiver directory with old day folders and one recent day folder."""
+    today = datetime.now(UTC).date()
+    old = date(2025, 1, 1)
+    for offset in range(3):
+        day = old + timedelta(days=offset)
+        _touch(root / "2025" / f"{day.timetuple().tm_yday:03d}", _day_name(day))
+    _touch(root / "recent", _day_name(today), "notes.txt")
+    _touch(root / ".hidden", _day_name(old))
+    _touch(root, "readme.txt")
+    return old, today
+
+
+def _scan(root: Path, **kwargs):
+    clear_discovery_cache()
+    return scan_directory(root, **kwargs)
+
+
+def _listed_folders(monkeypatch) -> list[Path]:
+    """Record every folder the scan lists (os.scandir)."""
+    import os
+
+    listed: list[Path] = []
+    real = os.scandir
+
+    def counting(path):
+        listed.append(Path(path))
+        return real(path)
+
+    monkeypatch.setattr(os, "scandir", counting)
+    return listed
+
+
+def test_with_a_file_index_only_recent_and_undated_folders_are_listed(
+    tmp_path: Path, monkeypatch
+) -> None:
+    _archive(tmp_path)
+    index = _scan(tmp_path).listings
+    listed = _listed_folders(monkeypatch)
+
+    scan = _scan(tmp_path, file_index=index)
+
+    # Folders without a data file (the root, the year folder) and the folder
+    # with a file of the last 30 days; the three old day folders come from
+    # the index.
+    assert sorted(listed) == sorted([tmp_path, tmp_path / "2025", tmp_path / "recent"])
+    assert scan.folders_from_index == 3
+    monkeypatch.undo()
+    assert scan.days == _scan(tmp_path).days
+
+
+def test_a_file_added_to_an_old_folder_is_found_only_with_rescan(
+    tmp_path: Path,
+) -> None:
+    old, _ = _archive(tmp_path)
+    index = _scan(tmp_path).listings
+    # A second file of the same old day.
+    added = _day_name(old).replace("0000_15M", "0015_15M")
+    _touch(tmp_path / "2025" / "001", added)
+
+    without = _scan(tmp_path, file_index=index)
+    with_rescan = _scan(tmp_path, file_index=index, rescan=True)
+
+    assert added not in [f.path.name for f in without.days["2025001"]]
+    assert added in [f.path.name for f in with_rescan.days["2025001"]]
+    assert with_rescan.days == _scan(tmp_path).days
+    assert with_rescan.folders_from_index == 0
+
+
+def test_a_new_old_folder_and_a_deleted_one_are_seen_with_an_index(
+    tmp_path: Path,
+) -> None:
+    import shutil
+
+    _archive(tmp_path)
+    index = _scan(tmp_path).listings
+    _touch(tmp_path / "2024" / "100", _day_name(date(2024, 4, 9)))
+    shutil.rmtree(tmp_path / "2025" / "002")
+
+    scan = _scan(tmp_path, file_index=index)
+
+    assert "2024100" in scan.days
+    assert "2025002" not in scan.days
+    assert scan.days == _scan(tmp_path).days
+    assert "2025/002" not in scan.listings
+
+
+@pytest.mark.parametrize("index", [{}, None], ids=["empty index", "no index"])
+def test_without_a_usable_index_every_folder_is_listed(tmp_path: Path, index) -> None:
+    _archive(tmp_path)
+
+    scan = _scan(tmp_path, file_index=index)
+
+    assert scan.folders_from_index == 0
+    assert set(scan.listings) == {
+        ".",
+        "2025",
+        "2025/001",
+        "2025/002",
+        "2025/003",
+        "recent",
+    }
+    assert scan.listings["2025/001"].newest_day == "2025001"
+    assert scan.listings["."].newest_day is None
+
+
+def test_results_with_and_without_an_index_are_identical(tmp_path: Path) -> None:
+    _archive(tmp_path)
+    _touch(tmp_path / "2025" / "001", "FANA01INK_R_20250010000_15M_05S_AA.rnx.gz")
+    _touch(tmp_path / "2025" / "002", "junk.bin")
+    index = _scan(tmp_path).listings
+
+    with_index = _scan(tmp_path, file_index=index)
+    without = _scan(tmp_path)
+
+    assert with_index.days == without.days
+    assert with_index.unrecognized == without.unrecognized
+    assert with_index.compressed == without.compressed
+    assert with_index.identity == without.identity
+    assert with_index.listings == without.listings
+
+
+@LAYOUTS
+def test_every_layout_scans_the_same_with_an_index(
+    tmp_path: Path, layout: dict[str, list[str]]
+) -> None:
+    root = tmp_path / "rx"
+    for folder, names in layout.items():
+        _touch(root / folder, *names)
+    _touch(root / ".snapshot", DAY2)
+    _touch(tmp_path / "elsewhere", DAY2)
+    (root / "link").symlink_to(tmp_path / "elsewhere")
+    index = _scan(root).listings
+
+    with_index = _scan(root, file_index=index)
+
+    assert with_index.days == _scan(root).days
+    assert sorted(with_index.days) == ["2025001", "2025002"]
+
+
+def test_the_receiver_directory_itself_is_always_listed(tmp_path: Path) -> None:
+    # All files in one folder, the newest older than 30 days.
+    _touch(tmp_path, DAY1)
+    index = _scan(tmp_path).listings
+    _touch(tmp_path, DAY2)
+
+    scan = _scan(tmp_path, file_index=index)
+
+    assert sorted(scan.days) == ["2025001", "2025002"]
+    assert scan.folders_from_index == 0
+
+
+def test_rescan_replaces_a_cached_scan(tmp_path: Path) -> None:
+    old, _ = _archive(tmp_path)
+    index = _scan(tmp_path).listings
+    scan_directory(tmp_path, file_index=index)  # cached, from the index
+    added = _day_name(old).replace("0000_15M", "0015_15M")
+    _touch(tmp_path / "2025" / "001", added)
+
+    rescanned = scan_directory(tmp_path, rescan=True)
+
+    assert added in [f.path.name for f in rescanned.days["2025001"]]
+    assert scan_directory(tmp_path) is rescanned

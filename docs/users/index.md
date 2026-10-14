@@ -326,7 +326,10 @@ example, `2025001` is January 1, 2025 and `2025032` is February 1, 2025.
     Before it reads a file, a run finds the files of every receiver in the
     site. On a network drive this can take minutes. The CLI says, for each
     receiver, which folder it is scanning, and afterwards how many files and
-    days it found, so you can see that the run is working.
+    days it found, so you can see that the run is working. The next run is
+    faster: it takes folders whose files are all older than 30 days from a
+    [file index](../packages/naming/overview.md#old-folders-come-from-the-file-index).
+    A file added to such an old folder is found only with `--rescan`.
 
     To see what a run would process without running it, add `--dry-run`.
 
