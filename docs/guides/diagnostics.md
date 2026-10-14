@@ -202,6 +202,10 @@ records:
   of the data written (in memory, before compression);
 - the time of each stage, with the process that ran it (see the table
   below);
+- every 30 seconds and once more at its end, also when it fails: the
+  CPU use and memory use of the machine (percent) and the free space of
+  the disks of the log folder and the stores
+  (`history.resource_samples(run_id)`);
 - its warnings and errors, in words, with their receiver and day;
 - its end: `finished`, or `failed` with the error.
 
@@ -278,8 +282,8 @@ while it runs. On a long run, pick a longer interval.
 The dashboard takes the site from the run ID. Events logged outside a
 run carry none; the dashboard shows them with "(no run ID)" as the site.
 
-The memory, CPU, and disk use of a run are in the `memory_stats` and
-`resource_sample` events; see
+The memory, CPU, and disk use of a run are in the run history and in
+the `memory_stats` and `resource_sample` events; see
 [Parallel processing](parallel-processing.md#memory-use).
 
 !!! example "Try it in a notebook"

@@ -46,6 +46,9 @@ FILE_NAME = "run_history.sqlite"
 # the step from the previous version to _MIGRATIONS.
 SCHEMA_VERSION = 1
 
+# Seconds between two resource samples of a run.
+SAMPLE_INTERVAL_SECONDS = 30.0
+
 # Seconds a write waits while another process writes.
 BUSY_TIMEOUT_SECONDS = 60.0
 
@@ -727,6 +730,10 @@ class ActiveRun:
         """Record the ``(receiver, day)`` pairs the run will process."""
         self._try(self.history.plan_receiver_days, self.run_id, list(receiver_days))
 
+    def record_resources(self, **sample: Any) -> None:
+        """Record one resource sample (:meth:`RunHistory.record_resources`)."""
+        self._try(self.history.record_resources, self.run_id, **sample)
+
     def finish(
         self,
         receiver: str,
@@ -769,6 +776,10 @@ def recorded_run(
 ) -> Generator[ActiveRun]:
     """Record a run of *site* from start to end in the run history of *log_dir*.
 
+    While the block runs, CPU, memory and the free disk of the log folder
+    and *disks* are sampled every :data:`SAMPLE_INTERVAL_SECONDS` and once
+    more when it ends, also when it fails.
+
     The run takes the run ID of the caller's context
     (:func:`canvod.utils.logging.get_run_id`), or a new one. Run IDs name
     the second a run starts, so a run ID the run history already holds
@@ -798,6 +809,7 @@ def recorded_run(
         If *log_dir* is on a network drive.
     """
     from canvod.utils.logging import get_run_id, new_run_id, reset_run_id, set_run_id
+    from canvodpy.orchestrator.resources import ResourceSampler
 
     base_id = get_run_id() or new_run_id(site)
     token = None
@@ -820,13 +832,22 @@ def recorded_run(
                 except sqlite3.IntegrityError:
                     run_id = f"{base_id}-{number}"
             token = set_run_id(run_id)
+            active = ActiveRun(run_id, history)
+            sampler = ResourceSampler(
+                SAMPLE_INTERVAL_SECONDS,
+                disks=facts["machine"]["disks"],
+                on_sample=active.record_resources,
+            )
+            sampler.start()
             try:
-                yield ActiveRun(run_id, history)
+                yield active
             except BaseException as error:
+                sampler.stop()
                 history.end_run(
                     run_id, "failed", error=f"{type(error).__name__}: {error}"
                 )
                 raise
+            sampler.stop()
             history.end_run(run_id, "finished")
     finally:
         if token is not None:

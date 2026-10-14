@@ -60,7 +60,6 @@ from canvod.utils.logging import (
 )
 from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
 from canvodpy.logging import emit_run_summary
-from canvodpy.orchestrator.resources import ResourceSampler
 from canvodpy.orchestrator.store_retry import call_with_store_retries
 
 log = structlog.get_logger(__name__)
@@ -435,13 +434,6 @@ def _main_impl(args: SimpleNamespace) -> int:
             site_days = 0
             site_vod = 0
 
-            # Continuous memory/CPU/disk-I/O visibility for the whole
-            # site run (perf-degradation investigation, 2026-07-14) --
-            # complements the once-per-batch MemoryMonitor snapshot with
-            # samples covering time spent outside batch boundaries too.
-            resource_sampler = ResourceSampler()
-            resource_sampler.start()
-
             try:
                 reporter.set_current_site(site_name, start, end)
                 reporter.print_header(site_name, start, end, config, args)
@@ -615,7 +607,6 @@ def _main_impl(args: SimpleNamespace) -> int:
                 )
                 raise
             finally:
-                resource_sampler.stop()
                 reset_run_stats(run_id)
                 reset_run_id(run_id_token)
 
