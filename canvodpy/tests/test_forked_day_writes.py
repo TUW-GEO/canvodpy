@@ -333,3 +333,28 @@ def test_a_failed_growth_fails_the_batch_days_and_the_run_goes_on(
         (_GROUP, _DATE_KEY, "failed"),
         (_GROUP, "2025088", "failed"),
     ]
+
+
+def test_a_group_keeps_its_chunks_when_the_settings_change(store, files) -> None:  # noqa: F811
+    # The group was created with chunks of 90 epochs; the settings now say
+    # 180. Tasks own the chunks the group has, so no file is left to the
+    # writer thread.
+    store.chunk_strategy = {**store.chunk_strategy, "epoch": 90}
+    _Processor(store)._write_day_blocks(
+        _inputs(_GROUP, [(Path(_name(0)), files[_name(0)])])
+    )
+    store.chunk_strategy = {**store.chunk_strategy, "epoch": 180}
+    before = _commits(store)
+    proc = _Processor(store)
+    planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
+    assert planned is not None
+    results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
+    assert not [n for r in results for n in r.files if n.deferred is not None]
+
+    proc._commit_forked_day(planned, results)
+
+    # Three 30-epoch files per 90-epoch chunk.
+    assert len(planned.tasks) == _FILES_PER_DAY // 3
+    assert _commits(store) == before + 1
+    stored = store.read_group(_GROUP, drop_empty=True)
+    np.testing.assert_array_equal(stored["S1C"].values, _day(files)["S1C"].values)

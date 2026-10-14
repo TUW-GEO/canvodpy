@@ -69,6 +69,7 @@ from canvod.store.day_blocks import (
     add_day_block,
     day_blocks,
     span_chunks,
+    stored_epoch_chunk,
     write_file_region,
 )
 from canvod.store.prepare import prepare_write
@@ -3557,10 +3558,13 @@ class RinexDataProcessor:
             return None
 
         day = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
-        epoch_chunk = int((store.chunk_strategy or {}).get("epoch", 180))
         session = store.repo.writable_session("main")
         blocks: dict[str, dict[np.datetime64, DayBlock]] = {}
+        # The chunks each group has, not the settings: a group keeps the
+        # chunks it was created with.
+        epoch_chunks: dict[str, int] = {}
         for group in all_groups:
+            epoch_chunks[group] = stored_epoch_chunk(session.store, group)
             group_blocks = day_blocks(session.store, group)
             if day not in group_blocks:
                 return None
@@ -3587,7 +3591,11 @@ class RinexDataProcessor:
                 (
                     desc,
                     self._file_chunks(
-                        Path(desc[0]), names[Path(desc[0])], groups, blocks, epoch_chunk
+                        Path(desc[0]),
+                        names[Path(desc[0])],
+                        groups,
+                        blocks,
+                        epoch_chunks,
                     ),
                 )
                 for desc in descs
@@ -3633,7 +3641,7 @@ class RinexDataProcessor:
         canonical: str,
         groups: Sequence[str],
         blocks: Mapping[str, Mapping[np.datetime64, DayBlock]],
-        epoch_chunk: int,
+        epoch_chunks: Mapping[str, int],
     ) -> set[tuple[str, int]]:
         """The ``(group, chunk)`` pairs a file's name puts it into.
 
@@ -3662,7 +3670,7 @@ class RinexDataProcessor:
             day_end = (block.day + np.timedelta64(1, "D")).astype(
                 "M8[ns]"
             ) - np.timedelta64(1, "ns")
-            span = span_chunks(block, start, min(last, day_end), epoch_chunk)
+            span = span_chunks(block, start, min(last, day_end), epoch_chunks[group])
             chunks |= {(group, chunk) for chunk in span}
         return chunks
 

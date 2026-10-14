@@ -155,6 +155,26 @@ def _epoch_array(zgroup: zarr.Group, group: str) -> zarr.Array:
     return epoch
 
 
+def stored_epoch_chunk(store: Any, group: str) -> int:
+    """The epochs per chunk of ``group``, as it was created.
+
+    A group keeps the chunks it was created with; the settings may say
+    otherwise by now, so whatever numbers chunks of an existing group
+    takes them from here.
+
+    Raises
+    ------
+    LayoutError
+        If the group does not exist or does not store its epochs in
+        ``TIME_UNITS``.
+    """
+    zgroup = _open_group(store, group)
+    if zgroup is None:
+        msg = f"Group '{group}' does not exist, so it has no epoch chunks."
+        raise LayoutError(msg)
+    return int(_epoch_array(zgroup, group).chunks[0])
+
+
 def _epochs_ns(zgroup: zarr.Group, group: str) -> np.ndarray:
     """The group's epoch coordinate as nanoseconds since 1970."""
     return np.asarray(_epoch_array(zgroup, group)[...], dtype=np.int64)
@@ -257,8 +277,10 @@ def add_day_block(
     """Give ``day`` a block in ``group``, or return the block it has.
 
     Creates the group from the variables and labels of ``template`` (a file
-    of the day) if it does not exist yet; without a template the group must
-    exist. A new block is added at the end of
+    of the day) if it does not exist yet, with chunks of ``epoch_chunk``
+    epochs; without a template the group must exist. An existing group
+    keeps the chunks it was created with (:func:`stored_epoch_chunk`), and
+    the cadence must fit those. A new block is added at the end of
     the epoch axis; its slots hold their grid times and missing values. A day
     that has a block keeps it, so files written again land in the same
     slots, and a block grown for a day that failed later is reused.
@@ -273,9 +295,13 @@ def add_day_block(
         If ``group`` exists but is not made of day blocks, or does not exist
         and no ``template`` is given.
     """
-    step = cadence_ns(cadence_s, epoch_chunk)
     day = np.datetime64(day, "D")
-    if _open_group(session.store, group) is None:
+    existing = _open_group(session.store, group)
+    if existing is not None:
+        _require_day_blocks(existing, group)
+        epoch_chunk = int(_epoch_array(existing, group).chunks[0])
+    step = cadence_ns(cadence_s, epoch_chunk)
+    if existing is None:
         if template is None:
             msg = (
                 f"Group '{group}' does not exist yet, so {day} cannot get a "
@@ -441,8 +467,7 @@ def _check_chunks(
     chunks: Collection[int],
 ) -> None:
     """Refuse regions that reach beyond the epoch chunks a fork may write."""
-    zgroup = zarr.open_group(session.store, mode="r", path=group)
-    epoch_chunk = int(_epoch_array(zgroup, group).chunks[0])
+    epoch_chunk = stored_epoch_chunk(session.store, group)
     allowed = set(chunks)
     for block, _, slots in regions:
         # A region covers every slot from the file's first to its last one.

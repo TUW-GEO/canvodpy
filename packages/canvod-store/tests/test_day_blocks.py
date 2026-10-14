@@ -15,6 +15,7 @@ from canvod.store.day_blocks import (
     add_day_block,
     day_blocks,
     load_group,
+    stored_epoch_chunk,
     write_file_region,
 )
 from canvod.store.prepare import (
@@ -262,3 +263,25 @@ def test_a_file_with_other_sids_is_refused_as_a_write(session):
 
     with pytest.raises(GroupCoordinatesMismatchError, match="the write would"):
         write_file_region(session, GROUP, other)
+
+
+def test_an_existing_group_keeps_its_epoch_chunk(session):
+    # Created with chunks of 90 epochs; the settings now say 180. A day at
+    # 960 s has 90 slots: whole chunks of 90, not of 180.
+    first = _file(DAY_1, 0, 10, 30)
+    add_day_block(session, GROUP, DAY_1, 30, template=first, epoch_chunk=90)
+
+    block = add_day_block(session, GROUP, DAY_2, 960, template=None, epoch_chunk=180)
+
+    assert block.slots == 90
+    assert stored_epoch_chunk(session.store, GROUP) == 90
+
+
+def test_a_cadence_off_the_stored_chunks_is_refused(session):
+    # Created with chunks of 180 epochs; the settings now say 90. 90 slots
+    # would end a day inside a chunk.
+    first = _file(DAY_1, 0, 10, 30)
+    add_day_block(session, GROUP, DAY_1, 30, template=first, epoch_chunk=180)
+
+    with pytest.raises(CadenceError):
+        add_day_block(session, GROUP, DAY_2, 960, template=None, epoch_chunk=90)
