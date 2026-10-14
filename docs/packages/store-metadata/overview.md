@@ -170,6 +170,9 @@ breaks one. The error names the field, the value, and the rule.
 | `publisher.license_uri`, `publisher.url`, `creator.website` | A URL starting with `http://` or `https://`, kept as written | |
 
 The source format, the timestamps and the email address have no rule.
+The source format of a GNSS store is the `source_format` of the reader that
+read its files (`rinex3`, `rinex3_stripped`, `rinex2`, `sbf` or `nmea`), the
+same value as the store's `source_format` root attribute.
 
 The description of the site's stores, the site description, and the
 location come from the site:

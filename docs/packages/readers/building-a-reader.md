@@ -95,8 +95,12 @@ class MyFormatReader(GNSSDataReader):
         return "my_format"
 ```
 
-`source_format` names the format; the GNSS store records it. The built-in
-readers return `rinex3`, `rinex3_stripped`, `rinex2`, `sbf` and `nmea`.
+`source_format` names the format. A run puts it on each file's dataset as
+the `Source Format` attribute, and the GNSS store records it as its
+`source_format` (root attribute and `identity.source_format` of the store's
+metadata). A run refuses files of different formats in one store. The
+built-in readers return `rinex3`, `rinex3_stripped`, `rinex2`, `sbf` and
+`nmea`.
 
 The base class does not freeze readers. `frozen=True` stops anyone from
 changing `fpath` or another field after construction; the RINEX readers use
@@ -246,7 +250,7 @@ class MyFormatReader(GNSSDataReader):
                 builder.set_value(ei, sig, "SNR", obs.snr)
         return builder.build(
             keep_data_vars=keep_data_vars,
-            extra_attrs={"Source Format": "My Custom Format"},
+            extra_attrs={"Format Version": "1.0"},
         )
 ```
 
@@ -267,7 +271,8 @@ class MyFormatReader(GNSSDataReader):
 3. fills every value you did not set with NaN for floating-point variables
    and `-1` for integer ones;
 4. adds the metadata of the coordinates and of the variables it knows;
-5. adds the global attributes of `_build_attrs()` and `extra_attrs`;
+5. adds the global attributes of `_build_attrs()` and `extra_attrs` (a run
+   sets `Source Format` itself, from `source_format`);
 6. calls `validate_dataset()`.
 
 It knows these variables:
@@ -581,7 +586,7 @@ class GnsdReader(GNSSDataReader):
                 sig = builder.add_signal(sv=obs.sv, band=obs.band, code=obs.code)
                 builder.set_value(ei, sig, "SNR", obs.snr)
         return builder.build(
-            keep_data_vars=keep_data_vars, extra_attrs={"Source Format": "GNSD 1.0"}
+            keep_data_vars=keep_data_vars, extra_attrs={"Format Version": "1.0"}
         )
 
     @cached_property
