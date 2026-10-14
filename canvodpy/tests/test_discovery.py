@@ -398,12 +398,14 @@ def test_scan_reports_unrecognized_files(tmp_path: Path) -> None:
 def test_directory_scan_results_are_pinned(tmp_path: Path) -> None:
     """Pin a directory scan, so a faster equivalent is safe to use.
 
+    The files of a day come back in time order, also when they lie in
+    several folders, matching the order in which the processor writes them.
     The folders ``9``, ``10`` and ``100`` hold files of one day (2025001):
     their physical-path natural order (``9`` < ``10`` < ``100``) differs from
-    the canonical-name time order (00:00 -> 01:00 -> 23:00), so a cheaper
-    sort key must not change the order this test records. The branch is
-    otherwise hit with two file types, a compressed file, an unrecognized
-    file and a single receiver identity.
+    the time order (00:00 -> 01:00 -> 23:00), so the order recorded here is
+    the time order, not the folder order. The branch is otherwise hit with
+    two file types, a compressed file, an unrecognized file and a single
+    receiver identity.
     """
     _touch(tmp_path / "9", "FANA01INK_R_20250012300_15M_05S_AA.rnx")
     _touch(tmp_path / "10", "FANA01INK_R_20250010000_15M_05S_AA.rnx")
@@ -419,9 +421,9 @@ def test_directory_scan_results_are_pinned(tmp_path: Path) -> None:
     assert scan.identity == "FANA01INK"
     assert set(scan.days) == {"2025001", "2025002"}
     assert [f.path.name for f in scan.days["2025001"]] == [
-        "FANA01INK_R_20250012300_15M_05S_AA.rnx",
-        "FANA01INK_R_20250010000_15M_05S_AA.rnx",
-        "FANA01INK_R_20250010100_15M_05S_AA.rnx",
+        "FANA01INK_R_20250010000_15M_05S_AA.rnx",  # 00:00
+        "FANA01INK_R_20250010100_15M_05S_AA.rnx",  # 01:00
+        "FANA01INK_R_20250012300_15M_05S_AA.rnx",  # 23:00
     ]
     assert [f.path.name for f in scan.days["2025002"]] == [
         "FANA01INK_R_20250020000_15M_05S_AA.sbf"

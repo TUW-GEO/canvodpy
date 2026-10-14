@@ -360,7 +360,9 @@ class DirectoryScan:
     Attributes
     ----------
     days : dict[str, tuple[DiscoveredFile, ...]]
-        Day (``YYYYDOY``) to the files starting on it, naturally sorted.
+        Day (``YYYYDOY``) to the files starting on it, each day's files in
+        time order (by canonical name), so the order matches the order in
+        which the processor writes them.
     identity : str | None
         Receiver identity of the files (e.g. ``ROSA01TUW``), ``None`` if
         there are none.
@@ -471,7 +473,7 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
         by_day[f"{parsed.year:04d}{parsed.doy:03d}"].append(f)
     return DirectoryScan(
         days={
-            day: tuple(natsorted(files, key=lambda d: str(d.path)))
+            day: tuple(sorted(files, key=lambda d: d.canonical_name))
             for day, files in by_day.items()
         },
         identity=identities[0] if identities else None,
@@ -537,7 +539,8 @@ def discover_files(
     Returns
     -------
     list[DiscoveredFile]
-        Naturally sorted by physical path.
+        The files of ``day`` that the run reads, in time order (by canonical
+        name), matching the order in which the processor writes them.
     """
     index = _scan_directory(Path(day.directory), day.recipe).days
     return _of_format(index.get(day.yyyydoy, ()), reader_format, day.recipe)
