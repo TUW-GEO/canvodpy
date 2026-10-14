@@ -1316,10 +1316,12 @@ class MyIcechunkStore:
         drop_empty: bool = False,
     ) -> xr.Dataset:
         """
-        Read data from a group with automatic deduplication.
+        Read a group with one entry per epoch: the one written last.
 
-        This method calls read_group() then removes duplicates using metadata table
-        intelligence when available, falling back to simple epoch deduplication.
+        A group written with the ``unsafe_append`` strategy can hold an epoch
+        more than once, when a file was appended again. Appends go to the
+        end of the group, so the last entry of an epoch is the one written
+        last.
 
         Parameters
         ----------
@@ -1328,7 +1330,7 @@ class MyIcechunkStore:
         branch : str, default "main"
             Repository branch.
         keep : str, default "last"
-            Deduplication strategy for duplicate epochs.
+            Which entry of a duplicate epoch to keep; only ``"last"``.
         time_slice : slice | None, optional
             Optional time slice for filtering.
         chunks : dict[str, Any] | None, optional
@@ -1339,15 +1341,17 @@ class MyIcechunkStore:
         Returns
         -------
         xr.Dataset
-            Dataset with duplicates removed (latest data only).
+            Dataset with every epoch once.
+
+        Raises
+        ------
+        ValueError
+            If ``keep`` is not ``"last"``.
         """
 
-        if keep not in ["last"]:
+        if keep != "last":
             raise ValueError("Currently only 'last' is supported for keep parameter.")
 
-        self._logger.info(f"Reading group '{group_name}' with deduplication")
-
-        # First, read the raw data
         ds = self.read_group(
             group_name,
             branch=branch,
@@ -1355,60 +1359,12 @@ class MyIcechunkStore:
             chunks=chunks,
             drop_empty=drop_empty,
         )
-
-        # Then deduplicate using metadata table intelligence
-        with self.readonly_session(branch) as session:
-            try:
-                zmeta = zarr.open_group(session.store, mode="r")[
-                    f"{group_name}/metadata/table"
-                ]
-
-                # Load metadata and get latest entries for each time range
-                data = {col: zmeta[col][:] for col in zmeta.array_keys()}
-                df = pl.DataFrame(data)
-
-                # Ensure datetime dtypes
-                df = df.with_columns(
-                    [
-                        pl.col("start").cast(pl.Datetime("ns")),
-                        pl.col("end").cast(pl.Datetime("ns")),
-                    ]
-                )
-
-                # Get latest entry for each unique (start, end) combination
-                latest_entries = df.sort("written_at").unique(
-                    subset=["start", "end"], keep=keep
-                )
-
-                if latest_entries.height > 0:
-                    # Create time masks for latest data only
-                    time_masks = []
-                    for row in latest_entries.iter_rows(named=True):
-                        start_time = np.datetime64(row["start"], "ns")
-                        end_time = np.datetime64(row["end"], "ns")
-                        mask = (ds.epoch >= start_time) & (ds.epoch <= end_time)
-                        time_masks.append(mask)
-
-                    # Combine all masks with OR logic
-                    if time_masks:
-                        combined_mask = time_masks[0]
-                        for mask in time_masks[1:]:
-                            combined_mask = combined_mask | mask
-                        ds = ds.isel(epoch=combined_mask)
-
-                        self._logger.info(
-                            "Deduplicated using metadata table: kept "
-                            f"{len(latest_entries)} time ranges"
-                        )
-
-            except Exception as e:
-                # Fall back to simple deduplication
-                self._logger.warning(
-                    f"Metadata-based deduplication failed, using simple approach: {e}"
-                )
-                ds = ds.drop_duplicates("epoch", keep="last")
-                self._logger.info("Applied simple epoch deduplication (keep='last')")
-
+        n_read = ds.sizes["epoch"]
+        ds = ds.drop_duplicates("epoch", keep="last")
+        self._logger.info(
+            f"Read group '{group_name}' without duplicate epochs: dropped "
+            f"{n_read - ds.sizes['epoch']} of {n_read} entries"
+        )
         return ds
 
     def _cleanse_dataset_attrs(self, dataset: xr.Dataset) -> xr.Dataset:
