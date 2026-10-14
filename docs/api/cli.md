@@ -43,6 +43,10 @@ $ canvodpy [OPTIONS] COMMAND [ARGS]...
 
 Process GNSS observations into Icechunk stores and compute VOD.
 
+Exits with 0 when every receiver-day is written or skipped, 3 when the
+run finished but a receiver-day failed (the log says why), and 1 when
+the run stopped.
+
 **Usage**:
 
 ```console

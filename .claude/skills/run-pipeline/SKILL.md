@@ -51,6 +51,9 @@ runs, for example the repetitions of a benchmark. See
 - The run ends with a summary; files it did not process are listed
   (`files_not_processed`; compressed ones apart,
   `compressed_files_not_processed`). Report them to the user.
+- Exit code 3: the run finished, but receiver-days failed; it names them
+  at the end, and the error log says why (`docs/guides/diagnostics.md`).
+  Report them to the user.
 - `just store-info <site>` and `just store-log <site>` show what the
   store holds and its history.
 - With `--write-catalog`, the run writes the STAC catalog of the data

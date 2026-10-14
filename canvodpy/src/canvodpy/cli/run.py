@@ -27,6 +27,12 @@ Usage
     # http://<host>:<port>; its own marimo startup output is redirected to
     # <log_dir>/machine/dashboard.log so it doesn't clutter run's progress)
     uv run canvodpy run --site ExampleSite --dashboard --dashboard-host 0.0.0.0
+
+Exit codes
+----------
+    0  every receiver-day was written or skipped
+    1  the run stopped: an error in the settings, or a crash
+    3  the run finished, but at least one receiver-day failed
 """
 
 from __future__ import annotations
@@ -303,6 +309,20 @@ def _compute_vod_for_day(
     return results
 
 
+#: Exit code of a run that finished with failed receiver-days (#334). 2 is taken: typer exits with 2 on a usage error.
+EXIT_DAYS_FAILED = 3
+
+
+def _report_failed_days(failed: list[tuple[str, str, str]]) -> None:
+    """Name the failed receiver-days of a run, on stderr."""
+    noun = "receiver-day" if len(failed) == 1 else "receiver-days"
+    days = ", ".join(" ".join(day) for day in failed)
+    print(
+        f"{len(failed)} {noun} failed: {days}. The log says why (human/errors.log).",
+        file=sys.stderr,
+    )
+
+
 def _discovery_callbacks(
     emit: Callable[[str], None],
 ) -> tuple[Callable[[str, Path], None], Callable[[str, int, int, float], None]]:
@@ -415,6 +435,7 @@ def _main_impl(args: SimpleNamespace) -> int:
 
     total_days = 0
     total_vod = 0
+    failed_days: list[tuple[str, str, str]] = []
     t_total = time.perf_counter()
 
     from canvodpy.orchestrator.resources import PipelineRunLock
@@ -590,6 +611,10 @@ def _main_impl(args: SimpleNamespace) -> int:
                         last_good_date_key = date_key
                         stage = "pipeline_process"
 
+                failed_days.extend(
+                    (site_name, receiver, day)
+                    for receiver, day in pipeline.failed_receiver_days
+                )
                 emit_run_summary(site=site_name, days=site_days, vod_results=site_vod)
             except Exception:
                 # See module docstring / logging/run_context.py: this runs
@@ -616,6 +641,9 @@ def _main_impl(args: SimpleNamespace) -> int:
         dt_total = time.perf_counter() - t_total
         reporter.on_done(total_days, total_vod, dt_total)
 
+    if failed_days:
+        _report_failed_days(failed_days)
+        return EXIT_DAYS_FAILED
     return 0
 
 
@@ -763,7 +791,12 @@ def run(
         ),
     ] = None,
 ) -> None:
-    """Process GNSS observations into Icechunk stores and compute VOD."""
+    """Process GNSS observations into Icechunk stores and compute VOD.
+
+    Exits with 0 when every receiver-day is written or skipped, 3 when the
+    run finished but a receiver-day failed (the log says why), and 1 when
+    the run stopped.
+    """
     args = SimpleNamespace(
         site=site,
         start=start,
@@ -810,8 +843,11 @@ def run(
         # what to change.
         print(f"Error: {e}", file=sys.stderr)
         code = 1
-    if code == 0 and write_catalog and not dry_run:
-        code = _write_catalog(config)
+    if code in (0, EXIT_DAYS_FAILED) and write_catalog and not dry_run:
+        # The days that were written are committed: catalog them. A failed
+        # catalog (1) wins over failed days (3).
+        catalog_code = _write_catalog(config)
+        code = catalog_code or code
     raise typer.Exit(code=code)
 
 
