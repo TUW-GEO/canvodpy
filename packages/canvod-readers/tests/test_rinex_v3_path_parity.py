@@ -30,6 +30,7 @@ import pytest
 import xarray as xr
 
 from canvod.readers.gnss_specs.exceptions import InvalidEpochError
+from canvod.readers.gnss_specs.metadata import INTEGER_FILL_VALUE
 from canvod.readers.rinex.v3_04 import (
     Rnxv3Obs,
     UnvalidatedParserWarning,
@@ -400,3 +401,76 @@ def test_kept_variables_have_the_values_of_the_full_read(keep_data_vars):
     for ds in (full, subset):
         ds.attrs.pop("Created", None)
     xr.testing.assert_identical(subset, full[keep_data_vars])
+
+
+# RINEX 3.04 Table A3 (rinex304.pdf, PDF p.67, printed A13): a missing
+# observation is written as 0.0 or blanks. Fields of G18 in the first epoch of V304_FILE, in header order.
+_G18_FIELD = {"C1C": 1, "L1C": 2, "D1C": 3, "S1C": 4}
+
+
+def _with_g18_fields(tmp_path: Path, fields: dict[str, str]) -> Path:
+    """Copy V304_FILE with G18's fields of the first epoch replaced.
+
+    Each replacement is the 16-character field: F14.3 value, LLI, SSI.
+    """
+    lines = V304_FILE.read_text().splitlines(keepends=True)
+    i = next(n for n, line in enumerate(lines) if line.startswith("G18"))
+    line = lines[i].rstrip("\n").ljust(3 + 16 * 5)
+    for obs, field in fields.items():
+        start = 3 + 16 * _G18_FIELD[obs]
+        line = line[:start] + field + line[start + 16 :]
+    lines[i] = line + "\n"
+    out = tmp_path / V304_FILE.name
+    out.write_text("".join(lines))
+    return out
+
+
+def _first_g18_l1c(fpath: Path, parser: str) -> xr.Dataset:
+    obs = Rnxv3Obs(fpath=fpath, completeness_mode="off")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UnvalidatedParserWarning)
+        ds = obs._create_dataset(None, parser)
+    return ds.sel(sid="G18|L1|C").isel(epoch=0)
+
+
+@needs_v304
+@pytest.mark.parametrize("parser", ["validated", "unvalidated_fast"])
+@pytest.mark.parametrize(
+    ("obs", "var"),
+    [
+        ("C1C", "Pseudorange"),
+        ("L1C", "Phase"),
+        ("D1C", "Doppler"),
+        ("S1C", "SNR"),
+    ],
+)
+@pytest.mark.parametrize("field", [f"{0.0:14.3f}  ", " " * 16])
+def test_zero_or_blank_observation_is_missing(tmp_path, parser, obs, var, field):
+    fpath = _with_g18_fields(tmp_path, {obs: field})
+    assert np.isnan(_first_g18_l1c(fpath, parser)[var].item())
+
+
+@needs_v304
+@pytest.mark.parametrize("parser", ["validated", "unvalidated_fast"])
+def test_flags_of_a_missing_phase_are_not_kept(tmp_path, parser):
+    """A 0.0 phase is missing with its LLI and SSI; the code's SSI is used."""
+    fpath = _with_g18_fields(
+        tmp_path,
+        {"C1C": f"{22588547.385:14.3f} 6", "L1C": f"{0.0:14.3f}17"},
+    )
+    ds = _first_g18_l1c(fpath, parser)
+    assert ds["LLI"].item() == INTEGER_FILL_VALUE
+    assert ds["SSI"].item() == 6
+
+
+@needs_v304
+@pytest.mark.parametrize("parser", ["validated", "unvalidated_fast"])
+def test_flags_of_a_missing_code_are_not_kept(tmp_path, parser):
+    """A 0.0 code and phase leave no SSI behind."""
+    fpath = _with_g18_fields(
+        tmp_path,
+        {"C1C": f"{0.0:14.3f} 6", "L1C": f"{0.0:14.3f}17"},
+    )
+    ds = _first_g18_l1c(fpath, parser)
+    assert ds["LLI"].item() == INTEGER_FILL_VALUE
+    assert ds["SSI"].item() == INTEGER_FILL_VALUE
