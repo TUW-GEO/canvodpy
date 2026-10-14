@@ -40,3 +40,31 @@ def test_other_errors_propagate_at_once(exc):
     with pytest.raises(type(exc)):
         store_retry.call_with_store_retries(fn, logger=structlog.get_logger())
     assert fn.calls == 1
+
+
+_CONFLICTS = [
+    icechunk.ConflictError("parent snapshot"),
+    icechunk.RebaseFailedError("snapshot", []),
+]
+
+
+@pytest.mark.parametrize("exc", _CONFLICTS)
+def test_a_conflict_is_retried_once_without_waiting(exc, monkeypatch):
+    # Another commit moved the branch. Each call opens a new session, so one
+    # more try starts from the new commit; there is nothing to wait for.
+    sleeps = []
+    monkeypatch.setattr(store_retry._time, "sleep", sleeps.append)
+    fn = _Failing(exc, 1)
+    assert (
+        store_retry.call_with_store_retries(fn, logger=structlog.get_logger()) == "ok"
+    )
+    assert fn.calls == 2
+    assert sleeps == []
+
+
+@pytest.mark.parametrize("exc", _CONFLICTS)
+def test_a_second_conflict_propagates(exc):
+    fn = _Failing(exc, 2)
+    with pytest.raises(icechunk.ConflictError):
+        store_retry.call_with_store_retries(fn, logger=structlog.get_logger())
+    assert fn.calls == 2

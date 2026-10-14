@@ -103,6 +103,11 @@ again up to four times, after 5, 15, 45, and 90 seconds. Each retry logs
 a `store_op_retry` warning. Only when the last try fails does the run
 log the error.
 
+A conflict, when another commit changed the store first, is not a lost
+connection: the run tries once more at once, on the new state of the
+store, and logs a `store_conflict_retry` warning. A second conflict is
+logged as an error.
+
 Other errors stop the run:
 
 - **`run_crashed`**: `canvodpy run` logs this event when an error ends
