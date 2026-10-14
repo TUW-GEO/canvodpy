@@ -51,9 +51,9 @@ You need:
 ??? tip "No data of your own yet? Use the demo data"
 
     `canvodpy.demo_data()` downloads one day of the Rosalia site from
-    Zenodo: a receiver below the canopy and a reference receiver, on
+    Hugging Face: a receiver below the canopy and a reference receiver, on
     2025-01-01. It downloads only the kind of data you ask for, checks each
-    archive against its md5, and keeps the files in your user cache
+    archive against its sha256, and keeps the files in your user cache
     folder, so a second call needs no network.
 
     ```python
