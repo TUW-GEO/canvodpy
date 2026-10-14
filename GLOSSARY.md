@@ -83,6 +83,18 @@ _Avoid_: day file, batch
 
 ## Files
 
+**Raw archive**:
+Where a site's receiver files are kept before canvodpy reads them; the
+source every store is rebuilt from. Its files may have been prepared on
+the way (compressed, renamed, reduced to some observables), but are not
+yet read by canvodpy.
+_Avoid_: input folder, data share
+
+**Completeness**:
+The share of the files a receiver-day should have, by its cadence and
+file length, that are in the raw archive.
+_Avoid_: coverage, availability
+
 **canVOD file name**:
 The file name convention that states a file's receiver identity, start
 time, length, sampling and type, e.g.
@@ -127,8 +139,8 @@ them.
 _Avoid_: filtering, cleaning
 
 **Store**:
-An Icechunk repository holding one site's GNSS data or VOD; a GNSS store
-or a VOD store.
+An Icechunk repository holding one kind of a site's data: a GNSS store, a
+VOD store, or a store of an extension (geodesy, rollup, statistics).
 _Avoid_: repo, database
 
 **GNSS store**:
@@ -137,6 +149,28 @@ _Avoid_: RINEX store, observation store
 
 **VOD store**:
 A site's versioned store of the VOD of all its VOD analyses.
+
+**Derived store**:
+A store computed from other stores (VOD, geodesy, rollup, statistics); it
+can be rebuilt from them.
+_Avoid_: secondary store, product store
+
+**Geodesy store**:
+A site's versioned store of the geodetic products computed from its GNSS
+data (reflector height, multipath).
+
+**Rollup store**:
+A site's store of VOD summed per hemisphere cell and time bin, from which
+the aggregate over any time window is computed quickly.
+_Avoid_: cube, rolled store, summary store
+
+**Rollup level**:
+The length of a rollup store's time bins (hour, day, week).
+
+**Statistics store**:
+A site's store of running statistics per hemisphere cell and signal,
+updated with each new day without reading the history again.
+_Avoid_: accumulator store
 
 **Group**:
 One receiver's data (in the GNSS store) or one VOD analysis's results
