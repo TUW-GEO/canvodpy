@@ -153,6 +153,8 @@ class Site:
         nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
+        on_discovery_start: Callable[[str, Path], None] | None = None,
+        on_discovery_end: Callable[[str, int, int, float], None] | None = None,
     ) -> Pipeline:
         """Create a processing pipeline for this site.
 
@@ -183,6 +185,13 @@ class Site:
             one day finishes writing to Icechunk. Lets a caller drive its own
             progress display (e.g. the CLI's per-site/receiver rows) without
             this class owning any display itself.
+        on_discovery_start : Callable[[str, Path], None], optional
+            Called with the receiver name and its data folder when the run
+            starts finding that receiver's files.
+        on_discovery_end : Callable[[str, int, int, float], None], optional
+            Called with the receiver name, the number of files found, the
+            number of days and the elapsed seconds when the run has found
+            them.
 
         Returns
         -------
@@ -205,6 +214,8 @@ class Site:
             days_per_batch=days_per_batch,
             threads_per_worker=threads_per_worker,
             on_group_written=on_group_written,
+            on_discovery_start=on_discovery_start,
+            on_discovery_end=on_discovery_end,
         )
 
     def __repr__(self) -> str:
@@ -250,6 +261,12 @@ class Pipeline:
         Called with the receiver-group name each time a group's data for one
         day finishes writing to Icechunk. Lets a caller drive its own
         progress display without this class owning any display itself.
+    on_discovery_start : Callable[[str, Path], None], optional
+        Called with the receiver name and its data folder when the run starts
+        finding that receiver's files.
+    on_discovery_end : Callable[[str, int, int, float], None], optional
+        Called with the receiver name, the number of files found, the number
+        of days and the elapsed seconds when the run has found them.
 
     Examples
     --------
@@ -283,6 +300,8 @@ class Pipeline:
         nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
+        on_discovery_start: Callable[[str, Path], None] | None = None,
+        on_discovery_end: Callable[[str, int, int, float], None] | None = None,
     ) -> None:
         # Handle both Site object and string
         if isinstance(site, str):
@@ -341,6 +360,8 @@ class Pipeline:
             days_per_batch=days_per_batch,
             threads_per_worker=threads_per_worker,
             on_group_written=on_group_written,
+            on_discovery_start=on_discovery_start,
+            on_discovery_end=on_discovery_end,
             config=config,
         )
 
