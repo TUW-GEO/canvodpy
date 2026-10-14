@@ -55,7 +55,7 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "coverage_content_type": "physicalMeasurement",
         "units": "meters",
         # canvodpy's own bound: RINEX 3.04 gives no range. Table A3 (PDF
-        # p.65, printed A13) writes a missing observation as 0.0 or blank.
+        # p.67, printed A13) writes a missing observation as 0.0 or blank.
         "valid_min": 0.0,
         "description": (
             "The pseudorange is the raw distance measurement between the GNSS "
@@ -120,8 +120,8 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
             "marker for a blank field, not a RINEX value."
         ),
         "references": (
-            f"{_RINEX304}, Table A3, loss of lock indicator, PDF p.65 "
-            "(printed A13); bit 1: sect. 5.4, PDF p.28 (printed 24)."
+            f"{_RINEX304}, Table A3, loss of lock indicator, PDF p.67 "
+            "(printed A13); bit 1: sect. 5.4, PDF p.29 (printed 24)."
         ),
         "_FillValue": INTEGER_FILL_VALUE,
     },
@@ -138,8 +138,8 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
             "canvodpy's marker for a blank field, not a RINEX value."
         ),
         "references": (
-            f"{_RINEX304}, Table A3, signal strength indicator, PDF p.66 "
-            "(printed A14); mapping from dBHz: sect. 5.7, Table 12, PDF p.29 "
+            f"{_RINEX304}, Table A3, signal strength indicator, PDF p.68 "
+            "(printed A14); mapping from dBHz: sect. 5.7, Table 12, PDF p.30 "
             "(printed 25)."
         ),
         "_FillValue": INTEGER_FILL_VALUE,
@@ -162,8 +162,8 @@ CN0_METADATA: Final[dict[str, Any]] = {
         "with the header record SIGNAL STRENGTH UNIT DBHZ (sect. 5.7)."
     ),
     "references": (
-        f"{_RINEX304}, sect. 5.7, PDF p.29 (printed 25); SIGNAL STRENGTH UNIT: "
-        "Table A2, PDF p.62."
+        f"{_RINEX304}, sect. 5.7, PDF p.30 (printed 25); SIGNAL STRENGTH UNIT: "
+        "Table A2, PDF p.63 (printed A9)."
     ),
     "_FillValue": np.nan,
 }
@@ -181,8 +181,8 @@ SNR_METADATA: Final[dict[str, Any]] = {
         "is not declared and dB is assumed."
     ),
     "references": (
-        f"{_RINEX304}, sect. 5.7, PDF p.29 (printed 25); SIGNAL STRENGTH UNIT: "
-        "Table A2, PDF p.62."
+        f"{_RINEX304}, sect. 5.7, PDF p.30 (printed 25); SIGNAL STRENGTH UNIT: "
+        "Table A2, PDF p.63 (printed A9)."
     ),
     "_FillValue": np.nan,
 }
