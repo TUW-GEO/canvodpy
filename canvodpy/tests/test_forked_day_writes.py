@@ -11,6 +11,7 @@ round trip, as they cross the process boundary of the worker pool.
 from __future__ import annotations
 
 import hashlib
+import multiprocessing
 import pickle
 import time
 from concurrent.futures import Future
@@ -470,3 +471,63 @@ def test_a_batch_that_breaks_waits_for_the_day_being_committed(
     with pytest.raises(RuntimeError, match="worker pool broke"):
         list(pipe._process_multi_day_batches([(_DATE_KEY, {})], None))
     assert committed == [_DATE_KEY]
+
+
+def _write_day_in_process(store_path: str, barrier, outcomes) -> None:
+    """One run's forked write of the day, in a process of its own.
+
+    Plans and writes the forks, waits until the other run did too, then
+    commits; puts ``"written"`` or the lost conflict into ``outcomes``.
+    """
+    by_name = {_name(i): _dataset(i) for i in range(_FILES_PER_DAY)}
+
+    def read(file_task, groups):
+        fname = Path(file_task[0])
+        return fname, {groups[0]: by_name[fname.name]}, {}
+
+    forked_writes._read = read
+    gnss_store = MyIcechunkStore(Path(store_path))
+    proc = _Processor(gnss_store)
+    descriptors = _descriptors(range(_FILES_PER_DAY))
+    planned = proc.plan_forked_day(descriptors)
+    results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
+    barrier.wait(timeout=120)
+    try:
+        _orchestrator(gnss_store)._write_forked_day(
+            proc, planned, descriptors, results, _submit, 1
+        )
+    except icechunk.ConflictError as exc:
+        outcomes.put(f"conflict: {exc}")
+    else:
+        outcomes.put("written")
+
+
+@pytest.mark.integration
+def test_two_processes_writing_one_day_both_finish(seeded, files) -> None:
+    # Two runs on one machine write the same day of one store at the same
+    # time. The commit lock lets one commit first; the other loses the
+    # conflict, plans the day again and finds every file stored. Either it
+    # finishes or it fails loudly; no epoch is lost or doubled.
+    context = multiprocessing.get_context("spawn")
+    barrier = context.Barrier(2)
+    outcomes = context.Queue()
+    runs = [
+        context.Process(
+            target=_write_day_in_process,
+            args=(str(seeded.store_path), barrier, outcomes),
+        )
+        for _ in range(2)
+    ]
+    for run in runs:
+        run.start()
+    for run in runs:
+        run.join(timeout=300)
+
+    assert [run.exitcode for run in runs] == [0, 0]
+    results = sorted(outcomes.get(timeout=10) for _ in runs)
+    assert results[-1] == "written"
+    assert results[0] == "written" or results[0].startswith("conflict: ")
+    stored = seeded.read_group(_GROUP, drop_empty=True)
+    np.testing.assert_array_equal(stored["S1C"].values, _day(files)["S1C"].values)
+    log_book = _log_book(seeded)
+    assert log_book["rinex_hash"].n_unique() == _FILES_PER_DAY
