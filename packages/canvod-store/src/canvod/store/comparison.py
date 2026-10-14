@@ -464,7 +464,12 @@ def _compare_exact_values(
             )
         )
     elif np.issubdtype(ref_p.dtype, np.number):
-        largest = int(np.max(np.abs(ref_p[mismatches] - new_p[mismatches])))
+        # Compute in Python integers so no dtype wraps: int8 -100 vs 100 is
+        # 200 (int8 arithmetic would wrap to 56) and uint8 0 vs 7 is 7 (not
+        # 249). Booleans differ by 1.
+        largest = max(
+            abs(int(a) - int(b)) for a, b in zip(ref_p[mismatches], new_p[mismatches])
+        )
     else:
         largest = str(new_p[mismatches][0])
     result.differences.append(

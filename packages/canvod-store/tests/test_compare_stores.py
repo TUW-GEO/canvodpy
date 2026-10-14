@@ -430,7 +430,7 @@ def test_to_text_value_difference_line(tmp_path) -> None:
     ds = _gnss_ds(seed=0)
     ds["LLI"] = (
         ("epoch", "sid"),
-        np.zeros((ds.dims["epoch"], ds.dims["sid"]), dtype="int8"),
+        np.zeros((ds.sizes["epoch"], ds.sizes["sid"]), dtype="int8"),
     )
     ref = _gnss_store(tmp_path / "ref", ds)
     new_ds = ds.copy(deep=True)
@@ -448,7 +448,7 @@ def test_to_text_value_difference_line(tmp_path) -> None:
 
 def test_datetime_nat_in_both_is_equal(tmp_path) -> None:
     ds = _gnss_ds(seed=0)
-    shape = (ds.dims["epoch"], ds.dims["sid"])
+    shape = (ds.sizes["epoch"], ds.sizes["sid"])
     ds["obs_time"] = (
         ("epoch", "sid"),
         np.full(shape, np.datetime64("NaT"), dtype="datetime64[ns]"),
@@ -463,7 +463,7 @@ def test_datetime_nat_in_both_is_equal(tmp_path) -> None:
 
 def test_datetime_nat_in_one_store_only_is_reported(tmp_path) -> None:
     ds = _gnss_ds(seed=0)
-    shape = (ds.dims["epoch"], ds.dims["sid"])
+    shape = (ds.sizes["epoch"], ds.sizes["sid"])
     ds["obs_time"] = (("epoch", "sid"), np.zeros(shape, dtype="datetime64[ns]"))
     ds_nat = ds.copy(deep=True)
     ds_nat["obs_time"].values[(0, 0)] = np.datetime64("NaT")
@@ -474,3 +474,47 @@ def test_datetime_nat_in_one_store_only_is_reported(tmp_path) -> None:
 
     assert DiffKind.MISSING_VALUE in {d.kind for d in result.differences}
     assert not result.matches
+
+
+# --- Exact integer differences -----------------------------------------------
+
+
+def test_uint8_largest_difference_is_exact(tmp_path) -> None:
+    ds = _gnss_ds(seed=0)
+    shape = (ds.sizes["epoch"], ds.sizes["sid"])
+    ds["qc"] = (("epoch", "sid"), np.zeros(shape, dtype="uint8"))
+    ref = _gnss_store(tmp_path / "ref", ds)
+    new_ds = ds.copy(deep=True)
+    new_ds["qc"].values[(0, 0)] = 7
+    new = _gnss_store(tmp_path / "new", new_ds)
+
+    result = compare_stores(ref, new)
+
+    diffs = [
+        d for d in result.differences if d.variable == "qc" and d.kind == DiffKind.VALUE
+    ]
+    assert len(diffs) == 1
+    assert diffs[0].n_values == 1
+    assert diffs[0].largest_diff == 7
+
+
+def test_int8_largest_difference_does_not_wrap(tmp_path) -> None:
+    ds = _gnss_ds(seed=0)
+    shape = (ds.sizes["epoch"], ds.sizes["sid"])
+    ds["qflag"] = (("epoch", "sid"), np.zeros(shape, dtype="int8"))
+    ds["qflag"].values[(0, 0)] = -100
+    ref = _gnss_store(tmp_path / "ref", ds)
+    new_ds = ds.copy(deep=True)
+    new_ds["qflag"].values[(0, 0)] = 100
+    new = _gnss_store(tmp_path / "new", new_ds)
+
+    result = compare_stores(ref, new)
+
+    diffs = [
+        d
+        for d in result.differences
+        if d.variable == "qflag" and d.kind == DiffKind.VALUE
+    ]
+    assert len(diffs) == 1
+    assert diffs[0].n_values == 1
+    assert diffs[0].largest_diff == 200
