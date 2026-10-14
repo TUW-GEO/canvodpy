@@ -3357,6 +3357,7 @@ class RinexDataProcessor:
                     if file_hash_map[fname] not in existing_hashes
                     or self._gnss_store_strategy != "skip"
                 ]
+                blocks = None
                 if to_write:
                     cadence_s = self._day_block_cadence_s(receiver_name, to_write)
                     template = store._normalize_encodings(
@@ -3376,6 +3377,9 @@ class RinexDataProcessor:
                             template,
                             epoch_chunk=epoch_chunk,
                         )
+                    # Read once: reading them reads the group's whole epoch
+                    # axis, and writing a file keeps them as they are.
+                    blocks = day_blocks(session.store, receiver_name)
 
                 new_fnames: list[Path] = []
                 for idx, (fname, ds) in enumerate(hashed):
@@ -3395,6 +3399,7 @@ class RinexDataProcessor:
                                 store._normalize_encodings(
                                     store._cleanse_dataset_attrs(ds)
                                 ),
+                                blocks=blocks,
                             )
                         except (OSError, RuntimeError, ValueError):  # fmt: skip
                             log.exception("Failed to write %s", fname.name)
@@ -3869,12 +3874,18 @@ class RinexDataProcessor:
         blocks = day_blocks(session.store, n.group)
         day = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
         cadence_s = blocks[day].cadence_s
-        for file_day in np.unique(n.deferred.epoch.values.astype("M8[D]")):
-            if file_day not in blocks:
-                add_day_block(
-                    session, n.group, file_day, cadence_s, None, epoch_chunk=epoch_chunk
-                )
-        return write_file_region(session, n.group, n.deferred).epochs
+        missing = [
+            file_day
+            for file_day in np.unique(n.deferred.epoch.values.astype("M8[D]"))
+            if file_day not in blocks
+        ]
+        for file_day in missing:
+            add_day_block(
+                session, n.group, file_day, cadence_s, None, epoch_chunk=epoch_chunk
+            )
+        if missing:
+            blocks = day_blocks(session.store, n.group)
+        return write_file_region(session, n.group, n.deferred, blocks=blocks).epochs
 
     def _append_to_icechunk(
         self,

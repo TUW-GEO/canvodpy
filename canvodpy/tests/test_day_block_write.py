@@ -184,3 +184,40 @@ def test_without_preprocessing_the_names_set_the_cadence(proc) -> None:
     proc._config.processing.preprocessing = None
 
     assert proc._day_block_cadence_s("canopy_01", [_file("a", 0)]) == 5.0
+
+
+def _epoch_axis_reads(monkeypatch, proc, files) -> int:
+    """How often writing ``files`` reads a group's whole epoch axis."""
+    from canvod.store import day_blocks as module
+
+    reads = []
+    original = module._epochs_ns
+
+    def counting(zgroup, group):
+        reads.append(group)
+        return original(zgroup, group)
+
+    monkeypatch.setattr(module, "_epochs_ns", counting)
+    proc._write_day_blocks(_inputs("canopy_01", files))
+    return len(reads)
+
+
+def test_the_epoch_axis_is_read_once_not_per_file(store, monkeypatch) -> None:  # noqa: F811
+    # Reading the epoch axis reads every epoch chunk of the group, so a
+    # day's files share one read of their day blocks.
+    def proc():
+        p = _DayBlockProcessor(store)
+        p._config = _config()
+        return p
+
+    two = _epoch_axis_reads(
+        monkeypatch,
+        proc(),
+        [_file("a", 0, day="2025-03-28"), _file("b", 1, day="2025-03-28")],
+    )
+    five = _epoch_axis_reads(
+        monkeypatch,
+        proc(),
+        [_file(f"c{i}", i, day="2025-03-29") for i in range(5)],
+    )
+    assert five == two
