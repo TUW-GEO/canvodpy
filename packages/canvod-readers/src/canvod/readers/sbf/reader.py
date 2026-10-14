@@ -345,6 +345,7 @@ _RISE_SET_ATTRS: dict[str, object] = {
         "SatVisibility block (Block 4012), SatInfo sub-block, field RiseSet, p.400. "
         "Raw field: u1, scale 1; 0=setting, 1=rising, 255=unknown (→ stored as -1)."
     ),
+    "_FillValue": -1,
 }
 
 _BROADCAST_ANGLE_SOURCE_ATTRS: dict[str, object] = {
@@ -366,6 +367,7 @@ _BROADCAST_ANGLE_SOURCE_ATTRS: dict[str, object] = {
         "SatelliteInfo, p.400. Raw field: u1; 1=almanac, 2=ephemeris, "
         "255=unknown (→ stored as -1)."
     ),
+    "_FillValue": -1,
 }
 
 _MP_CORRECTION_ATTRS: dict[str, object] = {
@@ -716,6 +718,7 @@ _PVT_MODE_ATTRS: dict[str, object] = {
         "Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide, "
         "PVTGeodetic block (Block 4007), field Mode, p.337."
     ),
+    "_FillValue": -1,
 }
 
 _MEAN_CORR_AGE_ATTRS: dict[str, object] = {
@@ -745,7 +748,7 @@ _CPU_LOAD_ATTRS: dict[str, object] = {
     "comment": (
         "Percentage load on the receiver's main processor (0-100%). "
         "Sustained values above 80% risk data loss in the receiver. "
-        "Fill value -1 (int8) indicates not available (raw DoNotUse value 255)."
+        "Fill value -1 (int16) indicates not available (raw DoNotUse value 255)."
     ),
     "references": (
         "Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide, "
@@ -753,6 +756,7 @@ _CPU_LOAD_ATTRS: dict[str, object] = {
         "Raw field: u1, scale 1 %/LSB, Do-Not-Use 255 (→ stored as -1). "
         "Sustained load > 80% risks data loss."
     ),
+    "_FillValue": -1,
 }
 
 _TEMPERATURE_ATTRS: dict[str, object] = {
@@ -858,6 +862,7 @@ _QUAL_OVERALL_ATTRS: dict[str, object] = {
     "source": "SBF QualityInd block (Block 4082), indicator type 0",
     "comment": _QUAL_COMMENT_TAIL,
     "references": _QUAL_REFERENCE,
+    "_FillValue": -1,
 }
 _QUAL_GNSS_MAIN_ATTRS: dict[str, object] = {
     "long_name": "GNSS signal quality, main antenna",
@@ -866,6 +871,7 @@ _QUAL_GNSS_MAIN_ATTRS: dict[str, object] = {
     "source": "SBF QualityInd block (Block 4082), indicator type 1",
     "comment": _QUAL_COMMENT_TAIL,
     "references": _QUAL_REFERENCE,
+    "_FillValue": -1,
 }
 _QUAL_RF_MAIN_ATTRS: dict[str, object] = {
     "long_name": "RF power level quality, main antenna",
@@ -874,6 +880,7 @@ _QUAL_RF_MAIN_ATTRS: dict[str, object] = {
     "source": "SBF QualityInd block (Block 4082), indicator type 11",
     "comment": _QUAL_COMMENT_TAIL,
     "references": _QUAL_REFERENCE,
+    "_FillValue": -1,
 }
 _QUAL_CPU_ATTRS: dict[str, object] = {
     "long_name": "CPU headroom quality indicator",
@@ -882,6 +889,7 @@ _QUAL_CPU_ATTRS: dict[str, object] = {
     "source": "SBF QualityInd block (Block 4082), indicator type 21",
     "comment": _QUAL_COMMENT_TAIL,
     "references": _QUAL_REFERENCE,
+    "_FillValue": -1,
 }
 _QUAL_SCINT_ATTRS: dict[str, object] = {
     "long_name": "Ionospheric scintillation score",
@@ -894,6 +902,7 @@ _QUAL_SCINT_ATTRS: dict[str, object] = {
         "QualityInd block (Block 4082), field Indicators, indicator type 29, "
         "p.428."
     ),
+    "_FillValue": -1,
 }
 
 # ---------------------------------------------------------------------------
@@ -915,6 +924,7 @@ _SPOOFING_FLAG_ATTRS: dict[str, object] = {
         "Septentrio AsteRx SB3 ProBase Firmware v4.14.x Reference Guide, "
         "RFStatus block (Block 4092), field Flags bit 0."
     ),
+    "_FillValue": -1,
 }
 _NMA_FAIL_ATTRS: dict[str, object] = {
     "long_name": "Navigation message authentication failure flag",
@@ -931,6 +941,7 @@ _NMA_FAIL_ATTRS: dict[str, object] = {
         "Septentrio AsteRx SB3 ProBase Firmware v4.14.x Reference Guide, "
         "RFStatus block (Block 4092), field Flags bit 1."
     ),
+    "_FillValue": -1,
 }
 
 # ---------------------------------------------------------------------------
@@ -1966,7 +1977,8 @@ class SbfReader(GNSSDataReader):
         v_acc_arr = np.full(n_epochs, np.nan, dtype=np.float32)
         pvt_mode_arr = np.full(n_epochs, -1, dtype=np.int8)
         mean_corr_arr = np.full(n_epochs, np.nan, dtype=np.float32)
-        cpu_load_arr = np.full(n_epochs, -1, dtype=np.int8)
+        # int16: CPULoad is u1, so 128-254 would not fit in int8.
+        cpu_load_arr = np.full(n_epochs, -1, dtype=np.int16)
         temp_arr = np.full(n_epochs, np.nan, dtype=np.float32)
         rx_error_arr = np.full(n_epochs, 0, dtype=np.int32)
         # QualityInd scores (0-10; -1 = unknown / block absent)

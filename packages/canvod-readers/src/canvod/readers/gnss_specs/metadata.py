@@ -73,8 +73,7 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "long_name": "GNSS Doppler Shift",
         "coverage_content_type": "physicalMeasurement",
         "units": "Hz",
-        # canvodpy's own bound: RINEX 3.04 gives no range for Doppler.
-        "valid_min": -10_000.0,
+        # No valid_range: RINEX 3.04 gives none for Doppler.
         "description": (
             "The Doppler shift represents the rate of change in the phase of "
             "the GNSS signal due to the relative motion between the satellite "
