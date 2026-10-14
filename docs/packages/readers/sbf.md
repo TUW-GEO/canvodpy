@@ -162,7 +162,7 @@ geometry still works, since it uses `sbf_obs` in memory.
 | `v_accuracy_m` | PVTGeodetic | `m` | $2\sigma$ vertical accuracy (~95 %) |
 | `pvt_mode` | PVTGeodetic | `1` | Fix type (see flag table) |
 | `mean_corr_age_s` | PVTGeodetic | `s` | Age of differential corrections |
-| `cpu_load` | ReceiverStatus | `percent` | Receiver CPU utilisation |
+| `cpu_load` | ReceiverStatus | `percent` | Receiver CPU utilisation (-1 unknown) |
 | `temperature_c` | ReceiverStatus | `degC` | Receiver temperature |
 | `rx_error` | ReceiverStatus | `1` | Error bit-field (see bitmask table) |
 | `qual_overall` | QualityInd | `1` | Overall quality score (0-10, -1 unknown) |
@@ -172,6 +172,8 @@ geometry still works, since it uses `sbf_obs` in memory.
 | `qual_scintillation` | QualityInd | `1` | Scintillation score (firmware $\geq$ 4.15.1) |
 | `spoofing_flag` | RFStatus | `1` | 1 = signals may not be authentic |
 | `nma_fail_flag` | RFStatus | `1` | 1 = non-authentic navigation message detected (NMA) |
+
+`cpu_load` and the `qual_*` variables declare their unknown value `-1` as `_FillValue`, so tools that follow CF conventions read it as missing.
 
 **Per-signal variables** (dimensions: `epoch × sid`):
 

@@ -745,7 +745,7 @@ _CPU_LOAD_ATTRS: dict[str, object] = {
     "comment": (
         "Percentage load on the receiver's main processor (0-100%). "
         "Sustained values above 80% risk data loss in the receiver. "
-        "Fill value -1 (int8) indicates not available (raw DoNotUse value 255)."
+        "Fill value -1 (int16) indicates not available (raw DoNotUse value 255)."
     ),
     "references": (
         "Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide, "
@@ -753,6 +753,7 @@ _CPU_LOAD_ATTRS: dict[str, object] = {
         "Raw field: u1, scale 1 %/LSB, Do-Not-Use 255 (→ stored as -1). "
         "Sustained load > 80% risks data loss."
     ),
+    "_FillValue": -1,
 }
 
 _TEMPERATURE_ATTRS: dict[str, object] = {
@@ -858,6 +859,7 @@ _QUAL_OVERALL_ATTRS: dict[str, object] = {
     "source": "SBF QualityInd block (Block 4082), indicator type 0",
     "comment": _QUAL_COMMENT_TAIL,
     "references": _QUAL_REFERENCE,
+    "_FillValue": -1,
 }
 _QUAL_GNSS_MAIN_ATTRS: dict[str, object] = {
     "long_name": "GNSS signal quality, main antenna",
@@ -866,6 +868,7 @@ _QUAL_GNSS_MAIN_ATTRS: dict[str, object] = {
     "source": "SBF QualityInd block (Block 4082), indicator type 1",
     "comment": _QUAL_COMMENT_TAIL,
     "references": _QUAL_REFERENCE,
+    "_FillValue": -1,
 }
 _QUAL_RF_MAIN_ATTRS: dict[str, object] = {
     "long_name": "RF power level quality, main antenna",
@@ -874,6 +877,7 @@ _QUAL_RF_MAIN_ATTRS: dict[str, object] = {
     "source": "SBF QualityInd block (Block 4082), indicator type 11",
     "comment": _QUAL_COMMENT_TAIL,
     "references": _QUAL_REFERENCE,
+    "_FillValue": -1,
 }
 _QUAL_CPU_ATTRS: dict[str, object] = {
     "long_name": "CPU headroom quality indicator",
@@ -882,6 +886,7 @@ _QUAL_CPU_ATTRS: dict[str, object] = {
     "source": "SBF QualityInd block (Block 4082), indicator type 21",
     "comment": _QUAL_COMMENT_TAIL,
     "references": _QUAL_REFERENCE,
+    "_FillValue": -1,
 }
 _QUAL_SCINT_ATTRS: dict[str, object] = {
     "long_name": "Ionospheric scintillation score",
@@ -894,6 +899,7 @@ _QUAL_SCINT_ATTRS: dict[str, object] = {
         "QualityInd block (Block 4082), field Indicators, indicator type 29, "
         "p.428."
     ),
+    "_FillValue": -1,
 }
 
 # ---------------------------------------------------------------------------
@@ -1966,7 +1972,8 @@ class SbfReader(GNSSDataReader):
         v_acc_arr = np.full(n_epochs, np.nan, dtype=np.float32)
         pvt_mode_arr = np.full(n_epochs, -1, dtype=np.int8)
         mean_corr_arr = np.full(n_epochs, np.nan, dtype=np.float32)
-        cpu_load_arr = np.full(n_epochs, -1, dtype=np.int8)
+        # int16: CPULoad is u1, so 128-254 would not fit in int8.
+        cpu_load_arr = np.full(n_epochs, -1, dtype=np.int16)
         temp_arr = np.full(n_epochs, np.nan, dtype=np.float32)
         rx_error_arr = np.full(n_epochs, 0, dtype=np.int32)
         # QualityInd scores (0-10; -1 = unknown / block absent)
