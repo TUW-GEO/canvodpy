@@ -912,6 +912,48 @@ def worker_task_with_region_auto(
     return fork  # Return the modified fork
 
 
+def logged_day_epochs(rows: pl.DataFrame) -> tuple[int, int]:
+    """``(epochs logged, epochs expected)`` of one receiver's day.
+
+    ``rows`` are the log-book rows of the day. Each file counts once, with
+    its last row; skipped files count nothing. A file's epochs come from
+    the ``epochs`` column, or, in rows written before that column existed
+    (``-1``), from its time range and sampling interval. The day is expected
+    to hold 24 h at the finest sampling interval of its files, taken from
+    their canonical names.
+
+    Raises
+    ------
+    ValueError
+        If a row's canonical name gives no sampling interval.
+    """
+    rows = rows.filter(~pl.col("action").is_in(["skip", "skipped"]))
+    rows = rows.sort("written_at").unique(
+        subset=["canonical_name"], keep="last", maintain_order=True
+    )
+    if rows.is_empty():
+        return 0, 0
+    has_counts = "epochs" in rows.columns
+    logged = 0
+    samplings = []
+    for row in rows.iter_rows(named=True):
+        sampling = parse_sampling_interval_from_filename(row["canonical_name"])
+        if sampling is None:
+            msg = (
+                f"No sampling interval in the canonical name "
+                f"{row['canonical_name']!r} of a log-book row, so the epochs "
+                "the day should hold are unknown."
+            )
+            raise ValueError(msg)
+        samplings.append(sampling)
+        if has_counts and row["epochs"] is not None and row["epochs"] >= 0:
+            logged += int(row["epochs"])
+        else:
+            span = (row["end"] - row["start"]).total_seconds()
+            logged += round(span / sampling) + 1
+    return logged, round(24 * 3600 / min(samplings))
+
+
 # ============================================================================
 # Cross-group fork/merge batch writes
 # ============================================================================
@@ -4863,12 +4905,15 @@ class RinexDataProcessor:
     ) -> tuple[bool, dict]:
         """Check if this day should be skipped based on existing data coverage.
 
+        The epochs of the day come from the log book (see
+        :func:`logged_day_epochs`), at the sampling interval of the files.
+
         Parameters
         ----------
         receiver_types : list[str], optional
             Receiver types to check. Defaults to ['canopy', 'reference']
         completeness_threshold : float
-            Fraction of expected epochs (default 0.95 = 95%)
+            Fraction of expected epochs (default 1 = 100%)
 
         Returns
         -------
@@ -4876,17 +4921,19 @@ class RinexDataProcessor:
             (should_skip, coverage_info) where coverage_info contains details
             per receiver.
 
+        Raises
+        ------
+        ValueError
+            If the matched day has no date.
         """
         if receiver_types is None:
             receiver_types = ["canopy", "reference"]
 
-        # Expected epochs for 24h at 30s sampling
-        expected_epochs = int(24 * 3600 / 30)  # 2880
-        required_epochs = int(expected_epochs * completeness_threshold)
-
         # Get datetime objects from YYYYDOY.date
         yyyydoy_date = self.matched_data_dirs.yyyydoy.date
-        assert yyyydoy_date is not None, "yyyydoy.date must not be None"
+        if yyyydoy_date is None:
+            msg = "The matched day has no date (yyyydoy.date is None)."
+            raise ValueError(msg)
         day_start = np.datetime64(
             datetime.combine(yyyydoy_date, dt_time.min),
             "ns",
@@ -4934,8 +4981,9 @@ class RinexDataProcessor:
                 day_rows = df.filter(
                     (pl.col("start") >= day_start) & (pl.col("end") <= day_end)  # ty: ignore[invalid-argument-type]
                 )
+                total_epochs, expected_epochs = logged_day_epochs(day_rows)
 
-                if day_rows.is_empty():
+                if total_epochs == 0:
                     coverage_info[receiver_type] = {
                         "exists": False,
                         "epochs": 0,
@@ -4944,16 +4992,7 @@ class RinexDataProcessor:
                     }
                     return False, coverage_info
 
-                # Calculate total epochs
-                day_rows = day_rows.with_columns(
-                    [
-                        (
-                            (pl.col("end") - pl.col("start")).dt.total_seconds() / 30
-                        ).alias("n_epochs")
-                    ]
-                )
-
-                total_epochs = int(day_rows["n_epochs"].sum())
+                required_epochs = int(expected_epochs * completeness_threshold)
                 percent = total_epochs / expected_epochs * 100
 
                 coverage_info[receiver_type] = {
@@ -4972,7 +5011,7 @@ class RinexDataProcessor:
                     "exists": False,
                     "reason": str(e),
                     "epochs": 0,
-                    "expected": expected_epochs,
+                    "expected": None,
                     "percent": 0.0,
                 }
                 return False, coverage_info
