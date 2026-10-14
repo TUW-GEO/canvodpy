@@ -40,12 +40,12 @@ def archives(tmp_path, monkeypatch) -> Path:
         ("sbf", "sbf-canopy.zip", {CANOPY_SBF: b"sbf"}),
     ]
     local = []
-    for file_type, name, members in specs:
+    for kind, name, members in specs:
         md5 = _zip(served / name, members)
         local.append(
             DemoArchive(
                 name=name,
-                file_type=file_type,
+                kind=kind,
                 url=(served / name).as_uri(),
                 md5=md5,
                 members=(),
@@ -62,7 +62,7 @@ def test_rinex_unpacks_both_receivers_in_the_test_data_layout(archives, tmp_path
     assert (root / REFERENCE_RNX).read_bytes() == b"reference"
 
 
-def test_only_the_requested_file_type_is_downloaded(archives, tmp_path):
+def test_only_the_requested_kind_is_downloaded(archives, tmp_path):
     root = demo_data("rinex", cache_dir=tmp_path / "cache")
 
     assert not (root / CANOPY_SBF).exists()
@@ -84,7 +84,7 @@ def test_wrong_checksum_is_refused_and_nothing_is_unpacked(
 ):
     bad = DemoArchive(
         name="sbf-canopy.zip",
-        file_type="sbf",
+        kind="sbf",
         url=(archives / "sbf-canopy.zip").as_uri(),
         md5="0" * 32,
         members=(),
@@ -99,16 +99,95 @@ def test_wrong_checksum_is_refused_and_nothing_is_unpacked(
     assert not list(cache.rglob("*.zip"))
 
 
-def test_unknown_file_type_names_the_known_ones(archives, tmp_path):
+def test_unknown_kind_names_the_known_ones(archives, tmp_path):
     with pytest.raises(ValueError, match=r"'nmea'.*'rinex'.*'sbf'"):
         demo_data("nmea", cache_dir=tmp_path / "cache")  # ty: ignore[invalid-argument-type]
 
 
 def test_unpublished_archive_says_so(archives, tmp_path, monkeypatch):
     unpublished = DemoArchive(
-        name="aux.zip", file_type="aux", url=None, md5="0" * 32, members=()
+        name="aux.zip", kind="aux", url=None, md5="0" * 32, members=()
     )
     monkeypatch.setattr(demo_module, "ARCHIVES", (unpublished,))
 
     with pytest.raises(RuntimeError, match="not published yet"):
         demo_data("aux", cache_dir=tmp_path / "cache")
+
+
+@pytest.fixture
+def flaky_server(archives):
+    """Serve the archives over HTTP; the first answer of each breaks off.
+
+    Like Zenodo when it drops a connection: the next request asks for the
+    rest with a Range header and gets it.
+    """
+    import http.server
+    import threading
+
+    broken: set[str] = set()
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            data = (archives / self.path.lstrip("/")).read_bytes()
+            start = 0
+            if rng := self.headers.get("Range"):
+                start = int(rng.removeprefix("bytes=").split("-")[0])
+            body = data[start:]
+            self.send_response(206 if start else 200)
+            if start:
+                self.send_header(
+                    "Content-Range", f"bytes {start}-{len(data) - 1}/{len(data)}"
+                )
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if self.path not in broken:
+                broken.add(self.path)
+                self.wfile.write(body[: len(body) // 2])
+                return  # the connection closes before the rest
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"http://127.0.0.1:{server.server_address[1]}"
+    server.shutdown()
+
+
+def test_a_broken_download_resumes(flaky_server, tmp_path, monkeypatch):
+    monkeypatch.setattr(demo_module.time, "sleep", lambda _: None)
+    sbf = next(a for a in demo_module.ARCHIVES if a.kind == "sbf")
+    served = DemoArchive(
+        name=sbf.name,
+        kind="sbf",
+        url=f"{flaky_server}/{sbf.name}",
+        md5=sbf.md5,
+        members=(),
+    )
+    monkeypatch.setattr(demo_module, "ARCHIVES", (served,))
+
+    root = demo_data("sbf", cache_dir=tmp_path / "cache")
+
+    assert (root / CANOPY_SBF).read_bytes() == b"sbf"
+
+
+def test_a_failed_download_names_the_url_and_not_ftp(tmp_path, monkeypatch):
+    monkeypatch.setattr(demo_module.time, "sleep", lambda _: None)
+    missing = DemoArchive(
+        name="gone.zip",
+        kind="sbf",
+        url=(tmp_path / "gone.zip").as_uri(),
+        md5="0" * 32,
+        members=(),
+    )
+    monkeypatch.setattr(demo_module, "ARCHIVES", (missing,))
+
+    with pytest.raises(RuntimeError) as info:
+        demo_data("sbf", cache_dir=tmp_path / "cache")
+
+    message = str(info.value) + str(info.value.__cause__)
+    assert "gone.zip" in message
+    assert "FTP" not in message
+    assert "NASA" not in message

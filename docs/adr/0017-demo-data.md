@@ -13,7 +13,7 @@ run as a single file runs without it.
 Their input is **demo data**: a small, published subset of the test data
 (one day of RINEX 3.04 for both receivers of the Rosalia site, SBF from
 00:00 to 02:00; no NMEA until a notebook needs it). `canvodpy.demo_data()`
-downloads only the files of the type asked for (`file_type`: RINEX,
+downloads only the kind of data asked for (`kind`: RINEX,
 SBF, auxiliary files), checks each against an md5 written into
 canvodpy, unpacks it, caches it in the OS cache folder (`canvodpy` folder in it, one
 folder per data version), and returns the root of that folder, laid out
@@ -23,7 +23,7 @@ canvod-auxiliary, not a second copy of it.
 
 The demo data sits in three Zenodo records, created and versioned by
 hand by the maintainers, under their own account in the canVODpy
-community, with the same license and creators as the test data:
+community, with the same license as the test data:
 
 1. demo input data, one zip per file type and receiver (Zenodo takes
    about 100 files per record, the demo day has over 200);
