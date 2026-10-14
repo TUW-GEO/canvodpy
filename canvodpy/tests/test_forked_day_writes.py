@@ -416,6 +416,42 @@ def test_a_deferred_file_that_fails_fails_the_day(seeded, monkeypatch) -> None:
     assert _finished(pipe, planned, out) == [(_GROUP, _DATE_KEY, "failed")]
 
 
+def test_a_forked_day_whose_fork_jobs_all_fail_is_a_failed_receiver_day(
+    seeded,
+) -> None:
+    # The #334 contract on the forked path: the day ends in
+    # failed_receiver_days, which makes `canvodpy run` exit 3.
+    proc = _Processor(seeded)
+    # Without the seed's file, which would be skipped and so give a row.
+    planned = proc.plan_forked_day(_descriptors(range(1, _FILES_PER_DAY)))
+    assert planned is not None
+    pipe = _orchestrator(seeded)
+    broken: Future = Future()
+    broken.set_exception(OSError("the worker lost the data drive"))
+    results = [
+        pipe._fork_result(_DATE_KEY, _ForkJob(task, fork), broken, 1)
+        for task, fork in planned.tasks
+    ]
+
+    out = proc._commit_forked_day(planned, results)
+    _finished(pipe, planned, out)
+
+    assert pipe.failed_receiver_days == ((_GROUP, _DATE_KEY),)
+
+
+def test_a_forked_day_whose_write_raises_is_a_failed_receiver_day(seeded) -> None:
+    proc = _Processor(seeded)
+    planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
+    assert planned is not None
+    write: Future = Future()
+    write.set_exception(icechunk.IcechunkError("the store went away"))
+    pipe = _orchestrator(seeded)
+
+    pipe._finish_forked_day(_DATE_KEY, planned, write)
+
+    assert pipe.failed_receiver_days == ((_GROUP, _DATE_KEY),)
+
+
 def test_a_day_without_a_calendar_date_is_refused_when_planned(seeded) -> None:
     # Refused before any fork runs, not when the writer thread finishes it.
     proc = _Processor(seeded)
