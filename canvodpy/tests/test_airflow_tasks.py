@@ -49,6 +49,9 @@ def _site_config(tmp_path) -> MagicMock:
     )
     config = MagicMock()
     config.sites.sites = {"TestSite": site_cfg}
+    # check_day records itself in the run history of the log folder.
+    config.processing.logging.get_log_dir.return_value = tmp_path / "logs"
+    config.model_dump.return_value = {}
     return config
 
 
