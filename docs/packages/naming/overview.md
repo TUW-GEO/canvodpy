@@ -84,6 +84,35 @@ the convention are processed. A run stops before reading any data if
 3. two files cover the same time, for example a daily file next to the 15-minute files
    of the same day.
 
+### Old folders come from the file index
+
+Listing a folder on a network drive is slow: about 50 ms per day folder on
+an SMB share, so a few years of day folders take most of a minute per
+receiver. A run therefore keeps a **file index**, the names it found in
+each folder, in the [run history](../../guides/diagnostics.md#the-run-history).
+The next run lists again only
+
+- folders with a data file of the last 30 days,
+- folders without a data file (for example the receiver directory itself
+  and year folders), and
+- folders that are not in the index yet.
+
+Every other folder comes from the index, without asking the drive. So a
+**file added to a folder whose files are all older than 30 days is not found**
+unless you list every folder again:
+
+```bash
+canvodpy run --site ExampleSite --start 2025001 --end 2025365 --rescan
+```
+
+In Python, `site.pipeline(rescan=True)`. A run with `--rescan` also renews
+the index. The same applies to a file deleted, renamed or compressed in
+such a folder: a run would still try to read the old name, so run with
+`--rescan` after changing files in old folders. If the run history is
+deleted or its index can't be read, the next run lists every folder and
+writes the index again. A dry run reads the index but never writes it,
+so it shows the files a run would find.
+
 With `reader_format: auto`, the reader is detected per day: SBF and NMEA by file type, and
 RINEX 2 or 3 by the file header. A day whose files need different readers stops the
 run; set `reader_format`, or keep each format in its own directory.

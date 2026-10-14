@@ -97,6 +97,11 @@ Most failures don't stop a run. The run logs an error event and goes on:
 These events carry the date (`date` or `date_key`) and the receiver, and
 `human/errors.log` holds their tracebacks.
 
+After `receiver_all_tasks_failed`, `icechunk_write_failed` and
+`read_back_failed`, the receiver-day counts as failed: `canvodpy run`
+names it at the end and exits with code 3, and `process_day` raises an
+error.
+
 When a store write or read fails with a file system or Icechunk error,
 for example because a network drive lost its connection, the run tries
 again up to four times, after 5, 15, 45, and 90 seconds. Each retry logs
@@ -214,6 +219,10 @@ records:
 - its warnings and errors, in words, with their receiver and day;
 - its end: `finished`, or `failed` with the error.
 
+The same file holds the [file index](../packages/naming/overview.md#old-folders-come-from-the-file-index):
+the names found in each folder of every receiver directory, so the next
+run lists only the folders that can still change.
+
 The stages a run records, from every `stage_timing` event of the run:
 
 | Stage | Process | One per |
@@ -257,7 +266,10 @@ Finding the files is the first thing a run does, before it reads a file.
 On a network drive it can take minutes, so the CLI says, for each receiver,
 `Finding files of receiver <name> in <folder>...` and then
 `Found <n> files on <d> days for receiver <name> (<s> s)`, so you know it
-is working.
+is working. From the second run on, folders whose files are all older than
+30 days come from the [file index](../packages/naming/overview.md#old-folders-come-from-the-file-index)
+and the listing is much shorter; the log event `files_found` says per
+receiver how many folders were listed and how many came from the index.
 
 `canvodpy dashboard` opens a [marimo](https://marimo.io/) app that shows
 the timing events of `machine/performance*.json`:

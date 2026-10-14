@@ -116,6 +116,11 @@ A description of how a receiver's own file names translate to canVOD file
 names, for files not named by the convention.
 _Avoid_: name mapping, pattern
 
+**File index**:
+The names of the files a run found in each folder of a receiver
+directory, kept so the next run need not list old folders again.
+_Avoid_: file cache, file list
+
 **Reader format**:
 The setting that tells a run which reader reads a receiver's files.
 _Avoid_: file format (for the setting)

@@ -27,6 +27,12 @@ Usage
     # http://<host>:<port>; its own marimo startup output is redirected to
     # <log_dir>/machine/dashboard.log so it doesn't clutter run's progress)
     uv run canvodpy run --site ExampleSite --dashboard --dashboard-host 0.0.0.0
+
+Exit codes
+----------
+    0  every receiver-day was written or skipped
+    1  the run stopped: an error in the settings, or a crash
+    3  the run finished, but at least one receiver-day failed
 """
 
 from __future__ import annotations
@@ -60,6 +66,7 @@ from canvod.utils.logging import (
 )
 from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
 from canvodpy.logging import emit_run_summary
+from canvodpy.orchestrator.discovery import RECENT_DAYS
 from canvodpy.orchestrator.store_retry import call_with_store_retries
 
 log = structlog.get_logger(__name__)
@@ -302,6 +309,20 @@ def _compute_vod_for_day(
     return results
 
 
+#: Exit code of a run that finished with failed receiver-days (#334). 2 is taken: typer exits with 2 on a usage error.
+EXIT_DAYS_FAILED = 3
+
+
+def _report_failed_days(failed: list[tuple[str, str, str]]) -> None:
+    """Name the failed receiver-days of a run, on stderr."""
+    noun = "receiver-day" if len(failed) == 1 else "receiver-days"
+    days = ", ".join(" ".join(day) for day in failed)
+    print(
+        f"{len(failed)} {noun} failed: {days}. The log says why (human/errors.log).",
+        file=sys.stderr,
+    )
+
+
 def _discovery_callbacks(
     emit: Callable[[str], None],
 ) -> tuple[Callable[[str, Path], None], Callable[[str, int, int, float], None]]:
@@ -383,6 +404,7 @@ def _main_impl(args: SimpleNamespace) -> int:
                 dry_run=True,
                 on_discovery_start=on_discovery_start,
                 on_discovery_end=on_discovery_end,
+                rescan=args.rescan,
             ) as pipeline:
                 plan = pipeline.preview(start=start, end=end)
                 print(f"Dry-run plan for {site_name}:")
@@ -413,6 +435,7 @@ def _main_impl(args: SimpleNamespace) -> int:
 
     total_days = 0
     total_vod = 0
+    failed_days: list[tuple[str, str, str]] = []
     t_total = time.perf_counter()
 
     from canvodpy.orchestrator.resources import PipelineRunLock
@@ -513,6 +536,7 @@ def _main_impl(args: SimpleNamespace) -> int:
                     label=args.label,
                     on_discovery_start=on_discovery_start,
                     on_discovery_end=on_discovery_end,
+                    rescan=args.rescan,
                 ) as pipeline:
                     gen = pipeline.process_range(start=start, end=end)
                     while True:
@@ -587,6 +611,10 @@ def _main_impl(args: SimpleNamespace) -> int:
                         last_good_date_key = date_key
                         stage = "pipeline_process"
 
+                failed_days.extend(
+                    (site_name, receiver, day)
+                    for receiver, day in pipeline.failed_receiver_days
+                )
                 emit_run_summary(site=site_name, days=site_days, vod_results=site_vod)
             except Exception:
                 # See module docstring / logging/run_context.py: this runs
@@ -613,6 +641,9 @@ def _main_impl(args: SimpleNamespace) -> int:
         dt_total = time.perf_counter() - t_total
         reporter.on_done(total_days, total_vod, dt_total)
 
+    if failed_days:
+        _report_failed_days(failed_days)
+        return EXIT_DAYS_FAILED
     return 0
 
 
@@ -667,6 +698,20 @@ def run(
         typer.Option(
             "--dry-run/--no-dry-run",
             help="Preview processing plan without executing.",
+        ),
+    ] = False,
+    rescan: Annotated[
+        bool,
+        typer.Option(
+            "--rescan",
+            help=(
+                "List every folder of the receiver directories and renew the "
+                "file index (a dry run does not save it). Without it, a run "
+                f"takes folders whose files are all older than {RECENT_DAYS} "
+                "days from the file index in the run history, so a file "
+                "added to, deleted from or compressed in such a folder is "
+                "seen only with --rescan."
+            ),
         ),
     ] = False,
     workers: Annotated[
@@ -746,7 +791,12 @@ def run(
         ),
     ] = None,
 ) -> None:
-    """Process GNSS observations into Icechunk stores and compute VOD."""
+    """Process GNSS observations into Icechunk stores and compute VOD.
+
+    Exits with 0 when every receiver-day is written or skipped, 3 when the
+    run finished but a receiver-day failed (the log says why), and 1 when
+    the run stopped.
+    """
     args = SimpleNamespace(
         site=site,
         start=start,
@@ -754,6 +804,7 @@ def run(
         no_vod=no_vod,
         label=label,
         dry_run=dry_run,
+        rescan=rescan,
         workers=workers,
         days_per_batch=days_per_batch,
         config=config,
@@ -792,8 +843,11 @@ def run(
         # what to change.
         print(f"Error: {e}", file=sys.stderr)
         code = 1
-    if code == 0 and write_catalog and not dry_run:
-        code = _write_catalog(config)
+    if code in (0, EXIT_DAYS_FAILED) and write_catalog and not dry_run:
+        # The days that were written are committed: catalog them. A failed
+        # catalog (1) wins over failed days (3).
+        catalog_code = _write_catalog(config)
+        code = catalog_code or code
     raise typer.Exit(code=code)
 
 

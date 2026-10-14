@@ -244,6 +244,55 @@ run writes to it. `create_gnss_store()` and `create_vod_store()` are left
 over from development: they open a store as well, and are removed with
 the next major version.
 
+## Compare two stores
+
+`compare_stores()` compares two stores and returns a report of every
+difference, per group and variable. It works on any two stores, for
+example the reference stores of the test data and the stores a change
+produces (spec #318), or a production store before and after an
+upgrade. It only reads, through `MyIcechunkStore` (`list_groups` and
+`read_group`), and never changes how a store is written or read.
+
+Open each store by its path, then compare:
+
+```python
+from canvod.store import compare_stores, open_gnss_store
+
+reference = open_gnss_store("/data/stores/ExampleSite/rinex")
+new = open_gnss_store("/data/stores/ExampleSite-new/rinex")
+report = compare_stores(reference, new)
+
+report.matches  # True when the stores are the same
+print(report.to_text())  # a report for a person
+report.model_dump_json()  # a report for CI
+```
+
+The report lists a group present in one store and not the other, a lost
+epoch or a renamed SID, a changed integer or flag variable, a value
+present in one store and missing in the other, and a changed attribute
+from the compared list: the `units` of every variable and coordinate,
+the `time_system` of `epoch`, and the store's `source_format`. It
+ignores what changes every run: software versions, timestamps, run ids,
+paths, hashes, and the log book.
+
+Float variables are compared within one absolute tolerance per
+variable, derived from the finest resolution any format records. A
+float variable not in the table is compared exactly and is reported as
+`no tolerance set`, so a new variable is noticed.
+
+| Variable | Tolerance | Derivation |
+|---|---|---|
+| `SNR` (also 1-minute means), `Pseudorange`, `Phase`, `Doppler` | 5e-4 | half the RINEX observation resolution, format F14.3 = 0.001 (RINEX 3.04, observation record, p. 67; RINEX 2.11, observation record). SBF (0.25 dB-Hz) and NMEA GSV (1 dB-Hz) are coarser. |
+| `delta_snr` | 1e-3 | a difference of two SNR values, 2 × 5e-4 |
+| `VOD` | 2e-4 | `VOD = -(ln 10 / 10) · delta_snr · cos(theta)`; `(ln 10 / 10) × 1e-3 = 2.3e-4`, rounded down |
+| `theta`, `phi` | 1e-6 rad | `dVOD/dtheta = (ln 10 / 10) · delta_snr · sin(theta)`, at most 4.6 for `delta_snr` up to 20 dB, so 1e-6 rad moves VOD by at most 4.6e-6; above the float32 spacing at pi/2 (1.2e-7 rad) |
+
+The tolerances, with their derivation and sources, are one constant in
+the code: `FLOAT_TOLERANCES` in
+`packages/canvod-store/src/canvod/store/comparison.py` (spec #318).
+
+The JSON form carries `matches`, so a CI check can read the result.
+
 ## History
 
 Each store keeps its commits and the operations on it:

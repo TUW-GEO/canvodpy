@@ -1012,8 +1012,9 @@ def process_day(site: str, yyyydoy: str) -> dict:
     ------
     RuntimeError
         If nothing was processed for the day (e.g. no files, or the
-        auxiliary data could not be downloaded), so Airflow retries the
-        task; the log of the run gives the reason.
+        auxiliary data could not be downloaded), or a receiver-day failed
+        (#334), so Airflow retries the task; the log of the run gives the
+        reason.
     """
     from canvodpy.api import Site
 
@@ -1024,6 +1025,10 @@ def process_day(site: str, yyyydoy: str) -> dict:
         if not datasets:
             msg = f"Nothing processed for {site} {date_obj.to_str()}; see the log"
             raise RuntimeError(msg)
+    if pipeline.failed_receiver_days:
+        failed = ", ".join(f"{r} {d}" for r, d in pipeline.failed_receiver_days)
+        msg = f"Failed receiver-days of {site}: {failed}; see the log"
+        raise RuntimeError(msg)
 
     return {
         "site": site,

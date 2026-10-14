@@ -7,6 +7,10 @@ samples, its warnings and errors, and its end. The run dashboard and
 scripts (the paper benchmark) read it through the queries of
 :class:`RunHistory`. This module is the only code that touches the SQL.
 
+The same file holds the file index (#299): the names listed in each
+folder of a receiver directory, so a run lists again only the folders
+that can still change (:func:`canvodpy.orchestrator.discovery.scan_directory`).
+
 The file is ``run_history.sqlite`` in the log folder
 (``processing.logging.log_dir``). It is opened in WAL mode, so one
 process writes while any number of processes read; writes are short
@@ -44,7 +48,7 @@ FILE_NAME = "run_history.sqlite"
 
 # Version of the tables below. Raise it with every change to them and add
 # the step from the previous version to _MIGRATIONS.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 # Seconds between two resource samples of a run.
 SAMPLE_INTERVAL_SECONDS = 30.0
@@ -140,9 +144,25 @@ CREATE TABLE IF NOT EXISTS problems (
 CREATE INDEX IF NOT EXISTS problems_run ON problems (run_id);
 """
 
+# Version 2: the file index, one row per folder below a receiver directory
+# (root), per naming recipe ('' without one). files and folders are JSON
+# lists of names; newest_day is the YYYYDOY of the newest data file in the
+# folder, NULL if it holds none.
+_SCHEMA_V2 = """
+CREATE TABLE IF NOT EXISTS file_index (
+    root TEXT NOT NULL,
+    recipe TEXT NOT NULL,
+    folder TEXT NOT NULL,
+    files TEXT NOT NULL,
+    folders TEXT NOT NULL,
+    newest_day TEXT,
+    PRIMARY KEY (root, recipe, folder)
+);
+"""
+
 # Steps from each schema version to the next: _MIGRATIONS[v] takes a run
 # history from version v to v + 1. Version 0 is an empty file.
-_MIGRATIONS: dict[int, str] = {0: _SCHEMA_V1}
+_MIGRATIONS: dict[int, str] = {0: _SCHEMA_V1, 1: _SCHEMA_V2}
 
 
 class RunHistoryError(Exception):
@@ -239,6 +259,19 @@ class Problem:
     message: str
     receiver: str | None
     day: str | None
+
+
+@dataclass(frozen=True)
+class FolderListing:
+    """The names listed in one folder of a receiver directory (file index).
+
+    ``newest_day`` is the day (``YYYYDOY``) of the newest data file in the
+    folder, ``None`` if it holds no data file.
+    """
+
+    files: tuple[str, ...]
+    folders: tuple[str, ...]
+    newest_day: str | None
 
 
 def run_history_path(log_dir: Path | str) -> Path:
@@ -563,7 +596,63 @@ class RunHistory:
                 (_now(), result, error, run_id),
             )
 
+    def save_file_index(
+        self, root: Path, recipe: Path | None, listings: dict[str, FolderListing]
+    ) -> None:
+        """Replace the file index of the receiver directory *root*.
+
+        *listings* maps each folder, relative to *root* (``"."`` for
+        *root*), to its listing. A receiver directory with a naming recipe
+        has its own index per recipe file.
+        """
+        key = (str(root), str(recipe or ""))
+        with self._write() as db:
+            db.execute("DELETE FROM file_index WHERE root = ? AND recipe = ?", key)
+            db.executemany(
+                "INSERT INTO file_index (root, recipe, folder, files, folders,"
+                " newest_day) VALUES (?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        *key,
+                        folder,
+                        json.dumps(listing.files),
+                        json.dumps(listing.folders),
+                        listing.newest_day,
+                    )
+                    for folder, listing in listings.items()
+                ],
+            )
+
     # -- queries -------------------------------------------------------
+
+    def file_index(self, root: Path, recipe: Path | None) -> dict[str, FolderListing]:
+        """The file index of the receiver directory *root*, as saved.
+
+        Empty if there is none, or if it can't be read: a run then lists
+        every folder and saves the index again.
+        """
+        try:
+            rows = self._read(
+                "SELECT folder, files, folders, newest_day FROM file_index"
+                " WHERE root = ? AND recipe = ?",
+                str(root),
+                str(recipe or ""),
+            )
+            return {
+                row["folder"]: FolderListing(
+                    files=tuple(json.loads(row["files"])),
+                    folders=tuple(json.loads(row["folders"])),
+                    newest_day=row["newest_day"],
+                )
+                for row in rows
+            }
+        except sqlite3.Error, ValueError, TypeError:
+            import structlog
+
+            structlog.get_logger(__name__).warning(
+                "file_index_unreadable", root=str(root), exc_info=True
+            )
+            return {}
 
     def runs(self, *, site: str | None = None, label: str | None = None) -> list[Run]:
         """Return the runs, newest first, optionally of one site or label."""
@@ -751,6 +840,12 @@ class ActiveRun:
             result,
             bytes_added=bytes_added,
         )
+
+    def save_file_index(
+        self, root: Path, recipe: Path | None, listings: dict[str, FolderListing]
+    ) -> None:
+        """Save a receiver directory's file index (:meth:`RunHistory.save_file_index`)."""
+        self._try(self.history.save_file_index, root, recipe, listings)
 
     @staticmethod
     def _try(write: Any, *args: Any, **kwargs: Any) -> None:

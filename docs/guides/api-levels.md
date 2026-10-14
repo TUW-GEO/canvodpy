@@ -45,6 +45,7 @@ Dates are `YYYYDDD`: the year and the day of year, for example
 | `--no-vod` | Leave out `site.vod` | Write the observations to the GNSS store and compute no VOD. |
 | `--dry-run` | `pipeline.preview(start, end)` | List the days, receivers and files a run would process, without processing them. |
 | `--write-catalog` | `write_catalog(stores_root_dir)` after the run | After a successful run, write the [STAC catalog](../packages/store-metadata/overview.md#write-the-stac-catalog) of every store under the data root. Without it, a run writes no catalog. |
+| `--rescan` | `site.pipeline(rescan=True)` | List every folder of the receiver directories. Without it, folders whose files are all older than 30 days come from the [file index](../packages/naming/overview.md#old-folders-come-from-the-file-index), so a file added to such a folder is found only with `--rescan`. |
 | `--label` | `site.pipeline(label=...)` | Free-text label stored with the run in the [run history](diagnostics.md#the-run-history), for example to group the repetitions of a benchmark. |
 | `--workers` | `site.pipeline(n_workers=...)` | Number of worker processes. |
 | `--days-per-batch` | `site.pipeline(days_per_batch=...)` | Number of days the workers process together. |
@@ -65,6 +66,15 @@ os.environ["CANVOD_CONFIG_DIR"] = "/path/to/config"
 ```
 
 `canvodpy run --help` lists every option.
+
+`canvodpy run` exits with code 0 when every receiver-day is written or
+skipped, and with 1 when it stops, for example on an error in the
+settings. When it finishes but a receiver-day failed, it names the
+failed receiver-days and exits with 3;
+[What the run does when something fails](diagnostics.md#what-the-run-does-when-something-fails)
+lists the reasons. A receiver-day that is written though some of its
+files failed counts as written. In Python,
+`pipeline.failed_receiver_days` lists the failed receiver-days.
 
 !!! example "Try it in a notebook"
 
@@ -125,6 +135,7 @@ GNSS store. Use it in a `with` block, which closes it at the end.
 | `process_date(date)` | Processes one day. Returns one dataset per receiver. |
 | `process_range(start, end)` | Processes the days from `start` to `end`. Yields `(date, datasets)` for one day at a time. |
 | `preview(start=None, end=None)` | Returns the days, receivers and files a run would process. Without dates, it covers every day it finds data for. |
+| `failed_receiver_days` | The receiver-days of this pipeline that failed, as `(receiver, date)` pairs. Empty when every one is written or skipped. |
 | `close()` | Ends the pipeline. The `with` block calls it for you. The worker processes stay for reuse; see [Parallel processing](parallel-processing.md#the-worker-processes). |
 
 The datasets are [xarray](https://docs.xarray.dev/) Datasets, keyed by
@@ -239,10 +250,12 @@ To process new data every day, schedule `canvodpy run` without
 
 Cron runs with a minimal environment, so give the full path to
 `canvodpy` (`which canvodpy` prints it) and to the settings folder.
+A scheduler can check the exit code: 3 means some receiver-days failed.
 
 For [Apache Airflow](https://airflow.apache.org/), `check_day` and
 `process_day` in `canvodpy.workflows.tasks` run the code of
-`canvodpy run` for one site and day. Ready-made Airflow DAGs are an
+`canvodpy run` for one site and day. `process_day` raises an error when
+a receiver-day failed, so Airflow retries the task. Ready-made Airflow DAGs are an
 optional extension; see [Optional extensions](extensions.md).
 
 !!! example "Try it in a notebook"
