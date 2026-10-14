@@ -27,6 +27,7 @@ from canvod.readers.gnss_specs.metadata import (
     CN0_METADATA,
     COORDS_METADATA,
     DTYPES,
+    INTEGER_FILL_VALUE,
     OBSERVABLES_METADATA,
     SNR_METADATA,
     epoch_coord_attrs,
@@ -250,7 +251,7 @@ class DatasetBuilder:
         data_vars: dict[str, tuple] = {}
         for var in vars_to_build:
             dtype = DTYPES.get(var, np.dtype("float32"))
-            fill = np.nan if np.issubdtype(dtype, np.floating) else -1
+            fill = np.nan if np.issubdtype(dtype, np.floating) else INTEGER_FILL_VALUE
             arr = np.full((n_epochs, n_sids), fill, dtype=dtype)
 
             for (ei, sid_str), val in self._values[var].items():

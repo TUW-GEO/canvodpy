@@ -104,6 +104,7 @@ def test_a_new_store_has_no_validation_failures(rosalia_one_day):
     result = validate_all(read_metadata(store_path), recommended=False)
 
     assert result == {
+        "rules": [],
         "zarr_conventions": [],
         "acdd": [],
         "datacite": [],

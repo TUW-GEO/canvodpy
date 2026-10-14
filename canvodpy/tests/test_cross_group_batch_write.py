@@ -74,6 +74,7 @@ def _make_ds(
 class _FakeSite:
     def __init__(self, store: MyIcechunkStore) -> None:
         self.gnss_store = store
+        self.gnss_store_path = store.store_path
         self.site_name = "testsite"
 
 
@@ -101,6 +102,12 @@ class _TestProcessor(RinexDataProcessor):
         self._keeper_tags_enabled = False
         self._config = SimpleNamespace(sites=SimpleNamespace(sites={}))
         self._reader_name = "rinex3"
+
+    def _writes_day_blocks(self) -> bool:
+        """These tests are about stores written by appending; a new store
+        would get day blocks (``test_day_block_write.py``).
+        """
+        return False
 
     def _ensure_gnss_store_metadata(self, receivers, reader_format) -> None:
         """The ``store`` fixture has its metadata: these tests are about the
