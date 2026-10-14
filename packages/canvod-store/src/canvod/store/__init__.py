@@ -8,6 +8,13 @@ stores hemisphere grids and the analysis results computed on them.
 from importlib.metadata import version as _version
 
 from canvod.store.analysis_storage import AnalysisStorage
+from canvod.store.comparison import (
+    COMPARED_VARIABLE_ATTRIBUTES,
+    FLOAT_TOLERANCES,
+    DiffKind,
+    StoreComparison,
+    compare_stores,
+)
 from canvod.store.grid_storage import load_grid, store_grid
 from canvod.store.manager import GnssResearchSite
 from canvod.store.reader import IcechunkDataReader
@@ -24,9 +31,14 @@ __version__ = _version("canvod-store")
 
 __all__ = [
     "AnalysisStorage",
+    "COMPARED_VARIABLE_ATTRIBUTES",
+    "DiffKind",
+    "FLOAT_TOLERANCES",
     "GnssResearchSite",
     "IcechunkDataReader",
     "MyIcechunkStore",
+    "StoreComparison",
+    "compare_stores",
     "create_gnss_store",
     "create_vod_store",
     "open_gnss_store",
