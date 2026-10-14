@@ -246,6 +246,34 @@ def _receiver_identity(cfg: dict[str, Any], base_path: Path, site: str) -> str |
         return None  # reported when the receiver's files are read
 
 
+def require_filemap(recipe_receivers: list[str]) -> None:
+    """Raise ``DiscoveryError`` if canvod-filemap is needed but not installed.
+
+    ``recipe_receivers`` are the names of the receivers with a ``recipe:``;
+    they only fill the message, so a caller passes whatever holds them
+    (``check_receivers`` gets receiver dicts, the warm-up gets config objects).
+
+    Raises
+    ------
+    DiscoveryError
+        The combined message ``check_receivers`` raises today, if any receiver
+        uses a naming recipe and the optional canvod-filemap extra is not
+        installed:
+        ``Receiver(s) <names> use a naming recipe, which requires
+        canvod-filemap, but it is not installed. <install hint>``.
+    """
+    if recipe_receivers:
+        try:
+            import canvod.filemap  # noqa: F401
+        except ImportError as exc:
+            msg = (
+                f"Receiver(s) {', '.join(recipe_receivers)} use a naming recipe, "
+                f"which requires canvod-filemap, but it is not installed. "
+                f"{FILEMAP_INSTALL_HINT}"
+            )
+            raise DiscoveryError(msg) from exc
+
+
 def check_receivers(
     receivers: dict[str, dict[str, Any]], base_path: Path, site: str
 ) -> None:
@@ -276,16 +304,7 @@ def check_receivers(
         cannot be read (see :func:`receiver_days`).
     """
     recipe_receivers = [name for name, cfg in receivers.items() if cfg.get("recipe")]
-    if recipe_receivers:
-        try:
-            import canvod.filemap  # noqa: F401
-        except ImportError as exc:
-            msg = (
-                f"Receiver(s) {', '.join(recipe_receivers)} use a naming recipe, "
-                f"which requires canvod-filemap, but it is not installed. "
-                f"{FILEMAP_INSTALL_HINT}"
-            )
-            raise DiscoveryError(msg) from exc
+    require_filemap(recipe_receivers)
 
     owner: dict[str, str] = {}
     problems: list[str] = []

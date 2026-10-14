@@ -38,8 +38,6 @@ from canvod.utils.logging import get_run_id, new_run_id, reset_run_id, set_run_i
 from canvod.utils.tools import YYYYDOY, deprecated
 from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
 from canvodpy.orchestrator.discovery import (
-    FILEMAP_INSTALL_HINT,
-    DiscoveryError,
     ReceiverDay,
     check_receivers,
     clear_discovery_cache,
@@ -48,6 +46,7 @@ from canvodpy.orchestrator.discovery import (
     is_compressed,
     receiver_days,
     recipe_file,
+    require_filemap,
     unprocessed_files,
 )
 from canvodpy.orchestrator.processor import (
@@ -341,15 +340,7 @@ class PipelineOrchestrator:
         recipe_receivers = [
             name for name, cfg in site_config.receivers.items() if cfg.recipe
         ]
-        if recipe_receivers:
-            try:
-                import canvod.filemap  # noqa: F401
-            except ImportError as exc:
-                raise DiscoveryError(
-                    f"Receiver(s) {', '.join(recipe_receivers)} use a naming "
-                    f"recipe, which requires canvod-filemap, but it is not "
-                    f"installed. {FILEMAP_INSTALL_HINT}"
-                ) from exc
+        require_filemap(recipe_receivers)
         for receiver_name, cfg in site_config.receivers.items():
             reader_format = None if cfg.reader_format == "auto" else cfg.reader_format
             directory = site_config.get_base_path() / cfg.directory
