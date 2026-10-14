@@ -505,7 +505,7 @@ reader.source_format  # → "sbf"
 ```
 
 This value is written as a root-level Zarr attribute (`source_format`) on first
-ingest. The store viewer uses it to select the correct display labels and to
+ingest, and as `identity.source_format` in the store's metadata. The store viewer uses it to select the correct display labels and to
 detect whether `sbf_obs` metadata is available.
 
 ---

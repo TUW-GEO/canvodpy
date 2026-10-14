@@ -46,7 +46,7 @@ _SIDS = [f"G{i:02d}|L1|C" for i in range(1, 6)]
 def _make_ds(
     file_id: str, slot: int, n_epochs: int = 10, day: str = "2025-03-28"
 ) -> xr.Dataset:
-    """Small synthetic (epoch, sid) dataset with the required "File Hash" attr.
+    """Small synthetic (epoch, sid) dataset with the attrs a worker sets.
 
     ``slot`` offsets the epoch range so distinct files in a batch don't
     temporally overlap -- the dedup guardrail's temporal-overlap check
@@ -65,6 +65,7 @@ def _make_ds(
         coords={"epoch": ("epoch", epochs, {"time_system": "GPS"}), "sid": _SIDS},
         attrs={
             "File Hash": hashlib.sha256(file_id.encode()).hexdigest()[:16],
+            "Source Format": "rinex3",
             "canonical_name": file_id,
             "physical_path": file_id,
         },

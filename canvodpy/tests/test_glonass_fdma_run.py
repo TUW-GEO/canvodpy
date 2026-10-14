@@ -33,6 +33,7 @@ POSITION = ECEFPosition(x=4194304.0, y=1162205.0, z=4647245.0)
 
 class _FakeReader:
     file_hash = "deadbeef"
+    source_format = "rinex3_stripped"
 
     def to_ds_and_auxiliary(self, **_kwargs):
         ds = xr.Dataset(
