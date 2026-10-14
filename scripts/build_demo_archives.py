@@ -1,9 +1,9 @@
-"""Build the demo data zips for Zenodo from ``canvodpy.demo.ARCHIVES``.
+"""Build the demo data zips for Hugging Face from ``canvodpy.demo.ARCHIVES``.
 
 Each zip holds the files its ``members`` patterns match in the test data
 folder, at the same relative paths. The zips are deterministic (sorted
 members, fixed timestamps), so a rebuild from the same test data gives
-the same md5. Prints name, size and md5 of each zip; copy the md5 into
+the same sha256. Prints name, size and sha256 of each zip; copy the sha256 into
 ``ARCHIVES``.
 
 Usage: ``just demo-archives [OUT] [TEST_DATA]``.
@@ -47,9 +47,9 @@ def build(out: Path, test_data: Path) -> None:
                 info.external_attr = 0o644 << 16
                 zf.writestr(info, path.read_bytes())
         with target.open("rb") as f:
-            md5 = hashlib.file_digest(f, "md5").hexdigest()
+            sha256 = hashlib.file_digest(f, "sha256").hexdigest()
         size_mb = target.stat().st_size / 1e6
-        print(f"{archive.name}  {len(files)} files  {size_mb:.1f} MB  md5 {md5}")
+        print(f"{archive.name}  {len(files)} files  {size_mb:.1f} MB  sha256 {sha256}")
 
 
 def main() -> None:

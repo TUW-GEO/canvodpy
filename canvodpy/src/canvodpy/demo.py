@@ -1,7 +1,7 @@
 """Demo data: one day of the Rosalia site, downloaded on first use.
 
 ``demo_data()`` downloads the published archives of one kind of data,
-checks each archive's md5, unpacks it into a cache folder and returns
+checks each archive's sha256, unpacks it into a cache folder and returns
 that folder. The folder has the layout of the test data, so the demo
 notebooks and the tests find the files at the same relative paths. A
 second call finds the data in the cache and downloads nothing.
@@ -14,11 +14,12 @@ The archives (ADR 0017):
   and the auxiliary store of 2025-01-01.
 
 ``ARCHIVES`` is the single list of what each archive holds;
-``just demo-archives`` builds the zips from it. The md5 values are those
-of zips built from the test data at commit 077aa69 of
-``packages/canvod-readers/tests/test_data``. The observations are in
-Zenodo record 10.5281/zenodo.23366661, the auxiliary files in
-10.5281/zenodo.23366994.
+``just demo-archives`` builds the zips from it. The sha256 values are
+those of zips built from the test data at commit 077aa69 of
+``packages/canvod-readers/tests/test_data``, which is archived on Zenodo
+(10.5281/zenodo.19708759). The zips are in the Hugging Face dataset
+``nfb2021/canvodpy-demo-data``; the URLs name one commit of it, so the
+files can't change under a released canvodpy.
 """
 
 from __future__ import annotations
@@ -37,10 +38,16 @@ from typing import Literal
 DemoKind = Literal["rinex", "sbf", "aux"]
 
 DEMO_DATA_VERSION = "1"
-
-# Attempts per download; Zenodo sometimes drops a connection mid-file.
-DOWNLOAD_ATTEMPTS = 5
 """Folder name under the cache; raise it when the archives change."""
+
+# Attempts per download; a server can drop a connection mid-file.
+DOWNLOAD_ATTEMPTS = 5
+
+# The Hugging Face dataset at one commit; a new commit means new archives.
+_HF_FILES = (
+    "https://huggingface.co/datasets/nfb2021/canvodpy-demo-data/resolve/"
+    "96ee47a817460e2a21b815c2bf5a72618533cf9f/"
+)
 
 
 @dataclass(frozen=True)
@@ -50,13 +57,13 @@ class DemoArchive:
     Attributes
     ----------
     name : str
-        File name of the zip, also its name on Zenodo.
+        File name of the zip, also its name in the Hugging Face dataset.
     kind : str
         The ``kind`` of ``demo_data()`` that downloads it.
     url : str or None
         Download URL; None while the archive is not published.
-    md5 : str
-        md5 of the zip, as Zenodo shows it.
+    sha256 : str
+        sha256 of the zip, as Hugging Face shows it.
     members : tuple[str, ...]
         Glob patterns of the files it holds, relative to the test data
         folder ``valid/``; used to build the zip.
@@ -65,7 +72,7 @@ class DemoArchive:
     name: str
     kind: str
     url: str | None
-    md5: str
+    sha256: str
     members: tuple[str, ...]
 
 
@@ -76,36 +83,36 @@ ARCHIVES: tuple[DemoArchive, ...] = (
     DemoArchive(
         name="canvodpy-demo-rinex-canopy.zip",
         kind="rinex",
-        url="https://zenodo.org/records/23366661/files/canvodpy-demo-rinex-canopy.zip?download=1",
-        md5="b10ea0231d71c871b9566010029cc598",
+        url=_HF_FILES + "canvodpy-demo-rinex-canopy.zip",
+        sha256="899f74c3cd238ae0d22e053bfaa49a2db6172835cf3e87256b2fcfe392ceadab",
         members=(_RINEX.format(receiver="02_canopy", prefix="ROSA01TUW"),),
     ),
     DemoArchive(
         name="canvodpy-demo-rinex-reference.zip",
         kind="rinex",
-        url="https://zenodo.org/records/23366661/files/canvodpy-demo-rinex-reference.zip?download=1",
-        md5="727c34442c622ac1db315ecae5b51556",
+        url=_HF_FILES + "canvodpy-demo-rinex-reference.zip",
+        sha256="4b4af60c39a8cdf665c0d35319272e4ae35b05704b2bc218756773dd74b89753",
         members=(_RINEX.format(receiver="01_reference", prefix="ROSR01TUW"),),
     ),
     DemoArchive(
         name="canvodpy-demo-sbf-canopy.zip",
         kind="sbf",
-        url="https://zenodo.org/records/23366661/files/canvodpy-demo-sbf-canopy.zip?download=1",
-        md5="32c5e72cbe1aef639997862bdf1b6fc9",
+        url=_HF_FILES + "canvodpy-demo-sbf-canopy.zip",
+        sha256="ab9049b87154ecf9f7878677adc15b0b14efd194a3dc15191d1ce1b88e29dd9e",
         members=(_SBF.format(receiver="02_canopy", prefix="ROSA01TUW"),),
     ),
     DemoArchive(
         name="canvodpy-demo-sbf-reference.zip",
         kind="sbf",
-        url="https://zenodo.org/records/23366661/files/canvodpy-demo-sbf-reference.zip?download=1",
-        md5="c92b99639337322427954c4c29d719ab",
+        url=_HF_FILES + "canvodpy-demo-sbf-reference.zip",
+        sha256="c4686e100f7330e7f2d13f837cfe05649a2c52a0f5986729f513bc86d72f4e64",
         members=(_SBF.format(receiver="01_reference", prefix="ROSR01TUW"),),
     ),
     DemoArchive(
         name="canvodpy-demo-aux.zip",
         kind="aux",
-        url="https://zenodo.org/records/23366994/files/canvodpy-demo-aux.zip?download=1",
-        md5="f38bddf8972f9d1ebf3565688e3a6a48",
+        url=_HF_FILES + "canvodpy-demo-aux.zip",
+        sha256="d9ccb764bb8031ccff484559255e1b156bafa962e91c9142fd2fd8065d781256",
         members=(
             "aux_data/01_SP3/COD0MGXFIN_*_01D_05M_ORB.SP3",
             "aux_data/02_CLK/COD0MGXFIN_*_01D_30S_CLK.CLK",
@@ -148,7 +155,7 @@ def demo_data(kind: DemoKind, *, cache_dir: Path | None = None) -> Path:
         If ``kind`` is not one of the known ones.
     RuntimeError
         If an archive is not published yet, can't be downloaded, or its
-        md5 doesn't match.
+        sha256 doesn't match.
 
     Examples
     --------
@@ -171,7 +178,7 @@ def _download(url: str, path: Path) -> None:
     """Download *url* to *path*, continuing after a broken connection.
 
     The bytes received so far are kept in ``<path>.part``; each attempt
-    asks for the rest (an HTTP Range request, which Zenodo answers), also
+    asks for the rest (an HTTP Range request), also
     in a later call after this one gave up.
 
     Raises
@@ -224,8 +231,8 @@ def _total_size(response: http.client.HTTPResponse, start: int) -> int | None:
 
 def _ensure(archive: DemoArchive, root: Path) -> None:
     """Download, check and unpack one archive, unless it is in the cache."""
-    marker = root / f".{archive.name}.md5"
-    if marker.exists() and marker.read_text().strip() == archive.md5:
+    marker = root / f".{archive.name}.sha256"
+    if marker.exists() and marker.read_text().strip() == archive.sha256:
         return
     if archive.url is None:
         msg = f"Demo archive {archive.name} is not published yet"
@@ -244,15 +251,15 @@ def _ensure(archive: DemoArchive, root: Path) -> None:
 
     try:
         with zip_path.open("rb") as f:
-            md5 = hashlib.file_digest(f, "md5").hexdigest()
-        if md5 != archive.md5:
+            sha256 = hashlib.file_digest(f, "sha256").hexdigest()
+        if sha256 != archive.sha256:
             msg = (
-                f"Demo archive {archive.name} has md5 {md5}, expected "
-                f"{archive.md5}; it was not unpacked"
+                f"Demo archive {archive.name} has sha256 {sha256}, expected "
+                f"{archive.sha256}; it was not unpacked"
             )
             raise RuntimeError(msg)
         with zipfile.ZipFile(zip_path) as zf:
             zf.extractall(root)
     finally:
         zip_path.unlink(missing_ok=True)
-    marker.write_text(archive.md5)
+    marker.write_text(archive.sha256)

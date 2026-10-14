@@ -22,11 +22,11 @@ CANOPY_SBF = "sbf/01_Rosalia/02_canopy/25001/ROSA01TUW_R_20250010000_15M_05S_AA.
 
 
 def _zip(path: Path, members: dict[str, bytes]) -> str:
-    """Write a zip with these members and return its md5."""
+    """Write a zip with these members and return its sha256."""
     with zipfile.ZipFile(path, "w") as zf:
         for name, data in members.items():
             zf.writestr(name, data)
-    return hashlib.md5(path.read_bytes()).hexdigest()
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 @pytest.fixture
@@ -41,13 +41,13 @@ def archives(tmp_path, monkeypatch) -> Path:
     ]
     local = []
     for kind, name, members in specs:
-        md5 = _zip(served / name, members)
+        digest = _zip(served / name, members)
         local.append(
             DemoArchive(
                 name=name,
                 kind=kind,
                 url=(served / name).as_uri(),
-                md5=md5,
+                sha256=digest,
                 members=(),
             )
         )
@@ -86,13 +86,13 @@ def test_wrong_checksum_is_refused_and_nothing_is_unpacked(
         name="sbf-canopy.zip",
         kind="sbf",
         url=(archives / "sbf-canopy.zip").as_uri(),
-        md5="0" * 32,
+        sha256="0" * 64,
         members=(),
     )
     monkeypatch.setattr(demo_module, "ARCHIVES", (bad,))
     cache = tmp_path / "cache"
 
-    with pytest.raises(RuntimeError, match=r"sbf-canopy\.zip.*md5"):
+    with pytest.raises(RuntimeError, match=r"sbf-canopy\.zip.*sha256"):
         demo_data("sbf", cache_dir=cache)
 
     assert not list(cache.rglob("*.sbf"))
@@ -106,7 +106,7 @@ def test_unknown_kind_names_the_known_ones(archives, tmp_path):
 
 def test_unpublished_archive_says_so(archives, tmp_path, monkeypatch):
     unpublished = DemoArchive(
-        name="aux.zip", kind="aux", url=None, md5="0" * 32, members=()
+        name="aux.zip", kind="aux", url=None, sha256="0" * 64, members=()
     )
     monkeypatch.setattr(demo_module, "ARCHIVES", (unpublished,))
 
@@ -163,7 +163,7 @@ def test_a_broken_download_resumes(flaky_server, tmp_path, monkeypatch):
         name=sbf.name,
         kind="sbf",
         url=f"{flaky_server}/{sbf.name}",
-        md5=sbf.md5,
+        sha256=sbf.sha256,
         members=(),
     )
     monkeypatch.setattr(demo_module, "ARCHIVES", (served,))
@@ -179,7 +179,7 @@ def test_a_failed_download_names_the_url_and_not_ftp(tmp_path, monkeypatch):
         name="gone.zip",
         kind="sbf",
         url=(tmp_path / "gone.zip").as_uri(),
-        md5="0" * 32,
+        sha256="0" * 64,
         members=(),
     )
     monkeypatch.setattr(demo_module, "ARCHIVES", (missing,))
