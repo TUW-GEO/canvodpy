@@ -25,6 +25,7 @@ Examples
 
 from __future__ import annotations
 
+import itertools
 import json
 import os
 import socket
@@ -706,3 +707,227 @@ def _status(row: sqlite3.Row) -> RunStatus:
         # A process of another user, whose start can't be read: it lives.
         alive = True
     return "running" if alive else "interrupted"
+
+
+# -- recording a run ---------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ActiveRun:
+    """A run being recorded: what processing code writes to while it runs.
+
+    A failed write is logged and doesn't stop the run: the data matter
+    more than their record.
+    """
+
+    run_id: str
+    history: RunHistory
+
+    def plan(self, receiver_days: Iterable[tuple[str, str]]) -> None:
+        """Record the ``(receiver, day)`` pairs the run will process."""
+        self._try(self.history.plan_receiver_days, self.run_id, list(receiver_days))
+
+    def finish(
+        self,
+        receiver: str,
+        day: str,
+        result: DayResult,
+        *,
+        bytes_added: int | None = None,
+    ) -> None:
+        """Record a finished receiver-day."""
+        self._try(
+            self.history.finish_receiver_day,
+            self.run_id,
+            receiver,
+            day,
+            result,
+            bytes_added=bytes_added,
+        )
+
+    @staticmethod
+    def _try(write: Any, *args: Any, **kwargs: Any) -> None:
+        try:
+            write(*args, **kwargs)
+        except sqlite3.Error:
+            import structlog
+
+            structlog.get_logger(__name__).warning(
+                "run_history_write_failed", exc_info=True
+            )
+
+
+@contextmanager
+def recorded_run(
+    site: str,
+    *,
+    log_dir: Path | str,
+    settings: dict[str, Any],
+    workers: int | None,
+    disks: Iterable[Path | str] = (),
+    label: str | None = None,
+) -> Generator[ActiveRun]:
+    """Record a run of *site* from start to end in the run history of *log_dir*.
+
+    The run takes the run ID of the caller's context
+    (:func:`canvod.utils.logging.get_run_id`), or a new one. Run IDs name
+    the second a run starts, so a run ID the run history already holds
+    gets a number (``fangorn-20261014-120000-2``); the run ID is set for
+    the time of the block. The run ends as finished when the block ends,
+    as failed with the error when it raises.
+
+    Parameters
+    ----------
+    site : str
+        Site name.
+    log_dir : Path or str
+        Log folder (``processing.logging.log_dir``).
+    settings : dict
+        The settings of the run, as JSON-compatible values.
+    workers : int or None
+        Worker processes of the run.
+    disks : iterable of Path or str
+        Folders whose disk the machine facts describe (the stores); the log
+        folder is always included.
+    label : str, optional
+        Free-text label (``canvodpy run --label``).
+
+    Raises
+    ------
+    NetworkDriveError
+        If *log_dir* is on a network drive.
+    """
+    from canvod.utils.logging import get_run_id, new_run_id, reset_run_id, set_run_id
+
+    base_id = get_run_id() or new_run_id(site)
+    token = None
+    try:
+        with RunHistory.open(log_dir) as history:
+            facts = {
+                "site": site,
+                "settings": settings,
+                "canvodpy_version": canvodpy_version(),
+                "commit": canvodpy_commit(),
+                "machine": machine_facts([log_dir, *disks]),
+                "workers": workers,
+                "label": label,
+            }
+            run_id = base_id
+            for number in itertools.count(2):
+                try:
+                    history.start_run(run_id, **facts)
+                    break
+                except sqlite3.IntegrityError:
+                    run_id = f"{base_id}-{number}"
+            token = set_run_id(run_id)
+            try:
+                yield ActiveRun(run_id, history)
+            except BaseException as error:
+                history.end_run(
+                    run_id, "failed", error=f"{type(error).__name__}: {error}"
+                )
+                raise
+            history.end_run(run_id, "finished")
+    finally:
+        if token is not None:
+            reset_run_id(token)
+
+
+def canvodpy_version() -> str:
+    """Return the installed canvodpy version."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("canvodpy")
+    except PackageNotFoundError:
+        return "0.0.0+unknown"
+
+
+def canvodpy_commit() -> str | None:
+    """Return the git commit canvodpy runs from, or ``None`` if unknown.
+
+    From the install record of a package installed from git, else from the
+    git checkout an editable install points into.
+    """
+    from importlib.metadata import PackageNotFoundError, distribution
+
+    try:
+        direct_url = distribution("canvodpy").read_text("direct_url.json")
+    except PackageNotFoundError:
+        direct_url = None
+    if direct_url:
+        commit = json.loads(direct_url).get("vcs_info", {}).get("commit_id")
+        if commit:
+            return commit
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(__file__).parent,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=True,
+        )
+    except OSError, subprocess.SubprocessError:
+        return None
+    return out.stdout.strip() or None
+
+
+def machine_facts(disks: Iterable[Path | str] = ()) -> dict[str, Any]:
+    """Return the facts of this machine a run records.
+
+    CPU model and counts, memory, operating system, Python, and for each
+    folder of *disks* the size, free space and file system of its disk.
+    """
+    import platform
+
+    memory = psutil.virtual_memory()
+    facts: dict[str, Any] = {
+        "cpu_model": _cpu_model(),
+        "cpu_physical": psutil.cpu_count(logical=False),
+        "cpu_logical": psutil.cpu_count(logical=True),
+        "memory_total": memory.total,
+        "os": platform.platform(),
+        "python": platform.python_version(),
+        "disks": {},
+    }
+    for folder in disks:
+        path = Path(folder).expanduser()
+        existing = next((p for p in (path, *path.parents) if p.exists()), None)
+        if existing is None:
+            continue
+        usage = psutil.disk_usage(str(existing))
+        facts["disks"][str(path)] = {
+            "total": usage.total,
+            "free": usage.free,
+            "filesystem": filesystem_type(existing),
+        }
+    return facts
+
+
+def _cpu_model() -> str:
+    import platform
+    import subprocess
+    import sys
+
+    if sys.platform == "darwin":
+        try:
+            return subprocess.run(
+                ["sysctl", "-n", "machdep.cpu.brand_string"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=True,
+            ).stdout.strip()
+        except OSError, subprocess.SubprocessError:
+            pass
+    elif sys.platform.startswith("linux"):
+        try:
+            for line in Path("/proc/cpuinfo").read_text().splitlines():
+                if line.startswith("model name"):
+                    return line.split(":", 1)[1].strip()
+        except OSError:
+            pass
+    return platform.processor() or platform.machine()

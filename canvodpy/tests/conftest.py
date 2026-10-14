@@ -71,17 +71,16 @@ _TEST_VOD_ANALYSES = {
 
 
 @pytest.fixture
-def rosalia_one_day(tmp_path, monkeypatch):
-    """Run the pipeline on one day of the Rosalia test data.
+def rosalia_site(tmp_path, monkeypatch):
+    """The made-up site on the Rosalia test data, ready to run.
 
     Uses self-contained test data and receiver config so the run is
     independent of the user's local ``config/canvod-settings.yaml`` (which
     must exist, though: the settings are loaded from it and then patched).
-    Returns the patched settings and the number of days processed.
+    Returns the patched settings and the site's ``GnssResearchSite``.
     """
     if not (HAS_CONFIG and HAS_TEST_DATA):
         pytest.skip("Integration test requires config files and test data")
-    from canvodpy.orchestrator.pipeline import PipelineOrchestrator
 
     import canvod.config as config_pkg
     import canvod.config.loader as config_loader
@@ -154,7 +153,18 @@ def rosalia_one_day(tmp_path, monkeypatch):
     site._site_config.gnss_site_data_root = str(_ROSALIA_DATA)
     site._site_config.receivers = dict(_TEST_RECEIVERS)
     site._site_config.vod_analyses = dict(_TEST_VOD_ANALYSES)
+    return patched_config, site
 
+
+@pytest.fixture
+def rosalia_one_day(rosalia_site):
+    """Run the pipeline on one day of the Rosalia test data.
+
+    Returns the patched settings and the number of days processed.
+    """
+    from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+
+    patched_config, site = rosalia_site
     counter = 0
     with PipelineOrchestrator(site=site, dry_run=False) as orchestrator:
         for date_key, _datasets, _receiver_times in orchestrator.process_by_date(

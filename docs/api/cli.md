@@ -55,6 +55,7 @@ $ canvodpy run [OPTIONS]
 * `--start <str>`: Start date in YYYYDOY format, for example 2025001. If omitted, resumes from the last processed date in the store.
 * `--end <str>`: End date in YYYYDOY format, for example 2025007. If omitted, processes up to today.
 * `--no-vod / --vod`: Skip the VOD calculation: only write the observations to the GNSS store.  [default: vod]
+* `--label <str>`: Free-text label of the run, stored in the run history, for example to group the repetitions of a benchmark.
 * `--dry-run / --no-dry-run`: Preview processing plan without executing.  [default: no-dry-run]
 * `--workers <int>`: Number of worker processes. Default: from the resource settings in canvod-settings.yaml.
 * `--days-per-batch <int>`: Number of days that the workers process together. Default: processing.params.days_per_batch in canvod-settings.yaml.

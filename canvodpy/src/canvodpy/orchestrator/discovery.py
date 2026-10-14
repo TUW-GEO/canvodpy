@@ -46,6 +46,8 @@ from typing import TYPE_CHECKING, Any
 
 from natsort import natsorted
 
+from canvod.utils.logging import timed_stage
+
 if TYPE_CHECKING:
     from canvod.preflight.convention import CanVODFilename
 
@@ -414,6 +416,7 @@ def scan_directory(directory: Path, recipe: Path | None = None) -> DirectoryScan
 
 
 @lru_cache(maxsize=64)
+@timed_stage("finding_files")  # inside the cache: only real scans are timed
 def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
     from canvod.preflight.convention import find_overlaps
 

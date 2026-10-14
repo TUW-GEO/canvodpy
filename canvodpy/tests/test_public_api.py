@@ -66,7 +66,7 @@ class TestPipelineAPI:
 
         assert Pipeline is not None
 
-    def test_pipeline_creation_from_site(self):
+    def test_pipeline_creation_from_site(self, tmp_path):
         """Should create Pipeline from Site."""
         from canvodpy import Pipeline, Site
 
@@ -92,13 +92,16 @@ class TestPipelineAPI:
                 "threads_per_worker": 1,
             }
             mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.logging.get_log_dir.return_value = (
+                tmp_path  # the run history of the pipeline
+            )
             mock_config.return_value.processing.aux_data.agency = "COD"
 
             site = Site("Fangorn")
             pipeline = Pipeline(site)
             assert pipeline.site.name == "Fangorn"
 
-    def test_pipeline_creation_from_string(self):
+    def test_pipeline_creation_from_string(self, tmp_path):
         """Should create Pipeline from site name."""
         from canvodpy import Pipeline
 
@@ -120,12 +123,15 @@ class TestPipelineAPI:
                 "threads_per_worker": 1,
             }
             mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.logging.get_log_dir.return_value = (
+                tmp_path  # the run history of the pipeline
+            )
             mock_config.return_value.processing.aux_data.agency = "COD"
 
             pipeline = Pipeline("Fangorn")
             assert pipeline.site.name == "Fangorn"
 
-    def test_pipeline_has_process_date(self):
+    def test_pipeline_has_process_date(self, tmp_path):
         """Pipeline should have process_date method."""
         from canvodpy import Pipeline
 
@@ -147,6 +153,9 @@ class TestPipelineAPI:
                 "threads_per_worker": 1,
             }
             mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.logging.get_log_dir.return_value = (
+                tmp_path  # the run history of the pipeline
+            )
             mock_config.return_value.processing.aux_data.agency = "COD"
 
             pipeline = Pipeline("Fangorn")
@@ -158,7 +167,7 @@ class TestNoEffectResourceArguments:
     """The resource arguments that have no effect are deprecated."""
 
     @pytest.fixture
-    def mocked_pipeline_setup(self):
+    def mocked_pipeline_setup(self, tmp_path):
         mock_gnss_site = MagicMock()
         with (
             patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site),
@@ -173,6 +182,9 @@ class TestNoEffectResourceArguments:
                 "threads_per_worker": 1,
             }
             mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.logging.get_log_dir.return_value = (
+                tmp_path  # the run history of the pipeline
+            )
             mock_config.return_value.processing.aux_data.agency = "COD"
             yield mock_orch
 
@@ -349,7 +361,7 @@ class TestAPICoexistence:
             workflow = VODWorkflow(site=site, keep_vars=["SNR"])
             assert site.name == workflow.site.name
 
-    def test_pipeline_uses_factories(self):
+    def test_pipeline_uses_factories(self, tmp_path):
         """Pipeline should use factory components."""
         from canvodpy import Pipeline
 
@@ -371,6 +383,9 @@ class TestAPICoexistence:
                 "threads_per_worker": 1,
             }
             mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.logging.get_log_dir.return_value = (
+                tmp_path  # the run history of the pipeline
+            )
             mock_config.return_value.processing.aux_data.agency = "COD"
 
             pipeline = Pipeline("Fangorn")
