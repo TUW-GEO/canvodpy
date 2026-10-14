@@ -36,6 +36,16 @@ import numpy as np
 
 from canvod.readers.gnss_specs.constants import FREQ_UNIT
 
+#: Value of an integer variable (e.g. LLI, SSI) where nothing was recorded;
+#: floating-point variables use NaN. This is canvodpy's own marker for a blank
+#: field, not a RINEX value, and lies outside every ``valid_range``.
+INTEGER_FILL_VALUE: Final[int] = -1
+
+# Ranges taken from RINEX cite the spec shipped in the source tree,
+# canvod/readers/rinex/rinex304.pdf ("RINEX 3.04", IGS/RTCM, 2018-11-23). Its
+# PDF page and printed page differ, so citations give both.
+_RINEX304 = "RINEX 3.04 (IGS/RTCM, 2018-11-23)"
+
 # -------------------
 # Observable metadata
 # -------------------
@@ -44,6 +54,8 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "long_name": "GNSS Pseudorange",
         "coverage_content_type": "physicalMeasurement",
         "units": "meters",
+        # canvodpy's own bound: RINEX 3.04 gives no range. Table A3 (PDF
+        # p.65, printed A13) writes a missing observation as 0.0 or blank.
         "valid_min": 0.0,
         "description": (
             "The pseudorange is the raw distance measurement between the GNSS "
@@ -61,6 +73,7 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "long_name": "GNSS Doppler Shift",
         "coverage_content_type": "physicalMeasurement",
         "units": "Hz",
+        # canvodpy's own bound: RINEX 3.04 gives no range for Doppler.
         "valid_min": -10_000.0,
         "description": (
             "The Doppler shift represents the rate of change in the phase of "
@@ -96,29 +109,40 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "long_name": "Loss of Lock Indicator",
         "coverage_content_type": "qualityInformation",
         "units": "1",
-        "valid_range": [-1, 7],
+        "valid_range": [0, 7],
         "description": (
             "Loss of lock indicator of the signal's carrier phase, a bit field "
             "per RINEX 3.04 Table A3: bit 0 = lost lock, cycle slip possible; "
             "bit 1 = half-cycle ambiguity/slip possible; bit 2 = Galileo "
-            "BOC-tracking of an MBOC-modulated signal. 0 = OK or not known, "
-            "-1 = no indicator recorded. Table A3 defines no further bits, so "
-            "7 is the largest defined value."
+            "BOC-tracking of an MBOC-modulated signal. 0 = OK or not known. "
+            "Table A3 defines no further bits, so 7 is the largest defined "
+            "value. -1 (_FillValue) = no indicator recorded; it is canvodpy's "
+            "marker for a blank field, not a RINEX value."
         ),
-        "_FillValue": -1,
+        "references": (
+            f"{_RINEX304}, Table A3, loss of lock indicator, PDF p.65 "
+            "(printed A13); bit 1: sect. 5.4, PDF p.28 (printed 24)."
+        ),
+        "_FillValue": INTEGER_FILL_VALUE,
     },
     "SSI": {
         "long_name": "Signal Strength Indicator",
         "coverage_content_type": "qualityInformation",
         "units": "1",
-        "valid_range": [-1, 9],
+        "valid_range": [0, 9],
         "description": (
             "Signal strength indicator per RINEX 3.04 Table A3, projected "
             "into 1-9: 1 = minimum possible signal strength, 5 = average/good "
             "S/N ratio, 9 = maximum possible signal strength. 0 = not known, "
-            "-1 = no indicator recorded."
+            "don't care. -1 (_FillValue) = no indicator recorded; it is "
+            "canvodpy's marker for a blank field, not a RINEX value."
         ),
-        "_FillValue": -1,
+        "references": (
+            f"{_RINEX304}, Table A3, signal strength indicator, PDF p.66 "
+            "(printed A14); mapping from dBHz: sect. 5.7, Table 12, PDF p.29 "
+            "(printed 25)."
+        ),
+        "_FillValue": INTEGER_FILL_VALUE,
     },
 }
 
@@ -129,11 +153,17 @@ CN0_METADATA: Final[dict[str, Any]] = {
     "long_name": "Carrier-to-Noise Density Ratio (C/N0)",
     "coverage_content_type": "physicalMeasurement",
     "units": "dB-Hz",
+    # canvodpy's own bound: RINEX 3.04 gives no range. The reader treats a
+    # signal strength of 0 as not observed.
     "valid_min": 0.0,
     "description": (
         "Carrier-to-noise density ratio (C/N0): carrier power relative to the "
         "noise power density (per 1 Hz). RINEX 3.04 observation type S "
         "with the header record SIGNAL STRENGTH UNIT DBHZ (sect. 5.7)."
+    ),
+    "references": (
+        f"{_RINEX304}, sect. 5.7, PDF p.29 (printed 25); SIGNAL STRENGTH UNIT: "
+        "Table A2, PDF p.62."
     ),
     "_FillValue": np.nan,
 }
@@ -142,12 +172,17 @@ SNR_METADATA: Final[dict[str, Any]] = {
     "long_name": "Signal-to-Noise Ratio (SNR)",
     "coverage_content_type": "physicalMeasurement",
     "units": "dB",
+    # canvodpy's own bound, as for C/N0.
     "valid_min": 0.0,
     "description": (
         "Raw signal strength as given by the receiver (RINEX 3.04 "
         "observation type S). RINEX 3.04 sect. 5.7 defines only the unit "
         "DBHZ; without a SIGNAL STRENGTH UNIT DBHZ header record the unit "
         "is not declared and dB is assumed."
+    ),
+    "references": (
+        f"{_RINEX304}, sect. 5.7, PDF p.29 (printed 25); SIGNAL STRENGTH UNIT: "
+        "Table A2, PDF p.62."
     ),
     "_FillValue": np.nan,
 }

@@ -9,6 +9,7 @@ import xarray as xr
 import zarr
 import zarr.errors
 from canvod.config.models import split_preprocessing
+from canvod.store_metadata.layout import LayoutError, is_day_block_group
 
 from canvod.store.time_encoding import prepare_times
 
@@ -78,21 +79,50 @@ def prepare_write(
         The dimension the write appends along (``append_dim=`` of the write),
         or ``None`` for a write that creates, replaces or fills a region of
         the group. An append is checked with :func:`check_append_variables`
-        and :func:`check_append_coordinates`.
+        and :func:`check_append_coordinates`, and refused for a group made
+        of day blocks (:func:`refuse_append_to_day_blocks`).
 
     Raises
     ------
     EpochTimeSystemError
         See :func:`check_epoch_time_system`.
+    LayoutError
+        See :func:`refuse_append_to_day_blocks`.
     """
     check_epoch_time_system(ds, store, group)
     if append_dim is not None:
+        refuse_append_to_day_blocks(store, group)
         check_append_variables(ds, store, group, append_dim)
         check_append_coordinates(ds, store, group, append_dim)
     attrs, _ = split_preprocessing(ds.attrs)
     ds = ds.copy(deep=False)
     ds.attrs = attrs
     return prepare_times(ds, store, group)
+
+
+def refuse_append_to_day_blocks(store: Any, group: str) -> None:
+    """Refuse an append to a group made of day blocks (ADR 0016).
+
+    Appended epochs would land after the day blocks, outside them; files
+    go into a day-block group with
+    :func:`~canvod.store.day_blocks.write_file_region`.
+
+    Raises
+    ------
+    LayoutError
+        If ``group`` is made of day blocks.
+    """
+    try:
+        zgroup = zarr.open_group(store, mode="r", path=group)
+    except FileNotFoundError, zarr.errors.GroupNotFoundError:
+        return
+    if is_day_block_group(zgroup.attrs):
+        msg = (
+            f"Group '{group}' is made of day blocks; a file cannot be appended "
+            "to it. Write it into its day's block instead "
+            "(canvod.store.day_blocks.write_file_region)."
+        )
+        raise LayoutError(msg)
 
 
 def check_epoch_time_system(ds: xr.Dataset, store: Any, group: str) -> None:

@@ -52,6 +52,7 @@ from canvod.readers.gnss_specs.metadata import (
     CN0_METADATA,
     COORDS_METADATA,
     DTYPES,
+    INTEGER_FILL_VALUE,
     OBSERVABLES_METADATA,
     epoch_coord_attrs,
 )
@@ -847,8 +848,8 @@ _QUAL_COMMENT_TAIL = (
     "indicator words: bits 0-7 = indicator type, bits 8-11 = value."
 )
 _QUAL_REFERENCE = (
-    "Septentrio AsteRx SB3 ProBase Firmware v4.14.x Reference Guide, "
-    "QualityInd block (Block 4082), field Indicators."
+    "Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide, "
+    "QualityInd block (Block 4082), field Indicators, p.411."
 )
 _QUAL_OVERALL_ATTRS: dict[str, object] = {
     "long_name": "Overall receiver quality indicator",
@@ -888,7 +889,11 @@ _QUAL_SCINT_ATTRS: dict[str, object] = {
     "valid_range": [0, 10],
     "source": "SBF QualityInd block (Block 4082), indicator type 29",
     "comment": (_QUAL_COMMENT_TAIL + " Indicator type 29 requires firmware >= 4.15.1."),
-    "references": _QUAL_REFERENCE,
+    "references": (
+        "Septentrio AsteRx SB3 ProBase Firmware v4.15.1 Reference Guide, "
+        "QualityInd block (Block 4082), field Indicators, indicator type 29, "
+        "p.428."
+    ),
 }
 
 # ---------------------------------------------------------------------------
@@ -1792,8 +1797,8 @@ class SbfReader(GNSSDataReader):
         dop_arr = _grid(obs.doppler_hz, DTYPES["Doppler"], np.nan)
         # ObsInfo flags: -1 = no observation, 0 = flag clear, 1 = flag set.
         # Bit 0 = smoothing, bit 2 = half-cycle ambiguity (p.262).
-        smoothing_arr = _grid(obs.obs_info & 0x01, np.int8, -1)
-        half_cycle_arr = _grid((obs.obs_info >> 2) & 0x01, np.int8, -1)
+        smoothing_arr = _grid(obs.obs_info & 0x01, np.int8, INTEGER_FILL_VALUE)
+        half_cycle_arr = _grid((obs.obs_info >> 2) & 0x01, np.int8, INTEGER_FILL_VALUE)
         # SBF has no native RINEX-style SSI field: derive it from C/N0.
         ssi_arr = _snr_dbhz_to_ssi(snr_arr).astype(DTYPES["SSI"])
 

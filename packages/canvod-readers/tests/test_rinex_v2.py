@@ -618,6 +618,6 @@ def test_snr_and_lli_metadata(rinex_v2_file):
     )
     assert ds.SNR.attrs["units"] == "dB"
     assert "RINEX 2.11 declares no unit" in ds.SNR.attrs["description"]
-    assert ds.LLI.attrs["valid_range"] == [-1, 7]
+    assert ds.LLI.attrs["valid_range"] == [0, 7]
     assert "RINEX 3.04 Table A3" in ds.LLI.attrs["description"]
     assert int(ds.LLI.max()) <= 3  # v2 bit 2 (antispoofing) never survives

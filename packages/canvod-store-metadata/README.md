@@ -198,7 +198,7 @@ GNSS equipment and per-receiver ingestion stats.
 | `reader_format` | str | Reader format (default `auto`) |
 | `description` | str? | Receiver description |
 | `recipe` | str? | Naming recipe used |
-| `epochs` | int? | Number of epochs ingested |
+| `epochs` | int? | Epochs with data; a file stored in several groups counts once |
 | `sids` | int? | Number of satellite IDs observed |
 | `variables` | list[str]? | Variable names in the store group |
 | `temporal_range` | list[str]? | `[start, end]` ISO timestamps |
@@ -286,7 +286,7 @@ Aggregate statistics about the store contents.
 
 | Field | Type | Description |
 |---|---|---|
-| `total_epochs` | int? | Total number of time epochs |
+| `total_epochs` | int? | Epochs with data, summed over the receivers (a store written as day blocks); in a store written by appending files, the distinct epochs of all groups |
 | `total_sids` | int? | Total satellite IDs across all constellations |
 | `constellations` | list[str]? | GNSS constellations present (G, R, E, C, ...) |
 | `variables` | list[str]? | Data variable names |

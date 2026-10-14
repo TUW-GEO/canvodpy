@@ -74,7 +74,42 @@ canopy_01/
 The log book (`metadata/table`) records each stored file: its hash, start,
 end, filename, the dataset attributes, and the preprocessing record (see
 [Preprocessing during a run](../ops/overview.md#the-preprocessing-record)).
-Every value in it is text, JSON, or a time.
+In a group made of day blocks, it also records how many epochs of the file
+were stored (`epochs`). Every other value in it is text, JSON, or a time.
+
+## Day blocks
+
+A new GNSS store is written as day blocks
+([ADR 0016](../../adr/0016-day-blocks-and-forked-writes.md)). The `epoch`
+axis of a group holds one block per day, with one slot for every epoch of
+the day at the day's cadence: 17280 slots for a day at 5 s, 86400 at 1 s.
+A block is added the first time a run writes a file of that day, so the
+blocks are stored in the order the days were first written; reading a
+group returns its epochs in time order.
+
+- Each epoch of a file goes into its nearest slot: 00:00 of the day plus a
+  multiple of the cadence. The `epoch` coordinate keeps the epoch's real
+  time.
+- A slot without data holds its grid time in `epoch`, NaN in
+  floating-point variables, and -1 in integer variables such as `LLI` and
+  `SSI` (their `_FillValue`).
+- Writing a file again writes the same slots, so it never adds epochs.
+- The cadence of a day is the finest sampling interval in the names of the
+  files of the day, or the bin length of
+  `processing.preprocessing.temporal_aggregation` when it is set. A day
+  holds a whole number of chunks of 180 epochs
+  (`processing.icechunk.chunk_strategies.gnss_store.epoch`), so the cadence
+  must divide 86400 s / 180 = 480 s: 1 s, 5 s, 15 s, 30 s, or 1 min, for
+  example. Days in one group can have different cadences.
+- A group records its layout in its attributes (`epoch_layout:
+  day_blocks`). A store whose groups were written by appending files to
+  the `epoch` axis, by canVODpy versions before day blocks, is still
+  written that way.
+
+`GnssResearchSite.read_receiver_data()` returns only the slots with data.
+`MyIcechunkStore.read_group()` returns every slot; with `drop_empty=True`
+it leaves out the empty ones (slots where every floating-point variable is
+missing).
 
 ## How a run writes
 
@@ -106,7 +141,7 @@ For each receiver and day, a run does the following:
    snapshot summary and records the commit metadata (see
    [canvod-store-metadata](../store-metadata/overview.md)).
 
-An append must match the group. A run stops with an error if:
+A write must match the group. A run stops with an error if:
 
 - the data has other variables than the group
   (`GroupVariablesMismatchError`);
@@ -119,7 +154,15 @@ An append must match the group. A run stops with an error if:
   scale (`EpochTimeSystemError`). Every stored epoch is GPS time
   (`epoch.attrs["time_system"] == "GPS"`). Groups written by canVODpy
   before it stored every epoch in GPS time have no record (their SBF and
-  NMEA epochs were UTC, 18 s earlier); write to a new store.
+  NMEA epochs were UTC, 18 s earlier); write to a new store;
+- the cadence of a day block doesn't divide 480 s, or a day stored at a
+  coarser cadence gets a file sampled more often (`CadenceError`);
+- a file would be appended to a group made of day blocks (`LayoutError`).
+
+A file with two epochs in one slot, for example because its name gives a
+coarser sampling than its data, isn't stored: the run logs a
+`SlotCollisionError` and writes no log-book row for the file, so the next
+run tries it again.
 
 If another commit lands while a write is in progress, canVODpy rebases the
 write onto it when the two changed different groups. If both changed the

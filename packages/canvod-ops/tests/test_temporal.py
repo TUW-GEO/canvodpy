@@ -182,7 +182,7 @@ def _reader_like_ds(n: int = 36, step_s: int = 5) -> xr.Dataset:
         {
             "SNR": (("epoch", "sid"), snr, {"units": "dB-Hz"}),
             "theta": (("epoch", "sid"), rng.uniform(0, 1.5, shape), {"units": "rad"}),
-            "LLI": (("epoch", "sid"), lli, {"valid_range": [-1, 7]}),
+            "LLI": (("epoch", "sid"), lli, {"valid_range": [0, 7]}),
         },
         coords={
             "epoch": ("epoch", epochs, {"time_system": "GPS"}),

@@ -17,6 +17,8 @@ import numpy as np
 import zarr
 from canvod.config.models.sites import reference_store_group
 
+from .layout import is_day_block_group
+
 if TYPE_CHECKING:
     from .location import StoreLocation
 
@@ -42,6 +44,11 @@ _CF_UNITS = {
 
 # Log-book actions whose file is part of the stored data.
 _STORED_ACTIONS = {"initial", "written", "appended", "overwritten"}
+
+_DAY = np.timedelta64(1, "D")
+
+# A day's cadence (s) and its first and last epoch with data.
+_DaySpan = tuple[float, np.datetime64, np.datetime64]
 
 
 def _decode_epochs(arr: zarr.Array) -> np.ndarray:
@@ -92,6 +99,30 @@ def day_cadences(epochs: np.ndarray) -> dict[np.datetime64, float]:
     }
 
 
+def _epoch_days(epochs: np.ndarray) -> dict[np.datetime64, _DaySpan]:
+    """Each day's cadence and first and last epoch, from the epochs."""
+    epochs = np.unique(np.asarray(epochs).astype("M8[ns]"))
+    days = epochs.astype("M8[D]")
+    spans = {}
+    for day, cadence in day_cadences(epochs).items():
+        on_day = epochs[days == day]
+        spans[day] = (cadence, on_day[0], on_day[-1])
+    return spans
+
+
+def _ranges(days: Mapping[np.datetime64, _DaySpan]) -> list[dict[str, Any]]:
+    """Consecutive days at the same cadence, merged into time ranges."""
+    ranges: list[dict[str, Any]] = []
+    for _, (cadence, first, last) in sorted(days.items()):
+        if ranges and ranges[-1]["cadence_s"] == cadence:
+            ranges[-1]["end"] = _iso(last)
+        else:
+            ranges.append(
+                {"start": _iso(first), "end": _iso(last), "cadence_s": cadence}
+            )
+    return ranges
+
+
 def cadence_ranges(epochs: np.ndarray) -> list[dict[str, Any]]:
     """The time ranges of ``epochs`` at one cadence, in time order.
 
@@ -99,22 +130,7 @@ def cadence_ranges(epochs: np.ndarray) -> list[dict[str, Any]]:
     range, from its first to its last epoch. Each range is
     ``{"start": ISO, "end": ISO, "cadence_s": float}``.
     """
-    epochs = np.unique(np.asarray(epochs).astype("M8[ns]"))
-    days = epochs.astype("M8[D]")
-    ranges: list[dict[str, Any]] = []
-    for day, cadence in sorted(day_cadences(epochs).items()):
-        on_day = epochs[days == day]
-        if ranges and ranges[-1]["cadence_s"] == cadence:
-            ranges[-1]["end"] = _iso(on_day[-1])
-        else:
-            ranges.append(
-                {
-                    "start": _iso(on_day[0]),
-                    "end": _iso(on_day[-1]),
-                    "cadence_s": cadence,
-                }
-            )
-    return ranges
+    return _ranges(_epoch_days(epochs))
 
 
 def _data_groups(root: zarr.Group) -> dict[str, zarr.Group]:
@@ -126,8 +142,107 @@ def _data_groups(root: zarr.Group) -> dict[str, zarr.Group]:
     }
 
 
+def _observation_groups(root: zarr.Group) -> dict[str, zarr.Group]:
+    """Data groups that hold observations, keyed by their path.
+
+    Datasets under a group's ``metadata/`` (``sbf_obs``, the log book)
+    describe the group's files; they are not observations of their own.
+    """
+    return {
+        name: member
+        for name, member in _data_groups(root).items()
+        if "metadata" not in name.split("/")
+    }
+
+
+def _logged_files(
+    group: zarr.Group,
+) -> dict[str, tuple[int, np.datetime64, np.datetime64]]:
+    """Stored files of a day-block group: epochs with data, first and last.
+
+    From the group's log book, by file hash; the latest stored row of a file
+    counts.
+    """
+    table = group["metadata/table"] if "metadata/table" in group else None
+    columns = ("rinex_hash", "action", "start", "end", "epochs")
+    if not isinstance(table, zarr.Group) or not set(columns) <= set(table.array_keys()):
+        msg = (
+            f"Day-block group {group.path} has no log book with the columns "
+            f"{', '.join(columns)}; its epoch count cannot be summarized"
+        )
+        raise ValueError(msg)
+    hashes, actions, starts, ends, counts = (
+        np.asarray(_array(table, name)[...]) for name in columns
+    )
+    files = {}
+    for file_hash, action, start, end, count in zip(
+        hashes, actions, starts, ends, counts, strict=True
+    ):
+        if action not in _STORED_ACTIONS:
+            continue
+        if count < 0:
+            msg = (
+                f"Log book of day-block group {group.path} has a stored row "
+                f"without an epoch count (file {file_hash})"
+            )
+            raise ValueError(msg)
+        files[str(file_hash)] = (
+            int(count),
+            np.datetime64(start, "ns"),
+            np.datetime64(end, "ns"),
+        )
+    return files
+
+
+def _block_days(
+    epochs: np.ndarray, files: Mapping[str, tuple[int, np.datetime64, np.datetime64]]
+) -> dict[np.datetime64, _DaySpan]:
+    """Each day's cadence and first and last epoch, in a day-block group.
+
+    A day's cadence is the day divided by its slots; its first and last
+    epoch come from the files covering it. Days without files (a block
+    whose files failed) are left out.
+    """
+    days, slots = np.unique(epochs.astype("M8[D]"), return_counts=True)
+    cadences = {
+        day: round(86400 / int(n), 3) for day, n in zip(days, slots, strict=True)
+    }
+    spans: dict[np.datetime64, _DaySpan] = {}
+    for _, start, end in files.values():
+        day = start.astype("M8[D]")
+        while day <= end.astype("M8[D]"):
+            cadence = cadences[day]
+            last_slot = (day + _DAY).astype("M8[ns]") - np.timedelta64(
+                int(cadence * 1e9), "ns"
+            )
+            first = max(start, day.astype("M8[ns]"))
+            last = min(end, last_slot)
+            if day in spans:
+                _, f, la = spans[day]
+                first, last = min(first, f), max(last, la)
+            spans[day] = (cadence, first, last)
+            day = day + _DAY
+    return spans
+
+
 def _group_summary(group: zarr.Group) -> dict[str, Any]:
-    epochs = np.unique(_decode_epochs(_array(group, "epoch")))
+    """What a data group holds.
+
+    ``epochs`` are the epochs of a group written by appending; a day-block
+    group (ADR 0016) has a slot for every epoch of its days, with or
+    without data, so its ``files`` (from the log book) say which epochs
+    hold data and ``epochs`` is empty. ``days`` gives each day's cadence
+    and its first and last epoch with data.
+    """
+    all_epochs = _decode_epochs(_array(group, "epoch"))
+    if is_day_block_group(group.attrs):
+        files = _logged_files(group)
+        epochs = np.array([], dtype="M8[ns]")
+        days = _block_days(all_epochs, files)
+    else:
+        files = {}
+        epochs = np.unique(all_epochs)
+        days = _epoch_days(epochs)
     variables = sorted(name for name, arr in group.arrays() if len(arr.shape) >= 2)
     sids = np.asarray(_array(group, "sid")[...]) if "sid" in group else np.array([])
     systems = (
@@ -137,10 +252,40 @@ def _group_summary(group: zarr.Group) -> dict[str, Any]:
     )
     return {
         "epochs": epochs,
+        "files": files,
+        "days": days,
         "sids": {str(s) for s in sids},
         "variables": variables,
         "systems": systems,
     }
+
+
+def _coverage(
+    groups: Collection[dict[str, Any]],
+) -> tuple[int, np.datetime64, np.datetime64, dict[np.datetime64, _DaySpan]] | None:
+    """Epochs with data, first and last epoch, and days of some groups.
+
+    None if the groups hold no data (a day block whose files all failed).
+
+    Epochs of groups written by appending count once however many groups
+    hold them. Day-block groups add the epochs of their files; a file
+    stored in several groups (a reference paired with several canopies)
+    counts once.
+    """
+    epochs = np.unique(np.concatenate([g["epochs"] for g in groups]))
+    files = {h: f for g in groups for h, f in g["files"].items()}
+    times = [*epochs[:1], *epochs[-1:]] + [t for _, *ts in files.values() for t in ts]
+    if not times:
+        return None
+    days: dict[np.datetime64, _DaySpan] = {}
+    for g in groups:
+        for day, (cadence, first, last) in g["days"].items():
+            if day in days:
+                c, f, la = days[day]
+                cadence, first, last = min(cadence, c), min(first, f), max(last, la)
+            days[day] = (cadence, first, last)
+    count = int(epochs.size) + sum(n for n, _, _ in files.values())
+    return count, min(times), max(times), days
 
 
 def _stored_file_count(group: zarr.Group) -> int | None:
@@ -267,15 +412,18 @@ def summarize_root(
     for a group that need not be committed yet (the commit function
     summarizes the session it commits).
     """
-    data_groups = _data_groups(root)
+    data_groups = _observation_groups(root)
     groups = {name: _group_summary(g) for name, g in data_groups.items()}
     if not groups:
         return {}
 
-    epochs = np.unique(np.concatenate([g["epochs"] for g in groups.values()]))
-    start, end = _iso(epochs[0]), _iso(epochs[-1])
+    coverage = _coverage(list(groups.values()))
+    if coverage is None:
+        return {}
+    total, first, last, days = coverage
+    start, end = _iso(first), _iso(last)
     # The finest cadence of any day in any group.
-    cadences = [c for g in groups.values() for c in day_cadences(g["epochs"]).values()]
+    cadences = [cadence for cadence, _, _ in days.values()]
     resolution = min(cadences) if cadences else None
     systems = set().union(*(g["systems"] for g in groups.values()))
     file_counts = [
@@ -290,13 +438,13 @@ def summarize_root(
         "temporal.time_coverage_start": start,
         "temporal.time_coverage_end": end,
         "temporal.time_coverage_duration": _iso_duration(
-            (epochs[-1] - epochs[0]) / np.timedelta64(1, "s")
+            (last - first) / np.timedelta64(1, "s")
         ),
         "temporal.time_coverage_resolution": (
             _iso_duration(resolution) if resolution is not None else None
         ),
         "spatial.extent_temporal_interval": [[start, end]],
-        "summaries.total_epochs": int(epochs.size),
+        "summaries.total_epochs": total,
         "summaries.total_sids": len(set().union(*(g["sids"] for g in groups.values()))),
         "summaries.constellations": sorted(_CONSTELLATIONS.get(s, s) for s in systems),
         "summaries.variables": sorted(
@@ -310,17 +458,18 @@ def summarize_root(
         # A reference receiver is stored once per canopy it is paired with
         # (e.g. ``reference_01_canopy_01``); combine all of its groups.
         own = [groups[name] for name in sorted(by_receiver[receiver])]
-        if not own:
+        r_coverage = _coverage(own) if own else None
+        if r_coverage is None:
             continue
-        r_epochs = np.unique(np.concatenate([g["epochs"] for g in own]))
+        r_total, r_first, r_last, r_days = r_coverage
         prefix = f"instruments.receivers.{receiver}"
-        updates[f"{prefix}.epochs"] = int(r_epochs.size)
+        updates[f"{prefix}.epochs"] = r_total
         updates[f"{prefix}.sids"] = len(set().union(*(g["sids"] for g in own)))
         updates[f"{prefix}.variables"] = sorted(
             set().union(*(g["variables"] for g in own))
         )
-        updates[f"{prefix}.temporal_range"] = [_iso(r_epochs[0]), _iso(r_epochs[-1])]
-        updates[f"{prefix}.cadences"] = cadence_ranges(r_epochs)
+        updates[f"{prefix}.temporal_range"] = [_iso(r_first), _iso(r_last)]
+        updates[f"{prefix}.cadences"] = _ranges(r_days)
         # A file stored in several groups (a reference paired with several
         # canopies) counts once.
         positions = {
