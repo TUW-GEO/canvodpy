@@ -241,14 +241,19 @@ def _store_observation(
 ) -> None:
     """Store one observation; the single definition of the storage rules.
 
-    An SNR of 0 means not observed and stays missing. RINEX 3.04 Table A3
-    notes 1-3: the LLI belongs to the phase observation only; the SSI to the
-    phase, or to the code when the signal has no phase. Phase, code, Doppler
-    and SNR share a sid, so flags on other observables must not overwrite the
-    phase's.
+    RINEX 3.04 Table A3 (rinex304.pdf, PDF p.67, printed A13): "Missing
+    observations are written as 0.0 or blanks." A 0.0 of any observable is
+    therefore missing and stores nothing, like a blank field: the value
+    stays NaN and its LLI and SSI are not kept, so the SSI then comes from
+    the code if that was observed. Table A3 notes 1-3: the LLI belongs to
+    the phase observation only; the SSI to the phase, or to the code when
+    the signal has no phase. Phase, code, Doppler and SNR share a sid, so
+    flags on other observables must not overwrite the phase's.
     """
+    if value == 0:
+        return
     var = _VAR_OF_OBS_TYPE.get(obs_type)
-    if var is not None and var in arrays and not (var == "SNR" and value == 0):
+    if var is not None and var in arrays:
         arrays[var][t_idx, s_idx] = value
     if lli is not None and obs_type == "L" and "LLI" in arrays:
         arrays["LLI"][t_idx, s_idx] = lli
@@ -1970,13 +1975,13 @@ class Rnxv3Obs(GNSSDataReader):
                     value, obs_lli, obs_ssi = _parse_obs_fast(
                         data_part[col_start : col_start + 16]
                     )
-                    if value is None:
-                        continue
-
                     # Inlined _store_observation(); keep the two identical.
+                    # A 0.0 is missing like a blank (RINEX 3.04 Table A3).
+                    if value is None or value == 0:
+                        continue
                     match obs_type:
                         case "S":
-                            if snr is not None and value != 0:
+                            if snr is not None:
                                 snr[t_idx, s_idx] = value
                         case "C":
                             if pseudo is not None:
