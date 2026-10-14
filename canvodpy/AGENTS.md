@@ -17,6 +17,7 @@ other package is a library this one composes.
 | `orchestrator/data_check.py` | `canvodpy config validate`: same discovery as a run |
 | `vod_computer.py` | `VodComputer`, the only VOD implementation (`site.vod`, `canvodpy run`, `canvodpy vod`, `vod-reconcile`) |
 | `workflows/tasks.py` | Airflow tasks; `check_day` and `process_day` run the code of `canvodpy run` |
+| `run_history.py` | The run history (ADR 0018): one SQLite file per machine in the log folder; the only code that touches its tables. Refuses a log folder on a network drive |
 | `factories.py`, `__init__.py` | `ReaderFactory` and friends; built-in readers are registered in `_register_builtin_components`, then installed plugins in `register_plugins` (`docs/guides/plugins.md`) |
 
 ## Invariants
