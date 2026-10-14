@@ -59,7 +59,10 @@ Background: `docs/packages/store/overview.md`,
   replaces the chunk whole and the other's data are lost without an
   error. `day_blocks.write_file_region(chunks=...)` refuses a write
   outside them (`ChunkOwnershipError`); `span_chunks` gives a span's
-  chunks. Forked writes check the hash only (no time-span check, ADR 0005).
+  chunks. Forked writes check the hash only: day blocks need no time-span
+  check (ADR 0016), and it is deprecated. A group keeps the epoch chunk
+  it was created with (`stored_epoch_chunk`); the settings apply to new
+  groups only.
 - canvod-store does not import `canvodpy`.
 - Grids and the analysis results on them are stored by `grid_storage.py`
   and `analysis_storage.py`; canvod-store depends on canvod-grids, never
