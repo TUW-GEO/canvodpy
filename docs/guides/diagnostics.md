@@ -187,6 +187,12 @@ changes, the run starts new workers.
 
 ## See where a run spends its time
 
+Finding the files is the first thing a run does, before it reads a file.
+On a network drive it can take minutes, so the CLI says, for each receiver,
+`Finding files of receiver <name> in <folder>...` and then
+`Found <n> files on <d> days for receiver <name> (<s> s)`, so you know it
+is working.
+
 `canvodpy dashboard` opens a [marimo](https://marimo.io/) app that shows
 the timing events of `machine/performance*.json`:
 

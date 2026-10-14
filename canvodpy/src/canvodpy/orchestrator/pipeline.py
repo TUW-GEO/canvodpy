@@ -213,6 +213,14 @@ class PipelineOrchestrator:
         instances on the same terminal corrupt each other's output, so
         display ownership belongs entirely to the caller. Default None
         (no-op) for standalone/programmatic use.
+    on_discovery_start : Callable[[str, Path], None] | None
+        Called with the receiver name and its data folder when the run starts
+        finding that receiver's files, so the CLI can say what it is doing.
+        Default None (no-op) for standalone/programmatic use.
+    on_discovery_end : Callable[[str, int, int, float], None] | None
+        Called with the receiver name, the number of files found, the number
+        of days and the elapsed seconds when the run has found them. Default
+        None (no-op) for standalone/programmatic use.
 
     """
 
@@ -228,6 +236,8 @@ class PipelineOrchestrator:
         nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
+        on_discovery_start: Callable[[str, Path], None] | None = None,
+        on_discovery_end: Callable[[str, int, int, float], None] | None = None,
         config: CanvodConfig | None = None,
     ) -> None:
         if config is None:
@@ -258,6 +268,8 @@ class PipelineOrchestrator:
         self.dry_run = dry_run
         self.days_per_batch = days_per_batch
         self._on_group_written = on_group_written
+        self._on_discovery_start = on_discovery_start
+        self._on_discovery_end = on_discovery_end
         self._batch_duration: pint.Quantity = days_per_batch * 24 * UREG.hour
         self._threads_per_worker = threads_per_worker
         self._memory_monitor = MemoryMonitor()
@@ -318,8 +330,17 @@ class PipelineOrchestrator:
         reader_format = None if cfg.reader_format == "auto" else cfg.reader_format
         directory = site_config.get_base_path() / cfg.directory
         recipe = recipe_file(self.site.site_name, cfg.recipe)
+        on_start = getattr(self, "_on_discovery_start", None)
+        if on_start is not None:
+            on_start(receiver_name, directory)
+        t_discovery = _time.perf_counter()
         days = receiver_days(receiver_name, directory, reader_format, recipe)
         skipped = unprocessed_files(directory, reader_format, recipe)
+        dt_discovery = _time.perf_counter() - t_discovery
+        on_end = getattr(self, "_on_discovery_end", None)
+        if on_end is not None:
+            n_files = sum(len(discover_files(day, reader_format)) for day in days)
+            on_end(receiver_name, n_files, len(days), dt_discovery)
         from canvodpy.orchestrator.data_check import group_by_file_type
 
         compressed = [p for p in skipped if is_compressed(p)]

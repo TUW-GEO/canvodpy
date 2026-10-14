@@ -348,10 +348,27 @@ def _main_impl(args: SimpleNamespace) -> int:
         for site_name in site_names:
             site = Site(site_name)
             start, end = _resolve_date_range(args, site)
+
+            def _on_discovery_start(receiver_name: str, folder: Path) -> None:
+                print(
+                    f"  Finding files of receiver {receiver_name} in "
+                    f"{folder} (can take minutes on a network drive)..."
+                )
+
+            def _on_discovery_end(
+                receiver_name: str, n_files: int, n_days: int, seconds: float
+            ) -> None:
+                print(
+                    f"  Found {n_files} files on {n_days} days for receiver "
+                    f"{receiver_name} ({seconds:.1f} s)."
+                )
+
             with site.pipeline(
                 n_workers=args.workers,
                 days_per_batch=args.days_per_batch,
                 dry_run=True,
+                on_discovery_start=_on_discovery_start,
+                on_discovery_end=_on_discovery_end,
             ) as pipeline:
                 plan = pipeline.preview(start=start, end=end)
                 print(f"Dry-run plan for {site_name}:")
@@ -474,12 +491,31 @@ def _main_impl(args: SimpleNamespace) -> int:
                 ) -> None:
                     reporter.advance(_site_name, group_name)
 
+                # Say what the warm-up is doing: before a receiver's files are
+                # found and after. A network drive can make this the slowest
+                # quiet part of a run, so the user sees it is working.
+                def _on_discovery_start(receiver_name: str, folder: Path) -> None:
+                    reporter.log(
+                        f"  Finding files of receiver {receiver_name} in "
+                        f"{folder} (can take minutes on a network drive)..."
+                    )
+
+                def _on_discovery_end(
+                    receiver_name: str, n_files: int, n_days: int, seconds: float
+                ) -> None:
+                    reporter.log(
+                        f"  Found {n_files} files on {n_days} days for receiver "
+                        f"{receiver_name} ({seconds:.1f} s)."
+                    )
+
                 stage = "pipeline_process"
                 with site.pipeline(
                     n_workers=args.workers,
                     days_per_batch=args.days_per_batch,
                     dry_run=False,
                     on_group_written=_on_group_written,
+                    on_discovery_start=_on_discovery_start,
+                    on_discovery_end=_on_discovery_end,
                 ) as pipeline:
                     gen = pipeline.process_range(start=start, end=end)
                     while True:
