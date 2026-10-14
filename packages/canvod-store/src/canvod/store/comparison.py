@@ -190,8 +190,8 @@ def compare_stores(reference: MyIcechunkStore, new: MyIcechunkStore) -> StoreCom
     (``list_groups`` and ``read_group``). The report says whether it
     matches and lists every difference per group and variable.
     """
-    ref_groups = list(reference.list_groups())
-    new_groups = list(new.list_groups())
+    ref_groups = sorted(reference.list_groups())
+    new_groups = sorted(new.list_groups())
 
     result = StoreComparison(
         groups_in_reference=len(ref_groups),
