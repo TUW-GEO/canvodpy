@@ -6,7 +6,7 @@ import json
 import os
 import time
 import warnings
-from collections.abc import Generator, Sequence
+from collections.abc import Generator, Iterable, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass, field
@@ -358,6 +358,7 @@ def _preprocess_file(
                 parser=rinex_v3_parser,
             )
             ds.attrs["File Hash"] = rnx.file_hash
+            ds.attrs[SOURCE_FORMAT_ATTR] = rnx.source_format
             t_rinex = time.perf_counter()
 
             # SBF-geometry fast path: use receiver-reported theta/phi, skip ephemeris
@@ -720,6 +721,49 @@ def _compute_spherical_coords_fast(
 # ============================================================================
 # Coordinated Parallel Writing to Icechunk
 # ============================================================================
+
+
+#: Dataset attribute naming the format of the reader that read the file
+#: (``GNSSDataReader.source_format``); set by the worker, recorded by the
+#: GNSS store as its ``source_format``.
+SOURCE_FORMAT_ATTR = "Source Format"
+
+
+def _source_format_of(
+    datasets: Iterable[xr.Dataset], receivers: Sequence[str]
+) -> str | None:
+    """The format of the reader that read ``datasets``.
+
+    Returns
+    -------
+    str | None
+        The readers' common ``source_format``; ``None`` if there are no
+        datasets.
+
+    Raises
+    ------
+    ValueError
+        If a dataset does not name its reader's format, or the datasets
+        were read by readers of different formats (a GNSS store holds one
+        format).
+    """
+    found = [ds.attrs.get(SOURCE_FORMAT_ATTR) for ds in datasets]
+    formats = {str(fmt) for fmt in found if fmt is not None}
+    names = ", ".join(receivers)
+    if None in found:
+        msg = (
+            f"A file of {names} does not name the format of the reader that "
+            f"read it (dataset attribute {SOURCE_FORMAT_ATTR!r}), so the GNSS "
+            "store cannot record its source_format."
+        )
+        raise ValueError(msg)
+    if len(formats) > 1:
+        msg = (
+            f"The files of {names} were read by readers of different formats "
+            f"({', '.join(sorted(formats))}); a GNSS store holds one format."
+        )
+        raise ValueError(msg)
+    return next(iter(formats), None)
 
 
 def _sanitize_ds_for_write(ds: xr.Dataset) -> xr.Dataset:
@@ -1161,25 +1205,29 @@ class RinexDataProcessor:
                 aux_file_path = Path(self.site.site_config["gnss_site_data_root"])
 
         t1 = time.perf_counter()
-        pipeline = AuxDataPipeline.create_standard(
-            matched_dirs=self.matched_data_dirs,
-            aux_file_path=aux_file_path,
-            agency=self._agency,
-            product_type=self._product_type,
-            ftp_server=self._ftp_server,
-            user_email=user_email,
-            keep_sids=self.keep_sids,
-            aggregate_glonass_fdma=config.processing.params.aggregate_glonass_fdma,
-        )
-        t2 = time.perf_counter()
+        # Downloading (or reading the cached) orbit and clock files.
+        with stage_timer(
+            "auxiliary_data", date_key=self.matched_data_dirs.yyyydoy.to_str()
+        ):
+            pipeline = AuxDataPipeline.create_standard(
+                matched_dirs=self.matched_data_dirs,
+                aux_file_path=aux_file_path,
+                agency=self._agency,
+                product_type=self._product_type,
+                ftp_server=self._ftp_server,
+                user_email=user_email,
+                keep_sids=self.keep_sids,
+                aggregate_glonass_fdma=config.processing.params.aggregate_glonass_fdma,
+            )
+            t2 = time.perf_counter()
 
-        self._logger.info(
-            "aux_pipeline_create_standard_complete",
-            duration_seconds=round(t2 - t1, 2),
-        )
+            self._logger.info(
+                "aux_pipeline_create_standard_complete",
+                duration_seconds=round(t2 - t1, 2),
+            )
 
-        # Load all auxiliary files into memory
-        pipeline.load_all()
+            # Load all auxiliary files into memory
+            pipeline.load_all()
         t3 = time.perf_counter()
 
         self._logger.info(
@@ -1480,7 +1528,7 @@ class RinexDataProcessor:
         raise ValueError(msg)
 
     def _ensure_gnss_store_metadata(
-        self, receivers: Sequence[str], reader_format: str | None
+        self, receivers: Sequence[str], source_format: str | None
     ) -> None:
         """Give a new GNSS store its metadata; refuse unlisted receivers.
 
@@ -1488,10 +1536,17 @@ class RinexDataProcessor:
         without its repository metadata (ADR 0014). Every commit then
         writes the store's root copy and snapshot summary itself.
 
+        Parameters
+        ----------
+        source_format : str | None
+            The format of the reader that read the batch's files (see
+            :func:`_source_format_of`), which a new store records.
+
         Raises
         ------
         ValueError
-            If the store predates repository metadata (names the migrate
+            If the store is new and ``source_format`` is ``None``, the
+            store predates repository metadata (names the migrate
             command), or a receiver is not listed in it (names the amend
             command).
         """
@@ -1503,11 +1558,25 @@ class RinexDataProcessor:
             config=self._config,
             site_name=self.site.site_name,
             store_type="gnss_store",
-            source_format=reader_format or self._reader_name,
+            source_format=source_format,
             names=receivers,
             dask_workers=resources.get("n_workers"),
             dask_threads_per_worker=resources.get("threads_per_worker"),
         )
+
+    def _set_store_source_format(
+        self, source_format: str | None, branch: str = "main"
+    ) -> None:
+        """Record ``source_format`` as the GNSS store's root attribute, once.
+
+        A store that already names its format keeps it; nothing is
+        recorded when no file was read (``source_format`` is ``None``).
+        """
+        store = self.site.gnss_store
+        if source_format is None or store.source_format is not None:
+            return
+        store.set_root_attrs({"source_format": source_format}, branch=branch)
+        self._logger.info("Set store source_format='%s'", source_format)
 
     def _compute_receiver_position(
         self,
@@ -2645,10 +2714,12 @@ class RinexDataProcessor:
         5. One `base_session.merge(*forks)` + one `base_session.commit(...)`
            for the groups written this round via fork.
         """
-        self._ensure_gnss_store_metadata(
-            [name for name, *_ in group_inputs],
-            next((fmt for *_, fmt in group_inputs if fmt), None),
+        receivers = [name for name, *_ in group_inputs]
+        source_format = _source_format_of(
+            (ds for _, datasets, *_ in group_inputs for _, ds in datasets),
+            receivers,
         )
+        self._ensure_gnss_store_metadata(receivers, source_format)
         version = get_version_from_pyproject()
         log = self._logger
         yyyydoy = str(self.matched_data_dirs.yyyydoy)
@@ -3045,14 +3116,8 @@ class RinexDataProcessor:
                 ),
             )
 
-        # STEP 7: source_format root attr, once per batch (idempotent).
-        if results and self.site.gnss_store.source_format is None:
-            first_result = next(iter(results.values()))
-            reader_fmt = first_result.reader_format or self._reader_name
-            self.site.gnss_store.set_root_attrs(
-                {"source_format": reader_fmt}, branch="main"
-            )
-            log.info("Set store source_format='%s'", reader_fmt)
+        # STEP 7: source_format root attr, once per store (idempotent).
+        self._set_store_source_format(source_format)
 
         return results
 
@@ -3196,10 +3261,12 @@ class RinexDataProcessor:
             A cadence the slots cannot have, or a group written by
             appending: the run stops.
         """
-        self._ensure_gnss_store_metadata(
-            [name for name, *_ in group_inputs],
-            next((fmt for *_, fmt in group_inputs if fmt), None),
+        receivers = [name for name, *_ in group_inputs]
+        source_format = _source_format_of(
+            (ds for _, datasets, *_ in group_inputs for _, ds in datasets),
+            receivers,
         )
+        self._ensure_gnss_store_metadata(receivers, source_format)
         log = self._logger
         version = get_version_from_pyproject()
         yyyydoy = str(self.matched_data_dirs.yyyydoy)
@@ -3385,6 +3452,9 @@ class RinexDataProcessor:
         for name, r in written.items():
             if self._keeper_tags_enabled:
                 store.create_keeper_tag(name, yyyydoy, str(r.snapshot_id))
+            record_stage_timing(
+                "writing", r.duration_seconds, receiver=name, date_key=yyyydoy
+            )
             self._icechunk_log.info(
                 "batch_write_complete",
                 receiver=name,
@@ -3397,11 +3467,7 @@ class RinexDataProcessor:
                 actions=r.actions,
             )
 
-        if store.source_format is None:
-            first = next(iter(written.values()))
-            reader_fmt = first.reader_format or self._reader_name
-            store.set_root_attrs({"source_format": reader_fmt}, branch="main")
-            log.info("Set store source_format='%s'", reader_fmt)
+        self._set_store_source_format(source_format)
 
         return results
 
@@ -3448,7 +3514,10 @@ class RinexDataProcessor:
             return results[receiver_name].existing_hashes
         _ = rinex_files
         log = self._logger
-        self._ensure_gnss_store_metadata([receiver_name], reader_format)
+        source_format = _source_format_of(
+            (ds for _, ds in augmented_datasets), [receiver_name]
+        )
+        self._ensure_gnss_store_metadata([receiver_name], source_format)
         version = get_version_from_pyproject()
 
         t_start = time.time()
@@ -3935,12 +4004,7 @@ class RinexDataProcessor:
                 raise
 
         # STEP 5: Set source_format root attr (once, idempotent)
-        if self.site.gnss_store.source_format is None:
-            reader_fmt = reader_format or self._reader_name
-            self.site.gnss_store.set_root_attrs(
-                {"source_format": reader_fmt}, branch=branch
-            )
-            log.info("Set store source_format='%s'", reader_fmt)
+        self._set_store_source_format(source_format, branch=branch)
 
         # Promote temp branch to main after successful commit. Refused with
         # BranchMovedError if main moved since the temp branch was created
@@ -5119,7 +5183,6 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
         receiver_name: str,
     ) -> list[Path]:
         version = get_version_from_pyproject()
-        self._ensure_gnss_store_metadata([receiver_name], self._reader_name)
         repo = self.site.gnss_store.repo
         rinex_files_sorted = sorted(rinex_files, key=lambda p: p.name)
 
@@ -5154,6 +5217,9 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             self.keep_sids,
             self._reader_name,
             store_sbf_raw_observables=store_raw,
+        )
+        self._ensure_gnss_store_metadata(
+            [receiver_name], _source_format_of([first_ds], [receiver_name])
         )
 
         # Initialize with full epoch dimension

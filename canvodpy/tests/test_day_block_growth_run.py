@@ -65,6 +65,7 @@ def _run(store: MyIcechunkStore, monkeypatch, receivers: list[str]) -> None:
     pipe.n_max_workers = 1
     pipe._threads_per_worker = 1
     pipe._on_group_written = None
+    pipe._run = None
     pipe._logger = structlog.get_logger(__name__)
     pipe._memory_monitor = MemoryMonitor()
     resources = {"nice_priority": None, "cpu_affinity": None}

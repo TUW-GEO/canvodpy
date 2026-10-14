@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextvars
 import gc
 import os
 import time as _time
@@ -20,7 +21,7 @@ from datetime import datetime
 from functools import partial
 from itertools import zip_longest
 from pathlib import Path
-from typing import TypeVar
+from typing import TypeVar, cast
 
 import numpy as np
 import pint
@@ -48,6 +49,7 @@ from canvodpy.orchestrator.discovery import (
     is_compressed,
     receiver_days,
     recipe_file,
+    require_filemap,
     unprocessed_files,
 )
 from canvodpy.orchestrator.processor import (
@@ -63,12 +65,16 @@ from canvodpy.orchestrator.resources import (
     deprecate_no_effect_arguments,
 )
 from canvodpy.orchestrator.store_retry import STORE_ERROR_TYPES, call_with_store_retries
+from canvodpy.run_history import ActiveRun, DayResult
 
 # Old-style TypeVar (not PEP 695 `def f[T](...)`): CodeQL's Python analysis
 # doesn't yet understand the newer generic syntax and flags T as a
 # potentially-uninitialized local inside the nested _submit() closure below.
 # A module-level TypeVar is unambiguous to both type checkers and CodeQL.
 T = TypeVar("T")
+
+# A day prepared in Phase 1: its processor, file tasks and files per receiver.
+_PreparedDate = tuple[RinexDataProcessor, list[tuple], list[tuple[str, list[Path]]]]
 
 
 def _windowed_completions(  # noqa: UP047 -- see TypeVar comment above
@@ -215,6 +221,18 @@ class PipelineOrchestrator:
         instances on the same terminal corrupt each other's output, so
         display ownership belongs entirely to the caller. Default None
         (no-op) for standalone/programmatic use.
+    run : ActiveRun | None
+        The run recorded in the run history (``Pipeline`` starts it): the
+        orchestrator records the receiver-days it plans and finishes.
+        ``None``: nothing is recorded.
+    on_discovery_start : Callable[[str, Path], None] | None
+        Called with the receiver name and its data folder when the run starts
+        finding that receiver's files, so the CLI can say what it is doing.
+        Default None (no-op) for standalone/programmatic use.
+    on_discovery_end : Callable[[str, int, int, float], None] | None
+        Called with the receiver name, the number of files found, the number
+        of days and the elapsed seconds when the run has found them. Default
+        None (no-op) for standalone/programmatic use.
 
     """
 
@@ -230,7 +248,10 @@ class PipelineOrchestrator:
         nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
+        on_discovery_start: Callable[[str, Path], None] | None = None,
+        on_discovery_end: Callable[[str, int, int, float], None] | None = None,
         config: CanvodConfig | None = None,
+        run: ActiveRun | None = None,
     ) -> None:
         if config is None:
             warnings.warn(
@@ -242,10 +263,19 @@ class PipelineOrchestrator:
             )
             config = load_config()
         self._config = config
+        self.site = site
+        self._on_group_written = on_group_written
+        self._on_discovery_start = on_discovery_start
+        self._on_discovery_end = on_discovery_end
+        self._run = run
         # The log location comes from the configuration of this run.
         ensure_file_logging()
         # A new run sees files added since the previous one.
         clear_discovery_cache()
+        # Find every receiver's files before check_receivers reads them, so
+        # the slow listing on a network drive is reported, not silent; the
+        # scan is cached, so check_receivers below reads the warmed result.
+        self._warm_and_report_discovery()
         check_receivers(
             site.receivers, site._site_config.get_base_path(), site.site_name
         )
@@ -255,11 +285,9 @@ class PipelineOrchestrator:
             set_run_id(new_run_id(site.site_name)) if get_run_id() is None else None
         )
 
-        self.site = site
         self.n_max_workers = n_max_workers
         self.dry_run = dry_run
         self.days_per_batch = days_per_batch
-        self._on_group_written = on_group_written
         self._batch_duration: pint.Quantity = days_per_batch * 24 * UREG.hour
         self._threads_per_worker = threads_per_worker
         self._memory_monitor = MemoryMonitor()
@@ -306,6 +334,39 @@ class PipelineOrchestrator:
 
     def __exit__(self, *exc: object) -> None:
         self.close()
+
+    def _warm_and_report_discovery(self) -> None:
+        """Scan the files of every receiver now, and report it.
+
+        ``check_receivers`` reads a no-recipe receiver's identity from a
+        directory scan, and ``_receiver_days`` reads the same scan when the
+        run schedules a receiver's days. On a network drive that listing is
+        the slowest quiet part of a run, so this does it here and says, per
+        receiver, what the run is finding, before ``check_receivers`` reads
+        the warmed scan. The scan is cached, so ``check_receivers`` and
+        ``_receiver_days`` get the result for free.
+        """
+        site_config = self.site._site_config
+        # A receiver with a naming recipe needs the optional canvod-filemap
+        # extra; fail before scanning with the same message check_receivers
+        # would raise, so a run reports the missing extra the same way.
+        recipe_receivers = [
+            name for name, cfg in site_config.receivers.items() if cfg.recipe
+        ]
+        require_filemap(recipe_receivers)
+        for receiver_name, cfg in site_config.receivers.items():
+            reader_format = None if cfg.reader_format == "auto" else cfg.reader_format
+            directory = site_config.get_base_path() / cfg.directory
+            recipe = recipe_file(self.site.site_name, cfg.recipe)
+            if self._on_discovery_start is not None:
+                self._on_discovery_start(receiver_name, directory)
+            t_discovery = _time.perf_counter()
+            days = receiver_days(receiver_name, directory, reader_format, recipe)
+            unprocessed_files(directory, reader_format, recipe)
+            dt_discovery = _time.perf_counter() - t_discovery
+            if self._on_discovery_end is not None:
+                n_files = sum(len(discover_files(day, reader_format)) for day in days)
+                self._on_discovery_end(receiver_name, n_files, len(days), dt_discovery)
 
     def _receiver_days(self, receiver_name: str) -> dict[str, ReceiverDay]:
         """Days with files to process for one receiver, keyed by ``YYYYDOY``.
@@ -652,7 +713,7 @@ class PipelineOrchestrator:
         date_key: str,
         receivers: dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]],
         keep_vars: list[str] | None,
-    ) -> tuple[RinexDataProcessor, list[tuple], list[tuple[str, list[Path]]]] | None:
+    ) -> _PreparedDate | None:
         """Prepare one DOY for flat loky submission (Phase 1 helper).
 
         Thread-safe: each date downloads different SP3/CLK files,
@@ -719,6 +780,19 @@ class PipelineOrchestrator:
             groups=sorted(days),
             committed=snapshot_id is not None,
             seconds=round(_time.monotonic() - t_start, 2),
+        )
+
+    def _prepare_in_context(
+        self,
+        context: contextvars.Context,
+        date_key: str,
+        receivers: dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]],
+        keep_vars: list[str] | None,
+    ) -> _PreparedDate | None:
+        """:meth:`_prepare_single_date` in *context*, a copy of the caller's."""
+        return cast(
+            "_PreparedDate | None",
+            context.run(self._prepare_single_date, date_key, receivers, keep_vars),
         )
 
     def _process_multi_day_batches(
@@ -799,9 +873,15 @@ class PipelineOrchestrator:
             phase1_workers = len(batch)
             batch_receivers_by_date = dict(batch)
             with ThreadPoolExecutor(max_workers=phase1_workers) as tp:
+                # Each thread runs in a copy of this context, so its log
+                # events carry the run ID like those of the main thread.
                 futures = {
                     tp.submit(
-                        self._prepare_single_date, date_key, receivers, keep_vars
+                        self._prepare_in_context,
+                        contextvars.copy_context(),
+                        date_key,
+                        receivers,
+                        keep_vars,
                     ): date_key
                     for date_key, receivers in batch
                 }
@@ -1066,6 +1146,7 @@ class PipelineOrchestrator:
                                 receiver=receiver_name,
                                 batch_index=batch_idx + 1,
                             )
+                            self._finish_receiver_day(receiver_name, date_key, "failed")
                             continue
 
                         processor = doy_contexts[date_key][0]
@@ -1108,8 +1189,16 @@ class PipelineOrchestrator:
                                 date=date_key,
                                 receiver=receiver_name,
                             )
+                            self._finish_receiver_day(receiver_name, date_key, "failed")
                             continue
                         t_write_end = _time.monotonic()
+                        # Data of files already stored were not written again.
+                        bytes_added = sum(
+                            int(ds.nbytes)
+                            for _, ds in augmented
+                            if ds.attrs.get("File Hash") not in skipped
+                        )
+                        day_result: DayResult = "written" if bytes_added else "skipped"
 
                         # Build the daily dataset: from in-memory parts when
                         # nothing was skipped by dedup (avoids a full store
@@ -1148,6 +1237,12 @@ class PipelineOrchestrator:
                                     date=date_key,
                                     receiver=receiver_name,
                                 )
+                                self._finish_receiver_day(
+                                    receiver_name,
+                                    date_key,
+                                    "failed",
+                                    bytes_added=bytes_added,
+                                )
                                 continue
                             assembly_source = "store"
                         t_read_end = _time.monotonic()
@@ -1162,6 +1257,9 @@ class PipelineOrchestrator:
                             total_seconds=round(t_read_end - t_write_start, 2),
                         )
 
+                        self._finish_receiver_day(
+                            receiver_name, date_key, day_result, bytes_added=bytes_added
+                        )
                         if self._on_group_written is not None:
                             self._on_group_written(receiver_name)
                         date_datasets[date_key][receiver_name] = daily_ds
@@ -1267,6 +1365,18 @@ class PipelineOrchestrator:
         for group in sorted({group for _, receivers in dates for group in receivers}):
             self.site.gnss_store.check_settings_match(group, settings)
 
+    def _finish_receiver_day(
+        self,
+        receiver: str,
+        date_key: str,
+        result: DayResult,
+        *,
+        bytes_added: int | None = None,
+    ) -> None:
+        """Record a finished receiver-day in the run history, if recorded."""
+        if self._run is not None:
+            self._run.finish(receiver, date_key, result, bytes_added=bytes_added)
+
     def process_by_date(
         self,
         keep_vars: list[str] | None = None,
@@ -1311,6 +1421,12 @@ class PipelineOrchestrator:
             return
 
         self._check_preprocessing_before_run(filtered_dates)
+        if self._run is not None:
+            self._run.plan(
+                (group, date_key)
+                for date_key, groups in filtered_dates
+                for group in groups
+            )
 
         self._logger.info(
             "process_by_date_started",

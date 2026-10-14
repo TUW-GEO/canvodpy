@@ -185,7 +185,70 @@ changes, the run starts new workers.
 
 ---
 
+## The run history
+
+Every run records itself in the **run history**: `run_history.sqlite`
+in the log folder, one file per machine (ADR 0018). A run of
+`canvodpy run`, of `site.pipeline()` (until the pipeline is closed, at
+the end of the `with` block) and of the Airflow task `process_day`
+records:
+
+- its start: site, run ID, settings, canvodpy version and commit,
+  machine (CPU, memory, operating system, Python, size and free space of
+  the disks of the log folder and the stores), worker count, and the
+  label of `--label` or `site.pipeline(label=...)`;
+- the receiver-days it plans, and for each one it finishes: `written`,
+  `skipped` (every file already in the store) or `failed`, and the size
+  of the data written (in memory, before compression);
+- the time of each stage, with the process that ran it (see the table
+  below);
+- its warnings and errors, in words, with their receiver and day;
+- its end: `finished`, or `failed` with the error.
+
+The stages a run records, from every `stage_timing` event of the run:
+
+| Stage | Process | One per |
+|---|---|---|
+| `finding_files` | main | receiver folder scanned |
+| `auxiliary_data` | main | day: downloading or reading the orbit and clock files |
+| `rinex.process_file` | worker | file: everything below, together |
+| `reading`, `validating`, `augmenting` | worker | file: reading it, checking its signals, adding positions and geometry |
+| `writing` | main | receiver-day: writing to the GNSS store |
+| `icechunk.write` | main | group write of a store made before day blocks |
+| `vod_calc`, `vod_store` | main | VOD analysis and day (`canvodpy run` only) |
+
+A run that has no end and whose process is gone shows as `interrupted`.
+Two runs of a site that start in the same second get one run ID each:
+the second gets a number (`ExampleSite-20261010-030000-2`).
+
+Read it from Python, also while a run writes to it:
+
+```python
+from canvodpy.run_history import RunHistory
+
+with RunHistory.open("/path/to/logs", read_only=True) as history:
+    for run in history.runs(site="ExampleSite", label="benchmark-a"):
+        print(run.run_id, run.status, run.started_at, run.ended_at)
+        for problem in history.problems(run.run_id):
+            print(" ", problem.level, problem.day, problem.message)
+```
+
+The run history must be on a local disk: SQLite needs shared memory for
+one process to write while others read, which network drives (NFS, SMB)
+don't provide. A run refuses to start when the log folder
+(`processing.logging.log_dir`) is on a network drive. Errors that stop
+`canvodpy run` before processing starts (for example a settings check)
+are in the log files only.
+
+---
+
 ## See where a run spends its time
+
+Finding the files is the first thing a run does, before it reads a file.
+On a network drive it can take minutes, so the CLI says, for each receiver,
+`Finding files of receiver <name> in <folder>...` and then
+`Found <n> files on <d> days for receiver <name> (<s> s)`, so you know it
+is working.
 
 `canvodpy dashboard` opens a [marimo](https://marimo.io/) app that shows
 the timing events of `machine/performance*.json`:

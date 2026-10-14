@@ -323,6 +323,11 @@ example, `2025001` is January 1, 2025 and `2025032` is February 1, 2025.
     Icechunk store, and computes VOD for every receiver pair in
     `vod_analyses` and writes it to the site's VOD store.
 
+    Before it reads a file, a run finds the files of every receiver in the
+    site. On a network drive this can take minutes. The CLI says, for each
+    receiver, which folder it is scanning, and afterwards how many files and
+    days it found, so you can see that the run is working.
+
     To see what a run would process without running it, add `--dry-run`.
 
 Files that are already in the store are skipped.

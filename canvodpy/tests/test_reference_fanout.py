@@ -59,6 +59,7 @@ def _fake_aux_ds() -> xr.Dataset:
 
 class _FakeReader:
     file_hash = "deadbeef"
+    source_format = "rinex3_stripped"
 
     def to_ds_and_auxiliary(self, **_kwargs):
         return _fake_rinex_ds(), {"sbf_obs": xr.Dataset()}
@@ -164,3 +165,21 @@ def test_fanout_single_pairing_is_a_degenerate_case(rnx_file: Path, tmp_path: Pa
     )
 
     assert list(ds_by_pairing) == ["reference_01_canopy_A"]
+
+
+def test_each_dataset_names_the_format_of_its_reader(rnx_file: Path, tmp_path: Path):
+    """The worker records the reader's own format, not the name it was given."""
+    aux_zarr_path = tmp_path / "aux_hermite.zarr"
+
+    _fname, ds_by_pairing, _aux, _sids = preprocess_reference_with_hermite_aux_fanout(
+        rnx_file,
+        None,
+        aux_zarr_path,
+        {"reference_01_canopy_A": POSITION_A, "reference_01_canopy_B": POSITION_B},
+        "reference",
+        reader_name="rinex3",
+    )
+
+    assert {ds.attrs["Source Format"] for ds in ds_by_pairing.values()} == {
+        "rinex3_stripped"
+    }

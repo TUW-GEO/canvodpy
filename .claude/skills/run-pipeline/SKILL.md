@@ -32,7 +32,7 @@ just run <site> <YYYYDOY> <YYYYDOY>
 The recipe and the `canvodpy run` command are the same code. Without
 `--start`, `canvodpy run` resumes after the last day in the store; other
 options (`--no-vod`, `--workers`, `--ephemeris-source`, `--config`,
-`--write-catalog`) are in
+`--write-catalog`, `--label`) are in
 `docs/guides/api-levels.md`. A settings folder other than the default:
 `just config_dir=<folder> run ...`.
 
@@ -40,6 +40,11 @@ From Python, `Site(site).pipeline()` gives the same results; use it only
 when the user scripts runs (several sites, a notebook). Never suggest the
 deprecated surfaces (`FluentWorkflow`, `process_date()`, `VODWorkflow`,
 `canvodpy.functional`).
+
+Every run records itself in the run history (`run_history.sqlite` in
+the log folder); a label (`--label`, `site.pipeline(label=...)`) groups
+runs, for example the repetitions of a benchmark. See
+`docs/guides/diagnostics.md`.
 
 ## 3. Check the result
 
