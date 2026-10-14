@@ -239,13 +239,14 @@ def add_day_block(
     group: str,
     day: np.datetime64,
     cadence_s: float,
-    template: xr.Dataset,
+    template: xr.Dataset | None,
     epoch_chunk: int = 180,
 ) -> DayBlock:
     """Give ``day`` a block in ``group``, or return the block it has.
 
     Creates the group from the variables and labels of ``template`` (a file
-    of the day) if it does not exist yet. A new block is added at the end of
+    of the day) if it does not exist yet; without a template the group must
+    exist. A new block is added at the end of
     the epoch axis; its slots hold their grid times and missing values. A day
     that has a block keeps it, so files written again land in the same
     slots, and a block grown for a day that failed later is reused.
@@ -257,11 +258,19 @@ def add_day_block(
         the day has a block at a coarser cadence: its slots cannot take the
         new epochs.
     LayoutError
-        If ``group`` exists but is not made of day blocks.
+        If ``group`` exists but is not made of day blocks, or does not exist
+        and no ``template`` is given.
     """
     step = cadence_ns(cadence_s, epoch_chunk)
     day = np.datetime64(day, "D")
     if _open_group(session.store, group) is None:
+        if template is None:
+            msg = (
+                f"Group '{group}' does not exist yet, so {day} cannot get a "
+                "block without a file to take the group's variables from; "
+                "the group's first write creates it."
+            )
+            raise LayoutError(msg)
         _create_group(session, group, template, epoch_chunk)
     blocks = day_blocks(session.store, group)
     if day in blocks:

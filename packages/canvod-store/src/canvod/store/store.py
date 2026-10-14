@@ -4,7 +4,7 @@ import json
 import os
 import sys
 import time
-from collections.abc import Generator, Sequence
+from collections.abc import Generator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -48,7 +48,13 @@ from icechunk.session import ForkSession
 from icechunk.xarray import to_icechunk
 from zarr.dtype import VariableLengthUTF8
 
-from canvod.store.day_blocks import drop_empty_slots, holds_day_blocks, load_group
+from canvod.store.day_blocks import (
+    add_day_block,
+    day_blocks,
+    drop_empty_slots,
+    holds_day_blocks,
+    load_group,
+)
 from canvod.store.prepare import prepare_write
 from canvod.store.time_encoding import with_time_units
 from canvod.store.viewer import add_rich_display_to_store
@@ -1447,6 +1453,91 @@ class MyIcechunkStore:
             self._to_icechunk_throttled(dataset, session, group=group_name, mode=mode)
 
         self._logger.info(f"Wrote dataset to group '{group_name}' (mode={mode})")
+
+    #: Attempts of a growth commit that loses a conflict (:meth:`grow_day_blocks`).
+    GROWTH_ATTEMPTS = 3
+
+    def grow_day_blocks(
+        self,
+        days: Mapping[str, Mapping[np.datetime64, float]],
+        *,
+        message: str,
+        branch: str = "main",
+    ) -> str | None:
+        """Give days a block in existing day-block groups, in one commit.
+
+        A run calls this once per batch, before reading files, for the days
+        whose Phase 1 succeeded (ADR 0016). A day that has a block keeps it,
+        so a block grown for a day that failed later is reused on the next
+        run. When another commit changed the branch meanwhile and the two
+        conflict, the growth starts again on the new tip: it rereads the
+        epoch axis, reuses the blocks added meanwhile and grows the rest.
+
+        Parameters
+        ----------
+        days : Mapping[str, Mapping[numpy.datetime64, float]]
+            For each group, the cadence in seconds of each day to grow.
+        message : str
+            Commit message.
+        branch : str, default "main"
+            Branch to commit to.
+
+        Returns
+        -------
+        str or None
+            Snapshot ID of the growth commit; ``None`` if every day already
+            had a block, in which case nothing is committed.
+
+        Raises
+        ------
+        LayoutError
+            If a group does not exist (its first write creates it) or is not
+            made of day blocks.
+        CadenceError
+            If a cadence does not fit the chunks, or a day has a block at a
+            coarser cadence.
+        RuntimeError
+            If the growth still conflicts after ``GROWTH_ATTEMPTS`` attempts.
+        """
+        epoch_chunk = int((self.chunk_strategy or {}).get("epoch", 180))
+        last_error: Exception | None = None
+        for attempt in range(1, self.GROWTH_ATTEMPTS + 1):
+            with self.writable_session(branch) as session:
+                grown = 0
+                for group, cadences in days.items():
+                    before = day_blocks(session.store, group)
+                    for day, cadence_s in cadences.items():
+                        add_day_block(
+                            session,
+                            group,
+                            day,
+                            cadence_s,
+                            template=None,
+                            epoch_chunk=epoch_chunk,
+                        )
+                    grown += len(
+                        {np.datetime64(d, "D") for d in cadences} - set(before)
+                    )
+                if not grown:
+                    return None
+                try:
+                    return commit_with_rebase(
+                        session,
+                        message,
+                        store_path=self.store_path,
+                        config=self.settings,
+                    )
+                except (icechunk.ConflictError, icechunk.RebaseFailedError) as err:
+                    self._logger.info(
+                        f"Growth commit lost a conflict (attempt {attempt}): {err}"
+                    )
+                    last_error = err
+        msg = (
+            f"Could not grow the day blocks of {self.store_path} on branch "
+            f"'{branch}': other commits conflicted {self.GROWTH_ATTEMPTS} "
+            "times. Is another run writing this store?"
+        )
+        raise RuntimeError(msg) from last_error
 
     def write_initial_group(
         self,

@@ -3092,6 +3092,21 @@ class RinexDataProcessor:
         CadenceError
             If a file has no canonical name to take its sampling from.
         """
+        return self._cadence_s_from_names(
+            receiver_name,
+            [
+                (fname, ds.attrs.get("canonical_name") or self._canonical_name(fname))
+                for fname, ds in augmented_datasets
+            ],
+        )
+
+    def _cadence_s_from_names(
+        self, receiver_name: str, names: Sequence[tuple[Path, str]]
+    ) -> float:
+        """The cadence of :meth:`_day_block_cadence_s`, from canonical names.
+
+        ``names`` pairs each file with its canonical name (``""`` if none).
+        """
         from canvod.preflight.convention import CanVODFilename
 
         preprocessing = self._config.processing.preprocessing
@@ -3101,8 +3116,7 @@ class RinexDataProcessor:
         if aggregation is not None and aggregation.enabled:
             return pd.Timedelta(aggregation.freq).total_seconds()
         intervals = []
-        for fname, ds in augmented_datasets:
-            canonical = ds.attrs.get("canonical_name") or self._canonical_name(fname)
+        for fname, canonical in names:
             if not canonical:
                 msg = (
                     f"{fname.name} of receiver '{receiver_name}' has no canonical "
@@ -3114,6 +3128,38 @@ class RinexDataProcessor:
             interval = CanVODFilename.from_filename(canonical).sampling_interval
             intervals.append(interval.total_seconds())
         return min(intervals)
+
+    def day_blocks_to_grow(
+        self, receiver_file_map: Sequence[tuple[str, list[Path]]]
+    ) -> dict[str, dict[np.datetime64, float]]:
+        """The day blocks this day needs, for the batch's growth commit.
+
+        For each receiver group of ``receiver_file_map`` that exists and is
+        made of day blocks: this day and its cadence, from the files' names
+        (:meth:`_cadence_s_from_names`), so no file is read. A group not
+        written yet is left out: its first write creates it from a file.
+        Empty if the store does not exist yet or is not written as day
+        blocks.
+
+        Raises
+        ------
+        CadenceError
+            If a file has no canonical name to take its sampling from.
+        """
+        # A store not created yet has no group to grow; opening it would fail.
+        if not store_exists(self.site.gnss_store_path) or not self._writes_day_blocks():
+            return {}
+        existing = set(self.site.gnss_store.list_groups() or [])
+        day = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
+        return {
+            group: {
+                day: self._cadence_s_from_names(
+                    group, [(f, self._canonical_name(f)) for f in files]
+                )
+            }
+            for group, files in receiver_file_map
+            if files and group in existing
+        }
 
     def _write_day_blocks(
         self,
