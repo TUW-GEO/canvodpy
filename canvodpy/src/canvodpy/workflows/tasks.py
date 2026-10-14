@@ -207,19 +207,11 @@ def check_day(site: str, yyyydoy: str) -> dict:
 
     Notes
     -----
-    The check is recorded as a run in the run history (ADR 0018), failed
-    when files are missing.
+    The check is not recorded in the run history (ADR 0018): Airflow
+    retries it until the files arrive, and each retry would add a failed
+    run.
     """
-    from canvodpy.run_history import recorded_run
-
-    config = load_config()
-    with recorded_run(
-        site,
-        log_dir=config.processing.logging.get_log_dir(),
-        settings=config.model_dump(mode="json"),
-        workers=None,
-    ):
-        return _check_files(site, yyyydoy, None, "GNSS")
+    return _check_files(site, yyyydoy, None, "GNSS")
 
 
 def _check_files(site: str, yyyydoy: str, reader_format: str | None, kind: str) -> dict:

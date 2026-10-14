@@ -137,26 +137,17 @@ def test_a_run_that_raises_is_failed_with_its_error_and_problems(
     ]
 
 
-def test_check_day_records_a_run(rosalia_site) -> None:
+def test_check_day_records_no_run(rosalia_site) -> None:
+    # Airflow retries check_day until the files arrive; each retry would
+    # add a failed run.
     from canvodpy.workflows.tasks import check_day
 
     config, _ = rosalia_site
     assert check_day(testing.SITE_KEY, DAY)["ready"]
-
-    run, _, _ = _only_run(config)
-    assert run.status == "finished"
-
-
-def test_check_day_without_files_is_a_failed_run(rosalia_site) -> None:
-    from canvodpy.workflows.tasks import check_day
-
-    config, _ = rosalia_site
     with pytest.raises(RuntimeError, match="not yet available"):
         check_day(testing.SITE_KEY, "2025200")
 
-    run, _, _ = _only_run(config)
-    assert run.status == "failed"
-    assert run.error.startswith("RuntimeError: GNSS files not yet available")
+    assert not (config.processing.logging.log_dir / "run_history.sqlite").exists()
 
 
 def test_runs_started_in_the_same_second_are_two_runs(tmp_path) -> None:

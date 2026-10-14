@@ -190,8 +190,8 @@ changes, the run starts new workers.
 Every run records itself in the **run history**: `run_history.sqlite`
 in the log folder, one file per machine (ADR 0018). A run of
 `canvodpy run`, of `site.pipeline()` (until the pipeline is closed, at
-the end of the `with` block) and of the Airflow tasks `check_day` and
-`process_day` records:
+the end of the `with` block) and of the Airflow task `process_day`
+records:
 
 - its start: site, run ID, settings, canvodpy version and commit,
   machine (CPU, memory, operating system, Python, size and free space of
