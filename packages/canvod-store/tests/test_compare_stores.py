@@ -422,8 +422,18 @@ def test_to_text_lists_groups_sections(tmp_path) -> None:
     result = compare_stores(ref, new)
 
     text = result.to_text()
-    assert "Groups only in the reference: canopy_01, reference_01" in text
-    assert "Groups only in the new store: new_01" in text
+    ref_line = next(
+        line
+        for line in text.splitlines()
+        if line.startswith("Groups only in the reference: ")
+    )
+    assert set(ref_line.split(": ", 1)[1].split(", ")) == {"canopy_01", "reference_01"}
+    new_line = next(
+        line
+        for line in text.splitlines()
+        if line.startswith("Groups only in the new store: ")
+    )
+    assert new_line.split(": ", 1)[1] == "new_01"
 
 
 def test_to_text_value_difference_line(tmp_path) -> None:
