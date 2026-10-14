@@ -8,6 +8,7 @@ index. ``--rescan`` lists every folder.
 from __future__ import annotations
 
 import os
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -135,8 +136,10 @@ def test_a_lost_run_history_gives_the_full_scan(tmp_path, monkeypatch) -> None:
 
 def test_rescan_is_explained_in_the_help() -> None:
     result = runner.invoke(main_app, ["run", "--help"], env={"COLUMNS": "200"})
-    assert "--rescan" in result.output
-    assert "30 days" in result.output
+    # ANSI codes removed: on GitHub Actions typer forces a colored terminal.
+    plain = " ".join(re.sub(r"\x1b\[[0-9;]*m", "", result.output).split())
+    assert "--rescan" in plain
+    assert "30 days" in plain
 
 
 def test_a_damaged_file_index_gives_the_full_scan(tmp_path, monkeypatch) -> None:
