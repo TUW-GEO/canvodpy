@@ -35,3 +35,4 @@ that names the decision replacing it.
 | [0014](0014-store-metadata-split.md) | A store's description lives in its repository metadata; each snapshot carries a checked copy |
 | [0015](0015-stac-catalog-at-data-root.md) | The STAC catalog sits beside the stores; a release is a tag in each store plus a pinned catalog |
 | [0016](0016-day-blocks-and-forked-writes.md) | Each receiver-day is a day block at its own cadence; workers write forks, one commit per day |
+| [0018](0018-run-history-in-sqlite.md) | Every run records itself in a run history, one SQLite file per machine |

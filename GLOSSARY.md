@@ -112,8 +112,13 @@ _Avoid_: file format (for the setting)
 
 **Run**:
 One processing of a site's receiver-days, started from the command line,
-Python or Airflow; all three behave the same.
+Python or a scheduler such as Airflow; all behave the same.
 _Avoid_: job, pipeline execution
+
+**Run history**:
+The record canvodpy keeps on one machine of every run: its settings,
+progress, timings, machine and problems.
+_Avoid_: journal, run log, database
 
 **Preprocessing**:
 Optional changes to the observations before they are stored (temporal
