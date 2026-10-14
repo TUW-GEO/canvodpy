@@ -2,14 +2,15 @@
 
 A run from ``Site.pipeline()``, ``canvodpy run`` or a scheduler task
 records its start (settings, version, machine, label), the receiver-days
-it plans and finishes, the time of its stages, its warnings and errors,
-and its end. Tests read
+it plans and finishes, the time of its stages, resource samples (#298),
+its warnings and errors, and its end. Tests read
 the run history only through its queries.
 """
 
 from __future__ import annotations
 
 import os
+import threading
 
 import pytest
 import structlog
@@ -77,6 +78,17 @@ def test_site_pipeline_records_its_run(rosalia_site) -> None:
     assert all(t.seconds >= 0 for t in timings)
     assert any(t.day == DAY for t in timings)
 
+    # Resource samples (#298): CPU, memory and the free disk of the log
+    # folder and the stores.
+    with _history(config) as history:
+        samples = history.resource_samples(run.run_id)
+    assert samples
+    for sample in samples:
+        assert 0 <= sample.cpu_percent
+        assert 0 < sample.memory_percent <= 100
+        assert set(sample.free_disk) == set(run.machine["disks"])
+        assert all(free > 0 for free in sample.free_disk.values())
+
 
 @pytest.mark.integration
 def test_canvodpy_run_records_its_run_with_label(rosalia_site) -> None:
@@ -135,6 +147,10 @@ def test_a_run_that_raises_is_failed_with_its_error_and_problems(
     assert [(p.level, p.message, p.receiver, p.day) for p in problems] == [
         ("warning", "aux download slow", "canopy_01", DAY)
     ]
+    # Sampling stopped with the failed run, after its last sample.
+    with _history(config) as history:
+        assert history.resource_samples(run.run_id)
+    assert "resource-sampler" not in {t.name for t in threading.enumerate()}
 
 
 def test_check_day_records_no_run(rosalia_site) -> None:

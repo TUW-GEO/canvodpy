@@ -138,9 +138,9 @@ the main process holds the days it writes. To lower the memory a run
 needs, use fewer workers or a smaller `days_per_batch`.
 
 The run writes the memory use of the machine to the log before each
-batch (`memory_stats`). `canvodpy run` also writes memory, CPU, and disk
-use every 30 seconds (`resource_sample`). [Diagnostics](diagnostics.md)
-describes the logs.
+batch (`memory_stats`). Every run also writes memory, CPU, and disk use
+every 30 seconds (`resource_sample`) to the log; the run history keeps
+the same samples. [Diagnostics](diagnostics.md) describes both.
 
 ---
 

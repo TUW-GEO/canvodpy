@@ -6,7 +6,7 @@ import os
 import threading
 import time
 import types
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 import psutil
@@ -100,35 +100,59 @@ class ResourceSampler:
     ``interval_seconds`` for the whole run (including time spent outside
     batch boundaries, e.g. aux data fetch/interpolation), so a wall-clock
     slowdown seen in stage_timing events can be correlated against actual
-    resource pressure instead of assumed.
+    resource pressure instead of assumed. :meth:`stop` takes one last
+    sample, so a run shorter than the interval has one too.
 
     Parameters
     ----------
     interval_seconds : float
         Seconds between samples.
+    disks : iterable of Path or str
+        Folders whose free disk space each sample records.
+    on_sample : callable, optional
+        Called with ``cpu_percent``, ``memory_percent`` and ``free_disk``
+        (bytes per folder of *disks*) for every sample; the run history
+        records them this way (``canvodpy.run_history.recorded_run``).
     """
 
-    def __init__(self, interval_seconds: float = 30.0) -> None:
+    def __init__(
+        self,
+        interval_seconds: float = 30.0,
+        *,
+        disks: Iterable[Path | str] = (),
+        on_sample: Callable[..., None] | None = None,
+    ) -> None:
         self.interval_seconds = interval_seconds
+        self.disks = [str(Path(folder).expanduser()) for folder in disks]
+        self.on_sample = on_sample
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._run_id = get_run_id()
+        self._sample_index = 0
+        self._prev_io = None
 
     def start(self) -> None:
         """Start sampling in a daemon thread. Safe to call once per run."""
         self._run_id = get_run_id()
         self._stop.clear()
+        # The first cpu_percent call only starts the measurement.
+        psutil.cpu_percent(interval=None)
+        try:
+            self._prev_io = psutil.disk_io_counters()
+        except Exception:
+            self._prev_io = None
         self._thread = threading.Thread(
             target=self._run_loop, name="resource-sampler", daemon=True
         )
         self._thread.start()
 
     def stop(self, timeout: float = 5.0) -> None:
-        """Signal the sampler thread to stop and wait for it to exit."""
+        """Stop the sampler thread, then take the last sample."""
         self._stop.set()
         if self._thread is not None:
             self._thread.join(timeout=timeout)
             self._thread = None
+            self._sample()
 
     def _run_loop(self) -> None:
         # Contextvars don't cross thread boundaries automatically -- carry
@@ -136,55 +160,71 @@ class ResourceSampler:
         # for loky workers (pipeline.py).
         if self._run_id:
             set_run_id(self._run_id)
-
-        proc = psutil.Process()
-        try:
-            prev_io = psutil.disk_io_counters()
-        except Exception:
-            prev_io = None
-        sample_index = 0
-
         while not self._stop.wait(self.interval_seconds):
-            sample_index += 1
-            t0 = time.perf_counter()
+            self._sample()
+
+    def _sample(self) -> None:
+        self._sample_index += 1
+        t0 = time.perf_counter()
+        try:
+            proc = psutil.Process()
+            mem = psutil.virtual_memory()
+            main_rss_gb = proc.memory_info().rss / (1024**3)
+
+            children_rss_gb = 0.0
             try:
-                mem = psutil.virtual_memory()
-                main_rss_gb = proc.memory_info().rss / (1024**3)
-
-                children_rss_gb = 0.0
-                try:
-                    for child in proc.children(recursive=True):
-                        try:
-                            children_rss_gb += child.memory_info().rss / (1024**3)
-                        except psutil.NoSuchProcess, psutil.AccessDenied:
-                            continue
-                except Exception:
-                    pass
-
-                read_mb = write_mb = None
-                try:
-                    io = psutil.disk_io_counters()
-                    if io is not None and prev_io is not None:
-                        read_mb = (io.read_bytes - prev_io.read_bytes) / (1024**2)
-                        write_mb = (io.write_bytes - prev_io.write_bytes) / (1024**2)
-                    prev_io = io
-                except Exception:
-                    pass
-
-                logger.info(
-                    "resource_sample",
-                    duration_seconds=round(time.perf_counter() - t0, 4),
-                    sample_index=sample_index,
-                    available_gb=round(mem.available / (1024**3), 2),
-                    used_percent=round(mem.percent, 1),
-                    main_rss_gb=round(main_rss_gb, 3),
-                    children_rss_gb=round(children_rss_gb, 3),
-                    cpu_percent=psutil.cpu_percent(interval=None),
-                    disk_read_mb=round(read_mb, 2) if read_mb is not None else None,
-                    disk_write_mb=round(write_mb, 2) if write_mb is not None else None,
-                )
+                for child in proc.children(recursive=True):
+                    try:
+                        children_rss_gb += child.memory_info().rss / (1024**3)
+                    except psutil.NoSuchProcess, psutil.AccessDenied:
+                        continue
             except Exception:
-                logger.debug("resource_sample_failed", exc_info=True)
+                pass
+
+            read_mb = write_mb = None
+            try:
+                io = psutil.disk_io_counters()
+                if io is not None and self._prev_io is not None:
+                    read_mb = (io.read_bytes - self._prev_io.read_bytes) / (1024**2)
+                    write_mb = (io.write_bytes - self._prev_io.write_bytes) / (1024**2)
+                self._prev_io = io
+            except Exception:
+                pass
+
+            cpu_percent = psutil.cpu_percent(interval=None)
+            free_disk = _free_disk(self.disks)
+            logger.info(
+                "resource_sample",
+                duration_seconds=round(time.perf_counter() - t0, 4),
+                sample_index=self._sample_index,
+                available_gb=round(mem.available / (1024**3), 2),
+                used_percent=round(mem.percent, 1),
+                main_rss_gb=round(main_rss_gb, 3),
+                children_rss_gb=round(children_rss_gb, 3),
+                cpu_percent=cpu_percent,
+                disk_read_mb=round(read_mb, 2) if read_mb is not None else None,
+                disk_write_mb=round(write_mb, 2) if write_mb is not None else None,
+                free_disk=free_disk,
+            )
+            if self.on_sample is not None:
+                self.on_sample(
+                    cpu_percent=cpu_percent,
+                    memory_percent=mem.percent,
+                    free_disk=free_disk,
+                )
+        except Exception:
+            logger.debug("resource_sample_failed", exc_info=True)
+
+
+def _free_disk(folders: Iterable[str]) -> dict[str, int]:
+    """Free bytes of the disk of each folder (or its nearest existing parent)."""
+    free = {}
+    for folder in folders:
+        path = Path(folder)
+        existing = next((p for p in (path, *path.parents) if p.exists()), None)
+        if existing is not None:
+            free[folder] = psutil.disk_usage(str(existing)).free
+    return free
 
 
 # Anchored to the user's home directory, not Path.cwd() -- `canvodpy run`
