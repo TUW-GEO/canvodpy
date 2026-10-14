@@ -848,8 +848,8 @@ _QUAL_COMMENT_TAIL = (
     "indicator words: bits 0-7 = indicator type, bits 8-11 = value."
 )
 _QUAL_REFERENCE = (
-    "Septentrio AsteRx SB3 ProBase Firmware v4.14.x Reference Guide, "
-    "QualityInd block (Block 4082), field Indicators."
+    "Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide, "
+    "QualityInd block (Block 4082), field Indicators, p.411."
 )
 _QUAL_OVERALL_ATTRS: dict[str, object] = {
     "long_name": "Overall receiver quality indicator",
@@ -889,7 +889,11 @@ _QUAL_SCINT_ATTRS: dict[str, object] = {
     "valid_range": [0, 10],
     "source": "SBF QualityInd block (Block 4082), indicator type 29",
     "comment": (_QUAL_COMMENT_TAIL + " Indicator type 29 requires firmware >= 4.15.1."),
-    "references": _QUAL_REFERENCE,
+    "references": (
+        "Septentrio AsteRx SB3 ProBase Firmware v4.15.1 Reference Guide, "
+        "QualityInd block (Block 4082), field Indicators, indicator type 29, "
+        "p.428."
+    ),
 }
 
 # ---------------------------------------------------------------------------

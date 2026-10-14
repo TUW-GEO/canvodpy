@@ -283,7 +283,7 @@ The result does not depend on the order of observables in the header.
 | 1 | Half-cycle ambiguity/slip possible |
 | 2 | Galileo BOC tracking of an MBOC-modulated signal |
 
-`-1` marks "no indicator written." Table A3 defines no further bits, so the `valid_range` of `LLI` is `[-1, 7]`. The RINEX 3 meaning of `LLI` and `SSI` is shared by all readers; the [RINEX 2 reader](rinex-v2-format.md#loss-of-lock-and-signal-strength-indicators) translates its bits.
+`-1` marks "no indicator written." Table A3 defines no further bits, so the `valid_range` of `LLI` is `[0, 7]`; the fill value `-1` lies outside it, as CF requires. The RINEX 3 meaning of `LLI` and `SSI` is shared by all readers; the [RINEX 2 reader](rinex-v2-format.md#loss-of-lock-and-signal-strength-indicators) translates its bits.
 
 ## Signal strength unit
 
