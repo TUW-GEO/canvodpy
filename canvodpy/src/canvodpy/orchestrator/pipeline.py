@@ -23,6 +23,7 @@ from itertools import zip_longest
 from pathlib import Path
 from typing import TypeVar, cast
 
+import numpy as np
 import pint
 import structlog
 import xarray as xr
@@ -34,9 +35,10 @@ from canvod.ops import planned_settings, preprocess_files
 from canvod.readers import MatchedDirs
 from canvod.readers.gnss_specs.constants import UREG
 from canvod.store import GnssResearchSite
+from canvod.store.store import _with_run_id
 from canvod.store_metadata import store_exists
 from canvod.utils.logging import get_run_id, new_run_id, reset_run_id, set_run_id
-from canvod.utils.tools import YYYYDOY, deprecated
+from canvod.utils.tools import YYYYDOY, deprecated, get_version_from_pyproject
 from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
 from canvodpy.orchestrator.discovery import (
     ReceiverDay,
@@ -739,6 +741,47 @@ class PipelineOrchestrator:
             return None
         return processor, task_descriptors, receiver_file_map
 
+    def _grow_day_blocks(
+        self,
+        doy_contexts: dict[
+            str, tuple[RinexDataProcessor, list[tuple[str, list[Path]]]]
+        ],
+        batch_index: int,
+    ) -> None:
+        """Grow the batch's day blocks in one small commit, before reading.
+
+        Only the days whose Phase 1 succeeded (``doy_contexts``) get a
+        block, so days whose orbit products are not out yet get none. A
+        block of a day whose files fail later stays as fill and is reused
+        when the day is run again (ADR 0016).
+        """
+        days: dict[str, dict[np.datetime64, float]] = defaultdict(dict)
+        for processor, receiver_file_map in doy_contexts.values():
+            for group, cadences in processor.day_blocks_to_grow(
+                receiver_file_map
+            ).items():
+                days[group].update(cadences)
+        if not days:
+            return
+        message = _with_run_id(
+            f"[v{get_version_from_pyproject()}] Day blocks for "
+            f"{', '.join(sorted(doy_contexts))}"
+        )
+        t_start = _time.monotonic()
+        snapshot_id = call_with_store_retries(
+            partial(self.site.gnss_store.grow_day_blocks, days, message=message),
+            logger=self._logger,
+            date=",".join(sorted(doy_contexts)),
+            op="grow_day_blocks",
+        )
+        self._logger.info(
+            "day_blocks_grown",
+            batch_index=batch_index,
+            groups=sorted(days),
+            committed=snapshot_id is not None,
+            seconds=round(_time.monotonic() - t_start, 2),
+        )
+
     def _prepare_in_context(
         self,
         context: contextvars.Context,
@@ -765,6 +808,8 @@ class PipelineOrchestrator:
 
         1. Prepare, one thread per date: auxiliary data (SP3/CLK
            interpolation or cache), receiver positions, one task per file.
+           The prepared dates then get their day blocks in one growth
+           commit (:meth:`_grow_day_blocks`).
         2. Process the files of all dates of the batch in loky's reusable
            process pool, at most twice the worker count in flight.
         3. Write, in this process, as soon as all files of a receiver-day
@@ -897,6 +942,8 @@ class PipelineOrchestrator:
                 doys_prepared=len(doy_contexts),
                 total_tasks=len(all_tasks),
             )
+
+            self._grow_day_blocks(doy_contexts, batch_idx + 1)
 
             if not all_tasks:
                 self._logger.warning(
