@@ -7,6 +7,7 @@ recomputed the way the comparison does.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -396,6 +397,80 @@ def test_json_round_trips(tmp_path) -> None:
 
     result = compare_stores(ref, new)
 
-    loaded = StoreComparison.model_validate_json(result.model_dump_json())
+    dumped = result.model_dump_json()
+    # The matches field is in the JSON, and a computed field does not break
+    # model_validate_json (matches is recomputed, not read from the input).
+    assert json.loads(dumped)["matches"] is False
+    loaded = StoreComparison.model_validate_json(dumped)
     assert loaded == result
-    assert loaded.matches == result.matches
+    assert loaded.matches is False
+
+    # Identical stores carry matches True and still round-trip.
+    same = compare_stores(ref, _gnss_store(tmp_path / "new2", ds))
+    assert json.loads(same.model_dump_json())["matches"] is True
+    assert StoreComparison.model_validate_json(same.model_dump_json()).matches is True
+
+
+# --- Text report ------------------------------------------------------------
+
+
+def test_to_text_lists_groups_sections(tmp_path) -> None:
+    ref = _gnss_store(tmp_path / "ref", _gnss_ds(seed=0), group="canopy_01")
+    _write_group(ref, "reference_01", _gnss_ds(seed=1))
+    new = _gnss_store(tmp_path / "new", _gnss_ds(seed=2), group="new_01")
+
+    result = compare_stores(ref, new)
+
+    text = result.to_text()
+    assert "Groups only in the reference: canopy_01, reference_01" in text
+    assert "Groups only in the new store: new_01" in text
+
+
+def test_to_text_value_difference_line(tmp_path) -> None:
+    ds = _gnss_ds(seed=0)
+    ds["LLI"] = (
+        ("epoch", "sid"),
+        np.zeros((ds.dims["epoch"], ds.dims["sid"]), dtype="int8"),
+    )
+    ref = _gnss_store(tmp_path / "ref", ds)
+    new_ds = ds.copy(deep=True)
+    new_ds["LLI"].values[(0, 0)] = 7
+    new = _gnss_store(tmp_path / "new", new_ds)
+
+    result = compare_stores(ref, new)
+
+    # The line carries group/variable, kind, count and largest difference.
+    assert result.to_text() == "canopy_01/LLI: value: 1 value(s), largest |diff| 7"
+
+
+# --- Datetime values use NaT -------------------------------------------------
+
+
+def test_datetime_nat_in_both_is_equal(tmp_path) -> None:
+    ds = _gnss_ds(seed=0)
+    shape = (ds.dims["epoch"], ds.dims["sid"])
+    ds["obs_time"] = (
+        ("epoch", "sid"),
+        np.full(shape, np.datetime64("NaT"), dtype="datetime64[ns]"),
+    )
+    ref = _gnss_store(tmp_path / "ref", ds)
+    new = _gnss_store(tmp_path / "new", ds)
+
+    result = compare_stores(ref, new)
+
+    assert result.matches
+
+
+def test_datetime_nat_in_one_store_only_is_reported(tmp_path) -> None:
+    ds = _gnss_ds(seed=0)
+    shape = (ds.dims["epoch"], ds.dims["sid"])
+    ds["obs_time"] = (("epoch", "sid"), np.zeros(shape, dtype="datetime64[ns]"))
+    ds_nat = ds.copy(deep=True)
+    ds_nat["obs_time"].values[(0, 0)] = np.datetime64("NaT")
+    ref = _gnss_store(tmp_path / "ref", ds)
+    new = _gnss_store(tmp_path / "new", ds_nat)
+
+    result = compare_stores(ref, new)
+
+    assert DiffKind.MISSING_VALUE in {d.kind for d in result.differences}
+    assert not result.matches

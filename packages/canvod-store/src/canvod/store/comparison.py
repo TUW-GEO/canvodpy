@@ -23,7 +23,7 @@ from enum import StrEnum
 
 import numpy as np
 import xarray as xr
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from canvod.store.store import MyIcechunkStore
 
@@ -130,6 +130,7 @@ class StoreComparison(BaseModel):
     groups_only_in_new: list[str] = Field(default_factory=list)
     differences: list[ComparisonDifference] = Field(default_factory=list)
 
+    @computed_field
     @property
     def matches(self) -> bool:
         """True when the stores match (no group and no value difference)."""
@@ -143,9 +144,8 @@ class StoreComparison(BaseModel):
             return ""
         lines: list[str] = []
         if self.groups_only_in_reference:
-            lines.append(
-                "Groups only in the reference: , ".join(self.groups_only_in_reference)
-            )
+            groups = ", ".join(self.groups_only_in_reference)
+            lines.append(f"Groups only in the reference: {groups}")
         if self.groups_only_in_new:
             lines.append(
                 f"Groups only in the new store: {', '.join(self.groups_only_in_new)}"
@@ -411,8 +411,6 @@ def _compare_values(
 
     if _is_float(ref_vals):
         _compare_float_values(group, name, ref_p, new_p, result)
-    elif _is_exact(ref_vals):
-        _compare_exact_values(group, name, ref_p, new_p, result)
     else:
         _compare_exact_values(group, name, ref_p, new_p, result)
 
@@ -484,15 +482,13 @@ def _is_float(values: np.ndarray) -> bool:
     return values.dtype.kind in "fc"
 
 
-def _is_exact(values: np.ndarray) -> bool:
-    # Integer, boolean, string and object arrays are compared exactly.
-    return values.dtype.kind in "iubUS" or values.dtype == object
-
-
 def _missing_mask(values: np.ndarray) -> np.ndarray:
     """A boolean mask of the missing values of an xarray array."""
     if values.dtype.kind in "fc":
         return np.isnan(values)
+    if values.dtype.kind in "mM":
+        # datetime64 and timedelta64 use NaT, not NaN.
+        return np.isnat(values)
     if values.dtype == object:
         return np.array(
             [
