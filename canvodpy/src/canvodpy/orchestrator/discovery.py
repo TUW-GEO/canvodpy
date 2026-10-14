@@ -42,9 +42,12 @@ from dataclasses import dataclass
 from fnmatch import fnmatch
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from natsort import natsorted
+
+if TYPE_CHECKING:
+    from canvod.preflight.convention import CanVODFilename
 
 #: Suffixes of general-purpose compression, compared in lower case.
 COMPRESSION_SUFFIXES = frozenset(
@@ -312,8 +315,13 @@ def check_receivers(
         raise DiscoveryError(msg)
 
 
-def _canonical_file(path: Path, file_types: frozenset[str]) -> DiscoveredFile | None:
-    """``path`` as a discovered file if its name follows the convention."""
+def _canonical_file(
+    path: Path, file_types: frozenset[str]
+) -> tuple[DiscoveredFile, CanVODFilename] | None:
+    """``path`` as a discovered file if its name follows the convention.
+
+    Returned together with the parsed name, so a scan parses each name once.
+    """
     from canvod.preflight.convention import CanVODFilename
 
     try:
@@ -322,18 +330,27 @@ def _canonical_file(path: Path, file_types: frozenset[str]) -> DiscoveredFile | 
         return None
     if parsed.compression is not None or parsed.file_type not in file_types:
         return None
-    return DiscoveredFile(path=path, canonical_name=parsed.name)
+    return DiscoveredFile(path=path, canonical_name=parsed.name), parsed
 
 
-def _recipe_file(path: Path, naming_recipe: Any) -> DiscoveredFile | None:
-    """``path`` as a discovered file if the recipe recognizes its name."""
+def _recipe_file(
+    path: Path, naming_recipe: Any
+) -> tuple[DiscoveredFile, CanVODFilename] | None:
+    """``path`` as a discovered file if the recipe recognizes its name.
+
+    Returned together with the parsed canonical name, so a scan parses each
+    name once.
+    """
+    from canvod.preflight.convention import CanVODFilename
+
     if not fnmatch(path.name, naming_recipe.glob) or not naming_recipe.matches(
         path.name
     ):
         return None
-    return DiscoveredFile(
+    discovered = DiscoveredFile(
         path=path, canonical_name=naming_recipe.to_virtual_file(path).canonical_str
     )
+    return discovered, CanVODFilename.from_filename(discovered.canonical_name)
 
 
 @dataclass(frozen=True)
@@ -377,7 +394,7 @@ def scan_directory(directory: Path, recipe: Path | None = None) -> DirectoryScan
 
 @lru_cache(maxsize=64)
 def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
-    from canvod.preflight.convention import CanVODFilename, find_overlaps
+    from canvod.preflight.convention import find_overlaps
 
     try:
         naming_recipe = _load_recipe(recipe) if recipe else None
@@ -386,6 +403,7 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
     from canvod.preflight.convention import known_file_types
 
     found: list[DiscoveredFile] = []
+    parsed_by_path: dict[Path, CanVODFilename] = {}
     unrecognized: list[Path] = []
     compressed: list[Path] = []
     if directory.is_dir():
@@ -398,13 +416,15 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
                 if is_compressed(path):
                     compressed.append(path)
                     continue
-                discovered = (
+                result = (
                     _recipe_file(path, naming_recipe)
                     if naming_recipe is not None
                     else _canonical_file(path, known_file_types())
                 )
-                if discovered is not None:
+                if result is not None:
+                    discovered, parsed = result
                     found.append(discovered)
+                    parsed_by_path[discovered.path] = parsed
                 else:
                     unrecognized.append(path)
 
@@ -431,10 +451,7 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
         )
         raise DiscoveryError(msg)
 
-    parsed_names = {
-        f.canonical_name: CanVODFilename.from_filename(f.canonical_name) for f in found
-    }
-    overlaps = find_overlaps(found, key=lambda f: parsed_names[f.canonical_name])
+    overlaps = find_overlaps(found, key=lambda f: parsed_by_path[f.path])
     if overlaps:
         lines = [f"{a.path} overlaps {b.path}" for a, b in overlaps[:5]]
         if len(overlaps) > 5:
@@ -450,7 +467,7 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
 
     by_day: dict[str, list[DiscoveredFile]] = defaultdict(list)
     for f in found:
-        parsed = parsed_names[f.canonical_name]
+        parsed = parsed_by_path[f.path]
         by_day[f"{parsed.year:04d}{parsed.doy:03d}"].append(f)
     return DirectoryScan(
         days={
