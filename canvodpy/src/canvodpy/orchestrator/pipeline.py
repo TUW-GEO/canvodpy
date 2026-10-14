@@ -47,6 +47,7 @@ from canvodpy.orchestrator.discovery import (
     is_compressed,
     receiver_days,
     recipe_file,
+    require_filemap,
     unprocessed_files,
 )
 from canvodpy.orchestrator.processor import (
@@ -222,6 +223,14 @@ class PipelineOrchestrator:
         The run recorded in the run history (``Pipeline`` starts it): the
         orchestrator records the receiver-days it plans and finishes.
         ``None``: nothing is recorded.
+    on_discovery_start : Callable[[str, Path], None] | None
+        Called with the receiver name and its data folder when the run starts
+        finding that receiver's files, so the CLI can say what it is doing.
+        Default None (no-op) for standalone/programmatic use.
+    on_discovery_end : Callable[[str, int, int, float], None] | None
+        Called with the receiver name, the number of files found, the number
+        of days and the elapsed seconds when the run has found them. Default
+        None (no-op) for standalone/programmatic use.
 
     """
 
@@ -237,6 +246,8 @@ class PipelineOrchestrator:
         nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
+        on_discovery_start: Callable[[str, Path], None] | None = None,
+        on_discovery_end: Callable[[str, int, int, float], None] | None = None,
         config: CanvodConfig | None = None,
         run: ActiveRun | None = None,
     ) -> None:
@@ -250,10 +261,19 @@ class PipelineOrchestrator:
             )
             config = load_config()
         self._config = config
+        self.site = site
+        self._on_group_written = on_group_written
+        self._on_discovery_start = on_discovery_start
+        self._on_discovery_end = on_discovery_end
+        self._run = run
         # The log location comes from the configuration of this run.
         ensure_file_logging()
         # A new run sees files added since the previous one.
         clear_discovery_cache()
+        # Find every receiver's files before check_receivers reads them, so
+        # the slow listing on a network drive is reported, not silent; the
+        # scan is cached, so check_receivers below reads the warmed result.
+        self._warm_and_report_discovery()
         check_receivers(
             site.receivers, site._site_config.get_base_path(), site.site_name
         )
@@ -263,12 +283,9 @@ class PipelineOrchestrator:
             set_run_id(new_run_id(site.site_name)) if get_run_id() is None else None
         )
 
-        self.site = site
         self.n_max_workers = n_max_workers
         self.dry_run = dry_run
         self.days_per_batch = days_per_batch
-        self._on_group_written = on_group_written
-        self._run = run
         self._batch_duration: pint.Quantity = days_per_batch * 24 * UREG.hour
         self._threads_per_worker = threads_per_worker
         self._memory_monitor = MemoryMonitor()
@@ -315,6 +332,39 @@ class PipelineOrchestrator:
 
     def __exit__(self, *exc: object) -> None:
         self.close()
+
+    def _warm_and_report_discovery(self) -> None:
+        """Scan the files of every receiver now, and report it.
+
+        ``check_receivers`` reads a no-recipe receiver's identity from a
+        directory scan, and ``_receiver_days`` reads the same scan when the
+        run schedules a receiver's days. On a network drive that listing is
+        the slowest quiet part of a run, so this does it here and says, per
+        receiver, what the run is finding, before ``check_receivers`` reads
+        the warmed scan. The scan is cached, so ``check_receivers`` and
+        ``_receiver_days`` get the result for free.
+        """
+        site_config = self.site._site_config
+        # A receiver with a naming recipe needs the optional canvod-filemap
+        # extra; fail before scanning with the same message check_receivers
+        # would raise, so a run reports the missing extra the same way.
+        recipe_receivers = [
+            name for name, cfg in site_config.receivers.items() if cfg.recipe
+        ]
+        require_filemap(recipe_receivers)
+        for receiver_name, cfg in site_config.receivers.items():
+            reader_format = None if cfg.reader_format == "auto" else cfg.reader_format
+            directory = site_config.get_base_path() / cfg.directory
+            recipe = recipe_file(self.site.site_name, cfg.recipe)
+            if self._on_discovery_start is not None:
+                self._on_discovery_start(receiver_name, directory)
+            t_discovery = _time.perf_counter()
+            days = receiver_days(receiver_name, directory, reader_format, recipe)
+            unprocessed_files(directory, reader_format, recipe)
+            dt_discovery = _time.perf_counter() - t_discovery
+            if self._on_discovery_end is not None:
+                n_files = sum(len(discover_files(day, reader_format)) for day in days)
+                self._on_discovery_end(receiver_name, n_files, len(days), dt_discovery)
 
     def _receiver_days(self, receiver_name: str) -> dict[str, ReceiverDay]:
         """Days with files to process for one receiver, keyed by ``YYYYDOY``.

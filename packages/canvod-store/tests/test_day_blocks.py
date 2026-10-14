@@ -17,6 +17,10 @@ from canvod.store.day_blocks import (
     load_group,
     write_file_region,
 )
+from canvod.store.prepare import (
+    GroupCoordinatesMismatchError,
+    GroupVariablesMismatchError,
+)
 
 GROUP = "canopy_01"
 SIDS = ["G01|L1|C", "G02|L1|C", "E01|E1|C"]
@@ -240,3 +244,21 @@ def test_drop_empty_leaves_a_group_written_by_appending_as_it_is(session):
     to_icechunk(ds, session, group=GROUP)
 
     assert load_group(session.store, GROUP, drop_empty=True).sizes["epoch"] == 10
+
+
+def test_a_file_with_other_variables_is_refused_as_a_write(session):
+    _write(session, _file(DAY_1, 0, 10, 5), 5)
+    other = _file(DAY_1, 50, 10, 5).drop_vars("LLI")
+
+    with pytest.raises(GroupVariablesMismatchError, match="Cannot write to group"):
+        write_file_region(session, GROUP, other)
+
+
+def test_a_file_with_other_sids_is_refused_as_a_write(session):
+    _write(session, _file(DAY_1, 0, 10, 5), 5)
+    other = _file(DAY_1, 50, 10, 5).assign_coords(
+        sid=["G01|L1|C", "G03|L1|C", "E01|E1|C"]
+    )
+
+    with pytest.raises(GroupCoordinatesMismatchError, match="the write would"):
+        write_file_region(session, GROUP, other)

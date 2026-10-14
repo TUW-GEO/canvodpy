@@ -48,6 +48,31 @@ You need:
 - **An internet connection** during processing, to download the
   satellite orbits and clocks.
 
+??? tip "No data of your own yet? Use the demo data"
+
+    `canvodpy.demo_data()` downloads one day of the Rosalia site from
+    Hugging Face: a receiver below the canopy and a reference receiver, on
+    2025-01-01. It downloads only the kind of data you ask for, checks each
+    archive against its sha256, and keeps the files in your user cache
+    folder, so a second call needs no network.
+
+    ```python
+    from canvodpy import demo_data
+
+    root = demo_data("rinex")  # RINEX v3.04, the whole day
+    root = demo_data("sbf")  # SBF, 00:00 to 02:00
+    root = demo_data("aux")  # SP3 orbits, CLK clocks, auxiliary store
+    ```
+
+    All three return the same folder. In it, the RINEX files of the two
+    receivers are in `rinex_v3_04/01_Rosalia/01_reference` and
+    `rinex_v3_04/01_Rosalia/02_canopy`, the SBF files in
+    `sbf/01_Rosalia/01_reference` and `sbf/01_Rosalia/02_canopy`. Use
+    the site folder as `gnss_site_data_root` and the receiver folders as
+    `directory` in [step 3](#3-point-canvodpy-to-your-data). The
+    pipeline still downloads the orbits and clocks from the agencies; the
+    `"aux"` files are a copy for when that fails.
+
 ---
 
 ## 1. Install canVODpy
@@ -298,6 +323,11 @@ example, `2025001` is January 1, 2025 and `2025032` is February 1, 2025.
     Icechunk store, and computes VOD for every receiver pair in
     `vod_analyses` and writes it to the site's VOD store.
 
+    Before it reads a file, a run finds the files of every receiver in the
+    site. On a network drive this can take minutes. The CLI says, for each
+    receiver, which folder it is scanning, and afterwards how many files and
+    days it found, so you can see that the run is working.
+
     To see what a run would process without running it, add `--dry-run`.
 
 Files that are already in the store are skipped.
@@ -337,6 +367,11 @@ Files that are already in the store are skipped.
 
 By default, canVODpy uses all but two of the machine's CPU cores. To set
 limits, see [Parallel processing](../guides/parallel-processing.md).
+
+To follow a long run while it's in progress, add `--dashboard`. It opens the
+performance dashboard, which shows how long each step took per day and
+receiver. The diagnostics guide explains it under
+[See where a run spends its time](../guides/diagnostics.md#see-where-a-run-spends-its-time).
 
 !!! example "Try it in a notebook"
 
@@ -384,6 +419,8 @@ canvodpy store log ExampleSite --store vod   # the history of its writes
   `canvodpy run`, and the `Site` and `Pipeline` objects in detail.
 - [Command line reference](../api/cli.md): every `canvodpy` command and
   option.
+- [Diagnostics](../guides/diagnostics.md): the log files, what to do when
+  a run fails, and the performance dashboard.
 - [Hemispheric grids](../packages/grids/overview.md): assign the VOD to
   cells of the sky.
 - [Storage](../packages/store/overview.md): the history of a store, and

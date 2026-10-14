@@ -681,3 +681,40 @@ class TestToDsAndAuxiliary:
         obs, aux = combined_result
         meta = aux["sbf_obs"]
         assert meta.attrs.get("File Hash") == obs.attrs.get("File Hash")
+
+
+class TestSbfObsUnknownMarker:
+    """Epoch variables that store -1 for "unknown" declare it as _FillValue."""
+
+    _MARKED = (
+        "cpu_load",
+        "qual_overall",
+        "qual_gnss_main",
+        "qual_rf_main",
+        "qual_cpu",
+        "qual_scintillation",
+        "pvt_mode",
+        "spoofing_flag",
+        "nma_fail_flag",
+        "rise_set",
+        "broadcast_angle_source",
+    )
+
+    def test_unknown_marker_is_declared(self, meta_ds: xr.Dataset) -> None:
+        for name in self._MARKED:
+            assert meta_ds[name].attrs.get("_FillValue") == -1, name
+
+    def test_cpu_load_holds_every_raw_value(self, meta_ds: xr.Dataset) -> None:
+        # ReceiverStatus.CPULoad is u1: 0-254 are values, 255 Do-Not-Use.
+        assert np.iinfo(meta_ds["cpu_load"].dtype).max >= 254
+
+    def test_unknown_reads_back_as_missing(
+        self, meta_ds: xr.Dataset, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        path = tmp_path_factory.mktemp("sbf_obs") / "meta.zarr"
+        meta_ds[list(self._MARKED)].to_zarr(path, mode="w")
+        back = xr.open_zarr(path)
+        for name in self._MARKED:
+            unknown = (meta_ds[name] == -1).values
+            assert back[name].isnull().values[unknown].all(), name
+            assert not back[name].isnull().values[~unknown].any(), name

@@ -37,6 +37,7 @@ import socket
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from functools import partial
 from pathlib import Path
@@ -302,6 +303,33 @@ def _compute_vod_for_day(
     return results
 
 
+def _discovery_callbacks(
+    emit: Callable[[str], None],
+) -> tuple[Callable[[str, Path], None], Callable[[str, int, int, float], None]]:
+    """Build the two discovery callbacks that report through ``emit``.
+
+    ``emit`` writes one line (``print`` for a dry-run, ``reporter.log`` for a
+    real run), so the CLI owns the display and the library stays quiet. The
+    count words are singular when there is one file or one day.
+    """
+
+    def on_start(receiver_name: str, folder: Path) -> None:
+        emit(
+            f"  Finding files of receiver {receiver_name} in {folder} "
+            f"(can take minutes on a network drive)..."
+        )
+
+    def on_end(receiver_name: str, n_files: int, n_days: int, seconds: float) -> None:
+        file_word = "file" if n_files == 1 else "files"
+        day_word = "day" if n_days == 1 else "days"
+        emit(
+            f"  Found {n_files} {file_word} on {n_days} {day_word} for receiver "
+            f"{receiver_name} ({seconds:.1f} s)."
+        )
+
+    return on_start, on_end
+
+
 def _main_impl(args: SimpleNamespace) -> int:
     from pathlib import Path
 
@@ -348,10 +376,14 @@ def _main_impl(args: SimpleNamespace) -> int:
         for site_name in site_names:
             site = Site(site_name)
             start, end = _resolve_date_range(args, site)
+
+            on_discovery_start, on_discovery_end = _discovery_callbacks(print)
             with site.pipeline(
                 n_workers=args.workers,
                 days_per_batch=args.days_per_batch,
                 dry_run=True,
+                on_discovery_start=on_discovery_start,
+                on_discovery_end=on_discovery_end,
             ) as pipeline:
                 plan = pipeline.preview(start=start, end=end)
                 print(f"Dry-run plan for {site_name}:")
@@ -474,6 +506,12 @@ def _main_impl(args: SimpleNamespace) -> int:
                 ) -> None:
                     reporter.advance(_site_name, group_name)
 
+                # Say what the warm-up is doing: before a receiver's files are
+                # found and after. A network drive can make this the slowest
+                # quiet part of a run, so the user sees it is working.
+                on_discovery_start, on_discovery_end = _discovery_callbacks(
+                    reporter.log
+                )
                 stage = "pipeline_process"
                 with site.pipeline(
                     n_workers=args.workers,
@@ -481,6 +519,8 @@ def _main_impl(args: SimpleNamespace) -> int:
                     dry_run=False,
                     on_group_written=_on_group_written,
                     label=args.label,
+                    on_discovery_start=on_discovery_start,
+                    on_discovery_end=on_discovery_end,
                 ) as pipeline:
                     gen = pipeline.process_range(start=start, end=end)
                     while True:

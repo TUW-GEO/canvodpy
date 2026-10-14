@@ -157,6 +157,8 @@ class Site:
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
         label: str | None = None,
+        on_discovery_start: Callable[[str, Path], None] | None = None,
+        on_discovery_end: Callable[[str, int, int, float], None] | None = None,
     ) -> Pipeline:
         """Create a processing pipeline for this site.
 
@@ -190,6 +192,13 @@ class Site:
         label : str, optional
             Free-text label of the run, stored in the run history (for
             example to group the repetitions of a benchmark).
+        on_discovery_start : Callable[[str, Path], None], optional
+            Called with the receiver name and its data folder when the run
+            starts finding that receiver's files.
+        on_discovery_end : Callable[[str, int, int, float], None], optional
+            Called with the receiver name, the number of files found, the
+            number of days and the elapsed seconds when the run has found
+            them.
 
         Returns
         -------
@@ -213,6 +222,8 @@ class Site:
             threads_per_worker=threads_per_worker,
             on_group_written=on_group_written,
             label=label,
+            on_discovery_start=on_discovery_start,
+            on_discovery_end=on_discovery_end,
         )
 
     def __repr__(self) -> str:
@@ -260,6 +271,12 @@ class Pipeline:
         progress display without this class owning any display itself.
     label : str, optional
         Free-text label of the run, stored in the run history.
+    on_discovery_start : Callable[[str, Path], None], optional
+        Called with the receiver name and its data folder when the run starts
+        finding that receiver's files.
+    on_discovery_end : Callable[[str, int, int, float], None], optional
+        Called with the receiver name, the number of files found, the number
+        of days and the elapsed seconds when the run has found them.
 
     A pipeline that is not a dry run is a run: it records itself in the run
     history of the log folder (ADR 0018) from its creation until
@@ -299,6 +316,8 @@ class Pipeline:
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
         label: str | None = None,
+        on_discovery_start: Callable[[str, Path], None] | None = None,
+        on_discovery_end: Callable[[str, int, int, float], None] | None = None,
     ) -> None:
         # Handle both Site object and string
         if isinstance(site, str):
@@ -372,6 +391,8 @@ class Pipeline:
                 days_per_batch=days_per_batch,
                 threads_per_worker=threads_per_worker,
                 on_group_written=on_group_written,
+                on_discovery_start=on_discovery_start,
+                on_discovery_end=on_discovery_end,
                 config=config,
                 run=active_run,
             )

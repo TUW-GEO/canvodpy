@@ -555,6 +555,10 @@ docs-lint-changed BASE="origin/main":
     uvx --from vale vale sync
     uvx --from vale vale $files
 
+# build the demo data zips for Hugging Face from the test data (prints each sha256)
+demo-archives OUT="dev/demo_archives" TEST_DATA="packages/canvod-readers/tests/test_data/valid":
+    uv run --no-sync python scripts/build_demo_archives.py "{{ OUT }}" "{{ TEST_DATA }}"
+
 # write the command-line reference page (docs/api/cli.md) from the --help texts
 cli-docs:
     uv run python scripts/cli_docs.py

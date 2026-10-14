@@ -42,11 +42,14 @@ from dataclasses import dataclass
 from fnmatch import fnmatch
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from natsort import natsorted
 
 from canvod.utils.logging import timed_stage
+
+if TYPE_CHECKING:
+    from canvod.preflight.convention import CanVODFilename
 
 #: Suffixes of general-purpose compression, compared in lower case.
 COMPRESSION_SUFFIXES = frozenset(
@@ -245,6 +248,34 @@ def _receiver_identity(cfg: dict[str, Any], base_path: Path, site: str) -> str |
         return None  # reported when the receiver's files are read
 
 
+def require_filemap(recipe_receivers: list[str]) -> None:
+    """Raise ``DiscoveryError`` if canvod-filemap is needed but not installed.
+
+    ``recipe_receivers`` are the names of the receivers with a ``recipe:``;
+    they only fill the message, so a caller passes whatever holds them
+    (``check_receivers`` gets receiver dicts, the warm-up gets config objects).
+
+    Raises
+    ------
+    DiscoveryError
+        The combined message ``check_receivers`` raises today, if any receiver
+        uses a naming recipe and the optional canvod-filemap extra is not
+        installed:
+        ``Receiver(s) <names> use a naming recipe, which requires
+        canvod-filemap, but it is not installed. <install hint>``.
+    """
+    if recipe_receivers:
+        try:
+            import canvod.filemap  # noqa: F401
+        except ImportError as exc:
+            msg = (
+                f"Receiver(s) {', '.join(recipe_receivers)} use a naming recipe, "
+                f"which requires canvod-filemap, but it is not installed. "
+                f"{FILEMAP_INSTALL_HINT}"
+            )
+            raise DiscoveryError(msg) from exc
+
+
 def check_receivers(
     receivers: dict[str, dict[str, Any]], base_path: Path, site: str
 ) -> None:
@@ -275,16 +306,7 @@ def check_receivers(
         cannot be read (see :func:`receiver_days`).
     """
     recipe_receivers = [name for name, cfg in receivers.items() if cfg.get("recipe")]
-    if recipe_receivers:
-        try:
-            import canvod.filemap  # noqa: F401
-        except ImportError as exc:
-            msg = (
-                f"Receiver(s) {', '.join(recipe_receivers)} use a naming recipe, "
-                f"which requires canvod-filemap, but it is not installed. "
-                f"{FILEMAP_INSTALL_HINT}"
-            )
-            raise DiscoveryError(msg) from exc
+    require_filemap(recipe_receivers)
 
     owner: dict[str, str] = {}
     problems: list[str] = []
@@ -314,8 +336,13 @@ def check_receivers(
         raise DiscoveryError(msg)
 
 
-def _canonical_file(path: Path, file_types: frozenset[str]) -> DiscoveredFile | None:
-    """``path`` as a discovered file if its name follows the convention."""
+def _canonical_file(
+    path: Path, file_types: frozenset[str]
+) -> tuple[DiscoveredFile, CanVODFilename] | None:
+    """``path`` as a discovered file if its name follows the convention.
+
+    Returned together with the parsed name, so a scan parses each name once.
+    """
     from canvod.preflight.convention import CanVODFilename
 
     try:
@@ -324,18 +351,27 @@ def _canonical_file(path: Path, file_types: frozenset[str]) -> DiscoveredFile | 
         return None
     if parsed.compression is not None or parsed.file_type not in file_types:
         return None
-    return DiscoveredFile(path=path, canonical_name=parsed.name)
+    return DiscoveredFile(path=path, canonical_name=parsed.name), parsed
 
 
-def _recipe_file(path: Path, naming_recipe: Any) -> DiscoveredFile | None:
-    """``path`` as a discovered file if the recipe recognizes its name."""
+def _recipe_file(
+    path: Path, naming_recipe: Any
+) -> tuple[DiscoveredFile, CanVODFilename] | None:
+    """``path`` as a discovered file if the recipe recognizes its name.
+
+    Returned together with the parsed canonical name, so a scan parses each
+    name once.
+    """
+    from canvod.preflight.convention import CanVODFilename
+
     if not fnmatch(path.name, naming_recipe.glob) or not naming_recipe.matches(
         path.name
     ):
         return None
-    return DiscoveredFile(
+    discovered = DiscoveredFile(
         path=path, canonical_name=naming_recipe.to_virtual_file(path).canonical_str
     )
+    return discovered, CanVODFilename.from_filename(discovered.canonical_name)
 
 
 @dataclass(frozen=True)
@@ -345,7 +381,9 @@ class DirectoryScan:
     Attributes
     ----------
     days : dict[str, tuple[DiscoveredFile, ...]]
-        Day (``YYYYDOY``) to the files starting on it, naturally sorted.
+        Day (``YYYYDOY``) to the files starting on it, each day's files in
+        time order (by canonical name), so the order matches the order in
+        which the processor writes them.
     identity : str | None
         Receiver identity of the files (e.g. ``ROSA01TUW``), ``None`` if
         there are none.
@@ -380,7 +418,7 @@ def scan_directory(directory: Path, recipe: Path | None = None) -> DirectoryScan
 @lru_cache(maxsize=64)
 @timed_stage("finding_files")  # inside the cache: only real scans are timed
 def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
-    from canvod.preflight.convention import CanVODFilename, find_overlaps
+    from canvod.preflight.convention import find_overlaps
 
     try:
         naming_recipe = _load_recipe(recipe) if recipe else None
@@ -389,6 +427,7 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
     from canvod.preflight.convention import known_file_types
 
     found: list[DiscoveredFile] = []
+    parsed_by_path: dict[Path, CanVODFilename] = {}
     unrecognized: list[Path] = []
     compressed: list[Path] = []
     if directory.is_dir():
@@ -401,13 +440,15 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
                 if is_compressed(path):
                     compressed.append(path)
                     continue
-                discovered = (
+                result = (
                     _recipe_file(path, naming_recipe)
                     if naming_recipe is not None
                     else _canonical_file(path, known_file_types())
                 )
-                if discovered is not None:
+                if result is not None:
+                    discovered, parsed = result
                     found.append(discovered)
+                    parsed_by_path[discovered.path] = parsed
                 else:
                     unrecognized.append(path)
 
@@ -434,10 +475,7 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
         )
         raise DiscoveryError(msg)
 
-    parsed_names = {
-        f.canonical_name: CanVODFilename.from_filename(f.canonical_name) for f in found
-    }
-    overlaps = find_overlaps(found, key=lambda f: parsed_names[f.canonical_name])
+    overlaps = find_overlaps(found, key=lambda f: parsed_by_path[f.path])
     if overlaps:
         lines = [f"{a.path} overlaps {b.path}" for a, b in overlaps[:5]]
         if len(overlaps) > 5:
@@ -453,11 +491,11 @@ def _scan_directory(directory: Path, recipe: Path | None) -> DirectoryScan:
 
     by_day: dict[str, list[DiscoveredFile]] = defaultdict(list)
     for f in found:
-        parsed = parsed_names[f.canonical_name]
+        parsed = parsed_by_path[f.path]
         by_day[f"{parsed.year:04d}{parsed.doy:03d}"].append(f)
     return DirectoryScan(
         days={
-            day: tuple(natsorted(files, key=lambda d: str(d.path)))
+            day: tuple(sorted(files, key=lambda d: d.canonical_name))
             for day, files in by_day.items()
         },
         identity=identities[0] if identities else None,
@@ -523,7 +561,8 @@ def discover_files(
     Returns
     -------
     list[DiscoveredFile]
-        Naturally sorted by physical path.
+        The files of ``day`` that the run reads, in time order (by canonical
+        name), matching the order in which the processor writes them.
     """
     index = _scan_directory(Path(day.directory), day.recipe).days
     return _of_format(index.get(day.yyyydoy, ()), reader_format, day.recipe)
