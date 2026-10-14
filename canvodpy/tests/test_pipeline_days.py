@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import time
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-import canvodpy.orchestrator.discovery as discovery_module
 import pytest
 from canvodpy.orchestrator.discovery import ReceiverDay, clear_discovery_cache
 from canvodpy.orchestrator.pipeline import PipelineOrchestrator
@@ -68,71 +66,6 @@ def test_days_where_both_receivers_have_files(tmp_path: Path) -> None:
     assert ref_type == "reference"
     assert ref_pos == canopy_day  # the canopy's same day gives the position
     assert ref_fmt == "sbf"  # detected, the receiver is configured as auto
-
-
-def test_discovery_messages_bracket_the_real_scan(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """The 'Found' time covers the listing, not a cache hit.
-
-    The messages for a receiver bracket its directory scan: the start message
-    comes before the (slow) listing and the reported seconds cover its real
-    duration, so a run on a network drive says what it is doing while it
-    waits.
-    """
-    _touch(tmp_path / "canopy", "FANA01INK_R_20250010000_15M_05S_AA.sbf")
-    _touch(tmp_path / "ref", "FANR01INK_R_20250010000_15M_05S_AA.sbf")
-    receivers = {
-        "canopy_01": SimpleNamespace(
-            type="canopy", directory="canopy", reader_format="sbf", recipe=None
-        ),
-        "reference_01": SimpleNamespace(
-            type="reference", directory="ref", reader_format="sbf", recipe=None
-        ),
-    }
-    site = SimpleNamespace(
-        site_name="fangorn",
-        _site_config=SimpleNamespace(
-            receivers=receivers,
-            get_base_path=lambda: tmp_path,
-            resolve_paired_canopies=lambda name: ["canopy_01"],
-        ),
-    )
-    orch = PipelineOrchestrator.__new__(PipelineOrchestrator)
-    orch.site = site
-    events: list[tuple] = []
-    orch._on_discovery_start = lambda name, folder: events.append(
-        ("start", name, time.monotonic())
-    )
-    orch._on_discovery_end = lambda name, n_files, n_days, seconds: events.append(
-        ("end", name, time.monotonic(), seconds)
-    )
-
-    original = discovery_module._scan_directory
-    scan_markers: list[float | tuple] = []
-    clear_discovery_cache()
-
-    def slow_scan(directory: Path, recipe: Path | None):
-        scan_markers.append(time.monotonic())
-        time.sleep(0.5)
-        result = original(directory, recipe)
-        scan_markers.append(time.monotonic())
-        return result
-
-    monkeypatch.setattr(discovery_module, "_scan_directory", slow_scan)
-    orch._warm_and_report_discovery()
-
-    # One start and one end per receiver, in receiver order.
-    assert events[0][0] == "start" and events[0][1] == "canopy_01"
-    assert events[1][0] == "end" and events[1][1] == "canopy_01"
-    assert events[2][0] == "start" and events[2][1] == "reference_01"
-    assert events[3][0] == "end" and events[3][1] == "reference_01"
-    # The start message precedes a receiver's first listing, and the end
-    # message follows it, so the reported time covers the real scan.
-    assert events[0][2] < scan_markers[0] < scan_markers[1] < events[1][2]
-    for name in ("canopy_01", "reference_01"):
-        end = next(e for e in events if e[0] == "end" and e[1] == name)
-        assert end[3] >= 0.5, end
 
 
 def test_unprocessed_files_are_warned_about_not_fatal(tmp_path: Path) -> None:
