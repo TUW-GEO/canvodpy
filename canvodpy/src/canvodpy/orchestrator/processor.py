@@ -6,7 +6,7 @@ import json
 import os
 import time
 import warnings
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Generator, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass, field
@@ -15,6 +15,7 @@ from datetime import time as dt_time
 from pathlib import Path
 from typing import Any
 
+import icechunk
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -57,20 +58,23 @@ from canvod.config.models import (
     PREPROCESSING_ATTR,
     reference_store_group,
 )
-from canvod.ops import preprocess_files
+from canvod.ops import build_default_pipeline, preprocess_files
 from canvod.readers import DataDirMatcher, MatchedDirs
 from canvod.readers.gnss_specs.exceptions import NmeaError, RinexError
 from canvod.store import GnssResearchSite, scoped_zarr_concurrency
 from canvod.store.day_blocks import (
     AGGREGATION_SETTING,
     CadenceError,
+    DayBlock,
     add_day_block,
+    day_blocks,
+    span_chunks,
     write_file_region,
 )
 from canvod.store.prepare import prepare_write
 from canvod.store.store import _with_run_id
 from canvod.store.time_encoding import with_time_units
-from canvod.store_metadata.io import commit_with_rebase
+from canvod.store_metadata.io import commit_lock, commit_with_rebase
 from canvod.store_metadata.layout import is_day_block_group
 from canvod.store_metadata.location import store_exists
 from canvod.utils.logging import (
@@ -92,6 +96,15 @@ from canvodpy.orchestrator.discovery import (
     discover_files,
     parse_sampling_interval_from_filename,
     recipe_file,
+)
+from canvodpy.orchestrator.forked_writes import (
+    SKIPPED,
+    WRITTEN,
+    FileNumbers,
+    ForkedDay,
+    ForkResult,
+    ForkTask,
+    chunk_groups,
 )
 
 # ============================================================================
@@ -1499,16 +1512,43 @@ class RinexDataProcessor:
         """
         canonical_name = ds.attrs.get("canonical_name") or self._canonical_name(fname)
         _warn_if_name_disagrees_with_data(self._logger, fname, canonical_name, ds)
+        return self._logbook_row_of(
+            fname,
+            rinex_hash,
+            np.datetime64(ds.epoch.min().values),
+            np.datetime64(ds.epoch.max().values),
+            ds.attrs.copy(),
+            canonical_name,
+            exists,
+            rel_path,
+            action,
+            epochs,
+        )
+
+    def _logbook_row_of(
+        self,
+        fname: Path,
+        rinex_hash: str,
+        start: np.datetime64,
+        end: np.datetime64,
+        attrs: dict[str, Any],
+        canonical_name: str,
+        exists: bool,
+        rel_path: str,
+        action: str,
+        epochs: int,
+    ) -> dict[str, Any]:
+        """One log-book row from a file's numbers (see :meth:`_logbook_row`)."""
         return {
             "fname": fname,
             "rinex_hash": rinex_hash,
-            "start": np.datetime64(ds.epoch.min().values),
-            "end": np.datetime64(ds.epoch.max().values),
-            "dataset_attrs": ds.attrs.copy(),
+            "start": start,
+            "end": end,
+            "dataset_attrs": attrs,
             "exists": exists,
             "rel_path": rel_path,
             "canonical_name": canonical_name,
-            "physical_path": ds.attrs.get("physical_path") or str(fname),
+            "physical_path": attrs.get("physical_path") or str(fname),
             "action": action,
             "epochs": epochs,
             "write_strategy": self._gnss_store_strategy,
@@ -3470,6 +3510,371 @@ class RinexDataProcessor:
         self._set_store_source_format(source_format)
 
         return results
+
+    # ── Forked writes of day blocks (ADR 0016) ─────────────────────────────
+
+    def plan_forked_day(self, task_descriptors: Sequence[tuple]) -> ForkedDay | None:
+        """Plan this day's files as tasks that write into forks of one session.
+
+        Each task takes the files of one receiver (or of one reference file's
+        pairings) that share an epoch chunk, so no chunk is written by two
+        forks (see :mod:`canvodpy.orchestrator.forked_writes`). The chunks
+        come from the files' canonical names and the day's blocks, so no
+        file is read. With ``processing.preprocessing`` set, a time bin can
+        span two files, so each receiver's files of the day go to one task.
+
+        ``None`` when the day is written in one session instead
+        (:meth:`_write_day_blocks`): the store does not exist yet, is not
+        made of day blocks, or a group of the day does not exist yet or has
+        no block for the day, so the first file must create it.
+
+        Parameters
+        ----------
+        task_descriptors
+            The day's tasks from :meth:`prepare_batch_tasks`.
+
+        Raises
+        ------
+        CadenceError
+            If a file has no canonical name to take its place from.
+        """
+        if not task_descriptors or not store_exists(self.site.gnss_store_path):
+            return None
+        if not self._writes_day_blocks():
+            return None
+        store = self.site.gnss_store
+        lanes: dict[tuple[str, ...], list[tuple]] = {}
+        for desc in task_descriptors:
+            groups = tuple(desc[3]) if desc[-1] else (str(desc[4]),)
+            lanes.setdefault(groups, []).append(desc)
+        all_groups = {g for groups in lanes for g in groups}
+        if not all_groups or not all_groups <= set(store.list_groups() or []):
+            return None
+
+        day = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
+        epoch_chunk = int((store.chunk_strategy or {}).get("epoch", 180))
+        session = store.repo.writable_session("main")
+        blocks: dict[str, dict[np.datetime64, DayBlock]] = {}
+        for group in all_groups:
+            group_blocks = day_blocks(session.store, group)
+            if day not in group_blocks:
+                return None
+            blocks[group] = {
+                d: b
+                for d, b in group_blocks.items()
+                if d in (day, day + np.timedelta64(1, "D"))
+            }
+        stored = {g: self._stored_hashes_around(g, day) for g in all_groups}
+        params = self._config.processing.params
+        preprocessing = self._config.processing.preprocessing
+        whole_lanes = (
+            preprocessing is not None and len(build_default_pipeline(preprocessing)) > 0
+        )
+
+        planned = ForkedDay(
+            date_key=self.matched_data_dirs.yyyydoy.to_str(),
+            session=session,
+            tasks=[],
+        )
+        for groups, descs in lanes.items():
+            names = {Path(d[0]): self._canonical_name(Path(d[0])) for d in descs}
+            chunks_of = [
+                (
+                    desc,
+                    self._file_chunks(
+                        Path(desc[0]), names[Path(desc[0])], groups, blocks, epoch_chunk
+                    ),
+                )
+                for desc in descs
+            ]
+            if whole_lanes:
+                chunks_of = [
+                    (
+                        [desc for desc, _ in chunks_of],
+                        set().union(*(c for _, c in chunks_of)),
+                    )
+                ]
+            else:
+                chunks_of = chunk_groups(chunks_of)
+            for members, chunks in chunks_of:
+                task = ForkTask(
+                    date_key=planned.date_key,
+                    file_tasks=tuple(members),
+                    groups=groups,
+                    chunks={
+                        g: frozenset(c for owner, c in chunks if owner == g)
+                        for g in groups
+                    },
+                    blocks={g: blocks[g] for g in groups},
+                    stored_hashes={g: stored[g] for g in groups},
+                    strategy=self._gnss_store_strategy,
+                    preprocessing=preprocessing,
+                    canonical_names={Path(m[0]): names[Path(m[0])] for m in members},
+                    keep_sbf_obs=bool(params.store_sbf_metadata),
+                )
+                planned.tasks.append((task, session.fork()))
+        self._logger.info(
+            "forked_day_planned",
+            date=planned.date_key,
+            groups=sorted(all_groups),
+            tasks=len(planned.tasks),
+            files=sum(len(t.file_tasks) for t, _ in planned.tasks),
+        )
+        return planned
+
+    def _file_chunks(
+        self,
+        fname: Path,
+        canonical: str,
+        groups: Sequence[str],
+        blocks: Mapping[str, Mapping[np.datetime64, DayBlock]],
+        epoch_chunk: int,
+    ) -> set[tuple[str, int]]:
+        """The ``(group, chunk)`` pairs a file's name puts it into.
+
+        From the first to the last epoch its name gives (start, and end
+        minus one sampling interval), within the block of its first day;
+        epochs of another day, or beyond the name, are written by the
+        writer thread (see :mod:`canvodpy.orchestrator.forked_writes`).
+        """
+        from canvod.preflight.convention import CanVODFilename
+
+        if not canonical:
+            msg = (
+                f"{fname.name} has no canonical name, so its place in the "
+                "day's slots is unknown. Name the file by the canVOD "
+                f"convention or set {AGGREGATION_SETTING}."
+            )
+            raise CadenceError(msg)
+        named = CanVODFilename.from_filename(canonical)
+        start = np.datetime64(named.start, "ns")
+        last = np.datetime64(named.end - named.sampling_interval, "ns")
+        chunks: set[tuple[str, int]] = set()
+        for group in groups:
+            block = blocks[group].get(start.astype("M8[D]"))
+            if block is None:
+                continue
+            day_end = (block.day + np.timedelta64(1, "D")).astype(
+                "M8[ns]"
+            ) - np.timedelta64(1, "ns")
+            span = span_chunks(block, start, min(last, day_end), epoch_chunk)
+            chunks |= {(group, chunk) for chunk in span}
+        return chunks
+
+    def _stored_hashes_around(self, group: str, day: np.datetime64) -> frozenset[str]:
+        """Hashes of ``group``'s log-book rows from the day before to the day after.
+
+        A file has one time span, so a file of ``day`` is in the log book
+        only with a row near it; the rest of the log book is not sent to
+        the workers.
+        """
+        df = self.site.gnss_store.load_metadata_for_dedup(group)
+        if df is None or df.is_empty():
+            return frozenset()
+        low = datetime.fromisoformat(str(day - np.timedelta64(1, "D")))
+        high = datetime.fromisoformat(str(day + np.timedelta64(2, "D")))
+        near = df.filter((pl.col("end") >= low) & (pl.col("start") < high))
+        return frozenset(str(h) for h in near["rinex_hash"].to_list() if h)
+
+    def _commit_forked_day(
+        self, day: ForkedDay, results: Sequence[ForkResult]
+    ) -> dict[str, GroupWriteResult]:
+        """Merge a day's forks and commit them once, with the day's log book.
+
+        Under the store's commit lock: merge the forks, rebase onto commits
+        made since the session was opened (other days, other runs), write
+        the files the workers left to this thread, the ``sbf_obs`` of new
+        files and a log-book row for every file of the day (also skipped
+        ones), and commit. The commit writes the snapshot summary from the
+        log book and the coordinates (ADR 0014); no data are read back.
+
+        Raises
+        ------
+        icechunk.RebaseFailedError, icechunk.ConflictError
+            If another run wrote the same chunks first; nothing is
+            committed, and the caller retries once.
+        PreprocessingMismatchError
+            If a group holds data preprocessed differently.
+        """
+        store = self.site.gnss_store
+        log = self._logger
+        version = get_version_from_pyproject()
+        yyyydoy = str(self.matched_data_dirs.yyyydoy)
+        numbers = [n for r in results for n in r.files]
+        groups = sorted({g for task, _ in day.tasks for g in task.groups})
+        out: dict[str, GroupWriteResult] = {}
+        for group in groups:
+            out[group] = GroupWriteResult(receiver_name=group, fork=None)
+            out[group].actions["overwritten"] = 0
+        for r in results:
+            for group, fname, error in r.failed:
+                log.error(
+                    "file_not_written",
+                    date=yyyydoy,
+                    group=group,
+                    file=fname,
+                    error=error,
+                )
+
+        checked: set[tuple[str, str]] = set()
+        for n in numbers:
+            key = (n.group, str(n.attrs.get(PREPROCESSING_ATTR, "")))
+            if n.action != SKIPPED and key not in checked:
+                checked.add(key)
+                store.check_preprocessing_matches(n.group, xr.Dataset(attrs=n.attrs))
+
+        t_start = time.perf_counter()
+        session = day.session
+        with commit_lock(store.store_path):
+            # A fork that wrote nothing (all files skipped, deferred or
+            # failed) has nothing to merge.
+            forks = [
+                r.fork
+                for r in results
+                if any(n.action != SKIPPED and n.deferred is None for n in r.files)
+            ]
+            if forks:
+                session.merge(*forks)
+            if store.repo.lookup_branch("main") != session.snapshot_id:
+                session.rebase(icechunk.ConflictDetector())
+
+            kept: list[FileNumbers] = []
+            for n in numbers:
+                if n.deferred is not None:
+                    try:
+                        n.epochs = self._write_deferred(session, n)
+                    except (OSError, RuntimeError, ValueError):  # fmt: skip
+                        log.exception(
+                            "file_write_failed", file=n.fname.name, group=n.group
+                        )
+                        continue
+                    n.deferred = None
+                kept.append(n)
+
+            for group in groups:
+                new = [n for n in kept if n.group == group and n.action == WRITTEN]
+                self._write_sbf_obs(
+                    session,
+                    group,
+                    {
+                        n.fname: {"sbf_obs": n.sbf_obs}
+                        for n in new
+                        if n.sbf_obs is not None
+                    },
+                    [n.fname for n in new],
+                )
+
+            for n in kept:
+                result = out[n.group]
+                result.actions[n.action] += 1
+                result.metadata_records.append(
+                    self._logbook_row_of(
+                        n.fname,
+                        n.rinex_hash,
+                        n.start,
+                        n.end,
+                        n.attrs,
+                        n.canonical_name,
+                        n.exists,
+                        store.rel_path_for_commit(n.fname),
+                        n.action,
+                        n.epochs,
+                    )
+                )
+                result.file_append_seconds.append(n.seconds)
+                result.total_epochs += max(n.epochs, 0)
+                if n.action != SKIPPED:
+                    result.total_nbytes += n.nbytes
+                if n.exists:
+                    result.existing_hashes.add(n.rinex_hash)
+
+            written = {g: r for g, r in out.items() if r.metadata_records}
+            if not written:
+                return out
+            summary = ", ".join(
+                f"{g}({', '.join(f'{k}={v}' for k, v in r.actions.items() if v)})"
+                for g, r in written.items()
+            )
+            commit_msg = _with_run_id(
+                f"[v{version}] {yyyydoy}: {len(written)} groups: {summary}"
+            )
+            agg_metadata: dict[str, Any] = {
+                "date": yyyydoy,
+                "receivers": ",".join(written),
+                "total_files": str(
+                    sum(len(r.metadata_records) for r in written.values())
+                ),
+            }
+            for group, r in written.items():
+                for row in r.metadata_records:
+                    row["commit_msg"] = commit_msg
+                store.append_metadata_bulk(
+                    group_name=group, rows=r.metadata_records, session=session
+                )
+                agg_metadata[f"group__{group}"] = json.dumps(
+                    {
+                        "receiver": group,
+                        "start": str(min(rec["start"] for rec in r.metadata_records)),
+                        "end": str(max(rec["end"] for rec in r.metadata_records)),
+                        "rinex_hashes": ",".join(
+                            str(rec["rinex_hash"]) for rec in r.metadata_records
+                        ),
+                        "canonical_names": ",".join(
+                            str(rec["canonical_name"])
+                            for rec in r.metadata_records
+                            if rec.get("canonical_name")
+                        ),
+                    }
+                )
+            snapshot_id = commit_with_rebase(
+                session,
+                commit_msg,
+                metadata=agg_metadata,
+                store_path=store.store_path,
+                config=self._config,
+            )
+        duration = time.perf_counter() - t_start
+        log.info("Committed forked day %s (snapshot: %s...)", yyyydoy, snapshot_id[:8])
+        for group, r in written.items():
+            r.snapshot_id = snapshot_id
+            r.duration_seconds = duration
+            if self._keeper_tags_enabled:
+                store.create_keeper_tag(group, yyyydoy, snapshot_id)
+            record_stage_timing("writing", duration, receiver=group, date_key=yyyydoy)
+            self._icechunk_log.info(
+                "batch_write_complete",
+                receiver=group,
+                date=yyyydoy,
+                snapshot_id=snapshot_id[:12],
+                total_files=len(r.metadata_records),
+                total_epochs=r.total_epochs,
+                total_nbytes=r.total_nbytes,
+                duration_seconds=round(duration, 2),
+                actions=r.actions,
+                forks=len(results),
+            )
+        return out
+
+    def _write_deferred(self, session: Session, n: FileNumbers) -> int:
+        """Write a file a worker left to the writer thread; its epochs written.
+
+        A day of the file without a block gets one at the cadence of the
+        processing day's block.
+        """
+        if n.deferred is None:
+            msg = f"{n.fname.name} has no data left for the writer thread to write."
+            raise ValueError(msg)
+        store = self.site.gnss_store
+        epoch_chunk = int((store.chunk_strategy or {}).get("epoch", 180))
+        blocks = day_blocks(session.store, n.group)
+        day = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
+        cadence_s = blocks[day].cadence_s
+        for file_day in np.unique(n.deferred.epoch.values.astype("M8[D]")):
+            if file_day not in blocks:
+                add_day_block(
+                    session, n.group, file_day, cadence_s, None, epoch_chunk=epoch_chunk
+                )
+        return write_file_region(session, n.group, n.deferred).epochs
 
     def _append_to_icechunk(
         self,

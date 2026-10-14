@@ -30,16 +30,26 @@ error names the aggregation setting.
 A run grows the axis once per batch, in one small commit, only for the
 days whose ephemerides are ready, so days that cannot be processed never
 get a block. Workers read a file and write its region into a fork of
-one session; with aggregation, one task writes the files of one chunk,
-because two forks must never write the same chunk. A writer thread, not
-the loop that collects results, merges the forks of all receivers of a
-day and commits once per store and day, with the day's log-book rows
-and its snapshot summary, built from the numbers each worker returns.
+one session. Two forks must never write the same chunk: Icechunk merges
+forks chunk by chunk, so the fork merged last replaces a shared chunk
+whole and the other's data in it are lost without an error (measured).
+The files whose names put them into one chunk therefore go to one task,
+with aggregation or without (six 15-minute files at 30 s share a chunk
+of 180 epochs); with preprocessing set, a time bin can span two files,
+so one task writes all files of a receiver-day. A file whose epochs
+reach beyond its task's chunks is written by the writer thread. The
+writer thread, not the loop that collects results, merges the forks of
+all receivers of a day and commits once per store and day, with the
+day's log-book rows (also of skipped files) and its snapshot summary,
+built from the numbers each worker returns. The first write of a new
+group, which creates it, is one session in the main process.
 Phase 1 of the next day and VOD of the previous day overlap with
 reading. `commit_lock` makes commits of other runs on the same machine
-wait; a growth commit that loses a conflict retries, a data commit
-rereads the log book, drops the files now stored and retries once, then
-fails loudly. Two machines never write one store.
+wait; a growth commit that loses a conflict retries. A day whose commit
+loses a conflict is planned again on the new tip, against its log
+book, and its tasks run once more; if it loses again, or the growth
+lost three times, the run records the receiver-days as failed with the
+error and goes on with the next days. Two machines never write one store.
 
 Memory is a budget (`max_memory_gb`, in `auto` the available memory):
 the run sizes its workers and `days_per_batch` to fit it and fails at

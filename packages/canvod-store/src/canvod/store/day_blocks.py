@@ -15,6 +15,7 @@ store for reads; the caller commits.
 
 from __future__ import annotations
 
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -55,6 +56,17 @@ class CadenceError(Exception):
 
 class SlotCollisionError(ValueError):
     """Two epochs of one file fall into one slot (ADR 0004: never drop data)."""
+
+
+class ChunkOwnershipError(ValueError):
+    """A write into a fork would touch an epoch chunk its task does not own.
+
+    Icechunk merges forks chunk by chunk: of two forks that wrote one chunk,
+    the one merged last replaces the other's chunk whole, so the data the
+    other wrote there are lost without an error. Each task therefore owns
+    the chunks its files' names give (:func:`span_chunks`), and a file whose
+    epochs reach beyond them is refused.
+    """
 
 
 @dataclass(frozen=True)
@@ -318,7 +330,34 @@ def _slots(offsets: np.ndarray, block: DayBlock) -> np.ndarray:
     return np.minimum(slots, block.slots - 1)
 
 
-def write_file_region(session: Any, group: str, ds: xr.Dataset) -> FileRegion:
+def span_chunks(
+    block: DayBlock, start: np.datetime64, last: np.datetime64, epoch_chunk: int
+) -> set[int]:
+    """The epoch chunks of the slots from ``start`` to ``last`` in ``block``.
+
+    Chunks are numbered along the group's whole epoch axis. ``start`` and
+    ``last`` are the first and last epoch of a file, e.g. from its name, and
+    go to their nearest slots as epochs do (:func:`write_file_region`).
+    """
+    day_ns = int(block.day.astype("M8[ns]").astype(np.int64))
+    offsets = np.array(
+        [
+            int(np.datetime64(start, "ns").astype(np.int64)) - day_ns,
+            int(np.datetime64(last, "ns").astype(np.int64)) - day_ns,
+        ]
+    )
+    first, final = (block.start + _slots(offsets, block)).tolist()
+    return set(range(first // epoch_chunk, final // epoch_chunk + 1))
+
+
+def write_file_region(
+    session: Any,
+    group: str,
+    ds: xr.Dataset,
+    *,
+    blocks: Mapping[np.datetime64, DayBlock] | None = None,
+    chunks: Collection[int] | None = None,
+) -> FileRegion:
     """Write a file's epochs into the blocks of their days.
 
     Each epoch goes to its nearest slot; the slots between the file's first
@@ -326,10 +365,22 @@ def write_file_region(session: Any, group: str, ds: xr.Dataset) -> FileRegion:
     values, grid times), so writing a file again replaces what it wrote
     before. Every day of the file needs a block (:func:`add_day_block`).
 
+    Parameters
+    ----------
+    blocks
+        The group's day blocks (:func:`day_blocks`), when the caller has
+        them: reading them reads the group's whole epoch axis.
+    chunks
+        The epoch chunks the write may touch, numbered along the group's
+        epoch axis; ``None`` allows all. A write into a fork passes the
+        chunks its task owns (see :class:`ChunkOwnershipError`).
+
     Raises
     ------
     SlotCollisionError
         If two epochs of the file fall into one slot; nothing is written.
+    ChunkOwnershipError
+        If the file's slots reach beyond ``chunks``; nothing is written.
     LayoutError
         If a day of the file has no block, or the group is not made of day
         blocks.
@@ -337,7 +388,8 @@ def write_file_region(session: Any, group: str, ds: xr.Dataset) -> FileRegion:
         If the file's variables or labels differ from the group's (see
         :func:`~canvod.store.prepare.prepare_write`).
     """
-    blocks = day_blocks(session.store, group)
+    if blocks is None:
+        blocks = day_blocks(session.store, group)
     # The checks of an append (same variables, same labels), without the
     # refusal of appends to day blocks that prepare_write makes.
     check_append_variables(ds, session.store, group, "epoch")
@@ -369,6 +421,9 @@ def write_file_region(session: Any, group: str, ds: xr.Dataset) -> FileRegion:
             raise SlotCollisionError(msg)
         regions.append((block, idx, slots))
 
+    if chunks is not None:
+        _check_chunks(session, group, regions, chunks)
+
     for block, idx, slots in regions:
         _write_region(session, group, ds, block, idx, slots)
 
@@ -377,6 +432,36 @@ def write_file_region(session: Any, group: str, ds: xr.Dataset) -> FileRegion:
         start=np.datetime64(int(epochs.min()), "ns"),
         end=np.datetime64(int(epochs.max()), "ns"),
     )
+
+
+def _check_chunks(
+    session: Any,
+    group: str,
+    regions: list[tuple[DayBlock, np.ndarray, np.ndarray]],
+    chunks: Collection[int],
+) -> None:
+    """Refuse regions that reach beyond the epoch chunks a fork may write."""
+    zgroup = zarr.open_group(session.store, mode="r", path=group)
+    epoch_chunk = int(_epoch_array(zgroup, group).chunks[0])
+    allowed = set(chunks)
+    for block, _, slots in regions:
+        # A region covers every slot from the file's first to its last one.
+        positions = block.start + np.array([slots.min(), slots.max()])
+        touched = set(
+            range(
+                int(positions[0]) // epoch_chunk, int(positions[1]) // epoch_chunk + 1
+            )
+        )
+        outside = sorted(touched - allowed)
+        if outside:
+            msg = (
+                f"The file's epochs on {block.day} reach epoch chunks "
+                f"{outside} of group '{group}', beyond the chunks "
+                f"{sorted(allowed)} its name gives, which another task may be "
+                "writing; the file was not written. Its epochs disagree with "
+                "the period in its name."
+            )
+            raise ChunkOwnershipError(msg)
 
 
 def _write_region(

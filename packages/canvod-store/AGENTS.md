@@ -54,6 +54,12 @@ Background: `docs/packages/store/overview.md`,
 - **One committer per branch.** On local or network file systems icechunk
   cannot detect concurrent commits; the second silently wins. Parallel
   writes go through fork/merge into one session and one `commit()`.
+- **Forked day-block writes** (ADR 0016): a fork writes only the epoch
+  chunks it owns. Of two forks that wrote one chunk, the one merged last
+  replaces the chunk whole and the other's data are lost without an
+  error. `day_blocks.write_file_region(chunks=...)` refuses a write
+  outside them (`ChunkOwnershipError`); `span_chunks` gives a span's
+  chunks. Forked writes check the hash only (no time-span check, ADR 0005).
 - canvod-store does not import `canvodpy`.
 - Grids and the analysis results on them are stored by `grid_storage.py`
   and `analysis_storage.py`; canvod-store depends on canvod-grids, never

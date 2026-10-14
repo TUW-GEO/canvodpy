@@ -37,6 +37,7 @@ def _config(*, aggregation: str | None = None, store_sbf_metadata: bool = True):
     )
     preprocessing = SimpleNamespace(
         temporal_aggregation=temporal_aggregation,
+        grid_assignment=None,
         model_dump=lambda mode: {"temporal_aggregation": aggregation},
     )
     dumped = {"params": {"store_sbf_metadata": store_sbf_metadata}}

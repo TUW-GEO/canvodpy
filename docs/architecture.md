@@ -173,10 +173,15 @@ flowchart TD
   ([loky](https://github.com/joblib/loky)), which stays up from one batch
   to the next. `--workers`, or the resource settings, set the number of
   workers.
-- **Writing.** Only one process writes. In a store made of day blocks, it
+- **Writing.** Only one process commits. In a store made of day blocks, it
   first adds the blocks of the batch's days in one commit, before any file
-  is read. As soon as all files of a receiver and day are read, it writes
-  them with one commit for the data and its log-book rows. With the `overwrite` strategy, it writes on a temporary
+  is read. Then the worker processes write the files into their slots,
+  each worker into its own fork of the day's session, and one writer thread
+  merges the forks of all receivers of a day and commits them with the
+  day's log-book rows. Files that share a chunk go to one worker task. In
+  a store written by appending, as soon as all files of a receiver and day
+  are read, the run writes them with one commit for the data and its
+  log-book rows. With the `overwrite` strategy, it writes on a temporary
   branch first and then moves `main` to it. On a file system, Icechunk
   can't detect two commits at the same time, so every commit takes the
   store's commit lock. A commit from another process waits for it (see
