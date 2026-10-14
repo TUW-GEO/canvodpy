@@ -60,6 +60,7 @@ from canvod.utils.logging import (
 )
 from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
 from canvodpy.logging import emit_run_summary
+from canvodpy.orchestrator.discovery import RECENT_DAYS
 from canvodpy.orchestrator.store_retry import call_with_store_retries
 
 log = structlog.get_logger(__name__)
@@ -383,6 +384,7 @@ def _main_impl(args: SimpleNamespace) -> int:
                 dry_run=True,
                 on_discovery_start=on_discovery_start,
                 on_discovery_end=on_discovery_end,
+                rescan=args.rescan,
             ) as pipeline:
                 plan = pipeline.preview(start=start, end=end)
                 print(f"Dry-run plan for {site_name}:")
@@ -513,6 +515,7 @@ def _main_impl(args: SimpleNamespace) -> int:
                     label=args.label,
                     on_discovery_start=on_discovery_start,
                     on_discovery_end=on_discovery_end,
+                    rescan=args.rescan,
                 ) as pipeline:
                     gen = pipeline.process_range(start=start, end=end)
                     while True:
@@ -669,6 +672,20 @@ def run(
             help="Preview processing plan without executing.",
         ),
     ] = False,
+    rescan: Annotated[
+        bool,
+        typer.Option(
+            "--rescan",
+            help=(
+                "List every folder of the receiver directories and renew the "
+                "file index (a dry run does not save it). Without it, a run "
+                f"takes folders whose files are all older than {RECENT_DAYS} "
+                "days from the file index in the run history, so a file "
+                "added to, deleted from or compressed in such a folder is "
+                "seen only with --rescan."
+            ),
+        ),
+    ] = False,
     workers: Annotated[
         int | None,
         typer.Option(
@@ -754,6 +771,7 @@ def run(
         no_vod=no_vod,
         label=label,
         dry_run=dry_run,
+        rescan=rescan,
         workers=workers,
         days_per_batch=days_per_batch,
         config=config,

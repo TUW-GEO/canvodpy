@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextvars
 import gc
 import os
+import sqlite3
 import time as _time
 import warnings
 from collections import defaultdict
@@ -50,6 +51,7 @@ from canvodpy.orchestrator.discovery import (
     receiver_days,
     recipe_file,
     require_filemap,
+    scan_directory,
     unprocessed_files,
 )
 from canvodpy.orchestrator.processor import (
@@ -65,7 +67,13 @@ from canvodpy.orchestrator.resources import (
     deprecate_no_effect_arguments,
 )
 from canvodpy.orchestrator.store_retry import STORE_ERROR_TYPES, call_with_store_retries
-from canvodpy.run_history import ActiveRun, DayResult
+from canvodpy.run_history import (
+    ActiveRun,
+    DayResult,
+    FolderListing,
+    RunHistory,
+    RunHistoryError,
+)
 
 # Old-style TypeVar (not PEP 695 `def f[T](...)`): CodeQL's Python analysis
 # doesn't yet understand the newer generic syntax and flags T as a
@@ -233,6 +241,11 @@ class PipelineOrchestrator:
         Called with the receiver name, the number of files found, the number
         of days and the elapsed seconds when the run has found them. Default
         None (no-op) for standalone/programmatic use.
+    rescan : bool, default False
+        List every folder of the receiver directories instead of taking old
+        folders from the file index in the run history (#299), so files
+        added to folders older than
+        :data:`~canvodpy.orchestrator.discovery.RECENT_DAYS` days are found.
 
     """
 
@@ -252,6 +265,7 @@ class PipelineOrchestrator:
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
         config: CanvodConfig | None = None,
         run: ActiveRun | None = None,
+        rescan: bool = False,
     ) -> None:
         if config is None:
             warnings.warn(
@@ -268,6 +282,8 @@ class PipelineOrchestrator:
         self._on_discovery_start = on_discovery_start
         self._on_discovery_end = on_discovery_end
         self._run = run
+        self._rescan = rescan
+        self._logger = structlog.get_logger(__name__).bind(site=site.site_name)
         # The log location comes from the configuration of this run.
         ensure_file_logging()
         # A new run sees files added since the previous one.
@@ -291,7 +307,6 @@ class PipelineOrchestrator:
         self._batch_duration: pint.Quantity = days_per_batch * 24 * UREG.hour
         self._threads_per_worker = threads_per_worker
         self._memory_monitor = MemoryMonitor()
-        self._logger = structlog.get_logger(__name__).bind(site=site.site_name)
 
         if n_max_workers is not None:
             effective_workers: int | None = min(
@@ -361,12 +376,55 @@ class PipelineOrchestrator:
             if self._on_discovery_start is not None:
                 self._on_discovery_start(receiver_name, directory)
             t_discovery = _time.perf_counter()
+            scan = scan_directory(
+                directory,
+                recipe,
+                file_index=self._file_index(directory, recipe),
+                rescan=self._rescan,
+            )
+            if self._run is not None:
+                self._run.save_file_index(directory, recipe, scan.listings)
+            self._logger.info(
+                "files_found",
+                receiver=receiver_name,
+                folders_listed=len(scan.listings) - scan.folders_from_index,
+                folders_from_index=scan.folders_from_index,
+            )
             days = receiver_days(receiver_name, directory, reader_format, recipe)
             unprocessed_files(directory, reader_format, recipe)
             dt_discovery = _time.perf_counter() - t_discovery
             if self._on_discovery_end is not None:
                 n_files = sum(len(discover_files(day, reader_format)) for day in days)
                 self._on_discovery_end(receiver_name, n_files, len(days), dt_discovery)
+
+    def _file_index(
+        self, directory: Path, recipe: Path | None
+    ) -> dict[str, FolderListing] | None:
+        """The receiver directory's file index from the run history, if any.
+
+        A run reads it from its own run history; a dry run reads the run
+        history of the log folder without writing to it, so it finds the
+        files a run would find.
+        """
+        if self._rescan:
+            return None
+        if self._run is not None:
+            return self._run.history.file_index(directory, recipe)
+        from canvod.config.models.logging import LogDirNotSetError
+
+        try:
+            with RunHistory.open(
+                self._config.processing.logging.get_log_dir(), read_only=True
+            ) as history:
+                return history.file_index(directory, recipe)
+        # No log folder or no run history yet: list every folder.
+        except (OSError, LogDirNotSetError, RunHistoryError, sqlite3.Error) as exc:
+            self._logger.info(
+                "file_index_unavailable",
+                directory=str(directory),
+                reason=f"{type(exc).__name__}: {exc}",
+            )
+            return None
 
     def _receiver_days(self, receiver_name: str) -> dict[str, ReceiverDay]:
         """Days with files to process for one receiver, keyed by ``YYYYDOY``.

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import functools
 import time
 from pathlib import Path
 
@@ -146,12 +145,12 @@ def test_discovery_messages_bracket_the_real_scan(
     original = discovery_module._scan_directory
     clear_discovery_cache()
 
-    # Cached like the real scan, so a scan before the "Finding files" line
-    # would make the reported seconds a cache hit and fail the test.
-    @functools.lru_cache(maxsize=64)
-    def slow_scan(directory: Path, recipe: Path | None):
+    # Behind the real cache (scan_directory), so a scan before the "Finding
+    # files" line would make the reported seconds a cache hit and fail the
+    # test.
+    def slow_scan(directory: Path, recipe: Path | None, file_index):
         time.sleep(0.5)
-        return original.__wrapped__(directory, recipe)
+        return original(directory, recipe, file_index)
 
     monkeypatch.setattr(discovery_module, "_scan_directory", slow_scan)
 
