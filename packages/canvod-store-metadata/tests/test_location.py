@@ -297,6 +297,42 @@ class TestS3Locations:
 
         assert not any(tmp_path.iterdir())
 
+    @pytest.mark.parametrize("value", ["1", "true", "True", "yes", "on"])
+    def test_path_style_is_switched_on_by_the_environment(
+        self, monkeypatch: pytest.MonkeyPatch, value: str
+    ) -> None:
+        # Self-hosted S3 services (Ceph, RustFS) expect the bucket in the
+        # path, not in the host name (#303).
+        monkeypatch.setenv("CANVOD_S3_PATH_STYLE", value)
+
+        storage = store_location("s3://fangorn/stores/gnss").storage()
+
+        assert "force_path_style: True" in repr(storage)
+
+    @pytest.mark.parametrize("value", [None, "", "0", "false", "no", "off"])
+    def test_without_path_style_the_bucket_is_in_the_host_name(
+        self, monkeypatch: pytest.MonkeyPatch, value: str | None
+    ) -> None:
+        if value is None:
+            monkeypatch.delenv("CANVOD_S3_PATH_STYLE", raising=False)
+        else:
+            monkeypatch.setenv("CANVOD_S3_PATH_STYLE", value)
+
+        storage = store_location("s3://fangorn/stores/gnss").storage()
+
+        # Icechunk lists the option only when it is on.
+        assert "force_path_style" not in repr(storage)
+
+    def test_an_unknown_path_style_value_is_refused(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("CANVOD_S3_PATH_STYLE", "sometimes")
+
+        with pytest.raises(ValueError, match="CANVOD_S3_PATH_STYLE") as error:
+            store_location("s3://fangorn/stores/gnss").storage()
+
+        assert "sometimes" in str(error.value)
+
     @pytest.fixture
     def no_aws_credentials(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """No credentials anywhere: Icechunk fails before it contacts the
