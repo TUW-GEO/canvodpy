@@ -65,7 +65,11 @@ def test_a_forked_day_stores_what_one_session_stores(
     def run(stores: Path, data: Path, n_workers: int) -> Path:
         config.processing.storage.stores_root_dir = stores
         site.gnss_site_data_root = str(data)
-        with Site(testing.SITE_KEY).pipeline(n_workers=n_workers) as pipeline:
+        # rescan: the file index of an earlier run would hide files added
+        # to a folder of old days (#299)
+        with Site(testing.SITE_KEY).pipeline(
+            n_workers=n_workers, rescan=True
+        ) as pipeline:
             pipeline.process_date(DAY)
         return config.processing.storage.get_gnss_store_path(testing.SITE_KEY)
 
