@@ -237,3 +237,93 @@ class TestPromoteBranch:
 
         with pytest.raises(ValueError, match="already exists"):
             store.rechunk_group(group, chunks={"epoch": 360, "sid": -1})
+
+
+class TestRechunkDayBlocks:
+    """A group of day blocks keeps its layout and missing values."""
+
+    @pytest.fixture
+    def day_block_store(self, tmp_path):
+        from canvod.store_metadata.io import commit_with_rebase
+
+        from canvod.store.day_blocks import add_day_block, write_file_region
+
+        store = new_gnss_store(tmp_path / "day_block_store")
+        day = np.datetime64("2025-01-01", "D")
+        epochs = day.astype("M8[ns]") + np.arange(10) * np.timedelta64(30, "s")
+        ds = xr.Dataset(
+            {
+                "SNR": (("epoch", "sid"), np.full((10, 2), 40.0, dtype="f4")),
+                "LLI": (("epoch", "sid"), np.ones((10, 2), dtype="i1")),
+            },
+            coords={
+                "epoch": ("epoch", epochs, {"time_system": "GPS"}),
+                "sid": ["G01|L1|C", "G02|L1|C"],
+            },
+        )
+        with store.writable_session("main") as session:
+            add_day_block(session, "canopy_01", day, 30, template=ds)
+            region = write_file_region(session, "canopy_01", ds)
+            row = {
+                "fname": "/data/a.rnx",
+                "rinex_hash": "a",
+                "start": region.start,
+                "end": region.end,
+                "epochs": region.epochs,
+                "dataset_attrs": "{}",
+                "exists": False,
+                "rel_path": "data/a.rnx",
+                "canonical_name": "",
+                "physical_path": "/data/a.rnx",
+                "action": "initial",
+                "write_strategy": "skip",
+                "run_id": "run-1",
+                "commit_msg": "day",
+                "snapshot_id": "",
+            }
+            store.append_metadata_bulk("canopy_01", [row], session=session)
+            commit_with_rebase(
+                session, "day", store_path=store.store_path, config=store.settings
+            )
+        return store
+
+    def _raw(self, store, name):
+        import zarr
+
+        with store.readonly_session() as session:
+            array = zarr.open_group(session.store, mode="r", path="canopy_01")[name]
+            return array, array[:]
+
+    def test_rechunk_keeps_integer_variables_and_their_fill(
+        self, day_block_store
+    ) -> None:
+        lli_before, values_before = self._raw(day_block_store, "LLI")
+
+        day_block_store.rechunk_group("canopy_01", chunks={"epoch": 360, "sid": -1})
+
+        lli_after, values_after = self._raw(day_block_store, "LLI")
+        assert lli_after.chunks[0] == 360
+        assert lli_after.dtype == lli_before.dtype
+        assert lli_after.fill_value == lli_before.fill_value
+        np.testing.assert_array_equal(values_after, values_before)
+
+    def test_rechunk_keeps_the_day_blocks(self, day_block_store) -> None:
+        from canvod.store.day_blocks import day_blocks
+
+        with day_block_store.readonly_session() as session:
+            before = day_blocks(session.store, "canopy_01")
+
+        day_block_store.rechunk_group("canopy_01", chunks={"epoch": 360, "sid": -1})
+
+        with day_block_store.readonly_session() as session:
+            assert day_blocks(session.store, "canopy_01") == before
+
+    @pytest.mark.parametrize("epoch", [7, -1, None])
+    def test_chunks_that_split_a_day_are_refused(self, day_block_store, epoch):
+        from canvod.store.day_blocks import CadenceError
+
+        chunks = {"sid": -1} if epoch is None else {"epoch": epoch, "sid": -1}
+        with pytest.raises((CadenceError, ValueError)):
+            day_block_store.rechunk_group("canopy_01", chunks=chunks)
+        # Refused before anything is staged.
+        assert "canopy_01_rechunked_temp" not in day_block_store.repo.list_branches()

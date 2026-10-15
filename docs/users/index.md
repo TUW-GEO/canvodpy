@@ -180,8 +180,14 @@ it:
 canvodpy config init --interactive
 ```
 
+To see what a question sets, answer `?`: the wizard prints the setting's
+description and asks again.
+
 Without `--interactive`, the command copies the template and you fill it
-in yourself, with `canvodpy config edit` or any text editor.
+in yourself, with `canvodpy config edit` or any text editor. Each setting
+in the template has a link to its entry in the
+[Settings reference](../guides/settings.md), and
+`canvodpy config explain SETTING` prints that entry in the terminal.
 
 ### Where the file is
 

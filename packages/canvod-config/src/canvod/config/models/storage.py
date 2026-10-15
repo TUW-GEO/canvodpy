@@ -29,78 +29,59 @@ class MaintenanceConfig(_StrictModel):
     enabled: bool = Field(
         False,
         description=(
-            "Master switch for `canvodpy store maintain-due`. Off by "
-            "default. Before you turn it on, run garbage_collect(dry_run="
-            "True) against your store and check what it would delete."
+            "Turn on canvodpy store maintain-due. Off by default. Before you "
+            "turn it on, run garbage_collect(dry_run=True) against your store "
+            "and check what it would delete."
         ),
     )
     dry_run_until_confirmed: bool = Field(
         True,
         description=(
-            "Force every `maintain-due` invocation to dry-run only, "
-            "regardless of due-ness, until explicitly set False per "
-            "deployment. The interactive CLI's `maintain --execute` "
-            "requires a typer.confirm a cron job can't answer; this is "
-            "the config-level equivalent gate for the unattended path."
+            "Make every run of canvodpy store maintain-due a dry run until you "
+            "set this to false. An unattended job can't answer the question "
+            "that maintain --execute asks; this setting is that answer."
         ),
     )
     retention_days: int = Field(
         90,
         ge=7,
         description=(
-            "Snapshot retention window passed to expire_old_snapshots()/ "
-            "garbage_collect() by the scheduled job (weeks-to-months, a "
-            "generous margin past any realistic write-session duration). "
-            "Mirrors MyIcechunkStore.maintenance()'s own default; kept "
-            "separate so a human running `maintain --expire-days` "
-            "interactively is unaffected by this value."
+            "Days of snapshots the scheduled clean-up keeps; older snapshots "
+            "are expired and their data collected as garbage. canvodpy store "
+            "maintain --expire-days, run by hand, doesn't use it."
         ),
     )
     expire_interval_days: int = Field(
         45,
         ge=1,
         description=(
-            "How often (wall-clock days since the most recent "
-            "ExpirationRan entry in the store's own ops log) the "
-            "scheduled job re-runs expiration. Skill-doc guidance: every "
-            "1-2 months."
+            "Days from one expiration by the scheduled clean-up to the next, "
+            "counted from the last expiration in the store's operations log."
         ),
     )
     gc_delay_days: int = Field(
         20,
         ge=1,
         description=(
-            "Extra days to wait after the most recent expiration before "
-            "running garbage_collect(), so physical deletion always lags "
-            "the (reversible-in-effect) soft-delete by a safety buffer. "
-            "Skill-doc guidance: GC every 15-30 days, offset from expire."
+            "Days the scheduled clean-up waits after the last expiration before "
+            "it collects garbage, so it deletes data only some time after their "
+            "snapshots expired."
         ),
     )
     manifests_enabled: bool = Field(
         False,
         description=(
-            "Enable scheduled manifest compaction (rewrite_manifests()) "
-            "under maintain-due, independent of `enabled`'s expire/GC "
-            "gate -- rewrite_manifests() is an ordinary commit (no "
-            "history rewrite or physical deletion), a different risk "
-            "profile than expire/GC, safe to validate and enable "
-            "separately. Off by default until confirmed against the "
-            "real store (see maintain-due's dry-run path)."
+            "Let canvodpy store maintain-due rewrite the manifests, whatever "
+            "'enabled' says. A rewrite is an ordinary commit: it changes no "
+            "history and deletes nothing."
         ),
     )
     manifest_count_threshold: int = Field(
         3000,
         ge=1,
         description=(
-            "Trigger rewrite_manifests() when the store's on-disk "
-            "manifest count (MyIcechunkStore.dir_entry_counts()) reaches "
-            "this. A direct fragmentation measurement, not a time "
-            "interval -- rewrite_manifests() has no distinguishing "
-            "ops-log entry (it logs as an ordinary NewCommit, "
-            "indistinguishable from any data-ingest commit), so "
-            "'how fragmented is the store right now' is the available "
-            "and more meaningful signal here, unlike expire/GC's "
-            "ExpirationRan/GCRan-based due-check."
+            "Number of manifest files in the store at which canvodpy store "
+            "maintain-due rewrites the manifests."
         ),
     )
 
@@ -116,9 +97,8 @@ class StorageConfig(_StrictModel):
     stores_root_dir: Path = Field(
         ...,
         description=(
-            "Directory where canvodpy writes all processed results "
-            "(Icechunk/Zarr stores). Must exist and be writable. "
-            "Wizard prompt: 'Where should processed results be stored?'"
+            "Folder of the stores: each site's GNSS store and VOD store are "
+            "under it. Must exist and be writable."
         ),
     )
     gnss_store_name: str = Field(
@@ -148,46 +128,24 @@ class StorageConfig(_StrictModel):
     shared_aux_cache_dir: Path | None = Field(
         None,
         description=(
-            "Network-wide, fingerprint-keyed aux (SP3/CLK Hermite) cache "
-            "root. None (default) = disabled, falls "
-            "back to per-site aux_data_dir/aux_{date}.zarr, rebuilt every "
-            "run. Ephemeris products are satellite-based, not site-based, "
-            "so pointing multiple sites at the same path lets them share "
-            "one cache entry per (agency, product, date) instead of each "
-            "rebuilding it independently."
+            "Folder of an orbit and clock cache that several sites share (SP3 "
+            "and CLK, interpolated). null (default): no shared cache; each "
+            "site's cache is in aux_data_dir and rebuilt every run. Orbit and "
+            "clock products are the same for every site, so sites that point at "
+            "the same folder share one cache entry per agency, product and date "
+            "instead of each building its own."
         ),
     )
     gnss_store_strategy: Literal["skip", "overwrite", "unsafe_append"] = Field(
         "skip",
         description=(
-            "How to handle a file whose hash/time-range already exists in "
-            "the GNSS store (new files are always written regardless of "
-            "this setting). 'skip' (default, recommended): do nothing -- "
-            "the normal case, since a re-run over already-ingested files "
-            "should be a no-op, not a rewrite. 'overwrite': delete the old "
-            "epochs for that file's range first, then write the new "
-            "version -- for correcting already-ingested data after a "
-            "pipeline bug fix (reader logic, ephemeris source, etc.), not "
-            "because the raw GNSS file itself changed. 'unsafe_append': "
-            "write the file's data again on top of what's already there, "
-            "with NO epoch-level uniqueness check. This produces duplicate "
-            "epoch coordinate values in the Zarr array, and xarray does not "
-            "enforce unique index values. The two built-in pipeline read "
-            "paths already guard against it -- GnssResearchSite."
-            "read_receiver_data() routes through read_group_deduplicated() "
-            "whenever this strategy is set (manager.py), and VodComputer."
-            "compute_bulk() unconditionally deduplicates every read via "
-            "_dedup_sort() regardless of strategy -- but MyIcechunkStore."
-            "read_group() itself (the low-level API used directly by "
-            "custom scripts and notebooks) has no such guard: `.sel()` on a "
-            "duplicated label can raise or return multiple matches, and "
-            "aligning two duplicated datasets (e.g. canopy vs. reference) "
-            "produces a cartesian product at the duplicated epochs. The "
-            "duplication is also physical, not just a read-time artifact -- "
-            "Icechunk stores the extra chunks permanently; dedup-on-read "
-            "does not undo that. Avoid 'unsafe_append' unless you have a "
-            "specific reason, and be aware any read path outside the two "
-            "guarded ones above is unprotected."
+            "What a run does with a file that is already in the GNSS store; new "
+            "files are always written. 'skip' (default): nothing is written. "
+            "'overwrite': the run replaces the file's stored data. "
+            "'unsafe_append': the file is written again next to the stored "
+            "data. In a store made of day blocks, 'overwrite' and "
+            "'unsafe_append' both replace the file's slots; in a store written "
+            "by appending, 'unsafe_append' stores the file's epochs twice."
         ),
     )
     vod_store_strategy: Literal["skip", "overwrite", "unsafe_append"] | None = Field(
@@ -202,13 +160,16 @@ class StorageConfig(_StrictModel):
     keeper_tags: bool = Field(
         False,
         description=(
-            "Tag every (receiver, date) Icechunk commit as "
-            "keep/{receiver}/{yyyydoy} so a future retention job can expire "
-            "everything else. Off by default: the cost of create_tag() "
-            "on large stores hasn't been measured yet."
+            "Tag every commit of a receiver and day as "
+            "keep/{receiver}/{yyyydoy}, so a later clean-up can expire "
+            "everything else. Off by default: the cost of tagging a large store "
+            "hasn't been measured yet."
         ),
     )
-    maintenance: MaintenanceConfig = Field(default_factory=MaintenanceConfig)
+    maintenance: MaintenanceConfig = Field(
+        default_factory=MaintenanceConfig,
+        description="Scheduled clean-up of old snapshots (canvodpy store maintain-due)",
+    )
 
     @model_validator(mode="before")
     @classmethod

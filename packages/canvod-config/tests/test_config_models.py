@@ -800,6 +800,12 @@ class TestChunkStrategy:
         with pytest.raises(ValidationError):
             ChunkStrategy(epoch=0)
 
+    def test_sid_is_minus_one_or_positive(self):
+        for sid in (0, -2):
+            with pytest.raises(ValidationError, match="sid"):
+                ChunkStrategy(epoch=180, sid=sid)
+        assert ChunkStrategy(epoch=180, sid=64).sid == 64
+
 
 # ===================================================================
 # SitesConfig

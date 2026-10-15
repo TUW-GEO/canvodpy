@@ -31,24 +31,18 @@ class AuxDataConfig(_StrictModel):
     fetch_clock: bool = Field(
         True,
         description=(
-            "Download and interpolate CLK clock-correction files alongside "
-            "SP3 ephemerides. canvod-vod's VOD formula only needs "
-            "transmittance and polar angle; clock is not consumed "
-            "downstream. Set to False to skip the extra downloads, "
-            "parsing, and interpolation."
+            "Download and interpolate the CLK clock files with the SP3 orbit "
+            "files. VOD doesn't use clock corrections; set false to skip them."
         ),
     )
     zarr_async_concurrency: int | None = Field(
         None,
         ge=1,
         description=(
-            "Cap on zarr's own async chunk write/read burst for aux cache "
-            "writes; None (default) = zarr's own default (10) applies, no "
-            "cost for local/fast storage. Set on network-mounted "
-            "(CIFS/NFS) shared_aux_cache_dir deployments hitting "
-            "connection-abort errors; separate from "
-            "IcechunkConfig.zarr_async_concurrency since this is a "
-            "different store with its own write-frequency profile."
+            "Limit on Zarr's concurrent chunk reads and writes in the orbit and "
+            "clock cache; null keeps Zarr's default of 10. Set it when "
+            "shared_aux_cache_dir is on a network mount (CIFS or NFS) that "
+            "drops connections during writes."
         ),
     )
 

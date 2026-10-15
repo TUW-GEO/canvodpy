@@ -39,6 +39,16 @@ jobs:
             - name: Check the command-line reference page
               run: uv run python scripts/cli_docs.py --check
 
+    settings-reference:
+        # The settings reference page is written from the descriptions on
+        # the settings models; it must match them.
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: ./.github/actions/setup
+            - name: Check the settings reference page
+              run: uv run python scripts/settings_docs.py --check
+
     links:
         # lychee on the built site: links between our pages, their anchors,
         # and external links (settings in lychee.toml).

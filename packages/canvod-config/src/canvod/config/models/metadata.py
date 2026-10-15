@@ -18,15 +18,15 @@ class MetadataConfig(_StrictModel):
     author: str = Field(
         ...,
         description=(
-            "Your full name, used in dataset metadata and FAIR attribution "
-            "(e.g. 'Jane Forester'). Wizard prompt: 'Who is running this pipeline?'"
+            "Your full name, written into the metadata of the stores you "
+            "create (for example 'Jane Forester')"
         ),
     )
     email: EmailStr = Field(
         ...,
         description=(
-            "Your contact email, included in DataCite and ACDD metadata records "
-            "(e.g. 'jane@boku.ac.at'). Wizard prompt: 'Contact email address?'"
+            "Your contact email, written into the metadata of the stores you "
+            "create (for example 'jane@boku.ac.at')"
         ),
     )
 
@@ -63,8 +63,7 @@ class MetadataConfig(_StrictModel):
         ...,
         description=(
             "Your institution or organization name "
-            "(e.g. 'University of Natural Resources and Life Sciences Vienna'). "
-            "Wizard prompt: 'Which institution do you belong to?'"
+            "(for example 'University of Natural Resources and Life Sciences Vienna')"
         ),
     )
     institution_ror: str | None = Field(None, description="ROR identifier")
@@ -80,7 +79,7 @@ class MetadataConfig(_StrictModel):
     license: str | None = Field(
         None,
         description=(
-            "SPDX license identifier (e.g. 'CC-BY-4.0'), or 'other' for a "
+            "SPDX license identifier (for example 'CC-BY-4.0'), or 'other' for a "
             "license outside SPDX (then license_uri is required). Required "
             "when a store is created."
         ),
@@ -97,7 +96,7 @@ class MetadataConfig(_StrictModel):
         None,
         description=(
             "Your institution's domain in reverse order, lowercase "
-            "(e.g. 'at.ac.tuwien'). Required when a store is created: with "
+            "(for example 'at.ac.tuwien'). Required when a store is created: with "
             "the store id it gives the store's id in the STAC catalog."
         ),
     )
@@ -111,7 +110,7 @@ class MetadataConfig(_StrictModel):
     initials: str | None = Field(
         None,
         description=(
-            "How a store's metadata records who changed it (e.g. 'NFB'). "
+            "How a store's metadata records who changed it (for example 'NFB'). "
             "Required to amend or migrate a store's metadata."
         ),
     )

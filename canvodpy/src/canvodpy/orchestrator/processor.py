@@ -3380,6 +3380,7 @@ class RinexDataProcessor:
                             cadence_s,
                             template,
                             epoch_chunk=epoch_chunk,
+                            dim_chunks=store.chunk_strategy,
                         )
                     # Read once: reading them reads the group's whole epoch
                     # axis, and writing a file keeps them as they are.
@@ -5251,13 +5252,17 @@ class RinexDataProcessor:
                             skipped.add(name)
 
         # processing.preprocessing (if set) on each receiver-day, after the
-        # SCS recompute above (which needs the unprocessed observations)
+        # SCS recompute above (which needs the unprocessed observations);
+        # the receiver's `metadata` setting goes into each file's attributes
         preprocessing = self._config.processing.preprocessing
         for name, (aug, aux_ds, sid_iss) in per_receiver_results.items():
             for fname, ds in aug:
                 _warn_if_epoch_count_differs_from_name(
                     self._logger, fname, self._canonical_name(fname), ds
                 )
+            aug = [
+                (fname, self.site.add_receiver_metadata(ds, name)) for fname, ds in aug
+            ]
             per_receiver_results[name] = (
                 preprocess_files(aug, preprocessing),
                 aux_ds,

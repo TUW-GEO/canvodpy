@@ -20,20 +20,38 @@ from .storage import StorageConfig
 class ProcessingConfig(_StrictModel):
     """Complete processing configuration."""
 
-    metadata: MetadataConfig
+    metadata: MetadataConfig = Field(
+        ...,
+        description="Who made the stores, and under which license",
+    )
     credentials: CredentialsConfig = Field(
         default_factory=CredentialsConfig,
         description="Credentials for external data services",
     )
-    aux_data: AuxDataConfig = Field(default_factory=AuxDataConfig)
-    params: ProcessingParams = Field(default_factory=ProcessingParams)
+    aux_data: AuxDataConfig = Field(
+        default_factory=AuxDataConfig,
+        description="The orbit and clock products to download",
+    )
+    params: ProcessingParams = Field(
+        default_factory=ProcessingParams,
+        description="What a run reads and computes, and how many workers it uses",
+    )
     netcdf_compression: NetcdfCompressionConfig = Field(
         default_factory=NetcdfCompressionConfig,
         description="Compression settings for NetCDF output from RINEX readers",
     )
-    icechunk: IcechunkConfig = Field(default_factory=IcechunkConfig)
-    storage: StorageConfig = Field(default_factory=StorageConfig)
-    logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    icechunk: IcechunkConfig = Field(
+        default_factory=IcechunkConfig,
+        description="How the stores are written on disk: compression and chunks",
+    )
+    storage: StorageConfig = Field(
+        default_factory=StorageConfig,
+        description="Where the stores are, and what a run does with stored files",
+    )
+    logging: LoggingConfig = Field(
+        default_factory=LoggingConfig,
+        description="Where the log files go",
+    )
     preprocessing: PreprocessingConfig | None = Field(
         None,
         description=(

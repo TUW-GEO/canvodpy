@@ -46,17 +46,16 @@ class ReceiverConfig(_StrictModel):
         ...,
         description=(
             "Receiver role: 'canopy' = placed under the vegetation canopy; "
-            "'reference' = open-sky baseline above or outside the canopy. "
-            "Wizard prompt: 'Is this receiver under the canopy or in the open sky?'"
+            "'reference' = open-sky baseline above or outside the canopy"
         ),
     )
     directory: str = Field(..., description="Subdirectory for receiver data")
     paired_canopies: str | list[str] | None = Field(
         None,
         description=(
-            "Which canopy receiver(s) to pair with this reference. "
-            "Required for reference receivers: 'all' or a list of canopy names. "
-            "Must not be set for canopy receivers."
+            "The canopy receivers to pair with this reference: 'all' or a list "
+            "of canopy names. Required for reference receivers; must not be set "
+            "for canopy receivers."
         ),
     )
     description: str | None = Field(
@@ -73,8 +72,11 @@ class ReceiverConfig(_StrictModel):
     metadata: dict[str, str | int | float | bool] | None = Field(
         None,
         description=(
-            "Freeform receiver metadata written to dataset global attrs. "
-            "Example keys: site_url, antenna_height, species."
+            "Your own receiver metadata, added to the attributes of every "
+            "file of the receiver that is written to the GNSS store: the log "
+            "book keeps them per file, and a new group also takes them from "
+            "its first file. Attributes a file already has are kept. Example "
+            "keys: site_url, antenna_height, species."
         ),
     )
     receiver_hardware: ReceiverHardwareConfig | None = Field(
@@ -119,7 +121,7 @@ class ReceiverConfig(_StrictModel):
     recipe: str | None = Field(
         None,
         description=(
-            "Name of a naming recipe (e.g. 'examplesite_reference'). "
+            "Name of a naming recipe (for example 'examplesite_reference'). "
             "Read from <config dir>/recipes/<site>/{recipe}.yaml. "
             "Without a recipe, only files with canonical canVOD names are "
             "processed."
@@ -248,13 +250,7 @@ class VodAnalysisConfig(_StrictModel):
     canopy_receiver: str = Field(..., description="Canopy receiver name")
     reference_receiver: str = Field(
         ...,
-        description=(
-            "Bare reference receiver name -- always matches a 'receivers' "
-            "config key, never a store group name. Used for directory "
-            "lookups during RINEX ingest. For the Icechunk store group "
-            "holding this receiver's data (paired with canopy_receiver), "
-            "use the reference_store_group property instead."
-        ),
+        description=("Reference receiver name, as named under 'receivers'"),
     )
     description: str | None = Field(None, description="Analysis description")
 
@@ -278,7 +274,7 @@ class SiteConfig(_StrictModel):
     store_description: str | None = Field(
         None,
         description=(
-            "What the site's stores hold (e.g. 'GNSS-T observations below "
+            "What the site's stores hold (for example 'GNSS-T observations below "
             "a beech canopy'): written to StoreIdentity.description. "
             "Required when a store of the site is created."
         ),
@@ -287,10 +283,15 @@ class SiteConfig(_StrictModel):
     latitude: float | None = Field(None, description="WGS84 latitude")
     longitude: float | None = Field(None, description="WGS84 longitude")
     altitude_m: float | None = Field(None, description="Altitude in meters")
-    receivers: dict[str, ReceiverConfig] = Field(..., description="Site receivers")
+    receivers: dict[str, ReceiverConfig] = Field(
+        ..., description="The site's receivers, each named by its key"
+    )
     vod_analyses: dict[str, VodAnalysisConfig] | None = Field(
         None,
-        description="VOD analysis pairs",
+        description=(
+            "The site's VOD analyses, each named by its key: a canopy receiver "
+            "and its reference receiver"
+        ),
     )
     naming: dict | None = Field(
         None,
@@ -357,6 +358,30 @@ class SiteConfig(_StrictModel):
             Canopy receiver names.
         """
         return [name for name, cfg in self.receivers.items() if cfg.type == "canopy"]
+
+    def receiver_of_group(self, group: str) -> str | None:
+        """The receiver whose data a GNSS store group holds.
+
+        A canopy receiver's group is its name; a reference receiver has one
+        group per paired canopy (:func:`reference_store_group`).
+
+        Parameters
+        ----------
+        group : str
+            Group name in the GNSS store, e.g. ``"reference_01_canopy_01"``.
+
+        Returns
+        -------
+        str or None
+            The receiver's name in ``receivers``, or None for a group no
+            receiver writes.
+        """
+        if group in self.receivers and self.receivers[group].type == "canopy":
+            return group
+        for reference, canopy in self.get_reference_canopy_pairs():
+            if reference_store_group(reference, canopy) == group:
+                return reference
+        return None
 
     def resolve_paired_canopies(self, receiver_name: str) -> list[str]:
         """Resolve paired_canopies for a reference receiver to a list of canopy names.
@@ -460,4 +485,10 @@ class SitesConfig(_StrictModel):
     a ``KeyError`` listing available sites there.
     """
 
-    sites: dict[str, SiteConfig]
+    sites: dict[str, SiteConfig] = Field(
+        ...,
+        description=(
+            "A research site, named by its key: its data folder, receivers, and "
+            "VOD analyses"
+        ),
+    )

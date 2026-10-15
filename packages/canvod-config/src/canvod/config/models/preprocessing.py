@@ -61,7 +61,7 @@ class GridAssignmentConfig(_StrictModel):
     """Assignment of each observation to a cell of a hemispherical grid."""
 
     enabled: bool = Field(True, description="Apply the grid cell assignment")
-    grid_type: str = Field(..., description="Grid type, e.g. 'equal_area'")
+    grid_type: str = Field(..., description="Grid type, for example 'equal_area'")
     angular_resolution: float = Field(
         ..., gt=0, le=90, description="Angular resolution in degrees"
     )

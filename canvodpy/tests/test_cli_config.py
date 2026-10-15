@@ -124,6 +124,34 @@ class TestInteractiveWizard:
         assert "metadata.author" in result.output
         assert "Traceback" not in result.output
 
+    def test_a_question_mark_explains_the_setting_and_asks_again(self, tmp_path):
+        config_dir = tmp_path / "config"
+        answers = (
+            "?\n"
+            f"{testing.PERSON_NAME}\n"
+            f"{testing.PERSON_EMAIL}\n"
+            "C\n"
+            "?\n"
+            f"{tmp_path / 's'}\n"
+            f"{tmp_path / 'l'}\n"
+            "Site\n"
+            f"{tmp_path / 'd'}\n"
+            "?\n"
+            "\n\n"
+        )
+        result = _run_wizard(config_dir, answers)
+
+        assert result.exit_code == 0, result.output
+        assert "processing.metadata.author" in result.output
+        assert "processing.storage.stores_root_dir" in result.output
+        assert "sites.<site>.receivers.<receiver>.directory" in result.output
+        text = (config_dir / "canvod-settings.yaml").read_text()
+        assert f"author: {testing.PERSON_NAME}" in text
+        assert f"stores_root_dir: {tmp_path / 's'}" in text
+        assert "directory: 02_canopy" in text
+        # "?" is never written as an answer.
+        assert not re.search(r"^ *(author|stores_root_dir|directory): '?\?", text, re.M)
+
 
 class TestValidateRecipeWithoutFilemap:
     """canvod-filemap is an optional extra, not installed in this test env —
@@ -228,3 +256,25 @@ class TestConfigDirOption:
             )
             plain = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
             assert "--config-dir" in plain, command
+
+
+class TestExplain:
+    def test_prints_the_setting_and_its_link(self):
+        result = runner.invoke(
+            _app(), ["config", "explain", "gnss_store.epoch"], env={"COLUMNS": "60"}
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "processing.icechunk.chunk_strategies.gnss_store.epoch" in result.output
+        assert "Default: 180" in result.output
+        # One line, so a terminal can open it.
+        assert (
+            "https://canvodpy.eu/guides/settings/"
+            "#processing-icechunk-chunk_strategies-gnss_store-epoch\n" in result.output
+        )
+
+    def test_an_unknown_setting_fails_and_names_the_closest(self):
+        result = runner.invoke(_app(), ["config", "explain", "stores_rot_dir"])
+
+        assert result.exit_code == 1
+        assert "processing.storage.stores_root_dir" in result.output

@@ -167,6 +167,7 @@ $ canvodpy config [OPTIONS] COMMAND [ARGS]...
 * `validate`: Validate the configuration and the...
 * `show`: Show the settings that canvodpy uses.
 * `edit`: Open canvod-settings.yaml in $EDITOR.
+* `explain`: Print what a setting of...
 
 ### `canvodpy config init`
 
@@ -238,6 +239,29 @@ $ canvodpy config edit [OPTIONS]
 **Options**:
 
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--help`: Show this message and exit.
+
+### `canvodpy config explain`
+
+Print what a setting of canvod-settings.yaml means.
+
+Prints the setting's description, type, limits and default, and a link
+to its entry in the settings reference. Name a site, receiver or VOD
+analysis as in your file:
+sites.my_site.receivers.reference_01.directory.
+
+**Usage**:
+
+```console
+$ canvodpy config explain [OPTIONS] {setting}
+```
+
+**Arguments**:
+
+* `setting`: The setting's path in canvod-settings.yaml, or the end of it (for example gnss_store.epoch).  [required]
+
+**Options**:
+
 * `--help`: Show this message and exit.
 
 ## `canvodpy store`

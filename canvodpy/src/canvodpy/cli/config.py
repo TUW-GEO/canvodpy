@@ -6,6 +6,7 @@ Provides commands for:
 - Validating configuration
 - Viewing current configuration
 - Editing configuration files
+- Explaining a setting
 """
 
 import os
@@ -20,6 +21,7 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.table import Table
 
+from canvod.config import settings_help
 from canvod.config.loader import (
     ConfigValidationError,
     format_validation_error,
@@ -72,6 +74,25 @@ def _yaml_scalar(value: str) -> str:
     return dumped.removesuffix("...").strip()
 
 
+def _print_setting_help(setting: str) -> None:
+    """Print what *setting* means, indented under the question."""
+    text = settings_help.explain(setting)
+    indented = "\n".join(f"    {line}" if line else "" for line in text.splitlines())
+    console.print(f"\n{indented}\n", markup=False, highlight=False, soft_wrap=True)
+
+
+def _ask(question: str, setting: str, default: str | None = None) -> str:
+    """Ask *question*; the answer ``?`` explains *setting* and asks again."""
+    while True:
+        if default is None:
+            answer = Prompt.ask(question)
+        else:
+            answer = Prompt.ask(question, default=default)
+        if answer.strip() != "?":
+            return answer
+        _print_setting_help(setting)
+
+
 def _run_interactive_wizard(canvod_dest: Path) -> None:
     """Ask ~8 setup questions and patch their answers into canvod_dest's text.
 
@@ -81,21 +102,32 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
     invocation just created (never one that already existed), so the known
     placeholder strings are guaranteed present.
     """
-    console.print("\n[bold]Interactive setup[/bold]. Answer a few questions:\n")
+    console.print(
+        "\n[bold]Interactive setup[/bold]. Answer a few questions; "
+        "answer ? to see what a question sets.\n"
+    )
 
-    author = Prompt.ask("  Your name")
-    email = Prompt.ask("  Your email")
-    institution = Prompt.ask("  Institution")
-    stores_root_dir = Prompt.ask("  Where should processed results be stored?")
-    log_dir = Prompt.ask("  Where should the log files go?")
-    site_name = Prompt.ask("  Site name (e.g. ExampleSite)")
-    data_root = Prompt.ask(f"  Data root directory for site '{site_name}'")
-    canopy_dir = Prompt.ask(
+    author = _ask("  Your name", "processing.metadata.author")
+    email = _ask("  Your email", "processing.metadata.email")
+    institution = _ask("  Institution", "processing.metadata.institution")
+    stores_root_dir = _ask(
+        "  Where should processed results be stored?",
+        "processing.storage.stores_root_dir",
+    )
+    log_dir = _ask("  Where should the log files go?", "processing.logging.log_dir")
+    site_name = _ask("  Site name (e.g. ExampleSite)", "sites.<site>")
+    data_root = _ask(
+        f"  Data root directory for site '{site_name}'",
+        "sites.<site>.gnss_site_data_root",
+    )
+    canopy_dir = _ask(
         "  Canopy receiver directory (relative to the data root)",
+        "sites.<site>.receivers.<receiver>.directory",
         default="02_canopy",
     )
-    reference_dir = Prompt.ask(
+    reference_dir = _ask(
         "  Reference receiver directory (relative to the data root)",
+        "sites.<site>.receivers.<receiver>.directory",
         default="01_reference",
     )
 
@@ -706,3 +738,41 @@ def _show_sids(config: SidsConfig) -> None:
         table.add_row("Custom SIDs", f"{len(config.custom_sids)} defined")
     console.print(table)
     console.print()
+
+
+@config_app.command()
+def explain(
+    setting: Annotated[
+        str,
+        typer.Argument(
+            help=(
+                "The setting's path in canvod-settings.yaml, or the end of it "
+                "(for example gnss_store.epoch)."
+            ),
+        ),
+    ],
+) -> None:
+    """Print what a setting of canvod-settings.yaml means.
+
+    Prints the setting's description, type, limits and default, and a link
+    to its entry in the settings reference. Name a site, receiver or VOD
+    analysis as in your file:
+    sites.my_site.receivers.reference_01.directory.
+
+    \f
+    Parameters
+    ----------
+    setting : str
+        The setting's path, or the end of it.
+
+    Raises
+    ------
+    typer.Exit
+        With code 1 if no setting, or more than one, has that path.
+    """
+    try:
+        text = settings_help.explain(setting)
+    except settings_help.UnknownSettingError as exc:
+        console.print(f"[red]{exc.args[0]}[/red]", highlight=False)
+        raise typer.Exit(1) from exc
+    console.print(text, markup=False, highlight=False, soft_wrap=True)

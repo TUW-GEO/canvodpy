@@ -239,17 +239,29 @@ def fill_value(var: xr.Variable | xr.DataArray, name: str) -> Any:
 
 
 def _create_group(
-    session: Any, group: str, template: xr.Dataset, epoch_chunk: int
+    session: Any,
+    group: str,
+    template: xr.Dataset,
+    epoch_chunk: int,
+    dim_chunks: Mapping[str, int] | None = None,
 ) -> None:
-    """Create ``group`` with the variables of ``template`` and no epochs."""
+    """Create ``group`` with the variables of ``template`` and no epochs.
+
+    Dimensions other than ``epoch`` get the chunk sizes of ``dim_chunks``;
+    a dimension it leaves out, or gives ``-1``, is one chunk.
+    """
     empty = template.isel(epoch=slice(0, 0)).copy()
     empty.attrs = {**empty.attrs, EPOCH_LAYOUT_ATTR: DAY_BLOCKS}
+    sizes = {str(dim): size for dim, size in empty.sizes.items()}
+    for dim, size in (dim_chunks or {}).items():
+        if dim != "epoch" and dim in sizes and size != -1:
+            sizes[dim] = int(size)
     encoding: dict[str, dict[str, Any]] = {}
     for name, var in empty.variables.items():
         if not var.dims:
             continue
         chunks = tuple(
-            epoch_chunk if dim == "epoch" else empty.sizes[dim] for dim in var.dims
+            epoch_chunk if dim == "epoch" else sizes[str(dim)] for dim in var.dims
         )
         encoding[str(name)] = {"chunks": chunks}
         if "epoch" in var.dims and name != "epoch":
@@ -273,12 +285,15 @@ def add_day_block(
     cadence_s: float,
     template: xr.Dataset | None,
     epoch_chunk: int = 180,
+    dim_chunks: Mapping[str, int] | None = None,
 ) -> DayBlock:
     """Give ``day`` a block in ``group``, or return the block it has.
 
     Creates the group from the variables and labels of ``template`` (a file
     of the day) if it does not exist yet, with chunks of ``epoch_chunk``
-    epochs; without a template the group must exist. An existing group
+    epochs and, along the other dimensions, of ``dim_chunks`` (for example
+    ``{"sid": 64}``; ``-1`` or a dimension left out is one chunk); without
+    a template the group must exist. An existing group
     keeps the chunks it was created with (:func:`stored_epoch_chunk`), and
     the cadence must fit those. A new block is added at the end of
     the epoch axis; its slots hold their grid times and missing values. A day
@@ -309,7 +324,7 @@ def add_day_block(
                 "the group's first write creates it."
             )
             raise LayoutError(msg)
-        _create_group(session, group, template, epoch_chunk)
+        _create_group(session, group, template, epoch_chunk, dim_chunks)
     blocks = day_blocks(session.store, group)
     if day in blocks:
         block = blocks[day]

@@ -163,6 +163,36 @@ class GnssResearchSite:
             if getattr(config, "active", True)
         }
 
+    def add_receiver_metadata(self, dataset: xr.Dataset, group: str) -> xr.Dataset:
+        """``dataset`` with the receiver's ``metadata`` setting in its attributes.
+
+        Attributes the dataset already has are kept; a key of the setting
+        that clashes with one is left out, with a warning. ``dataset`` itself
+        is not changed: receivers can share the datasets of one file.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            Data of the receiver.
+        group : str
+            The GNSS store group the data go to: a canopy receiver's name,
+            or a reference receiver's group per canopy
+            (``reference_01_canopy_01``), whose setting is ``reference_01``'s.
+        """
+        receiver = self._site_config.receiver_of_group(group)
+        receiver_meta = self.get_receiver_metadata(receiver) if receiver else None
+        if not receiver_meta:
+            return dataset
+        skipped = {k for k in receiver_meta if k in dataset.attrs}
+        if skipped:
+            self._logger.warning(
+                f"Receiver metadata keys {skipped} already exist in "
+                f"dataset attrs; skipping (existing attrs take precedence)"
+            )
+        return dataset.assign_attrs(
+            {k: v for k, v in receiver_meta.items() if k not in dataset.attrs}
+        )
+
     def get_receiver_metadata(
         self, receiver_name: str
     ) -> dict[str, str | int | float | bool] | None:
@@ -417,19 +447,7 @@ class GnssResearchSite:
                 f"Available: {available_receivers}"
             )
 
-        # Merge receiver metadata into dataset attrs (never overwrite existing)
-        receiver_meta = self.get_receiver_metadata(receiver_name)
-        if receiver_meta:
-            skipped = {k for k in receiver_meta if k in dataset.attrs}
-            if skipped:
-                self._logger.warning(
-                    f"Receiver metadata keys {skipped} already exist in "
-                    f"dataset attrs; skipping (existing attrs take precedence)"
-                )
-            new_attrs = {
-                k: v for k, v in receiver_meta.items() if k not in dataset.attrs
-            }
-            dataset.attrs.update(new_attrs)
+        dataset = self.add_receiver_metadata(dataset, receiver_name)
 
         self._logger.info(f"Ingesting RINEX data for receiver '{receiver_name}'")
 

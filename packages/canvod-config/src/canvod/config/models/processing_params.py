@@ -38,9 +38,9 @@ class ProcessingParams(_StrictModel):
     auto_uncapped: bool = Field(
         False,
         description=(
-            "Remove the automatic CPU core cap in resource_mode='auto'. "
-            "WARNING: enabling this on a shared machine can starve other users' "
-            "processes. Only set True when the machine is exclusively yours."
+            "Remove the automatic CPU core cap of resource_mode 'auto'. On a "
+            "shared machine, this can starve other users' processes: set it to "
+            "true only when the machine is yours alone."
         ),
     )
     keep_gnss_observables: list[str] = Field(
@@ -64,12 +64,12 @@ class ProcessingParams(_StrictModel):
     aggregate_glonass_fdma: bool = Field(
         True,
         description=(
-            "Aggregate GLONASS FDMA sub-bands into effective G1/G2 bands. "
-            "When False, the GLONASS signal IDs name the FDMA bands "
-            "(G1_FDMA, G2_FDMA), for the observations and the orbit data "
-            "alike. RINEX only: the SBF and NMEA readers refuse False. "
-            "It changes the GLONASS signal IDs, so an existing store refuses "
-            "data written with the other value."
+            "Aggregate GLONASS FDMA sub-bands into effective G1/G2 bands. When "
+            "false, the GLONASS signal IDs name the FDMA bands (G1_FDMA, "
+            "G2_FDMA), for the observations and the orbit data alike. RINEX "
+            "only: the SBF and NMEA readers refuse false. It changes the "
+            "GLONASS signal IDs, so an existing store refuses data written with "
+            "the other value."
         ),
     )
     store_radial_distance: bool = Field(
@@ -86,9 +86,10 @@ class ProcessingParams(_StrictModel):
     store_radial_diff: bool = Field(
         False,
         description=(
-            "Store radial distance difference (r_canopy − r_reference, m) in the "
-            "VOD store. Requires store_radial_distance=true at ingest time so that "
-            "r is available in both receiver datasets."
+            "Store the radial distance difference (r_canopy − r_reference, m) "
+            "in the VOD store. Requires store_radial_distance: true when the "
+            "receivers' files are read, so that r is available in both receiver "
+            "datasets."
         ),
     )
     receiver_position_mode: Literal["shared", "per_receiver"] = Field(
@@ -113,9 +114,9 @@ class ProcessingParams(_StrictModel):
         ge=1,
         le=30,
         description=(
-            "Number of DOYs pooled per loky wave (1 = one day at a time). "
-            "Raising this too high may cause connection issues with the "
-            "ephemeris download server."
+            "Days processed together in one batch (1 = one day at a time). A "
+            "high value may cause connection problems with the server the orbit "
+            "and clock files come from."
         ),
     )
     max_memory_gb: float | None = Field(
@@ -128,17 +129,16 @@ class ProcessingParams(_StrictModel):
     )
     cpu_affinity: list[int] | None = Field(
         None,
-        description="Pin workers to specific CPU core IDs (None = no restriction)",
+        description="Pin workers to these CPU core IDs (null = no restriction)",
     )
     nice_priority: int = Field(
         -5,
         ge=-20,
         le=19,
         description=(
-            "Process nice value (-20=highest priority, 0=normal, 19=lowest). "
-            "Negative values raise worker priority above normal but require "
-            "root/CAP_SYS_NICE on Linux -- silently has no effect otherwise "
-            "(canvod.utils.tools.worker._worker_init swallows PermissionError)."
+            "Priority of the worker processes (-20 = highest, 0 = normal, 19 = "
+            "lowest). A negative value needs root or CAP_SYS_NICE on Linux; "
+            "without it, the value has no effect."
         ),
     )
     # TODO: investigate whether threads_per_worker is still needed after the loky /
@@ -149,9 +149,9 @@ class ProcessingParams(_StrictModel):
         ge=1,
         le=8,
         description=(
-            "Threads per worker process. None lets the scheduler decide. "
-            "Values >1 help with numpy/xarray ops and I/O (GIL-releasing) but not "
-            "pure-Python RINEX text parsing."
+            "Threads per worker process; null lets the scheduler decide. More "
+            "than 1 helps array computations and reading and writing, but not "
+            "the parsing of RINEX text."
         ),
     )
     ephemeris_source: Literal["final", "broadcast"] = Field(
@@ -166,24 +166,23 @@ class ProcessingParams(_StrictModel):
     store_sbf_raw_observables: bool = Field(
         True,
         description=(
-            "When reading SBF files, include the pre-correction 'raw' observable "
-            "variables in obs_ds: SNR_raw (before CN0HighRes), "
-            "Pseudorange_unsmoothed (before Hatch filter), "
-            "Pseudorange_raw (before Hatch + multipath filters), and "
-            "Phase_raw (before carrier multipath correction). "
-            "Set to False to reduce dataset size when raw quantities are not needed."
+            "When reading SBF files, also store the observables before the "
+            "receiver's corrections: SNR_raw (before CN0HighRes), "
+            "Pseudorange_unsmoothed (before the Hatch filter), Pseudorange_raw "
+            "(before the Hatch and multipath filters), and Phase_raw (before "
+            "the carrier multipath correction). Set to false to make the stores "
+            "smaller when you don't need them."
         ),
     )
     store_sbf_metadata: bool = Field(
         True,
         description=(
-            "When reading SBF files, store the per-file SBF metadata dataset "
-            "(sbf_obs: SatVisibility geometry and its almanac/ephemeris source, "
+            "When reading SBF files, store each file's SBF metadata "
+            "(SatVisibility geometry and its almanac or ephemeris source, "
             "MeasExtra, PVT, DOP, receiver status and quality indicators) under "
             "{group}/metadata/sbf_obs, in the same commit as the observations. "
-            "Set to False to save space; broadcast geometry "
-            "(ephemeris_source='broadcast') still works, since it uses sbf_obs "
-            "in memory."
+            "Set to false to save space; broadcast geometry (ephemeris_source "
+            "'broadcast') still works, since it uses these data in memory."
         ),
     )
 
