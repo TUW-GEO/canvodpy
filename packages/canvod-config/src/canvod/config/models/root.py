@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pydantic import Field
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -48,9 +49,13 @@ class CanvodConfig(BaseSettings):
         env_ignore_empty=True,
     )
 
-    processing: ProcessingConfig
-    sites: SitesConfig
-    sids: SidsConfig
+    processing: ProcessingConfig = Field(
+        ..., description="How canVODpy processes the data, and where the results go"
+    )
+    sites: SitesConfig = Field(
+        ..., description="The research sites, their receivers, and VOD analyses"
+    )
+    sids: SidsConfig = Field(..., description="Which signals are kept")
 
     @classmethod
     def settings_customise_sources(
