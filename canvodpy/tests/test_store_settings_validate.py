@@ -56,8 +56,8 @@ def test_validate_reports_a_store_that_does_not_exist_even_otherwise_full(
 
     assert len(errors) == 1  # both stores are new: one error names them both
     (error,) = errors
-    assert "/tmp/gnss-fangorn" in error
-    assert "/tmp/vod-fangorn" in error
+    assert str(Path("/tmp/gnss-fangorn")) in error
+    assert str(Path("/tmp/vod-fangorn")) in error
     assert error.count("sites.fangorn.store_description") == 1
 
 
@@ -70,8 +70,8 @@ def test_validate_reports_one_error_when_both_stores_are_new(monkeypatch):
 
     (error,) = missing_store_settings_errors("fangorn", site_cfg, config)
 
-    assert "/tmp/gnss-fangorn" in error
-    assert "/tmp/vod-fangorn" in error
+    assert str(Path("/tmp/gnss-fangorn")) in error
+    assert str(Path("/tmp/vod-fangorn")) in error
     for name in (
         "sites.fangorn.store_description",
         "processing.metadata.publisher",

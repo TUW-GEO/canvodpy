@@ -457,18 +457,18 @@ def missing_store_settings_message(
     if stores:
         subject = " and ".join(f"the new {label} at {path}" for label, path in stores)
         subject = subject[0].upper() + subject[1:]
-        verb = "need"
+        verb = "need these settings when they are"
     elif store_path is not None:
         subject = f"The new {store_label} at {store_path}"
-        verb = "needs"
+        verb = "needs these settings when it is"
     elif store_label is not None:
         subject = f"A new {store_label}"
-        verb = "needs"
+        verb = "needs these settings when it is"
     else:
         subject = "A store"
-        verb = "needs"
+        verb = "needs these settings when it is"
     return (
-        f"{subject} {verb} these settings when it is created; the metadata "
+        f"{subject} {verb} created; the metadata "
         f"standards (DataCite, STAC) require them: " + "; ".join(missing) + "."
     )
 
