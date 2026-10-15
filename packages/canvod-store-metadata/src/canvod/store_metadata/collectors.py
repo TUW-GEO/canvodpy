@@ -427,22 +427,13 @@ def missing_store_settings(site_name: str, site_config: Any, config: Any) -> lis
         ),
     }
     missing = [name for name, value in required.items() if not (value or "").strip()]
-    naming_authority = getattr(meta_cfg, "naming_authority", None)
-    if isinstance(naming_authority, str):
-        try:
-            check_naming_authority(naming_authority)
-        except ValueError:
-            missing.append(
-                f"{NAMING_AUTHORITY_SETTING} is missing or not a reverse DNS "
-                "name (e.g. 'at.ac.tuwien')"
-            )
-    elif not naming_authority:
-        # None or empty: the setting is absent.
+    try:
+        check_naming_authority(getattr(meta_cfg, "naming_authority", None))
+    except ValueError:
         missing.append(
             f"{NAMING_AUTHORITY_SETTING} is missing or not a reverse DNS "
             "name (e.g. 'at.ac.tuwien')"
         )
-    # A truthy non-string value (e.g. a mock in a test) is left as present.
     return missing
 
 

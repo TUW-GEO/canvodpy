@@ -1,143 +1,157 @@
-"""A first run refuses before processing when a new store's settings are missing."""
+"""A first run refuses before processing when a new store's settings are missing.
 
-import re
-from types import SimpleNamespace
+Through the public entry points: ``Site.pipeline()`` (which Airflow's
+``process_day`` also uses) and ``canvodpy run``. The test site leaves out
+``sites.fangorn.store_description``.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
 
 import pytest
+import yaml
+from canvodpy.cli.app import main_app
+from canvodpy.orchestrator.discovery import clear_discovery_cache
+from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+from test_run_discovery_messages import _write_site
+from typer.testing import CliRunner
+
+import canvod.config.loader as loader_module
+from canvod.utils.testing import SITE_KEY
+
+runner = CliRunner()
+MISSING = "sites.fangorn.store_description"
 
 
-def _config(store_description: str | None = None) -> SimpleNamespace:
-    """Settings with the site's store description left out by default."""
-    return SimpleNamespace(
-        processing=SimpleNamespace(
-            metadata=SimpleNamespace(
-                publisher="Test Institute",
-                license="CC-BY-4.0",
-                naming_authority="at.ac.tuwien",
-                store_description=None,
-            )
-        ),
-        sites=SimpleNamespace(
-            sites={"fangorn": SimpleNamespace(store_description=store_description)}
-        ),
+@pytest.fixture(autouse=True)
+def _fresh():
+    loader_module.load_config.cache_clear()
+    clear_discovery_cache()
+    yield
+    loader_module.load_config.cache_clear()
+    clear_discovery_cache()
+
+
+@pytest.fixture
+def site(tmp_path: Path, monkeypatch) -> Path:
+    """The test site without a store description; returns the stores folder."""
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(_write_site(tmp_path)))
+    return tmp_path / "stores"
+
+
+@pytest.fixture
+def batches(monkeypatch) -> list[object]:
+    """Records every batch of days the orchestrator starts to read."""
+    started: list[object] = []
+
+    def record(self, dates, keep_vars):
+        started.append(dates)
+        yield from ()
+
+    monkeypatch.setattr(PipelineOrchestrator, "_process_multi_day_batches", record)
+    return started
+
+
+def _without_store_metadata(config_dir: Path) -> None:
+    """Remove every setting a new store needs from the test site."""
+    path = config_dir / "canvod-settings.yaml"
+    settings = yaml.safe_load(path.read_text())
+    for key in ("publisher", "license", "naming_authority"):
+        settings["processing"]["metadata"].pop(key)
+    path.write_text(yaml.safe_dump(settings))
+
+
+def _create_gnss_store(stores: Path) -> None:
+    """An existing GNSS store: its metadata was written when it was created."""
+    from canvod.store_metadata import open_repository
+
+    open_repository(stores / SITE_KEY / "rinex", create=True)
+
+
+def _run(*extra: str):
+    return runner.invoke(
+        main_app,
+        ["run", "--site", SITE_KEY, "--start", "2025001", "--end", "2025001", *extra],
+        env={"CANVOD_CONFIG_DIR": os.environ["CANVOD_CONFIG_DIR"]},
     )
 
 
 # ---------------------------------------------------------------------------
-# The orchestrator (Site.pipeline(), process_day) refuses a first GNSS store
+# Site.pipeline() refuses a new GNSS store
 # ---------------------------------------------------------------------------
 
 
-def test_pipeline_refuses_a_new_gnss_store_with_a_missing_description(
-    monkeypatch, tmp_path
-):
-    from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+def test_the_pipeline_refuses_before_reading_a_file(site, batches) -> None:
+    from canvodpy.api import Site
 
-    store_path = tmp_path / "stores" / "fangorn-gnss"
-    config = _config()  # site store_description missing
-    monkeypatch.setattr("canvodpy.orchestrator.pipeline.store_exists", lambda _: False)
+    with pytest.raises(ValueError, match=MISSING):
+        with Site(SITE_KEY).pipeline(n_workers=1) as pipeline:
+            pipeline.process_date("2025001")
 
-    orchestrator = PipelineOrchestrator.__new__(PipelineOrchestrator)
-    orchestrator.site = SimpleNamespace(
-        site_name="fangorn",
-        _site_config=SimpleNamespace(store_description=None),
-        gnss_store_path=store_path,
-    )
-    orchestrator._config = config
-
-    with pytest.raises(ValueError, match=re.escape("sites.fangorn.store_description")):
-        orchestrator._check_new_store_settings()
-    assert not store_path.exists()
+    assert batches == []
+    assert not (site / SITE_KEY).exists()
 
 
-def test_pipeline_names_every_missing_setting_at_once(monkeypatch, tmp_path):
-    from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+def test_the_pipeline_names_every_missing_setting_at_once(site, batches) -> None:
+    from canvodpy.api import Site
 
-    config = SimpleNamespace(
-        processing=SimpleNamespace(
-            metadata=SimpleNamespace(
-                publisher=None,
-                license=None,
-                naming_authority=None,
-                store_description=None,
-            )
-        )
-    )
-    monkeypatch.setattr("canvodpy.orchestrator.pipeline.store_exists", lambda _: False)
-
-    orchestrator = PipelineOrchestrator.__new__(PipelineOrchestrator)
-    orchestrator.site = SimpleNamespace(
-        site_name="fangorn",
-        _site_config=SimpleNamespace(store_description=None),
-        gnss_store_path=tmp_path / "stores" / "fangorn-gnss",
-    )
-    orchestrator._config = config
+    _without_store_metadata(Path(os.environ["CANVOD_CONFIG_DIR"]))
 
     with pytest.raises(ValueError) as err:
-        orchestrator._check_new_store_settings()
-    message = str(err.value)
+        with Site(SITE_KEY).pipeline(n_workers=1) as pipeline:
+            pipeline.process_date("2025001")
+
     for name in (
-        "sites.fangorn.store_description",
+        MISSING,
         "processing.metadata.publisher",
         "processing.metadata.license",
         "processing.metadata.naming_authority",
     ):
-        assert name in message
+        assert name in str(err.value)
+    assert batches == []
 
 
-def test_pipeline_does_not_check_an_existing_store(monkeypatch, tmp_path):
-    from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+def test_the_pipeline_does_not_check_an_existing_store(site, batches) -> None:
+    from canvodpy.api import Site
 
-    config = _config()  # description missing, but the store exists
-    monkeypatch.setattr("canvodpy.orchestrator.pipeline.store_exists", lambda _: True)
+    _create_gnss_store(site)
 
-    orchestrator = PipelineOrchestrator.__new__(PipelineOrchestrator)
-    orchestrator.site = SimpleNamespace(
-        site_name="fangorn",
-        _site_config=SimpleNamespace(store_description=None),
-        gnss_store_path=tmp_path / "stores" / "fangorn-gnss",
-    )
-    orchestrator._config = config
+    with Site(SITE_KEY).pipeline(n_workers=1) as pipeline:
+        pipeline.process_date("2025001")
 
-    orchestrator._check_new_store_settings()  # must not raise
+    assert len(batches) == 1
 
 
 # ---------------------------------------------------------------------------
-# The CLI refuses a first VOD store, unless --no-vod
+# canvodpy run refuses a new GNSS or VOD store; --no-vod skips the VOD store
 # ---------------------------------------------------------------------------
 
 
-def test_run_refuses_a_new_vod_store_with_a_missing_description(monkeypatch, tmp_path):
-    from canvodpy.cli.run import _refuse_new_vod_store_missing_settings
+def test_run_refuses_a_new_gnss_store_before_reading_a_file(site, batches) -> None:
+    result = _run("--no-vod")
 
-    config = _config()
-    monkeypatch.setattr("canvodpy.cli.run.store_exists", lambda _: False)
-    site = SimpleNamespace(name="fangorn", vod_store_path=tmp_path / "stores" / "vod")
-
-    with pytest.raises(ValueError, match=re.escape("sites.fangorn.store_description")):
-        _refuse_new_vod_store_missing_settings(
-            site, config, {"canopy_01_vs_reference_01": object()}
-        )
+    assert result.exit_code != 0
+    assert MISSING in " ".join(result.output.split())
+    assert batches == []
+    assert not (site / SITE_KEY).exists()
 
 
-def test_run_keeps_a_new_vod_store_unchecked_under_no_vod(monkeypatch, tmp_path):
-    from canvodpy.cli.run import _refuse_new_vod_store_missing_settings
+def test_run_refuses_a_new_vod_store_before_reading_a_file(site, batches) -> None:
+    _create_gnss_store(site)  # the VOD store is new
 
-    config = _config()
-    site = SimpleNamespace(name="fangorn", vod_store_path=tmp_path / "stores" / "vod")
+    result = _run()
 
-    # --no-vod gives an empty vod_analyses, so the VOD store is not checked,
-    # even though it does not exist and its settings are missing.
-    _refuse_new_vod_store_missing_settings(site, config, {})
+    assert result.exit_code != 0
+    assert "A new VOD store needs these settings" in " ".join(result.output.split())
+    assert batches == []
 
 
-def test_run_keeps_an_existing_vod_store_unchecked(monkeypatch, tmp_path):
-    from canvodpy.cli.run import _refuse_new_vod_store_missing_settings
+def test_run_with_no_vod_does_not_check_the_vod_store(site, batches) -> None:
+    _create_gnss_store(site)  # the VOD store is new
 
-    config = _config()
-    monkeypatch.setattr("canvodpy.cli.run.store_exists", lambda _: True)
-    site = SimpleNamespace(name="fangorn", vod_store_path=tmp_path / "stores" / "vod")
+    result = _run("--no-vod")
 
-    _refuse_new_vod_store_missing_settings(
-        site, config, {"canopy_01_vs_reference_01": object()}
-    )
+    assert result.exit_code == 0, result.output
+    assert len(batches) == 1

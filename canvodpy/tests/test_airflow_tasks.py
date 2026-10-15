@@ -47,8 +47,13 @@ def _site_config(tmp_path) -> MagicMock:
             },
         },
     )
+    site_cfg.store_description = "GNSS-T observations below a test canopy"
     config = MagicMock()
     config.sites.sites = {"TestSite": site_cfg}
+    # The settings a new store needs (config validate checks them).
+    config.processing.metadata.publisher = "Fangorn Forest Institute"
+    config.processing.metadata.license = "CC-BY-4.0"
+    config.processing.metadata.naming_authority = "org.fangorn"
     return config
 
 
