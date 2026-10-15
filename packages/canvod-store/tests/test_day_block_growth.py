@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 import xarray as xr
 from _helpers import new_gnss_store
+from canvod.store_metadata import io
 from canvod.store_metadata.io import commit_with_rebase
 
 from canvod.store import MyIcechunkStore
@@ -131,3 +132,40 @@ def test_a_growth_conflict_is_retried_and_ends_with_one_block_per_day(
     with store.readonly_session("main") as session:
         epochs = xr.open_zarr(session.store, group=GROUP, consolidated=False).epoch
     assert epochs.size == 3 * 17280
+
+
+def _racing(store, monkeypatch, races: int) -> list[float]:
+    """Another run grows a day of its own before each of ``races`` sessions."""
+    sleeps: list[float] = []
+    monkeypatch.setattr(io.time, "sleep", sleeps.append)
+    rival = MyIcechunkStore(store.store_path)
+    opened = store.repo.writable_session
+    rival_days = iter(DAY_3 + np.arange(1, races + 1))
+
+    def writable_session(branch: str):
+        session = opened(branch)
+        day = next(rival_days, None)
+        if day is not None:
+            rival.grow_day_blocks({GROUP: {day: 5}}, message="rival")
+        return session
+
+    monkeypatch.setattr(store.repo, "writable_session", writable_session)
+    return sleeps
+
+
+def test_a_growth_that_lost_four_conflicts_wins_the_fifth(store, monkeypatch) -> None:
+    sleeps = _racing(store, monkeypatch, races=4)
+
+    store.grow_day_blocks({GROUP: {DAY_2: 5}}, message="grow")
+
+    assert DAY_2 in _blocks(store)
+    assert len(sleeps) == 4
+    assert all(a < b for a, b in zip(sleeps, sleeps[1:], strict=False))
+
+
+def test_a_growth_that_loses_five_conflicts_fails(store, monkeypatch) -> None:
+    sleeps = _racing(store, monkeypatch, races=5)
+
+    with pytest.raises(RuntimeError, match="conflicted 5 times"):
+        store.grow_day_blocks({GROUP: {DAY_2: 5}}, message="grow")
+    assert len(sleeps) == 4
