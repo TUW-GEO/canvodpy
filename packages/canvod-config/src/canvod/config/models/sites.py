@@ -72,9 +72,10 @@ class ReceiverConfig(_StrictModel):
     metadata: dict[str, str | int | float | bool] | None = Field(
         None,
         description=(
-            "Your own receiver metadata. "
-            "GnssResearchSite.ingest_receiver_data() adds it to the attributes "
-            "of the dataset it writes; canvodpy run doesn't use it. Example "
+            "Your own receiver metadata, added to the attributes of every "
+            "file of the receiver that is written to the GNSS store: the log "
+            "book keeps them per file, and a new group also takes them from "
+            "its first file. Attributes a file already has are kept. Example "
             "keys: site_url, antenna_height, species."
         ),
     )
