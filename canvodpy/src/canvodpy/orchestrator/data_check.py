@@ -294,26 +294,36 @@ def missing_store_settings_errors(
     A store records its site description, publisher, license and naming
     authority when it is created. ``config validate`` reports these as the
     errors of a site whose GNSS or VOD store does not exist yet, so a first
-    run is not started with a store that would be refused at its write. An
-    existing store is never reported (its metadata is already written).
+    run is not started with a store that would be refused at its write. The
+    settings are listed once; when both stores are new, one error names
+    them both. An existing store is never reported (its metadata is already
+    written).
     """
-    from canvod.store_metadata import missing_store_settings, store_exists
+    from canvod.store_metadata import (
+        missing_store_settings,
+        missing_store_settings_message,
+        store_exists,
+    )
 
-    errors = []
+    stores = []
     for label, path in (
         ("GNSS store", config.processing.storage.get_gnss_store_path(site)),
         ("VOD store", config.processing.storage.get_vod_store_path(site)),
     ):
-        if store_exists(path):
-            continue
-        missing = missing_store_settings(site, site_config, config)
-        if missing:
-            errors.append(
-                f"The new {label} at {path} needs these settings when it is "
-                f"created; the metadata standards (DataCite, STAC) require "
-                f"them: " + "; ".join(missing) + "."
-            )
-    return errors
+        if not store_exists(path):
+            stores.append((label, path))
+
+    if not stores:
+        return []
+
+    missing = missing_store_settings(site, site_config, config)
+    if not missing:
+        return []
+
+    if len(stores) > 1:
+        return [missing_store_settings_message(missing, stores=stores)]
+    label, path = stores[0]
+    return [missing_store_settings_message(missing, store_label=label, store_path=path)]
 
 
 def check_site_data(

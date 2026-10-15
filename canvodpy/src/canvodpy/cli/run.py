@@ -56,7 +56,11 @@ import typer
 import xarray as xr
 
 from canvod.config.models import reference_store_group
-from canvod.store_metadata import missing_store_settings, store_exists
+from canvod.store_metadata import (
+    missing_store_settings,
+    missing_store_settings_message,
+    store_exists,
+)
 from canvod.utils.logging import (
     new_run_id,
     record_stage_timing,
@@ -676,11 +680,7 @@ def _refuse_new_vod_store_missing_settings(site, config, vod_analyses) -> None:
     )
     if not missing:
         return
-    msg = (
-        "A new VOD store needs these settings when it is created; the "
-        "metadata standards (DataCite, STAC) require them: " + "; ".join(missing) + "."
-    )
-    raise ValueError(msg)
+    raise ValueError(missing_store_settings_message(missing, store_label="VOD store"))
 
 
 def run(

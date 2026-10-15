@@ -13,6 +13,7 @@ from .collectors import (
     collect_config_snapshot,
     collect_metadata,
     missing_store_settings,
+    missing_store_settings_message,
 )
 from .inventory import (
     scan_stores,
@@ -84,6 +85,7 @@ __all__ = [
     "metadata_exists",
     "migrate_metadata",
     "missing_store_settings",
+    "missing_store_settings_message",
     "open_repository",
     "store_exists",
     "read_metadata",

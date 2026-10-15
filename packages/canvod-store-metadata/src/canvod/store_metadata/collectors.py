@@ -437,6 +437,42 @@ def missing_store_settings(site_name: str, site_config: Any, config: Any) -> lis
     return missing
 
 
+def missing_store_settings_message(
+    missing: list[str],
+    *,
+    stores: list[tuple[str, Path | str]] | None = None,
+    store_label: str | None = None,
+    store_path: Path | str | None = None,
+) -> str:
+    """Return the store-creation error message for *missing* settings.
+
+    *missing* is the list from :func:`missing_store_settings`. *stores*
+    names each of the new stores as ``(label, path)`` pairs and reads "the
+    new <label> at <path>", joined with " and ", with a plural verb: the
+    form for the one error that names several new stores. A single store is
+    described by *store_path* ("The new <store_label> at <path>") or
+    *store_label* ("A new <store_label>"), and with none of them the
+    message reads "A store", as ``collect_metadata`` prints it.
+    """
+    if stores:
+        subject = " and ".join(f"the new {label} at {path}" for label, path in stores)
+        subject = subject[0].upper() + subject[1:]
+        verb = "need"
+    elif store_path is not None:
+        subject = f"The new {store_label} at {store_path}"
+        verb = "needs"
+    elif store_label is not None:
+        subject = f"A new {store_label}"
+        verb = "needs"
+    else:
+        subject = "A store"
+        verb = "needs"
+    return (
+        f"{subject} {verb} these settings when it is created; the metadata "
+        f"standards (DataCite, STAC) require them: " + "; ".join(missing) + "."
+    )
+
+
 def collect_metadata(
     *,
     config: Any,
@@ -464,11 +500,7 @@ def collect_metadata(
     sid = store_id(site_name, store_type)
     missing = missing_store_settings(site_name, site_config, config)
     if missing:
-        msg = (
-            "A store needs these settings when it is created; the metadata "
-            "standards (DataCite, STAC) require them: " + "; ".join(missing) + "."
-        )
-        raise ValueError(msg)
+        raise ValueError(missing_store_settings_message(missing))
     naming_authority = check_naming_authority(
         getattr(meta_cfg, "naming_authority", None)
     )

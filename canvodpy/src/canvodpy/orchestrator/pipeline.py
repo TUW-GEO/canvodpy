@@ -40,7 +40,11 @@ from canvod.readers import MatchedDirs
 from canvod.readers.gnss_specs.constants import UREG
 from canvod.store import GnssResearchSite
 from canvod.store.store import _with_run_id
-from canvod.store_metadata import missing_store_settings, store_exists
+from canvod.store_metadata import (
+    missing_store_settings,
+    missing_store_settings_message,
+    store_exists,
+)
 from canvod.utils.logging import (
     get_run_id,
     new_run_id,
@@ -1565,8 +1569,8 @@ class PipelineOrchestrator:
         authority when it is created (DataCite/STAC). A first run on a site
         whose GNSS store does not exist yet must not read every day and
         compute geometry only to fail at the write: this checks the settings
-        up front, before any file is read. An existing store is never checked
-        -- its metadata is already written.
+        up front, before any file is read. An existing store is never checked:
+        its metadata is already written.
 
         Raises
         ------
@@ -1580,13 +1584,9 @@ class PipelineOrchestrator:
         )
         if not missing:
             return
-        msg = (
-            "A new GNSS store needs these settings when it is created; the "
-            "metadata standards (DataCite, STAC) require them: "
-            + "; ".join(missing)
-            + "."
+        raise ValueError(
+            missing_store_settings_message(missing, store_label="GNSS store")
         )
-        raise ValueError(msg)
 
     def _fail_receiver_days(
         self, date_key: str, receivers: Sequence[str], error: BaseException

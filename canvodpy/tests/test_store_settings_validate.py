@@ -47,13 +47,33 @@ def test_validate_reports_nothing_for_an_existing_store(monkeypatch):
 def test_validate_reports_a_store_that_does_not_exist_even_otherwise_full(
     monkeypatch,
 ):
-    """Only the description is missing, but no store: one error, the site one."""
+    """Only the description is missing, but neither store: one error, both paths."""
     monkeypatch.setattr("canvod.store_metadata.store_exists", lambda _: False)
     config = _validate_config()
     site_cfg = SimpleNamespace(store_description=None)
 
     errors = missing_store_settings_errors("fangorn", site_cfg, config)
 
-    assert len(errors) == 2  # GNSS store and VOD store, neither exists
-    for error in errors:
-        assert "sites.fangorn.store_description" in error
+    assert len(errors) == 1  # both stores are new: one error names them both
+    (error,) = errors
+    assert "/tmp/gnss-fangorn" in error
+    assert "/tmp/vod-fangorn" in error
+    assert error.count("sites.fangorn.store_description") == 1
+
+
+def test_validate_reports_one_error_when_both_stores_are_new(monkeypatch):
+    """Both stores new: one error, both paths, each missing setting named once."""
+    monkeypatch.setattr("canvod.store_metadata.store_exists", lambda _: False)
+    config = _validate_config()
+    config.processing.metadata.publisher = None  # a second missing setting
+    site_cfg = SimpleNamespace(store_description=None)
+
+    (error,) = missing_store_settings_errors("fangorn", site_cfg, config)
+
+    assert "/tmp/gnss-fangorn" in error
+    assert "/tmp/vod-fangorn" in error
+    for name in (
+        "sites.fangorn.store_description",
+        "processing.metadata.publisher",
+    ):
+        assert error.count(name) == 1
