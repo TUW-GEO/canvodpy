@@ -108,7 +108,9 @@ store again, uses the blocks already there, and adds the rest.
   holds a whole number of chunks of 180 epochs
   (`processing.icechunk.chunk_strategies.gnss_store.epoch`), so the cadence
   must divide 86400 s / 180 = 480 s: 1 s, 5 s, 15 s, 30 s, or 1 min, for
-  example. Days in one group can have different cadences.
+  example. Days in one group can have different cadences. A group keeps
+  the chunk size it was created with: a changed setting applies to new
+  groups only.
 - A group records its layout in its attributes (`epoch_layout:
   day_blocks`). A store whose groups were written by appending files to
   the `epoch` axis, by canVODpy versions before day blocks, is still
@@ -145,8 +147,11 @@ For each receiver and day, a run does the following:
 1. Applies the preprocessing in `processing.preprocessing`, if set.
 1. Checks each file against the group's log book (see
    [Duplicate checks](#duplicate-checks)).
-1. Writes the new data with one commit. The same commit writes the
-   snapshot summary and records the commit metadata (see
+1. Writes the new data with one commit. In a store made of day blocks,
+   the worker processes write the files into their slots and one commit
+   writes the day of all receivers; otherwise each receiver and day gets
+   its own commit. The same commit writes the snapshot summary and
+   records the commit metadata (see
    [canvod-store-metadata](../store-metadata/overview.md)).
 
 A write must match the group. A run stops with an error if:
@@ -175,7 +180,11 @@ run tries it again.
 If another commit lands while a write is in progress, canVODpy rebases the
 write onto it when the two changed different groups. If both changed the
 same data, the later commit fails with `icechunk.RebaseFailedError` and
-writes nothing.
+writes nothing. In a store made of day blocks, the run then writes the
+day once more on top of the other commit. When that write fails too,
+the run records the receivers and days as failed in its run history,
+with the error, and goes on with the next days. It does the same when
+it can't add the blocks of a batch.
 
 ## Duplicate checks
 

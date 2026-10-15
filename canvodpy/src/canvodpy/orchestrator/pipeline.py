@@ -9,7 +9,7 @@ import sqlite3
 import time as _time
 import warnings
 from collections import defaultdict
-from collections.abc import Callable, Generator, Sequence
+from collections.abc import Callable, Generator, Hashable, Sequence
 from concurrent.futures import (
     FIRST_COMPLETED,
     Future,
@@ -18,16 +18,19 @@ from concurrent.futures import (
     wait,
 )
 from concurrent.futures.process import BrokenProcessPool
+from dataclasses import dataclass
 from datetime import datetime
 from functools import partial
 from itertools import zip_longest
 from pathlib import Path
 from typing import TypeVar, cast
 
+import icechunk
 import numpy as np
 import pint
 import structlog
 import xarray as xr
+from icechunk.session import ForkSession
 from loky import get_reusable_executor as _loky_reusable
 
 from canvod.config import CanvodConfig, load_config
@@ -38,7 +41,13 @@ from canvod.readers.gnss_specs.constants import UREG
 from canvod.store import GnssResearchSite
 from canvod.store.store import _with_run_id
 from canvod.store_metadata import store_exists
-from canvod.utils.logging import get_run_id, new_run_id, reset_run_id, set_run_id
+from canvod.utils.logging import (
+    get_run_id,
+    new_run_id,
+    record_stage_timing,
+    reset_run_id,
+    set_run_id,
+)
 from canvod.utils.tools import YYYYDOY, deprecated, get_version_from_pyproject
 from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
 from canvodpy.orchestrator.discovery import (
@@ -54,7 +63,14 @@ from canvodpy.orchestrator.discovery import (
     scan_directory,
     unprocessed_files,
 )
+from canvodpy.orchestrator.forked_writes import (
+    ForkedDay,
+    ForkResult,
+    ForkTask,
+    write_files_into_fork,
+)
 from canvodpy.orchestrator.processor import (
+    GroupWriteResult,
     RinexDataProcessor,
     _processing_progress,
     _warn_if_epoch_count_differs_from_name,
@@ -143,6 +159,27 @@ def _windowed_completions(  # noqa: UP047 -- see TypeVar comment above
             yield task, fut
 
 
+@dataclass(frozen=True)
+class _ForkJob:
+    """A task of a forked day: write its files into its fork (ADR 0016)."""
+
+    task: ForkTask
+    fork: ForkSession
+
+
+def _round_robin[I](items: Sequence[I], key: Callable[[I], Hashable]) -> list[I]:
+    """Reorder *items* round-robin across the values of *key*."""
+    by_key: dict[Hashable, list[I]] = {}
+    for item in items:
+        by_key.setdefault(key(item), []).append(item)
+    return [
+        item
+        for row in zip_longest(*by_key.values())
+        for item in row
+        if item is not None
+    ]
+
+
 def _interleave_by_receiver(task_descriptors: list[tuple]) -> list[tuple]:
     """Reorder one date's task descriptors round-robin across receivers.
 
@@ -157,21 +194,14 @@ def _interleave_by_receiver(task_descriptors: list[tuple]) -> list[tuple]:
     groups regardless of group size; uneven group sizes just mean the
     shorter receiver's tail drops out of rotation first, not an error.
     """
-    by_receiver: dict[str, list[tuple]] = {}
-    for task_args in task_descriptors:
-        by_receiver.setdefault(task_args[4], []).append(task_args)
-    return [
-        task_args
-        for row in zip_longest(*by_receiver.values())
-        for task_args in row
-        if task_args is not None
-    ]
+    return _round_robin(task_descriptors, lambda task_args: task_args[4])
 
 
 def _build_ordered_tasks(
     ordered_date_keys: Sequence[str],
     task_descriptors_by_date: dict[str, list[tuple]],
-) -> list[tuple[str, tuple]]:
+    forked_days: dict[str, ForkedDay] | None = None,
+) -> list[tuple[str, tuple | _ForkJob]]:
     """Flatten per-date task descriptors in ``ordered_date_keys`` order.
 
     Phase 1 prepares dates concurrently and collects results via
@@ -185,10 +215,18 @@ def _build_ordered_tasks(
     tasks are further round-robined across receivers via
     ``_interleave_by_receiver``. A date missing from
     ``task_descriptors_by_date`` (failed/skipped Phase 1 prep) is
-    silently omitted, matching the previous behavior.
+    silently omitted, matching the previous behavior. A date in
+    ``forked_days`` gets its fork jobs instead of its file tasks,
+    round-robined across their store groups.
     """
-    all_tasks: list[tuple[str, tuple]] = []
+    all_tasks: list[tuple[str, tuple | _ForkJob]] = []
     for date_key in ordered_date_keys:
+        planned = (forked_days or {}).get(date_key)
+        if planned is not None:
+            jobs = [_ForkJob(task, fork) for task, fork in planned.tasks]
+            for job in _round_robin(jobs, lambda job: job.task.groups):
+                all_tasks.append((date_key, job))
+            continue
         task_descriptors = task_descriptors_by_date.get(date_key)
         if task_descriptors is None:
             continue
@@ -832,12 +870,14 @@ class PipelineOrchestrator:
             date=",".join(sorted(doy_contexts)),
             op="grow_day_blocks",
         )
+        seconds = _time.monotonic() - t_start
+        record_stage_timing("day_block_growth", seconds)
         self._logger.info(
             "day_blocks_grown",
             batch_index=batch_index,
             groups=sorted(days),
             committed=snapshot_id is not None,
-            seconds=round(_time.monotonic() - t_start, 2),
+            seconds=round(seconds, 2),
         )
 
     def _prepare_in_context(
@@ -987,21 +1027,58 @@ class PipelineOrchestrator:
                     doy_contexts[date_key] = (processor, receiver_file_map)
                     task_descriptors_by_date[date_key] = task_descriptors
 
-            all_tasks = _build_ordered_tasks(
-                [date_key for date_key, _receivers in batch],
-                task_descriptors_by_date,
-            )
-
             t_phase1_end = _time.monotonic()
             self._logger.info(
                 "phase1_prepare_complete",
                 batch_index=batch_idx + 1,
                 phase1_seconds=round(t_phase1_end - t_phase1_start, 2),
                 doys_prepared=len(doy_contexts),
-                total_tasks=len(all_tasks),
+                total_tasks=sum(map(len, task_descriptors_by_date.values())),
             )
 
-            self._grow_day_blocks(doy_contexts, batch_idx + 1)
+            try:
+                self._grow_day_blocks(doy_contexts, batch_idx + 1)
+            except STORE_ERROR_TYPES as exc:
+                # A lost growth fails the batch's days, not the run; the
+                # next run grows and writes them.
+                self._logger.exception(
+                    "day_block_growth_failed",
+                    batch_index=batch_idx + 1,
+                    batch_dates=batch_date_keys,
+                )
+                for date_key, (_processor, receiver_file_map) in doy_contexts.items():
+                    self._fail_receiver_days(
+                        date_key, [name for name, _ in receiver_file_map], exc
+                    )
+                continue
+
+            forked_days: dict[str, ForkedDay] = {}
+            for date_key, (processor, _receiver_file_map) in doy_contexts.items():
+                try:
+                    planned = call_with_store_retries(
+                        partial(
+                            processor.plan_forked_day,
+                            task_descriptors_by_date[date_key],
+                        ),
+                        logger=self._logger,
+                        date=date_key,
+                        op="plan_forked_day",
+                    )
+                except STORE_ERROR_TYPES as exc:
+                    self._logger.exception("forked_day_planning_failed", date=date_key)
+                    self._fail_receiver_days(
+                        date_key, [name for name, _ in _receiver_file_map], exc
+                    )
+                    task_descriptors_by_date.pop(date_key)
+                    continue
+                if planned is not None:
+                    forked_days[date_key] = planned
+
+            all_tasks = _build_ordered_tasks(
+                [date_key for date_key, _receivers in batch],
+                task_descriptors_by_date,
+                forked_days,
+            )
 
             if not all_tasks:
                 self._logger.warning(
@@ -1022,6 +1099,8 @@ class PipelineOrchestrator:
             receiver_files_lookup: dict[tuple[str, str], list[Path]] = {}
             reader_format_lookup: dict[tuple[str, str], str | None] = {}
             for date_key in doy_contexts:
+                if date_key in forked_days:
+                    continue  # written by fork jobs and the writer thread
                 _processor, receiver_file_map = doy_contexts[date_key]
                 for receiver_name, rinex_files in receiver_file_map:
                     key = (date_key, receiver_name)
@@ -1068,8 +1147,18 @@ class PipelineOrchestrator:
                 ),
             )
 
-            def _submit_task(task: tuple[str, tuple], *, _pool=_pool) -> Future:
+            def _submit_fork(job: _ForkJob, *, _pool=_pool) -> Future:
+                return _pool.submit(write_files_into_fork, job.fork, job.task)
+
+            def _submit_task(
+                task: tuple[str, tuple | _ForkJob],
+                *,
+                _pool=_pool,
+                _submit_fork=_submit_fork,
+            ) -> Future:
                 task_args = task[1]
+                if isinstance(task_args, _ForkJob):
+                    return _submit_fork(task_args)
                 # Trailing element marks a reference fan-out task (dict
                 # result, one canopy_positions arg instead of a single
                 # receiver_position/receiver_name pair) vs. the normal
@@ -1079,6 +1168,13 @@ class PipelineOrchestrator:
                         preprocess_reference_with_hermite_aux_fanout, *task_args[:-1]
                     )
                 return _pool.submit(preprocess_with_hermite_aux, *task_args[:-1])
+
+            fork_results: dict[str, list[ForkResult]] = defaultdict(list)
+            fork_jobs_left = {
+                date_key: len(planned.tasks)
+                for date_key, planned in forked_days.items()
+            }
+            day_writes: dict[str, Future] = {}
 
             # Windowed submission (~2x worker count in flight), not the whole
             # batch upfront: submitting all ~n_days*n_receivers*n_files tasks
@@ -1124,7 +1220,13 @@ class PipelineOrchestrator:
                     f.stat().st_size / 1_048_576 for f in files if f.exists()
                 )
 
-            with _processing_progress(disable=True) as _progress_inner:
+            # One thread commits the forked days, one at a time, while the
+            # pool works on and this thread writes the other days. Leaving
+            # the block, also by an error, waits for the day it commits.
+            with (
+                ThreadPoolExecutor(max_workers=1) as day_writer,
+                _processing_progress(disable=True) as _progress_inner,
+            ):
                 # Stub tasks on the disabled inner progress (no-ops for rendering)
                 _progress_inner.add_task(
                     f"[bold]batch {batch_idx + 1}",
@@ -1134,6 +1236,28 @@ class PipelineOrchestrator:
                 batch_t0 = _time.monotonic()
                 for task, fut in completion_iter:
                     date_key, task_args = task
+                    if isinstance(task_args, _ForkJob):
+                        fork_result = self._fork_result(
+                            date_key, task_args, fut, batch_idx + 1
+                        )
+                        if fork_result.files or not fork_result.failed:
+                            tasks_succeeded += 1
+                        else:
+                            tasks_failed += 1
+                        fork_results[date_key].append(fork_result)
+                        fork_jobs_left[date_key] -= 1
+                        if not fork_jobs_left[date_key]:
+                            day_writes[date_key] = day_writer.submit(
+                                contextvars.copy_context().run,
+                                self._write_forked_day,
+                                doy_contexts[date_key][0],
+                                forked_days[date_key],
+                                task_descriptors_by_date[date_key],
+                                fork_results.pop(date_key),
+                                _submit_fork,
+                                batch_idx + 1,
+                            )
+                        continue
                     is_fanout = bool(task_args[-1])
                     lane_key = task_args[4]
                     # A reference fan-out task's pairing names are known from its
@@ -1326,6 +1450,17 @@ class PipelineOrchestrator:
                         )
                         groups_written.add(group_key)
 
+            for date_key in sorted(day_writes):
+                groups_done = self._finish_forked_day(
+                    date_key,
+                    forked_days[date_key],
+                    day_writes[date_key],
+                )
+                for receiver_name, (daily_ds, seconds) in groups_done.items():
+                    date_datasets[date_key][receiver_name] = daily_ds
+                    date_timings[date_key][receiver_name] = seconds
+                    groups_written.add((date_key, receiver_name))
+
             self._logger.info(
                 "flat_loky_complete",
                 batch_index=batch_idx + 1,
@@ -1423,6 +1558,178 @@ class PipelineOrchestrator:
         for group in sorted({group for _, receivers in dates for group in receivers}):
             self.site.gnss_store.check_settings_match(group, settings)
 
+    def _fail_receiver_days(
+        self, date_key: str, receivers: Sequence[str], error: BaseException
+    ) -> None:
+        """Record *receivers* of *date_key* as failed, with the error."""
+        for receiver_name in receivers:
+            self._logger.error(
+                "receiver_day_not_written",
+                date=date_key,
+                receiver=receiver_name,
+                error=f"{type(error).__name__}: {error}",
+            )
+            self._finish_receiver_day(receiver_name, date_key, "failed")
+
+    def _fork_result(
+        self, date_key: str, job: _ForkJob, fut: Future, batch_index: int
+    ) -> ForkResult:
+        """The result of a fork job; a failed job lists all its files as failed."""
+        try:
+            return cast("ForkResult", fut.result())
+        except Exception as exc:
+            event = (
+                "worker_pool_broken"
+                if isinstance(exc, BrokenProcessPool)
+                else "task_failed"
+            )
+            self._logger.exception(
+                event,
+                date=date_key,
+                receiver=",".join(job.task.groups),
+                batch_index=batch_index,
+            )
+            return ForkResult(
+                task=job.task,
+                fork=job.fork,
+                failed=[
+                    (group, Path(file_task[0]).name, repr(exc))
+                    for file_task in job.task.file_tasks
+                    for group in job.task.groups
+                ],
+            )
+
+    def _write_forked_day(
+        self,
+        processor: RinexDataProcessor,
+        planned: ForkedDay,
+        task_descriptors: Sequence[tuple],
+        results: list[ForkResult],
+        submit_fork: Callable[[_ForkJob], Future],
+        batch_index: int,
+    ) -> dict[str, GroupWriteResult]:
+        """Commit a forked day; after a lost conflict, write it once again.
+
+        Runs in the writer thread. A conflict means another run wrote the
+        day's chunks first: the day is planned again against the new tip
+        (whose log book now holds that run's files), its fork jobs run
+        again in the pool, and the day is committed. A second lost
+        conflict raises.
+
+        Raises
+        ------
+        icechunk.ConflictError
+            If the day lost a conflict twice.
+        """
+        try:
+            return processor._commit_forked_day(planned, results)
+        except icechunk.ConflictError as exc:
+            self._logger.warning(
+                "forked_day_conflict_retrying",
+                date=planned.date_key,
+                error=str(exc),
+            )
+        replanned = processor.plan_forked_day(task_descriptors)
+        if replanned is None:
+            msg = (
+                f"Day {planned.date_key} could not be planned again after a "
+                "lost conflict: the store no longer has its day blocks."
+            )
+            raise RuntimeError(msg)
+        jobs = [_ForkJob(task, fork) for task, fork in replanned.tasks]
+        futures = [(job, submit_fork(job)) for job in jobs]
+        retried = [
+            self._fork_result(planned.date_key, job, fut, batch_index)
+            for job, fut in futures
+        ]
+        return processor._commit_forked_day(replanned, retried)
+
+    def _finish_forked_day(
+        self,
+        date_key: str,
+        planned: ForkedDay,
+        write: Future,
+    ) -> dict[str, tuple[xr.Dataset, float]]:
+        """Record a forked day's groups and read back the written ones.
+
+        A group is failed when the day's commit failed, or when none of its
+        files has a log-book row and some failed; otherwise written, or
+        skipped when every file was already stored.
+
+        Returns
+        -------
+        dict[str, tuple[xarray.Dataset, float]]
+            Per group read back: its day's data and the seconds of its
+            write and read back.
+        """
+        groups = sorted({g for task, _ in planned.tasks for g in task.groups})
+        try:
+            outcome = cast("dict[str, GroupWriteResult]", write.result())
+        except STORE_ERROR_TYPES as exc:
+            self._logger.exception("icechunk_write_failed", date=date_key)
+            self._fail_receiver_days(date_key, groups, exc)
+            return {}
+
+        time_range = (
+            datetime.combine(planned.date, datetime.min.time()),
+            datetime.combine(planned.date, datetime.max.time()),
+        )
+        done: dict[str, tuple[xr.Dataset, float]] = {}
+        for receiver_name in groups:
+            result = outcome[receiver_name]
+            if not result.metadata_records:
+                if result.failed_files:
+                    self._logger.warning(
+                        "receiver_all_tasks_failed",
+                        date=date_key,
+                        receiver=receiver_name,
+                    )
+                    self._finish_receiver_day(receiver_name, date_key, "failed")
+                else:
+                    self._finish_receiver_day(receiver_name, date_key, "skipped")
+                continue
+            bytes_added = result.total_nbytes
+            day_result: DayResult = "written" if bytes_added else "skipped"
+            t_read = _time.monotonic()
+            try:
+                daily_ds = call_with_store_retries(
+                    partial(
+                        self.site.read_receiver_data,
+                        receiver_name=receiver_name,
+                        time_range=time_range,
+                    ),
+                    logger=self._logger,
+                    date=date_key,
+                    receiver=receiver_name,
+                    op="read_back",
+                )
+            except STORE_ERROR_TYPES:
+                self._logger.exception(
+                    "read_back_failed", date=date_key, receiver=receiver_name
+                )
+                self._finish_receiver_day(
+                    receiver_name, date_key, "failed", bytes_added=bytes_added
+                )
+                continue
+            read_seconds = _time.monotonic() - t_read
+            self._logger.info(
+                "group_write_complete",
+                date=date_key,
+                receiver=receiver_name,
+                write_seconds=round(result.duration_seconds, 2),
+                assembly_seconds=round(read_seconds, 2),
+                assembly_source="store",
+                total_seconds=round(result.duration_seconds + read_seconds, 2),
+                forked=True,
+            )
+            self._finish_receiver_day(
+                receiver_name, date_key, day_result, bytes_added=bytes_added
+            )
+            if self._on_group_written is not None:
+                self._on_group_written(receiver_name)
+            done[receiver_name] = (daily_ds, result.duration_seconds + read_seconds)
+        return done
+
     #: Receiver-days of this run that ended "failed", as ``(receiver,
     #: YYYYDOY)``. A class default, so an orchestrator made without
     #: ``__init__`` (tests) has it too.
@@ -1433,9 +1740,10 @@ class PipelineOrchestrator:
         """Receiver-days of this run that failed (#334).
 
         ``(receiver, YYYYDOY)`` pairs, in the order they failed: every file
-        failed, the write failed, or reading the written day back failed
-        (``receiver_all_tasks_failed``, ``icechunk_write_failed``,
-        ``read_back_failed``).
+        failed, the write failed, reading the written day back failed, or a
+        forked day was not written (``receiver_all_tasks_failed``,
+        ``icechunk_write_failed``, ``read_back_failed``,
+        ``receiver_day_not_written``).
         """
         return self._failed_receiver_days
 

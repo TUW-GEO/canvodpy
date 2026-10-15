@@ -41,10 +41,24 @@ def call_with_store_retries[T](fn: Callable[[], T], *, logger, **log_ctx: object
     caller's own ``except``/``log.exception`` so existing log event names
     and give-up behavior are unchanged; this only adds retries in front of
     that.
+
+    An ``icechunk.ConflictError`` (another commit moved the branch) is not a
+    dropped connection: ``fn`` is tried once more at once, without the
+    backoff, and a second conflict propagates. Every ``fn`` given here opens
+    its own session, so that one more try starts from the other commit.
     """
-    for attempt, backoff in enumerate(STORE_RETRY_BACKOFF_SECONDS):
+    conflicts = 0
+    attempt = 0
+    while attempt < len(STORE_RETRY_BACKOFF_SECONDS):
+        backoff = STORE_RETRY_BACKOFF_SECONDS[attempt]
         try:
             return fn()
+        except icechunk.ConflictError as exc:
+            conflicts += 1
+            if conflicts > 1:
+                raise
+            logger.warning("store_conflict_retry", error=str(exc), **log_ctx)
+            continue
         except RETRYABLE_STORE_ERRORS as exc:
             logger.warning(
                 "store_op_retry",
@@ -54,4 +68,5 @@ def call_with_store_retries[T](fn: Callable[[], T], *, logger, **log_ctx: object
                 **log_ctx,
             )
             _time.sleep(backoff)
+            attempt += 1
     return fn()

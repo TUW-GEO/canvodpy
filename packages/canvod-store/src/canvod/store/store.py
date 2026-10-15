@@ -312,6 +312,112 @@ def _append_log_rows(zmeta: zarr.Group, df: pl.DataFrame) -> None:
         )
 
 
+def normalize_encodings(ds: xr.Dataset) -> xr.Dataset:
+    """Normalize dataset encodings for Icechunk.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to normalize.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with normalized encodings.
+    """
+    for v in ds.data_vars:
+        if "dtype" in ds[v].encoding:
+            ds[v].encoding["dtype"] = np.dtype(ds[v].dtype)
+    # Cast string-like / non-numeric coords to numpy object for Zarr V3.
+    #
+    # Why np.array(raw, dtype=object) instead of raw.astype(object):
+    # In numpy 2.x, StringDType.astype(object) can silently return StringDType
+    # when the array is a Dask lazy computation. np.array() box-constructs a
+    # new object array from scratch, guaranteeing object dtype regardless of
+    # input type or lazy-evaluation state.
+    #
+    # Batching strategy: collect all Dask-backed coords first, compute them in
+    # one dask.compute() call (one scheduler pass), then handle numpy-backed
+    # coords. Reduces ~7 separate graph walks to 1 on a lazy VOD dataset.
+    _numeric_kinds = frozenset("fiucbmMV")
+    str_coords: dict = {}
+    dask_coords: dict = {}
+    numpy_coords: dict = {}
+
+    for name in list(ds.coords):
+        da = ds[name]
+        if da.dtype.kind in _numeric_kinds:
+            continue
+        if da.chunks is None and da.dtype == object:
+            continue  # already correct numpy object
+        if da.chunks is not None:
+            dask_coords[name] = da
+        else:
+            numpy_coords[name] = da
+
+    # Batch-compute all dask-backed string coords in ONE scheduler pass
+    # (a coord that cannot be computed raises: dropping it would write
+    # the dataset without it)
+    if dask_coords:
+        import dask
+
+        computed = dask.compute(*dask_coords.values())
+        for name, computed_da in zip(dask_coords.keys(), computed):
+            raw = (
+                computed_da.values
+                if hasattr(computed_da, "values")
+                else np.asarray(computed_da)
+            )
+            if raw.dtype != object:
+                raw = np.array(raw, dtype=object)
+            str_coords[name] = (
+                dask_coords[name].dims,
+                raw,
+                dask_coords[name].attrs,
+            )
+
+    # Numpy-backed non-object coords (StringDType, unicode kind 'U')
+    for name, da in numpy_coords.items():
+        raw = da.values
+        if raw.dtype != object:
+            raw = np.array(raw, dtype=object)
+        str_coords[name] = (da.dims, raw, da.attrs)
+
+    if str_coords:
+        ds = ds.assign_coords(str_coords)
+    for name in list(ds.data_vars):
+        if ds[name].dtype.kind in ("U", "T"):
+            ds[name] = ds[name].astype(object)
+    # Eagerly compute any remaining Dask-backed object data variables
+    import dask.array as da_mod
+
+    for name in list(ds.data_vars):
+        if ds[name].dtype == object and isinstance(ds[name].data, da_mod.Array):
+            ds[name] = ds[name].compute()
+    return ds
+
+
+def cleanse_dataset_attrs(dataset: xr.Dataset) -> xr.Dataset:
+    """Remove the attributes that must not be stored (in place; returns ``dataset``)."""
+
+    attrs_to_remove = [
+        "Created",
+        "File Path",
+        "File Type",
+        "Date",
+        "institution",
+        "Time of First Observation",
+        "GLONASS COD",
+        "GLONASS PHS",
+        "GLONASS BIS",
+        "Leap Seconds",
+    ]
+    for attr in attrs_to_remove:
+        if attr in dataset.attrs:
+            del dataset.attrs[attr]
+    return dataset
+
+
 @dataclass
 class VodWriteItem:
     """One VOD analysis pair's write request, as passed into a batch write."""
@@ -607,88 +713,8 @@ class MyIcechunkStore:
             self._logger.debug(f"Removed {removed}")
 
     def _normalize_encodings(self, ds: xr.Dataset) -> xr.Dataset:
-        """Normalize dataset encodings for Icechunk.
-
-        Parameters
-        ----------
-        ds : xr.Dataset
-            Dataset to normalize.
-
-        Returns
-        -------
-        xr.Dataset
-            Dataset with normalized encodings.
-        """
-        for v in ds.data_vars:
-            if "dtype" in ds[v].encoding:
-                ds[v].encoding["dtype"] = np.dtype(ds[v].dtype)
-        # Cast string-like / non-numeric coords to numpy object for Zarr V3.
-        #
-        # Why np.array(raw, dtype=object) instead of raw.astype(object):
-        # In numpy 2.x, StringDType.astype(object) can silently return StringDType
-        # when the array is a Dask lazy computation. np.array() box-constructs a
-        # new object array from scratch, guaranteeing object dtype regardless of
-        # input type or lazy-evaluation state.
-        #
-        # Batching strategy: collect all Dask-backed coords first, compute them in
-        # one dask.compute() call (one scheduler pass), then handle numpy-backed
-        # coords. Reduces ~7 separate graph walks to 1 on a lazy VOD dataset.
-        _numeric_kinds = frozenset("fiucbmMV")
-        str_coords: dict = {}
-        dask_coords: dict = {}
-        numpy_coords: dict = {}
-
-        for name in list(ds.coords):
-            da = ds[name]
-            if da.dtype.kind in _numeric_kinds:
-                continue
-            if da.chunks is None and da.dtype == object:
-                continue  # already correct numpy object
-            if da.chunks is not None:
-                dask_coords[name] = da
-            else:
-                numpy_coords[name] = da
-
-        # Batch-compute all dask-backed string coords in ONE scheduler pass
-        # (a coord that cannot be computed raises: dropping it would write
-        # the dataset without it)
-        if dask_coords:
-            import dask
-
-            computed = dask.compute(*dask_coords.values())
-            for name, computed_da in zip(dask_coords.keys(), computed):
-                raw = (
-                    computed_da.values
-                    if hasattr(computed_da, "values")
-                    else np.asarray(computed_da)
-                )
-                if raw.dtype != object:
-                    raw = np.array(raw, dtype=object)
-                str_coords[name] = (
-                    dask_coords[name].dims,
-                    raw,
-                    dask_coords[name].attrs,
-                )
-
-        # Numpy-backed non-object coords (StringDType, unicode kind 'U')
-        for name, da in numpy_coords.items():
-            raw = da.values
-            if raw.dtype != object:
-                raw = np.array(raw, dtype=object)
-            str_coords[name] = (da.dims, raw, da.attrs)
-
-        if str_coords:
-            ds = ds.assign_coords(str_coords)
-        for name in list(ds.data_vars):
-            if ds[name].dtype.kind in ("U", "T"):
-                ds[name] = ds[name].astype(object)
-        # Eagerly compute any remaining Dask-backed object data variables
-        import dask.array as da_mod
-
-        for name in list(ds.data_vars):
-            if ds[name].dtype == object and isinstance(ds[name].data, da_mod.Array):
-                ds[name] = ds[name].compute()
-        return ds
+        """Normalize dataset encodings for Icechunk (:func:`normalize_encodings`)."""
+        return normalize_encodings(ds)
 
     def _open(self) -> None:
         """Open the store's repository; never create it.
@@ -1380,24 +1406,8 @@ class MyIcechunkStore:
         return ds
 
     def _cleanse_dataset_attrs(self, dataset: xr.Dataset) -> xr.Dataset:
-        """Remove any attributes that might interfere with Icechunk storage."""
-
-        attrs_to_remove = [
-            "Created",
-            "File Path",
-            "File Type",
-            "Date",
-            "institution",
-            "Time of First Observation",
-            "GLONASS COD",
-            "GLONASS PHS",
-            "GLONASS BIS",
-            "Leap Seconds",
-        ]
-        for attr in attrs_to_remove:
-            if attr in dataset.attrs:
-                del dataset.attrs[attr]
-        return dataset
+        """Remove attributes not to store (:func:`cleanse_dataset_attrs`)."""
+        return cleanse_dataset_attrs(dataset)
 
     def write_dataset(
         self,
