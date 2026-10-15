@@ -44,8 +44,8 @@ class ChunkStrategy(_StrictModel):
         -1,
         ge=-1,
         description=(
-            "Signals per chunk; -1 puts all signals in one chunk. GNSS store "
-            "groups made of day blocks always put all signals in one chunk."
+            "Signals per chunk, for groups created from now on; -1 puts all "
+            "signals in one chunk."
         ),
     )
 

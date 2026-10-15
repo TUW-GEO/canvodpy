@@ -3380,6 +3380,7 @@ class RinexDataProcessor:
                             cadence_s,
                             template,
                             epoch_chunk=epoch_chunk,
+                            dim_chunks=store.chunk_strategy,
                         )
                     # Read once: reading them reads the group's whole epoch
                     # axis, and writing a file keeps them as they are.

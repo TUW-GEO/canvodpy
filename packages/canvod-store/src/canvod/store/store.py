@@ -50,6 +50,7 @@ from zarr.dtype import VariableLengthUTF8
 
 from canvod.store.day_blocks import (
     add_day_block,
+    cadence_ns,
     day_blocks,
     drop_empty_slots,
     holds_day_blocks,
@@ -4249,7 +4250,9 @@ class MyIcechunkStore:
         group_name : str
             Name of the group to rechunk
         chunks : dict[str, int]
-            Chunking specification, e.g. {'epoch': 17280, 'sid': -1}
+            Chunking specification, e.g. {'epoch': 180, 'sid': -1}. A group
+            stored in day blocks needs an epoch chunk that divides every day
+            into whole chunks.
         source_branch : str
             Branch to read original data from (default: "main")
         temp_branch : str | None
@@ -4270,7 +4273,10 @@ class MyIcechunkStore:
         Raises
         ------
         ValueError
-            If ``temp_branch`` already exists.
+            If ``temp_branch`` already exists, or a day-block group gets no
+            positive epoch chunk.
+        CadenceError
+            If the epoch chunks would split a day of a day-block group.
         BranchMovedError
             If ``source_branch`` moved during the rechunk.
         """
@@ -4284,6 +4290,9 @@ class MyIcechunkStore:
         # Snapshot everything up front so the whole operation is pinned to
         # one consistent point in time, regardless of concurrent writers.
         current_snapshot = self.repo.lookup_branch(source_branch)
+        source = self.repo.readonly_session(snapshot_id=current_snapshot)
+        if holds_day_blocks(source.store, group_name):
+            self._check_day_block_chunks(source.store, group_name, chunks)
 
         # Create temp branch from that snapshot (preserves all existing groups)
         if temp_branch in self.repo.list_branches():
@@ -4307,11 +4316,14 @@ class MyIcechunkStore:
         ds_rechunked = ds_original.chunk(chunks)
         self._logger.info(f"New chunks: {ds_rechunked.chunks}")
 
-        # Clear encoding in-place on all variables and coords.
-        # Assignment (= {}) creates a new dict on the returned copy and
-        # is a no-op; .clear() mutates the shared dict the Dataset holds.
+        # Drop the stored chunks from the encoding in place, so the write
+        # takes the new Dask chunks; keep the rest (dtype, _FillValue,
+        # compressors, time units), so integers stay integers with their
+        # missing value. Assignment would change a copy; pop() mutates the
+        # dict the Dataset holds.
         for key in list(ds_rechunked.data_vars) + list(ds_rechunked.coords):
-            ds_rechunked[key].encoding.clear()
+            for setting in ("chunks", "preferred_chunks", "shards"):
+                ds_rechunked[key].encoding.pop(setting, None)
 
         source_zroot = zarr.open_group(session.store, mode="r")
         source_group = source_zroot[group_name]
@@ -4370,6 +4382,34 @@ class MyIcechunkStore:
                 self._logger.info(f"Deleted temporary branch '{temp_branch}'")
 
         return snapshot_id
+
+    @staticmethod
+    def _check_day_block_chunks(
+        store: Any, group_name: str, chunks: dict[str, int]
+    ) -> None:
+        """Refuse epoch chunks that would split the day blocks of a group.
+
+        Every day block must hold whole epoch chunks (see
+        :func:`~canvod.store.day_blocks.cadence_ns`), so a write into a day
+        never touches the chunks of another one.
+
+        Raises
+        ------
+        ValueError
+            If ``chunks`` gives no positive epoch chunk size.
+        CadenceError
+            If a day's cadence does not fit the new chunks.
+        """
+        epoch_chunk = chunks.get("epoch")
+        if not isinstance(epoch_chunk, int) or epoch_chunk <= 0:
+            msg = (
+                f"Group '{group_name}' is stored in day blocks, so rechunking "
+                "it needs a positive number of epochs per chunk, for example "
+                f"{{'epoch': 180}}; got {epoch_chunk!r}."
+            )
+            raise ValueError(msg)
+        for block in day_blocks(store, group_name).values():
+            cadence_ns(block.cadence_s, epoch_chunk)
 
     def promote_branch(
         self,

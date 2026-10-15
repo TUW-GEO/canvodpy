@@ -72,8 +72,9 @@ How many files share a chunk depends on the cadence. At 5 s, a chunk of
 15-minute files share it. The files that share a chunk are always written
 together by one worker, so no write replaces the data of another file.
 
-A group made of day blocks keeps all signals in one chunk, whatever
-`gnss_store.sid` says.
+To change the chunks of an existing group made of day blocks, use
+`store.rechunk_group()`. It refuses an epoch chunk that doesn't divide every
+day of the group into whole chunks.
 
 ### Groups written by appending
 

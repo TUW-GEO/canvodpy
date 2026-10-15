@@ -6,6 +6,7 @@ import icechunk
 import numpy as np
 import pytest
 import xarray as xr
+import zarr
 from icechunk.xarray import to_icechunk
 
 from canvod.store.day_blocks import (
@@ -285,3 +286,22 @@ def test_a_cadence_off_the_stored_chunks_is_refused(session):
 
     with pytest.raises(CadenceError):
         add_day_block(session, GROUP, DAY_2, 960, template=None, epoch_chunk=90)
+
+
+def test_a_new_group_takes_the_signal_chunks(session):
+    first = _file(DAY_1, 0, 10, 30)
+    add_day_block(session, GROUP, DAY_1, 30, template=first, dim_chunks={"sid": 2})
+
+    snr = zarr.open_group(session.store, mode="r", path=GROUP)["SNR"]
+    assert snr.chunks == (180, 2)
+
+
+def test_signal_chunks_of_minus_one_are_one_chunk(session):
+    first = _file(DAY_1, 0, 10, 30)
+    add_day_block(
+        session, GROUP, DAY_1, 30, template=first, dim_chunks={"epoch": 90, "sid": -1}
+    )
+
+    snr = zarr.open_group(session.store, mode="r", path=GROUP)["SNR"]
+    # epoch_chunk sets the epoch chunks; dim_chunks only the other dimensions.
+    assert snr.chunks == (180, len(SIDS))
