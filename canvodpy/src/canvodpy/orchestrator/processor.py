@@ -275,6 +275,19 @@ def _warn_if_aux_grid_coarser(
         )
 
 
+def _open_aux_store(aux_zarr_path: Path, group: str | None = None) -> xr.Dataset:
+    """Open the auxiliary store with every variable as stored.
+
+    ``clock_offset`` is a float in seconds (CF ``units: seconds``). xarray
+    would decode it to ``timedelta64[ns]`` with ``decode_timedelta=True``,
+    rounding the clock to the nanosecond and casting its NaN through
+    int64; ``ephemeris/provider.py`` opens the same store the same way.
+    """
+    return xr.open_zarr(
+        aux_zarr_path, group=group, decode_timedelta=False, consolidated=False
+    )
+
+
 def _preprocess_file(
     rnx_file: Path,
     keep_vars: list[str] | None,
@@ -409,12 +422,7 @@ def _preprocess_file(
                     ds = ds[available_vars]
 
             # 2. Open preprocessed aux data and select matching epochs
-            aux_store = xr.open_zarr(
-                aux_zarr_path,
-                group=aux_group,
-                decode_timedelta=True,
-                consolidated=False,
-            )
+            aux_store = _open_aux_store(aux_zarr_path, group=aux_group)
             _warn_if_aux_grid_coarser(log, rnx_file, ds, aux_store)
             aux_slice = aux_store.sel(epoch=ds.epoch, method="nearest")
 
@@ -1737,9 +1745,7 @@ class RinexDataProcessor:
                 "not available with SBF geometry"
             )
         # Hoist open_zarr outside the per-file loop (was reopened per file)
-        aux_store = xr.open_zarr(
-            aux_zarr_path, decode_timedelta=True, consolidated=False
-        )
+        aux_store = _open_aux_store(aux_zarr_path)
         augmented_datasets = []
         try:
             for fpath, ds in cached_datasets:
