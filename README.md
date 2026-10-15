@@ -46,339 +46,176 @@ An open Python ecosystem for GNSS-Transmissometry (GNSS-T) canopy VOD retrievals
 
 ---
 
-> [!IMPORTANT]
-> Development requires `uv` and `just`:
-> - Install `uv`: [uv documentation](https://docs.astral.sh/uv/getting-started/installation/)
-> - Install `just`: [just documentation](https://github.com/casey/just)
+## Try it
 
----
+Every demo notebook runs on real test data, which it downloads on first
+use (about 350 MB, about 1 GB unpacked; later runs reuse it).
 
-## Overview
+**In the browser:** open a notebook in molab with the badge above, or read
+the notebooks with their results at
+[canvodpy.eu/notebooks](https://canvodpy.eu/notebooks/).
 
-canVODpy is organized as a monorepo with independent, composable packages:
+**On your own machine:** install [uv](https://docs.astral.sh/uv/getting-started/installation/),
+then run one notebook straight from GitHub:
 
-```mermaid
-graph TB
-    subgraph UI[User Interface]
-        Config["🔧 Configuration<br/>YAML files"]
-    end
-
-    subgraph Umbrella[Umbrella Package]
-        Canvodpy["📦 canvodpy<br/>Orchestrator & API"]
-    end
-
-    subgraph CorePkg[Core Processing Packages]
-        Readers["📖 canvod-readers<br/>RINEX & SBF Parsing"]
-        Aux["📡 canvod-auxiliary<br/>SP3/CLK/Position"]
-        Store["💾 canvod-store<br/>Icechunk Storage"]
-        StoreMeta["📋 canvod-store-metadata<br/>Provenance & Standards"]
-        CanvodConfig["⚙️ canvod-config<br/>Settings & Validation"]
-        Utils["🛠️ canvod-utils<br/>Date & Diagnostics"]
-    end
-
-    subgraph AnalysisPkg[Analysis and Output Packages]
-        VOD["🌳 canvod-vod<br/>VOD Calculator"]
-        Grids["🔲 canvod-grids<br/>Hemisphere Grids"]
-        Viz["📊 canvod-viz<br/>2D/3D Visualization"]
-    end
-
-    subgraph InfraPkg[Infrastructure Packages]
-        Ops["⚙️ canvod-ops<br/>Preprocessing Pipeline"]
-        Preflight["🚦 canvod-preflight<br/>Naming Convention"]
-    end
-
-    subgraph ExtPkg["Optional Extensions (canvodpy-extensions repo)"]
-        Filemap["🏷️ canvod-filemap<br/>Non-canonical Filename Mapping"]
-    end
-
-    Config --> Canvodpy
-    Canvodpy --> Readers
-    Canvodpy --> Aux
-    Canvodpy --> Store
-    Canvodpy --> StoreMeta
-    Canvodpy --> CanvodConfig
-    Canvodpy --> VOD
-    Canvodpy --> Grids
-    Canvodpy --> Viz
-    Canvodpy --> Ops
-    Canvodpy --> Preflight
-    Canvodpy -.optional.-> Filemap
-
-    Aux --> Readers
-    Store --> Grids
-    StoreMeta --> Utils
-    Viz --> Grids
-    Ops --> Grids
-    Ops --> Utils
+```bash
+uvx marimo edit --sandbox https://raw.githubusercontent.com/nfb2021/canvodpy-demo/main/03_convenience_speedrun.py
 ```
 
-## How it works
+`--sandbox` installs the packages the notebook declares into a throwaway
+environment, so nothing else on your machine changes. You don't need to
+clone anything. The [canvodpy-demo README](https://github.com/nfb2021/canvodpy-demo#readme)
+lists all 21 notebooks and other ways to run them.
+
+## What canVODpy does
 
 ```mermaid
-flowchart TD
-    Start([🚀 Start Processing]) --> Input
-
-    subgraph Input[📥 Data Ingestion]
-        RINEX["📄 RINEX OBS Files<br/>(.rnx)"]
-        SBF["📦 SBF Binary Files<br/>(.sbf)"]
-    end
-
-    subgraph Ephemeris[🛰️ Ephemeris Sources]
-        SP3["🏛️ Agency Final<br/>SP3 + CLK<br/>(12-18 day latency)"]
-        SBFVIS["📡 SBF Broadcast<br/>SatVisibility block<br/>(immediate)"]
-        NAV["📄 RINEX NAV 🚧<br/>.YYp / .YYn<br/>(planned)"]
-    end
-
-    subgraph Reading[🔍 Reading and Parsing]
-        RinexReader["Rnxv3Obs<br/>Parse RINEX v3.04"]
-        SbfReader["SbfReader<br/>Parse Septentrio Binary"]
-        AuxReader["SP3/CLK Parsers<br/>Load Auxiliary Data"]
-    end
-
-    subgraph Processing[⚙️ Geometry Augmentation]
-        Interp["Hermite Interpolation<br/>Orbits/clocks → obs epochs"]
-        Position["Coordinate Transform<br/>ECEF → spherical (r, θ, φ)"]
-        DirectGeom["Direct θ, φ<br/>From receiver firmware"]
-        Augment["Dataset Augmentation<br/>Merge observations + geometry"]
-    end
-
-    subgraph Storage[💾 Versioned Storage - Icechunk]
-        Dedup["3-Layer Deduplication<br/>Hash · Temporal · Intra-batch"]
-        Icechunk["Observations Store<br/>(epoch × sid)"]
-        Meta["Metadata Table<br/>File provenance"]
-    end
-
-    subgraph Analysis[📊 Analysis]
-        VODCalc["VodComputer<br/>Tau-Omega model · canopy vs reference"]
-        GridAssign["Hemispheric Grid Assignment<br/>Equal-area / Equal-angle / ..."]
-        Aggregate["Aggregation<br/>Per-cell statistics"]
-    end
-
-    subgraph Output[📈 Output]
-        Viz2D["2D Hemisphere Plots<br/>Polar projection"]
-        Viz3D["3D Interactive Plots<br/>Plotly surface"]
-        Export["Data Export<br/>NetCDF / CSV"]
-    end
-
-    RINEX --> RinexReader
-    SBF --> SbfReader
-    SP3 --> AuxReader
-    SBFVIS -.-> DirectGeom
-    NAV -.-> AuxReader
-
-    RinexReader --> Augment
-    SbfReader --> Augment
-    AuxReader --> Interp
-    Interp --> Position
-    Position --> Augment
-    DirectGeom --> Augment
-    Augment --> Dedup
-    Dedup --> Icechunk
-    Dedup --> Meta
-
-    Icechunk --> VODCalc
-    VODCalc --> GridAssign
-    GridAssign --> Aggregate
-
-    Aggregate --> Viz2D
-    Aggregate --> Viz3D
-    Aggregate --> Export
-
-    Viz2D --> End([✅ Complete])
-    Viz3D --> End
-    Export --> End
+flowchart LR
+    Files["Receiver files<br/>RINEX 2.11 and 3, SBF, NMEA"] --> Read["Read and<br/>check names"]
+    Orbits["Satellite orbits and clocks<br/>final SP3/CLK, or SBF broadcast"] --> Angles["Satellite angles<br/>per epoch"]
+    Read --> Angles
+    Angles --> GNSS[("GNSS store<br/>Icechunk")]
+    GNSS --> VOD["VOD<br/>canopy vs reference"]
+    VOD --> VODStore[("VOD store<br/>Icechunk")]
+    GNSS --> Grids["Hemispheric grids"]
+    VODStore --> Grids
+    Grids --> Plots["Plots"]
 ```
 
-## Installation
+- **Reads** the observation files of your receivers: RINEX 2.11 and 3,
+  Septentrio binary (SBF) and NMEA. Your own readers can be added as
+  plugins.
+- **Computes the satellite angles** of every observation, from agency final
+  orbit and clock products (SP3/CLK) or from the broadcast ephemerides in
+  SBF files.
+- **Stores** the observations of each site in a versioned
+  [Icechunk](https://icechunk.io/) store. Every commit keeps a snapshot, a
+  log book records which file produced which data, and each store carries
+  DataCite, ACDD and STAC metadata.
+- **Retrieves VOD** from a canopy and a reference receiver with the
+  tau-omega model and writes it to a VOD store. Your own VOD calculators
+  can be added as plugins.
+- **Assigns observations to hemispheric grids** (equal-area, equal-angle,
+  HTM, geodesic, HEALPix, Fibonacci and more) and plots them in 2D and 3D.
+
+## Install
 
 ```bash
 uv add canvodpy
-
-# Or install specific components
-uv add canvod-readers canvod-grids
+# or
+pip install canvodpy
 ```
 
-canVODpy requires Python 3.14. On macOS, the tests run on Apple silicon.
+canVODpy requires Python 3.14. It is tested on Linux, macOS (Apple
+silicon) and Windows.
 
-## Quick Start
+## Quick start
+
+Create the settings file, check it, and process a week:
 
 ```bash
-# Run the pipeline — resumes from the last processed date when --start is omitted
-uv run canvodpy run --site ExampleSite --start 2025001 --end 2025007
+canvodpy config init --interactive     # asks for your site and folders
+canvodpy config validate --site MySite # lists what a run would process
+canvodpy run --site MySite --start 2025001 --end 2025007
 ```
 
-Or from Python, when you need to script a run (looping over sites, embedding
-in a notebook):
+Days are given as `YYYYDDD` (year and day of year). Without `--start`, a run
+resumes from the last day in the store.
+
+The same from Python, for scripts and notebooks:
 
 ```python
 from canvodpy import Site
 
-site = Site("ExampleSite")
+site = Site("MySite")
 
-with site.pipeline(n_workers=8) as pipeline:
+with site.pipeline() as pipeline:
     for date_key, datasets in pipeline.process_range("2025001", "2025007"):
         site.vod.compute_day(datasets, "canopy_01_vs_reference_01")
 ```
 
-One supported Python surface, plus the CLI on top of it:
-
-```mermaid
-flowchart TD
-    subgraph CLI_["CLI — recommended"]
-        CLI["canvodpy run --site ... --start ... --end ..."]
-    end
-
-    subgraph L3["Site.pipeline() — Python-native scripting"]
-        L3A["Site('ExampleSite')"]
-        L3A --> L3B[".pipeline(n_workers=8)"]
-        L3B --> L3C[".process_range(start, end)"]
-        L3A --> L3E["site.vod.compute_bulk(...)"]
-    end
-
-    subgraph Shared["Shared Components"]
-        FM["File discovery"]
-        EP["EphemerisProvider"]
-        READER["GNSSDataReader"]
-        STORE["Icechunk Store"]
-        VOD["VodComputer"]
-    end
-
-    CLI -.wraps.-> L3A
-
-    L3C --> FM
-    L3C --> EP
-    L3C --> READER
-    L3C --> STORE
-    L3E --> VOD
-```
-
-The optional `canvod-airflow` extension builds its DAGs on
-`canvodpy.workflows.tasks`, a dedicated set of Airflow-compatible task
-functions. `FluentWorkflow`, the flat `process_date()` /
-`calculate_vod()` / `preview_processing()` functions, `VODWorkflow`, and the
-single-step functions of `canvodpy.functional` are deprecated (`FutureWarning`
-on use) — kept working until the next major version, no longer taught;
-`VODWorkflow` additionally has a broken augmentation step and shouldn't be
-used regardless. See the
-[API Levels guide](https://canvodpy.eu/guides/api-levels/) for details.
-
-## Development Setup
-
-```bash
-# Clone repository (with submodules for demo notebooks and test data)
-git clone --recurse-submodules https://github.com/nfb2021/canvodpy.git
-cd canvodpy
-
-# Verify required tools
-just check-dev-tools
-
-# Install dependencies + pre-commit hooks
-uv sync
-just hooks
-
-# Run tests and code quality checks
-just test
-just check
-```
-
-### Common Commands
-
-```bash
-just --list              # Show all commands
-just test                # Run all tests
-just check               # Lint + format + type-check
-just docs                # Preview documentation locally
-just open-notebook NAME  # Edit a marimo notebook interactively
-just app-notebook NAME   # Run a marimo notebook as read-only app
-just notebooks           # List available notebooks
-```
+[Start here](https://canvodpy.eu/users/) walks through the first run step
+by step.
 
 ## Documentation
 
-Full documentation is available at **[canvodpy.eu](https://canvodpy.eu/)**.
+All documentation is at **[canvodpy.eu](https://canvodpy.eu/)**:
 
-Key pages:
-
-- [Contributor Setup](https://canvodpy.eu/guides/contributor-setup/)
-- [Architecture](https://canvodpy.eu/architecture/)
-- [Your Own Readers and VOD Calculators](https://canvodpy.eu/guides/plugins/)
+- [Start here](https://canvodpy.eu/users/): from installation to the first VOD
+- [Settings file](https://canvodpy.eu/guides/configuration/)
 - [Command line and Python](https://canvodpy.eu/guides/api-levels/)
-- [Configuration Guide](https://canvodpy.eu/guides/configuration/)
-- [Contributing](CONTRIBUTING.md)
+- [Your own readers and VOD calculators](https://canvodpy.eu/guides/plugins/)
+- [Monorepo structure](https://canvodpy.eu/architecture/) and
+  [package dependencies](https://canvodpy.eu/dependencies/)
 
-## Project Structure
+## Packages
 
-<details>
-<summary>Directory layout</summary>
+`canvodpy` installs all of them. Each can also be installed on its own.
 
-```text
-canvodpy/                       # Monorepo root
-├── packages/                   # Independent packages
-│   ├── canvod-readers/         #   RINEX & SBF parsing
-│   ├── canvod-auxiliary/       #   Ephemeris & coordinate transforms
-│   ├── canvod-grids/           #   Hemispheric grid operations
-│   ├── canvod-vod/             #   VOD retrieval algorithms
-│   ├── canvod-store/           #   Icechunk versioned storage
-│   ├── canvod-store-metadata/  #   Store provenance & compliance
-│   ├── canvod-viz/             #   Visualization
-│   ├── canvod-ops/             #   Preprocessing pipeline
-│   ├── canvod-config/          #   Configuration management
-│   ├── canvod-utils/           #   Date/time utilities & diagnostics
-│   └── canvod-preflight/       #   Naming convention
-├── canvodpy/                   # Umbrella package + orchestrator
-├── demo/                       # marimo notebooks (submodule)
-├── config/                     # YAML configuration files
-├── docs/                       # Zensical documentation
-├── .github/                    # CI/CD workflows
-├── CONTRIBUTORS.md             # Project contributors
-├── NOTICE                      # Apache 2.0 attribution
-└── LICENSE                     # Apache License 2.0
+| Package | What it does |
+| --- | --- |
+| `canvodpy` | The command line, the `Site` API and the processing pipeline |
+| `canvod-readers` | Readers for RINEX, SBF and NMEA files |
+| `canvod-auxiliary` | Orbit and clock products, satellite angles |
+| `canvod-store` | Icechunk stores for observations and VOD |
+| `canvod-store-metadata` | Store metadata (DataCite, ACDD, STAC) and the STAC catalog |
+| `canvod-vod` | VOD retrieval |
+| `canvod-grids` | Hemispheric grids |
+| `canvod-viz` | 2D and 3D plots |
+| `canvod-ops` | Preprocessing: temporal aggregation, grid cell assignment |
+| `canvod-config` | The settings file and its checks |
+| `canvod-preflight` | The canVOD file name convention |
+| `canvod-utils` | Shared utilities |
+
+Optional extensions, such as `canvod-filemap` for file names that don't
+follow the convention, are in
+[canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions).
+
+## Development
+
+Development needs [uv](https://docs.astral.sh/uv/getting-started/installation/)
+and [just](https://github.com/casey/just).
+
+```bash
+git clone --recurse-submodules https://github.com/nfb2021/canvodpy.git
+cd canvodpy
+just check-dev-tools   # checks that the tools are installed
+uv sync
+just hooks             # installs the pre-commit hooks
+just test
+just check             # lint, format, type check
 ```
 
-Optional packages — `canvod-filemap` (naming recipes for non-canonical
-filenames), `canvod-airflow` (Airflow DAGs) and `canvod-adapters` (data
-exchange with gnssvod) — are developed in
-[canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions), not
-in this repo's `packages/`, and are released on GitHub only. In this
-repository, `canvod-filemap` installs as a dependency group
-(`uv sync --group filemap`), pinned to a release tag.
+`just --list` shows every command. The
+[contributor setup](https://canvodpy.eu/guides/contributor-setup/) has the
+details.
 
-</details>
+| Repository | Purpose |
+| --- | --- |
+| [canvodpy-demo](https://github.com/nfb2021/canvodpy-demo) | The marimo demo notebooks; submodule at `demo/` |
+| [canvodpy-test-data](https://github.com/nfb2021/canvodpy-test-data) | The receiver files the tests use; submodule at `packages/canvod-readers/tests/test_data/` |
+| [canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions) | Optional extensions, released on GitHub only |
 
-## Related repositories
-
-canvodpy spans a few separate repositories, each with a distinct purpose:
-
-| Repository | Purpose | Relationship to this repo |
-| --- | --- | --- |
-| [canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions) | Optional, GitHub-only packages: `canvod-filemap` (non-canonical filename mapping) and `canvod-airflow` (Airflow DAG definitions) | Independent repo, installed as an optional extra when needed — not a submodule |
-| [canvodpy-demo](https://github.com/nfb2021/canvodpy-demo) | marimo notebook walkthroughs of the pipeline | Git submodule at `demo/` |
-| [canvodpy-test-data](https://github.com/nfb2021/canvodpy-test-data) | Real RINEX/SBF fixtures used by the test suite | Git submodule at `packages/canvod-readers/tests/test_data/` |
-
-## AI-Assisted Development
-
-This project uses [Claude Code](https://claude.com/claude-code) as a development and maintenance tool. The repository includes a comprehensive `CLAUDE.md` that provides the AI agent with:
-
-- **Scientific domain knowledge** — GNSS-T, VOD, signal processing concepts
-- **Architecture context** — monorepo structure, API levels, data contracts
-- **15+ domain skills** — xarray, Zarr, Pydantic, pytest, marimo, and more
-- **Persistent memory** — project decisions, conventions, and known issues across sessions
-
-New contributors can run `claude` in the repo root to get an AI assistant with full project context — it can explain any module, run tests, generate diagrams, and navigate the 12-package monorepo.
+canVODpy is developed with coding agents, mostly
+[Claude Code](https://claude.com/claude-code). The repository carries their
+instructions (`AGENTS.md`, `CODING_STANDARDS.md`, `GLOSSARY.md`, the
+decision records in `docs/adr/`), which are also a short guide to the
+project's rules for people. See
+[Developing with coding agents](https://canvodpy.eu/guides/ai-development/).
 
 ## Contributing
 
-Contributions of all kinds are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-First-time contributors: add yourself to [CONTRIBUTORS.md](CONTRIBUTORS.md) in your PR.
+Contributions of all kinds are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+First-time contributors: add yourself to [CONTRIBUTORS.md](CONTRIBUTORS.md)
+in your pull request.
 
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE).
 
 This software is provided "as is" without warranty of any kind. See the
-[Impressum](https://canvodpy.eu/impressum/) for full legal notice
-and AI disclosure.
+[Impressum](https://canvodpy.eu/impressum/) for the full legal notice and
+AI disclosure.
 
 ## Affiliation
 
