@@ -56,7 +56,7 @@ import typer
 import xarray as xr
 
 from canvod.config.models import reference_store_group
-from canvod.store_metadata import store_exists
+from canvod.store_metadata import missing_store_settings, store_exists
 from canvod.utils.logging import (
     new_run_id,
     record_stage_timing,
@@ -472,6 +472,11 @@ def _main_impl(args: SimpleNamespace) -> int:
                 # Resolve VOD analysis pairs for this site
                 vod_analyses = site.vod_analyses if not args.no_vod else {}
 
+                # A first run whose new VOD store is missing settings is
+                # refused before processing; the write would refuse every
+                # day at the end. With --no-vod the VOD store is not checked.
+                _refuse_new_vod_store_missing_settings(site, config, vod_analyses)
+
                 if vod_analyses:
                     reporter.log(f"  VOD analyses: {list(vod_analyses.keys())}")
 
@@ -645,6 +650,37 @@ def _main_impl(args: SimpleNamespace) -> int:
         _report_failed_days(failed_days)
         return EXIT_DAYS_FAILED
     return 0
+
+
+def _refuse_new_vod_store_missing_settings(site, config, vod_analyses) -> None:
+    """Refuse a first run before processing if a new VOD store's settings are missing.
+
+    A store records its site description, publisher, license and naming
+    authority when it is created. A run that computes VOD for a site whose
+    VOD store does not exist yet must not process and only then fail at the
+    VOD write: this checks the settings up front. An existing store is never
+    checked; with ``--no-vod`` (an empty ``vod_analyses``) the VOD store is
+    not checked at all.
+
+    Raises
+    ------
+    ValueError
+        If the new VOD store is missing one of the settings, naming them all.
+    """
+    if not vod_analyses:
+        return  # --no-vod: the VOD store is not written this run
+    if store_exists(site.vod_store_path):
+        return  # not a first run: the store's metadata is already written
+    missing = missing_store_settings(
+        site.name, config.sites.sites.get(site.name), config
+    )
+    if not missing:
+        return
+    msg = (
+        "A new VOD store needs these settings when it is created; the "
+        "metadata standards (DataCite, STAC) require them: " + "; ".join(missing) + "."
+    )
+    raise ValueError(msg)
 
 
 def run(

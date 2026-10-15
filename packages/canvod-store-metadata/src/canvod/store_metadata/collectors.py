@@ -15,7 +15,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from .identity import check_naming_authority, new_uuid, stac_link, store_id
+from .identity import (
+    NAMING_AUTHORITY_SETTING,
+    check_naming_authority,
+    new_uuid,
+    stac_link,
+    store_id,
+)
 from .schema import (
     ConfigSnapshot,
     Creator,
@@ -388,6 +394,58 @@ def collect_references(config: Any) -> References:
     )
 
 
+def _site_store_description(site_config: Any, meta_cfg: Any) -> str:
+    """The site's store description, the deprecated shared one still counts."""
+    return (
+        getattr(site_config, "store_description", None)
+        or getattr(meta_cfg, "store_description", None)
+        or ""
+    ).strip()
+
+
+def missing_store_settings(site_name: str, site_config: Any, config: Any) -> list[str]:
+    """Return the settings a new store needs but does not have.
+
+    A store records these when it is created (DataCite, STAC): the site's
+    store description, the publisher, the license and the naming authority.
+    Each returned name carries an example value, as the store-creation error
+    lists them. The deprecated shared ``processing.metadata.store_description``
+    still counts as the site's store description.
+
+    The naming authority is checked with ``check_naming_authority``: it is
+    listed as missing when it is absent or not a reverse DNS name.
+    """
+    meta_cfg = config.processing.metadata
+    required = {
+        f"sites.{site_name}.store_description (e.g. 'GNSS-T observations "
+        "below a beech canopy')": _site_store_description(site_config, meta_cfg),
+        "processing.metadata.publisher (e.g. your institution)": getattr(
+            meta_cfg, "publisher", None
+        ),
+        "processing.metadata.license (an SPDX identifier, e.g. 'CC-BY-4.0')": (
+            getattr(meta_cfg, "license", None)
+        ),
+    }
+    missing = [name for name, value in required.items() if not (value or "").strip()]
+    naming_authority = getattr(meta_cfg, "naming_authority", None)
+    if isinstance(naming_authority, str):
+        try:
+            check_naming_authority(naming_authority)
+        except ValueError:
+            missing.append(
+                f"{NAMING_AUTHORITY_SETTING} is missing or not a reverse DNS "
+                "name (e.g. 'at.ac.tuwien')"
+            )
+    elif not naming_authority:
+        # None or empty: the setting is absent.
+        missing.append(
+            f"{NAMING_AUTHORITY_SETTING} is missing or not a reverse DNS "
+            "name (e.g. 'at.ac.tuwien')"
+        )
+    # A truthy non-string value (e.g. a mock in a test) is left as present.
+    return missing
+
+
 def collect_metadata(
     *,
     config: Any,
@@ -413,33 +471,17 @@ def collect_metadata(
     """
     meta_cfg = config.processing.metadata
     sid = store_id(site_name, store_type)
-    naming_authority = check_naming_authority(
-        getattr(meta_cfg, "naming_authority", None)
-    )
-    # The shared processing.metadata.store_description is deprecated; the
-    # setting warns when it is loaded.
-    description = (
-        getattr(site_config, "store_description", None)
-        or getattr(meta_cfg, "store_description", None)
-        or ""
-    ).strip()
-    required = {
-        f"sites.{site_name}.store_description (e.g. 'GNSS-T observations "
-        "below a beech canopy')": description,
-        "processing.metadata.publisher (e.g. your institution)": getattr(
-            meta_cfg, "publisher", None
-        ),
-        "processing.metadata.license (an SPDX identifier, e.g. 'CC-BY-4.0')": (
-            getattr(meta_cfg, "license", None)
-        ),
-    }
-    missing = [name for name, value in required.items() if not (value or "").strip()]
+    missing = missing_store_settings(site_name, site_config, config)
     if missing:
         msg = (
             "A store needs these settings when it is created; the metadata "
             "standards (DataCite, STAC) require them: " + "; ".join(missing) + "."
         )
         raise ValueError(msg)
+    naming_authority = check_naming_authority(
+        getattr(meta_cfg, "naming_authority", None)
+    )
+    description = _site_store_description(site_config, meta_cfg)
     now = datetime.now(UTC).isoformat()
 
     return StoreMetadata(

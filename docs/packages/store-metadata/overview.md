@@ -144,6 +144,10 @@ processing:
 DataCite requires the publisher and STAC requires the license, so a
 store isn't created without them.
 
+A first run, and `config validate`, refuse to start when a setting the
+new store needs is missing (the site's store description, the publisher,
+the license or the naming authority).
+
 The license is an identifier from the [SPDX license list](https://spdx.org/licenses/)
 (a copy of version 3.27.0 comes with the package), as STAC 1.1 asks. A
 license outside SPDX is `other`, with `license_uri` naming its text.

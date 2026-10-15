@@ -40,7 +40,7 @@ from canvod.readers import MatchedDirs
 from canvod.readers.gnss_specs.constants import UREG
 from canvod.store import GnssResearchSite
 from canvod.store.store import _with_run_id
-from canvod.store_metadata import store_exists
+from canvod.store_metadata import missing_store_settings, store_exists
 from canvod.utils.logging import (
     get_run_id,
     new_run_id,
@@ -1558,6 +1558,36 @@ class PipelineOrchestrator:
         for group in sorted({group for _, receivers in dates for group in receivers}):
             self.site.gnss_store.check_settings_match(group, settings)
 
+    def _check_new_store_settings(self) -> None:
+        """Refuse a first run before processing if a new store's settings are missing.
+
+        A store records its site description, publisher, license and naming
+        authority when it is created (DataCite/STAC). A first run on a site
+        whose GNSS store does not exist yet must not read every day and
+        compute geometry only to fail at the write: this checks the settings
+        up front, before any file is read. An existing store is never checked
+        -- its metadata is already written.
+
+        Raises
+        ------
+        ValueError
+            If the new store is missing one of the settings, naming them all.
+        """
+        if store_exists(self.site.gnss_store_path):
+            return  # not a first run: the store's metadata is already written
+        missing = missing_store_settings(
+            self.site.site_name, self.site._site_config, self._config
+        )
+        if not missing:
+            return
+        msg = (
+            "A new GNSS store needs these settings when it is created; the "
+            "metadata standards (DataCite, STAC) require them: "
+            + "; ".join(missing)
+            + "."
+        )
+        raise ValueError(msg)
+
     def _fail_receiver_days(
         self, date_key: str, receivers: Sequence[str], error: BaseException
     ) -> None:
@@ -1797,6 +1827,10 @@ class PipelineOrchestrator:
             )
             self.print_preview(start_from, end_at)
             return
+
+        # A first run whose new store is missing settings is refused before
+        # any file is read; the write would refuse every day at the end.
+        self._check_new_store_settings()
 
         grouped = self._group_by_date_and_receiver()
         filtered_dates = self._filter_dates(grouped, start_from, end_at)
