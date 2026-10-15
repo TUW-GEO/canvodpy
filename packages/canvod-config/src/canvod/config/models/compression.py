@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from .base import _StrictModel
 
@@ -48,6 +48,14 @@ class ChunkStrategy(_StrictModel):
             "signals in one chunk."
         ),
     )
+
+    @field_validator("sid")
+    @classmethod
+    def _sid_is_not_zero(cls, v: int) -> int:
+        if v == 0:
+            msg = "sid is -1 (all signals in one chunk) or a positive number of signals"
+            raise ValueError(msg)
+        return v
 
 
 class ChunkStrategies(_StrictModel):
