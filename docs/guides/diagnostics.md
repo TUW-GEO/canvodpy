@@ -109,9 +109,13 @@ a `store_op_retry` warning. Only when the last try fails does the run
 log the error.
 
 A conflict, when another commit changed the store first, is not a lost
-connection: the run tries once more at once, on the new state of the
-store, and logs a `store_conflict_retry` warning. A second conflict is
-logged as an error.
+connection: the run tries again on the new state of the store, up to
+five tries in all, and logs a `store_conflict_retry` warning (for a day
+of a store made of day blocks, `forked_day_conflict_retrying`) with the
+number of the retry and the seconds it waited. The wait doubles with
+every retry, from about 1 second, and has a random part, so two runs
+that collided don't try again at the same moment. A conflict on the last
+try is logged as an error.
 
 Other errors stop the run:
 

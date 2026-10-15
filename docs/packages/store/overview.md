@@ -181,7 +181,8 @@ If another commit lands while a write is in progress, canVODpy rebases the
 write onto it when the two changed different groups. If both changed the
 same data, the later commit fails with `icechunk.RebaseFailedError` and
 writes nothing. In a store made of day blocks, the run then writes the
-day once more on top of the other commit. When that write fails too,
+day again on top of the other commit, up to five tries in all, with a
+growing wait in between. When the last try fails too,
 the run records the receivers and days as failed in its run history,
 with the error, and goes on with the next days. It does the same when
 it can't add the blocks of a batch.

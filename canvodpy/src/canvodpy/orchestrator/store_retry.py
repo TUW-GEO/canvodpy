@@ -16,6 +16,8 @@ from collections.abc import Callable
 
 import icechunk
 
+from canvod.store_metadata.io import CONFLICT_TRIES, wait_after_conflict
+
 STORE_ERROR_TYPES = (OSError, RuntimeError, ValueError, icechunk.IcechunkError)
 # Only these can be transient (a dropped connection). A ValueError or
 # RuntimeError (e.g. a dataset that fails validation) fails the same way on
@@ -43,9 +45,10 @@ def call_with_store_retries[T](fn: Callable[[], T], *, logger, **log_ctx: object
     that.
 
     An ``icechunk.ConflictError`` (another commit moved the branch) is not a
-    dropped connection: ``fn`` is tried once more at once, without the
-    backoff, and a second conflict propagates. Every ``fn`` given here opens
-    its own session, so that one more try starts from the other commit.
+    dropped connection: ``fn`` is tried again after
+    :func:`wait_after_conflict`, up to :data:`CONFLICT_TRIES` tries in all,
+    and the last conflict propagates. Every ``fn`` given here opens its own
+    session, so each try starts from the other commit.
     """
     conflicts = 0
     attempt = 0
@@ -55,9 +58,17 @@ def call_with_store_retries[T](fn: Callable[[], T], *, logger, **log_ctx: object
             return fn()
         except icechunk.ConflictError as exc:
             conflicts += 1
-            if conflicts > 1:
+            if conflicts >= CONFLICT_TRIES:
                 raise
-            logger.warning("store_conflict_retry", error=str(exc), **log_ctx)
+            seconds = wait_after_conflict(conflicts)
+            logger.warning(
+                "store_conflict_retry",
+                retry=conflicts,
+                of=CONFLICT_TRIES - 1,
+                waited_seconds=round(seconds, 1),
+                error=str(exc),
+                **log_ctx,
+            )
             continue
         except RETRYABLE_STORE_ERRORS as exc:
             logger.warning(
