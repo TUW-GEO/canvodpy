@@ -567,6 +567,14 @@ cli-docs:
 cli-docs-check:
     uv run python scripts/cli_docs.py --check
 
+# write the settings reference page from the descriptions on the models
+settings-docs:
+    uv run python scripts/settings_docs.py
+
+# check that the settings reference page matches the descriptions
+settings-docs-check:
+    uv run python scripts/settings_docs.py --check
+
 # check every link of the built docs site (lychee; brew install lychee)
 docs-links:
     @command -v lychee >/dev/null || { echo "lychee is not installed: brew install lychee" >&2; exit 1; }

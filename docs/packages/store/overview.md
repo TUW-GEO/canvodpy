@@ -110,7 +110,7 @@ store again, uses the blocks already there, and adds the rest.
   must divide 86400 s / 180 = 480 s: 1 s, 5 s, 15 s, 30 s, or 1 min, for
   example. Days in one group can have different cadences. A group keeps
   the chunk size it was created with: a changed setting applies to new
-  groups only.
+  groups only (see [Chunks](chunks.md)).
 - A group records its layout in its attributes (`epoch_layout:
   day_blocks`). A store whose groups were written by appending files to
   the `epoch` axis, by canVODpy versions before day blocks, is still
@@ -223,8 +223,9 @@ ds_range = site.gnss_store.read_group(
 value is needed, its epochs in time order. `date="2025001"` selects that
 day only: from 00:00 up to, not including, 00:00 of the next day. A
 `time_slice` includes both of its ends, and an end written as a date
-(`"2025-01-15"`) means the whole of that day. For more about reading, chunks, and earlier states of a
-store, see [Versioning with Icechunk](icechunk.md).
+(`"2025-01-15"`) means the whole of that day. For how reads load chunks,
+see [Chunks](chunks.md); for earlier states of a store, see
+[Versioning with Icechunk](icechunk.md).
 
 To open a store by its path, use `open_gnss_store()` or
 `open_vod_store()`:
@@ -359,7 +360,9 @@ ds = storage.load_percell_timeseries(system="G", band="L1", code="C")
 
 ## Next steps
 
-- [Versioning with Icechunk](icechunk.md): the store format, chunks, the
+- [Chunks](chunks.md): how the stores are chunked, and how to choose the
+  chunk sizes.
+- [Versioning with Icechunk](icechunk.md): the store format, the
   Icechunk settings, and reading earlier states.
 - [Write strategies](storage-strategies.md): what a run does with a file
   that's already stored.

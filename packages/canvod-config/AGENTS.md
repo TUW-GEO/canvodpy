@@ -12,6 +12,7 @@ that finds and reads it. Every other package depends on it.
 | `models/storage.py` | Store paths and write strategies |
 | `models/preprocessing.py` | Optional preprocessing; `statistics` is reserved, not applied |
 | `loader.py` | `get_default_config_dir` (the only lookup of the config folder), `load_config` |
+| `settings_help.py` | Every setting's path, description, type, limits and default, from the models: `canvodpy config explain`, the wizard's `?`, the settings reference page |
 | `templates/` | The template users start from (`just config-init`) |
 
 Background: `docs/guides/configuration.md`, `docs/packages/config/overview.md`.
@@ -33,6 +34,12 @@ Background: `docs/guides/configuration.md`, `docs/packages/config/overview.md`.
   (`src/canvod/config/templates/canvod-settings.yaml.example`) and copy it
   to the repository's `config/canvod-settings.yaml.example`; a test keeps
   the two identical.
+- **Descriptions are user-facing**: they are the only help text of a
+  setting (`settings_help.py`). Write them for scientists, without function
+  names. After a change, run `just settings-docs`; CI checks
+  `docs/guides/settings.md`. In the template, the line above a setting's
+  first appearance is its link (`settings_help.DOCS_URL` + anchor);
+  `tests/test_settings_help.py` checks it.
 
 ## Tests
 

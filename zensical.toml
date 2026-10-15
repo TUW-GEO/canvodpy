@@ -37,6 +37,7 @@ nav = [
     { "Start here" = "users/index.md" },
     { "Configure" = [
       { "Settings file" = "guides/configuration.md" },
+      { "Settings reference" = "guides/settings.md" },
       { "Settings models" = "packages/config/overview.md" },
       { "File names" = "packages/naming/overview.md" },
     ]},
@@ -57,6 +58,7 @@ nav = [
       { "Hemispheric grids" = "packages/grids/overview.md" },
       { "VOD retrieval" = "packages/vod/overview.md" },
       { "Stores" = "packages/store/overview.md" },
+      { "Chunks" = "packages/store/chunks.md" },
       { "Versioning with Icechunk" = "packages/store/icechunk.md" },
       { "Write strategies" = "packages/store/storage-strategies.md" },
       { "Store metadata" = "packages/store-metadata/overview.md" },

@@ -26,8 +26,17 @@ canvodpy config init        # create canvod-settings.yaml from the template
 canvodpy config edit        # open canvod-settings.yaml in $EDITOR
 canvodpy config validate    # check the settings and the receiver data of all sites
 canvodpy config show        # print the settings canVODpy uses
+canvodpy config explain processing.storage.stores_root_dir  # what a setting means
 canvodpy doctor             # show which settings file canVODpy found
 ```
+
+Every setting is described in the [Settings reference](settings.md), and
+the template links each setting to its entry there.
+`canvodpy config explain` prints the same entry in the terminal; it takes
+the setting's path, or its end (`gnss_store.epoch`), and names a site or
+receiver as in your file (`sites.ExampleSite.receivers.canopy_01.directory`).
+In `canvodpy config init --interactive`, answer `?` to a question to see
+the entry of the setting it asks for.
 
 `canvodpy config show` prints the settings after the
 [overlay file](#overlay-file) is applied, so a value set there appears
