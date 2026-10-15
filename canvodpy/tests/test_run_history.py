@@ -1,7 +1,10 @@
 """The run history (ADR 0018), through the functions of its module only."""
 
 import multiprocessing
+import sqlite3
+import threading
 import time
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -145,6 +148,44 @@ def test_a_run_whose_process_is_gone_without_an_end_is_interrupted(tmp_path):
     assert process.exitcode == 0
     with RunHistory.open(tmp_path) as history:
         assert history.run("fangorn-20261014-140000").status == "interrupted"
+
+
+def test_runs_started_together_on_a_new_run_history_all_open_it(tmp_path):
+    # Switching a new file to WAL mode needs it alone; SQLite then fails at
+    # once instead of waiting (#340). Each try: 4 openers, 1 new history.
+    for trial in range(20):
+        log_dir = tmp_path / str(trial)
+        barrier = threading.Barrier(4)
+        errors: list[Exception] = []
+
+        def open_together(log_dir=log_dir, barrier=barrier, errors=errors):
+            barrier.wait()
+            try:
+                with RunHistory.open(log_dir):
+                    pass
+            except Exception as error:
+                errors.append(error)
+
+        threads = [threading.Thread(target=open_together) for _ in range(4)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(120)
+        assert errors == []
+        with closing(sqlite3.connect(run_history.run_history_path(log_dir))) as db:
+            assert db.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+
+
+def test_a_run_history_locked_longer_than_the_busy_timeout_is_not_opened(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(run_history, "BUSY_TIMEOUT_SECONDS", 0.5)
+    path = run_history.run_history_path(tmp_path)
+    with closing(sqlite3.connect(path, isolation_level=None)) as holder:
+        holder.execute("BEGIN EXCLUSIVE")
+        with pytest.raises(sqlite3.OperationalError, match="locked"):
+            RunHistory.open(tmp_path)
+        holder.execute("ROLLBACK")
 
 
 N_ROWS = 300

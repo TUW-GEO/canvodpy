@@ -35,6 +35,7 @@ import os
 import socket
 import sqlite3
 import threading
+import time
 from collections.abc import Generator, Iterable
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -55,6 +56,9 @@ SAMPLE_INTERVAL_SECONDS = 30.0
 
 # Seconds a write waits while another process writes.
 BUSY_TIMEOUT_SECONDS = 60.0
+
+# Seconds between two tries to put a new file in WAL mode.
+WAL_SWITCH_RETRY_SECONDS = 0.05
 
 DayResult = Literal["written", "skipped", "failed"]
 RunResult = Literal["finished", "failed"]
@@ -274,6 +278,30 @@ class FolderListing:
     newest_day: str | None
 
 
+def _switch_to_wal(connection: sqlite3.Connection) -> None:
+    """Put the file in WAL mode, waiting while another process has it.
+
+    Switching a new file to WAL mode needs it alone, and SQLite then fails
+    at once instead of waiting for the busy timeout: runs started together
+    on a new run history crashed with "database is locked" (#340). So the
+    switch is tried again until :data:`BUSY_TIMEOUT_SECONDS` have passed.
+    """
+    deadline = time.monotonic() + BUSY_TIMEOUT_SECONDS
+    while True:
+        try:
+            connection.execute("PRAGMA journal_mode = WAL")
+        except sqlite3.OperationalError as error:
+            busy = error.sqlite_errorcode in {
+                sqlite3.SQLITE_BUSY,
+                sqlite3.SQLITE_LOCKED,
+            }
+            if not busy or time.monotonic() >= deadline:
+                raise
+            time.sleep(WAL_SWITCH_RETRY_SECONDS)
+        else:
+            return
+
+
 def run_history_path(log_dir: Path | str) -> Path:
     """Return the run history file in *log_dir*."""
     return Path(log_dir) / FILE_NAME
@@ -401,10 +429,14 @@ class RunHistory:
             autocommit=True,
             check_same_thread=False,
         )
-        connection.execute("PRAGMA journal_mode = WAL")
-        connection.execute("PRAGMA synchronous = NORMAL")
-        history = cls(connection, path)
-        history._migrate()
+        try:
+            _switch_to_wal(connection)
+            connection.execute("PRAGMA synchronous = NORMAL")
+            history = cls(connection, path)
+            history._migrate()
+        except BaseException:
+            connection.close()
+            raise
         return history
 
     def close(self) -> None:
