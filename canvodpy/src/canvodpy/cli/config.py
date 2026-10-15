@@ -747,7 +747,7 @@ def explain(
         typer.Argument(
             help=(
                 "The setting's path in canvod-settings.yaml, or the end of it "
-                "(e.g. gnss_store.epoch)."
+                "(for example gnss_store.epoch)."
             ),
         ),
     ],
@@ -757,7 +757,7 @@ def explain(
     Prints the setting's description, type, limits and default, and a link
     to its entry in the settings reference. Name a site, receiver or VOD
     analysis as in your file:
-    sites.ExampleSite.receivers.canopy_01.directory.
+    sites.my_site.receivers.reference_01.directory.
 
     \f
     Parameters

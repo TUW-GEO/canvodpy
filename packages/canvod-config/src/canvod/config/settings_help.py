@@ -252,7 +252,7 @@ def _ends_with(pattern: str, path: str) -> bool:
 def find_setting(path: str) -> SettingHelp:
     """The setting at *path*, as written in the file or ending the path.
 
-    ``sites.ExampleSite.receivers.canopy_01.directory`` finds
+    ``sites.my_site.receivers.reference_01.directory`` finds
     ``sites.<site>.receivers.<receiver>.directory``, and ``gnss_store.epoch``
     finds ``processing.icechunk.chunk_strategies.gnss_store.epoch``.
 

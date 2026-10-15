@@ -34,7 +34,7 @@ Every setting is described in the [Settings reference](settings.md), and
 the template links each setting to its entry there.
 `canvodpy config explain` prints the same entry in the terminal; it takes
 the setting's path, or its end (`gnss_store.epoch`), and names a site or
-receiver as in your file (`sites.ExampleSite.receivers.canopy_01.directory`).
+receiver as in your file (`sites.my_site.receivers.reference_01.directory`).
 In `canvodpy config init --interactive`, answer `?` to a question to see
 the entry of the setting it asks for.
 
