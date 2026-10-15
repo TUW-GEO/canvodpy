@@ -15,7 +15,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from .identity import check_naming_authority, new_uuid, stac_link, store_id
+from .identity import (
+    NAMING_AUTHORITY_SETTING,
+    check_naming_authority,
+    new_uuid,
+    stac_link,
+    store_id,
+)
 from .schema import (
     ConfigSnapshot,
     Creator,
@@ -388,6 +394,85 @@ def collect_references(config: Any) -> References:
     )
 
 
+def _site_store_description(site_config: Any, meta_cfg: Any) -> str:
+    """The site's store description, the deprecated shared one still counts."""
+    return (
+        getattr(site_config, "store_description", None)
+        or getattr(meta_cfg, "store_description", None)
+        or ""
+    ).strip()
+
+
+def missing_store_settings(site_name: str, site_config: Any, config: Any) -> list[str]:
+    """Return the settings a new store needs but does not have.
+
+    A store records these when it is created (DataCite, STAC): the site's
+    store description, the publisher, the license and the naming authority.
+    Each returned name carries an example value, as the store-creation error
+    lists them. The deprecated shared ``processing.metadata.store_description``
+    still counts as the site's store description.
+
+    The naming authority is checked with ``check_naming_authority``: it is
+    listed as missing when it is absent or not a reverse DNS name.
+    """
+    meta_cfg = config.processing.metadata
+    required = {
+        f"sites.{site_name}.store_description (e.g. 'GNSS-T observations "
+        "below a beech canopy')": _site_store_description(site_config, meta_cfg),
+        "processing.metadata.publisher (e.g. your institution)": getattr(
+            meta_cfg, "publisher", None
+        ),
+        "processing.metadata.license (an SPDX identifier, e.g. 'CC-BY-4.0')": (
+            getattr(meta_cfg, "license", None)
+        ),
+    }
+    missing = [name for name, value in required.items() if not (value or "").strip()]
+    try:
+        check_naming_authority(getattr(meta_cfg, "naming_authority", None))
+    except ValueError:
+        missing.append(
+            f"{NAMING_AUTHORITY_SETTING} is missing or not a reverse DNS "
+            "name (e.g. 'at.ac.tuwien')"
+        )
+    return missing
+
+
+def missing_store_settings_message(
+    missing: list[str],
+    *,
+    stores: list[tuple[str, Path | str]] | None = None,
+    store_label: str | None = None,
+    store_path: Path | str | None = None,
+) -> str:
+    """Return the store-creation error message for *missing* settings.
+
+    *missing* is the list from :func:`missing_store_settings`. *stores*
+    names each of the new stores as ``(label, path)`` pairs and reads "the
+    new <label> at <path>", joined with " and ", with a plural verb: the
+    form for the one error that names several new stores. A single store is
+    described by *store_path* ("The new <store_label> at <path>") or
+    *store_label* ("A new <store_label>"), and with none of them the
+    message reads "A store", as ``collect_metadata`` prints it.
+    """
+    if stores:
+        subject = " and ".join(f"the new {label} at {path}" for label, path in stores)
+        subject = subject[0].upper() + subject[1:]
+        verb = "need these settings when they are"
+    elif store_path is not None:
+        subject = f"The new {store_label} at {store_path}"
+        verb = "needs these settings when it is"
+    elif store_label is not None:
+        subject = f"A new {store_label}"
+        verb = "needs these settings when it is"
+    else:
+        subject = "A store"
+        verb = "needs these settings when it is"
+    return (
+        f"{subject} {verb} created; the metadata "
+        f"standards (DataCite, STAC) require them: " + "; ".join(missing) + "."
+    )
+
+
 def collect_metadata(
     *,
     config: Any,
@@ -413,33 +498,13 @@ def collect_metadata(
     """
     meta_cfg = config.processing.metadata
     sid = store_id(site_name, store_type)
+    missing = missing_store_settings(site_name, site_config, config)
+    if missing:
+        raise ValueError(missing_store_settings_message(missing))
     naming_authority = check_naming_authority(
         getattr(meta_cfg, "naming_authority", None)
     )
-    # The shared processing.metadata.store_description is deprecated; the
-    # setting warns when it is loaded.
-    description = (
-        getattr(site_config, "store_description", None)
-        or getattr(meta_cfg, "store_description", None)
-        or ""
-    ).strip()
-    required = {
-        f"sites.{site_name}.store_description (e.g. 'GNSS-T observations "
-        "below a beech canopy')": description,
-        "processing.metadata.publisher (e.g. your institution)": getattr(
-            meta_cfg, "publisher", None
-        ),
-        "processing.metadata.license (an SPDX identifier, e.g. 'CC-BY-4.0')": (
-            getattr(meta_cfg, "license", None)
-        ),
-    }
-    missing = [name for name, value in required.items() if not (value or "").strip()]
-    if missing:
-        msg = (
-            "A store needs these settings when it is created; the metadata "
-            "standards (DataCite, STAC) require them: " + "; ".join(missing) + "."
-        )
-        raise ValueError(msg)
+    description = _site_store_description(site_config, meta_cfg)
     now = datetime.now(UTC).isoformat()
 
     return StoreMetadata(

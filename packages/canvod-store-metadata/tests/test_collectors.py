@@ -19,6 +19,7 @@ from canvod.store_metadata.collectors import (
     collect_references,
     collect_software_versions,
     collect_spatial,
+    missing_store_settings,
 )
 
 
@@ -241,6 +242,37 @@ class TestCollectors:
         config.processing.metadata.store_description = testing.SITE_DESCRIPTION
         meta = _collect(config, site_cfg)
         assert meta.identity.description == testing.SITE_DESCRIPTION
+
+    def test_missing_store_settings_all_set_is_empty(self):
+        config, site_cfg = _settings()
+        assert missing_store_settings("fangorn", site_cfg, config) == []
+
+    def test_missing_store_settings_names_a_missing_description(self):
+        config, site_cfg = _settings()
+        site_cfg.store_description = None
+        config.processing.metadata.store_description = None
+        missing = missing_store_settings("fangorn", site_cfg, config)
+        assert missing == [
+            "sites.fangorn.store_description (e.g. 'GNSS-T observations below "
+            "a beech canopy')"
+        ]
+
+    def test_missing_store_settings_names_description_and_license(self):
+        config, site_cfg = _settings()
+        site_cfg.store_description = None
+        config.processing.metadata.store_description = None
+        config.processing.metadata.license = None
+        missing = missing_store_settings("fangorn", site_cfg, config)
+        assert len(missing) == 2
+        assert missing[0].startswith("sites.fangorn.store_description")
+        assert missing[1].startswith("processing.metadata.license")
+
+    def test_missing_store_settings_the_deprecated_description_counts(self):
+        """The deprecated shared description still satisfies the site one."""
+        config, site_cfg = _settings()
+        site_cfg.store_description = None
+        config.processing.metadata.store_description = testing.SITE_DESCRIPTION
+        assert missing_store_settings("fangorn", site_cfg, config) == []
 
 
 def _settings() -> tuple[MagicMock, MagicMock]:

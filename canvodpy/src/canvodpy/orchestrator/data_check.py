@@ -286,6 +286,46 @@ def check_receiver_data(
     return report
 
 
+def missing_store_settings_errors(
+    site: str, site_config: Any, config: Any
+) -> list[str]:
+    """Errors for the stores of *site* that do not exist yet.
+
+    A store records its site description, publisher, license and naming
+    authority when it is created. ``config validate`` reports these as the
+    errors of a site whose GNSS or VOD store does not exist yet, so a first
+    run is not started with a store that would be refused at its write. The
+    settings are listed once; when both stores are new, one error names
+    them both. An existing store is never reported (its metadata is already
+    written).
+    """
+    from canvod.store_metadata import (
+        missing_store_settings,
+        missing_store_settings_message,
+        store_exists,
+    )
+
+    stores = []
+    for label, path in (
+        ("GNSS store", config.processing.storage.get_gnss_store_path(site)),
+        ("VOD store", config.processing.storage.get_vod_store_path(site)),
+    ):
+        if not store_exists(path):
+            stores.append((label, path))
+
+    if not stores:
+        return []
+
+    missing = missing_store_settings(site, site_config, config)
+    if not missing:
+        return []
+
+    if len(stores) > 1:
+        return [missing_store_settings_message(missing, stores=stores)]
+    label, path = stores[0]
+    return [missing_store_settings_message(missing, store_label=label, store_path=path)]
+
+
 def check_site_data(
     site: str, config: Any = None, check_sampling: bool = True
 ) -> SiteReport:
@@ -318,6 +358,7 @@ def check_site_data(
     receivers = {name: cfg.model_dump() for name, cfg in site_config.receivers.items()}
     clear_discovery_cache()
     report = SiteReport(site)
+    report.errors.extend(missing_store_settings_errors(site, site_config, config))
     try:
         check_receivers(receivers, base_path, site)
     except DiscoveryError as exc:

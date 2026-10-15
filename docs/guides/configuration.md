@@ -392,7 +392,10 @@ The signals (signal IDs, SIDs) to keep. There are three modes:
 values, unknown fields), then finds the files of each receiver exactly
 as `canvodpy run` does. It reports the days and files a run would
 process, the files it would skip, and the problems that would stop it,
-for example two files that cover the same time. To check one site:
+for example two files that cover the same time. A first run, and
+`config validate`, refuse to start when a setting the new store needs is
+missing (its description, publisher, license or naming authority). To
+check one site:
 
 ```bash
 canvodpy config validate --site <site>

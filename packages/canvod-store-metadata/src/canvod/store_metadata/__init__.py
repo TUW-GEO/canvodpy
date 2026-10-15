@@ -9,7 +9,12 @@ Not to be confused with the *file registry* in ``canvod.store``
 
 from .amend import amend_metadata
 from .catalog import build_catalog, create_release, store_item, write_catalog
-from .collectors import collect_config_snapshot, collect_metadata
+from .collectors import (
+    collect_config_snapshot,
+    collect_metadata,
+    missing_store_settings,
+    missing_store_settings_message,
+)
 from .inventory import (
     scan_stores,
     scan_stores_as_stac,
@@ -79,6 +84,8 @@ __all__ = [
     "format_metadata",
     "metadata_exists",
     "migrate_metadata",
+    "missing_store_settings",
+    "missing_store_settings_message",
     "open_repository",
     "store_exists",
     "read_metadata",
