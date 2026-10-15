@@ -231,7 +231,7 @@ processing:
 | `params.store_radial_distance`  | `true`, `false`          | Whether to store satellite radial distance in the output.                                                                                                                                |
 | `params.store_sbf_raw_observables` | `true`, `false`       | SBF only: add the pre-correction observables (`SNR_raw`, `Pseudorange_unsmoothed`, `Pseudorange_raw`, `Phase_raw`) to the observations. Default `true`. |
 | `params.store_sbf_metadata`     | `true`, `false`          | SBF only: store the per-file metadata dataset `sbf_obs` (SatVisibility geometry, MeasExtra, PVT, DOP, receiver status) under `{group}/metadata/sbf_obs`, in the same commit as the observations. Default `true`. |
-| `storage.stores_root_dir`       | folder                   | Local folder that holds the stores, one folder per site. A URL such as `s3://bucket/prefix` is refused: processing writes stores to local folders only. |
+| `storage.stores_root_dir`       | folder                   | Local folder that holds the stores, one folder per site. A URL such as `s3://bucket/prefix` is refused: processing writes stores to local folders only. Stores on S3 can be opened and read ([Stores on S3](../packages/store-metadata/overview.md#stores-on-s3)); credentials come from the environment. |
 | `storage.gnss_store_strategy`   | `skip`, `overwrite`, `unsafe_append` | What to do when a file already exists in the store. `skip` (default) is the normal case. See warning below before ever using `unsafe_append`.                              |
 | `logging.log_dir`               | folder                   | Folder of the log files. Required: a run stops if it is not set. [Diagnostics](diagnostics.md) describes the files. |
 
