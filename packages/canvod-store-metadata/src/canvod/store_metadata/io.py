@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import random
 import threading
+import time
 from collections.abc import Callable, Generator, Iterable, Mapping
 from contextlib import contextmanager, suppress
 from datetime import UTC, datetime
@@ -35,6 +37,29 @@ from .schema import (
 )
 
 apply_icechunk_log_filter()
+
+#: Tries in all of a commit that lost a conflict to another run's commit.
+#: Before the n-th try again it waits ``CONFLICT_WAIT_SECONDS * 2**(n-1)``
+#: plus up to half of that at random, so two runs that collided do not try
+#: again at the same moment (grilling on concurrent writers, Q10; #339).
+CONFLICT_TRIES = 5
+CONFLICT_WAIT_SECONDS = 1.0
+
+
+def wait_after_conflict(retry: int) -> float:
+    """Wait before try ``retry + 1`` of a commit that lost a conflict.
+
+    Returns
+    -------
+    float
+        The seconds waited: they double with every retry and have a
+        random part.
+    """
+    base = CONFLICT_WAIT_SECONDS * 2 ** (retry - 1)
+    seconds = base * (1 + random.random() / 2)  # noqa: S311 (not for security)
+    time.sleep(seconds)
+    return seconds
+
 
 #: Name of the lock file in the store directory (see :func:`commit_lock`).
 COMMIT_LOCK_NAME = ".canvodpy-commit.lock"

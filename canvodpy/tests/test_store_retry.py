@@ -1,5 +1,7 @@
 """Store retries: only errors that can be transient are retried."""
 
+import itertools
+
 import icechunk
 import pytest
 import structlog
@@ -49,22 +51,29 @@ _CONFLICTS = [
 
 
 @pytest.mark.parametrize("exc", _CONFLICTS)
-def test_a_conflict_is_retried_once_without_waiting(exc, monkeypatch):
-    # Another commit moved the branch. Each call opens a new session, so one
-    # more try starts from the new commit; there is nothing to wait for.
+def test_a_conflict_is_tried_again_after_a_growing_random_wait(exc, monkeypatch):
+    # Another run's commit moved the branch. Each call opens a new session,
+    # so the next try starts from that commit; the wait keeps two runs from
+    # colliding again at the same moment (#339).
     sleeps = []
     monkeypatch.setattr(store_retry._time, "sleep", sleeps.append)
-    fn = _Failing(exc, 1)
+    fn = _Failing(exc, 4)
     assert (
         store_retry.call_with_store_retries(fn, logger=structlog.get_logger()) == "ok"
     )
-    assert fn.calls == 2
-    assert sleeps == []
+    assert fn.calls == 5
+    assert len(sleeps) == 4
+    assert all(0 < a < b for a, b in itertools.pairwise(sleeps))
+
+
+def test_waits_after_a_conflict_have_a_random_part():
+    waits = {store_retry.wait_after_conflict(1) for _ in range(20)}
+    assert len(waits) > 1
 
 
 @pytest.mark.parametrize("exc", _CONFLICTS)
-def test_a_second_conflict_propagates(exc):
-    fn = _Failing(exc, 2)
+def test_the_fifth_conflict_propagates(exc):
+    fn = _Failing(exc, 5)
     with pytest.raises(icechunk.ConflictError):
         store_retry.call_with_store_retries(fn, logger=structlog.get_logger())
-    assert fn.calls == 2
+    assert fn.calls == 5

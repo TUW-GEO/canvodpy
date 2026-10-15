@@ -232,7 +232,12 @@ shared AWS files, never from the settings or the store metadata:
 
 - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, or `AWS_PROFILE`;
 - `~/.aws/credentials` and `~/.aws/config`;
-- `AWS_REGION`, and `AWS_ENDPOINT_URL` for storage that isn't AWS.
+- `AWS_REGION`, and `AWS_ENDPOINT_URL` for storage that isn't AWS;
+- `CANVOD_S3_PATH_STYLE=1` for a self-hosted S3 service, such as Ceph,
+  that expects the bucket in the request path
+  (`https://endpoint/bucket/...`) rather than in the host name
+  (`https://bucket.endpoint/...`). Unset or `0` keeps the host name, as
+  AWS expects.
 
 Without a credential, opening fails with an error that names the
 location and these sources.
@@ -253,7 +258,12 @@ Icechunk keeps with the store.
 On a local directory, commits hold a lock file in the store's directory,
 because Icechunk on a local file system can lose one of two concurrent
 commits without an error. On S3 there is no lock: Icechunk's
-conditional writes keep two commits from overwriting each other.
+conditional writes keep two commits from overwriting each other. The
+S3 service must support them (`If-Match` and `If-None-Match`); most do,
+but check before choosing one.
+
+Creating, opening, reading the metadata, and refusing a conflicting
+commit are tested in CI against an S3 emulator.
 
 Processing still writes stores to local directories only.
 

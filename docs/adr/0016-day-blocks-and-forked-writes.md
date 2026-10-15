@@ -47,8 +47,9 @@ Phase 1 of the next day and VOD of the previous day overlap with
 reading. `commit_lock` makes commits of other runs on the same machine
 wait; a growth commit that loses a conflict retries. A day whose commit
 loses a conflict is planned again on the new tip, against its log
-book, and its tasks run once more; if it loses again, or the growth
-lost three times, the run records the receiver-days as failed with the
+book, and its tasks run again; a commit is tried up to five times, with
+a growing, partly random wait in between. If the day or the growth
+loses every try, the run records the receiver-days as failed with the
 error and goes on with the next days. Two machines never write one store.
 
 Memory is a budget (`max_memory_gb`, in `auto` the available memory):

@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 import structlog
 import xarray as xr
-from canvodpy.orchestrator import forked_writes
+from canvodpy.orchestrator import forked_writes, store_retry
 from canvodpy.orchestrator import pipeline as pipeline_module
 from canvodpy.orchestrator.forked_writes import ForkResult, write_files_into_fork
 from canvodpy.orchestrator.pipeline import PipelineOrchestrator, _ForkJob
@@ -287,6 +287,70 @@ def test_a_day_that_lost_a_conflict_is_written_again(seeded, files) -> None:
     stored = seeded.read_group(_GROUP, drop_empty=True)
     expected = _day(files)
     np.testing.assert_array_equal(stored["S1C"].values, expected["S1C"].values)
+
+
+def test_a_day_that_lost_several_conflicts_is_stored_once(
+    seeded, files, monkeypatch
+) -> None:
+    # Another run commits the day just before each of this run's first three
+    # commits; the fourth wins (#339).
+    sleeps: list[float] = []
+    monkeypatch.setattr(store_retry._time, "sleep", sleeps.append)
+    proc = _Processor(seeded, strategy="overwrite")
+    planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
+    assert planned is not None
+    results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
+    commit = proc._commit_forked_day
+    lost: list[icechunk.ConflictError] = []
+
+    def commit_after_the_other_run(planned, results):
+        if len(lost) < 3:
+            _write_day(_Processor(seeded, strategy="overwrite"))
+            try:
+                return commit(planned, results)
+            except icechunk.ConflictError as exc:
+                lost.append(exc)
+                raise
+        return commit(planned, results)
+
+    monkeypatch.setattr(proc, "_commit_forked_day", commit_after_the_other_run)
+
+    out = _orchestrator(seeded)._write_forked_day(
+        proc, planned, _descriptors(range(_FILES_PER_DAY)), results, _submit, 1
+    )
+
+    assert len(lost) == 3
+    assert len(sleeps) == 3
+    assert out[_GROUP].failed_files == 0
+    assert sum(out[_GROUP].actions.values()) == _FILES_PER_DAY
+    stored = seeded.read_group(_GROUP, drop_empty=True)
+    expected = _day(files)
+    np.testing.assert_array_equal(stored.epoch.values, expected.epoch.values)
+    np.testing.assert_array_equal(stored["S1C"].values, expected["S1C"].values)
+
+
+def test_a_day_that_loses_every_try_fails_after_five(seeded, monkeypatch) -> None:
+    sleeps: list[float] = []
+    monkeypatch.setattr(store_retry._time, "sleep", sleeps.append)
+    proc = _Processor(seeded)
+    planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
+    assert planned is not None
+    results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
+    tries: list[int] = []
+
+    def always_lost(_planned, _results):
+        tries.append(1)
+        msg = "another run committed first"
+        raise icechunk.ConflictError(msg)
+
+    monkeypatch.setattr(proc, "_commit_forked_day", always_lost)
+
+    with pytest.raises(icechunk.ConflictError, match="another run"):
+        _orchestrator(seeded)._write_forked_day(
+            proc, planned, _descriptors(range(_FILES_PER_DAY)), results, _submit, 1
+        )
+    assert len(tries) == 5
+    assert len(sleeps) == 4
 
 
 def test_a_day_whose_write_failed_is_recorded_failed(seeded) -> None:

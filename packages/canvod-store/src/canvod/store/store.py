@@ -31,10 +31,12 @@ from canvod.readers.base import validate_vod_dataset
 from canvod.store_metadata import RESERVED_GROUP
 from canvod.store_metadata.icechunk_logs import apply_icechunk_log_filter
 from canvod.store_metadata.io import (
+    CONFLICT_TRIES,
     commit_lock,
     commit_with_rebase,
     rewrite_manifests,
     store_command,
+    wait_after_conflict,
 )
 from canvod.store_metadata.location import open_repository, repository_config
 from canvod.store_metadata.summary import cadence_ranges
@@ -1466,7 +1468,7 @@ class MyIcechunkStore:
         self._logger.info(f"Wrote dataset to group '{group_name}' (mode={mode})")
 
     #: Attempts of a growth commit that loses a conflict (:meth:`grow_day_blocks`).
-    GROWTH_ATTEMPTS = 3
+    GROWTH_ATTEMPTS = CONFLICT_TRIES
 
     def grow_day_blocks(
         self,
@@ -1508,7 +1510,9 @@ class MyIcechunkStore:
             If a cadence does not fit the chunks, or a day has a block at a
             coarser cadence.
         RuntimeError
-            If the growth still conflicts after ``GROWTH_ATTEMPTS`` attempts.
+            If the growth still conflicts after ``GROWTH_ATTEMPTS`` attempts,
+            with :func:`~canvod.store_metadata.io.wait_after_conflict`
+            between them.
         """
         epoch_chunk = int((self.chunk_strategy or {}).get("epoch", 180))
         last_error: Exception | None = None
@@ -1539,10 +1543,14 @@ class MyIcechunkStore:
                         config=self.settings,
                     )
                 except (icechunk.ConflictError, icechunk.RebaseFailedError) as err:
-                    self._logger.info(
-                        f"Growth commit lost a conflict (attempt {attempt}): {err}"
-                    )
                     last_error = err
+                    if attempt == self.GROWTH_ATTEMPTS:
+                        break
+                    seconds = wait_after_conflict(attempt)
+                    self._logger.info(
+                        f"Growth commit lost a conflict (attempt {attempt}), "
+                        f"tried again after {seconds:.1f} s: {err}"
+                    )
         msg = (
             f"Could not grow the day blocks of {self.store_path} on branch "
             f"'{branch}': other commits conflicted {self.GROWTH_ATTEMPTS} "

@@ -62,3 +62,14 @@ recipes run these from the command line (`just metadata-show <store>`,
 ```bash
 just test-package canvod-store-metadata
 ```
+
+`tests/test_s3_store.py` tests stores on S3 against a real S3 service and
+is skipped unless `CANVOD_TEST_S3_URL` (an S3 URL in an existing
+bucket) and the `AWS_*` variables are set; its docstring lists them. CI
+runs it in `.github/workflows/test_s3.yml` against RustFS, the S3
+emulator Icechunk's own CI uses, at the tag of Icechunk's compose file
+for the version in `uv.lock` (icechunk v2.3.0: RustFS 1.0.0-rc.6).
+When `uv.lock` moves to a new Icechunk, update the tag and its digest
+there. MinIO is not used: its community edition is no longer maintained.
+Any emulator must support conditional writes, or the conflict tests
+mean nothing.

@@ -82,7 +82,12 @@ from canvodpy.orchestrator.resources import (
     MemoryMonitor,
     deprecate_no_effect_arguments,
 )
-from canvodpy.orchestrator.store_retry import STORE_ERROR_TYPES, call_with_store_retries
+from canvodpy.orchestrator.store_retry import (
+    CONFLICT_TRIES,
+    STORE_ERROR_TYPES,
+    call_with_store_retries,
+    wait_after_conflict,
+)
 from canvodpy.run_history import (
     ActiveRun,
     DayResult,
@@ -1619,41 +1624,49 @@ class PipelineOrchestrator:
         submit_fork: Callable[[_ForkJob], Future],
         batch_index: int,
     ) -> dict[str, GroupWriteResult]:
-        """Commit a forked day; after a lost conflict, write it once again.
+        """Commit a forked day; after a lost conflict, write it again.
 
-        Runs in the writer thread. A conflict means another run wrote the
-        day's chunks first: the day is planned again against the new tip
-        (whose log book now holds that run's files), its fork jobs run
-        again in the pool, and the day is committed. A second lost
-        conflict raises.
+        Runs in the writer thread. A conflict means another run committed
+        first: after :func:`~canvod.store_metadata.io.wait_after_conflict`
+        the day is planned again against the new tip (whose log book now
+        holds that run's files), its fork jobs run again in the pool, and
+        the day is committed; up to
+        :data:`~canvod.store_metadata.io.CONFLICT_TRIES` tries in
+        all (#339).
 
         Raises
         ------
         icechunk.ConflictError
-            If the day lost a conflict twice.
+            If the day lost the conflict on every try.
         """
-        try:
-            return processor._commit_forked_day(planned, results)
-        except icechunk.ConflictError as exc:
-            self._logger.warning(
-                "forked_day_conflict_retrying",
-                date=planned.date_key,
-                error=str(exc),
-            )
-        replanned = processor.plan_forked_day(task_descriptors)
-        if replanned is None:
-            msg = (
-                f"Day {planned.date_key} could not be planned again after a "
-                "lost conflict: the store no longer has its day blocks."
-            )
-            raise RuntimeError(msg)
-        jobs = [_ForkJob(task, fork) for task, fork in replanned.tasks]
-        futures = [(job, submit_fork(job)) for job in jobs]
-        retried = [
-            self._fork_result(planned.date_key, job, fut, batch_index)
-            for job, fut in futures
-        ]
-        return processor._commit_forked_day(replanned, retried)
+        for retry in range(1, CONFLICT_TRIES):
+            try:
+                return processor._commit_forked_day(planned, results)
+            except icechunk.ConflictError as exc:
+                seconds = wait_after_conflict(retry)
+                self._logger.warning(
+                    "forked_day_conflict_retrying",
+                    date=planned.date_key,
+                    retry=retry,
+                    of=CONFLICT_TRIES - 1,
+                    waited_seconds=round(seconds, 1),
+                    error=str(exc),
+                )
+            replanned = processor.plan_forked_day(task_descriptors)
+            if replanned is None:
+                msg = (
+                    f"Day {planned.date_key} could not be planned again after a "
+                    "lost conflict: the store no longer has its day blocks."
+                )
+                raise RuntimeError(msg)
+            jobs = [_ForkJob(task, fork) for task, fork in replanned.tasks]
+            futures = [(job, submit_fork(job)) for job in jobs]
+            results = [
+                self._fork_result(planned.date_key, job, fut, batch_index)
+                for job, fut in futures
+            ]
+            planned = replanned
+        return processor._commit_forked_day(planned, results)
 
     def _finish_forked_day(
         self,

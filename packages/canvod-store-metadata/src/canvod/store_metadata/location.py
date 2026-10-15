@@ -6,6 +6,7 @@ new kind of storage is added in one place: a new :class:`StoreLocation`.
 
 from __future__ import annotations
 
+import os
 import posixpath
 import re
 from abc import ABC, abstractmethod
@@ -20,6 +21,14 @@ if TYPE_CHECKING:
 
 #: The command that moves a store to the metadata form of ADR 0014.
 MIGRATE_COMMAND = "canvodpy store migrate-metadata"
+
+#: The environment variable that puts the bucket in the path of S3
+#: requests (``endpoint/bucket/key``) instead of the host name
+#: (``bucket.endpoint/key``), as self-hosted S3 services such as Ceph or
+#: RustFS expect (#303).
+PATH_STYLE_VARIABLE = "CANVOD_S3_PATH_STYLE"
+_ON = frozenset({"1", "true", "yes", "on"})
+_OFF = frozenset({"", "0", "false", "no", "off"})
 
 
 class StoreLocation(ABC):
@@ -93,15 +102,27 @@ class S3StoreLocation(StoreLocation):
     ``AWS_PROFILE``) or the shared AWS files (``~/.aws/credentials``,
     ``~/.aws/config``), as do region and endpoint (``AWS_REGION``,
     ``AWS_ENDPOINT_URL``): never from the settings or the store metadata,
-    and they are never logged.
+    and they are never logged. ``CANVOD_S3_PATH_STYLE=1`` puts the bucket
+    in the request path, for S3 services that expect it.
     """
 
     bucket: str
     prefix: str
 
     def storage(self) -> icechunk.Storage:
+        """The Icechunk storage, configured from the environment.
+
+        Raises
+        ------
+        ValueError
+            If ``CANVOD_S3_PATH_STYLE`` is set to something other than
+            yes or no.
+        """
         return icechunk.s3_storage(
-            bucket=self.bucket, prefix=self.prefix, from_env=True
+            bucket=self.bucket,
+            prefix=self.prefix,
+            from_env=True,
+            force_path_style=_path_style(),
         )
 
     def __truediv__(self, relative: str | Path) -> S3StoreLocation:
@@ -144,11 +165,27 @@ class S3StoreLocation(StoreLocation):
             "Credentials come from the AWS_ACCESS_KEY_ID and "
             "AWS_SECRET_ACCESS_KEY environment variables, AWS_PROFILE or "
             "~/.aws/credentials; region and endpoint from AWS_REGION and "
-            "AWS_ENDPOINT_URL."
+            "AWS_ENDPOINT_URL. A self-hosted S3 service may also need "
+            f"{PATH_STYLE_VARIABLE}=1."
         )
 
     def __str__(self) -> str:
         return f"s3://{self.bucket}/{self.prefix}"
+
+
+def _path_style() -> bool:
+    """Whether ``CANVOD_S3_PATH_STYLE`` asks for path-style requests."""
+    value = os.environ.get(PATH_STYLE_VARIABLE, "")
+    if value.strip().lower() in _ON:
+        return True
+    if value.strip().lower() in _OFF:
+        return False
+    msg = (
+        f"{PATH_STYLE_VARIABLE}={value!r} is neither on nor off: set it to 1 "
+        "(the bucket in the request path, for self-hosted S3 services) or 0, "
+        "or leave it unset."
+    )
+    raise ValueError(msg)
 
 
 def _relative(location: StoreLocation, relative: str | Path) -> PurePosixPath:

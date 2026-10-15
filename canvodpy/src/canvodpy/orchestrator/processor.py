@@ -3717,7 +3717,8 @@ class RinexDataProcessor:
         ------
         icechunk.RebaseFailedError, icechunk.ConflictError
             If another run wrote the same chunks first; nothing is
-            committed, and the caller retries once.
+            committed, and the caller tries the day again (up to
+            :data:`~canvod.store_metadata.io.CONFLICT_TRIES` tries in all).
         PreprocessingMismatchError
             If a group holds data preprocessed differently.
         """
