@@ -199,7 +199,7 @@ processing:
   # ---------------------------------------------------------------------------
   icechunk:
     # https://canvodpy.eu/guides/settings/#processing-icechunk-compression_level
-    compression_level: 5
+    compression_level: 3
     # https://canvodpy.eu/guides/settings/#processing-icechunk-compression_algorithm
     compression_algorithm: zstd  # currently only zstd is supported
     # https://canvodpy.eu/guides/settings/#processing-icechunk-inline_chunk_threshold_bytes
