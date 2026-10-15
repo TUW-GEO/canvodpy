@@ -163,9 +163,7 @@ class GnssResearchSite:
             if getattr(config, "active", True)
         }
 
-    def add_receiver_metadata(
-        self, dataset: xr.Dataset, receiver_name: str
-    ) -> xr.Dataset:
+    def add_receiver_metadata(self, dataset: xr.Dataset, group: str) -> xr.Dataset:
         """``dataset`` with the receiver's ``metadata`` setting in its attributes.
 
         Attributes the dataset already has are kept; a key of the setting
@@ -176,10 +174,13 @@ class GnssResearchSite:
         ----------
         dataset : xr.Dataset
             Data of the receiver.
-        receiver_name : str
-            Name of the receiver.
+        group : str
+            The GNSS store group the data go to: a canopy receiver's name,
+            or a reference receiver's group per canopy
+            (``reference_01_canopy_01``), whose setting is ``reference_01``'s.
         """
-        receiver_meta = self.get_receiver_metadata(receiver_name)
+        receiver = self._site_config.receiver_of_group(group)
+        receiver_meta = self.get_receiver_metadata(receiver) if receiver else None
         if not receiver_meta:
             return dataset
         skipped = {k for k in receiver_meta if k in dataset.attrs}

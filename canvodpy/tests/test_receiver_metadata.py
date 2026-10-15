@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 import xarray as xr
 
 from canvod.store import GnssResearchSite
@@ -59,3 +60,42 @@ def test_without_a_setting_the_dataset_is_returned_as_it_is(site_settings, monke
     original = _observations()
 
     assert site.add_receiver_metadata(original, "canopy_01") is original
+
+
+def test_a_reference_group_gets_the_reference_receivers_setting(
+    site_settings, monkeypatch
+):
+    # The reference's data go to one group per paired canopy.
+    site = GnssResearchSite(testing.SITE_KEY)
+    settings = {"reference_01": {"mount": "reference mast"}}
+    monkeypatch.setattr(site, "get_receiver_metadata", settings.get)
+
+    ds = site.add_receiver_metadata(_observations(), "reference_01_canopy_01")
+
+    assert ds.attrs["mount"] == "reference mast"
+
+
+@pytest.mark.integration
+def test_a_run_stores_the_setting_of_canopy_and_reference(rosalia_site) -> None:
+    # A reference receiver's data go to a group named after the receiver
+    # and its canopy (reference_01_canopy_01); the setting is the receiver's.
+    from canvod.store import MyIcechunkStore
+    from canvodpy import Site
+
+    config, test_site = rosalia_site
+    site = config.sites.sites[testing.SITE_KEY]
+    site.receivers = {
+        name: cfg.model_copy(update={"metadata": {"mount": f"{name} mast"}})
+        for name, cfg in test_site._site_config.receivers.items()
+    }
+
+    with Site(testing.SITE_KEY).pipeline(n_workers=1) as pipeline:
+        pipeline.process_date("2025001")
+
+    store = MyIcechunkStore(
+        config.processing.storage.get_gnss_store_path(testing.SITE_KEY)
+    )
+    assert store.read_group("canopy_01").attrs["mount"] == "canopy_01 mast"
+    assert (
+        store.read_group("reference_01_canopy_01").attrs["mount"] == "reference_01 mast"
+    )

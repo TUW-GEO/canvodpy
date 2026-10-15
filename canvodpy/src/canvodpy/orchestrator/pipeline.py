@@ -1339,10 +1339,21 @@ class PipelineOrchestrator:
                                 processor._canonical_name(fname),
                                 ds,
                             )
+                        # The receiver's `metadata` setting, then
                         # processing.preprocessing (if set) on the whole
                         # receiver-day, so time bins can span two files
                         augmented = preprocess_files(
-                            sorted(group_results, key=lambda x: x[0].name),
+                            [
+                                (
+                                    fname,
+                                    processor.site.add_receiver_metadata(
+                                        ds, receiver_name
+                                    ),
+                                )
+                                for fname, ds in sorted(
+                                    group_results, key=lambda x: x[0].name
+                                )
+                            ],
                             processor._config.processing.preprocessing,
                         )
                         rinex_files = receiver_files_lookup[group_key]

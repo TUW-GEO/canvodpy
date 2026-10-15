@@ -359,6 +359,30 @@ class SiteConfig(_StrictModel):
         """
         return [name for name, cfg in self.receivers.items() if cfg.type == "canopy"]
 
+    def receiver_of_group(self, group: str) -> str | None:
+        """The receiver whose data a GNSS store group holds.
+
+        A canopy receiver's group is its name; a reference receiver has one
+        group per paired canopy (:func:`reference_store_group`).
+
+        Parameters
+        ----------
+        group : str
+            Group name in the GNSS store, e.g. ``"reference_01_canopy_01"``.
+
+        Returns
+        -------
+        str or None
+            The receiver's name in ``receivers``, or None for a group no
+            receiver writes.
+        """
+        if group in self.receivers and self.receivers[group].type == "canopy":
+            return group
+        for reference, canopy in self.get_reference_canopy_pairs():
+            if reference_store_group(reference, canopy) == group:
+                return reference
+        return None
+
     def resolve_paired_canopies(self, receiver_name: str) -> list[str]:
         """Resolve paired_canopies for a reference receiver to a list of canopy names.
 
