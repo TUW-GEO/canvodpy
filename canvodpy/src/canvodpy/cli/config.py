@@ -164,6 +164,117 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
         console.print("[green]✓ Configuration is valid: you're ready to go![/green]\n")
 
 
+#: The placeholder a settings file from a store keeps for a machine value
+#: (see ``canvod.store_metadata.settings_file.PLACEHOLDER``).
+_PLACEHOLDER = "TODO"
+
+
+def _store_file_comment(store: str) -> str:
+    """The comment header of a settings file written from a store."""
+    return (
+        f"# Settings written by `canvodpy config init --from-store {store}`.\n"
+        "# The content settings below are the store's and must stay as they "
+        "are;\n"
+        "# the values that are TODO are yours to fill in (an interactive run "
+        "asks).\n"
+    )
+
+
+def _run_store_wizard(settings, site_name, receiver_dirs):
+    """Ask the machine values in ``settings``; answers fill them in.
+
+    ``settings`` is the mapping from ``settings_from_store``, whose machine
+    values are ``TODO``. A receiver's directory offers the directory the
+    store records as the default answer.
+    """
+    site = settings["sites"][site_name]
+    site["gnss_site_data_root"] = _ask(
+        f"  Data root directory for site '{site_name}'",
+        f"sites.{site_name}.gnss_site_data_root",
+    )
+    for name, receiver in site["receivers"].items():
+        receiver["directory"] = _ask(
+            f"  Data directory for receiver '{name}'",
+            f"sites.{site_name}.receivers.{name}.directory",
+            default=receiver_dirs.get(name),
+        )
+    storage = settings["processing"]["storage"]
+    storage["aux_data_dir"] = _ask(
+        "  Where should the auxiliary files go?",
+        "processing.storage.aux_data_dir",
+    )
+    storage["shared_aux_cache_dir"] = _ask(
+        "  Where should the shared aux cache go?",
+        "processing.storage.shared_aux_cache_dir",
+    )
+    settings["processing"]["logging"]["log_dir"] = _ask(
+        "  Where should the log files go?", "processing.logging.log_dir"
+    )
+    metadata = settings["processing"]["metadata"]
+    metadata["author"] = _ask("  Your name", "processing.metadata.author")
+    metadata["email"] = _ask("  Your email", "processing.metadata.email")
+    metadata["institution"] = _ask("  Institution", "processing.metadata.institution")
+    return settings
+
+
+def _print_store_credentials(store: str) -> None:
+    """Tell the user which environment variables to set (never written)."""
+    console.print("\n[bold]Set these environment variables:[/bold]")
+    console.print("  - For NASA CDDIS access:")
+    console.print(
+        "      export CANVOD__PROCESSING__CREDENTIALS__NASA_EARTHDATA_ACC_MAIL="
+        "you@example.com"
+    )
+    if store.startswith("s3://"):
+        console.print("  - For the S3 store, credentials and endpoint come from:")
+        console.print(
+            "      AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (or AWS_PROFILE), "
+            "AWS_REGION,"
+        )
+        console.print(
+            "      AWS_ENDPOINT_URL; set CANVOD_S3_PATH_STYLE=1 for a "
+            "self-hosted S3 service."
+        )
+    console.print()
+
+
+def _init_from_store(config_dir: Path, store: str, no_interactive: bool) -> None:
+    """Write ``config_dir/canvod-settings.yaml`` from ``store``."""
+    from canvod.store_metadata import read_repository_metadata, settings_from_store
+
+    canvod_dest = config_dir / "canvod-settings.yaml"
+    if canvod_dest.exists():
+        console.print(f"[red]❌ {canvod_dest} already exists; not overwritten.[/red]")
+        console.print(
+            "  Use a different --config-dir, or remove the file and run it again."
+        )
+        raise typer.Exit(1)
+
+    try:
+        settings = settings_from_store(store)
+    except (ValueError, OSError) as e:
+        console.print(f"[red]❌ {e}[/red]", highlight=False)
+        raise typer.Exit(1) from e
+
+    site_name = next(iter(settings["sites"]))
+    if not no_interactive:
+        repository = read_repository_metadata(store)
+        receivers = repository.get("instruments", {}).get("receivers", {})
+        receiver_dirs = {
+            name: meta.get("directory") for name, meta in receivers.items()
+        }
+        settings = _run_store_wizard(settings, site_name, receiver_dirs)
+
+    text = _store_file_comment(store) + yaml.safe_dump(settings, sort_keys=False)
+    canvod_dest.write_text(text)
+    console.print(f"[green]✓ Wrote {canvod_dest}[/green]")
+    console.print(
+        "\n[i]The content settings are the store's and must stay as they are; "
+        "the TODO values are yours to fill in.[/i]"
+    )
+    _print_store_credentials(store)
+
+
 @config_app.command()
 def init(
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
@@ -171,7 +282,7 @@ def init(
         False,
         "--force",
         "-f",
-        help="Overwrite existing files",
+        help="Overwrite existing files (no effect with --from-store)",
     ),
     interactive: bool = typer.Option(
         False,
@@ -179,12 +290,31 @@ def init(
         "-i",
         help="Walk through setup with a guided Q&A instead of hand-editing YAML",
     ),
+    from_store: Annotated[
+        str | None,
+        typer.Option(
+            "--from-store",
+            help="Write the settings of a store from its content settings: a "
+            "local dir or an s3://bucket/prefix URL",
+        ),
+    ] = None,
+    no_interactive: bool = typer.Option(
+        False,
+        "--no-interactive",
+        help="With --from-store: keep the machine-value placeholders (TODO) "
+        "instead of asking",
+    ),
 ) -> None:
-    """Create canvod-settings.yaml from its template.
+    """Create canvod-settings.yaml from its template, or from a store.
 
     The file goes into the configuration directory that --config-dir sets.
     Create a naming recipe for each receiver with
     just naming-init SITE NAME.
+
+    With --from-store STORE, the file is written from the store's content
+    settings (a folder or an s3:// URL): the settings that shape its data
+    stay as they are, and the machine values are asked (or left as TODO
+    with --no-interactive).
 
     \f
     Parameters
@@ -197,6 +327,10 @@ def init(
     interactive : bool
         Ask setup questions instead of leaving placeholder values for the
         user to hand-edit afterward.
+    from_store : str | None
+        A store whose content settings the file reproduces.
+    no_interactive : bool
+        Keep the ``TODO`` machine values instead of asking.
 
     Returns
     -------
@@ -207,6 +341,10 @@ def init(
 
     # Create config directory
     config_dir.mkdir(parents=True, exist_ok=True)
+
+    if from_store is not None:
+        _init_from_store(config_dir, from_store, no_interactive)
+        return
 
     # Templates ship as real package data inside canvod-config (see
     # get_template_dir()'s docstring): always reachable regardless of
@@ -335,6 +473,28 @@ def _print_site_report(report) -> None:
                 say(f"        {escape(kind)}: {count} (e.g. {escape(example.name)})")
 
 
+def _todo_placeholders(config_dir: Path) -> list[str]:
+    """The dotted keys of every ``TODO`` value in ``config_dir``'s settings."""
+    settings_file = config_dir / "canvod-settings.yaml"
+    if not settings_file.exists():
+        return []
+    data = yaml.safe_load(settings_file.read_text()) or {}
+
+    def walk(node, path: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                walk(value, f"{path}.{key}" if path else str(key))
+        elif isinstance(node, list):
+            for index, value in enumerate(node):
+                walk(value, f"{path}[{index}]")
+        elif node == _PLACEHOLDER:
+            placeholder_keys.append(path)
+
+    placeholder_keys: list[str] = []
+    walk(data, "")
+    return placeholder_keys
+
+
 @config_app.command()
 def validate(
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
@@ -360,7 +520,9 @@ def validate(
     """Validate the configuration and the receiver data it points to.
 
     It finds the data files the same way as canvodpy run, so every error
-    it reports would stop a run or make its results wrong.
+    it reports would stop a run or make its results wrong. A settings file
+    written from a store (:meth:`init`) that still has placeholder values is
+    listed, and the command exits with code 1.
 
     \f
     Parameters
@@ -381,6 +543,21 @@ def validate(
 
     config_dir = get_default_config_dir()
     console.print(f"\n[bold]Validating configuration in {config_dir}...[/bold]\n")
+
+    # A settings file written from a store keeps TODO machine values; list
+    # them before anything else, so the user knows what to fill in (and so a
+    # not-yet-valid value such as a placeholder email does not hide them).
+    placeholders = _todo_placeholders(config_dir)
+    if placeholders:
+        console.print(
+            f"\n[yellow]⚠️  {len(placeholders)} placeholder value(s) (TODO) "
+            "in canvod-settings.yaml:[/yellow]\n"
+        )
+        for key in placeholders:
+            console.print(f"    {key}")
+        console.print("\nFill them in, or re-run the interactive wizard:")
+        console.print("  canvodpy config init --from-store <store>\n")
+        raise typer.Exit(1)
 
     try:
         config = load_config(config_dir)

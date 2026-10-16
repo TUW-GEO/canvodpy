@@ -209,6 +209,165 @@ class TestValidateRecipeWithoutFilemap:
         assert "uv sync --group filemap" not in result.output
 
 
+class TestConfigInitFromStore:
+    """``canvodpy config init --from-store`` writes a store's settings."""
+
+    @staticmethod
+    def _make_store(tmp_path):
+        """A GNSS store with content settings at ``<tmp>/root/<site>/rinex``."""
+        from canvod.config import load_config
+        from canvod.config.models import ReceiverConfig
+        from canvod.store_metadata import ensure_store_metadata
+        from canvod.utils import testing
+
+        folder = tmp_path / "settings"
+        testing.write_settings(folder)
+        config = load_config(config_dir=folder).model_copy(deep=True)
+        site = config.sites.sites[testing.SITE_KEY]
+        site.store_description = "GNSS-T observations below an Ent canopy"
+        site.receivers["reference_01"] = ReceiverConfig(
+            type="reference", directory="01_reference", paired_canopies=["canopy_01"]
+        )
+        store = tmp_path / "root" / testing.SITE_KEY / "rinex"
+        ensure_store_metadata(
+            store,
+            config=config,
+            site_name=testing.SITE_KEY,
+            store_type="gnss_store",
+            source_format="rinex3",
+            names=["canopy_01", "reference_01_canopy_01"],
+        )
+        return store
+
+    @staticmethod
+    def _invoke(store, config_dir, *extra, input=None):
+        args = [
+            "config",
+            "init",
+            "--config-dir",
+            str(config_dir),
+            "--from-store",
+            str(store),
+            *extra,
+        ]
+        return runner.invoke(_app(), args, input=input)
+
+    def test_no_interactive_writes_placeholder_values(self, tmp_path):
+        store = self._make_store(tmp_path)
+        config_dir = tmp_path / "config"
+        result = self._invoke(store, config_dir, "--no-interactive")
+
+        assert result.exit_code == 0, result.output
+        text = (config_dir / "canvod-settings.yaml").read_text()
+        assert "gnss_site_data_root: TODO" in text
+        assert "directory: TODO" in text
+        assert "log_dir: TODO" in text
+        assert "author: TODO" in text
+        # The store's root and name, and the site and receivers it records.
+        assert str(tmp_path / "root") in text
+        assert "canopy_01" in text and "reference_01" in text
+
+    def test_interactive_asks_and_writes_answers(self, tmp_path):
+        store = self._make_store(tmp_path)
+        config_dir = tmp_path / "config"
+        answers = (
+            f"{tmp_path / 'data'}\n"
+            f"{tmp_path / 'canopy'}\n"
+            f"{tmp_path / 'ref'}\n"
+            f"{tmp_path / 'aux'}\n"
+            f"{tmp_path / 'cache'}\n"
+            f"{tmp_path / 'logs'}\n"
+            "Tolkien\n"
+            "a@example.com\n"
+            "Oxford\n"
+        )
+        result = self._invoke(store, config_dir, input=answers)
+
+        assert result.exit_code == 0, result.output
+        text = (config_dir / "canvod-settings.yaml").read_text()
+        assert str(tmp_path / "data") in text
+        assert str(tmp_path / "canopy") in text
+        assert str(tmp_path / "ref") in text
+        assert "author: Tolkien" in text
+        assert "email: a@example.com" in text
+
+    def test_refuses_an_existing_file_even_with_force(self, tmp_path):
+        store = self._make_store(tmp_path)
+        config_dir = tmp_path / "config"
+        config_dir.mkdir()
+        existing = config_dir / "canvod-settings.yaml"
+        existing.write_text("# hand-edited, do not touch\n")
+
+        result = self._invoke(store, config_dir, "--no-interactive", "--force")
+
+        assert result.exit_code == 1
+        assert "already exists" in result.output
+        assert existing.read_text() == "# hand-edited, do not touch\n"
+
+    def test_a_store_without_content_settings_names_migrate(self, tmp_path):
+        from canvod.store_metadata.testing import give_test_metadata
+
+        store = give_test_metadata(tmp_path / "old")
+        config_dir = tmp_path / "config"
+        result = self._invoke(store, config_dir, "--no-interactive")
+
+        assert result.exit_code == 1
+        assert "migrate-metadata" in result.output
+
+
+class TestValidateListsPlaceholders:
+    """``config validate`` lists the TODO values of a settings file."""
+
+    def test_lists_placeholders_and_exits_1(self, tmp_path):
+        from canvod.config import load_config
+        from canvod.config.models import ReceiverConfig
+        from canvod.store_metadata import ensure_store_metadata
+        from canvod.utils import testing
+
+        folder = tmp_path / "settings"
+        testing.write_settings(folder)
+        config = load_config(config_dir=folder).model_copy(deep=True)
+        site = config.sites.sites[testing.SITE_KEY]
+        site.store_description = "GNSS-T observations below an Ent canopy"
+        site.receivers["reference_01"] = ReceiverConfig(
+            type="reference", directory="01_reference", paired_canopies=["canopy_01"]
+        )
+        store = tmp_path / "root" / testing.SITE_KEY / "rinex"
+        ensure_store_metadata(
+            store,
+            config=config,
+            site_name=testing.SITE_KEY,
+            store_type="gnss_store",
+            source_format="rinex3",
+            names=["canopy_01", "reference_01_canopy_01"],
+        )
+
+        config_dir = tmp_path / "config"
+        runner.invoke(
+            _app(),
+            [
+                "config",
+                "init",
+                "--config-dir",
+                str(config_dir),
+                "--from-store",
+                str(store),
+                "--no-interactive",
+            ],
+        )
+        result = runner.invoke(
+            _app(), ["config", "validate", "--config-dir", str(config_dir)]
+        )
+
+        assert result.exit_code == 1
+        assert (
+            "f'sites.fangorn.gnss_site_data_root'" in (result.output)
+            or "sites.fangorn.gnss_site_data_root" in result.output
+        )
+        assert "processing.logging.log_dir" in result.output
+        assert "processing.storage.aux_data_dir" in result.output
+
+
 class TestConfigDirOption:
     def test_selects_the_settings_and_the_recipes(self, tmp_path):
         pytest.importorskip("canvod.filemap.recipe_files")

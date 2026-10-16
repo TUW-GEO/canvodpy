@@ -60,6 +60,7 @@ from .location import (
 )
 from .migration import migrate_metadata
 from .schema import MetadataRuleWarning, StoreMetadata
+from .settings_file import PLACEHOLDER, settings_from_store
 from .show import extract_env, format_metadata, show_metadata
 from .snapshot import RESERVED_GROUP
 from .summary import summarize_store
@@ -72,6 +73,7 @@ __all__ = [
     "MIGRATE_COMMAND",
     "MetadataRuleWarning",
     "MissingContentSettingsError",
+    "PLACEHOLDER",
     "RESERVED_GROUP",
     "S3StoreLocation",
     "StorageUnreachableError",
@@ -107,6 +109,7 @@ __all__ = [
     "rewrite_manifests",
     "scan_stores",
     "scan_stores_as_stac",
+    "settings_from_store",
     "show_metadata",
     "store_item",
     "store_location",
