@@ -601,7 +601,9 @@ def _(mo, run_view):
                         .mark_bar(color=chart_series[0])
                         .encode(
                             y=alt.Y(
-                                "Stage:N", axis=alt.Axis(title="Stage", labelAngle=0)
+                                "Stage:N",
+                                sort="-x",
+                                axis=alt.Axis(title="Stage"),
                             ),
                             x=alt.X("Seconds:Q", axis=alt.Axis(title="Time (s)")),
                         )
@@ -611,7 +613,10 @@ def _(mo, run_view):
 
         if "day" in run_charts:
             chart_items.append(
-                mo.md("**Time per day.** Total time of the stages of each day.")
+                mo.md(
+                    "**Time per day.** The stage seconds of all receivers of a day, "
+                    "added up. Receivers run in parallel, so this is not wall time."
+                )
             )
             chart_items.append(
                 mo.ui.altair_chart(
