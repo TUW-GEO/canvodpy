@@ -113,17 +113,20 @@ store again, uses the blocks already there, and adds the rest.
   slots from its first to its last epoch.
 - The cadence of a day is the finest sampling interval in the names of the
   files of the day, or the bin length of
-  `processing.preprocessing.temporal_aggregation` when it is set. A day
-  holds a whole number of chunks of 180 epochs
-  (`processing.icechunk.chunk_strategies.gnss_store.epoch`), so the cadence
-  must divide 86400 s / 180 = 480 s: 1 s, 5 s, 15 s, 30 s, or 1 min, for
-  example. Days in one group can have different cadences. A group keeps
-  the chunk size it was created with: a changed setting applies to new
-  groups only (see [Chunks](chunks.md)).
+  `processing.preprocessing.temporal_aggregation` when it is set. Every
+  cadence is stored, and days in one group can have different cadences.
+  A day has ceil(86400 s / cadence) slots; its block holds whole chunks of
+  180 epochs (`processing.icechunk.chunk_strategies.gnss_store.epoch`),
+  padded with empty epochs where the slots don't fill the last chunk (84
+  per day at 15 min, none at 1 s to 1 min). Padding epochs lie between the
+  day's last slot and the next day, and loading leaves them out. A group
+  keeps the chunk size it was created with: a changed setting applies to
+  new groups only (see [Chunks](chunks.md)).
 - A group records its layout in its attributes (`epoch_layout:
-  day_blocks`). A store whose groups were written by appending files to
-  the `epoch` axis, by canVODpy versions before day blocks, is still
-  written that way.
+  day_blocks`) and the block of each day in `day_block_index` (start and
+  stop on the `epoch` axis, slots, cadence). A store whose groups were
+  written by appending files to the `epoch` axis, by canVODpy versions
+  before day blocks, is still written that way.
 
 `GnssResearchSite.read_receiver_data()` returns only the slots with data.
 `MyIcechunkStore.read_group()` returns every slot; with `drop_empty=True`
@@ -204,8 +207,8 @@ A write must match the group. A run stops with an error if:
   (`epoch.attrs["time_system"] == "GPS"`). Groups written by canVODpy
   before it stored every epoch in GPS time have no record (their SBF and
   NMEA epochs were UTC, 18 s earlier); write to a new store;
-- the cadence of a day block doesn't divide 480 s, or a day stored at a
-  coarser cadence gets a file sampled more often (`CadenceError`);
+- a day stored at a coarser cadence gets a file sampled more often
+  (`CadenceError`);
 - a file would be appended to a group made of day blocks (`LayoutError`).
 
 A file with two epochs in one slot, for example because its name gives a

@@ -477,3 +477,45 @@ class TestVodStoreMetadata:
         with pytest.raises(OSError, match="disk full"):
             vc.compute_day(_day_datasets(), "a")
         site._site.store_vod_analyses_batch.assert_not_called()
+
+
+class TestComputeBulkFromDayBlocks:
+    def test_padding_slots_never_reach_the_vod(self):
+        # 15-min data: 96 slots padded to 180 per day, and the padding of the
+        # canopy and the reference group has the same times.
+        import contextlib
+
+        import icechunk
+
+        from canvod.store.day_blocks import add_day_block, write_file_region
+
+        repo = icechunk.Repository.create(icechunk.in_memory_storage())
+        session = repo.writable_session("main")
+        cfg = _make_analysis_cfg()
+        day = np.datetime64("2025-01-01", "D")
+        epochs = day.astype("M8[ns]") + np.arange(4) * np.timedelta64(15, "m")
+        for group in (cfg.canopy_receiver, cfg.reference_store_group):
+            ds = _make_ds(n_epochs=4).assign_coords(
+                epoch=("epoch", epochs, {"time_system": "GPS"})
+            )
+            add_day_block(session, group, day, 900, template=ds)
+            write_file_region(session, group, ds)
+        session.commit("two receivers, one day")
+
+        class _Store:
+            @contextlib.contextmanager
+            def readonly_session(self, branch="main"):
+                yield repo.readonly_session(branch)
+
+        site = _make_site({"a": cfg})
+        site.gnss_store = _Store()
+        vc = VodComputer(site)
+
+        with unittest.mock.patch.object(
+            vc, "_compute", side_effect=lambda canopy, sky, name: canopy
+        ):
+            _, canopy, sky = vc._compute_bulk_entry("a", None, None)
+
+        assert canopy.sizes["epoch"] == 96
+        assert canopy.epoch.values[-1] < day + np.timedelta64(1, "D")
+        np.testing.assert_array_equal(canopy.epoch.values[:4], epochs)

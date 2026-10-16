@@ -199,7 +199,7 @@ _Avoid_: metadata table, registry
 **Day block**:
 The part of a group that holds one receiver-day (or one day of a VOD
 analysis): every possible epoch of that day at its cadence, with or
-without data.
+without data, padded with empty epochs to whole chunks.
 _Avoid_: day chunk, partition
 
 **Cadence**:

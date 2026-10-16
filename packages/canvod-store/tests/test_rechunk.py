@@ -320,10 +320,8 @@ class TestRechunkDayBlocks:
 
     @pytest.mark.parametrize("epoch", [7, -1, None])
     def test_chunks_that_split_a_day_are_refused(self, day_block_store, epoch):
-        from canvod.store.day_blocks import CadenceError
-
         chunks = {"sid": -1} if epoch is None else {"epoch": epoch, "sid": -1}
-        with pytest.raises((CadenceError, ValueError)):
+        with pytest.raises(ValueError):
             day_block_store.rechunk_group("canopy_01", chunks=chunks)
         # Refused before anything is staged.
         assert "canopy_01_rechunked_temp" not in day_block_store.repo.list_branches()
