@@ -3,13 +3,15 @@ message: "If you use this software, please cite it as below."
 type: software
 title: "canVODpy: An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrievals"
 abstract: >
-  canVODpy is the central community-driven software suite for GNSS-Transmissometry
-  (GNSS-T), providing the core ecosystem for deriving and analyzing canopy Vegetation
-  Optical Depth (VOD) from GNSS signal-to-noise ratio (SNR) observations. It provides
-  modular packages for RINEX and SBF data reading, auxiliary data handling (SP3/CLK
-  and broadcast ephemeris), hemispheric grid operations, Icechunk-based versioned
-  storage, visualization, and VOD calculation algorithms, all tied together by
-  Pydantic-validated configuration and a pipeline orchestrator.
+  canVODpy aims to be the central community-driven software suite for deriving canopy
+  Vegetation Optical Depth (VOD) from the signal-to-noise ratio of the same GNSS
+  signal, received at the same time by one receiver below the canopy and one with an
+  unobstructed view of the sky. It reads RINEX v2.11, RINEX v3.04, stripped RINEX
+  v3.05, NMEA v4.00, and Septentrio binary (SBF) files; computes the satellite angles
+  of every observation from final orbit and clock products or from broadcast
+  ephemerides; keeps observations and VOD in versioned Icechunk stores with DataCite,
+  ACDD, and STAC metadata; retrieves VOD with the zeroth-order tau-omega model; and
+  assigns observations to hemispheric grids.
 authors:
   - family-names: Bader
     given-names: Nicolas François

@@ -1,7 +1,7 @@
 [project]
 name = "canvod-vod"
 version = "0.4.0"
-description = "Vegetation Optical Depth retrieval algorithms for GNSS-Transmissometry"
+description = "VOD retrieval from a canopy and a reference GNSS receiver"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]

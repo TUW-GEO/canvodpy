@@ -1,7 +1,7 @@
 [project]
 name = "canvod-config"
 version = "0.4.0"
-description = "Configuration models and YAML loading for canVODpy"
+description = "The canVODpy settings file: models, loading, and checks"
 readme = "README.md"
 requires-python = ">=3.14"
 authors = [

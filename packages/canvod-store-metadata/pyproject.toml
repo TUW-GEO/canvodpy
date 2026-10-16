@@ -1,7 +1,7 @@
 [project]
 name = "canvod-store-metadata"
 version = "0.4.0"
-description = "FAIR-compliant metadata management for canVODpy stores"
+description = "Store metadata for canVODpy stores, in DataCite, ACDD, and STAC"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]
