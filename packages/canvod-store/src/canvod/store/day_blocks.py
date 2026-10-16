@@ -9,10 +9,11 @@ of the axis in the order the days are first written. The group's block index
 (:data:`~canvod.store_metadata.layout.DAY_BLOCK_INDEX_ATTR`) gives each
 day's block. An epoch goes to the nearest slot. The coordinate holds the
 real time of the epoch where there are data and the grid time in empty
-slots; padding slots hold times between the day's last slot and the next
-day, so the coordinate never has missing values. Variables hold their
-missing value in empty and padding slots: NaN for floating-point variables,
-the declared ``_FillValue`` for integer ones. Loading drops the padding.
+slots; padding slots hold the last nanoseconds before the next day, so the
+coordinate never has missing values and keeps rising within the block.
+Variables hold their missing value in empty and padding slots: NaN for
+floating-point variables, the declared ``_FillValue`` for integer ones.
+Loading drops the padding.
 
 The functions take an Icechunk session (or fork) for writes and its Zarr
 store for reads; the caller commits.
@@ -47,6 +48,8 @@ from canvod.store.prepare import (
 from canvod.store.time_encoding import TIME_UNITS, with_time_units
 
 _DAY_NS = 86_400 * 10**9
+#: Command that moves a store written by appending to day blocks.
+MIGRATE_LAYOUT_COMMAND = "canvodpy store migrate-layout SITE --store gnss|vod"
 #: Setting that sets the cadence of aggregated data, named in errors.
 AGGREGATION_SETTING = "processing.preprocessing.temporal_aggregation.freq"
 
@@ -138,17 +141,17 @@ def _padded(slots: int, epoch_chunk: int) -> int:
 def _block_times(block: DayBlock) -> np.ndarray:
     """The grid times of ``block``, padding included, in ns since 1970.
 
-    Slot ``k`` is 00:00 plus ``k`` cadences; the padding slots are spread
-    between the last slot and the next day, so the times keep rising.
+    Slot ``k`` is 00:00 plus ``k`` cadences; the padding slots are the last
+    nanoseconds before the next day. The last slot can hold a real time
+    after its grid time (an epoch near midnight goes to it), so padding
+    right after the grid time could come before that real time.
     """
     day_ns = int(block.day.astype("M8[ns]").astype(np.int64))
     grid = day_ns + np.arange(block.slots, dtype=np.int64) * block.cadence_ns
     pad = block.stop - block.start - block.slots
     if not pad:
         return grid
-    last = int(grid[-1])
-    gap = day_ns + _DAY_NS - last
-    padding = last + (np.arange(1, pad + 1, dtype=np.int64) * gap) // (pad + 1)
+    padding = day_ns + _DAY_NS - pad + np.arange(pad, dtype=np.int64)
     return np.concatenate([grid, padding])
 
 
@@ -169,7 +172,8 @@ def _require_day_blocks(zgroup: zarr.Group, group: str) -> None:
     if not is_day_block_group(zgroup.attrs):
         msg = (
             f"Group '{group}' was written by appending files to its epoch "
-            "axis, not as day blocks, so it cannot take day-block writes."
+            "axis, not as day blocks, so it cannot take day-block writes. "
+            f"Move the store to day blocks first:\n  {MIGRATE_LAYOUT_COMMAND}"
         )
         raise LayoutError(msg)
 
@@ -210,7 +214,8 @@ def _index(zgroup: zarr.Group, group: str) -> dict[str, dict[str, int]]:
         msg = (
             f"Group '{group}' is made of day blocks but has no block index "
             f"('{DAY_BLOCK_INDEX_ATTR}' attribute). It was written by a "
-            "development version of canVODpy; write it again from its files."
+            "development version of canVODpy; give it its block index "
+            f"with:\n  {MIGRATE_LAYOUT_COMMAND}"
         )
         raise LayoutError(msg)
     out: dict[str, dict[str, int]] = {}
@@ -317,11 +322,16 @@ def _create_group(
     template: xr.Dataset,
     epoch_chunk: int,
     dim_chunks: Mapping[str, int] | None = None,
+    *,
+    keep_subgroups: bool = False,
 ) -> None:
     """Create ``group`` with the variables of ``template`` and no epochs.
 
     Dimensions other than ``epoch`` get the chunk sizes of ``dim_chunks``;
-    a dimension it leaves out, or gives ``-1``, is one chunk.
+    a dimension it leaves out, or gives ``-1``, is one chunk. With
+    ``keep_subgroups``, the group exists without arrays (they were
+    deleted) and its subgroups, such as ``metadata/``, stay; otherwise
+    the group is created anew.
     """
     empty = template.isel(epoch=slice(0, 0)).copy()
     empty.attrs = {
@@ -350,7 +360,7 @@ def _create_group(
         empty,
         session,
         group=group,
-        mode="w",
+        mode="a" if keep_subgroups else "w",
         encoding=with_time_units(empty, encoding),
     )
 
@@ -787,6 +797,20 @@ def load_group(
         ds = ds.isel(epoch=_slot_positions(blocks.values()))
     ds.attrs.pop(EPOCH_LAYOUT_ATTR, None)
     ds.attrs.pop(DAY_BLOCK_INDEX_ATTR, None)
+    ds = restore_integers(ds)
+    if not ds.indexes["epoch"].is_monotonic_increasing:
+        ds = ds.sortby("epoch")
+    if drop_empty and day_blocked:
+        ds = drop_empty_slots(ds, group)
+    return ds
+
+
+def restore_integers(ds: xr.Dataset) -> xr.Dataset:
+    """``ds`` with its integer variables back as integers.
+
+    Opening a group masks the ``_FillValue`` of integer variables, which
+    turns them into floats with NaN; this puts the fill value back.
+    """
     for name in list(ds.variables):
         var = ds[name]
         dtype = var.encoding.get("dtype")
@@ -796,14 +820,9 @@ def load_group(
             and var.dtype.kind == "f"
             and "_FillValue" in var.encoding
         ):
-            # Masking turned the integers into floats with NaN; undo it.
             restored = var.fillna(var.encoding["_FillValue"]).astype(dtype)
             restored.encoding = var.encoding
             ds[name] = restored
-    if not ds.indexes["epoch"].is_monotonic_increasing:
-        ds = ds.sortby("epoch")
-    if drop_empty and day_blocked:
-        ds = drop_empty_slots(ds, group)
     return ds
 
 

@@ -374,6 +374,8 @@ just doctor              # environment + config diagnostics
 just store-list          # list every site's gnss/vod stores + status
 just store-info SITE     # branches/groups/stats for one site's store
 just store-log SITE      # commit history graph for one site's store
+just store-migrate-metadata SITE  # move an older store to repository metadata
+just store-migrate-layout SITE    # move a store written by appending to day blocks
 just docs                # preview documentation (opens the browser)
 just docs-lint           # language check of the docs (Vale, Google style)
 just docs-links          # link check of the built docs (lychee)
