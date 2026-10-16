@@ -1,5 +1,6 @@
 """What writers check before they write data (ADR 0014, #203)."""
 
+import threading
 from pathlib import Path
 
 import icechunk
@@ -15,11 +16,13 @@ from canvod.store_metadata import (
     ensure_store_metadata,
     metadata_exists,
     open_repository,
+    write_metadata,
 )
 from canvod.store_metadata.schema import (
     Creator,
     Instruments,
     ReceiverInfo,
+    RepositoryMetadata,
     SiteInfo,
     SpatialExtent,
     StoreIdentity,
@@ -114,6 +117,72 @@ class TestEnsureMetadata:
             path, fail, site_name="Fangorn", store_type="gnss_store"
         )
         assert repository["identity"]["id"] == "fangorn-gnss"
+
+    def test_a_store_another_run_created_meanwhile_is_used(self, tmp_path):
+        """Two runs found the store without metadata; the other one wrote it
+        first. This run goes on with the other run's store (#358).
+        """
+        path = _new_store(tmp_path)
+        other = _metadata().model_copy(deep=True)
+        other.identity.id = "fangorn-other-run"
+
+        def collect_while_the_other_run_creates_it():
+            write_metadata(path, other)
+            return _metadata()
+
+        repository = ensure_metadata(
+            path,
+            collect_while_the_other_run_creates_it,
+            site_name="Fangorn",
+            store_type="gnss_store",
+        )
+
+        assert repository["identity"]["id"] == "fangorn-other-run"
+        assert open_repository(path).get_metadata()["identity"]["id"] == (
+            "fangorn-other-run"
+        )
+
+    def test_a_creation_commit_of_another_run_is_not_replaced(self, tmp_path):
+        """The other run committed the store's creation but has not written
+        its repository metadata yet: this run waits for it and uses it, and
+        does not create the store a second time (#358).
+        """
+        path = _new_store(tmp_path)
+        other = RepositoryMetadata.from_store_metadata(_metadata()).model_dump(
+            mode="json"
+        )
+        other["identity"]["id"] = "fangorn-other-run"
+
+        def collect_after_the_other_runs_creation_commit():
+            repo = open_repository(path)
+            session = repo.writable_session("main")
+            zarr.open_group(session.store, mode="a")
+            commit_with_rebase(
+                session,
+                "Write store metadata",
+                store_path=path,
+                config=_metadata().config,
+                repository=other,
+            )
+            threading.Timer(0.5, repo.set_metadata, args=(other,)).start()
+            return _metadata()
+
+        repository = ensure_metadata(
+            path,
+            collect_after_the_other_runs_creation_commit,
+            site_name="Fangorn",
+            store_type="gnss_store",
+        )
+
+        assert repository["identity"]["id"] == "fangorn-other-run"
+        repo = open_repository(path)
+        assert repo.get_metadata()["identity"]["id"] == "fangorn-other-run"
+        creations = [
+            snapshot
+            for snapshot in repo.ancestry(branch="main")
+            if snapshot.message == "Write store metadata"
+        ]
+        assert len(creations) == 1
 
     def test_a_store_with_old_metadata_is_refused(self, tmp_path):
         path = _new_store(tmp_path)
