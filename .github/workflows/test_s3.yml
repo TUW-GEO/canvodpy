@@ -2,10 +2,11 @@ name: S3 Tests
 
 # Stores on S3 against an S3 emulator (#303): created, opened, metadata
 # written and read, and conflicting commits refused
-# (packages/canvod-store-metadata/tests/test_s3_store.py), and two
-# `canvodpy run` processes writing one store at the same time
-# (canvodpy/tests/test_s3_two_runs.py, #358). Without an S3 service these
-# tests skip, so the platform tests don't run them.
+# (packages/canvod-store-metadata/tests/test_s3_store.py), producing a
+# settings file from a store (`canvodpy/tests/test_config_from_store_s3.py`,
+# #356), and two `canvodpy run` processes writing one store at the same
+# time (`canvodpy/tests/test_s3_two_runs.py`, #358). Without an S3 service
+# these tests skip, so the platform tests don't run them.
 #
 # The emulator is RustFS (Apache-2.0), the one Icechunk's own CI tests
 # against, at the tag Icechunk's compose.yaml uses at the version in
@@ -103,6 +104,7 @@ jobs:
               run: |
                   set -o pipefail
                   uv run pytest packages/canvod-store-metadata/tests/test_s3_store.py \
+                      canvodpy/tests/test_config_from_store_s3.py \
                       canvodpy/tests/test_s3_two_runs.py \
                       --verbose --color=no -rs | tee pytest.log
                   if grep -q SKIPPED pytest.log; then
