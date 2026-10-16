@@ -45,4 +45,5 @@ marimo's SQL cells, pandas, and DuckDB read it.
   shared memory and does not work on a network drive.
 - Runs happen on one machine (user, 2026-10-14), so one file per machine
   sees every run of that machine. Runs on several machines have several
-  run histories.
+  run histories; since ADR 0019 that includes runs on several machines
+  that write one store on S3.

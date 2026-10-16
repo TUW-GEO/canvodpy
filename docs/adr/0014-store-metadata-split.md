@@ -25,8 +25,8 @@ kind of information:
   commit was made: software versions, environment, the settings and
   their hash, and the hash of the `uv.lock` in use. The text of
   `uv.lock` and `pyproject.toml` is stored once per distinct hash, in
-  the group environments inside the reserved group `canvod`, in the
-  commit that first uses it.
+  the group environments inside the reserved group `canvod`, in a
+  commit of its own before the first commit that uses it (ADR 0019).
 
 The root group carries a lossless copy of the repository metadata in
 standard form (flat CF and ACDD global attributes, `featureType =
