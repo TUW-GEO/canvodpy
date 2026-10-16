@@ -101,7 +101,16 @@ store again, uses the blocks already there, and adds the rest.
 - A slot without data holds its grid time in `epoch`, NaN in
   floating-point variables, and -1 in integer variables such as `LLI` and
   `SSI` (their `_FillValue`).
-- Writing a file again writes the same slots, so it never adds epochs.
+- A write fills the slots from the file's first to its last epoch. When
+  the log book already holds a file of the same canonical name, the
+  write also empties the slots of that earlier write that the file now
+  has no epochs for, but never slots inside another stored file's span.
+  Writing a file again therefore never adds epochs, a file that now has
+  fewer epochs leaves nothing of its earlier write, and a file written
+  for the first time leaves the rest of its named period alone (after a
+  receiver restart, the next file can start inside it). A file without a
+  canonical name (possible with `temporal_aggregation`) replaces only the
+  slots from its first to its last epoch.
 - The cadence of a day is the finest sampling interval in the names of the
   files of the day, or the bin length of
   `processing.preprocessing.temporal_aggregation` when it is set. A day
@@ -120,6 +129,33 @@ store again, uses the blocks already there, and adds the rest.
 `MyIcechunkStore.read_group()` returns every slot; with `drop_empty=True`
 it leaves out the empty ones (slots where every floating-point variable is
 missing).
+
+### The VOD store
+
+A VOD store group is made of day blocks when the canopy or the reference
+group of its analysis is. A day of VOD gets the cadence of its GNSS data:
+the coarser of the two groups' cadences for that day, so every VOD epoch
+has its own slot. Slots without VOD hold NaN.
+
+- A run writes the VOD of each day with its own commit. The VOD of all
+  analyses of a day shares that commit.
+- A write covers exactly one day; a result of more than one day is
+  refused (`LayoutError`). The log-book row of a write records how many
+  epochs of the day hold VOD (`epochs`).
+- A result computed from the same GNSS files as a stored one isn't
+  written; the run logs it. A result from other GNSS files, for example
+  after more files of the day were stored, is written into the day's
+  slots and replaces the VOD that was there. Its log-book row records the
+  action `overwrite`.
+- When the GNSS groups were written by appending, the VOD group is
+  written by appending too, and a result whose epochs overlap stored VOD
+  isn't written. A VOD store group written by appending can't take VOD of
+  GNSS groups made of day blocks (`LayoutError`): write it to a new VOD
+  store (set another `processing.storage.vod_store_name`).
+
+`GnssResearchSite.read_vod_analysis()` leaves out the empty slots, as
+`read_receiver_data()` does; with `drop_empty=False` it returns every
+slot.
 
 ## How a run writes
 

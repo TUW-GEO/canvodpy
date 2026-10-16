@@ -20,7 +20,10 @@ the store from a file with another hash stops the run, checked at the
 tip, so two runs that read different copies of a file never both write
 it. The text of `uv.lock` is stored in a commit of its own, before the
 first data commit that needs it, so two runs with a new lockfile don't
-both try to store it in their data commits.
+both try to store it in their data commits. Two runs that create one
+store at the same time don't both create it: the creating commit does
+not rebase, and the run whose commit fails goes on with the store the
+other run created.
 
 A store keeps one set of **content settings**: the settings that shape
 its data. The run that creates the store records them as a fixed field

@@ -321,7 +321,7 @@ processing:
         epoch: 180    # epochs per file (15 min at 5 s sampling)
         sid: -1
       vod_store:
-        epoch: 17280  # epochs per day (5 s sampling)
+        epoch: 180    # as gnss_store
         sid: -1
 
   storage:
@@ -360,7 +360,10 @@ processing:
     alone, so a second run over the same files changes nothing.
     `overwrite` deletes the stored epochs of the file's time span and
     writes the file again. Use it after a fix in canVODpy, such as in a
-    reader, to recompute stored data.
+    reader, to recompute stored data. The VOD of those days stays as it
+    was: the rewritten files are the same files, so their VOD results
+    are skipped. For VOD of the recomputed data, write it to a new VOD
+    store (set another `storage.vod_store_name`).
 
     `unsafe_append` writes the file again on top of the stored data,
     without checking for epochs that are already there. The store then

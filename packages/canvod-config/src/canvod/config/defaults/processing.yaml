@@ -48,7 +48,7 @@ icechunk:
       epoch: 180  # one 15-min file at 5 s sampling; set to the epochs per file
       sid: -1
     vod_store:
-      epoch: 17280  # one day at 5 s sampling; set to the epochs per day
+      epoch: 180  # as gnss_store, so every cadence of a GNSS day fits
       sid: -1
   manifest_preload_enabled: false
   manifest_preload_max_refs: 10000

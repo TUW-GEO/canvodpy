@@ -224,7 +224,7 @@ processing:
         sid: -1       # all signals in one chunk
       vod_store:
         # https://canvodpy.eu/guides/settings/#processing-icechunk-chunk_strategies-vod_store-epoch
-        epoch: 17280  # epochs per chunk: one day at 5 s
+        epoch: 180    # epochs per chunk; as gnss_store, so every GNSS day fits
         # https://canvodpy.eu/guides/settings/#processing-icechunk-chunk_strategies-vod_store-sid
         sid: -1
 

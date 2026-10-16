@@ -467,7 +467,12 @@ class VodComputer:
         self,
         entries: list[tuple[str, xr.Dataset, xr.Dataset, xr.Dataset]],
     ) -> dict[str, Any]:
-        """Write VOD results in one commit, after checking the store metadata.
+        """Write VOD results, one commit per day, after checking the store metadata.
+
+        The results of all analyses for one day share a commit. When the
+        GNSS groups of an analysis are day blocks, its VOD store group is
+        too (ADR 0016), each day at the cadence of its GNSS data
+        (:meth:`_gnss_cadences`); writing a day again replaces it.
 
         Parameters
         ----------
@@ -479,7 +484,100 @@ class VodComputer:
         Returns
         -------
         dict[str, VodWriteResult]
-            Store write result per ``{calculator}/{analysis}`` group.
+            Store write result per ``{calculator}/{analysis}`` group, of
+            the group's last day.
+        """
+        import numpy as np
+
+        days = np.unique(
+            np.concatenate(
+                [vod_ds.epoch.values.astype("M8[D]") for _, vod_ds, *_ in entries]
+            )
+        )
+        # Build every item first: that refuses receivers preprocessed
+        # differently before anything touches the store.
+        day_items = []
+        for day in days:
+            day_entries = []
+            for name, vod_ds, canopy_ds, sky_ds in entries:
+                vod_day = self._day_of(vod_ds, day)
+                if vod_day.sizes["epoch"]:
+                    day_entries.append(
+                        (
+                            name,
+                            vod_day,
+                            self._day_of(canopy_ds, day),
+                            self._day_of(sky_ds, day),
+                        )
+                    )
+            day_items.append(self._day_items(day, day_entries))
+
+        ensure_vod_store_metadata(
+            self._site, self._calculator_name, [name for name, *_ in entries]
+        )
+        results: dict[str, Any] = {}
+        for items in day_items:
+            results.update(self._site._site.store_vod_analyses_batch(items=items))
+        for analysis_name, *_ in entries:
+            self.log.info(
+                "vod_written_to_store",
+                analysis=analysis_name,
+                model=self._calculator_name,
+                days=len(day_items),
+            )
+        return results
+
+    @staticmethod
+    def _day_of(ds: xr.Dataset, day: Any) -> xr.Dataset:
+        """The epochs of ``ds`` on ``day``, in the order they are stored."""
+        import numpy as np
+
+        return ds.isel(epoch=np.flatnonzero(ds.epoch.values.astype("M8[D]") == day))
+
+    def _gnss_cadences(self, analysis_name: str, day: Any) -> dict[Any, float] | None:
+        """Cadence of the VOD of ``day``: that of its GNSS day blocks.
+
+        A VOD epoch is an epoch of both the canopy and the reference group,
+        so each group's cadence gives every VOD epoch of the day its own
+        slot; the coarser of the two gives the fewer slots. ``None`` when
+        neither group is made of day blocks: the result is then appended.
+
+        Raises
+        ------
+        LayoutError
+            If a day-block group of the analysis has no block for ``day``.
+        """
+        from canvod.store.day_blocks import day_blocks, holds_day_blocks
+        from canvod.store_metadata.layout import LayoutError
+
+        analysis_cfg = self._get_analysis_config(analysis_name)
+        groups = (analysis_cfg.canopy_receiver, analysis_cfg.reference_store_group)
+        cadences = []
+        with self._site._site.gnss_store.readonly_session() as session:
+            for group in groups:
+                if not holds_day_blocks(session.store, group):
+                    continue
+                blocks = day_blocks(session.store, group)
+                if day not in blocks:
+                    msg = (
+                        f"GNSS group '{group}' has no block for {day}, so the "
+                        f"VOD of {analysis_name} on {day} has no cadence."
+                    )
+                    raise LayoutError(msg)
+                cadences.append(blocks[day].cadence_s)
+        return {day: max(cadences)} if cadences else None
+
+    def _day_items(
+        self,
+        day: Any,
+        entries: list[tuple[str, xr.Dataset, xr.Dataset, xr.Dataset]],
+    ) -> list[dict[str, Any]]:
+        """Store items of one day's VOD results, one per analysis.
+
+        Raises
+        ------
+        PreprocessingMismatchError
+            If canopy and reference were preprocessed differently.
         """
         research_site = self._site._site
         gnss_store_path = str(research_site.gnss_store.store_path)
@@ -523,21 +621,10 @@ class VodComputer:
                     "commit_message": (
                         f"VOD {analysis_name} {self._date_label(vod_ds)}"
                     ),
+                    "cadences": self._gnss_cadences(analysis_name, day),
                 }
             )
-
-        ensure_vod_store_metadata(
-            self._site, self._calculator_name, [name for name, *_ in entries]
-        )
-        results = research_site.store_vod_analyses_batch(items=items)
-
-        for analysis_name, *_ in entries:
-            self.log.info(
-                "vod_written_to_store",
-                analysis=analysis_name,
-                model=self._calculator_name,
-            )
-        return results
+        return items
 
     def _prepare_for_store(self, vod_ds: xr.Dataset) -> xr.Dataset:
         """Drop encodings inherited from the inputs and rechunk.

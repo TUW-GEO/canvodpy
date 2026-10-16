@@ -15,7 +15,7 @@ store for reads; the caller commits.
 
 from __future__ import annotations
 
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -358,6 +358,66 @@ def add_day_block(
     return DayBlock(day, start, start + slots, step)
 
 
+def clear_day_block(session: Any, group: str, block: DayBlock) -> None:
+    """Empty every slot of ``block``: missing values at the grid times.
+
+    A write replaces only the slots from its first to its last epoch
+    (:func:`write_file_region`); a result that replaces a whole day, such
+    as the VOD of the day, clears the day's block first, so nothing of an
+    earlier write stays outside its span.
+
+    Raises
+    ------
+    LayoutError
+        If ``group`` is not made of day blocks.
+    """
+    zgroup = zarr.open_group(session.store, mode="r+", path=group)
+    _require_day_blocks(zgroup, group)
+    _clear_slots(zgroup, group, block, 0, block.slots)
+
+
+def _clear_slots(
+    zgroup: zarr.Group, group: str, block: DayBlock, first: int, stop: int
+) -> None:
+    """Empty slots ``first`` to ``stop`` (exclusive) of ``block``."""
+    for name, array in zgroup.arrays():
+        dims = _dimension_names(array)
+        if name == "epoch" or "epoch" not in dims:
+            continue
+        where = [slice(None)] * len(dims)
+        where[dims.index("epoch")] = slice(block.start + first, block.start + stop)
+        array[tuple(where)] = array.fill_value
+    day_ns = int(block.day.astype("M8[ns]").astype(np.int64))
+    _epoch_array(zgroup, group)[block.start + first : block.start + stop] = (
+        day_ns + np.arange(first, stop) * block.cadence_ns
+    )
+
+
+def _span_slots(
+    blocks: Mapping[np.datetime64, DayBlock],
+    start: np.datetime64,
+    last: np.datetime64,
+) -> list[tuple[DayBlock, int, int]]:
+    """The slots from ``start`` to ``last`` (both included), block by block.
+
+    ``start`` and ``last`` are a file's first and last epoch and go to their
+    nearest slots as epochs do. Days without a block hold nothing and are
+    left out.
+    """
+    start_ns = int(np.datetime64(start, "ns").astype(np.int64))
+    last_ns = int(np.datetime64(last, "ns").astype(np.int64))
+    out = []
+    for day_number in range(start_ns // _DAY_NS, last_ns // _DAY_NS + 1):
+        block = blocks.get(np.datetime64(day_number, "D"))
+        if block is None:
+            continue
+        day_ns = day_number * _DAY_NS
+        offsets = np.array([max(start_ns, day_ns), min(last_ns, day_ns + _DAY_NS - 1)])
+        first, final = _slots(offsets - day_ns, block).tolist()
+        out.append((block, first, final + 1))
+    return out
+
+
 def _dimension_names(array: zarr.Array) -> tuple[str, ...]:
     if not isinstance(array.metadata, ArrayV3Metadata):
         msg = f"Array '{array.path}' is not a zarr v3 array; it has no dimension names."
@@ -398,13 +458,15 @@ def write_file_region(
     *,
     blocks: Mapping[np.datetime64, DayBlock] | None = None,
     chunks: Collection[int] | None = None,
+    earlier: Sequence[tuple[np.datetime64, np.datetime64]] = (),
+    keep: Sequence[tuple[np.datetime64, np.datetime64]] = (),
 ) -> FileRegion:
     """Write a file's epochs into the blocks of their days.
 
     Each epoch goes to its nearest slot; the slots between the file's first
     and last epoch that it has no epoch for are written as empty (missing
-    values, grid times), so writing a file again replaces what it wrote
-    before. Every day of the file needs a block (:func:`add_day_block`).
+    values, grid times). Every day of the file needs a block
+    (:func:`add_day_block`).
 
     Parameters
     ----------
@@ -415,6 +477,16 @@ def write_file_region(
         The epoch chunks the write may touch, numbered along the group's
         epoch axis; ``None`` allows all. A write into a fork passes the
         chunks its task owns (see :class:`ChunkOwnershipError`).
+    earlier
+        The ``(first epoch, last epoch)`` of the file's earlier writes, from
+        its log-book rows: their slots outside the file's new span are
+        emptied, so nothing of an earlier write stays when the file now has
+        fewer epochs at its start or end. Empty for a first write: only the
+        slots from the file's first to its last epoch are written.
+    keep
+        The ``(first epoch, last epoch)`` of other stored files: their slots
+        are never emptied, also where an earlier write of this file
+        reached into them.
 
     Raises
     ------
@@ -462,9 +534,30 @@ def write_file_region(
             raise SlotCollisionError(msg)
         regions.append((block, idx, slots))
 
+    written = [
+        (block, int(slots.min()), int(slots.max()) + 1) for block, _, slots in regions
+    ]
+    kept = [span for first, last in keep for span in _span_slots(blocks, first, last)]
+    cleared = _outside(
+        [span for first, last in earlier for span in _span_slots(blocks, first, last)],
+        written + kept,
+    )
     if chunks is not None:
         _check_chunks(session, group, regions, chunks)
+        _check_chunks(
+            session,
+            group,
+            [
+                (block, None, np.array([first, stop - 1]))
+                for block, first, stop in cleared
+            ],
+            chunks,
+        )
 
+    if cleared:
+        zgroup = zarr.open_group(session.store, mode="r+", path=group)
+        for block, first, stop in cleared:
+            _clear_slots(zgroup, group, block, first, stop)
     for block, idx, slots in regions:
         _write_region(session, group, ds, block, idx, slots)
 
@@ -475,10 +568,31 @@ def write_file_region(
     )
 
 
+def _outside(
+    spans: list[tuple[DayBlock, int, int]],
+    holes: list[tuple[DayBlock, int, int]],
+) -> list[tuple[DayBlock, int, int]]:
+    """The slots of ``spans`` outside every one of ``holes``, block by block."""
+    out = []
+    for block, first, stop in spans:
+        pieces = [(first, stop)]
+        for other, low, high in holes:
+            if other.day != block.day:
+                continue
+            pieces = [
+                (a, b)
+                for p_first, p_stop in pieces
+                for a, b in ((p_first, min(p_stop, low)), (max(p_first, high), p_stop))
+                if a < b
+            ]
+        out += [(block, a, b) for a, b in pieces]
+    return out
+
+
 def _check_chunks(
     session: Any,
     group: str,
-    regions: list[tuple[DayBlock, np.ndarray, np.ndarray]],
+    regions: Sequence[tuple[DayBlock, Any, np.ndarray]],
     chunks: Collection[int],
 ) -> None:
     """Refuse regions that reach beyond the epoch chunks a fork may write."""

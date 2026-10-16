@@ -636,7 +636,9 @@ class GnssResearchSite:
         items : Sequence[dict]
             Each dict needs: ``vod_dataset``, ``analysis_name``,
             ``calculator_name``, ``source_file_hashes``,
-            ``source_gnss_stores``, and optionally ``commit_message``.
+            ``source_gnss_stores``, and optionally ``commit_message`` and
+            ``cadences`` (``{day: seconds}``: write into day blocks, see
+            :class:`~canvod.store.store.VodWriteItem`).
 
         Returns
         -------
@@ -668,6 +670,7 @@ class GnssResearchSite:
                     source_gnss_stores=entry["source_gnss_stores"],
                     calculator_name=calculator_name,
                     commit_message=entry.get("commit_message"),
+                    cadences=entry.get("cadences"),
                 )
             )
 
@@ -689,9 +692,14 @@ class GnssResearchSite:
         analysis_name: str,
         calculator_name: str,
         time_range: tuple[datetime, datetime] | None = None,
+        drop_empty: bool = True,
     ) -> xr.Dataset:
         """
         Read VOD analysis results for one calculator model.
+
+        VOD written as day blocks (ADR 0016) has a slot for every epoch of
+        a day at the cadence of its GNSS data; slots without a VOD value
+        hold NaN at their grid times.
 
         Parameters
         ----------
@@ -701,6 +709,10 @@ class GnssResearchSite:
             Registered ``VODFactory`` name the results were computed with.
         time_range : tuple of datetime, optional
             (start_time, end_time) for filtering the results.
+        drop_empty : bool, default True
+            Drop the empty slots of the epochs read, after ``time_range``:
+            the epochs with VOD. ``False`` keeps every slot of a day-block
+            group (see :meth:`~canvod.store.store.MyIcechunkStore.read_group`).
 
         Returns
         -------
@@ -722,15 +734,15 @@ class GnssResearchSite:
 
         self._logger.info(f"Reading VOD analysis: '{group_name}'")
 
-        ds = self.vod_store.read_group(group_name)
-
-        # Apply time filtering if specified
+        time_slice = None
         if time_range is not None:
             start_time, end_time = time_range
-            ds = ds.sel(epoch=slice(start_time, end_time))
+            time_slice = slice(start_time, end_time)
             self._logger.debug(f"Applied time filter: {start_time} to {end_time}")
 
-        return ds
+        return self.vod_store.read_group(
+            group_name, time_slice=time_slice, drop_empty=drop_empty
+        )
 
     def prepare_vod_input_data(
         self, analysis_name: str, time_range: tuple[datetime, datetime] | None = None
