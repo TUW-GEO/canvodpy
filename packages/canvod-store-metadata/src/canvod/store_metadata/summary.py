@@ -42,8 +42,17 @@ _CF_UNITS = {
     "days": "D",
 }
 
-# Log-book actions whose file is part of the stored data.
-_STORED_ACTIONS = {"initial", "written", "appended", "overwritten"}
+# Log-book actions whose file is part of the stored data: those of a run,
+# and those the store's own write methods record.
+_STORED_ACTIONS = {
+    "initial",
+    "written",
+    "appended",
+    "overwritten",
+    "write",
+    "append",
+    "overwrite",
+}
 # Actions of a VOD log book's rows whose result is part of the stored data.
 _VOD_STORED_ACTIONS = {"write", "append", "overwrite"}
 

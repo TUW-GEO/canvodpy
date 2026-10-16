@@ -1,7 +1,7 @@
 """Move a store written by appending files to day blocks (ADR 0016).
 
 ``canvodpy store migrate-layout`` calls :func:`migrate_layout`. Each data
-group of the store (a group at the top with an ``epoch`` array) is moved:
+group of the store (a group with an ``epoch`` array, at any depth) is moved:
 
 - A group written by appending is written again as day blocks, day by
   day. An epoch stored more than once keeps the entry written last, as
@@ -232,16 +232,24 @@ def _require_repository_metadata(repo: Any, location: StoreLocation) -> None:
 
 
 def _data_groups(store: Any) -> list[str]:
-    """The groups at the top of the store that hold epochs."""
+    """The groups of the store that hold epochs, at any depth.
+
+    A VOD group sits below its calculator (``tau_omega/...``). The groups
+    inside a data group (its ``metadata/``) are not data groups.
+    """
     try:
         root = zarr.open_group(store, mode="r")
     except FileNotFoundError, zarr.errors.GroupNotFoundError:
         return []
-    return sorted(
-        name
-        for name, group in root.groups()
-        if name != RESERVED_GROUP and "epoch" in set(group.array_keys())
-    )
+    found: list[str] = []
+    below = [(name, group) for name, group in root.groups() if name != RESERVED_GROUP]
+    while below:
+        path, group = below.pop()
+        if "epoch" in set(group.array_keys()):
+            found.append(path)
+        else:
+            below.extend((f"{path}/{name}", sub) for name, sub in group.groups())
+    return sorted(found)
 
 
 def _epochs_ns(store: Any, group: str) -> np.ndarray:
@@ -376,7 +384,7 @@ def _rebuilt_index(
             "start": int(start),
             "stop": int(stop),
             "slots": int(slots),
-            "cadence_ns": _DAY_NS // slots,
+            "cadence_ns": int(_DAY_NS // slots),
         }
     return index
 
