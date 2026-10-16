@@ -16,6 +16,7 @@ import pytest
 import xarray as xr
 import zarr
 
+from canvod.store.day_blocks import load_group
 from canvod.store_metadata import read_metadata, validate_all
 from canvod.vod import TauOmegaZerothOrder
 
@@ -118,7 +119,7 @@ def test_a_gnss_store_day_meets_cf_and_acdd(rosalia_one_day, tmp_path):
     config, _ = rosalia_one_day
     _, session = _store(config)
     attrs = dict(zarr.open_group(session.store, mode="r").attrs)
-    ds = xr.open_zarr(session.store, group="canopy_01", consolidated=False)
+    ds = load_group(session.store, "canopy_01", drop_empty=True)
 
     assert _failures(ds.load(), attrs, tmp_path) == []
 
@@ -129,7 +130,7 @@ def test_a_vod_day_meets_cf_and_acdd(rosalia_one_day, tmp_path):
     _, session = _store(config)
     attrs = dict(zarr.open_group(session.store, mode="r").attrs)
     canopy, sky = (
-        xr.open_zarr(session.store, group=group, consolidated=False).load()
+        load_group(session.store, group, drop_empty=True).load()
         for group in ("canopy_01", "reference_01_canopy_01")
     )
 
