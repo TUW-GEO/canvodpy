@@ -370,6 +370,12 @@ canvodpy store maintain ExampleSite                 # what expiry and garbage co
 selects a branch other than `main`. For every option, see the
 [command-line reference](../../api/cli.md).
 
+On a store on S3, maintenance is a dry run only: another machine may be
+writing to the store, so `canvodpy store maintain` reports what it would
+do and `--execute` is refused, and `canvodpy store maintain-due` reports
+a due store without changing it. See
+[ADR 0019](../../adr/0019-content-settings-and-several-writers.md).
+
 ## Grids and analysis results
 
 `store_grid()` writes a hemispherical grid to the `grids/{grid_name}` group

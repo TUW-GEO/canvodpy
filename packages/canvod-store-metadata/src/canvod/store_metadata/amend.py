@@ -228,7 +228,12 @@ def _add_receiver_content(
         If a receiver is added without its content settings, or they don't
         match its entry.
     """
-    from .content import CONTENT_SETTINGS_FIELD, RECEIVER_KEYS, settings_hash
+    from .content import (
+        CONTENT_SETTINGS_FIELD,
+        GNSS_CONTENT_HASH,
+        RECEIVER_KEYS,
+        settings_hash,
+    )
 
     content = amended.get(CONTENT_SETTINGS_FIELD)
     new = sorted(
@@ -263,5 +268,9 @@ def _add_receiver_content(
         field = f"{CONTENT_SETTINGS_FIELD}.settings.sites.{site}.receivers.{name}"
         fields.append((field, None))
     fields.append((f"{CONTENT_SETTINGS_FIELD}.hash", content["hash"]))
-    content["hash"] = settings_hash(content["settings"], content.get("resolved_sids"))
+    content["hash"] = settings_hash(
+        content["settings"],
+        content.get("resolved_sids"),
+        content.get(GNSS_CONTENT_HASH),
+    )
     return fields

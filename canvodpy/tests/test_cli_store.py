@@ -431,6 +431,58 @@ class TestStoreMaintainDue:
         assert "Would garbage-collect" not in result.output
         assert "Would expire" not in result.output
 
+    def test_dry_run_until_confirmed_false_runs_maintenance(self, tmp_path):
+        """On a local store, ``dry_run_until_confirmed: false`` still runs
+        the due maintenance instead of reporting it (#357)."""
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        (config_dir / "canvod-settings.yaml").write_text(
+            yaml.safe_dump(
+                {
+                    "processing": {
+                        "metadata": {
+                            "author": "A",
+                            "email": "a@example.com",
+                            "institution": "B",
+                        },
+                        "storage": {
+                            "stores_root_dir": str(stores_root),
+                            "maintenance": {
+                                "enabled": True,
+                                "dry_run_until_confirmed": False,
+                                "expire_interval_days": 1,
+                                "gc_delay_days": 20,
+                                "retention_days": 90,
+                            },
+                        },
+                    },
+                    "sites": {
+                        "TestSite": {
+                            "gnss_site_data_root": str(stores_root / "raw"),
+                            "receivers": {
+                                "canopy_01": {
+                                    "type": "canopy",
+                                    "directory": "02_canopy",
+                                },
+                            },
+                        }
+                    },
+                }
+            )
+        )
+        _write_synthetic_store(stores_root / "TestSite" / "rinex", n_slots=2)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "maintain-due", "TestSite"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Expired:" in result.output
+        assert "Would expire" not in result.output
+
 
 def _write_old_form_store(
     store_path,
@@ -799,7 +851,16 @@ class TestStoreMigrateMetadata:
 
         result = runner.invoke(
             main_app,
-            ["store", "migrate-metadata", "TestSite", "--store", "vod", "--yes"],
+            [
+                "store",
+                "migrate-metadata",
+                "TestSite",
+                "--store",
+                "vod",
+                "--yes",
+                "--set",
+                "gnss_content_hash=" + "a" * 64,
+            ],
             env=_env(config_dir),
         )
 

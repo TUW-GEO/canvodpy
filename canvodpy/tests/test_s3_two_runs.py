@@ -9,10 +9,12 @@ The second day is synthetic (``synthetic_days``): the test day's files
 with every date moved one day on, so the data are the same and only the
 time differs.
 
-Against a real S3 service, as ``test_s3_run.py``: CI runs it against an
-S3 emulator (RustFS, ``.github/workflows/test_s3.yml``). It needs
-``CANVOD_TEST_S3_URL`` (``s3://bucket/prefix``, a bucket that exists) and
-the ``AWS_*`` variables the service needs; without the URL it is skipped.
+Against a real S3 service, as ``test_s3_run.py``, and locally only: it
+reads the test data, which CI never checks out. Run it against an S3
+emulator such as RustFS (``.github/workflows/test_s3.yml`` shows the
+setup). It needs ``CANVOD_TEST_S3_URL`` (``s3://bucket/prefix``, a bucket
+that exists) and the ``AWS_*`` variables the service needs; without the
+URL or the test data it is skipped.
 """
 
 from __future__ import annotations

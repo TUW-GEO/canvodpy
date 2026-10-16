@@ -740,13 +740,15 @@ Every push to a branch and every pull request triggers automated checks on GitHu
 | **Docs Quality**       | Push to `main`, every pull request, weekly | Checks the language of the docs pages a pull request changes with Vale, and every link of the built site with lychee |
 | **Deploy Docs**        | A published release, or started by hand | Builds and deploys the documentation site                                                                                |
 
-The Platform Tests and Test with Coverage check out the test-data
-submodule (`packages/canvod-readers/tests/test_data`, a shallow clone of
-about 3 GB per job), so the readers' tests on real files and the
-end-to-end runs on the Rosalia data run there too. The S3 Tests check out
-only the files their runs read. The end-to-end runs take their settings
-from `config/canvod-settings.yaml.example`, not from your settings file,
-so they run the same on your machine as in CI.
+No CI workflow checks out the test-data submodule
+(`packages/canvod-readers/tests/test_data`): the tests that need it skip
+there, and the S3 Tests leave out the two S3 tests that read it
+(`canvodpy/tests/test_s3_run.py`, `canvodpy/tests/test_s3_two_runs.py`). Run them on your machine before you open a pull
+request that touches the readers, the stores or the pipeline
+(`git submodule update --init packages/canvod-readers/tests/test_data`,
+then `just test`). The end-to-end runs take their settings from
+`config/canvod-settings.yaml.example`, not from your settings file, so
+they run the same on every machine.
 
 ### Test coverage with Coveralls
 

@@ -2,13 +2,17 @@ name: S3 Tests
 
 # Stores on S3 against an S3 emulator (#303): created, opened, metadata
 # written and read, and conflicting commits refused
-# (packages/canvod-store-metadata/tests/test_s3_store.py), a run writing
-# the same stores on S3 as in a local folder (canvodpy/tests/test_s3_run.py,
-# #350), producing a settings file from a store
-# (canvodpy/tests/test_config_from_store_s3.py, #356), and two
-# `canvodpy run` processes writing one store at the same time
-# (canvodpy/tests/test_s3_two_runs.py, #358). Without an S3 service these
-# tests skip, so the platform tests don't run them.
+# (packages/canvod-store-metadata/tests/test_s3_store.py), producing a
+# settings file from a store (`canvodpy/tests/test_config_from_store_s3.py`,
+# #356), and maintenance on a store on S3 being a dry run only (#357: the
+# store tests refuse every mutating action,
+# `packages/canvod-store/tests/test_s3_maintenance.py`, and the CLI reports
+# a dry run, `canvodpy/tests/test_s3_maintenance_cli.py`). Without an S3
+# service these tests skip, so the platform tests don't run them.
+#
+# The S3 tests that read the test data (`canvodpy/tests/test_s3_run.py`,
+# `canvodpy/tests/test_s3_two_runs.py`, #358) run locally only: CI never
+# checks out the test data (`docs/guides/contributor-setup.md`).
 #
 # The emulator is RustFS (Apache-2.0), the one Icechunk's own CI tests
 # against, at the tag Icechunk's compose.yaml uses at the version in
@@ -40,23 +44,6 @@ jobs:
 
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-            - name: Check out the test data the run tests read
-              # Only these files of the test-data submodule, at the commit
-              # the submodule pins: two receivers' first files of one day and
-              # the orbits and clocks of two days. The whole checkout is
-              # about 3 GB.
-              run: |
-                  data=packages/canvod-readers/tests/test_data
-                  pinned="$(git ls-tree HEAD "$data" | awk '{print $3}')"
-                  git clone --quiet --filter=blob:none --no-checkout \
-                      https://github.com/nfb2021/canvodpy-test-data.git "$data"
-                  git -C "$data" sparse-checkout set --no-cone \
-                      'valid/rinex_v3_04/01_Rosalia/0*_*/01_GNSS/01_raw/25001/ROS?01TUW_R_20250010[01]*' \
-                      'valid/aux_data/01_SP3/COD0MGXFIN_2025001*' \
-                      'valid/aux_data/01_SP3/COD0MGXFIN_2025002*' \
-                      'valid/aux_data/02_CLK/COD0MGXFIN_2025001*' \
-                      'valid/aux_data/02_CLK/COD0MGXFIN_2025002*'
-                  git -C "$data" checkout --quiet "$pinned"
             - name: Make throwaway credentials
               # New for every run and masked in the logs: nothing secret is
               # in the repository.
@@ -106,9 +93,9 @@ jobs:
               run: |
                   set -o pipefail
                   uv run pytest packages/canvod-store-metadata/tests/test_s3_store.py \
-                      canvodpy/tests/test_s3_run.py \
                       canvodpy/tests/test_config_from_store_s3.py \
-                      canvodpy/tests/test_s3_two_runs.py \
+                      packages/canvod-store/tests/test_s3_maintenance.py \
+                      canvodpy/tests/test_s3_maintenance_cli.py \
                       --verbose --color=no -rs | tee pytest.log
                   if grep -q SKIPPED pytest.log; then
                       echo "::error::S3 tests were skipped; the emulator setup is broken."

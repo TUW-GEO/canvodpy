@@ -273,3 +273,41 @@ class TestDeprecations:
         with pytest.warns(FutureWarning, match="amend_metadata"):
             updated = apply_updates(_metadata(), {"identity.title": "x"})
         assert updated.identity.title == "x"
+
+
+def test_an_amended_vod_stores_hash_covers_gnss_content_hash():
+    """#355: the hash recomputed by an amendment keeps gnss_content_hash (#375)."""
+    from canvod.store_metadata.amend import _add_receiver_content
+    from canvod.store_metadata.content import (
+        GNSS_CONTENT_HASH,
+        settings_hash,
+    )
+
+    current = {"instruments": {"receivers": {}}}
+    amended = {
+        "instruments": {
+            "receivers": {
+                "canopy_01": {
+                    "type": "canopy",
+                    "reader_format": "auto",
+                    "paired_canopies": [],
+                }
+            }
+        },
+        "content_settings": {
+            "settings": {"sites": {"fangorn": {"receivers": {}}}},
+            "resolved_sids": None,
+            GNSS_CONTENT_HASH: "abc123",
+            "hash": "old",
+            "format": 1,
+        },
+    }
+    receiver_content = {
+        "canopy_01": {"type": "canopy", "reader_format": "auto", "paired_canopies": []}
+    }
+
+    _add_receiver_content(current, amended, receiver_content)
+
+    hashed = amended["content_settings"]
+    assert hashed["hash"] == settings_hash(hashed["settings"], None, "abc123")
+    assert hashed["hash"] != settings_hash(hashed["settings"], None, None)
