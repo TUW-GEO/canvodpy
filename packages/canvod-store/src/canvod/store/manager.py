@@ -636,7 +636,9 @@ class GnssResearchSite:
         items : Sequence[dict]
             Each dict needs: ``vod_dataset``, ``analysis_name``,
             ``calculator_name``, ``source_file_hashes``,
-            ``source_gnss_stores``, and optionally ``commit_message``.
+            ``source_gnss_stores``, and optionally ``commit_message`` and
+            ``cadences`` (``{day: seconds}``: write into day blocks, see
+            :class:`~canvod.store.store.VodWriteItem`).
 
         Returns
         -------
@@ -668,6 +670,7 @@ class GnssResearchSite:
                     source_gnss_stores=entry["source_gnss_stores"],
                     calculator_name=calculator_name,
                     commit_message=entry.get("commit_message"),
+                    cadences=entry.get("cadences"),
                 )
             )
 

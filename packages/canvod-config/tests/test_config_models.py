@@ -729,12 +729,12 @@ class TestChunkStrategies:
     def test_defaults_for_both_stores(self):
         ic = IcechunkConfig()
         assert ic.chunk_strategies.gnss_store == ChunkStrategy(epoch=180, sid=-1)
-        assert ic.chunk_strategies.vod_store == ChunkStrategy(epoch=17280, sid=-1)
+        assert ic.chunk_strategies.vod_store == ChunkStrategy(epoch=180, sid=-1)
 
     def test_one_store_set_keeps_the_other_default(self):
         ic = IcechunkConfig(chunk_strategies={"gnss_store": {"epoch": 720}})
         assert ic.chunk_strategies.gnss_store.epoch == 720
-        assert ic.chunk_strategies.vod_store.epoch == 17280
+        assert ic.chunk_strategies.vod_store.epoch == 180
 
     def test_shipped_defaults_match_the_model(self):
         import yaml

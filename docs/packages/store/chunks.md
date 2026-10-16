@@ -24,14 +24,14 @@ processing:
         epoch: 180    # epochs per chunk
         sid: -1       # all signals in one chunk
       vod_store:
-        epoch: 17280
+        epoch: 180
         sid: -1
 ```
 
 | Store | Default chunk | What it covers at 5 s |
 |---|---|---|
 | GNSS store | 180 epochs, all signals | one 15-minute file ($900\,\text{s} / 5\,\text{s}$) |
-| VOD store | 17280 epochs, all signals | one day ($86400\,\text{s} / 5\,\text{s}$) |
+| VOD store | 180 epochs, all signals | 15 minutes of VOD ($900\,\text{s} / 5\,\text{s}$) |
 
 `chunk_strategies` has exactly two keys, `gnss_store` and `vod_store`. A
 store that you leave out keeps the default, and any other key fails

@@ -214,7 +214,7 @@ processing:
         epoch: 180    # epochs per file (15 min at 5 s sampling)
         sid: -1
       vod_store:
-        epoch: 17280  # epochs per day (5 s sampling)
+        epoch: 180    # as gnss_store
         sid: -1
 
   storage:
