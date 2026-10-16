@@ -338,6 +338,22 @@ The charts follow marimo's light and dark theme. The frame (background,
 axes, text) uses the theme, and the data colors come from the canvodpy
 palette for that theme.
 
+**Compare runs by label:** a run can take a free-text label with
+`canvodpy run --label <text>`, for example to group the repetitions of a
+benchmark. The dashboard groups the runs that share a label and compares
+them:
+
+- Only **finished** runs are compared, and a run without a label is left
+  out.
+- Each group shows its machine, workers, version and settings, or
+  "differs" when the group is not uniform. A group whose machine,
+  workers, version or settings differ is not a set of repetitions of the
+  same thing, and the dashboard says so.
+- For each stage, the median time of the group's finished runs that
+  recorded it, with the minimum and the maximum. In total, the median of
+  the sum of a run's stage seconds, with the minimum and the maximum.
+  The median is the middle of the sorted times; the spread is min to max.
+
 A run's status is one of:
 
 - **Running:** the run's process lives.
