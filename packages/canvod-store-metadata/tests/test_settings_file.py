@@ -138,9 +138,13 @@ def test_a_local_store_not_at_the_site_layout_is_refused(tmp_path):
     assert repr(SITE) in str(e.value)
 
 
-def test_an_s3_url_not_at_the_site_layout_is_refused():
-    """A missing site prefix part in an S3 URL is refused (#356 review)."""
+@pytest.mark.parametrize(
+    "store",
+    ["s3://b/rinex", "s3://fangorn/rinex"],
+)
+def test_an_s3_url_not_at_the_site_layout_is_refused(store):
+    """An S3 store with no bucket before the site part is refused (#356)."""
     from canvod.store_metadata.settings_file import _store_root_and_name
 
     with pytest.raises(ValueError, match=r"<stores_root_dir>/<site>/<store_name>"):
-        _store_root_and_name("s3://b/rinex", SITE)
+        _store_root_and_name(store, SITE)

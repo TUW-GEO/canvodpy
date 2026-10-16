@@ -164,10 +164,6 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
         console.print("[green]✓ Configuration is valid: you're ready to go![/green]\n")
 
 
-#: The placeholder a settings file from a store keeps for a machine value
-#: (supplied by ``canvod.store_metadata.settings_file.PLACEHOLDER``).
-
-
 def _store_file_comment(store: str) -> str:
     """The comment header of a settings file written from a store."""
     return (

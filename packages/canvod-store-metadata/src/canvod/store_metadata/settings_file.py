@@ -47,21 +47,26 @@ def _store_root_and_name(store: Any, site_name: str) -> tuple[str, str]:
 
     A store lives at ``<stores_root_dir>/<site>/<store_name>``: ``<site>`` is
     the parent folder for a local store, or the S3 prefix part before the
-    name for an ``s3://`` URL. If the site is not the site the store
-    records, nothing is written and the error names the expected layout.
+    name for an ``s3://`` URL. The root of an ``s3://`` store must be
+    ``s3://<bucket>`` or ``s3://<bucket>/<prefix>``. If the site is not the
+    site the store records, nothing is written and the error names the
+    expected layout.
 
     Raises
     ------
     ValueError
         If the parent folder (or S3 prefix part before the name) is not the
-        site the store records.
+        site the store records, or if an ``s3://`` store has no bucket
+        before it.
     """
     text = str(store).rstrip("/")
     if text.startswith("s3://"):
         parts = text.split("/")
         name = parts[-1]
-        site_part = parts[-2] if len(parts) >= 2 else ""
         root = "/".join(parts[:-2])
+        if len(parts) < 5:
+            raise _layout_error(store, site_name)
+        site_part = parts[-2]
     else:
         p = Path(text)
         name = p.name
@@ -77,8 +82,8 @@ def _layout_error(store: Any, site_name: str) -> ValueError:
     return ValueError(
         f"The store at {store} is not at the layout "
         "<stores_root_dir>/<site>/<store_name>: the site the store records "
-        f"is {site_name!r}, but the folder (or S3 prefix part) before the "
-        "store's name is not it. "
+        f"is {site_name!r}, but the folder (or S3 prefix part) right "
+        "before the store's name is not it. "
         "A store lives at <stores_root_dir>/<site>/<store_name>; use its "
         "<root>/<site>/<name> path, or write to a new store."
     )
