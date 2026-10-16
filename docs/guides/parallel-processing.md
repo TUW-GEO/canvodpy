@@ -15,7 +15,9 @@ settings limit its use of the machine.
 ## How a run divides the work
 
 A run works through the days in batches of `days_per_batch` days. Each
-batch goes through three steps:
+batch goes through three steps, and the batches overlap: while the
+workers read one batch, the next batch is prepared, and while its days
+go to VOD, the workers read the next batch.
 
 ```text
  days of one batch
@@ -49,14 +51,23 @@ batch goes through three steps:
    [Storage](../packages/store/overview.md) page describes these checks.
 
 When the whole batch is written, `canvodpy run` computes the VOD of its
-days; in Python, `process_range` hands the days to your loop. The next
-batch starts after that, so the workers wait while a batch is prepared
-and while its VOD is computed.
+days; in Python, `process_range` hands the days to your loop. Meanwhile
+the run goes on with the next batch, which was prepared while this one
+was read, so the workers don't wait for the VOD or for the preparing.
+The run goes one batch ahead at most: it waits when a whole batch waits
+for VOD or for your loop. So the data of two batches can be in memory at
+the same time, the one going to VOD and the one being read.
 
-A larger `days_per_batch` prepares more days at the same time, so the
-workers wait less per day. It also downloads the orbit and clock files
-of all these days at the same time, which can cause connection problems
-with the download server.
+If VOD or your loop stops with an error, the run stops too: the day
+being written is committed, the files still being read are dropped, and
+the error is raised. Days already written stay in the store; the next
+run writes the rest. A day whose preparing fails, other than a missing
+orbit or clock file, is reported as failed for each receiver.
+
+A larger `days_per_batch` prepares more days at the same time. It also
+downloads the orbit and clock files of all these days at the same time,
+which can cause connection problems with the download server, and holds
+more days in memory.
 
 ---
 

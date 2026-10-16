@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from synthetic_days import link_aux
 
 from canvod.config import loader as config_loader_module
 from canvod.config.models import ReceiverConfig, VodAnalysisConfig
@@ -131,10 +132,7 @@ def rosalia_site(tmp_path, monkeypatch):
     patched_config.processing.storage.aux_data_dir = tmp_path / "aux"
     # The orbit and clock files of the test data, so a run downloads none
     # (CI does not depend on the download servers).
-    for aux, pattern in (("01_SP3", "*ORB.SP3"), ("02_CLK", "*CLK.CLK")):
-        (tmp_path / "aux" / aux).mkdir(parents=True, exist_ok=True)
-        for f in (_TEST_DATA / "valid" / "aux_data" / aux).glob(pattern):
-            (tmp_path / "aux" / aux / f.name).symlink_to(f)
+    link_aux(tmp_path / "aux")
     patched_config.processing.storage.shared_aux_cache_dir = None
     patched_config.processing.logging.log_dir = tmp_path / "logs"
     # The store metadata name the made-up person and site, never the local

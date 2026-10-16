@@ -46,7 +46,7 @@ def batches(monkeypatch) -> list[object]:
     """Records every batch of days the orchestrator starts to read."""
     started: list[object] = []
 
-    def record(self, dates, keep_vars):
+    def record(self, dates, keep_vars, stop):
         started.append(dates)
         yield from ()
 
