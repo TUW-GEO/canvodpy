@@ -54,6 +54,7 @@ from zarr.dtype import VariableLengthUTF8
 from canvod.store.day_blocks import (
     add_day_block,
     cadence_ns,
+    clear_day_block,
     day_blocks,
     drop_empty_slots,
     holds_day_blocks,
@@ -3191,8 +3192,10 @@ class MyIcechunkStore:
         gets a block at its cadence
         (:func:`~canvod.store.day_blocks.add_day_block`; a new group is
         created from the result), then the result is written into its
-        slots (:func:`~canvod.store.day_blocks.write_file_region`), which
-        replaces what an earlier write of the day put there. The data and
+        slots (:func:`~canvod.store.day_blocks.write_file_region`). A day
+        written before is emptied first
+        (:func:`~canvod.store.day_blocks.clear_day_block`), so the result
+        replaces all of it. The data and
         the log-book rows go into one commit.
 
         Raises
@@ -3224,8 +3227,9 @@ class MyIcechunkStore:
                     days=[str(day) for day in cadences],
                     approx_size_mb=round(dataset.nbytes / 1e6, 2),
                 )
+                stored_days = day_blocks(session.store, group_name)
                 for day, cadence_s in cadences.items():
-                    add_day_block(
+                    block = add_day_block(
                         session,
                         group_name,
                         day,
@@ -3234,6 +3238,10 @@ class MyIcechunkStore:
                         epoch_chunk=epoch_chunk,
                         dim_chunks=self.chunk_strategy,
                     )
+                    if day in stored_days:
+                        # The result replaces the whole day, also slots
+                        # outside its span that the earlier result filled.
+                        clear_day_block(session, group_name, block)
                 write_file_region(session, group_name, dataset)
                 zroot = zarr.open_group(session.store, mode="a")
                 self._append_vod_metadata_row(

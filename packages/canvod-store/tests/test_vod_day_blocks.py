@@ -117,6 +117,30 @@ def test_site_reads_vod_without_empty_slots_by_default(
     assert full.sizes["epoch"] == 86400 / CADENCE_S
 
 
+def test_shorter_rewrite_leaves_nothing_of_the_earlier_result(
+    store: MyIcechunkStore,
+) -> None:
+    """A day written again with a shorter result holds only the new one.
+
+    The new result covers the second half of the earlier one's span, so a
+    write of its span alone would keep the earlier first half.
+    """
+    store.write_or_append_vod_groups_batch([_item(GROUP, slot=0, source_id="old")])
+    new = _item(GROUP, slot=0, source_id="new", seed=7)
+    n = new.dataset.sizes["epoch"]
+    new.dataset = new.dataset.isel(epoch=slice(n // 2, None))
+    store.write_or_append_vod_groups_batch([new])
+
+    read = store.read_group(GROUP, drop_empty=True).compute()
+    np.testing.assert_array_equal(read.epoch.values, new.dataset.epoch.values)
+    xr.testing.assert_allclose(
+        read["VOD"].reset_coords(drop=True),
+        new.dataset["VOD"].reset_coords(drop=True).astype(read["VOD"].dtype),
+    )
+    summary = summarize_store(store.store_path)
+    assert summary["summaries.total_epochs"] == read.sizes["epoch"]
+
+
 def test_rewriting_a_day_replaces_it(store: MyIcechunkStore) -> None:
     """Recomputed VOD of a day overwrites its slots: no duplicate epochs."""
     store.write_or_append_vod_groups_batch([_item(GROUP, slot=0, source_id="old")])

@@ -358,6 +358,34 @@ def add_day_block(
     return DayBlock(day, start, start + slots, step)
 
 
+def clear_day_block(session: Any, group: str, block: DayBlock) -> None:
+    """Empty every slot of ``block``: missing values at the grid times.
+
+    A write replaces only the slots from its first to its last epoch
+    (:func:`write_file_region`); a result that replaces a whole day, such
+    as the VOD of the day, clears the day's block first, so nothing of an
+    earlier write stays outside its span.
+
+    Raises
+    ------
+    LayoutError
+        If ``group`` is not made of day blocks.
+    """
+    zgroup = zarr.open_group(session.store, mode="r+", path=group)
+    _require_day_blocks(zgroup, group)
+    for name, array in zgroup.arrays():
+        dims = _dimension_names(array)
+        if name == "epoch" or "epoch" not in dims:
+            continue
+        where = [slice(None)] * len(dims)
+        where[dims.index("epoch")] = slice(block.start, block.stop)
+        array[tuple(where)] = array.fill_value
+    day_ns = int(block.day.astype("M8[ns]").astype(np.int64))
+    _epoch_array(zgroup, group)[block.start : block.stop] = (
+        day_ns + np.arange(block.slots) * block.cadence_ns
+    )
+
+
 def _dimension_names(array: zarr.Array) -> tuple[str, ...]:
     if not isinstance(array.metadata, ArrayV3Metadata):
         msg = f"Array '{array.path}' is not a zarr v3 array; it has no dimension names."
