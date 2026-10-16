@@ -19,9 +19,10 @@ import canvodpy
 def _seed(log_dir: Path) -> None:
     """Build a small run history through the public API only (no SQL here).
 
-    Three runs: one finished, one failed with an error, one labeled with
-    two receivers; receiver-days with each result, stage timings, resource
-    samples, and one warning and one error.
+    Five runs: one finished and one failed without a label, and three
+    finished with the label "benchmark 2" (one of them on a different
+    machine with different workers and settings). Receiver-days with each
+    result, stage timings, resource samples, and one warning and one error.
     """
     with RunHistory.open(log_dir) as history:
         rid1 = "fangorn-20261014-100000"
@@ -123,6 +124,51 @@ def _seed(log_dir: Path) -> None:
             rid3, cpu_percent=60.0, memory_percent=35.0, free_disk={"/stores": 19}
         )
         history.end_run(rid3, "finished")
+
+        # Two more runs with the same label, so the comparison has a group
+        # of three. rid4 looks like rid3; rid5 runs on another machine with
+        # more workers, so the group's machine, workers and settings differ.
+        rid4 = "isengard-20261014-133000"
+        history.start_run(
+            rid4,
+            site="isengard",
+            settings={"processing": {"n_max_threads": 8}},
+            canvodpy_version="1.0.0",
+            commit="abc1234",
+            machine={"cpu": "test CPU", "cores": 16},
+            workers=8,
+            label="benchmark 2",
+        )
+        history.plan_receiver_days(
+            rid4, [("canopy_01", "2025001"), ("reference_01", "2025001")]
+        )
+        history.finish_receiver_day(
+            rid4, "canopy_01", "2025001", "written", bytes_added=1300
+        )
+        history.record_stage(rid4, "reading", 1.6, receiver="canopy_01", day="2025001")
+        history.record_stage(rid4, "writing", 3.0, receiver="canopy_01", day="2025001")
+        history.end_run(rid4, "finished")
+
+        rid5 = "isengard-20261014-123000"
+        history.start_run(
+            rid5,
+            site="isengard",
+            settings={"processing": {"n_max_threads": 16}},
+            canvodpy_version="1.0.0",
+            commit="abc1234",
+            machine={"cpu": "other CPU", "cores": 32},
+            workers=16,
+            label="benchmark 2",
+        )
+        history.plan_receiver_days(
+            rid5, [("canopy_01", "2025001"), ("reference_01", "2025001")]
+        )
+        history.finish_receiver_day(
+            rid5, "canopy_01", "2025001", "written", bytes_added=1800
+        )
+        history.record_stage(rid5, "reading", 2.4, receiver="canopy_01", day="2025001")
+        history.record_stage(rid5, "writing", 3.6, receiver="canopy_01", day="2025001")
+        history.end_run(rid5, "finished")
 
 
 def _export(
