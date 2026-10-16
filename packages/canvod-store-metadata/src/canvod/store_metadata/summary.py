@@ -157,19 +157,22 @@ def _observation_groups(root: zarr.Group) -> dict[str, zarr.Group]:
     }
 
 
-def _logged_files(
-    group: zarr.Group,
-) -> dict[str, tuple[int, np.datetime64, np.datetime64]]:
-    """Stored writes of a day-block group: epochs with data, first and last.
+def logged_keys(group: zarr.Group) -> list[str | None]:
+    """The key of each row of a day-block group's log book; ``None`` if not stored.
 
-    From the group's log book; the latest stored row of a key counts. A
-    GNSS log book (``rinex_hash`` column) is keyed by the file's canonical
+    A row whose action stores data has a key; the latest stored row of a
+    key says what the group holds of it (:func:`_logged_files`). A GNSS
+    log book (``rinex_hash`` column) is keyed by the file's canonical
     name, the period whose slots the file writes, so a file written again
     with other data (a new hash) replaces its earlier row; a row without a
-    canonical name is keyed by file hash. A file stored in several groups
-    counts once. A VOD log book
+    canonical name is keyed by file hash. A VOD log book
     (``source_file_hashes`` column) has one row per day written, and a day
     written again replaces it, so it is keyed by group and day.
+
+    Raises
+    ------
+    ValueError
+        If the group has no GNSS or VOD log book.
     """
     table = group["metadata/table"] if "metadata/table" in group else None
     if not isinstance(table, zarr.Group):
@@ -189,40 +192,65 @@ def _logged_files(
             "epoch count cannot be summarized"
         )
         raise ValueError(msg)
-    columns = (key_column, "action", "start", "end", "epochs")
-    if not set(columns) <= keys:
+    if not {key_column, "action", "start"} <= keys:
         msg = (
             f"Day-block group {group.path} has no log book with the columns "
-            f"{', '.join(columns)}; its epoch count cannot be summarized"
+            f"{key_column}, action, start; its epoch count cannot be summarized"
         )
         raise ValueError(msg)
-    hashes, actions, starts, ends, counts = (
-        np.asarray(_array(table, name)[...]) for name in columns
+    hashes, actions, starts = (
+        np.asarray(_array(table, name)[...]) for name in (key_column, "action", "start")
     )
     names = (
         np.asarray(_array(table, "canonical_name")[...])
         if key_column == "rinex_hash" and "canonical_name" in keys
         else np.full(hashes.shape, "", dtype=object)
     )
-    files = {}
-    for file_hash, name, action, start, end, count in zip(
-        hashes, names, actions, starts, ends, counts, strict=True
+    out: list[str | None] = []
+    for file_hash, name, action, start in zip(
+        hashes, names, actions, starts, strict=True
     ):
         if action not in stored_actions:
+            out.append(None)
+        elif key_column == "rinex_hash":
+            out.append(str(name or file_hash))
+        else:
+            day = np.datetime64(start, "ns").astype("M8[D]")
+            out.append(f"{group.path}@{day}")
+    return out
+
+
+def _logged_files(
+    group: zarr.Group,
+) -> dict[str, tuple[int, np.datetime64, np.datetime64]]:
+    """Stored writes of a day-block group: epochs with data, first and last.
+
+    From the group's log book; the latest stored row of a key counts
+    (:func:`logged_keys`). A file stored in several groups counts once.
+    """
+    keys = logged_keys(group)
+    table = group["metadata/table"]
+    assert isinstance(table, zarr.Group)
+    if not {"end", "epochs"} <= set(table.array_keys()):
+        msg = (
+            f"Day-block group {group.path} has no log book with the columns "
+            "end, epochs; its epoch count cannot be summarized"
+        )
+        raise ValueError(msg)
+    starts, ends, counts = (
+        np.asarray(_array(table, name)[...]) for name in ("start", "end", "epochs")
+    )
+    files = {}
+    for key, start, end, count in zip(keys, starts, ends, counts, strict=True):
+        if key is None:
             continue
         if count < 0:
             msg = (
                 f"Log book of day-block group {group.path} has a stored row "
-                f"without an epoch count ({key_column} {file_hash})"
+                f"without an epoch count ({key})"
             )
             raise ValueError(msg)
-        start = np.datetime64(start, "ns")
-        key = (
-            str(name or file_hash)
-            if key_column == "rinex_hash"
-            else f"{group.path}@{start.astype('M8[D]')}"
-        )
-        files[key] = (int(count), start, np.datetime64(end, "ns"))
+        files[key] = (int(count), np.datetime64(start, "ns"), np.datetime64(end, "ns"))
     return files
 
 
@@ -253,10 +281,14 @@ def _block_days(
 
     A day's cadence comes from the block index (:func:`_block_index`); its
     first and last epoch come from the files covering it, up to the day's
-    last slot. Days without files (a block whose files failed) are left out.
+    last slot. Days without files (a block whose files failed) are left out,
+    and so are files without epochs (a row whose epochs a later row of
+    another file holds).
     """
     spans: dict[np.datetime64, _DaySpan] = {}
-    for _, start, end in files.values():
+    for count, start, end in files.values():
+        if not count:
+            continue
         day = start.astype("M8[D]")
         while day <= end.astype("M8[D]"):
             cadence_ns, slots = index[day]
