@@ -73,7 +73,7 @@ from canvod.store.day_blocks import (
     write_file_region,
 )
 from canvod.store.prepare import prepare_write
-from canvod.store.store import _with_run_id
+from canvod.store.store import StoredOverlapError, _with_run_id
 from canvod.store.time_encoding import with_time_units
 from canvod.store_metadata.io import commit_lock, commit_with_rebase
 from canvod.store_metadata.layout import is_day_block_group
@@ -99,6 +99,7 @@ from canvodpy.orchestrator.discovery import (
     recipe_file,
 )
 from canvodpy.orchestrator.forked_writes import (
+    OVERWRITTEN,
     SKIPPED,
     WRITTEN,
     FileNumbers,
@@ -787,6 +788,69 @@ def _source_format_of(
         )
         raise ValueError(msg)
     return next(iter(formats), None)
+
+
+def _epoch_range(ds: xr.Dataset) -> tuple[np.datetime64, np.datetime64]:
+    """First and last epoch of a dataset."""
+    return np.datetime64(ds.epoch.min().values), np.datetime64(ds.epoch.max().values)
+
+
+def _second(time: Any) -> np.datetime64:
+    """``time`` to the second, as one form for every time of a message."""
+    return np.datetime64(time, "s")
+
+
+def _stored_overlaps(
+    stored: pl.DataFrame, rinex_hash: str, start: Any, end: Any
+) -> pl.DataFrame:
+    """Log-book rows of other files whose data overlap ``[start, end]``.
+
+    Rows of the same file (``rinex_hash``) and of files skipped as already
+    stored are left out: nothing of theirs was written by that row.
+    """
+    stored = stored.with_columns(
+        pl.col("start").cast(pl.Datetime("ns")), pl.col("end").cast(pl.Datetime("ns"))
+    )
+    if "action" in stored.columns:
+        stored = stored.filter(~pl.col("action").is_in(["skip", "skipped"]))
+    return stored.filter(
+        (pl.col("rinex_hash") != rinex_hash)
+        & (pl.col("start") <= pl.lit(np.datetime64(end, "ns")))
+        & (pl.col("end") >= pl.lit(np.datetime64(start, "ns")))
+    )
+
+
+def _stored_overlap_message(
+    receiver_name: str,
+    files: list[tuple[Path, str, Any, Any]],
+    stored: pl.DataFrame,
+) -> str:
+    """The error of files whose epochs other stored files already filled (#351).
+
+    ``files`` are ``(name, hash, first epoch, last epoch)``. Names each with
+    its time range and the log-book rows of the stored files it overlaps.
+    """
+    lines = []
+    for fname, rinex_hash, start, end in files:
+        rows = _stored_overlaps(stored, rinex_hash, start, end)
+        name_col = "canonical_name" if "canonical_name" in rows.columns else "fname"
+        others = ", ".join(
+            f"{Path(str(row[name_col])).name} ({_second(row['start'])} to "
+            f"{_second(row['end'])})"
+            for row in rows.unique(subset=["rinex_hash"]).iter_rows(named=True)
+        )
+        lines.append(
+            f"  {fname.name} ({_second(start)} to {_second(end)}) overlaps {others}"
+        )
+    return (
+        f"Receiver '{receiver_name}': {len(files)} file(s) cover epochs that "
+        "files with other content already filled in the GNSS store; the run "
+        "stopped and wrote nothing for them:\n"
+        + "\n".join(lines)
+        + "\nTo replace the stored data with these files, run these days with "
+        "processing.storage.gnss_store_strategy: overwrite. Otherwise remove the "
+        "files from the receiver's folder."
+    )
 
 
 def _sanitize_ds_for_write(ds: xr.Dataset) -> xr.Dataset:
@@ -2406,13 +2470,23 @@ class RinexDataProcessor:
         """Check for existing files by hash AND temporal overlap.
 
         Performs three checks:
-        1. Hash match against store metadata (exact duplicate)
-        2. Temporal overlap against store metadata (e.g. re-run)
+        1. Hash match against store metadata (exact duplicate): skipped,
+           or written again as ``gnss_store_strategy`` says.
+        2. Temporal overlap against store metadata: a file whose epochs a
+           file with another hash already filled stops the run with
+           ``gnss_store_strategy: skip`` (#351); the other strategies write
+           it over the stored data on purpose. Runs after a lost conflict
+           too, against the new tip, so it catches another run's files.
         3. Intra-batch overlap (e.g. daily concat + 15-min sub-files
            in the same batch)
 
         Returns the union of all flagged hashes so the caller can treat
         them as ``exists=True``.
+
+        Raises
+        ------
+        StoredOverlapError
+            If check 2 finds a file with ``gnss_store_strategy: skip``.
         """
         valid_hashes = [h for h in file_hash_map.values() if h]
 
@@ -2447,6 +2521,22 @@ class RinexDataProcessor:
                     temporal_overlaps = self.site.gnss_store.check_temporal_overlaps(
                         receiver_name, file_intervals, metadata_df=metadata_df
                     )
+                    if temporal_overlaps and self._gnss_store_strategy == "skip":
+                        raise StoredOverlapError(
+                            _stored_overlap_message(
+                                receiver_name,
+                                [
+                                    (
+                                        fname,
+                                        str(file_hash_map[fname]),
+                                        *_epoch_range(ds),
+                                    )
+                                    for fname, ds in augmented_datasets
+                                    if file_hash_map[fname] in temporal_overlaps
+                                ],
+                                metadata_df,
+                            )
+                        )
                     existing_hashes |= temporal_overlaps
 
         # Check 3: intra-batch overlap. Files are taken in order of their
@@ -3714,6 +3804,50 @@ class RinexDataProcessor:
         near = df.filter((pl.col("end") >= low) & (pl.col("start") < high))
         return frozenset(str(h) for h in near["rinex_hash"].to_list() if h)
 
+    def _check_stored_overlaps(
+        self, session: icechunk.Session, numbers: Sequence[FileNumbers]
+    ) -> None:
+        """Stop if a new file's epochs fall on epochs another stored file filled.
+
+        Runs at the tip, after the rebase, so the log book holds the files
+        of runs that committed since the day was planned (#351). With a
+        ``gnss_store_strategy`` other than ``skip`` the run writes over the
+        stored data on purpose; such a file's log-book row says
+        ``overwritten``.
+
+        Raises
+        ------
+        StoredOverlapError
+            With ``gnss_store_strategy: skip``, naming each such file and the
+            stored files it overlaps.
+        """
+        root = zarr.open_group(session.store, mode="r")
+        for group in sorted({n.group for n in numbers if n.action == WRITTEN}):
+            if f"{group}/metadata/table" not in root:
+                continue
+            stored = self.site.gnss_store.load_metadata(session.store, group)
+            overlapping = [
+                n
+                for n in numbers
+                if n.group == group
+                and n.action == WRITTEN
+                and not _stored_overlaps(
+                    stored, n.rinex_hash, n.start, n.end
+                ).is_empty()
+            ]
+            if not overlapping:
+                continue
+            if self._gnss_store_strategy == "skip":
+                raise StoredOverlapError(
+                    _stored_overlap_message(
+                        group,
+                        [(n.fname, n.rinex_hash, n.start, n.end) for n in overlapping],
+                        stored,
+                    )
+                )
+            for n in overlapping:
+                n.action = OVERWRITTEN
+
     def _commit_forked_day(
         self, day: ForkedDay, results: Sequence[ForkResult]
     ) -> dict[str, GroupWriteResult]:
@@ -3734,6 +3868,9 @@ class RinexDataProcessor:
             :data:`~canvod.store_metadata.io.CONFLICT_TRIES` tries in all).
         PreprocessingMismatchError
             If a group holds data preprocessed differently.
+        StoredOverlapError
+            If a new file's epochs fall on epochs that a file with another
+            hash already filled at the tip (#351).
         """
         store = self.site.gnss_store
         log = self._logger
@@ -3777,6 +3914,7 @@ class RinexDataProcessor:
                 session.merge(*forks)
             if store.repo.lookup_branch("main") != session.snapshot_id:
                 session.rebase(icechunk.ConflictDetector())
+            self._check_stored_overlaps(session, numbers)
 
             kept: list[FileNumbers] = []
             for n in numbers:
@@ -3793,7 +3931,13 @@ class RinexDataProcessor:
                 kept.append(n)
 
             for group in groups:
-                new = [n for n in kept if n.group == group and n.action == WRITTEN]
+                # Files not stored before, also those written over another
+                # file's epochs (#351).
+                new = [
+                    n
+                    for n in kept
+                    if n.group == group and n.action != SKIPPED and not n.exists
+                ]
                 self._write_sbf_obs(
                     session,
                     group,

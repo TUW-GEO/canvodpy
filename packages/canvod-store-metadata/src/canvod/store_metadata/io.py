@@ -131,11 +131,16 @@ def commit_with_rebase(
     repository metadata (creation, amendment, migration) is not checked.
 
     The commit also writes the root copy and the snapshot summary of the
-    rebased session (ADR 0014), stores the lockfile text once per hash, and
-    records software, environment and settings as commit metadata, next to
-    ``metadata``. It refuses a store without repository metadata, so no
-    store holds data without it, and a root group that differs from the
-    repository metadata.
+    rebased session (ADR 0014) and records software, environment and
+    settings as commit metadata, next to ``metadata``. The lockfile text is
+    stored once per hash: before a commit of data, in a commit of its own
+    when the branch does not hold it yet (:func:`store_lockfile`), so two
+    runs' data commits don't both write it and conflict (#352); a commit
+    that changes the repository metadata carries it itself.
+
+    It refuses a store without repository metadata, so no store holds data
+    without it, and a root group that differs from the repository
+    metadata.
 
     Every commit in canVODpy goes through this function, except manifest
     compaction, which goes through :func:`rewrite_manifests`.
@@ -184,26 +189,85 @@ def commit_with_rebase(
             raise ValueError(msg)
         from .snapshot import prepare_commit
 
-        # Rebase first, if the branch moved, so the summary describes
-        # everything the commit will hold and the root group is changed by
-        # this commit only.
-        branch = session.branch
-        if branch is None or repo.lookup_branch(branch) != session.snapshot_id:
-            session.rebase(icechunk.ConflictDetector())
         if config is None:
             from canvod.config import load_config
 
             config = load_config()
+        branch = session.branch
+        stores_lockfile_first = not changes_repository and branch is not None
         if not changes_repository:
             _check_content_at_tip(repository, config, store_path)
+        if stores_lockfile_first:
+            store_lockfile(
+                repo, branch, repository, store_path=store_path, config=config
+            )
+        # Rebase first, if the branch moved, so the summary describes
+        # everything the commit will hold and the root group is changed by
+        # this commit only.
+        if branch is None or repo.lookup_branch(branch) != session.snapshot_id:
+            session.rebase(icechunk.ConflictDetector())
         root = zarr.open_group(session.store, mode="a")
         metadata = {
-            **prepare_commit(root, repository, store_path=store_path, config=config),
+            **prepare_commit(
+                root,
+                repository,
+                store_path=store_path,
+                config=config,
+                write_environment=not stores_lockfile_first,
+            ),
             **(metadata or {}),
         }
         return session.commit(
             message, metadata=metadata, rebase_with=icechunk.ConflictDetector()
         )
+
+
+def store_lockfile(
+    repo: icechunk.Repository,
+    branch: str,
+    repository: dict[str, Any],
+    *,
+    store_path: StoreLocation | Path | str,
+    config: Any,
+) -> str | None:
+    """Store the lockfile text in use in a commit of its own, unless ``branch`` has it.
+
+    The text is stored once per hash (ADR 0014). Two runs that start with
+    the same new lockfile may both find it missing: the second commit then
+    conflicts, finds the text stored by the first, and goes on.
+
+    Returns
+    -------
+    str | None
+        Snapshot ID of the new commit; ``None`` if the text was stored
+        already, or no lockfile is in use.
+    """
+    from .snapshot import commit_metadata, lockfile_stored, prepare_commit
+
+    _, texts = commit_metadata(
+        repository, config, store_path, datetime.now(UTC).isoformat()
+    )
+    lock_hash = texts["uv_lock_hash"]
+
+    def stored() -> bool:
+        tip = repo.readonly_session(branch=branch)
+        return lockfile_stored(zarr.open_group(tip.store, mode="r"), lock_hash)
+
+    if stored():
+        return None
+    session = repo.writable_session(branch)
+    root = zarr.open_group(session.store, mode="a")
+    metadata = prepare_commit(root, repository, store_path=store_path, config=config)
+    try:
+        return session.commit(
+            "Store the lockfile in use",
+            metadata=metadata,
+            rebase_with=icechunk.ConflictDetector(),
+        )
+    except icechunk.ConflictError, icechunk.RebaseFailedError:
+        if stored():
+            return None
+        raise
 
 
 def _check_content_at_tip(
@@ -269,23 +333,18 @@ def rewrite_manifests(
         repository = repo.get_metadata()
         metadata = None
         if repository:
-            from .snapshot import commit_metadata, lockfile_stored
+            from .snapshot import commit_metadata
 
             if config is None:
                 from canvod.config import load_config
 
                 config = load_config()
-            metadata, texts = commit_metadata(
+            metadata, _ = commit_metadata(
                 repository, config, store_path, datetime.now(UTC).isoformat()
             )
-            root = zarr.open_group(repo.readonly_session(branch=branch).store, mode="r")
-            if not lockfile_stored(root, texts["uv_lock_hash"]):
-                commit_with_rebase(
-                    repo.writable_session(branch),
-                    "Store the lockfile in use",
-                    store_path=store_path,
-                    config=config,
-                )
+            store_lockfile(
+                repo, branch, repository, store_path=store_path, config=config
+            )
         return repo.rewrite_manifests(
             message, branch=branch, metadata=metadata, commit_method="new_commit"
         )

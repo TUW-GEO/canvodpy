@@ -231,9 +231,12 @@ book, in three ways:
 | Time span | A file whose time span overlaps stored data, also when it has another name or other start and end times | The orchestrator, and again in `append_to_group()` |
 | Batch | Two files of one batch that cover the same time | The orchestrator |
 
-A file that fails a check counts as already stored. The default write
+A file with the same hash counts as already stored: the default write
 strategy, `skip`, doesn't write it; `overwrite` replaces its time range.
-For details, see [Write strategies](storage-strategies.md).
+A file with another hash over stored data stops a run with `skip`, and
+replaces the stored data with `overwrite`; the run checks it again just
+before each commit. A file that overlaps another file of its batch is
+skipped. For details, see [Write strategies](storage-strategies.md).
 
 ## Read a store
 
