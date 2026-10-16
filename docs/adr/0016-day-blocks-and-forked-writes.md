@@ -68,7 +68,11 @@ portable one exists.
 
 Existing stores are moved to this layout by one explicit command,
 `canvodpy store migrate-layout`, after `migrate-metadata`; a store not
-yet moved is refused with a message naming it. The temporal-overlap
+yet moved is refused with a message naming it. The migration (#279) takes each
+day's cadence from its data, the finest step between its epochs rounded
+to 1 ms, keeps the entry written last of an epoch stored twice, keeps the
+groups' attributes and metadata, fills the log book's `epochs` column and
+commits once; groups of day blocks written without a block index get it. The temporal-overlap
 check, deduplication on read and the overwrite branch are not needed
 for day blocks and are deprecated (ADR 0005). Several runs on different
 machines write one store on S3 (ADR 0019); this layout needs no change

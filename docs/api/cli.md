@@ -295,6 +295,7 @@ $ canvodpy store [OPTIONS] COMMAND [ARGS]...
 * `maintain`: Expire old snapshots of one site's store...
 * `maintain-due`: Run only the store maintenance that's due,...
 * `migrate-metadata`: Move a store written before repository...
+* `migrate-layout`: Move a store written by appending files to...
 * `amend`: Change the description of a site's store,...
 
 ### `canvodpy store list`
@@ -471,6 +472,39 @@ $ canvodpy store migrate-metadata [OPTIONS] {site}
 * `--naming-authority <str>`: Your institution's domain in reverse order, for example at.ac.tuwien. Default: the store's own, if it is a reverse DNS name; otherwise processing.metadata.naming_authority in the settings.
 * `--set field.path=value`: A field or content setting the store lacks, for example identity.description=Beech forest site, or sites.my_site.receivers.reference_01.paired_canopies=[canopy_01]. Repeat for more.
 * `--yes`: Migrate without asking.
+* `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--help`: Show this message and exit.
+
+### `canvodpy store migrate-layout`
+
+Move a store written by appending files to day blocks (ADR 0016).
+
+Runs write day blocks only, so a store whose groups were written by
+appending has to be moved first. Each such group is written again, day
+by day: every day gets a block of slots at its cadence, the finest step
+between its epochs. An epoch stored more than once keeps the entry
+written last. The groups keep their attributes, log books and other
+metadata, and get the chunks of the settings
+(processing.icechunk.chunk_strategies).
+
+Shows what it will do and asks first. Everything goes into one commit;
+snapshots from before stay readable. A store written before repository
+metadata needs canvodpy store migrate-metadata first.
+
+**Usage**:
+
+```console
+$ canvodpy store migrate-layout [OPTIONS] {site}
+```
+
+**Arguments**:
+
+* `site`: Site name, as defined under sites: in canvod-settings.yaml  [required]
+
+**Options**:
+
+* `--store gnss|vod`: Store to move.  [default: gnss]
+* `--yes`: Move without asking.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 
