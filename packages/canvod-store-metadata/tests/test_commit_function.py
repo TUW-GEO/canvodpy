@@ -309,6 +309,98 @@ class TestCommitMetadata:
         assert bytes(environments[f"{lock_hash}/pyproject_toml"][...]).decode()
 
 
+def _project(tmp_path: Path, name: str) -> Path:
+    """A uv project with its own lockfile; a run from it records that lockfile."""
+    project = tmp_path / name
+    project.mkdir()
+    (project / "pyproject.toml").write_text(f'[project]\nname = "{name}"\n')
+    (project / "uv.lock").write_text(f"version = 1\n# {name}\n")
+    return project
+
+
+def _history(path: Path) -> list:
+    """The commits of ``main``, newest first, without the initial one."""
+    repo = _repo(path)
+    return list(repo.ancestry(snapshot_id=repo.lookup_branch("main")))[:-1]
+
+
+def _environments(path: Path, snapshot_id: str) -> list[str]:
+    session = _repo(path).readonly_session(snapshot_id=snapshot_id)
+    root = zarr.open_group(session.store, mode="r")
+    if "canvod/environments" not in root:
+        return []
+    return sorted(name for name, _ in root["canvod/environments"].groups())
+
+
+class TestLockfileCommit:
+    """The lockfile text goes into the store in its own commit (#352)."""
+
+    def test_a_new_lockfile_is_stored_in_its_own_commit_before_the_data(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.chdir(_project(tmp_path, "first"))
+        path = _store(tmp_path)
+        monkeypatch.chdir(_project(tmp_path, "second"))
+
+        _commit(path, lambda s: _write_receiver(s, "canopy_01", "2025-01-01", 4))
+
+        data, lockfile, *_ = _history(path)
+        assert data.message == "write"
+        assert lockfile.message == "Store the lockfile in use"
+        new_hash = data.metadata["environment"]["uv_lock_hash"]
+        assert lockfile.metadata["environment"]["uv_lock_hash"] == new_hash
+        assert new_hash in _environments(path, lockfile.id)
+        # The lockfile commit holds no data; the data commit writes no lockfile.
+        lockfile_root = zarr.open_group(
+            _repo(path).readonly_session(snapshot_id=lockfile.id).store, mode="r"
+        )
+        assert "canopy_01" not in lockfile_root
+        assert _environments(path, data.id) == _environments(path, lockfile.id)
+
+    def test_a_lockfile_already_stored_makes_no_commit(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(_project(tmp_path, "first"))
+        path = _store(tmp_path)
+        monkeypatch.chdir(_project(tmp_path, "second"))
+        _commit(path, lambda s: _write_receiver(s, "canopy_01", "2025-01-01", 4))
+
+        _commit(path, lambda s: _write_receiver(s, "reference_01", "2025-01-01", 4))
+
+        messages = [commit.message for commit in _history(path)]
+        assert messages.count("Store the lockfile in use") == 1
+        assert messages[0] == "write"
+
+    def test_two_runs_with_the_same_new_lockfile_store_it_once(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.chdir(_project(tmp_path, "first"))
+        path = _store(tmp_path)
+        monkeypatch.chdir(_project(tmp_path, "second"))
+        repo = _repo(path)
+        first, second = repo.writable_session("main"), repo.writable_session("main")
+        _write_receiver(first, "canopy_01", "2025-01-01T00:00:00", 4)
+        _write_receiver(second, "reference_01", "2025-01-01T00:00:00", 6)
+
+        commit_with_rebase(first, "canopy", store_path=path, config=_CONFIG)
+        commit_with_rebase(second, "reference", store_path=path, config=_CONFIG)
+
+        messages = [commit.message for commit in _history(path)]
+        assert messages[:3] == ["reference", "canopy", "Store the lockfile in use"]
+        # The creation's lockfile and the new one, each stored once.
+        assert len(_environments(path, _history(path)[0].id)) == 2
+
+    def test_a_store_created_from_a_new_lockfile_keeps_it_in_the_creation_commit(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.chdir(_project(tmp_path, "first"))
+        path = _store(tmp_path)
+
+        creation = _history(path)[0]
+        assert creation.message == "Write store metadata"
+        assert creation.metadata["environment"]["uv_lock_hash"] in _environments(
+            path, creation.id
+        )
+
+
 class TestCheck:
     def test_a_root_copy_edited_by_hand_refuses_the_next_commit(self, tmp_path):
         path = _store(tmp_path)

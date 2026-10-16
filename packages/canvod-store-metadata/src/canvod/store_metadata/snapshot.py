@@ -358,8 +358,12 @@ def prepare_commit(
     *,
     store_path: StoreLocation | Path | str,
     config: Any,
+    write_environment: bool = True,
 ) -> dict[str, Any]:
     """Write the root copy, summary and lockfile text; return the commit metadata.
+
+    ``write_environment=False`` leaves the lockfile text out: a data commit
+    finds it stored by a commit of its own before it (#352).
 
     Raises
     ------
@@ -370,7 +374,8 @@ def prepare_commit(
     check_root_copy(dict(root.attrs), repository, store_path)
     committed_at = datetime.now(UTC).isoformat()
     metadata, texts = commit_metadata(repository, config, store_path, committed_at)
-    _write_environment(root, texts)
+    if write_environment:
+        _write_environment(root, texts)
 
     summary = snapshot_summary(root, repository, committed_at)
     attrs = {k: v for k, v in root.attrs.items() if k not in _ROOT_COPY_KEYS}
