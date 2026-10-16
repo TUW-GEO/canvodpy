@@ -1,8 +1,10 @@
 name: S3 Tests
 
 # Stores on S3 against an S3 emulator (#303): created, opened, metadata
-# written and read, and conflicting commits refused. The tests are
-# packages/canvod-store-metadata/tests/test_s3_store.py; without an S3
+# written and read, and conflicting commits refused, plus
+# ``canvodpy config init --from-store`` on an S3 store (#356). The tests are
+# packages/canvod-store-metadata/tests/test_s3_store.py and
+# canvodpy/tests/test_config_from_store_s3.py; without an S3
 # service they skip, so the platform tests don't run them.
 #
 # The emulator is RustFS (Apache-2.0), the one Icechunk's own CI tests
@@ -84,6 +86,7 @@ jobs:
               run: |
                   set -o pipefail
                   uv run pytest packages/canvod-store-metadata/tests/test_s3_store.py \
+                      canvodpy/tests/test_config_from_store_s3.py \
                       --verbose --color=no -rs | tee pytest.log
                   if grep -q SKIPPED pytest.log; then
                       echo "::error::S3 tests were skipped; the emulator setup is broken."

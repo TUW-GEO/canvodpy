@@ -165,8 +165,7 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
 
 
 #: The placeholder a settings file from a store keeps for a machine value
-#: (see ``canvod.store_metadata.settings_file.PLACEHOLDER``).
-_PLACEHOLDER = "TODO"
+#: (supplied by ``canvod.store_metadata.settings_file.PLACEHOLDER``).
 
 
 def _store_file_comment(store: str) -> str:
@@ -475,6 +474,8 @@ def _print_site_report(report) -> None:
 
 def _todo_placeholders(config_dir: Path) -> list[str]:
     """The dotted keys of every ``TODO`` value in ``config_dir``'s settings."""
+    from canvod.store_metadata import PLACEHOLDER
+
     settings_file = config_dir / "canvod-settings.yaml"
     if not settings_file.exists():
         return []
@@ -487,7 +488,7 @@ def _todo_placeholders(config_dir: Path) -> list[str]:
         elif isinstance(node, list):
             for index, value in enumerate(node):
                 walk(value, f"{path}[{index}]")
-        elif node == _PLACEHOLDER:
+        elif node == PLACEHOLDER:
             placeholder_keys.append(path)
 
     placeholder_keys: list[str] = []

@@ -9,6 +9,7 @@ repository metadata, and the machine values a run owner fills in are
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from .content import MissingContentSettingsError
@@ -44,19 +45,43 @@ def _content_settings(repository: dict[str, Any], store: Any) -> dict[str, Any]:
 def _store_root_and_name(store: Any, site_name: str) -> tuple[str, str]:
     """``(stores_root_dir, gnss_store_name)`` of the store argument.
 
-    A store lives at ``<root>/<site>/<name>``: ``<root>`` is the
-    ``stores_root_dir`` (a folder or the ``s3://`` root), ``<name>`` the
-    store's own directory (a request for the S3 path counts the last part
-    only). The site component must match the store's recorded site.
+    A store lives at ``<stores_root_dir>/<site>/<store_name>``: ``<site>`` is
+    the parent folder for a local store, or the S3 prefix part before the
+    name for an ``s3://`` URL. If the site is not the site the store
+    records, nothing is written and the error names the expected layout.
+
+    Raises
+    ------
+    ValueError
+        If the parent folder (or S3 prefix part before the name) is not the
+        site the store records.
     """
     text = str(store).rstrip("/")
-    name = text.rsplit("/", 1)[-1]
-    tail = f"/{site_name}/{name}"
-    if text.endswith(tail):
-        root = text[: -len(tail)]
+    if text.startswith("s3://"):
+        parts = text.split("/")
+        name = parts[-1]
+        site_part = parts[-2] if len(parts) >= 2 else ""
+        root = "/".join(parts[:-2])
     else:
-        root = text.rsplit("/", 2)[0]
-    return (root or "/"), (name or PLACEHOLDER)
+        p = Path(text)
+        name = p.name
+        site_part = p.parent.name
+        root = str(p.parent.parent)
+    if site_part != site_name or not name:
+        raise _layout_error(store, site_name)
+    return root or "/", name
+
+
+def _layout_error(store: Any, site_name: str) -> ValueError:
+    """The error for a store not at ``<root>/<site>/<name>``."""
+    return ValueError(
+        f"The store at {store} is not at the layout "
+        "<stores_root_dir>/<site>/<store_name>: the site the store records "
+        f"is {site_name!r}, but the folder (or S3 prefix part) before the "
+        "store's name is not it. "
+        "A store lives at <stores_root_dir>/<site>/<store_name>; use its "
+        "<root>/<site>/<name> path, or write to a new store."
+    )
 
 
 def settings_from_store(store: Any) -> dict[str, Any]:

@@ -219,7 +219,7 @@ ADR 0019 records why ([Decisions](../adr/index.md)).
 A store's content settings are what a second machine must match to write
 into that store. `canvodpy config init --from-store <store>` writes a
 settings file from them, which is how a fresh worker joins a store, and
-how anyone reproduces the processing of a store it can open (a published
+how anyone reproduces the processing of a store they can open (a published
 one, or a copy):
 
 ```bash

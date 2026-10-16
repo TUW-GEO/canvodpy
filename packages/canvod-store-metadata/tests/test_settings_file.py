@@ -119,3 +119,28 @@ def test_the_store_root_and_name_come_from_the_store_argument(tmp_path):
     assert receivers["reference_01"]["directory"] == "TODO"
     assert receivers["reference_01"]["reader_format"] == "auto"
     assert receivers["reference_01"]["paired_canopies"] == ["canopy_01"]
+
+
+def test_a_local_store_not_at_the_site_layout_is_refused(tmp_path):
+    """The parent folder must be the site the store records (#356 review)."""
+    store = tmp_path / "copy" / "rinex"
+    ensure_store_metadata(
+        store,
+        config=_settings(tmp_path),
+        site_name=SITE,
+        store_type="gnss_store",
+        source_format="rinex3",
+        names=CONTENT_NAMES,
+    )
+
+    with pytest.raises(ValueError, match=r"<stores_root_dir>/<site>/<store_name>") as e:
+        settings_from_store(store)
+    assert repr(SITE) in str(e.value)
+
+
+def test_an_s3_url_not_at_the_site_layout_is_refused():
+    """A missing site prefix part in an S3 URL is refused (#356 review)."""
+    from canvod.store_metadata.settings_file import _store_root_and_name
+
+    with pytest.raises(ValueError, match=r"<stores_root_dir>/<site>/<store_name>"):
+        _store_root_and_name("s3://b/rinex", SITE)
