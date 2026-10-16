@@ -22,13 +22,15 @@ processing:
 settings. `canvodpy config show` prints the strategy in use under
 **Storage**.
 
-!!! note "The VOD store always skips"
+!!! note "The VOD store"
     The strategy applies to the GNSS store only. A run skips a VOD result
-    when the VOD store already holds one computed from the same source
-    files, or one whose epoch range overlaps it; the log book records
-    `skip`. To compute VOD again for days that are already in the VOD
-    store, write to a new VOD store: set another
-    `processing.storage.vod_store_name`.
+    when the VOD store already holds one computed from the same GNSS
+    files. In a VOD store made of
+    [day blocks](overview.md#the-vod-store), a result from other files
+    replaces the stored VOD of its day; in a VOD store written by
+    appending, a result whose epochs overlap stored VOD is skipped too. To
+    compute VOD again from the same GNSS files, write to a new VOD store:
+    set another `processing.storage.vod_store_name`.
 
 ## The strategies
 

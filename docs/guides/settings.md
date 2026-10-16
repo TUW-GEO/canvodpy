@@ -580,7 +580,7 @@ What a run does with a file that is already in the GNSS store; new files are alw
 
 #### `processing.storage.vod_store_strategy` {#processing-storage-vod_store_strategy}
 
-Deprecated, has no effect. VOD writes always skip a result whose source files or epoch range are already in the VOD store. To recompute VOD for days already stored, write to a new VOD store (set another `vod_store_name`).
+Deprecated, has no effect. A VOD write skips a result from the same GNSS files as a stored one. Another result replaces the stored VOD of its day in a VOD store made of day blocks, and is skipped in one written by appending. To recompute VOD from the same GNSS files, write to a new VOD store (set another `vod_store_name`).
 
 - Type: one of `skip`, `overwrite`, `unsafe_append`, or null
 - Default: `null`

@@ -100,9 +100,19 @@ $$
 
 ## VOD store
 
-A run adds VOD results one day at a time. A day that ends inside a chunk
-makes the next day rewrite that chunk, so set the epoch chunk to the
-epochs of one day:
+A VOD store group made of [day blocks](overview.md#the-vod-store) is
+chunked like the GNSS store: a day holds a whole number of chunks, so the
+cadence of a day must divide 86400 s / epoch. A day of VOD has the cadence
+of its GNSS data, so the default, 180 epochs as in the GNSS store, takes
+every day the GNSS store takes. With another epoch chunk, a run refuses a
+day of VOD whose cadence doesn't fit (`CadenceError`).
+
+### Groups written by appending
+
+A VOD store group written by canVODpy versions before day blocks is still
+written by appending one day at a time. A day that ends inside a chunk
+makes the next day rewrite that chunk, so the epoch chunk works best at
+the epochs of one day:
 
 $$
 \text{epoch} = \frac{86400\,\text{s}}{\text{sampling interval in s}}
@@ -119,9 +129,10 @@ example `.compute()`, `.values`, or a plot), and then only the chunks the
 result needs.
 
 With the default `sid: -1`, a chunk holds all signals, so one signal over a
-year reads 365 chunks of the VOD store and 35,040 of the GNSS store at
-5 s. If you read single signals of the VOD store over long periods,
-rechunk it along `sid` with `rechunk_group()`.
+year at 5 s reads 35,040 chunks of either store, 96 per day. A VOD store
+group written by appending, with one day per chunk, reads 365. If you read
+single signals over long periods, rechunk the group along `sid` with
+`rechunk_group()`.
 
 `read_group()` returns Dask chunks equal to the chunks on disk, whatever
 `chunk_strategies` says now. Its `chunks` argument sets other Dask chunks

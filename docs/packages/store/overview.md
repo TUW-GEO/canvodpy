@@ -121,6 +121,32 @@ store again, uses the blocks already there, and adds the rest.
 it leaves out the empty ones (slots where every floating-point variable is
 missing).
 
+### The VOD store
+
+A VOD store group is made of day blocks when the canopy or the reference
+group of its analysis is. A day of VOD gets the cadence of its GNSS data:
+the coarser of the two groups' cadences for that day, so every VOD epoch
+has its own slot. Slots without VOD hold NaN.
+
+- A run writes the VOD of each day with its own commit. The VOD of all
+  analyses of a day shares that commit.
+- A write covers exactly one day; a result of more than one day is
+  refused (`LayoutError`). The log-book row of a write records how many
+  epochs of the day hold VOD (`epochs`).
+- A result computed from the same GNSS files as a stored one isn't
+  written; the run logs it. A result from other GNSS files, for example
+  after more files of the day were stored, is written into the day's
+  slots and replaces the VOD that was there. Its log-book row records the
+  action `overwrite`.
+- When the GNSS groups were written by appending, the VOD group is
+  written by appending too, and a result whose epochs overlap stored VOD
+  isn't written. A VOD store group written by appending can't take VOD of
+  GNSS groups made of day blocks (`LayoutError`): write it to a new VOD
+  store (set another `processing.storage.vod_store_name`).
+
+`GnssResearchSite.read_vod_analysis()` returns every slot; with
+`drop_empty=True` it leaves out the empty ones.
+
 ## How a run writes
 
 `canvodpy run` writes to both stores; in your own code, read from them.
