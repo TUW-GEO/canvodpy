@@ -38,6 +38,7 @@ from canvod.store_metadata.io import (
     store_command,
     wait_after_conflict,
 )
+from canvod.store_metadata.layout import LayoutError
 from canvod.store_metadata.location import open_repository, repository_config
 from canvod.store_metadata.summary import cadence_ranges
 from canvod.utils.logging import get_run_id, stage_timer
@@ -437,9 +438,10 @@ class VodWriteItem:
     source_gnss_stores: dict[str, str]
     calculator_name: str
     commit_message: str | None = None
-    #: Cadence in seconds of each day of ``dataset``. Given, the result is
-    #: written into day blocks (ADR 0016); ``None`` appends it to a group
-    #: written by appending, from GNSS groups that are not day blocks.
+    #: Cadence in seconds of the day of ``dataset``, by day. Given, the
+    #: result is written into day blocks (ADR 0016) and must cover exactly
+    #: that one day; ``None`` appends it to a group written by appending,
+    #: from GNSS groups that are not day blocks.
     cadences: Mapping[np.datetime64, float] | None = None
 
 
@@ -453,6 +455,25 @@ class VodWritePlan:
     end: np.datetime64
     commit_message: str  # per-group description, then the batch commit message
     dataset: xr.Dataset
+
+
+def _require_one_day(plan: VodWritePlan) -> None:
+    """Refuse a day-block VOD result that does not cover exactly one day.
+
+    The log book keeps one row per write; with one day per row, the
+    latest row of a day says what the day holds (the snapshot summary
+    counts epochs that way).
+    """
+    cadences = plan.item.cadences or {}
+    days = np.unique(plan.dataset.epoch.values.astype("M8[D]"))
+    if len(cadences) != 1 or days.size != 1 or days[0] not in cadences:
+        msg = (
+            f"VOD result for '{plan.item.group_name}' covers the days "
+            f"{[str(d) for d in days]} with cadences for "
+            f"{[str(d) for d in cadences]}; a day-block write takes one day "
+            "and its cadence."
+        )
+        raise LayoutError(msg)
 
 
 def _vod_batch_commit(
@@ -2698,6 +2719,7 @@ class MyIcechunkStore:
         calculator_name: str,
         dataset_attrs: dict,
         write_strategy: str = VOD_WRITE_STRATEGY,
+        epochs: int | None = None,
     ) -> None:
         """Write one VOD metadata row into an already-open zarr group.
 
@@ -2724,6 +2746,8 @@ class MyIcechunkStore:
                                  the preprocessing records of the GNSS data
                                  behind the result, see
                                  ``canvod.config.models.vod_preprocessing_record``)
+            epochs              int64 (epochs with data, given for day
+                                 blocks; -1 in rows without it)
         """
         dataset_attrs, record = split_preprocessing(dataset_attrs)
         written_at = datetime.now(UTC).isoformat()
@@ -2742,6 +2766,8 @@ class MyIcechunkStore:
             "attrs": json.dumps(dataset_attrs, default=str),
             "preprocessing": record,
         }
+        if epochs is not None:
+            row["epochs"] = int(epochs)
         df_row = pl.DataFrame(
             [row],
             schema_overrides={"start": pl.Datetime("ns"), "end": pl.Datetime("ns")},
@@ -3174,9 +3200,11 @@ class MyIcechunkStore:
         CadenceError
             A cadence the chunks cannot take, or finer than the day's block.
         LayoutError
-            A group written by appending, or a day of a result without a
-            cadence.
+            A group written by appending, a day of a result without a
+            cadence, or a result of more than one day.
         """
+        for plan in plans:
+            _require_one_day(plan)
         epoch_chunk = int((self.chunk_strategy or {}).get("epoch", 180))
         message, metadata = _vod_batch_commit(version, "write", plans)
         results: dict[str, VodWriteResult] = {}
@@ -3221,6 +3249,7 @@ class MyIcechunkStore:
                     calculator_name=plan.item.calculator_name,
                     dataset_attrs=dict(dataset.attrs),
                     write_strategy=VOD_DAY_BLOCK_WRITE_STRATEGY,
+                    epochs=drop_empty_slots(dataset, group_name).sizes["epoch"],
                 )
                 results[group_name] = VodWriteResult(
                     group_name=group_name,
