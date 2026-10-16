@@ -489,15 +489,14 @@ class VodComputer:
         """
         import numpy as np
 
-        ensure_vod_store_metadata(
-            self._site, self._calculator_name, [name for name, *_ in entries]
-        )
         days = np.unique(
             np.concatenate(
                 [vod_ds.epoch.values.astype("M8[D]") for _, vod_ds, *_ in entries]
             )
         )
-        results: dict[str, Any] = {}
+        # Build every item first: that refuses receivers preprocessed
+        # differently before anything touches the store.
+        day_items = []
         for day in days:
             day_entries = []
             for name, vod_ds, canopy_ds, sky_ds in entries:
@@ -511,7 +510,21 @@ class VodComputer:
                             self._day_of(sky_ds, day),
                         )
                     )
-            results.update(self._write_one_day(day, day_entries))
+            day_items.append(self._day_items(day, day_entries))
+
+        ensure_vod_store_metadata(
+            self._site, self._calculator_name, [name for name, *_ in entries]
+        )
+        results: dict[str, Any] = {}
+        for items in day_items:
+            results.update(self._site._site.store_vod_analyses_batch(items=items))
+        for analysis_name, *_ in entries:
+            self.log.info(
+                "vod_written_to_store",
+                analysis=analysis_name,
+                model=self._calculator_name,
+                days=len(day_items),
+            )
         return results
 
     @staticmethod
@@ -554,12 +567,18 @@ class VodComputer:
                 cadences.append(blocks[day].cadence_s)
         return {day: max(cadences)} if cadences else None
 
-    def _write_one_day(
+    def _day_items(
         self,
         day: Any,
         entries: list[tuple[str, xr.Dataset, xr.Dataset, xr.Dataset]],
-    ) -> dict[str, Any]:
-        """Write the VOD results of one day, all analyses in one commit."""
+    ) -> list[dict[str, Any]]:
+        """Store items of one day's VOD results, one per analysis.
+
+        Raises
+        ------
+        PreprocessingMismatchError
+            If canopy and reference were preprocessed differently.
+        """
         research_site = self._site._site
         gnss_store_path = str(research_site.gnss_store.store_path)
 
@@ -605,16 +624,7 @@ class VodComputer:
                     "cadences": self._gnss_cadences(analysis_name, day),
                 }
             )
-
-        results = research_site.store_vod_analyses_batch(items=items)
-
-        for analysis_name, *_ in entries:
-            self.log.info(
-                "vod_written_to_store",
-                analysis=analysis_name,
-                model=self._calculator_name,
-            )
-        return results
+        return items
 
     def _prepare_for_store(self, vod_ds: xr.Dataset) -> xr.Dataset:
         """Drop encodings inherited from the inputs and rechunk.

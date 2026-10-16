@@ -198,6 +198,14 @@ def _vod_output_params(monkeypatch):
     return params
 
 
+@pytest.fixture(autouse=True)
+def _no_day_blocks(monkeypatch):
+    """The mocked GNSS store holds no day blocks, so VOD is appended."""
+    monkeypatch.setattr(
+        "canvod.store.day_blocks.holds_day_blocks", lambda store, group: False
+    )
+
+
 def _day_datasets(canopy_epochs: int = 6, ref_epochs: int = 4) -> dict:
     canopy = _make_ds(n_epochs=canopy_epochs, n_sids=3)
     canopy["SNR"] = canopy["SNR"] * 30.0
