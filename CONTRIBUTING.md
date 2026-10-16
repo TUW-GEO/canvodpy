@@ -2,11 +2,11 @@
 
 Contributions are welcome. This guide covers the development setup and contribution workflow.
 
-## Required Tools
+## Required tools
 
 Two external tools must be installed separately (not managed by `uv sync`):
 
-### uv (Python Package Manager)
+### The `uv` package manager
 
 ```bash
 # macOS/Linux
@@ -22,7 +22,7 @@ refuses to start.
 
 [uv documentation](https://docs.astral.sh/uv/)
 
-### just (Command Runner)
+### The `just` command runner
 
 ```bash
 # macOS/Linux
@@ -34,29 +34,29 @@ brew install just
 
 [just documentation](https://github.com/casey/just)
 
-## Types of Contributions
+## Types of contributions
 
-### Report Bugs
+### Report bugs
 
 Report bugs at https://github.com/nfb2021/canvodpy/issues. Include operating system, local setup details, and steps to reproduce.
 
-### Fix Bugs
+### Fix bugs
 
 Issues tagged "bug" and "help wanted" are open for contributions.
 
-### Implement Features
+### Implement features
 
 Issues tagged "enhancement" and "help wanted" are open for contributions.
 
-### Write Documentation
+### Write documentation
 
 Improvements to documentation, docstrings, or external articles are appreciated.
 
-### Submit Feedback
+### Submit feedback
 
 File feature proposals at https://github.com/nfb2021/canvodpy/issues. Keep the scope narrow and explain the intended behavior.
 
-## Development Workflow
+## Development workflow
 
 1. Install required tools (uv and just).
 
@@ -95,7 +95,7 @@ File feature proposals at https://github.com/nfb2021/canvodpy/issues. Keep the s
    git push origin name-of-your-bugfix-or-feature
    ```
 
-### Commit Message Format
+### Commit message format
 
 ```
 <type>(<scope>): <subject>
@@ -115,7 +115,7 @@ git commit -m "feat(viz)!: redesign 3D plotting API"  # Breaking change
 
 See [Conventional Commits](https://www.conventionalcommits.org/) for the full specification.
 
-## Common Commands
+## Common commands
 
 ```bash
 just --list                    # Show all commands
@@ -129,9 +129,9 @@ just docs-lint-changed         # Vale on the pages changed since origin/main
 just docs-links                # Link check of the built docs (lychee)
 ```
 
-## Pull Request Guidelines
+## Pull request guidelines
 
-1. Include tests for new functionality: new code must not reduce test coverage.
+1. Include tests for new features: new code must not reduce test coverage.
 2. Update the Zensical documentation in `docs/` with every change of behavior (new logic, new code, changed code), public API, or configuration. A pull request without docs to match is declined. The changed pages must pass Vale (`just docs-lint-changed`) and the built site the link check (`just docs-links`); CI runs both.
 3. Ensure compatibility with Python 3.14+.
 4. Add yourself to `CONTRIBUTORS.md` if this is your first contribution.
@@ -143,7 +143,7 @@ By submitting a pull request, you agree that your contribution is licensed under
 the same terms. The `LICENSE` and `NOTICE` files at the repository root apply to
 all source files. Per-file license headers are not required.
 
-## Code Quality
+## Code quality
 
 - **ruff** for linting and formatting
 - **ty** for type checking
