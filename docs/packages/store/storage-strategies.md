@@ -48,10 +48,11 @@ writes and again at the tip, just before each commit, so a run that lost
 a conflict to another run finds that run's files too.
 
 In a store made of [day blocks](overview.md#day-blocks), a file that is
-written again goes into the same slots, the slots of the period in its
-name, so `overwrite` and `unsafe_append` both replace all of the file's
-slots in the run's commit, also those it now has no epochs for, and the
-log book records `overwritten`. No temporary branch is needed, and no epoch is
+written again goes into the same slots, so `overwrite` and
+`unsafe_append` both replace all of the file's slots in the run's commit,
+also those of its earlier write (found in the log book by its canonical
+name) it now has no epochs for, and the log book records `overwritten`.
+Slots inside another stored file's span are never emptied. No temporary branch is needed, and no epoch is
 stored twice. The `sbf_obs` of such a file stays as first stored. The
 sections below describe a store written by appending.
 

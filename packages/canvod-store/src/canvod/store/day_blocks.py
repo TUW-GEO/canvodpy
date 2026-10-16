@@ -393,29 +393,28 @@ def _clear_slots(
     )
 
 
-def _period_slots(
+def _span_slots(
     blocks: Mapping[np.datetime64, DayBlock],
     start: np.datetime64,
-    end: np.datetime64,
+    last: np.datetime64,
 ) -> list[tuple[DayBlock, int, int]]:
-    """The slots whose grid times lie in ``[start, end)``, block by block.
+    """The slots from ``start`` to ``last`` (both included), block by block.
 
-    Days without a block hold nothing and are left out.
+    ``start`` and ``last`` are a file's first and last epoch and go to their
+    nearest slots as epochs do. Days without a block hold nothing and are
+    left out.
     """
     start_ns = int(np.datetime64(start, "ns").astype(np.int64))
-    end_ns = int(np.datetime64(end, "ns").astype(np.int64))
+    last_ns = int(np.datetime64(last, "ns").astype(np.int64))
     out = []
-    for day_number in range(start_ns // _DAY_NS, (end_ns - 1) // _DAY_NS + 1):
+    for day_number in range(start_ns // _DAY_NS, last_ns // _DAY_NS + 1):
         block = blocks.get(np.datetime64(day_number, "D"))
         if block is None:
             continue
         day_ns = day_number * _DAY_NS
-        # First slot at or after a time: ceiling division by the cadence.
-        first = -(-(max(start_ns, day_ns) - day_ns) // block.cadence_ns)
-        stop = -(-(min(end_ns, day_ns + _DAY_NS) - day_ns) // block.cadence_ns)
-        first, stop = max(first, 0), min(stop, block.slots)
-        if first < stop:
-            out.append((block, first, stop))
+        offsets = np.array([max(start_ns, day_ns), min(last_ns, day_ns + _DAY_NS - 1)])
+        first, final = _slots(offsets - day_ns, block).tolist()
+        out.append((block, first, final + 1))
     return out
 
 
@@ -459,7 +458,8 @@ def write_file_region(
     *,
     blocks: Mapping[np.datetime64, DayBlock] | None = None,
     chunks: Collection[int] | None = None,
-    period: tuple[np.datetime64, np.datetime64] | None = None,
+    earlier: Sequence[tuple[np.datetime64, np.datetime64]] = (),
+    keep: Sequence[tuple[np.datetime64, np.datetime64]] = (),
 ) -> FileRegion:
     """Write a file's epochs into the blocks of their days.
 
@@ -477,13 +477,16 @@ def write_file_region(
         The epoch chunks the write may touch, numbered along the group's
         epoch axis; ``None`` allows all. A write into a fork passes the
         chunks its task owns (see :class:`ChunkOwnershipError`).
-    period
-        The file's period ``(start, end)``, e.g. from its name: the slots
-        whose grid times lie in ``[start, end)`` belong to the file, so the
-        ones before its first and after its last epoch are emptied too.
-        Nothing of an earlier write of the file stays, also when it now has
-        fewer epochs at its start or end. ``None``: only the slots from the
-        first to the last epoch are written.
+    earlier
+        The ``(first epoch, last epoch)`` of the file's earlier writes, from
+        its log-book rows: their slots outside the file's new span are
+        emptied, so nothing of an earlier write stays when the file now has
+        fewer epochs at its start or end. Empty for a first write: only the
+        slots from the file's first to its last epoch are written.
+    keep
+        The ``(first epoch, last epoch)`` of other stored files: their slots
+        are never emptied, also where an earlier write of this file
+        reached into them.
 
     Raises
     ------
@@ -531,10 +534,13 @@ def write_file_region(
             raise SlotCollisionError(msg)
         regions.append((block, idx, slots))
 
-    cleared = (
-        []
-        if period is None
-        else _outside_regions(_period_slots(blocks, *period), regions)
+    written = [
+        (block, int(slots.min()), int(slots.max()) + 1) for block, _, slots in regions
+    ]
+    kept = [span for first, last in keep for span in _span_slots(blocks, first, last)]
+    cleared = _outside(
+        [span for first, last in earlier for span in _span_slots(blocks, first, last)],
+        written + kept,
     )
     if chunks is not None:
         _check_chunks(session, group, regions, chunks)
@@ -562,26 +568,24 @@ def write_file_region(
     )
 
 
-def _outside_regions(
-    period: list[tuple[DayBlock, int, int]],
-    regions: list[tuple[DayBlock, np.ndarray, np.ndarray]],
+def _outside(
+    spans: list[tuple[DayBlock, int, int]],
+    holes: list[tuple[DayBlock, int, int]],
 ) -> list[tuple[DayBlock, int, int]]:
-    """The period's slots outside the regions, which write their own slots."""
-    spans = {
-        block.day: (int(slots.min()), int(slots.max()) + 1)
-        for block, _, slots in regions
-    }
+    """The slots of ``spans`` outside every one of ``holes``, block by block."""
     out = []
-    for block, first, stop in period:
-        if block.day not in spans:
-            out.append((block, first, stop))
-            continue
-        low, high = spans[block.day]
-        out += [
-            (block, a, b)
-            for a, b in ((first, min(stop, low)), (max(first, high), stop))
-            if a < b
-        ]
+    for block, first, stop in spans:
+        pieces = [(first, stop)]
+        for other, low, high in holes:
+            if other.day != block.day:
+                continue
+            pieces = [
+                (a, b)
+                for p_first, p_stop in pieces
+                for a, b in ((p_first, min(p_stop, low)), (max(p_first, high), p_stop))
+                if a < b
+            ]
+        out += [(block, a, b) for a, b in pieces]
     return out
 
 

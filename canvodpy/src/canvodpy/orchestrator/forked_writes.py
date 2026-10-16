@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import polars as pl
 import structlog
 import xarray as xr
 from icechunk.session import ForkSession, Session
@@ -42,6 +43,11 @@ from canvod.store_metadata.layout import LayoutError
 
 #: Log-book actions of a file a fork wrote, or the writer thread wrote.
 WRITTEN, OVERWRITTEN, SKIPPED = "written", "overwritten", "skipped"
+
+#: A file's first and last epoch.
+Span = tuple[np.datetime64, np.datetime64]
+#: A log-book row's canonical name, hash, and first and last epoch.
+StoredSpan = tuple[str, str, np.datetime64, np.datetime64]
 
 
 @dataclass(frozen=True)
@@ -67,6 +73,10 @@ class ForkTask:
         Each group's file hashes in its log book around this day; a file
         with one of them is skipped with ``gnss_store_strategy: skip`` and
         written again otherwise.
+    stored_spans
+        Each group's log-book rows around this day that wrote data
+        (:func:`stored_spans`): a file written again empties the slots of
+        its earlier write, but none of another file's (:func:`rewrite_spans`).
     strategy
         ``processing.storage.gnss_store_strategy``.
     preprocessing
@@ -83,6 +93,7 @@ class ForkTask:
     chunks: Mapping[str, frozenset[int]]
     blocks: Mapping[str, Mapping[np.datetime64, DayBlock]]
     stored_hashes: Mapping[str, frozenset[str]]
+    stored_spans: Mapping[str, tuple[StoredSpan, ...]]
     strategy: str
     preprocessing: PreprocessingConfig | None
     canonical_names: Mapping[Path, str]
@@ -256,22 +267,54 @@ def write_files_into_fork(fork: ForkSession, task: ForkTask) -> ForkResult:
     return result
 
 
-def named_period(canonical_name: str) -> tuple[np.datetime64, np.datetime64] | None:
-    """The period ``(start, end)`` a file's canonical name gives; ``None`` if none.
+def stored_spans(df: pl.DataFrame | None) -> tuple[StoredSpan, ...]:
+    """The ``(canonical name, hash, first epoch, last epoch)`` of log-book rows.
 
-    The slots of the period belong to the file: a write empties the ones
-    its epochs leave out (:func:`~canvod.store.day_blocks.write_file_region`),
-    so a file written again with fewer epochs leaves nothing of its earlier
-    write. A file without a canonical name (possible with temporal
-    aggregation) has no known period; only the slots from its first to
-    its last epoch are written.
+    Rows of files skipped as already stored are left out: nothing of theirs
+    was written by that row.
     """
-    if not canonical_name:
-        return None
-    from canvod.preflight.convention import CanVODFilename
+    if df is None or df.is_empty():
+        return ()
+    if "action" in df.columns:
+        df = df.filter(~pl.col("action").is_in(["skip", "skipped"]))
+    names = (
+        df["canonical_name"].fill_null("").cast(pl.String).to_list()
+        if "canonical_name" in df.columns
+        else [""] * df.height
+    )
+    return tuple(
+        (name, str(rinex_hash or ""), start, end)
+        for name, rinex_hash, start, end in zip(
+            names,
+            df["rinex_hash"].to_list(),
+            df["start"].cast(pl.Datetime("ns")).to_numpy(),
+            df["end"].cast(pl.Datetime("ns")).to_numpy(),
+            strict=True,
+        )
+    )
 
-    named = CanVODFilename.from_filename(canonical_name)
-    return np.datetime64(named.start, "ns"), np.datetime64(named.end, "ns")
+
+def rewrite_spans(
+    stored: Sequence[StoredSpan], canonical_name: str, rinex_hash: str
+) -> tuple[list[Span], list[Span]]:
+    """The spans of a file's earlier writes, and those of the other stored files.
+
+    A write of the file empties the slots of its earlier writes outside its
+    new span, but none of the other files' slots
+    (:func:`~canvod.store.day_blocks.write_file_region`). Earlier writes are
+    the rows with the file's canonical name, so a changed file (a new hash)
+    leaves nothing of before. A file without a canonical name has no known
+    earlier writes; only the slots from its first to its last epoch are
+    written.
+    """
+    earlier: list[Span] = []
+    others: list[Span] = []
+    for name, stored_hash, start, end in stored:
+        if canonical_name and name == canonical_name:
+            earlier.append((start, end))
+        elif stored_hash != rinex_hash:
+            others.append((start, end))
+    return earlier, others
 
 
 def _write_one(
@@ -309,6 +352,9 @@ def _write_one(
     numbers.action = OVERWRITTEN if exists else WRITTEN
     clean = normalize_encodings(cleanse_dataset_attrs(ds))
     numbers.attrs = dict(clean.attrs)
+    earlier, others = rewrite_spans(
+        task.stored_spans.get(group, ()), numbers.canonical_name, numbers.rinex_hash
+    )
     t_file = time.perf_counter()
     try:
         region = write_file_region(
@@ -317,7 +363,8 @@ def _write_one(
             clean,
             blocks=task.blocks.get(group),
             chunks=task.chunks.get(group, frozenset()),
-            period=named_period(numbers.canonical_name),
+            earlier=earlier,
+            keep=others,
         )
     except ChunkOwnershipError, LayoutError:
         # Beyond the task's chunks or days: the writer thread writes it

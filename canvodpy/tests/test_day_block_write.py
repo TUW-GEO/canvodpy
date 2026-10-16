@@ -152,6 +152,25 @@ def test_a_file_written_again_with_fewer_epochs_leaves_nothing_of_before(
     assert read_metadata(store.store_path).summaries.total_epochs == 5
 
 
+def test_a_first_write_leaves_the_rest_of_its_period_alone(proc, store) -> None:  # noqa: F811
+    # A receiver restart: Y starts at 00:10 and is stored first; X, named
+    # for 00:00, ends before 00:10 and is written later for the first time.
+    y_path, y = _file("y", 0)
+    y = y.assign_coords(epoch=y.epoch + np.timedelta64(10, "m"))
+    y.attrs["canonical_name"] = y.attrs["canonical_name"].replace(
+        "0000_15M", "0010_15M"
+    )
+    x = _file("x", 0)
+    proc._write_day_blocks(_inputs("canopy_01", [(y_path, y)]))
+
+    proc._write_day_blocks(_inputs("canopy_01", [x]))
+
+    stored = store.read_group("canopy_01", drop_empty=True)
+    expected = np.concatenate([x[1].epoch.values, y.epoch.values])
+    np.testing.assert_array_equal(stored.epoch.values, expected)
+    assert read_metadata(store.store_path).summaries.total_epochs == 20
+
+
 def test_days_out_of_order_and_two_groups(proc, store) -> None:  # noqa: F811
     day_2 = _file("d2", 0, day="2025-03-29")
     day_1 = _file("d1", 0)

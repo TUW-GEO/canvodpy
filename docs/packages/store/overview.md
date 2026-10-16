@@ -101,13 +101,16 @@ store again, uses the blocks already there, and adds the rest.
 - A slot without data holds its grid time in `epoch`, NaN in
   floating-point variables, and -1 in integer variables such as `LLI` and
   `SSI` (their `_FillValue`).
-- The slots of a file are those of the period in its canonical name
-  (`15M`: 15 minutes from its start). A write fills them all: the file's
-  epochs, and empty slots where it has none. Writing a file again
-  therefore never adds epochs, and a file that now has fewer epochs
-  leaves nothing of its earlier write. A file without a canonical name
-  (possible with `temporal_aggregation`) writes the slots from its first
-  to its last epoch.
+- A write fills the slots from the file's first to its last epoch. When
+  the log book already holds a file of the same canonical name, the
+  write also empties the slots of that earlier write that the file now
+  has no epochs for, but never slots inside another stored file's span.
+  Writing a file again therefore never adds epochs, a file that now has
+  fewer epochs leaves nothing of its earlier write, and a file written
+  for the first time leaves the rest of its named period alone (after a
+  receiver restart, the next file can start inside it). A file without a
+  canonical name (possible with `temporal_aggregation`) replaces only the
+  slots from its first to its last epoch.
 - The cadence of a day is the finest sampling interval in the names of the
   files of the day, or the bin length of
   `processing.preprocessing.temporal_aggregation` when it is set. A day

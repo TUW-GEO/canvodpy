@@ -110,34 +110,67 @@ def test_a_write_inside_its_chunks_is_the_same_as_without(repo):
     np.testing.assert_array_equal(stored.epoch.values, ds.epoch.values)
 
 
-def _period(start_s: float, end_s: float) -> tuple[np.datetime64, np.datetime64]:
+def _span(first_s: float, last_s: float) -> tuple[np.datetime64, np.datetime64]:
+    """A file's first and last epoch, seconds into the day."""
     day = DAY.astype("M8[ns]")
-    return day + np.timedelta64(int(start_s), "s"), day + np.timedelta64(
-        int(end_s), "s"
+    return day + np.timedelta64(int(first_s), "s"), day + np.timedelta64(
+        int(last_s), "s"
     )
 
 
 def test_a_file_written_again_with_fewer_epochs_leaves_nothing_of_before(repo):
     session = repo.writable_session("main")
-    period = _period(0, 900)
-    write_file_region(session, GROUP, _file(0, 30, 30, 1.0), period=period)
-    write_file_region(
-        session, GROUP, _file(900, 30, 30, 3.0), period=_period(900, 1800)
-    )
+    write_file_region(session, GROUP, _file(0, 30, 30, 1.0))
+    write_file_region(session, GROUP, _file(900, 30, 30, 3.0))
     # Two epochs fewer at the start, eight at the end.
     shorter = _file(60, 20, 30, 2.0)
 
-    write_file_region(session, GROUP, shorter, period=period)
+    write_file_region(
+        session, GROUP, shorter, earlier=[_span(0, 870)], keep=[_span(900, 1770)]
+    )
 
     stored = load_group(session.store, GROUP, drop_empty=True)
     assert stored.sizes["epoch"] == 20 + 30
     np.testing.assert_array_equal(stored.epoch.values[:20], shorter.epoch.values)
     assert (stored.SNR.values[:20] == 2.0).all()
-    # The next file's slots are not the period's.
     assert (stored.SNR.values[20:] == 3.0).all()
 
 
-def test_without_a_period_only_the_span_is_written(repo):
+def test_a_first_write_leaves_the_rest_of_its_period_alone(repo):
+    # A receiver restart: the file of 00:10 is stored first, then the file
+    # of 00:00 stops at 00:09:30. Both names give 15-minute periods.
+    session = repo.writable_session("main")
+    write_file_region(session, GROUP, _file(600, 20, 30, 3.0))
+
+    write_file_region(session, GROUP, _file(0, 20, 30, 1.0), keep=[_span(600, 1170)])
+
+    stored = load_group(session.store, GROUP, drop_empty=True)
+    assert stored.sizes["epoch"] == 40
+    assert (stored.SNR.values[:20] == 1.0).all()
+    assert (stored.SNR.values[20:] == 3.0).all()
+
+
+def test_a_file_written_again_keeps_the_slots_of_other_files(repo):
+    # The earlier write reached into a file stored since; its slots stay.
+    session = repo.writable_session("main")
+    write_file_region(session, GROUP, _file(0, 30, 30, 1.0))
+    write_file_region(session, GROUP, _file(600, 20, 30, 3.0))
+
+    write_file_region(
+        session,
+        GROUP,
+        _file(0, 10, 30, 2.0),
+        earlier=[_span(0, 870)],
+        keep=[_span(600, 1170)],
+    )
+
+    stored = load_group(session.store, GROUP, drop_empty=True)
+    assert stored.sizes["epoch"] == 10 + 20
+    assert (stored.SNR.values[:10] == 2.0).all()
+    assert (stored.SNR.values[10:] == 3.0).all()
+
+
+def test_without_earlier_writes_only_the_span_is_written(repo):
     session = repo.writable_session("main")
     write_file_region(session, GROUP, _file(0, 30, 30, 1.0))
 
@@ -148,29 +181,30 @@ def test_without_a_period_only_the_span_is_written(repo):
     assert (stored.SNR.values[[0, 1, 22, 29]] == 1.0).all()
 
 
-def test_a_period_beyond_its_chunks_is_refused_and_writes_nothing(repo):
+def test_an_earlier_write_beyond_its_chunks_is_refused_and_writes_nothing(repo):
     session = repo.writable_session("main")
-    # Epochs in chunk 0, the period reaches into chunk 1 (slot 180 on).
+    # Epochs in chunk 0, the earlier write reached into chunk 1 (slot 180 on).
     inside = _file(170 * 30, 5, 30, 1.0)
 
     with pytest.raises(ChunkOwnershipError, match="chunks"):
         write_file_region(
-            session, GROUP, inside, chunks={0}, period=_period(170 * 30, 190 * 30)
+            session, GROUP, inside, chunks={0}, earlier=[_span(170 * 30, 189 * 30)]
         )
 
     assert not session.has_uncommitted_changes
 
 
-def test_a_period_into_a_day_without_a_block_empties_only_stored_days(repo):
+def test_an_earlier_write_into_a_day_without_a_block_empties_only_stored_days(
+    repo,
+):
     session = repo.writable_session("main")
-    late = _file(86400 - 900, 30, 30, 1.0)
-    write_file_region(session, GROUP, late)
+    write_file_region(session, GROUP, _file(86400 - 900, 30, 30, 1.0))
 
     write_file_region(
         session,
         GROUP,
         _file(86400 - 900, 10, 30, 2.0),
-        period=_period(86400 - 900, 86400 + 900),
+        earlier=[_span(86400 - 900, 86400 + 870)],
     )
 
     stored = load_group(session.store, GROUP, drop_empty=True)

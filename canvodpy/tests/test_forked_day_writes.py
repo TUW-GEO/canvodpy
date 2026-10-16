@@ -227,6 +227,27 @@ def test_a_changed_file_with_fewer_epochs_leaves_nothing_of_before(
     assert summary.total_epochs == stored.sizes["epoch"]
 
 
+def test_a_first_write_leaves_the_rest_of_its_period_alone(seeded, files) -> None:
+    # A receiver restart: file 5 ends at 01:25 and the file after the
+    # restart, named for 01:25, was stored first. Writing file 5 for the
+    # first time must not empty its named period's last five minutes.
+    restart = _dataset(5).isel(epoch=slice(20, None))
+    restart_name = _name(5).replace("0115_15M", "0125_15M")
+    restart.attrs |= {"canonical_name": restart_name, "physical_path": restart_name}
+    restart.attrs["File Hash"] = "restart"
+    _Processor(seeded)._write_day_blocks(
+        _inputs(_GROUP, [(Path(restart_name), restart)])
+    )
+    files[_name(5)] = _dataset(5).isel(epoch=slice(0, 20))
+
+    _write_day(_Processor(seeded))
+
+    stored = seeded.read_group(_GROUP, drop_empty=True)
+    expected = xr.concat([_day(files), restart], dim="epoch").sortby("epoch")
+    np.testing.assert_array_equal(stored.epoch.values, expected.epoch.values)
+    np.testing.assert_array_equal(stored["S1C"].values, expected["S1C"].values)
+
+
 def test_a_rerun_with_skip_writes_no_data(seeded) -> None:
     _write_day(_Processor(seeded))
     before = seeded.read_group(_GROUP, drop_empty=True)
@@ -533,7 +554,7 @@ def test_a_deferred_file_that_fails_fails_the_day(seeded, monkeypatch) -> None:
         msg = "beyond the task's chunks"
         raise ChunkOwnershipError(msg)
 
-    def broken(_session, _numbers):
+    def broken(_session, _numbers, _stored):
         msg = "the writer thread could not write it"
         raise RuntimeError(msg)
 
