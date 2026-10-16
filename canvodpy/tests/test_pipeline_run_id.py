@@ -2,6 +2,7 @@
 
 import re
 from contextlib import ExitStack
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -24,14 +25,33 @@ def make_orchestrator():
         yield _make
 
 
+RUN_ID = r"ExampleSite-\d{8}-\d{6}-[0-9a-f]{6}"
+
+
 def test_new_run_id_format():
-    assert re.fullmatch(r"ExampleSite-\d{8}-\d{6}", new_run_id("ExampleSite"))
+    assert re.fullmatch(RUN_ID, new_run_id("ExampleSite"))
+
+
+def test_new_run_id_starts_with_the_start_time_in_utc():
+    start = datetime(2026, 10, 10, 3, 0, 0, tzinfo=UTC)
+    with patch("canvod.utils.logging.run_context.datetime") as clock:
+        clock.now.return_value = start
+        run_id = new_run_id("ExampleSite")
+    assert run_id.startswith("ExampleSite-20261010-030000-")
+
+
+def test_runs_started_in_the_same_second_get_different_run_ids():
+    start = datetime(2026, 10, 10, 3, 0, 0, tzinfo=UTC)
+    with patch("canvod.utils.logging.run_context.datetime") as clock:
+        clock.now.return_value = start
+        run_ids = {new_run_id("ExampleSite") for _ in range(100)}
+    assert len(run_ids) == 100
 
 
 def test_sets_run_id_until_closed(make_orchestrator):
     assert get_run_id() is None
     with make_orchestrator():
-        assert re.fullmatch(r"ExampleSite-\d{8}-\d{6}", get_run_id() or "")
+        assert re.fullmatch(RUN_ID, get_run_id() or "")
     assert get_run_id() is None
 
 

@@ -10,6 +10,7 @@ the data it wrote -- without any call site needing to pass it explicitly.
 """
 
 import contextvars
+import secrets
 from datetime import UTC, datetime
 
 RUN_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
@@ -18,7 +19,11 @@ RUN_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
 
 
 def new_run_id(site_name: str) -> str:
-    """Return a run_id for *site_name*: the site and the start time in UTC.
+    """Return a run_id for *site_name*: the site, the start time in UTC, a random part.
+
+    The random part keeps run IDs apart when two machines start a run of
+    one site in the same second; each machine has its own run history, so
+    neither can number its run against the other.
 
     Parameters
     ----------
@@ -28,10 +33,10 @@ def new_run_id(site_name: str) -> str:
     Returns
     -------
     str
-        ``{site_name}-{YYYYMMDD-HHMMSS}``, for example
-        ``ExampleSite-20261010-030000``.
+        ``{site_name}-{YYYYMMDD-HHMMSS}-{6 hex digits}``, for example
+        ``ExampleSite-20261010-030000-3f9a1c``.
     """
-    return f"{site_name}-{datetime.now(UTC):%Y%m%d-%H%M%S}"
+    return f"{site_name}-{datetime.now(UTC):%Y%m%d-%H%M%S}-{secrets.token_hex(3)}"
 
 
 def get_run_id() -> str | None:
@@ -45,8 +50,8 @@ def set_run_id(run_id: str) -> contextvars.Token:
     Parameters
     ----------
     run_id : str
-        Identifier for the current pipeline run (see ``cli/run.py``'s
-        ``{site}-{YYYYMMDD-HHMMSS}`` format).
+        Identifier for the current pipeline run, usually from
+        :func:`new_run_id`.
 
     Returns
     -------
