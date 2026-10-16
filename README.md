@@ -17,28 +17,31 @@
 [![CLIMERS @ TU Wien](https://img.shields.io/badge/CLIMERS-TU_Wien-006699)](https://www.tuwien.at/en/mg/geo/climers)
 [![VODnet](https://img.shields.io/badge/-VODnet-2d6a4f?labelColor=555555&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAHhlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAA6gAwAEAAAAAQAAAA4AAAAAjn8NzQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAflJREFUKBWtUEtoE1EUPe+9SczHiam/aixtqi1E7aai4kK0CAVBDFZwrQs3xp2KIriYtiKuav3QRVxYKIjFVihWrCBIaaWioKidQBsxi3SwYmMmkxidYWaemYEEKUgRPHDhXu4575x3gf+NKfVD3UQ2u/Zv7wrLF8mPfV2ZH1ZCNIM7xUCAHHjyfN6wQ8mZo3vvE4Av57tzOjfd/WZpivfJSW5wkzvomnzFe2SFTyyU+iFJtCpk1eaRfOIw84TuRsN7kEkVMDzyEjPvUtga2YiDTRFM5+m+F8XYHMZuzDqaWlQf8yVMpmJ0/DUu9g6hVNQAy8au3W04NHAV85oFRulZS+LDkIjtWmcyHT6vQHYoXwrouTWKkv4LLOAHE4N4K6dxZ2AISl4DpawVDVrYcXSFZtTPGSV8IatjUVErJ+Cwbdstx3Vw8CG+pmQIHg+HUVlWo7aSp/qz9Kn3W5p5S/x4DJ8/lfGt4kAow7bmBpQ9fuQ3RUFtM4Uz61Qk/vijbpLbgtc61n05zjQ1hCvXHmB9fT3OnT8NOWfi+uxP0IJxE4S4jrXzxrffm1xlb75Aud/cEFmD9vYW6KaNUoUmCpS3BblUPNk45sR0UBM6Qzx2qd9LVnfqujGS+64puaX8olEuj4uMHHnc2dTrcFZGtCOMxv11KxP/kfEbTTzNcyb5ar0AAAAASUVORK5CYII=&logoColor=white)](https://www.gfz.de/en/section/remote-sensing-and-geoinformatics/projects/vodnet)
 
-canVODpy computes vegetation optical depth (VOD) from GNSS
-transmissometry (GNSS-T). A canopy receiver under the trees and a
-reference receiver in the open record the same navigation satellites, and
-the difference in signal strength shows how much the vegetation weakens
-the signal. canVODpy is for researchers who run such receiver pairs: it
-turns their raw receiver files into versioned VOD datasets that record
-which file each value came from.
+**An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrievals**
+
+canVODpy aims to be the central community-driven software suite for
+deriving canopy Vegetation Optical Depth (VOD) from the signal-to-noise
+ratio of the same [GNSS](https://gssc.esa.int/navipedia/index.php/GNSS)
+signal, received at the same time by one receiver below the canopy and one
+with an unobstructed view of the sky.
 
 ## Try it
 
-The [speedrun notebook](https://canvodpy.eu/notebooks/_build/03_convenience_speedrun.html)
-goes through the whole pipeline on real test data, from receiver files to
-VOD. Open it [in molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_convenience_speedrun.py)
-to run it in the browser, or run it on your own machine with
-[uv](https://docs.astral.sh/uv/getting-started/installation/):
+<a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_convenience_speedrun.py"><img alt="Open in molab" src="https://marimo.io/molab-shield.svg" height="32"></a>
+
+The speedrun notebook goes through the whole pipeline on real test data,
+from receiver files to VOD, in your browser. **All 21 notebooks** are at
+[canvodpy.eu/notebooks](https://canvodpy.eu/notebooks/), each with its
+results and a link to open it in molab.
+
+To run a notebook on your own machine instead, install
+[uv](https://docs.astral.sh/uv/getting-started/installation/) and run:
 
 ```bash
 uvx marimo edit --sandbox https://raw.githubusercontent.com/nfb2021/canvodpy-demo/main/03_convenience_speedrun.py
 ```
 
-The notebook downloads its test data on first use (about 350 MB). All
-notebooks are at [canvodpy.eu/notebooks](https://canvodpy.eu/notebooks/).
+The notebooks download their test data on first use (about 350 MB).
 
 ## Install
 
