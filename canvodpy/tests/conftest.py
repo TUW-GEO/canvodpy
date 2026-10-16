@@ -129,6 +129,12 @@ def rosalia_site(tmp_path, monkeypatch):
     patched_config = config_pkg.load_config(config_dir=config_dir)
     patched_config.processing.storage.stores_root_dir = tmp_path / "stores"
     patched_config.processing.storage.aux_data_dir = tmp_path / "aux"
+    # The orbit and clock files of the test data, so a run downloads none
+    # (CI does not depend on the download servers).
+    for aux, pattern in (("01_SP3", "*ORB.SP3"), ("02_CLK", "*CLK.CLK")):
+        (tmp_path / "aux" / aux).mkdir(parents=True, exist_ok=True)
+        for f in (_TEST_DATA / "valid" / "aux_data" / aux).glob(pattern):
+            (tmp_path / "aux" / aux / f.name).symlink_to(f)
     patched_config.processing.storage.shared_aux_cache_dir = None
     patched_config.processing.logging.log_dir = tmp_path / "logs"
     # The store metadata name the made-up person and site, never the local
