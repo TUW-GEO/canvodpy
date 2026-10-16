@@ -73,16 +73,18 @@ def test_close_twice(make_orchestrator):
 
 
 def test_no_run_id_left_when_checks_fail():
+    # The receivers are checked once the days to process are known (#353).
     site = MagicMock()
     site.site_name = "ExampleSite"
     with (
         patch("canvodpy.orchestrator.pipeline.ensure_file_logging"),
         patch("canvodpy.orchestrator.pipeline.clear_discovery_cache"),
         patch(
-            "canvodpy.orchestrator.pipeline.check_receivers",
+            "canvodpy.orchestrator.pipeline.PipelineOrchestrator._find_files",
             side_effect=ValueError("no receivers"),
         ),
         pytest.raises(ValueError, match="no receivers"),
+        PipelineOrchestrator(site) as orchestrator,
     ):
-        PipelineOrchestrator(site)
+        orchestrator.preview_processing_plan()
     assert get_run_id() is None
