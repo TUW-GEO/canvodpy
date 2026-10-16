@@ -349,12 +349,16 @@ def maintain(
             if snap.written_at < cutoff
         )
         console.print(f"\n[bold]Ancestry entries older than cutoff:[/bold] {stale}")
-        console.print(
-            "\n[dim]Nothing was deleted or expired. Re-run with --execute "
-            "to actually run maintenance (after confirming).[/dim]"
-        )
         if on_s3:
-            console.print("[yellow]--execute is not supported on S3 yet.[/yellow]")
+            console.print(
+                "\n[dim]Nothing was deleted or expired.[/dim]\n"
+                "[yellow]--execute is not supported on S3 yet.[/yellow]"
+            )
+        else:
+            console.print(
+                "\n[dim]Nothing was deleted or expired. Re-run with --execute "
+                "to actually run maintenance (after confirming).[/dim]"
+            )
         if execute:
             raise typer.Exit(1)
         return

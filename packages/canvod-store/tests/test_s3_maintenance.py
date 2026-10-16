@@ -53,9 +53,9 @@ def s3_location() -> S3StoreLocation:
 def s3_store(s3_location: S3StoreLocation) -> MyIcechunkStore:
     """An opened store on S3 with one commit, so it has a history."""
     repo = open_repository(s3_location, create=True)
-    with repo.writable_session("main") as session:
-        zarr.open_group(session.store, mode="a").attrs["writer"] = "seed"
-        session.commit("seed")
+    session = repo.writable_session("main")
+    zarr.open_group(session.store, mode="a").attrs["writer"] = "seed"
+    session.commit("seed")
     return MyIcechunkStore(s3_location, store_type="gnss_store")
 
 

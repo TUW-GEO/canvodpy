@@ -93,9 +93,9 @@ def _make_s3_store(store_path: str, n_commits: int = 2) -> None:
 
     repo = open_repository(store_path, create=True)
     for i in range(n_commits):
-        with repo.writable_session("main") as session:
-            zarr.open_group(session.store, mode="a").attrs["i"] = i
-            session.commit(f"seed {i}")
+        session = repo.writable_session("main")
+        zarr.open_group(session.store, mode="a").attrs["i"] = i
+        session.commit(f"seed {i}")
 
 
 def _s3_root() -> str:
@@ -127,6 +127,7 @@ def test_maintain_execute_on_s3_is_refused_and_changes_nothing(tmp_path) -> None
 
     assert result.exit_code == 1, result.output
     assert "DRY RUN" in result.output
+    assert "Re-run with --execute" not in result.output
     assert "--execute is not supported on S3 yet" in result.output
     assert "Maintenance complete" not in result.output
     assert _snapshot_ids(store_path) == before

@@ -9,7 +9,8 @@ name: S3 Tests
 # on S3 being a dry run only (#357: the store tests refuse every mutating
 # action, `packages/canvod-store/tests/test_s3_maintenance.py`, and the CLI
 # reports a dry run, `canvodpy/tests/test_s3_maintenance_cli.py`). Without an
-# S3 service
+# S3 service these tests skip, so the platform tests don't run them.
+#
 # The emulator is RustFS (Apache-2.0), the one Icechunk's own CI tests
 # against, at the tag Icechunk's compose.yaml uses at the version in
 # uv.lock (icechunk v2.3.0: rustfs/rustfs:1.0.0-rc.6). When uv.lock moves
