@@ -226,6 +226,18 @@ def _settings(tmp_path: Path):
     return config
 
 
+def _gnss_repository(tmp_path: Path):
+    """The repository metadata of a made-up GNSS store with content settings."""
+    return ensure_store_metadata(
+        _new_store(tmp_path / "gnss"),
+        config=_settings(tmp_path),
+        site_name=testing.SITE_KEY,
+        store_type="gnss_store",
+        source_format="rinex3",
+        names=["canopy_01", "reference_01_canopy_01"],
+    )
+
+
 def _ensure_store(tmp_path: Path, store_type: str, names: list[str]) -> dict:
     return ensure_store_metadata(
         _new_store(tmp_path),
@@ -234,6 +246,9 @@ def _ensure_store(tmp_path: Path, store_type: str, names: list[str]) -> dict:
         store_type=store_type,
         source_format="rinex3",
         names=names,
+        gnss_repository=(
+            _gnss_repository(tmp_path) if store_type == "vod_store" else None
+        ),
     )
 
 

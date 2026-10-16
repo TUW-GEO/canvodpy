@@ -411,6 +411,17 @@ class GnssResearchSite:
         store_path = (
             self.vod_store_path if store_type == "vod_store" else self.gnss_store_path
         )
+        gnss_repository = None
+        if store_type == "vod_store":
+            from canvod.store_metadata import read_repository_metadata
+
+            try:
+                gnss_repository = read_repository_metadata(self.gnss_store_path)
+            except FileNotFoundError, ValueError:
+                # A VOD store that already holds content settings is checked
+                # against its recorded hash; a missing GNSS store fails the
+                # run later reading data, so it needs no hash check here.
+                gnss_repository = None
         return ensure_store_metadata(
             store_path,
             config=self._config,
@@ -418,6 +429,7 @@ class GnssResearchSite:
             store_type=store_type,
             source_format=source_format,
             names=names,
+            gnss_repository=gnss_repository,
         )
 
     def ingest_receiver_data(
@@ -667,6 +679,7 @@ class GnssResearchSite:
                     source_file_hashes=entry["source_file_hashes"],
                     source_gnss_stores=entry["source_gnss_stores"],
                     calculator_name=calculator_name,
+                    calculator_params=entry.get("calculator_params"),
                     commit_message=entry.get("commit_message"),
                 )
             )

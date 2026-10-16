@@ -39,8 +39,9 @@ CONTENT_SETTINGS_FORMAT = 1
 #: The repository metadata field that holds them.
 CONTENT_SETTINGS_FIELD = "content_settings"
 
-#: Store types that keep content settings. The VOD store follows (#355).
-CONTENT_STORE_TYPES = ("gnss_store",)
+#: Store types that keep content settings. The VOD store adds its own keys
+#: (:data:`VOD_CONTENT_KEYS`) and the GNSS store's content-settings hash.
+CONTENT_STORE_TYPES = ("gnss_store", "vod_store")
 
 #: The settings that shape a GNSS store's data, as dotted keys of
 #: ``canvod-settings.yaml``. A key that names a section takes all of it.
@@ -72,9 +73,29 @@ CONTENT_KEYS = (
     "processing.storage.maintenance",
 )
 
+#: The settings that shape a VOD store's data, as dotted keys of
+#: ``canvod-settings.yaml``. A VOD store keeps no SIDs, receivers or site
+#: entries of its own; instead it records the content-settings hash of the
+#: GNSS store the VOD was computed from (:data:`gnss_content_hash`).
+VOD_CONTENT_KEYS = (
+    "processing.params.store_delta_snr",
+    "processing.params.store_radial_diff",
+    "processing.icechunk.compression_algorithm",
+    "processing.icechunk.compression_level",
+    "processing.icechunk.inline_chunk_threshold_bytes",
+    "processing.icechunk.manifest_splitting_enabled",
+    "processing.icechunk.manifest_splitting_epoch_range",
+    "processing.icechunk.chunk_strategies.vod_store",
+    "processing.storage.maintenance",
+)
+
 #: The top-level keys of the settings file that content settings come from.
 SETTINGS_ROOTS = ("sids", "processing", "sites")
 
+#: The repository-metadata field that holds the GNSS store's content-settings
+#: hash for a VOD store (a single hash replaces a SID list: a VOD store has no
+#: SIDs of its own).
+GNSS_CONTENT_HASH = "gnss_content_hash"
 #: The settings of each receiver that count, below
 #: ``sites.<site>.receivers.<receiver>``.
 RECEIVER_KEYS = ("type", "reader_format", "paired_canopies")
@@ -104,6 +125,8 @@ class Difference:
 def _get(data: Any, key: str) -> Any:
     """The value of a dotted ``key`` in a settings object or a dict."""
     for part in key.split("."):
+        if data is None:
+            return None
         data = data.get(part) if isinstance(data, Mapping) else getattr(data, part)
     return data
 
@@ -131,10 +154,16 @@ def _canvodpy_version() -> str | None:
         return None
 
 
-def settings_hash(settings: Mapping[str, Any], resolved_sids: Any) -> str:
+def settings_hash(
+    settings: Mapping[str, Any], resolved_sids: Any, gnss_hash: str | None = None
+) -> str:
     """SHA-256 of the content settings, for display and a quick check."""
     text = json.dumps(
-        {"settings": settings, "resolved_sids": resolved_sids},
+        {
+            "settings": settings,
+            "resolved_sids": resolved_sids,
+            "gnss_content_hash": gnss_hash,
+        },
         sort_keys=True,
         default=str,
     )
@@ -146,11 +175,16 @@ def receiver_content_settings(receiver: Any) -> dict[str, Any]:
     return {key: _json(getattr(receiver, key)) for key in RECEIVER_KEYS}
 
 
-def run_content_settings(config: Any, site_name: str) -> dict[str, Any]:
+def run_content_settings(
+    config: Any, site_name: str, store_type: str = "gnss_store"
+) -> dict[str, Any]:
     """The content settings of a run: the settings part and the SID list.
 
     Returns ``{"settings": ..., "resolved_sids": ...}``, where ``settings``
-    has the keys of ``canvod-settings.yaml``.
+    has the keys of ``canvod-settings.yaml``. For a VOD store the keys are
+    :data:`VOD_CONTENT_KEYS` and ``resolved_sids`` is ``None``: a VOD store
+    has no SIDs of its own, its GNSS store's SIDs are implied by
+    ``gnss_content_hash``.
 
     Raises
     ------
@@ -162,35 +196,60 @@ def run_content_settings(config: Any, site_name: str) -> dict[str, Any]:
         msg = f"Site {site_name!r} is not in the settings (sites.{site_name})."
         raise ValueError(msg)
     settings: dict[str, Any] = {}
-    for key in CONTENT_KEYS:
+    keys = CONTENT_KEYS if store_type == "gnss_store" else VOD_CONTENT_KEYS
+    for key in keys:
         _put(settings, key, _json(_get(config, key)))
-    receivers = {
-        name: receiver_content_settings(receiver)
-        for name, receiver in sites[site_name].receivers.items()
-    }
-    _put(settings, f"sites.{site_name}.receivers", receivers)
-    return {"settings": settings, "resolved_sids": _json(config.sids.get_sids())}
+    resolved_sids: Any = None
+    if store_type == "gnss_store":
+        receivers = {
+            name: receiver_content_settings(receiver)
+            for name, receiver in sites[site_name].receivers.items()
+        }
+        _put(settings, f"sites.{site_name}.receivers", receivers)
+        resolved_sids = _json(config.sids.get_sids())
+    return {"settings": settings, "resolved_sids": resolved_sids}
 
 
 def new_content_settings(
-    config: Any, site_name: str, *, set_by: str | None = None, origin: str = "created"
+    config: Any,
+    site_name: str,
+    *,
+    store_type: str = "gnss_store",
+    set_by: str | None = None,
+    origin: str = "created",
+    gnss_repository: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The content settings a new store records, from the run's settings.
 
     Parameters
     ----------
+    store_type
+        ``"gnss_store"`` or ``"vod_store"``; picks the keys that count.
     set_by
         Who sets them; ``None``: the user and computer of this process.
     origin
         ``"created"`` (a new store) or ``"migrated"``
         (``canvodpy store migrate-metadata``).
+    gnss_repository
+        The GNSS store's repository metadata, for a VOD store: its
+        content-settings hash is recorded as ``gnss_content_hash``. Not
+        needed for a GNSS store.
+
+    Raises
+    ------
+    MissingContentSettingsError
+        For a VOD store whose GNSS store has no content settings.
     """
-    content = run_content_settings(config, site_name)
+    content = run_content_settings(config, site_name, store_type)
+    gnss_hash = (
+        gnss_content_hash_from(gnss_repository) if store_type == "vod_store" else None
+    )
     return stored_form(
         content["settings"],
         content["resolved_sids"],
         set_by=set_by or f"{getpass.getuser()}@{socket.gethostname()}",
         origin=origin,
+        gnss_content_hash=gnss_hash,
     )
 
 
@@ -200,18 +259,76 @@ def stored_form(
     *,
     set_by: str,
     origin: str,
+    gnss_content_hash: str | None = None,
 ) -> dict[str, Any]:
     """The content settings as the repository metadata keeps them."""
-    return {
+    data = {
         "format": CONTENT_SETTINGS_FORMAT,
         "origin": origin,
         "set_by": set_by,
         "set_at": datetime.now(UTC).isoformat(),
         "canvodpy_version": _canvodpy_version(),
-        "hash": settings_hash(settings, resolved_sids),
+        "hash": settings_hash(settings, resolved_sids, gnss_content_hash),
         "settings": dict(settings),
         "resolved_sids": resolved_sids,
     }
+    if gnss_content_hash is not None:
+        data[GNSS_CONTENT_HASH] = gnss_content_hash
+    return data
+
+
+def gnss_content_hash_from(repository: Mapping[str, Any] | None) -> str:
+    """The content-settings hash of a GNSS store, from its repository metadata.
+
+    Raises
+    ------
+    MissingContentSettingsError
+        If the GNSS store has no content settings (created before they
+        existed): the hash cannot be known, and a VOD store cannot record it.
+    """
+    from .io import store_command
+
+    if repository is None or not repository.get(CONTENT_SETTINGS_FIELD):
+        site = (repository or {}).get("spatial", {}).get("site", {}).get("name", "SITE")
+        msg = (
+            "The GNSS store the VOD is computed from has no content settings, "
+            "so its hash cannot be recorded with the VOD store. Write them "
+            "once, from the settings recorded in the store's first commit:\n"
+            f"  {store_command('migrate-metadata', site, 'gnss_store')}"
+        )
+        raise MissingContentSettingsError(msg)
+    return repository[CONTENT_SETTINGS_FIELD]["hash"]
+
+
+def check_gnss_hash(
+    vod_repository: Mapping[str, Any],
+    gnss_repository: Mapping[str, Any],
+    store_path: StoreLocation | Path | str,
+) -> None:
+    """Refuse a VOD write from a GNSS store with other content settings.
+
+    A VOD store records ``gnss_content_hash`` (ADR 0019 D1). A run whose
+    GNSS store has a different content-settings hash would compute VOD from
+    data this VOD store does not describe.
+
+    Raises
+    ------
+    ContentSettingsError
+        If the hashes differ (both hashes and the two stores are named).
+    """
+    stored_hash = vod_repository.get(CONTENT_SETTINGS_FIELD, {}).get(GNSS_CONTENT_HASH)
+    current_hash = gnss_repository.get(CONTENT_SETTINGS_FIELD, {}).get("hash")
+    if not stored_hash or not current_hash or stored_hash == current_hash:
+        return
+    msg = (
+        f"The GNSS store this VOD run reads has content-settings hash "
+        f"{current_hash}, but the VOD store at {store_path} records "
+        f"gnss_content_hash {stored_hash}. The VOD store was computed from a "
+        "GNSS store with other content settings; writing it would mix data. "
+        "Use the GNSS store the VOD store was computed from, or write to a "
+        "new VOD store (processing.storage.vod_store_name)."
+    )
+    raise ContentSettingsError(msg)
 
 
 def _flatten(data: Any, prefix: str = "") -> dict[str, Any]:
@@ -285,6 +402,12 @@ def mismatch_message(
     """The error of a run whose settings differ from its store's."""
     found = list(found)
     stored = repository[CONTENT_SETTINGS_FIELD]
+    store_type = repository.get("identity", {}).get("store_type", "")
+    new_store = (
+        "processing.storage.vod_store_name"
+        if store_type == "vod_store"
+        else "processing.storage.gnss_store_name"
+    )
     lines = "\n".join(
         f"  {d.key}: store {_short(d.store)}, this run {_short(d.run)}" for d in found
     )
@@ -296,7 +419,7 @@ def mismatch_message(
         "Every run that writes to a store must have its content settings. "
         "Either use the store's settings (canvodpy config init --from-store "
         f"{store_path}), or write to a new store "
-        "(processing.storage.gnss_store_name or stores_root_dir)."
+        f"({new_store} or stores_root_dir)."
     )
 
 
@@ -306,6 +429,7 @@ def check_content_settings(
     *,
     store_path: StoreLocation | Path | str,
     migrate_command: str,
+    gnss_repository: Mapping[str, Any] | None = None,
 ) -> None:
     """Refuse a run whose content settings differ from its store's.
 
@@ -320,6 +444,10 @@ def check_content_settings(
     migrate_command
         The command that gives an older store its content settings, named
         in the error.
+    gnss_repository
+        The GNSS store's repository metadata, for a VOD store
+        (:data:`CONTENT_STORE_TYPES`): its content-settings hash is compared
+        with the VOD store's ``gnss_content_hash`` (ADR 0019 D3).
 
     Raises
     ------
@@ -330,7 +458,8 @@ def check_content_settings(
         values), or the store's form is newer than this canvodpy reads.
     """
     identity = repository.get("identity", {})
-    if identity.get("store_type") not in CONTENT_STORE_TYPES:
+    store_type = identity.get("store_type")
+    if store_type not in CONTENT_STORE_TYPES:
         return
     stored = repository.get(CONTENT_SETTINGS_FIELD)
     if not stored:
@@ -349,9 +478,16 @@ def check_content_settings(
             f"{CONTENT_SETTINGS_FORMAT}. Update canvodpy."
         )
         raise ContentSettingsError(msg)
-    # The site's key in the settings, as the store recorded it.
-    (site_name,) = stored["settings"]["sites"]
-    found = differences(stored, run_content_settings(config, site_name), site_name)
+    if store_type == "vod_store" and gnss_repository is not None:
+        check_gnss_hash(repository, gnss_repository, store_path)
+    # The site's key in the settings, as the repository metadata names it
+    # (a VOD store records no ``sites`` block of its own).
+    site_name = repository["spatial"]["site"]["name"]
+    found = differences(
+        stored,
+        run_content_settings(config, site_name, store_type),
+        site_name,
+    )
     if found:
         raise ContentSettingsError(mismatch_message(found, repository, store_path))
 

@@ -717,6 +717,7 @@ def ensure_store_metadata(
     names: Iterable[str],
     dask_workers: int | None = None,
     dask_threads_per_worker: int | None = None,
+    gnss_repository: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Make a store ready for a run's data: the step every run takes first.
 
@@ -782,6 +783,7 @@ def ensure_store_metadata(
             store_path=store_path,
             dask_workers=dask_workers,
             dask_threads_per_worker=dask_threads_per_worker,
+            gnss_repository=gnss_repository,
         )
 
     repository = ensure_metadata(
@@ -800,6 +802,7 @@ def ensure_store_metadata(
         config,
         store_path=store_path,
         migrate_command=store_command("migrate-metadata", site_name, store_type),
+        gnss_repository=gnss_repository,
     )
     return repository
 

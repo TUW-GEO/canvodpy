@@ -799,7 +799,16 @@ class TestStoreMigrateMetadata:
 
         result = runner.invoke(
             main_app,
-            ["store", "migrate-metadata", "TestSite", "--store", "vod", "--yes"],
+            [
+                "store",
+                "migrate-metadata",
+                "TestSite",
+                "--store",
+                "vod",
+                "--yes",
+                "--set",
+                "gnss_content_hash=" + "a" * 64,
+            ],
             env=_env(config_dir),
         )
 

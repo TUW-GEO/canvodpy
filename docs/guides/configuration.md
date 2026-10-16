@@ -186,6 +186,26 @@ change; to process with other settings, create a new store.
 | Maintenance | all of `processing.storage.maintenance` |
 | Each receiver | `type`, `reader_format`, `paired_canopies` |
 
+A VOD store keeps its own content settings too. It has no SIDs, receivers
+or site entries of its own; it records the settings that shape the VOD
+output and the content-settings hash of the GNSS store it was computed
+from (`gnss_content_hash`), so a run that computes VOD from a GNSS store
+with other content settings stops.
+
+| VOD content setting | Where |
+| ------------------- | ----- |
+| The VOD output options | `processing.params.store_delta_snr`, `store_radial_diff` |
+| Store layout | `processing.icechunk.compression_algorithm`, `compression_level`, `inline_chunk_threshold_bytes`, `manifest_splitting_enabled`, `manifest_splitting_epoch_range`, `chunk_strategies.vod_store` |
+| Maintenance | all of `processing.storage.maintenance` |
+| Where the VOD came from | `gnss_content_hash` (the GNSS store's content-settings hash) |
+
+The calculator and its parameters are recorded per VOD group
+(`{calculator}/{analysis}`) when the group is first written, and every
+later write compares them: a group never holds results computed with
+other calculator parameters. On a difference the run stops and names each
+parameter with both values; use a new analysis name
+(`canvodpy store amend --add-vod-analysis`) or a new VOD store.
+
 Every other setting may differ from run to run: the resources
 (`resource_mode`, `n_max_threads`, `days_per_batch`, memory), the
 Icechunk cache and concurrency settings, `aux_data.ftp_timeout_s`,

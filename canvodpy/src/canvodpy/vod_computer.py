@@ -49,6 +49,7 @@ from canvod.config.models import (
     PREPROCESSING_ATTR,
     vod_preprocessing_record,
 )
+from canvod.utils.tools import deprecated
 
 if TYPE_CHECKING:
     import xarray as xr
@@ -63,7 +64,9 @@ def ensure_vod_store_metadata(
 
     Call it before the VOD write, so the VOD store never holds data
     without its repository metadata (ADR 0014). Every commit then writes
-    the store's root copy and snapshot summary itself.
+    the store's root copy and snapshot summary itself. A VOD store records
+    the content-settings hash of the GNSS store it is computed from
+    (ADR 0019, D1).
 
     Raises
     ------
@@ -73,7 +76,10 @@ def ensure_vod_store_metadata(
         listed in it (names the amend command).
     """
     from canvod.config import load_config
-    from canvod.store_metadata import ensure_store_metadata
+    from canvod.store_metadata import (
+        ensure_store_metadata,
+        read_repository_metadata,
+    )
 
     ensure_store_metadata(
         site.vod_store_path,
@@ -82,6 +88,7 @@ def ensure_vod_store_metadata(
         store_type="vod_store",
         source_format=calculator_name,
         names=analyses,
+        gnss_repository=read_repository_metadata(site._site.gnss_store.store_path),
     )
 
 
@@ -104,10 +111,12 @@ class VodComputer:
         self,
         site: Site,
         calculator: str = "tau_omega",
+        calculator_params: dict | None = None,
         rechunk: dict[str, int] | None = None,
     ) -> None:
         self._site = site
         self._calculator_name = calculator
+        self._calculator_params = calculator_params
         self._rechunk = rechunk or {"epoch": 17280, "sid": -1}
         self.log = structlog.get_logger(__name__).bind(
             site=site.name, calculator=calculator
@@ -118,6 +127,37 @@ class VodComputer:
         """Registered name of the VOD calculator in use."""
         return self._calculator_name
 
+    @property
+    def calculator_params(self) -> dict:
+        """The calculator parameters in effect, as the store records them."""
+        return self._effective_calculator_params()
+
+    def _effective_calculator_params(self) -> dict[str, Any]:
+        """The calculator parameters in effect: passed, or the model's defaults.
+
+        The parameters are the calculator model's fields other than
+        ``canopy_ds`` and ``sky_ds``, with their defaults written out
+        (``{}`` for ``tau_omega`` today).
+        """
+        from canvodpy.factories import VODFactory
+
+        if self._calculator_params is not None:
+            return self._calculator_params
+        cls = VODFactory.component_class(self._calculator_name)
+        base = {"canopy_ds", "sky_ds"}
+        return {
+            name: getattr(field, "default", None)
+            for name, field in cls.model_fields.items()
+            if name not in base
+        }
+
+    @deprecated(
+        "`check_preprocessing` is left over from development: the VOD write now "
+        "checks the content-settings hash of the GNSS store the VOD is computed "
+        "from (check_gnss_hash), and each group's preprocessing is compared at "
+        "write time. It will be removed with the next major version. Use "
+        "check_gnss_hash instead."
+    )
     def check_preprocessing(self, analysis_names: list[str]) -> None:
         """Refuse a run before processing if a VOD group holds other preprocessing.
 
@@ -145,6 +185,40 @@ class VodComputer:
             vod_store.check_settings_match(
                 f"{self._calculator_name}/{analysis_name}", settings
             )
+
+    def check_gnss_hash(self, analysis_names: list[str]) -> None:
+        """Refuse a VOD write from a GNSS store with other content settings.
+
+        A VOD store records the content-settings hash of the GNSS store it
+        was computed from (``gnss_content_hash``, ADR 0019 D1/D3). A run
+        whose GNSS store has a different content-settings hash would compute
+        VOD from data this VOD store does not describe, so it stops before
+        anything is written.
+
+        Raises
+        ------
+        ContentSettingsError
+            If the GNSS store's content-settings hash differs from the VOD
+            store's (the error names both hashes and both stores).
+        """
+        from canvod.store_metadata import (
+            check_gnss_hash,
+            read_repository_metadata,
+            store_exists,
+        )
+
+        if not store_exists(self._site.vod_store_path):
+            return  # a first run: the store is created with this GNSS store
+        vod_store_path = (
+            self._site._site.vod_store.store_path
+            if hasattr(self._site._site, "vod_store")
+            else self._site.vod_store_path
+        )
+        check_gnss_hash(
+            read_repository_metadata(vod_store_path),
+            read_repository_metadata(self._site._site.gnss_store.store_path),
+            vod_store_path,
+        )
 
     def compute_day(
         self,
@@ -406,6 +480,7 @@ class VodComputer:
             self._calculator_name,
             canopy_ds=canopy_ds,
             sky_ds=sky_ds,
+            **self._effective_calculator_params(),
         )
 
         vod_ds = calculator.calculate_vod()
@@ -483,6 +558,7 @@ class VodComputer:
         """
         research_site = self._site._site
         gnss_store_path = str(research_site.gnss_store.store_path)
+        self.check_gnss_hash([name for name, *_ in entries])
 
         items = []
         for analysis_name, vod_ds, canopy_ds, sky_ds in entries:
@@ -508,6 +584,7 @@ class VodComputer:
                     ),
                     "analysis_name": analysis_name,
                     "calculator_name": self._calculator_name,
+                    "calculator_params": self._effective_calculator_params(),
                     "source_file_hashes": {
                         canopy_name: research_site.source_file_hashes_for(
                             canopy_name, canopy_ds
