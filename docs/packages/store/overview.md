@@ -144,8 +144,9 @@ has its own slot. Slots without VOD hold NaN.
   GNSS groups made of day blocks (`LayoutError`): write it to a new VOD
   store (set another `processing.storage.vod_store_name`).
 
-`GnssResearchSite.read_vod_analysis()` returns every slot; with
-`drop_empty=True` it leaves out the empty ones.
+`GnssResearchSite.read_vod_analysis()` leaves out the empty slots, as
+`read_receiver_data()` does; with `drop_empty=False` it returns every
+slot.
 
 ## How a run writes
 

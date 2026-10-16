@@ -692,7 +692,7 @@ class GnssResearchSite:
         analysis_name: str,
         calculator_name: str,
         time_range: tuple[datetime, datetime] | None = None,
-        drop_empty: bool = False,
+        drop_empty: bool = True,
     ) -> xr.Dataset:
         """
         Read VOD analysis results for one calculator model.
@@ -709,9 +709,10 @@ class GnssResearchSite:
             Registered ``VODFactory`` name the results were computed with.
         time_range : tuple of datetime, optional
             (start_time, end_time) for filtering the results.
-        drop_empty : bool, default False
-            Drop the empty slots of the epochs read, after ``time_range``
-            (see :meth:`~canvod.store.store.MyIcechunkStore.read_group`).
+        drop_empty : bool, default True
+            Drop the empty slots of the epochs read, after ``time_range``:
+            the epochs with VOD. ``False`` keeps every slot of a day-block
+            group (see :meth:`~canvod.store.store.MyIcechunkStore.read_group`).
 
         Returns
         -------

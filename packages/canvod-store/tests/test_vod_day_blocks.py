@@ -7,6 +7,7 @@ batch in one commit, and a day written again replaces what it held.
 
 from __future__ import annotations
 
+import unittest.mock
 from pathlib import Path
 
 import numpy as np
@@ -18,6 +19,7 @@ from canvod.store_metadata.summary import summarize_store
 
 from canvod.store import MyIcechunkStore
 from canvod.store.day_blocks import day_blocks, drop_empty_slots
+from canvod.store.manager import GnssResearchSite
 from canvod.store.store import VodWriteItem
 
 GROUP = "tau_omega/canopy_01_vs_reference_01"
@@ -95,6 +97,24 @@ def test_written_values_read_back_without_empty_slots(
             read[name].reset_coords(drop=True),
             expected[name].reset_coords(drop=True).astype(read[name].dtype),
         )
+
+
+def test_site_reads_vod_without_empty_slots_by_default(
+    store: MyIcechunkStore,
+) -> None:
+    """``read_vod_analysis`` leaves the empty slots out, as receiver reads do."""
+    item = _item(GROUP, slot=2, source_id="a")
+    store.write_or_append_vod_groups_batch([item])
+    site = object.__new__(GnssResearchSite)
+    site.vod_store = store
+    site._logger = unittest.mock.MagicMock()
+    calculator, analysis = GROUP.split("/")
+
+    read = site.read_vod_analysis(analysis, calculator)
+    full = site.read_vod_analysis(analysis, calculator, drop_empty=False)
+
+    assert read.sizes["epoch"] == item.dataset.sizes["epoch"]
+    assert full.sizes["epoch"] == 86400 / CADENCE_S
 
 
 def test_rewriting_a_day_replaces_it(store: MyIcechunkStore) -> None:
