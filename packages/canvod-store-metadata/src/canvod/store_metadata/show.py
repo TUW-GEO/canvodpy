@@ -225,6 +225,23 @@ def format_config(meta: StoreMetadata) -> str:
     return "\n".join(lines)
 
 
+def format_content_settings(meta: StoreMetadata) -> str:
+    """The store's content settings (ADR 0019): every run must have them."""
+    lines = [_section("Content Settings")]
+    content = meta.content_settings
+    if not content:
+        lines.append("  (none: created before stores kept them, or not a GNSS store)")
+        return "\n".join(lines)
+    lines.append(_kv("Set", f"{content.get('origin')} {content.get('set_at')}"))
+    lines.append(_kv("Set by", content.get("set_by")))
+    lines.append(_kv("canVODpy", content.get("canvodpy_version")))
+    lines.append(_kv("Hash", content.get("hash")))
+    lines.append(_dict_block(content.get("settings", {}), indent=4))
+    sids = content.get("resolved_sids")
+    lines.append(_kv("SIDs", "all" if sids is None else f"{len(sids)} listed"))
+    return "\n".join(lines)
+
+
 def format_references(meta: StoreMetadata) -> str:
     r = meta.references
     lines = [_section("References")]
@@ -304,6 +321,7 @@ def _sections(store_path: Path | None = None) -> dict[str, Any]:
         "processing": format_processing,
         "env": format_environment,
         "config": format_config,
+        "content": format_content_settings,
         "references": format_references,
         "summaries": format_summaries,
         "validation": lambda meta: format_validation(meta, store_path),

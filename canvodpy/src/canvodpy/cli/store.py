@@ -11,7 +11,7 @@ canvod-store's marimo/Jupyter-only IcechunkStoreViewer renders as HTML.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import typer
 from rich.console import Console
@@ -19,6 +19,9 @@ from rich.table import Table
 from rich.tree import Tree
 
 from canvodpy.cli.options import CONFIG_DIR_OPTION
+
+if TYPE_CHECKING:
+    from canvod.store_metadata import StoreMetadata
 
 store_app = typer.Typer(
     name="store",
@@ -152,7 +155,10 @@ def info(
     console.print(f"  Path:        {stats['store_path']}")
     console.print(f"  Groups:      {stats['total_groups']}")
     console.print(
-        f"  Compression: {stats['compression_algorithm']} (level {stats['compression_level']})\n"
+        f"  Compression: {stats['compression_algorithm']} (level {stats['compression_level']})"
+    )
+    console.print(
+        f"  Content settings: {_content_settings_line(icestore.store_path)}\n"
     )
 
     if group is not None:
@@ -162,6 +168,20 @@ def info(
         console.print(
             "\n[dim]Use --group <name> to see a group's dataset and metadata table.[/dim]"
         )
+
+
+def _content_settings_line(store_path) -> str:
+    """One line on a store's content settings (ADR 0019) for ``store info``."""
+    from canvod.store_metadata import read_repository_metadata
+
+    content = read_repository_metadata(store_path).get("content_settings")
+    if not content:
+        return "none (canvodpy store migrate-metadata writes them)"
+    return (
+        f"{content['hash'][:12]}, {content.get('origin')} "
+        f"{str(content.get('set_at'))[:10]} by {content.get('set_by')}; "
+        'full list: show_metadata(path, section="content")'
+    )
 
 
 def _print_group_content(icestore, group_name: str, branch: str) -> None:
@@ -548,7 +568,7 @@ def migrate_metadata_command(
         typer.Option(
             "--set",
             metavar="field.path=value",
-            help="A field the store lacks, for example identity.description=Beech forest site, Rosalia. Repeat for more fields.",
+            help="A field or content setting the store lacks, for example identity.description=Beech forest site, Rosalia or sites.rosalia.receivers.reference_01.paired_canopies=[canopy_01]. Repeat for more.",
         ),
     ] = None,
     yes: Annotated[bool, typer.Option("--yes", help="Migrate without asking.")] = False,
@@ -568,9 +588,14 @@ def migrate_metadata_command(
     attributes of SNR and theta to VOD, among them the valid range of theta.
     The migration record keeps who migrated the store, the initials set in
     processing.metadata.initials.
+
+    A GNSS store also gets its content settings (ADR 0019), also when it
+    was moved to repository metadata before: the settings that shape its
+    data, taken from the settings recorded in its first commit. A setting
+    that commit does not record is not guessed: the command stops and
+    lists it, to be given with --set by its key in canvod-settings.yaml.
     """
-    from canvod.store_metadata import migrate_metadata, read_metadata
-    from canvod.store_metadata.identity import check_naming_authority, store_id
+    from canvod.store_metadata import read_metadata
 
     path, _ = _store_path(site, store)
     try:
@@ -580,11 +605,54 @@ def migrate_metadata_command(
             f"[red]❌ The {store} store of '{site}' has no store metadata.[/red]"
         )
         raise typer.Exit(1) from None
-    if not old.written_before_migration:
+    store_type = old.identity.store_type
+    values = _amend_changes(site, store_type, set_values or [], [], [])
+    content_values = {k: v for k, v in values.items() if _is_content_key(k)}
+    values = {k: v for k, v in values.items() if k not in content_values}
+
+    asked = False
+    if old.written_before_migration:
+        _migrate_repository_metadata(
+            site, store, path, old, naming_authority, values, yes=yes
+        )
+        asked = True
+    elif values:
+        console.print(
+            f"[red]❌ The {store} store of '{site}' is already migrated; change "
+            f"{', '.join(values)} with canvodpy store amend.[/red]"
+        )
+        raise typer.Exit(1)
+    if (
+        not _migrate_content_settings(
+            site, store, path, store_type, content_values, yes=yes or asked
+        )
+        and not asked
+    ):
         console.print(
             f"[green]✓ The {store} store of '{site}' is already migrated.[/green]"
         )
-        return
+
+
+def _is_content_key(field: str) -> bool:
+    """Whether a --set field of migrate-metadata names a content setting."""
+    from canvod.store_metadata.content import SETTINGS_ROOTS
+
+    return field.split(".", 1)[0] in SETTINGS_ROOTS
+
+
+def _migrate_repository_metadata(
+    site: str,
+    store: str,
+    path: Path,
+    old: StoreMetadata,
+    naming_authority: str | None,
+    values: dict[str, object],
+    *,
+    yes: bool,
+) -> None:
+    """Move a store's metadata to repository metadata (ADR 0014)."""
+    from canvod.store_metadata import migrate_metadata
+    from canvod.store_metadata.identity import check_naming_authority, store_id
 
     who = _who()
     source = "--naming-authority"
@@ -609,7 +677,6 @@ def migrate_metadata_command(
         f"{naming_authority or old.identity.naming_authority or '(none)'}"
         f" (from {source})"
     )
-    values = _amend_changes(site, old.identity.store_type, set_values or [], [], [])
     for field, value in values.items():
         console.print(f"  Set {field}: {value!r}")
     variable_attrs = {}
@@ -633,6 +700,65 @@ def migrate_metadata_command(
         console.print(f"[red]❌ {exc}[/red]")
         raise typer.Exit(1) from None
     console.print(f"[green]✓ Migrated[/green] (snapshot {snapshot_id[:12]})")
+
+
+def _migrate_content_settings(
+    site: str,
+    store: str,
+    path: Path,
+    store_type: str,
+    values: dict[str, object],
+    *,
+    yes: bool,
+) -> bool:
+    """Give a store its content settings from its first commit (ADR 0019).
+
+    Returns whether they were written; ``False`` if the store has them or
+    its type keeps none.
+    """
+    from canvod.store_metadata import read_repository_metadata
+    from canvod.store_metadata.content import (
+        CONTENT_SETTINGS_FIELD,
+        CONTENT_STORE_TYPES,
+    )
+    from canvod.store_metadata.migration import (
+        first_recorded_settings,
+        migrate_content_settings,
+    )
+
+    if store_type not in CONTENT_STORE_TYPES:
+        if values:
+            console.print(f"[red]❌ A {store} store keeps no content settings.[/red]")
+            raise typer.Exit(1)
+        return False
+    if read_repository_metadata(path).get(CONTENT_SETTINGS_FIELD):
+        if values:
+            console.print(
+                f"[red]❌ The {store} store of '{site}' already has content "
+                "settings; they never change. Write to a new store instead.[/red]"
+            )
+            raise typer.Exit(1)
+        return False
+    who = _who()
+    first = first_recorded_settings(path)
+    console.print(f"\n[bold]{site}[/bold]: {store} store ({path})")
+    console.print(
+        "  Content settings:  from the settings of the first commit"
+        + (f" (snapshot {first[0][:12]})" if first else "")
+    )
+    for field, value in values.items():
+        console.print(f"  Set {field}: {value!r}")
+    if not yes and not typer.confirm("Write the content settings?"):
+        raise typer.Exit(1)
+    try:
+        snapshot_id = migrate_content_settings(path, who=who, values=values)
+    except ValueError as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(1) from None
+    console.print(
+        f"[green]✓ Content settings written[/green] (snapshot {snapshot_id[:12]})"
+    )
+    return True
 
 
 def _who() -> str:
@@ -771,6 +897,7 @@ def amend(
     from canvod.config import load_config
     from canvod.store_metadata import amend_metadata, read_repository_metadata
     from canvod.store_metadata.amend import check_amendable
+    from canvod.store_metadata.content import receiver_content_settings
 
     path, store_type = _store_path(site, store)
     set_values = list(set_values or [])
@@ -822,9 +949,19 @@ def amend(
     if not yes and not typer.confirm("Amend the store metadata?"):
         raise typer.Exit(1)
 
+    config = load_config()
+    site_receivers = config.sites.sites[site].receivers
     try:
         snapshot_id = amend_metadata(
-            path, changes, reason=reason, who=who, config=load_config()
+            path,
+            changes,
+            reason=reason,
+            who=who,
+            config=config,
+            receiver_content={
+                name: receiver_content_settings(site_receivers[name])
+                for name in receivers
+            },
         )
     except ValueError as exc:
         console.print(f"[red]❌ {exc}[/red]")

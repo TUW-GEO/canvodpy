@@ -9,7 +9,8 @@ canvod-store (`{group}/metadata/table`).
 | Path (under `src/canvod/store_metadata/`) | What |
 |---|---|
 | `schema.py` | The metadata models: `RepositoryMetadata` in Icechunk's repository metadata, `StoreMetadata` as read from one snapshot (repository metadata, snapshot summary and commit metadata); the old root attribute `canvod_metadata` only in snapshots from before ADR 0014 |
-| `amend.py`, `migration.py` | `amend_metadata` (amendable fields, with a reason) and `migrate_metadata` (stores from before ADR 0014) |
+| `amend.py`, `migration.py` | `amend_metadata` (amendable fields, with a reason), `migrate_metadata` (stores from before ADR 0014) and `migrate_content_settings` (stores from before ADR 0019) |
+| `content.py` | Content settings (ADR 0019): which settings count (`CONTENT_KEYS`, `RECEIVER_KEYS`), their stored form, the key-by-key comparison and its error |
 | `identity.py` | Store id, UUID, naming authority and catalog link of a new store |
 | `collectors.py` | `collect_metadata`: fills the model from settings, dataset and environment |
 | `io.py` | Write a new store's metadata, read a snapshot's; `commit_with_rebase`, the one commit function |
@@ -29,6 +30,15 @@ recipes run these from the command line (`just metadata-show <store>`,
 - Repository metadata is written once, when the store gets its metadata;
   every commit through `commit_with_rebase` then writes the root copy and
   the snapshot summary and checks the root copy (ADR 0014).
+- A GNSS store's content settings (ADR 0019) are a fixed field of its
+  repository metadata, written when the store is created; only a receiver
+  added by amendment adds its own entry. `ensure_store_metadata` (when a
+  run starts) and `commit_with_rebase` (at the tip, for commits of data)
+  refuse a run whose settings differ; `ensure_store_metadata` also refuses
+  a GNSS store without them. A new content setting goes into
+  `CONTENT_KEYS` and the table in `docs/guides/configuration.md`; it then
+  needs a new `CONTENT_SETTINGS_FORMAT` and a migration for stores that
+  lack it.
 - `commit_with_rebase` refuses a store without repository metadata. Tests
   that write to a store directly give it made-up metadata first with
   `canvod.store_metadata.testing.give_test_metadata`.

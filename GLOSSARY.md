@@ -232,6 +232,12 @@ A field of the repository metadata that never changes once the store
 exists, such as its id or creation date.
 _Avoid_: immutable field
 
+**Content settings**:
+The settings that shape a store's data, such as the signals kept, the
+preprocessing, the orbit product and the chunking: set by whoever creates
+the store, fixed with it, and the same for every run that writes to it.
+_Avoid_: fingerprint, store config
+
 **Amendable field**:
 A field of the repository metadata that changes only by amendment, such
 as the creator's email or the license.

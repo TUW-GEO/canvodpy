@@ -360,6 +360,25 @@ rule, such as a duration, only warns: the migration computes it again. In a VOD
 store, the attributes of `VOD` are replaced with the current ones.
 Snapshots from before the migration stay readable.
 
+A GNSS store also gets its
+[content settings](../../guides/configuration.md#content-settings-fixed-for-each-store)
+(ADR 0019), the settings that shape its data, also when it was migrated
+before: runs refuse a GNSS store without them. The command takes them
+from the settings recorded in the store's first commit, and each
+receiver's type and reader format from the repository metadata. A
+setting that commit doesn't record is not guessed: the command stops and
+lists it. The `paired_canopies` of a reference receiver is never
+recorded, so give it with the value the data was written with, by its
+key in `canvod-settings.yaml`:
+
+```bash
+canvodpy store migrate-metadata ExampleSite --store gnss \
+  --set sites.ExampleSite.receivers.reference_01.paired_canopies=[canopy_01]
+```
+
+In Python, `migrate_content_settings(store_path, who=..., values=...)`
+from `canvod.store_metadata.migration` does the same.
+
 ## List the stores of a directory
 
 ```python

@@ -186,7 +186,7 @@ class TestFirstRun:
         assert (start, end) == ("2000001", "2025002")
         assert not site.gnss_store_path.exists()
 
-    def test_the_pipeline_preprocessing_check_passes_without_a_gnss_store(
+    def test_the_pipeline_content_settings_check_passes_without_a_gnss_store(
         self, site_settings
     ):
         from canvodpy.orchestrator.pipeline import PipelineOrchestrator
@@ -197,8 +197,6 @@ class TestFirstRun:
         orchestrator.site = GnssResearchSite(testing.SITE_KEY)
         orchestrator._config = load_config()
 
-        orchestrator._check_preprocessing_before_run(
-            [("2025001", {"canopy_01": ()})]  # ty: ignore[invalid-argument-type]
-        )
+        orchestrator._check_content_settings_before_run()
 
         assert not orchestrator.site.gnss_store_path.exists()

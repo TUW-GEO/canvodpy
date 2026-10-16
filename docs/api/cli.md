@@ -440,6 +440,12 @@ attributes of SNR and theta to VOD, among them the valid range of theta.
 The migration record keeps who migrated the store, the initials set in
 processing.metadata.initials.
 
+A GNSS store also gets its content settings (ADR 0019), also when it
+was moved to repository metadata before: the settings that shape its
+data, taken from the settings recorded in its first commit. A setting
+that commit does not record is not guessed: the command stops and
+lists it, to be given with --set by its key in canvod-settings.yaml.
+
 **Usage**:
 
 ```console
@@ -454,7 +460,7 @@ $ canvodpy store migrate-metadata [OPTIONS] {site}
 
 * `--store gnss|vod`: Store to migrate.  [default: gnss]
 * `--naming-authority <str>`: Your institution's domain in reverse order, for example at.ac.tuwien. Default: the store's own, if it is a reverse DNS name; otherwise processing.metadata.naming_authority in the settings.
-* `--set field.path=value`: A field the store lacks, for example identity.description=Beech forest site, Rosalia. Repeat for more fields.
+* `--set field.path=value`: A field or content setting the store lacks, for example identity.description=Beech forest site, Rosalia or sites.rosalia.receivers.reference_01.paired_canopies=[canopy_01]. Repeat for more.
 * `--yes`: Migrate without asking.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
