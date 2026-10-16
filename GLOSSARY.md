@@ -118,7 +118,8 @@ _Avoid_: name mapping, pattern
 
 **File index**:
 The names of the files a run found in each folder of a receiver
-directory, kept so the next run need not list old folders again.
+directory, kept so a run need not list folders that hold none of the days
+it processes.
 _Avoid_: file cache, file list
 
 **Reader format**:

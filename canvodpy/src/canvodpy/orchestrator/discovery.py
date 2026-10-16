@@ -5,14 +5,14 @@ One code path decides which files of a receiver are processed for a day, so
 
 Each receiver's configured ``directory`` is scanned recursively once per run.
 Hidden directories are skipped and symbolic links are not followed. With a
-file index (#299, kept in the run history), a run lists again only the
-folders that can still change: folders with a data file of the last
-:data:`RECENT_DAYS` days, folders without a data file (the receiver
-directory itself, year folders) and folders not yet in the index. The
-others come from the index, which saves the slow listing of every old day
-folder on a network drive. A file added to such an old folder is found
-only by ``canvodpy run --rescan``, which lists every folder; the same
-holds for a file deleted, renamed or compressed there. A file's
+file index (kept in the run history), a run lists the folders that hold a
+day it processes, folders without a data file (the receiver directory
+itself, year folders) and folders not yet in the index. The others come
+from the index, which saves the slow listing of every other day folder on
+a network drive (ADR 0020). A file put into a folder that held only days
+outside the run's range is therefore not seen until a run processes one
+of that folder's days; the same holds for a file deleted, renamed or
+compressed there. A file's
 day comes from the date in its (canonical) name, not from the folder it sits
 in, so any folder layout works: all files in one folder, one folder per day
 (``YYDDD`` or ``YYYYDDD``), or deeper nesting. A file belongs to the day it
@@ -46,9 +46,8 @@ from __future__ import annotations
 import os
 import re
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
 from fnmatch import fnmatch
 from functools import lru_cache
 from pathlib import Path
@@ -60,12 +59,12 @@ from canvod.utils.logging import timed_stage
 from canvodpy.run_history import FolderListing
 
 if TYPE_CHECKING:
+    from canvod.config import CanvodConfig
     from canvod.preflight.convention import CanVODFilename
 
-#: Days a folder stays recent: a folder with a data file of the last
-#: ``RECENT_DAYS`` days is listed by every run, older ones come from the
-#: file index (#299). Files for a day usually arrive within a day or two.
-RECENT_DAYS = 30
+#: The days a run processes, ``(start, end)`` as ``YYYYDOY``, both
+#: inclusive; ``None`` leaves that side open.
+DayRange = tuple[str | None, str | None]
 
 #: Suffixes of general-purpose compression, compared in lower case.
 COMPRESSION_SUFFIXES = frozenset(
@@ -413,6 +412,9 @@ class DirectoryScan:
         the directory itself, ``/`` between parts) and the names in it.
     folders_from_index : int
         Folders taken from the given file index instead of listed.
+    listed_days : DayRange | None
+        The days whose folders were listed; ``None``: every folder was
+        listed.
     """
 
     days: dict[str, tuple[DiscoveredFile, ...]]
@@ -421,6 +423,7 @@ class DirectoryScan:
     compressed: tuple[Path, ...] = ()
     listings: dict[str, FolderListing] = field(default_factory=dict)
     folders_from_index: int = 0
+    listed_days: DayRange | None = None
 
 
 _SCANS: dict[tuple[Path, Path | None], DirectoryScan] = {}
@@ -436,14 +439,16 @@ def scan_directory(
     recipe: Path | None = None,
     *,
     file_index: Mapping[str, FolderListing] | None = None,
-    rescan: bool = False,
+    days: DayRange | None = None,
 ) -> DirectoryScan:
     """Scan a receiver directory as a run does.
 
     Cached for the run; :func:`clear_discovery_cache` forgets the result so
-    a new run sees files added since. *file_index* applies only to a scan
-    that isn't cached yet; *rescan* always scans again and replaces the
-    cached result.
+    a new run sees files added since. A lookup with *days* reuses the
+    cached scan only if that scan listed the folders of all these days;
+    otherwise it scans again, taking the folders of other days from the
+    cached scan and *file_index*. A lookup without *days* returns the
+    cached scan, or lists every folder if there is none.
 
     Parameters
     ----------
@@ -453,12 +458,11 @@ def scan_directory(
         The receiver's naming recipe file, if it has one.
     file_index : Mapping[str, FolderListing] | None
         The directory's file index from an earlier scan
-        (:attr:`DirectoryScan.listings`). Folders whose newest data file is
-        older than :data:`RECENT_DAYS` days are taken from it instead of
-        listed. ``None`` or empty: every folder is listed.
-    rescan : bool
-        List every folder, ignoring *file_index* and the cache
-        (``canvodpy run --rescan``).
+        (:attr:`DirectoryScan.listings`). A folder in it with data files,
+        none of them of *days*, is taken from it instead of listed.
+        ``None`` or empty: every folder is listed.
+    days : DayRange | None
+        The days the run processes. ``None``: *file_index* is not used.
 
     Raises
     ------
@@ -467,11 +471,32 @@ def scan_directory(
         docstring), or if the recipe file does not exist.
     """
     key = (Path(directory), recipe)
-    if rescan or key not in _SCANS:
-        _SCANS[key] = _scan_directory(
-            Path(directory), recipe, None if rescan else file_index
-        )
+    cached = _SCANS.get(key)
+    if cached is not None and (days is None or _covers(cached.listed_days, days)):
+        return cached
+    index = None
+    if days is not None:
+        # The cached listings are newer than the run history's index.
+        index = {**(file_index or {}), **(cached.listings if cached else {})}
+    _SCANS[key] = _scan_directory(Path(directory), recipe, index or None, days)
     return _SCANS[key]
+
+
+def _covers(listed: DayRange | None, days: DayRange) -> bool:
+    """``True`` if the folders of every day of *days* are in *listed*."""
+    if listed is None:
+        return True
+    (listed_start, listed_end), (start, end) = listed, days
+    starts_inside = listed_start is None or (
+        start is not None and listed_start <= start
+    )
+    ends_inside = listed_end is None or (end is not None and end <= listed_end)
+    return starts_inside and ends_inside
+
+
+def _in_range(day: str, days: DayRange) -> bool:
+    start, end = days
+    return (start is None or start <= day) and (end is None or day <= end)
 
 
 def _list_folder(folder: Path) -> tuple[tuple[str, ...], tuple[str, ...]] | None:
@@ -501,28 +526,24 @@ def _list_folder(folder: Path) -> tuple[tuple[str, ...], tuple[str, ...]] | None
 
 
 def _walk(
-    directory: Path, file_index: Mapping[str, FolderListing] | None
+    directory: Path,
+    file_index: Mapping[str, FolderListing] | None,
+    from_index_ok: Callable[[str, FolderListing], bool],
 ) -> tuple[dict[str, tuple[tuple[str, ...], tuple[str, ...]]], int]:
     """Files and subfolders of every folder below *directory*.
 
-    A folder in *file_index* whose newest data file is older than
-    :data:`RECENT_DAYS` days is taken from it; every other folder, and
-    *directory* itself, is listed. Returns the folders (relative, ``"."``
-    for *directory*) and the number taken from *file_index*.
+    A folder in *file_index* for which *from_index_ok* is true is taken
+    from it; every other folder, and *directory* itself, is listed.
+    Returns the folders (relative, ``"."`` for *directory*) and the number
+    taken from *file_index*.
     """
-    oldest_recent = datetime.now(UTC).date() - timedelta(days=RECENT_DAYS)
-    threshold = _day_key(oldest_recent.year, oldest_recent.timetuple().tm_yday)
     found: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {}
     from_index = 0
     pending = ["."]
     while pending:
         folder = pending.pop()
         known = file_index.get(folder) if file_index and folder != "." else None
-        if (
-            known is not None
-            and known.newest_day is not None
-            and known.newest_day < threshold
-        ):
+        if known is not None and from_index_ok(folder, known):
             listing = (known.files, known.folders)
             from_index += 1
         else:
@@ -541,6 +562,7 @@ def _scan_directory(
     directory: Path,
     recipe: Path | None,
     file_index: Mapping[str, FolderListing] | None,
+    days: DayRange | None,
 ) -> DirectoryScan:
     from canvod.preflight.convention import find_overlaps
 
@@ -554,19 +576,47 @@ def _scan_directory(
     parsed_by_path: dict[Path, CanVODFilename] = {}
     unrecognized: list[Path] = []
     compressed: list[Path] = []
-    folders, from_index = _walk(directory, file_index)
+    file_types = known_file_types()
+    classified: dict[Path, tuple[DiscoveredFile, CanVODFilename] | None] = {}
+
+    def classify(path: Path) -> tuple[DiscoveredFile, CanVODFilename] | None:
+        if path not in classified:
+            classified[path] = (
+                _recipe_file(path, naming_recipe)
+                if naming_recipe is not None
+                else _canonical_file(path, file_types)
+            )
+        return classified[path]
+
+    def path_of(folder: str, name: str) -> Path:
+        return directory / folder / name if folder != "." else directory / name
+
+    def holds_none_of_the_days(folder: str, known: FolderListing) -> bool:
+        """``True`` if *known* has data files, none of them of *days*."""
+        if days is None or known.newest_day is None:
+            return False
+        if days[0] is not None and known.newest_day < days[0]:
+            return True
+        for name in known.files:
+            path = path_of(folder, name)
+            result = None if is_compressed(path) else classify(path)
+            if result is not None and _in_range(
+                _day_key(result[1].year, result[1].doy), days
+            ):
+                return False
+        return True
+
+    folders, from_index = _walk(
+        directory, file_index if days is not None else None, holds_none_of_the_days
+    )
     newest_day: dict[str, str] = {}
     for folder, (filenames, _) in folders.items():
         for name in filenames:
-            path = directory / folder / name if folder != "." else directory / name
+            path = path_of(folder, name)
             if is_compressed(path):
                 compressed.append(path)
                 continue
-            result = (
-                _recipe_file(path, naming_recipe)
-                if naming_recipe is not None
-                else _canonical_file(path, known_file_types())
-            )
+            result = classify(path)
             if result is not None:
                 discovered, parsed = result
                 found.append(discovered)
@@ -630,7 +680,52 @@ def _scan_directory(
             for folder, (files, subfolders) in sorted(folders.items())
         },
         folders_from_index=from_index,
+        listed_days=days if from_index else None,
     )
+
+
+def saved_file_index(
+    config: CanvodConfig, directory: Path, recipe: Path | None
+) -> dict[str, FolderListing] | None:
+    """A receiver directory's file index from the run history, read only.
+
+    For the lookups that are not a run (a dry run, the Airflow day check):
+    they find the files a run would find without writing the run history.
+
+    Parameters
+    ----------
+    config : CanvodConfig
+        The settings, which name the log folder holding the run history.
+    directory : Path
+        The receiver's data directory.
+    recipe : Path | None
+        The receiver's naming recipe file, if it has one.
+
+    Returns
+    -------
+    dict[str, FolderListing] | None
+        The index, ``None`` if there is no log folder or run history yet or
+        it can't be read; the scan then lists every folder.
+    """
+    import sqlite3
+
+    import structlog
+
+    from canvod.config.models.logging import LogDirNotSetError
+    from canvodpy.run_history import RunHistory, RunHistoryError
+
+    try:
+        with RunHistory.open(
+            config.processing.logging.get_log_dir(), read_only=True
+        ) as history:
+            return history.file_index(directory, recipe)
+    except (OSError, LogDirNotSetError, RunHistoryError, sqlite3.Error) as exc:
+        structlog.get_logger(__name__).info(
+            "file_index_unavailable",
+            directory=str(directory),
+            reason=f"{type(exc).__name__}: {exc}",
+        )
+        return None
 
 
 def clear_discovery_cache() -> None:

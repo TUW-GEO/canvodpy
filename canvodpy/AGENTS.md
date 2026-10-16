@@ -11,7 +11,7 @@ other package is a library this one composes.
 | `cli/app.py` | The `canvodpy` console script: `run`, `vod`, `vod-reconcile`, `doctor`, `dashboard`, `config ...`, `store ...` |
 | `cli/run.py` | `canvodpy run`; resumes from the store's last date when `--start` is omitted |
 | `api.py` | `Site`, `Pipeline` (`Site(site).pipeline()`); the deprecated flat functions |
-| `orchestrator/discovery.py` | Which files of a receiver a day processes: naming recipe or canonical names, any folder layout; compressed files never (`is_compressed`). With a file index, old folders (`RECENT_DAYS`) are not listed again; results must equal a full scan (`--rescan`) |
+| `orchestrator/discovery.py` | Which files of a receiver a day processes: naming recipe or canonical names, any folder layout; compressed files never (`is_compressed`). A run lists the folders of the days it processes (`days=`), the others come from the file index (ADR 0020); with every folder listed, results must equal a full scan |
 | `orchestrator/pipeline.py` | `PipelineOrchestrator`: days, receivers, batches; warns `files_not_processed` and `compressed_files_not_processed` |
 | `orchestrator/processor.py` | Reads, adds geometry, applies preprocessing, writes the GNSS store |
 | `orchestrator/data_check.py` | `canvodpy config validate`: same discovery as a run, but always lists every folder (no file index) |

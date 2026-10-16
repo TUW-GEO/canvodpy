@@ -38,3 +38,4 @@ that names the decision replacing it.
 | [0017](0017-demo-data.md) | The demo notebooks use only the public interface and fetch demo data by file type from Hugging Face |
 | [0018](0018-run-history-in-sqlite.md) | Every run records itself in a run history, one SQLite file per machine |
 | [0019](0019-content-settings-and-several-writers.md) | One set of content settings per store, set by its creator; several runs may write one store |
+| [0020](0020-run-lists-folders-of-its-days.md) | A run lists the folders of the days it processes |
