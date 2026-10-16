@@ -151,7 +151,7 @@ grep -E '"event": "(run_crashed|uncaught_exception)"' machine/agent.json
 jq -c 'select(.event == "task_failed") | {timestamp, date, receiver}' machine/agent*.json
 
 # Everything one run logged, in the main process and the workers
-grep -h '"run_id": "ExampleSite-20261010-030000"' machine/agent*.json
+grep -h '"run_id": "ExampleSite-20261010-030000-3f9a1c"' machine/agent*.json
 ```
 
 The worker processes write to their own files, so search
@@ -162,15 +162,17 @@ The worker processes write to their own files, so search
 
 ## The run ID
 
-`canvodpy run` gives each site it processes a run ID: the site name and
-the start time in UTC, for example `ExampleSite-20261010-030000`. In
+`canvodpy run` gives each site it processes a run ID: the site name, the
+start time in UTC and six random characters, for example
+`ExampleSite-20261010-030000-3f9a1c`. The random part keeps the run IDs
+of two machines apart when both start a run in the same second. In
 Python, `site.pipeline()` sets one in the same way; it applies until the
 pipeline is closed, at the end of the `with` block. Every event of the
 run carries it in the `run_id` field, in the main process, and in the
 workers, so one search finds everything a run logged.
 
 The run ID also goes into the message of each commit the run makes to
-the stores, as `(run=ExampleSite-20261010-030000)`. To see which run
+the stores, as `(run=ExampleSite-20261010-030000-3f9a1c)`. To see which run
 wrote which data, list the commits:
 
 ```bash
@@ -240,8 +242,8 @@ The stages a run records, from every `stage_timing` event of the run:
 | `vod_calc`, `vod_store` | main | VOD analysis and day (`canvodpy run` only) |
 
 A run that has no end and whose process is gone shows as `interrupted`.
-Two runs of a site that start in the same second get one run ID each:
-the second gets a number (`ExampleSite-20261010-030000-2`).
+A run whose run ID the run history already holds (set by the caller and
+used before) gets a number (`ExampleSite-20261010-030000-3f9a1c-2`).
 
 Read it from Python, also while a run writes to it:
 
