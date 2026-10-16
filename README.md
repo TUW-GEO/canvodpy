@@ -47,8 +47,6 @@ The notebooks download their test data on first use (about 350 MB).
 
 ```bash
 uv add canvodpy
-# or
-pip install canvodpy
 ```
 
 canVODpy requires Python 3.14. It is tested on Linux, macOS (Apple
