@@ -63,9 +63,9 @@ with an unobstructed view of the sky.
 
     ---
 
-    Before it appends, canVODpy skips each file that's already in the
-    store, by its SHA-256 hash, and each file whose time span overlaps data
-    already stored.
+    Before it writes, canVODpy skips each file that's already in the
+    store, by its SHA-256 hash. A file whose time span overlaps data of
+    another file already stored stops the run, naming both files.
 
     [:octicons-arrow-right-24: Storage](packages/store/overview.md)
 
