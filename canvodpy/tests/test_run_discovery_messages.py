@@ -138,7 +138,7 @@ def test_discovery_messages_bracket_the_real_scan(
     the real scan, not a cache hit.
 
     The seam all directory scans go through is monkeypatched to sleep, so the
-    scan in the pipeline constructor is the slow part and the messages bracket
+    scan at the start of processing is the slow part and the messages bracket
     it, as they would on a network drive.
     """
     config_dir = _write_site(tmp_path)
@@ -148,9 +148,9 @@ def test_discovery_messages_bracket_the_real_scan(
     # Behind the real cache (scan_directory), so a scan before the "Finding
     # files" line would make the reported seconds a cache hit and fail the
     # test.
-    def slow_scan(directory: Path, recipe: Path | None, file_index):
+    def slow_scan(directory: Path, recipe: Path | None, file_index, days):
         time.sleep(0.5)
-        return original(directory, recipe, file_index)
+        return original(directory, recipe, file_index, days)
 
     monkeypatch.setattr(discovery_module, "_scan_directory", slow_scan)
 

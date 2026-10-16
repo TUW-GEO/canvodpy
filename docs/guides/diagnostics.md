@@ -225,9 +225,9 @@ records:
 - its warnings and errors, in words, with their receiver and day;
 - its end: `finished`, or `failed` with the error.
 
-The same file holds the [file index](../packages/naming/overview.md#old-folders-come-from-the-file-index):
-the names found in each folder of every receiver directory, so the next
-run lists only the folders that can still change.
+The same file holds the [file index](../packages/naming/overview.md#folders-of-other-days-come-from-the-file-index):
+the names found in each folder of every receiver directory, so a run need
+not list the folders that hold none of the days it processes.
 
 The stages a run records, from every `stage_timing` event of the run:
 
@@ -272,8 +272,8 @@ Finding the files is the first thing a run does, before it reads a file.
 On a network drive it can take minutes, so the CLI says, for each receiver,
 `Finding files of receiver <name> in <folder>...` and then
 `Found <n> files on <d> days for receiver <name> (<s> s)`, so you know it
-is working. From the second run on, folders whose files are all older than
-30 days come from the [file index](../packages/naming/overview.md#old-folders-come-from-the-file-index)
+is working. From the second run on, the folders that hold none of the
+days the run processes come from the [file index](../packages/naming/overview.md#folders-of-other-days-come-from-the-file-index)
 and the listing is much shorter; the log event `files_found` says per
 receiver how many folders were listed and how many came from the index.
 
