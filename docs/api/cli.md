@@ -493,7 +493,7 @@ by day: every day gets a block of slots at its cadence, the finest step
 between its epochs. An epoch stored more than once keeps the entry
 written last. The groups keep their attributes, log books and other
 metadata, and get the chunks of the settings
-(processing.icechunk.chunk_strategies).
+(`processing.icechunk.chunk_strategies`).
 
 Shows what it will do and asks first. Everything goes into one commit;
 snapshots from before stay readable. A store written before repository
