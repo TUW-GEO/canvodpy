@@ -46,7 +46,7 @@ from pystac.extensions.xarray_assets import XarrayAssetsExtension
 from .identity import _product
 from .inventory import _store_candidates
 from .io import _written_before_metadata, read_metadata, store_command
-from .location import MIGRATE_COMMAND, open_repository, store_exists
+from .location import MIGRATE_COMMAND, open_repository, store_exists, store_location
 from .schema import (
     SPDX_LIST_URL,
     MetadataRuleWarning,
@@ -519,6 +519,27 @@ def _describe(root: Path, release: str | None = None) -> list[_Described]:
     return described
 
 
+def _local_root(root: Path | str) -> Path:
+    """``root`` as a local folder; a data root on S3 is refused.
+
+    The catalog lists the store folders under the data root and is written
+    beside them, which needs a local folder.
+
+    Raises
+    ------
+    ValueError
+        If ``root`` is an ``s3://`` URL.
+    """
+    location = store_location(root)
+    if location.local_path is None:
+        msg = (
+            f"The data root {location} is on S3: catalogs are written only "
+            "for a local folder of stores so far."
+        )
+        raise ValueError(msg)
+    return location.local_path.resolve()
+
+
 def build_catalog(root: Path | str, *, release: str | None = None) -> pystac.Catalog:
     """The catalog of every store under ``root``, in memory.
 
@@ -537,9 +558,9 @@ def build_catalog(root: Path | str, *, release: str | None = None) -> pystac.Cat
         cannot be opened, has no metadata, needs migration (with the
         migrate command), has no site position, its license is missing
         or not usable (not SPDX, or ``other`` without ``license_uri``), or
-        it has no tag ``release``.
+        it has no tag ``release``; or ``root`` is on S3.
     """
-    return _catalog(_describe(Path(root), release), release)
+    return _catalog(_describe(_local_root(root), release), release)
 
 
 def _catalog(described: list[_Described], release: str | None) -> pystac.Catalog:
@@ -588,9 +609,9 @@ def write_catalog(root: Path | str, *, release: str | None = None) -> Path:
         Listing every store that cannot be described (see
         :func:`build_catalog`); nothing is written. With ``release``, also
         if the tag is not a single folder name or its catalog exists
-        already: a release catalog is never changed.
+        already: a release catalog is never changed. If ``root`` is on S3.
     """
-    root = Path(root).resolve()
+    root = _local_root(root)
     if release is not None:
         _check_tag(release)
         _refuse_written_release(root, release)
@@ -634,10 +655,10 @@ def create_release(root: Path | str, tag: str) -> Path:
         Before anything is tagged or written: the tag holds a ``/``, the
         release catalog exists already, a store cannot be described (see
         :func:`build_catalog`, all of them listed), no store is under
-        ``root``, or some stores have the tag and others don't (those that
-        have it listed).
+        ``root``, ``root`` is on S3, or some stores have the tag and others
+        don't (those that have it listed).
     """
-    root = Path(root).resolve()
+    root = _local_root(root)
     _check_tag(tag)
     _refuse_written_release(root, tag)
     stores = _describe(root)

@@ -538,9 +538,9 @@ Where the stores are, and what a run does with stored files
 
 #### `processing.storage.stores_root_dir` {#processing-storage-stores_root_dir}
 
-Folder of the stores: each site's GNSS store and VOD store are under it. Must exist and be writable.
+Folder of the stores: each site's GNSS store and VOD store are under it. A local folder (must exist and be writable) or s3://bucket/prefix; credentials, region and endpoint of S3 come from the environment.
 
-- Type: path
+- Type: path or text
 - Default: none, you have to set it
 
 #### `processing.storage.gnss_store_name` {#processing-storage-gnss_store_name}

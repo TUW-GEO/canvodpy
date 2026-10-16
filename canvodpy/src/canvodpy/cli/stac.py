@@ -31,7 +31,7 @@ ROOT_OPTION = typer.Option(
 )
 
 
-def _data_root(root: Path | None) -> Path:
+def _data_root(root: Path | None) -> Path | str:
     if root is not None:
         return root
     from canvod.config import load_config

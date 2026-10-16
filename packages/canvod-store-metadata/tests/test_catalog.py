@@ -16,6 +16,7 @@ from canvod.utils import testing
 from stac_validator.validate import StacValidate
 
 from canvod.store_metadata import (
+    build_catalog,
     commit_with_rebase,
     create_release,
     open_repository,
@@ -862,3 +863,24 @@ class TestReleases:
         for asset in _item(two_sites).assets.values():
             assert asset.roles == ["data", "latest-version"]
             assert "canvod:tag" not in asset.extra_fields
+
+
+@pytest.mark.parametrize("make", [build_catalog, write_catalog])
+def test_a_catalog_of_stores_on_s3_is_refused(make, tmp_path, monkeypatch):
+    """The catalog lists folders of a local data root; S3 has none (#350)."""
+    monkeypatch.chdir(tmp_path)
+
+    with pytest.raises(ValueError, match="local folder") as error:
+        make("s3://fangorn/stores")
+
+    assert "s3://fangorn/stores" in str(error.value)
+    assert not any(tmp_path.iterdir())
+
+
+def test_a_release_of_stores_on_s3_is_refused(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+
+    with pytest.raises(ValueError, match="local folder"):
+        create_release("s3://fangorn/stores", "v1")
+
+    assert not any(tmp_path.iterdir())

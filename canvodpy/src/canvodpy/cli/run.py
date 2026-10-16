@@ -57,6 +57,7 @@ import xarray as xr
 
 from canvod.config.models import reference_store_group
 from canvod.store_metadata import (
+    StorageUnreachableError,
     missing_store_settings,
     missing_store_settings_message,
     store_exists,
@@ -878,6 +879,11 @@ def run(
     ) as e:
         # Every later day would be refused the same way: stop, and say
         # what to change.
+        print(f"Error: {e}", file=sys.stderr)
+        code = 1
+    except StorageUnreachableError as e:
+        # The stores' storage (S3) can't be reached: every day would fail.
+        # The message names what to check, never the credentials.
         print(f"Error: {e}", file=sys.stderr)
         code = 1
     if code in (0, EXIT_DAYS_FAILED) and write_catalog and not dry_run:
