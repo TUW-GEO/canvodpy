@@ -834,6 +834,105 @@ def _amend_changes(
     return changes
 
 
+@store_app.command("migrate-layout")
+def migrate_layout_command(
+    site: Annotated[
+        str,
+        typer.Argument(
+            help="Site name, as defined under sites: in canvod-settings.yaml"
+        ),
+    ],
+    store: Annotated[
+        str, typer.Option("--store", metavar="gnss|vod", help="Store to move.")
+    ] = "gnss",
+    yes: Annotated[bool, typer.Option("--yes", help="Move without asking.")] = False,
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+) -> None:
+    """Move a store written by appending files to day blocks (ADR 0016).
+
+    Runs write day blocks only, so a store whose groups were written by
+    appending has to be moved first. Each such group is written again, day
+    by day: every day gets a block of slots at its cadence, the finest step
+    between its epochs. An epoch stored more than once keeps the entry
+    written last. The groups keep their attributes, log books and other
+    metadata, and get the chunks of the settings
+    (processing.icechunk.chunk_strategies).
+
+    Shows what it will do and asks first. Everything goes into one commit;
+    snapshots from before stay readable. A store written before repository
+    metadata needs canvodpy store migrate-metadata first.
+    """
+    from canvod.config import load_config
+    from canvod.store.day_blocks import CadenceError
+    from canvod.store.migrate_layout import (
+        NOTHING,
+        migrate_layout,
+        plan_layout_migration,
+    )
+    from canvod.store_metadata.layout import LayoutError
+
+    path, _ = _store_path(site, store)
+    try:
+        plans = plan_layout_migration(path)
+    except (ValueError, LayoutError, CadenceError) as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(1) from None
+    if all(plan.action == NOTHING for plan in plans):
+        console.print(
+            f"[green]✓ The {store} store of '{site}' is made of day blocks "
+            "already.[/green]"
+        )
+        return
+
+    console.print(f"\n[bold]{site}[/bold]: {store} store ({path})")
+    table = Table(show_header=True)
+    table.add_column("Group")
+    table.add_column("Change")
+    table.add_column("Days", justify="right")
+    table.add_column("Cadences (s)")
+    table.add_column("Epochs", justify="right")
+    table.add_column("Duplicates", justify="right")
+    changes = {
+        "rewrite": "rewrite",
+        "index": "add block index",
+        "nothing": "none",
+    }
+    for plan in plans:
+        cadences = sorted(set(plan.cadences.values()))
+        table.add_row(
+            plan.group,
+            changes[plan.action],
+            str(len(plan.cadences)),
+            ", ".join(f"{c:g}" for c in cadences),
+            str(plan.epochs) if plan.action == "rewrite" else "",
+            str(plan.duplicates) if plan.action == "rewrite" else "",
+        )
+    console.print(table)
+    if not yes and not typer.confirm("Move the store to day blocks?"):
+        raise typer.Exit(1)
+
+    config = load_config()
+    icestore = _open_store(site, store)
+    chunks = dict(icestore.chunk_strategy or {})
+    epoch_chunk = int(chunks.pop("epoch", 180))
+    try:
+        result = migrate_layout(
+            path, epoch_chunk=epoch_chunk, dim_chunks=chunks, config=config
+        )
+    except (ValueError, LayoutError, CadenceError) as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(1) from None
+    for plan in result.groups:
+        if plan.unlogged:
+            console.print(
+                f"[yellow]⚠ {plan.group}: {plan.unlogged} epochs are covered "
+                "by no log-book row; the snapshot summary does not count "
+                "them.[/yellow]"
+            )
+    snapshot = (result.snapshot_id or "")[:12]
+    console.print(f"[green]✓ Moved to day blocks[/green] (snapshot {snapshot})")
+
+
 @store_app.command()
 def amend(
     site: Annotated[

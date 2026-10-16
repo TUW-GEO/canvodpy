@@ -1063,3 +1063,63 @@ class TestStoreAmend:
         assert meta.identity.persistent_identifier == "10.1234/abc"
         assert "canopy_02" in meta.instruments.receivers
         assert {a.reason for a in meta.amendments} == {"DOI assigned, second receiver"}
+
+
+class TestStoreMigrateLayout:
+    def _setup(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        store_path = stores_root / "TestSite" / "rinex"
+        _write_synthetic_store(store_path)
+        return config_dir, store_path
+
+    def _is_day_blocks(self, store_path) -> bool:
+        import zarr
+
+        from canvod.store_metadata.layout import is_day_block_group
+        from canvod.store_metadata.location import open_repository, store_location
+
+        repo = open_repository(store_location(store_path))
+        session = repo.readonly_session(branch="main")
+        group = zarr.open_group(session.store, mode="r", path="canopy_01")
+        return is_day_block_group(group.attrs)
+
+    def test_shows_the_plan_and_moves_after_confirmation(self, tmp_path):
+        config_dir, store_path = self._setup(tmp_path)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-layout", "TestSite", "--store", "gnss", "--yes"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "canopy_01" in result.output
+        assert "rewrite" in result.output
+        assert "Moved to day blocks" in result.output
+        assert self._is_day_blocks(store_path)
+
+    def test_declining_leaves_the_store_as_it_is(self, tmp_path):
+        config_dir, store_path = self._setup(tmp_path)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "migrate-layout", "TestSite", "--store", "gnss"],
+            env=_env(config_dir),
+            input="n\n",
+        )
+
+        assert result.exit_code == 1
+        assert not self._is_day_blocks(store_path)
+
+    def test_a_moved_store_is_named_as_such(self, tmp_path):
+        config_dir, _ = self._setup(tmp_path)
+        command = ["store", "migrate-layout", "TestSite", "--store", "gnss", "--yes"]
+        runner.invoke(main_app, command, env=_env(config_dir))
+        loader_module.load_config.cache_clear()
+
+        result = runner.invoke(main_app, command, env=_env(config_dir))
+
+        assert result.exit_code == 0, result.output
+        assert "day blocks already" in result.output
