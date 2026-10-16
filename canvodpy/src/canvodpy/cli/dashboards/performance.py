@@ -119,7 +119,107 @@ def _():
             )
         return rows
 
-    def build_run_view(run, progress, days, timings, problems):
+    def chart_data(run, days, timings, samples):
+        """The data every chart shows, from the run history records only.
+
+        Returns a dict of row lists, each a list of dicts, one per chart:
+        ``stage``, ``day``, ``store``, ``resources``, ``disk`` and
+        ``throughput``. A chart has no entry when the run history holds no
+        records for it.
+        """
+        charts = {}
+
+        # Time per stage: the seconds of each stage, summed.
+        stages = {}
+        for timing in timings:
+            stages[timing.stage] = stages.get(timing.stage, 0.0) + (
+                timing.seconds or 0.0
+            )
+        if stages:
+            charts["stage"] = [
+                {"Stage": stage, "Seconds": seconds}
+                for stage, seconds in sorted(stages.items(), key=lambda item: -item[1])
+            ]
+
+        # Time per day: the seconds of the stages that name a day, summed.
+        day_totals = {}
+        for timing in timings:
+            if timing.day is None:
+                continue
+            day_totals[timing.day] = day_totals.get(timing.day, 0.0) + (
+                timing.seconds or 0.0
+            )
+        if day_totals:
+            charts["day"] = [
+                {"Day": day, "Seconds": seconds}
+                for day, seconds in sorted(day_totals.items())
+            ]
+
+        # Store growth per day: the bytes each finished receiver-day added.
+        store = {}
+        for day in days:
+            if day.bytes_added:
+                store[day.day] = store.get(day.day, 0) + day.bytes_added
+        if store:
+            charts["store"] = [
+                {"Day": day, "Store growth (MB)": bytes_added / 1e6}
+                for day, bytes_added in sorted(store.items())
+            ]
+
+        # CPU and memory over time, one row per sample and metric.
+        resources = []
+        for sample in samples:
+            if sample.cpu_percent is not None:
+                resources.append(
+                    {
+                        "Time": sample.sampled_at,
+                        "Metric": "CPU (%)",
+                        "Percent": sample.cpu_percent,
+                    }
+                )
+            if sample.memory_percent is not None:
+                resources.append(
+                    {
+                        "Time": sample.sampled_at,
+                        "Metric": "Memory (%)",
+                        "Percent": sample.memory_percent,
+                    }
+                )
+        if resources:
+            charts["resources"] = resources
+
+        # Free disk over time, one row per sample and folder, in GB.
+        disk = []
+        for sample in samples:
+            for folder, bytes_free in sample.free_disk.items():
+                disk.append(
+                    {
+                        "Time": sample.sampled_at,
+                        "Folder": folder,
+                        "Free disk (GB)": bytes_free / 1e9,
+                    }
+                )
+        if disk:
+            charts["disk"] = disk
+
+        # Throughput over time: the receiver-days finished, cumulative.
+        finished_at = sorted(
+            day.finished_at
+            for day in days
+            if day.result is not None and day.finished_at is not None
+        )
+        if finished_at:
+            charts["throughput"] = [
+                {
+                    "Elapsed (h)": (at - run.started_at).total_seconds() / 3600,
+                    "Receiver-days finished": count,
+                }
+                for count, at in enumerate(finished_at, start=1)
+            ]
+
+        return charts
+
+    def build_run_view(run, progress, days, timings, problems, samples):
         """Everything the run page shows, computed from the run history only."""
         now = datetime.now(UTC)
         finished = [d for d in days if d.result is not None]
@@ -184,6 +284,7 @@ def _():
             "bytes_per_hour": bytes_per_hour,
             "last_step": last_step,
             "problem_rows": problem_rows,
+            "charts": chart_data(run, days, timings, samples),
         }
 
     return (
@@ -376,7 +477,8 @@ def _(RunHistory, build_run_view, log_dir, refresh, selected):
                 days = rh.receiver_days(chosen)
                 timings = rh.stage_timings(chosen)
                 problems = rh.problems(chosen)
-            run_view = build_run_view(run, progress, days, timings, problems)
+                samples = rh.resource_samples(chosen)
+            run_view = build_run_view(run, progress, days, timings, problems, samples)
         except KeyError:
             run_view = None
 
@@ -468,6 +570,154 @@ def _(mo, run_view):
             body,
         ]
     mo.vstack(problem_items)
+    return
+
+
+@app.cell
+def _(mo, run_view):
+    import altair as alt
+
+    def chart_style(chart):
+        return chart.properties(background="transparent").configure_view(stroke=None)
+
+    run_charts = run_view["charts"] if run_view is not None else {}
+    chart_items = [mo.md("### Charts")]
+    if not run_charts:
+        chart_items.append(mo.md("_No chart data for this run yet._"))
+    else:
+        chart_dark = mo.app_meta().theme == "dark"
+        chart_series = (
+            ["#C4D7A4", "#C47070", "#E1E6B9"]
+            if chart_dark
+            else ["#375D3B", "#8B3A3A", "#183128"]
+        )
+
+        if "stage" in run_charts:
+            chart_items.append(mo.md("**Time per stage.** Total time of each stage."))
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": run_charts["stage"]})  # type: ignore
+                        .mark_bar(color=chart_series[0])
+                        .encode(
+                            y=alt.Y(
+                                "Stage:N", axis=alt.Axis(title="Stage", labelAngle=0)
+                            ),
+                            x=alt.X("Seconds:Q", axis=alt.Axis(title="Time (s)")),
+                        )
+                    )
+                )
+            )
+
+        if "day" in run_charts:
+            chart_items.append(
+                mo.md("**Time per day.** Total time of the stages of each day.")
+            )
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": run_charts["day"]})  # type: ignore
+                        .mark_bar(color=chart_series[0])
+                        .encode(
+                            x=alt.X("Day:N", axis=alt.Axis(title="Day")),
+                            y=alt.Y("Seconds:Q", axis=alt.Axis(title="Time (s)")),
+                        )
+                    )
+                )
+            )
+
+        if "store" in run_charts:
+            chart_items.append(
+                mo.md(
+                    "**Store growth per day.** The bytes each day added to the store."
+                )
+            )
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": run_charts["store"]})  # type: ignore
+                        .mark_bar(color=chart_series[0])
+                        .encode(
+                            x=alt.X("Day:N", axis=alt.Axis(title="Day")),
+                            y=alt.Y(
+                                "Store growth (MB):Q",
+                                axis=alt.Axis(title="Store growth (MB)"),
+                            ),
+                        )
+                    )
+                )
+            )
+
+        if "resources" in run_charts:
+            chart_items.append(
+                mo.md("**CPU and memory.** Percent used, sampled during the run.")
+            )
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": run_charts["resources"]})  # type: ignore
+                        .mark_line(point=True)
+                        .encode(
+                            x=alt.X("Time:T", axis=alt.Axis(title="Time (UTC)")),
+                            y=alt.Y(
+                                "Percent:Q", axis=alt.Axis(title="Percent used (%)")
+                            ),
+                            color=alt.Color("Metric:N").scale(range=chart_series),
+                        )
+                    )
+                )
+            )
+
+        if "disk" in run_charts:
+            chart_items.append(
+                mo.md(
+                    "**Free disk.** Free space of each folder, sampled during the run."
+                )
+            )
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": run_charts["disk"]})  # type: ignore
+                        .mark_line(point=True)
+                        .encode(
+                            x=alt.X("Time:T", axis=alt.Axis(title="Time (UTC)")),
+                            y=alt.Y(
+                                "Free disk (GB):Q",
+                                axis=alt.Axis(title="Free disk (GB)"),
+                            ),
+                            color=alt.Color("Folder:N").scale(range=chart_series),
+                        )
+                    )
+                )
+            )
+
+        if "throughput" in run_charts:
+            chart_items.append(
+                mo.md(
+                    "**Throughput over time.** Receiver-days finished, cumulative "
+                    "from the run start."
+                )
+            )
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": run_charts["throughput"]})  # type: ignore
+                        .mark_line(point=True, color=chart_series[0])
+                        .encode(
+                            x=alt.X(
+                                "Elapsed (h):Q",
+                                axis=alt.Axis(title="Elapsed since start (h)"),
+                            ),
+                            y=alt.Y(
+                                "Receiver-days finished:Q",
+                                axis=alt.Axis(title="Receiver-days finished"),
+                            ),
+                        )
+                    )
+                )
+            )
+
+    mo.vstack(chart_items)
     return
 
 
