@@ -37,7 +37,7 @@ def test_a_section_sets_the_defaults_of_its_settings() -> None:
         find_setting("processing.icechunk.chunk_strategies.gnss_store.epoch").default
         == "180"
     )
-    assert find_setting("vod_store.epoch").default == "17280"
+    assert find_setting("vod_store.epoch").default == "180"
 
 
 def test_a_setting_without_default_has_to_be_set() -> None:

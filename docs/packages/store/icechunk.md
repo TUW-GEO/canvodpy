@@ -56,7 +56,7 @@ processing:
         epoch: 180
         sid: -1
       vod_store:
-        epoch: 17280
+        epoch: 180
         sid: -1
     manifest_splitting_enabled: true
     manifest_splitting_epoch_range: 17280

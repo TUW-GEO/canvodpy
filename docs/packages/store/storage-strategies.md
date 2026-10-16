@@ -22,13 +22,15 @@ processing:
 settings. `canvodpy config show` prints the strategy in use under
 **Storage**.
 
-!!! note "The VOD store always skips"
+!!! note "The VOD store"
     The strategy applies to the GNSS store only. A run skips a VOD result
-    when the VOD store already holds one computed from the same source
-    files, or one whose epoch range overlaps it; the log book records
-    `skip`. To compute VOD again for days that are already in the VOD
-    store, write to a new VOD store: set another
-    `processing.storage.vod_store_name`.
+    when the VOD store already holds one computed from the same GNSS
+    files. In a VOD store made of
+    [day blocks](overview.md#the-vod-store), a result from other files
+    replaces the stored VOD of its day; in a VOD store written by
+    appending, a result whose epochs overlap stored VOD is skipped too. To
+    compute VOD again from the same GNSS files, write to a new VOD store:
+    set another `processing.storage.vod_store_name`.
 
 ## The strategies
 
@@ -46,9 +48,11 @@ writes and again at the tip, just before each commit, so a run that lost
 a conflict to another run finds that run's files too.
 
 In a store made of [day blocks](overview.md#day-blocks), a file that is
-written again goes into the same slots, so `overwrite` and `unsafe_append`
-both replace the file's slots in the run's commit, and the log book
-records `overwritten`. No temporary branch is needed, and no epoch is
+written again goes into the same slots, so `overwrite` and
+`unsafe_append` both replace all of the file's slots in the run's commit,
+also those of its earlier write (found in the log book by its canonical
+name) it now has no epochs for, and the log book records `overwritten`.
+Slots inside another stored file's span are never emptied. No temporary branch is needed, and no epoch is
 stored twice. The `sbf_obs` of such a file stays as first stored. The
 sections below describe a store written by appending.
 

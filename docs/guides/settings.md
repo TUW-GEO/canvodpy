@@ -437,7 +437,7 @@ Signals per chunk, for groups created from now on; -1 puts all signals in one ch
 
 ### `processing.icechunk.chunk_strategies.vod_store` {#processing-icechunk-chunk_strategies-vod_store}
 
-Chunks of the VOD store. A run adds one day at a time, so set epoch to the epochs of one day: 17280 is one day at 5 s.
+Chunks of the VOD store. As in the GNSS store, a day holds whole chunks, so the cadence of a day must divide 86400 s / epoch; with the same epoch as the GNSS store, every GNSS day fits.
 
 #### `processing.icechunk.chunk_strategies.vod_store.epoch` {#processing-icechunk-chunk_strategies-vod_store-epoch}
 
@@ -445,7 +445,7 @@ Epochs per chunk, for groups created from now on: a group keeps the chunk size i
 
 - Type: whole number
 - Limits: >= 1
-- Default: `17280`
+- Default: `180`
 
 #### `processing.icechunk.chunk_strategies.vod_store.sid` {#processing-icechunk-chunk_strategies-vod_store-sid}
 
@@ -580,7 +580,7 @@ What a run does with a file that is already in the GNSS store; new files are alw
 
 #### `processing.storage.vod_store_strategy` {#processing-storage-vod_store_strategy}
 
-Deprecated, has no effect. VOD writes always skip a result whose source files or epoch range are already in the VOD store. To recompute VOD for days already stored, write to a new VOD store (set another `vod_store_name`).
+Deprecated, has no effect. A VOD write skips a result from the same GNSS files as a stored one. Another result replaces the stored VOD of its day in a VOD store made of day blocks, and is skipped in one written by appending. To recompute VOD from the same GNSS files, write to a new VOD store (set another `vod_store_name`).
 
 - Type: one of `skip`, `overwrite`, `unsafe_append`, or null
 - Default: `null`
