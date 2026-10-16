@@ -568,7 +568,7 @@ def migrate_metadata_command(
         typer.Option(
             "--set",
             metavar="field.path=value",
-            help="A field or content setting the store lacks, for example identity.description=Beech forest site, Rosalia or sites.rosalia.receivers.reference_01.paired_canopies=[canopy_01]. Repeat for more.",
+            help="A field or content setting the store lacks, for example identity.description=Beech forest site, or sites.my_site.receivers.reference_01.paired_canopies=[canopy_01]. Repeat for more.",
         ),
     ] = None,
     yes: Annotated[bool, typer.Option("--yes", help="Migrate without asking.")] = False,
