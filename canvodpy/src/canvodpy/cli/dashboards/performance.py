@@ -287,6 +287,137 @@ def _():
             "charts": chart_data(run, days, timings, samples),
         }
 
+    def chart_style(chart):
+        """Make a chart follow the marimo theme: a transparent frame."""
+        return chart.properties(background="transparent").configure_view(stroke=None)
+
+    def chart_palette(dark):
+        """The altair data colors for a theme, from the canvodpy palette."""
+        return (
+            ["#C4D7A4", "#C47070", "#E1E6B9"]
+            if dark
+            else ["#375D3B", "#8B3A3A", "#183128"]
+        )
+
+    def comparison_view(log_dir):
+        """The compare-by-label items, or a message when there is nothing.
+
+        The grouping and the statistics live in
+        :func:`canvodpy.cli.dashboards.comparison.build_comparison`; here
+        the run history is opened and the result rendered.
+        """
+        import altair as alt
+
+        from canvodpy.cli.dashboards.comparison import build_comparison
+        from canvodpy.run_history import (
+            NetworkDriveError,
+            RunHistory,
+            RunHistoryError,
+            RunHistoryVersionError,
+        )
+
+        def _charts(rows, labels, series):
+            """One grouped chart, or one chart per label when there are more
+            labels than the palette has colors."""
+            charts = []
+            if len(labels) <= len(series):
+                charts.append(
+                    mo.ui.altair_chart(
+                        chart_style(
+                            alt.Chart({"values": rows})  # type: ignore
+                            .mark_bar()
+                            .encode(
+                                x=alt.X("Stage:N", axis=alt.Axis(title="Stage")),
+                                y=alt.Y(
+                                    "Median (s):Q",
+                                    axis=alt.Axis(title="Median time (s)"),
+                                ),
+                                color=alt.Color("Label:N").scale(range=series),
+                            )
+                        )
+                    )
+                )
+                return charts
+            for index, label in enumerate(labels):
+                one = [row for row in rows if row["Label"] == label]
+                color = series[index % len(series)]
+                charts.append(mo.md(f"**{label}**"))
+                charts.append(
+                    mo.ui.altair_chart(
+                        chart_style(
+                            alt.Chart({"values": one})  # type: ignore
+                            .mark_bar()
+                            .encode(
+                                x=alt.X("Stage:N", axis=alt.Axis(title="Stage")),
+                                y=alt.Y(
+                                    "Median (s):Q",
+                                    axis=alt.Axis(title="Median time (s)"),
+                                ),
+                                color=alt.Color("Label:N").scale(range=[color]),
+                            )
+                        )
+                    )
+                )
+            return charts
+
+        intro = mo.md(
+            "A run gets an optional `--label` when it starts "
+            "(`canvodpy run --label <text>`). Runs with the same label are "
+            "grouped and compared. Only **finished** runs are compared, and "
+            "a run without a label is left out. Each group shows the median "
+            "time per stage and in total, with the spread from the minimum "
+            "to the maximum. A stage's time is summed over the run's "
+            "receivers and days (across its worker processes); the **Total** "
+            "is the run's wall time, so the stage times can add up to more "
+            "than the total."
+        )
+
+        items = [mo.md("## Compare runs by label")]
+        if log_dir is None:
+            items.append(mo.md("_No log folder to compare._"))
+            return items
+
+        try:
+            with RunHistory.open(log_dir, read_only=True) as history:
+                comparison = build_comparison(history)
+        except FileNotFoundError:
+            items.append(mo.md("_No run has been recorded in this folder yet._"))
+            return items
+        except (NetworkDriveError, RunHistoryVersionError, RunHistoryError) as error:
+            items.append(mo.md(f"_{error}_"))
+            return items
+
+        items.append(intro)
+        if not comparison.group_rows:
+            items.append(mo.md("_No finished labeled runs to compare yet._"))
+            return items
+
+        items.append(
+            mo.ui.table(comparison.group_rows, selection=None, label="Run groups")
+        )
+        if comparison.any_differs:
+            items.append(
+                mo.callout(
+                    mo.md(
+                        "A group whose machine, workers, version or settings "
+                        "differ is not a set of repetitions of the same run."
+                    ),
+                    kind="warn",
+                )
+            )
+        labels = [row["Label"] for row in comparison.group_rows]
+        series = chart_palette(mo.app_meta().theme == "dark")
+        items.append(mo.md("### Median time per stage"))
+        items.extend(_charts(comparison.chart_rows, labels, series))
+        items.append(
+            mo.ui.table(
+                comparison.stage_rows,
+                selection=None,
+                label="Timing per stage and in total",
+            )
+        )
+        return items
+
     return (
         mo,
         format_duration,
@@ -295,6 +426,9 @@ def _():
         site_overview_rows,
         last_step_text,
         build_run_view,
+        chart_style,
+        chart_palette,
+        comparison_view,
     )
 
 
@@ -574,23 +708,15 @@ def _(mo, run_view):
 
 
 @app.cell
-def _(mo, run_view):
+def _(chart_palette, chart_style, mo, run_view):
     import altair as alt
-
-    def chart_style(chart):
-        return chart.properties(background="transparent").configure_view(stroke=None)
 
     run_charts = run_view["charts"] if run_view is not None else {}
     chart_items = [mo.md("### Charts")]
     if not run_charts:
         chart_items.append(mo.md("_No chart data for this run yet._"))
     else:
-        chart_dark = mo.app_meta().theme == "dark"
-        chart_series = (
-            ["#C4D7A4", "#C47070", "#E1E6B9"]
-            if chart_dark
-            else ["#375D3B", "#8B3A3A", "#183128"]
-        )
+        chart_series = chart_palette(mo.app_meta().theme == "dark")
 
         if "stage" in run_charts:
             chart_items.append(mo.md("**Time per stage.** Total time of each stage."))
@@ -723,6 +849,13 @@ def _(mo, run_view):
             )
 
     mo.vstack(chart_items)
+    return
+
+
+@app.cell
+def _(comparison_view, log_dir, mo, refresh):
+    _ = refresh  # re-read the comparison on refresh
+    mo.vstack(comparison_view(log_dir))
     return
 
 

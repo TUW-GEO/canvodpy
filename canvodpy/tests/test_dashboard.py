@@ -7,22 +7,35 @@ asserting the exporter exits 0.
 """
 
 import os
+import statistics
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
+from canvodpy.cli.dashboards.comparison import build_comparison
 from canvodpy.run_history import RunHistory
 
 import canvodpy
 
 
-def _seed(log_dir: Path) -> None:
+def _seed(log_dir: Path) -> dict[str, list[float]]:
     """Build a small run history through the public API only (no SQL here).
 
-    Three runs: one finished, one failed with an error, one labeled with
-    two receivers; receiver-days with each result, stage timings, resource
-    samples, and one warning and one error.
+    Five runs: one finished and one failed without a label, and three
+    finished with the label "benchmark 2" (one of them on a different
+    machine with different workers and settings). Receiver-days with each
+    result, stage timings, resource samples, and one warning and one
+    error.
+
+    Returns the wall time (seconds) of each finished run of the labeled
+    group, by label, so the comparison test can compute the expected
+    median and spread. The start and end times are passed explicitly (the
+    seeded run IDs name the minute, and the newest run stays the default
+    in the picker).
     """
+    # The finished runs of the labeled group: run ID, start, end. The end
+    # minus the start is the wall time the test checks.
     with RunHistory.open(log_dir) as history:
         rid1 = "fangorn-20261014-100000"
         history.start_run(
@@ -33,6 +46,7 @@ def _seed(log_dir: Path) -> None:
             commit="abc1234",
             machine={"cpu": "test CPU", "cores": 8},
             workers=4,
+            started_at=datetime(2026, 10, 14, 10, 0, 0, tzinfo=UTC),
         )
         history.plan_receiver_days(
             rid1,
@@ -65,7 +79,9 @@ def _seed(log_dir: Path) -> None:
             receiver="canopy_01",
             day="2025001",
         )
-        history.end_run(rid1, "finished")
+        history.end_run(
+            rid1, "finished", ended_at=datetime(2026, 10, 14, 10, 0, 10, tzinfo=UTC)
+        )
 
         rid2 = "fangorn-20261014-120000"
         history.start_run(
@@ -76,6 +92,7 @@ def _seed(log_dir: Path) -> None:
             commit="abc1234",
             machine={"cpu": "test CPU", "cores": 8},
             workers=2,
+            started_at=datetime(2026, 10, 14, 12, 0, 0, tzinfo=UTC),
         )
         history.plan_receiver_days(
             rid2, [("canopy_01", "2025001"), ("reference_01", "2025001")]
@@ -84,7 +101,12 @@ def _seed(log_dir: Path) -> None:
         history.record_problem(
             rid2, "error", "no valid observations", receiver="canopy_01", day="2025001"
         )
-        history.end_run(rid2, "failed", error="ValueError: no valid observations")
+        history.end_run(
+            rid2,
+            "failed",
+            error="ValueError: no valid observations",
+            ended_at=datetime(2026, 10, 14, 12, 0, 3, tzinfo=UTC),
+        )
 
         rid3 = "isengard-20261014-140000"
         history.start_run(
@@ -96,6 +118,7 @@ def _seed(log_dir: Path) -> None:
             machine={"cpu": "test CPU", "cores": 16},
             workers=8,
             label="benchmark 2",
+            started_at=datetime(2026, 10, 14, 14, 0, 0, tzinfo=UTC),
         )
         history.plan_receiver_days(
             rid3,
@@ -122,7 +145,63 @@ def _seed(log_dir: Path) -> None:
         history.record_resources(
             rid3, cpu_percent=60.0, memory_percent=35.0, free_disk={"/stores": 19}
         )
-        history.end_run(rid3, "finished")
+        history.end_run(
+            rid3, "finished", ended_at=datetime(2026, 10, 14, 14, 0, 32, tzinfo=UTC)
+        )
+
+        # Two more runs with the same label, so the comparison has a group
+        # of three. rid4 looks like rid3; rid5 runs on another machine with
+        # more workers, so the group's machine, workers and settings differ.
+        rid4 = "isengard-20261014-133000"
+        history.start_run(
+            rid4,
+            site="isengard",
+            settings={"processing": {"n_max_threads": 8}},
+            canvodpy_version="1.0.0",
+            commit="abc1234",
+            machine={"cpu": "test CPU", "cores": 16},
+            workers=8,
+            label="benchmark 2",
+            started_at=datetime(2026, 10, 14, 13, 30, 0, tzinfo=UTC),
+        )
+        history.plan_receiver_days(
+            rid4, [("canopy_01", "2025001"), ("reference_01", "2025001")]
+        )
+        history.finish_receiver_day(
+            rid4, "canopy_01", "2025001", "written", bytes_added=1300
+        )
+        history.record_stage(rid4, "reading", 1.6, receiver="canopy_01", day="2025001")
+        history.record_stage(rid4, "writing", 3.0, receiver="canopy_01", day="2025001")
+        history.end_run(
+            rid4, "finished", ended_at=datetime(2026, 10, 14, 13, 30, 6, tzinfo=UTC)
+        )
+
+        rid5 = "isengard-20261014-123000"
+        history.start_run(
+            rid5,
+            site="isengard",
+            settings={"processing": {"n_max_threads": 16}},
+            canvodpy_version="1.0.0",
+            commit="abc1234",
+            machine={"cpu": "other CPU", "cores": 32},
+            workers=16,
+            label="benchmark 2",
+            started_at=datetime(2026, 10, 14, 12, 30, 0, tzinfo=UTC),
+        )
+        history.plan_receiver_days(
+            rid5, [("canopy_01", "2025001"), ("reference_01", "2025001")]
+        )
+        history.finish_receiver_day(
+            rid5, "canopy_01", "2025001", "written", bytes_added=1800
+        )
+        history.record_stage(rid5, "reading", 2.4, receiver="canopy_01", day="2025001")
+        history.record_stage(rid5, "writing", 3.6, receiver="canopy_01", day="2025001")
+        history.end_run(
+            rid5, "finished", ended_at=datetime(2026, 10, 14, 12, 30, 9, tzinfo=UTC)
+        )
+
+    # Wall time of each finished run of the labeled group (end minus start).
+    return {"benchmark 2": [32.0, 6.0, 9.0]}
 
 
 def _export(
@@ -196,3 +275,50 @@ def test_dashboard_export_via_cli_logs_dir(tmp_path: Path) -> None:
     _seed(log_dir)
     result = _export(log_dir, app_dir, via_cli_arg=True)
     assert result.returncode == 0, result.stderr + result.stdout
+
+
+def test_dashboard_compare_runs(tmp_path: Path) -> None:
+    # The comparison, checked on the data, not the export. The seeded group
+    # "benchmark 2" has three finished runs on two machines, so its machine,
+    # workers and settings differ; the Total row is the runs' wall time
+    # (ended minus started), not the sum of the stage seconds.
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    walls = _seed(log_dir)
+    with RunHistory.open(log_dir, read_only=True) as history:
+        comparison = build_comparison(history)
+
+    group = next(row for row in comparison.group_rows if row["Label"] == "benchmark 2")
+    assert group["Runs"] == 3
+    assert group["Machine"] == "differs"
+    assert group["Workers"] == "differs"
+    assert group["Version"] == "1.0.0 (abc1234)"
+    assert group["Settings"] == "differs"
+    assert comparison.any_differs
+
+    # A stage row is the sum of that stage's seconds over the run's
+    # receivers and days, and the median is over the group's runs that
+    # recorded it.
+    reading = next(
+        row
+        for row in comparison.stage_rows
+        if row["Label"] == "benchmark 2" and row["Stage"] == "reading"
+    )
+    assert reading["Runs"] == 3
+    assert reading["Min (s)"] == 1.6
+    assert reading["Median (s)"] == 2.4
+    assert reading["Max (s)"] == 4.5
+
+    # The Total row is the wall time of the seeded runs (not the ~13 s of
+    # their stage seconds): the median and the spread are of the runs' end
+    # minus start.
+    total = next(
+        row
+        for row in comparison.stage_rows
+        if row["Label"] == "benchmark 2" and row["Stage"] == "Total"
+    )
+    expected = sorted(walls["benchmark 2"])
+    assert total["Runs"] == 3
+    assert total["Min (s)"] == round(expected[0], 1)
+    assert total["Median (s)"] == round(statistics.median(expected), 1)
+    assert total["Max (s)"] == round(expected[-1], 1)
