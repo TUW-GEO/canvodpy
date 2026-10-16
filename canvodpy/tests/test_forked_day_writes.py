@@ -318,6 +318,7 @@ def _orchestrator(gnss_store: MyIcechunkStore) -> PipelineOrchestrator:
     pipe._logger = structlog.get_logger(__name__)
     pipe._on_group_written = None
     pipe._run = _Recorder()
+    pipe._workers = None
     return pipe
 
 

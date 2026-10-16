@@ -64,6 +64,7 @@ def _run(store: MyIcechunkStore, monkeypatch, receivers: list[str]) -> None:
     pipe.site = _FakeSite(store)
     pipe.days_per_batch = 2
     pipe.n_max_workers = 1
+    pipe._workers = None
     pipe._threads_per_worker = 1
     pipe._on_group_written = None
     pipe._run = None
