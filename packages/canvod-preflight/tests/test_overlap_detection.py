@@ -152,3 +152,10 @@ class TestFindOverlaps:
             "FANR01INK_R_20250010600_15M_05S_AA.rnx",
         ]
         assert find_overlaps(names, key=_cn) == [tuple(names)]
+
+    def test_item_without_canonical_name_raises(self):
+        name = "FANR01INK_R_20250010000_01D_05S_AA.rnx"
+        with pytest.raises(TypeError, match=r"item 0 .*gives a str"):
+            find_overlaps([name])
+        with pytest.raises(TypeError, match="not a CanVODFilename"):
+            find_overlaps([name], key=lambda n: n.upper())
