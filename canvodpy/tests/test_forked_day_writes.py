@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import multiprocessing
 import pickle
+import threading
 import time
 from concurrent.futures import Future
 from pathlib import Path
@@ -488,7 +489,7 @@ def test_a_failed_growth_fails_the_batch_days_and_the_run_goes_on(
     monkeypatch.setattr(pipeline_module, "_loky_reusable", lambda **_: None)
 
     batch = [(_DATE_KEY, {}), ("2025088", {})]
-    assert list(pipe._process_multi_day_batches(batch, None)) == []
+    assert list(pipe._process_multi_day_batches(batch, None, threading.Event())) == []
     assert pipe._run.days == [
         (_GROUP, _DATE_KEY, "failed"),
         (_GROUP, "2025088", "failed"),
@@ -662,7 +663,9 @@ def test_a_batch_that_breaks_waits_for_the_day_being_committed(
     monkeypatch.setattr(pipeline_module, "_windowed_completions", completions)
 
     with pytest.raises(RuntimeError, match="worker pool broke"):
-        list(pipe._process_multi_day_batches([(_DATE_KEY, {})], None))
+        list(
+            pipe._process_multi_day_batches([(_DATE_KEY, {})], None, threading.Event())
+        )
     assert committed == [_DATE_KEY]
 
 

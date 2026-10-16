@@ -6,6 +6,7 @@ pool whose every task fails, so the store shows what the growth alone did.
 
 from __future__ import annotations
 
+import threading
 from concurrent.futures import Future
 from pathlib import Path
 from types import SimpleNamespace
@@ -86,7 +87,7 @@ def _run(store: MyIcechunkStore, monkeypatch, receivers: list[str]) -> None:
     monkeypatch.setattr(pipe, "_prepare_single_date", prepare)
     monkeypatch.setattr(pipeline_module, "_loky_reusable", lambda **_: _FailingPool())
     batch = [(READ_FAILS, {}), (NO_ORBITS, {})]
-    assert list(pipe._process_multi_day_batches(batch, None)) == []
+    assert list(pipe._process_multi_day_batches(batch, None, threading.Event())) == []
 
 
 def _blocks(store: MyIcechunkStore, group: str = "canopy_01") -> dict:

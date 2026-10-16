@@ -168,7 +168,7 @@ flowchart TD
 ## Parallel work
 
 - **Preparing.** Each day of a batch of days (`days_per_batch`) is
-  prepared in its own thread.
+  prepared in its own thread, while the batch before is read.
 - **Reading.** The files are read in a pool of worker processes
   ([loky](https://github.com/joblib/loky)), which stays up from one batch
   to the next. `--workers`, or the resource settings, set the number of
@@ -187,8 +187,9 @@ flowchart TD
   store's commit lock. A commit from another process waits for it (see
   [How a run writes](packages/store/overview.md#how-a-run-writes)).
 - **VOD.** After a batch is written, the run computes the VOD day by day
-  and writes all analyses of a day with one commit, before the next batch
-  starts.
+  and writes all analyses of a day with one commit. Meanwhile the batches
+  run on in a thread of their own, one batch ahead at most, so the
+  workers read the next batch during the VOD.
 
 See [Parallel processing](guides/parallel-processing.md) for the settings.
 
