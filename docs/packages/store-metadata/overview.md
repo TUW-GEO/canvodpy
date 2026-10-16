@@ -36,7 +36,10 @@ such as xarray, see it too. The `uv.lock` and `pyproject.toml` are those
 of the project the run starts in: the nearest directory, from the working
 directory up, that holds both. A run outside such a project records
 neither. Their text is stored once per hash, in the reserved group
-`canvod`:
+`canvod`. A run with a lockfile the store doesn't hold yet stores it in a
+commit of its own ("Store the lockfile in use") before its first data
+commit, so the data commits of two runs never both write it. Two runs
+that start with the same new lockfile store it once:
 
 ```text
 store_root/                    # root attributes: root copy and snapshot summary
