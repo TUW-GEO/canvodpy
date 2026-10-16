@@ -1,43 +1,222 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "canvodpy",
+#     "marimo",
+#     "altair",
+# ]
+# ///
 import marimo
 
-__generated_with = "0.23.13"
+__generated_with = "0.25.1"
 app = marimo.App(
     width="medium",
-    app_title="canvodpy: Performance Dashboard",
+    app_title="canvodpy: Run dashboard",
     css_file="canvod_nordic.css",
 )
 
 
 @app.cell
 def _():
+    from datetime import UTC, datetime, timedelta
+
     import marimo as mo
 
-    return (mo,)
+    def format_duration(seconds):
+        """Short human text for a number of seconds, or 'n/a'."""
+        if seconds is None:
+            return "n/a"
+        if seconds < 60:
+            return f"{seconds:.0f} s"
+        minutes, remainder = divmod(int(seconds), 60)
+        if minutes < 60:
+            return f"{minutes} m {remainder} s"
+        hours, minutes = divmod(minutes, 60)
+        if hours < 24:
+            return f"{hours} h {minutes} m"
+        days, hours = divmod(hours, 24)
+        return f"{days} d {hours} h"
+
+    def eta_text(eta_seconds):
+        """Human text for an ETA; an estimate, never a fact."""
+        if eta_seconds is None:
+            return "none (only for a running run with a finished receiver-day)."
+        finish = datetime.now(UTC) + timedelta(seconds=eta_seconds)
+        return (
+            f"done about {finish.strftime('%H:%M')} UTC "
+            f"({format_duration(eta_seconds)} left). This is an estimate."
+        )
+
+    def status_text(status):
+        """Human text for a run's status."""
+        return {
+            "running": "Running",
+            "finished": "Finished",
+            "failed": "Failed",
+            "interrupted": "Interrupted",
+            "unknown": "Unknown (started on another machine)",
+        }[status]
+
+    def elapsed_seconds(run, last_activity):
+        """Seconds the run has taken, from its records.
+
+        Finished and failed runs run to their end. A running run counts up
+        to now. An interrupted or unknown run has no end record, so it
+        counts only to the last activity the run history saw; this keeps
+        its throughput from falling while the dashboard is open.
+        """
+        now = datetime.now(UTC)
+        if run.ended_at is not None and run.status in ("finished", "failed"):
+            return max((run.ended_at - run.started_at).total_seconds(), 0.0)
+        if run.status in ("interrupted", "unknown") and last_activity is not None:
+            return max((last_activity - run.started_at).total_seconds(), 0.0)
+        return max((now - run.started_at).total_seconds(), 0.0)
+
+    def last_step_text(last_step):
+        """Human text for the newest recorded stage of a run."""
+        if last_step is None:
+            return "none recorded yet."
+        base = f"**{last_step['stage']}**"
+        where = ", ".join(p for p in (last_step["receiver"], last_step["day"]) if p)
+        if where:
+            base += f" ({where})"
+        seconds_ago = last_step["seconds_ago"]
+        if seconds_ago < 60:
+            ago = "just now"
+        else:
+            minutes = int(seconds_ago) // 60
+            ago = f"{minutes} min ago" if minutes < 60 else f"{minutes // 60} h ago"
+        return f"{base}, {ago}."
+
+    def site_overview_rows(history, runs):
+        """One row per site: its last run and that run's progress."""
+        seen = set()
+        rows = []
+        for run in runs:
+            if run.site in seen:
+                continue
+            seen.add(run.site)
+            progress = history.progress(run.run_id)
+            planned = sum(p.planned for p in progress)
+            written = sum(p.written for p in progress)
+            skipped = sum(p.skipped for p in progress)
+            failed = sum(p.failed for p in progress)
+            rows.append(
+                {
+                    "Site": run.site,
+                    "Run": run.run_id,
+                    "Status": status_text(run.status),
+                    "Started (UTC)": run.started_at.strftime("%Y-%m-%d %H:%M"),
+                    "Ended (UTC)": (
+                        run.ended_at.strftime("%Y-%m-%d %H:%M") if run.ended_at else ""
+                    ),
+                    "Planned": planned,
+                    "Written": written,
+                    "Skipped": skipped,
+                    "Failed": failed,
+                    "Not yet done": planned - (written + skipped + failed),
+                }
+            )
+        return rows
+
+    def build_run_view(run, progress, days, timings, problems):
+        """Everything the run page shows, computed from the run history only."""
+        now = datetime.now(UTC)
+        finished = [d for d in days if d.result is not None]
+        pending = [d for d in days if d.result is None]
+        activity = [d.finished_at for d in days if d.finished_at is not None]
+        activity += [t.recorded_at for t in timings]
+        last_activity = max(activity) if activity else None
+        elapsed = elapsed_seconds(run, last_activity)
+        hours = elapsed / 3600 if elapsed else 0.0
+
+        eta_seconds = None
+        if run.status == "running" and finished and hours > 0:
+            mean_per_finished = elapsed / len(finished)
+            if pending:
+                eta_seconds = mean_per_finished * len(pending)
+
+        days_per_hour = len(finished) / hours if hours else None
+        bytes_total = sum(d.bytes_added or 0 for d in finished)
+        bytes_per_hour = bytes_total / hours if hours else None
+
+        last_step = None
+        if timings:
+            last = timings[-1]
+            last_step = {
+                "stage": last.stage,
+                "receiver": last.receiver,
+                "day": last.day,
+                "seconds_ago": (now - last.recorded_at).total_seconds(),
+            }
+
+        progress_rows = [
+            {
+                "Receiver": p.receiver,
+                "Planned": p.planned,
+                "Written": p.written,
+                "Skipped": p.skipped,
+                "Failed": p.failed,
+                "Not yet done": p.planned - (p.written + p.skipped + p.failed),
+                "Bytes added": p.bytes_added,
+            }
+            for p in progress
+        ]
+
+        problem_rows = [
+            {
+                "Time (UTC)": problem.recorded_at.strftime("%Y-%m-%d %H:%M"),
+                "Level": problem.level,
+                "Message": problem.message,
+                "Receiver": problem.receiver or "",
+                "Day": problem.day or "",
+            }
+            for problem in problems
+        ]
+
+        return {
+            "run": run,
+            "progress_rows": progress_rows,
+            "finished": len(finished),
+            "pending": len(pending),
+            "eta_seconds": eta_seconds,
+            "days_per_hour": days_per_hour,
+            "bytes_per_hour": bytes_per_hour,
+            "last_step": last_step,
+            "problem_rows": problem_rows,
+        }
+
+    return (
+        mo,
+        format_duration,
+        eta_text,
+        status_text,
+        site_overview_rows,
+        last_step_text,
+        build_run_view,
+    )
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
-# canvodpy — Performance Dashboard
+    from importlib.resources import files
 
-Reads `stage_timing` events from `machine/performance*.json` (see
-`canvodpy.logging.stage_timer` / `docs/guides/diagnostics.md`).
-Not full telemetry — this is a lightweight, always-on, file-based
-view of how a pipeline run spent its time. Works while a run is
-still in progress (partial data) or after it's finished.
-
-**Site** is parsed from `run_id` (`{site}-{YYYYMMDD-HHMMSS}`, set by
-`canvodpy run` and by `site.pipeline()`): multiple sites' logs in the
-same directory show up as separate rows and can be filtered below.
-Events logged outside a run carry no `run_id` and show up as
-"(no run ID)".
-**VOD model** comes from the `calculator` field emitted on
-`vod_calc`/`vod_store` events — different `--vod-calculator` runs
-are distinguishable the same way.
-"""
+    logos = files("canvodpy.cli.dashboards")
+    bright_svg = logos.joinpath("canvodpy_logo_bright_mode.svg").read_text(
+        encoding="utf-8"
     )
-    return
+    dark_svg = logos.joinpath("canvodpy_logo_dark_mode.svg").read_text(encoding="utf-8")
+    mo.vstack(
+        [
+            mo.md("## canvodpy run dashboard"),
+            mo.Html(
+                f'<div class="canvodpy-logo">'
+                f'<div class="canvodpy-logo-bright">{bright_svg}</div>'
+                f'<div class="canvodpy-logo-dark">{dark_svg}</div>'
+                "</div>"
+            ),
+        ]
+    )
 
 
 @app.cell
@@ -45,31 +224,46 @@ def _(mo):
     import os
     from pathlib import Path
 
-    def _default_log_dir() -> Path:
-        # `canvodpy dashboard` and `canvodpy run --dashboard` always set it.
-        env_dir = os.environ.get("CANVODPY_PERF_LOG_DIR")
-        if env_dir:
-            return Path(env_dir).expanduser()
-        from canvod.config import load_config
+    from canvod.config import load_config
+    from canvod.config.models.logging import LogDirNotSetError
 
+    def _resolve_log_dir():
+        # Order: --logs-dir on the marimo command line (after `--`), then the
+        # variable `canvodpy dashboard` / `canvodpy run --dashboard` set, then
+        # the settings file.
+        args = mo.cli_args()
+        if args.get("logs-dir"):
+            return Path(args["logs-dir"]).expanduser()
+        env = os.environ.get("CANVODPY_PERF_LOG_DIR")
+        if env:
+            return Path(env).expanduser()
         return load_config().processing.logging.get_log_dir()
 
-    log_dir = _default_log_dir()
-    machine_dir = log_dir / "machine"
+    log_dir = None
+    log_dir_problem = None
+    try:
+        log_dir = _resolve_log_dir()
+    except LogDirNotSetError:
+        log_dir_problem = (
+            "No log folder is set. Pass it on the command line with "
+            "`--logs-dir <folder>` after `--`, or set "
+            "`processing.logging.log_dir` in `canvod-settings.yaml`."
+        )
+    except Exception as error:
+        log_dir_problem = (
+            "Could not read the log folder from the settings file. Pass it with "
+            f"`--logs-dir <folder>` after `--`. ({type(error).__name__}: {error})"
+        )
 
-    mo.md(f"**Log directory:** `{machine_dir}`")
-    return (machine_dir,)
+    mo.md(f"**Log directory:** `{log_dir}`" if log_dir is not None else "")
+    return log_dir, log_dir_problem
 
 
 @app.cell
 def _(mo):
-    # Auto-refreshing timer: re-runs every cell that references `refresh`
-    # on the chosen interval, so the dashboard tracks a live run without
-    # a manual click. The widget also exposes a manual refresh action.
-    # Long options (30m-24h) matter for the "runs may take days or run
-    # forever" case -- a dashboard left open
-    # against an unattended multi-day backfill shouldn't have to poll
-    # every few seconds to eventually catch up.
+    # Auto-refresh: re-runs the cells that read `refresh` on the chosen
+    # interval, so the notebook follows a live run. A long interval suits a
+    # multi-day run; the widget also has a manual refresh.
     refresh = mo.ui.refresh(
         options=["2s", "5s", "10s", "30s", "1m", "5m", "30m", "1h", "2h", "6h", "24h"],
         default_interval="10s",
@@ -79,257 +273,201 @@ def _(mo):
 
 
 @app.cell
-def _(machine_dir, mo, refresh):
-    import json
-
-    import polars as pl
-
-    _ = refresh  # re-run this cell when the button is clicked
-
-    _STAGE_SCHEMA = {
-        "run_id": pl.Utf8,
-        "stage": pl.Utf8,
-        "receiver": pl.Utf8,
-        "date_key": pl.Utf8,
-        "duration_seconds": pl.Float64,
-        "status": pl.Utf8,
-        "timestamp": pl.Utf8,
-        # VOD-only fields: populated on "vod_calc"/"vod_store" events,
-        # null for the RINEX-side reading/validating/augmenting/writing
-        # events (see cli/run.py and orchestrator/processor.py).
-        "calculator": pl.Utf8,
-        "analysis": pl.Utf8,
-    }
-
-    def _read_stage_events(paths: list) -> pl.DataFrame:
-        """Read stage_timing events from one or more performance*.json files.
-
-        Line-by-line json.loads rather than pl.read_ndjson: a file being
-        actively appended to by a live run may have an incomplete trailing
-        line at read time, which would otherwise fail the whole read.
-        """
-        rows = []
-        for path in paths:
-            try:
-                text = path.read_text()
-            except OSError:
-                continue
-            for line in text.splitlines():
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    event = json.loads(line)
-                except json.JSONDecodeError:
-                    continue  # partial trailing line from a live writer
-                if event.get("event") != "stage_timing":
-                    continue
-                rows.append({key: event.get(key) for key in _STAGE_SCHEMA})
-
-        if not rows:
-            return pl.DataFrame(schema=_STAGE_SCHEMA)
-        return pl.DataFrame(rows, schema=_STAGE_SCHEMA)
-
-    # `performance*.json*` (trailing `*`), not `performance*.json`: the perf
-    # log uses a size-triggered RotatingFileHandler (50MB, backupCount now
-    # 60 -- was 10; see logging_config.py), so a run of any real length
-    # rotates the main process's file to `performance.json.1`, `.2`, ...
-    # -- names that don't end in `.json` and were silently invisible to the
-    # old pattern. On a ~15h overnight run, `performance.json.1` alone held
-    # 82% of the main process's *total* logged lines (150,842/184,763) but
-    # only ~0.4% of the `stage_timing` events this cell reads specifically
-    # (most `stage_timing` events come from per-PID worker files, which
-    # never rotated this run) -- still a real bug, just smaller in this
-    # dimension than the raw file sizes suggest (confirmed against a real
-    # backfill's logs, 2026-07-15).
-    perf_files = sorted(machine_dir.glob("performance*.json*"))
-    events = _read_stage_events(perf_files)
-
-    # `site` is not logged directly -- it's the prefix of run_id
-    # (`{site}-{YYYYMMDD-HHMMSS}`, see cli/run.py). `unit` unifies the
-    # RINEX-side "receiver" and the VOD-side "analysis" fields into one
-    # column so per-stage grouping/coloring works across both without
-    # conflating them. Applied unconditionally (incl. on the empty
-    # DataFrame) so every downstream cell can rely on both columns existing.
-    events = events.with_columns(
-        pl.col("run_id")
-        .str.extract(r"^(.*)-\d{8}-\d{6}$", 1)
-        .fill_null(pl.col("run_id"))
-        .fill_null("(no run ID)")
-        .alias("site"),
-        pl.coalesce([pl.col("receiver"), pl.col("analysis")]).alias("unit"),
+def _(log_dir, log_dir_problem, refresh, site_overview_rows):
+    from canvodpy.run_history import (
+        NetworkDriveError,
+        RunHistory,
+        RunHistoryError,
+        RunHistoryVersionError,
     )
 
-    if events.is_empty():
-        summary = mo.callout(
+    _ = refresh  # re-read the run history on refresh
+
+    runs = []
+    overview = []
+    problem = log_dir_problem
+
+    if log_dir is not None:
+        try:
+            with RunHistory.open(log_dir, read_only=True) as history:
+                runs = history.runs()
+                overview = site_overview_rows(history, runs)
+        except FileNotFoundError:
+            problem = (
+                f"No run has been recorded in `{log_dir}` yet. "
+                "Run `canvodpy run ...` first."
+            )
+        except (NetworkDriveError, RunHistoryVersionError, RunHistoryError) as error:
+            problem = str(error)
+
+    return runs, overview, problem, RunHistory
+
+
+@app.cell
+def _(log_dir, mo, overview, problem, runs):
+    if problem is not None:
+        banner_items = [mo.callout(mo.md(problem), kind="warn")]
+    elif runs:
+        banner_items = [
             mo.md(
-                f"No `stage_timing` events found yet under `{machine_dir}`. "
-                "Run `canvodpy run ...` first, or wait for the next "
-                "auto-refresh once one has started writing."
+                f"**{len(runs)}** run(s), **{len(overview)}** site(s) in `{log_dir}`. "
+                "Reads the run history, not the log files."
+            )
+        ]
+    else:
+        banner_items = [
+            mo.callout(
+                mo.md(f"No run has been recorded in `{log_dir}` yet."), kind="warn"
+            )
+        ]
+    mo.vstack(banner_items)
+    return
+
+
+@app.cell
+def _(mo, overview):
+    if not overview:
+        overview_items = [mo.md("_No runs to show yet._")]
+    else:
+        overview_items = [
+            mo.md("## Site overview"),
+            mo.ui.table(overview, selection=None, label="Sites"),
+        ]
+    mo.vstack(overview_items)
+    return
+
+
+@app.cell
+def _(mo):
+    chosen_get, chosen_set = mo.state(None)
+    return (chosen_get, chosen_set)
+
+
+@app.cell
+def _(chosen_get, chosen_set, mo, runs):
+    selected = None
+    if runs:
+        labels = {f"{run.site} · {run.run_id}": run.run_id for run in runs}
+        value = chosen_get()
+        if value not in labels.values():
+            value = next(iter(labels))
+        selected = mo.ui.dropdown(
+            options=labels,
+            value=value,
+            label="Run",
+            full_width=False,
+            on_change=chosen_set,
+        )
+    selected
+
+
+@app.cell
+def _(RunHistory, build_run_view, log_dir, refresh, selected):
+    _ = refresh  # re-read the selected run's detail on refresh
+
+    chosen = selected.value if selected is not None else None
+
+    run_view = None
+    if chosen is not None and log_dir is not None:
+        try:
+            with RunHistory.open(log_dir, read_only=True) as rh:
+                run = rh.run(chosen)
+                progress = rh.progress(chosen)
+                days = rh.receiver_days(chosen)
+                timings = rh.stage_timings(chosen)
+                problems = rh.problems(chosen)
+            run_view = build_run_view(run, progress, days, timings, problems)
+        except KeyError:
+            run_view = None
+
+    return (run_view,)
+
+
+@app.cell
+def _(mo, run_view, status_text):
+    if run_view is None:
+        header_items = [mo.md("_Select a run._")]
+    else:
+        run_record = run_view["run"]
+        header_md = mo.md(
+            f"## Run: {run_record.run_id}\n\n"
+            f"**Site:** {run_record.site}  ·  **Status:** {status_text(run_record.status)}  ·  "
+            f"**Label:** {run_record.label or 'none'}\n\n"
+            f"**Started (UTC):** {run_record.started_at.strftime('%Y-%m-%d %H:%M')}  ·  "
+            f"**Ended (UTC):** {run_record.ended_at.strftime('%Y-%m-%d %H:%M') if run_record.ended_at else 'running'}\n\n"
+            f"**canvodpy:** {run_record.canvodpy_version}"
+            + (f" ({run_record.commit})" if run_record.commit else "")
+            + f"  ·  **Workers:** {run_record.workers or 'n/a'}"
+        )
+        settings_block = mo.vstack(
+            [mo.md("**Settings**"), mo.json(run_record.settings)]
+        )
+        machine_block = mo.vstack([mo.md("**Machine**"), mo.json(run_record.machine)])
+        header_items = [header_md, settings_block, machine_block]
+    mo.vstack(header_items)
+    return
+
+
+@app.cell
+def _(mo, run_view):
+    if run_view is None:
+        progress_items = [mo.md("")]
+    else:
+        progress_items = [
+            mo.md(
+                f"### Progress ({run_view['finished']} finished, "
+                f"{run_view['pending']} not yet done)"
             ),
-            kind="warn",
-        )
-    else:
-        summary = mo.md(
-            f"**{len(events)}** stage_timing events across "
-            f"**{events['run_id'].n_unique()}** run(s), "
-            f"**{events['site'].n_unique()}** site(s), "
-            f"**{events['stage'].n_unique()}** distinct stages, "
-            f"**{events['calculator'].n_unique()}** VOD model(s)."
-        )
-    summary
-    return events, pl
-
-
-@app.cell
-def _(events, mo):
-    _sites = sorted(events["site"].drop_nulls().unique().to_list())
-    _models = sorted(events["calculator"].drop_nulls().unique().to_list())
-
-    site_filter = mo.ui.multiselect(
-        options=_sites, value=_sites, label="Site(s)", full_width=False
-    )
-    model_filter = mo.ui.multiselect(
-        options=_models,
-        value=_models,
-        label="VOD model(s): n/a rows (RINEX stages) always included",
-        full_width=False,
-    )
-    mo.hstack([site_filter, model_filter], justify="start", gap=2)
-    return model_filter, site_filter
-
-
-@app.cell
-def _(events, model_filter, pl, site_filter):
-    if events.is_empty():
-        filtered = events
-    else:
-        filtered = events.filter(
-            pl.col("site").is_in(site_filter.value)
-            & (
-                pl.col("calculator").is_in(model_filter.value)
-                | pl.col("calculator").is_null()
-            )
-        )
-    return (filtered,)
-
-
-@app.cell
-def _(filtered, mo, pl):
-    mo.md(
-        """
-## Stage duration over time
-
-One panel per stage — trace each receiver or VOD analysis (color) across
-days to spot regressions per stage, not just totals. Rows facet by site
-when more than one site is present.
-"""
-    )
-
-    if filtered.is_empty():
-        trend_chart = mo.md("_No data yet._")
-    else:
-        trend_data = (
-            filtered.filter(
-                pl.col("date_key").is_not_null() & pl.col("unit").is_not_null()
-            )
-            .group_by(["site", "stage", "unit", "date_key"])
-            .agg(pl.col("duration_seconds").sum().alias("duration_seconds"))
-            .sort("date_key")
-        )
-        if trend_data.is_empty():
-            trend_chart = mo.md(
-                "_No stage_timing events carry receiver/analysis context yet._"
-            )
-        else:
-            import altair as _alt
-
-            _n_sites = trend_data["site"].n_unique()
-            _base = (
-                _alt.Chart(trend_data.to_pandas())
-                .mark_line(point=True)
-                .encode(  # ty: ignore[unresolved-attribute] -- altair's stubs lose the concrete Chart type across this chain
-                    x=_alt.X("date_key:N", title="Day (YYYYDOY)"),
-                    y=_alt.Y("duration_seconds:Q", title="Duration (s)"),
-                    color=_alt.Color("unit:N", title="Receiver / analysis"),
-                    tooltip=["site", "stage", "unit", "date_key", "duration_seconds"],
-                )
-                .properties(width=220, height=180)
-            )
-            _facet_kwargs = {"column": _alt.Column("stage:N", title="Stage")}
-            if _n_sites > 1:
-                _facet_kwargs["row"] = _alt.Row("site:N", title="Site")
-            # Faceted charts aren't wrapped in mo.ui.altair_chart (selection
-            # bindings don't apply cleanly to facets) -- rendered directly.
-            trend_chart = _base.facet(**_facet_kwargs).resolve_scale(y="independent")
-
-    trend_chart
+            mo.ui.table(
+                run_view["progress_rows"], selection=None, label="Receiver-days"
+            ),
+        ]
+    mo.vstack(progress_items)
     return
 
 
 @app.cell
-def _(filtered, mo, pl):
-    mo.md("## Total elapsed time per day")
-
-    if filtered.is_empty():
-        agg_chart = mo.md("_No data yet._")
+def _(eta_text, last_step_text, mo, run_view):
+    if run_view is None:
+        timing_items = [mo.md("")]
     else:
-        by_unit = (
-            filtered.filter(
-                pl.col("date_key").is_not_null() & pl.col("unit").is_not_null()
-            )
-            .group_by(["site", "unit", "date_key"])
-            .agg(pl.col("duration_seconds").sum().alias("total_seconds"))
-            .sort(["date_key", "site", "unit"])
-        )
-        if by_unit.is_empty():
-            agg_chart = mo.md("_No receiver/analysis-tagged events yet._")
+        dp_hour = run_view["days_per_hour"]
+        bp_hour = run_view["bytes_per_hour"]
+        if dp_hour is None or bp_hour is None:
+            throughput_md = mo.md("**Throughput:** no receiver-day has finished yet.")
         else:
-            import altair as _alt
-
-            _n_sites = by_unit["site"].n_unique()
-            _base = (
-                _alt.Chart(by_unit.to_pandas())
-                .mark_bar()
-                .encode(  # ty: ignore[unresolved-attribute] -- altair's stubs lose the concrete Chart type across this chain
-                    x=_alt.X("date_key:N", title="Day (YYYYDOY)"),
-                    y=_alt.Y("total_seconds:Q", title="Total time (s)"),
-                    color=_alt.Color("unit:N", title="Receiver / analysis"),
-                    tooltip=["site", "unit", "date_key", "total_seconds"],
-                )
-                .properties(width=650, height=300)
+            suffix = (
+                " (over the run so far)" if run_view["run"].status == "running" else ""
             )
-            if _n_sites > 1:
-                agg_chart = _base.facet(row=_alt.Row("site:N", title="Site"))
-            else:
-                agg_chart = mo.ui.altair_chart(_base)
-
-    agg_chart
+            throughput_md = mo.md(
+                f"**Throughput:** {dp_hour:.2f} receiver-days per hour, "
+                f"{bp_hour / 1e6:.1f} MB per hour{suffix}"
+            )
+        timing_items = [
+            mo.md(f"**Estimate:** {eta_text(run_view['eta_seconds'])}"),
+            mo.md(f"**Last finished step:** {last_step_text(run_view['last_step'])}"),
+            throughput_md,
+        ]
+    mo.vstack(timing_items)
     return
 
 
 @app.cell
-def _(filtered, mo, pl):
-    mo.md("## Exact figures: duration (s) per site × stage × receiver/analysis")
-
-    if filtered.is_empty():
-        stats_table = mo.md("_No data yet._")
+def _(mo, run_view):
+    if run_view is None:
+        problem_items = [mo.md("")]
     else:
-        stats = (
-            filtered.filter(pl.col("unit").is_not_null())
-            .group_by(["site", "stage", "unit"])
-            .agg(
-                pl.col("duration_seconds").mean().round(2).alias("mean_s"),
-                pl.col("duration_seconds").median().round(2).alias("median_s"),
-                pl.col("duration_seconds").max().round(2).alias("max_s"),
-                pl.col("duration_seconds").sum().round(1).alias("total_s"),
-                pl.len().alias("n"),
+        if run_view["problem_rows"]:
+            body = mo.ui.table(
+                run_view["problem_rows"], selection=None, label="Problems"
             )
-            .sort(["site", "stage", "unit"])
-        )
-        stats_table = mo.ui.table(stats.to_pandas(), selection=None)
-
-    stats_table
+        else:
+            body = mo.md("_None recorded._")
+        problem_items = [
+            mo.md(f"### Warnings and errors ({len(run_view['problem_rows'])})"),
+            body,
+        ]
+    mo.vstack(problem_items)
     return
 
 
