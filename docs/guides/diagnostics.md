@@ -316,6 +316,28 @@ how each is computed:
 - **Throughput:** receiver-days finished per hour and bytes added per
   hour over the run (so far, for a running run).
 
+**Charts:** the run page also shows charts of the run, built from the
+run history queries only:
+
+- **Time per stage:** the total time of each stage. A long bar is a
+  stage that takes a lot of the run.
+- **Time per day:** the stage seconds of a day, added up over all its
+  receivers. Receivers run in parallel, so this is not wall time; a day
+  can show more seconds than it took.
+- **Store growth per day:** the bytes each day added to the store. The
+  y-axis is in megabytes.
+- **CPU and memory:** the percent of the CPU and memory used, sampled
+  during the run. A line near 100 % shows what limits the run.
+- **Free disk:** the free space of each folder, sampled during the run.
+  Free disk is one value per folder, so a chart has one line per folder;
+  the y-axis is in gigabytes.
+- **Throughput over time:** the receiver-days finished, cumulative from
+  the run start. The slope is the pace; a steep line is a fast run.
+
+The charts follow marimo's light and dark theme. The frame (background,
+axes, text) uses the theme, and the data colors come from the canvodpy
+palette for that theme.
+
 A run's status is one of:
 
 - **Running:** the run's process lives.
