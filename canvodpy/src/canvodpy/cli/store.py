@@ -646,7 +646,7 @@ def _is_content_key(field: str) -> bool:
 def _migrate_repository_metadata(
     site: str,
     store: str,
-    path: Path,
+    path: Path | str,
     old: StoreMetadata,
     naming_authority: str | None,
     values: dict[str, object],
@@ -708,7 +708,7 @@ def _migrate_repository_metadata(
 def _migrate_content_settings(
     site: str,
     store: str,
-    path: Path,
+    path: Path | str,
     store_type: str,
     values: dict[str, object],
     *,
