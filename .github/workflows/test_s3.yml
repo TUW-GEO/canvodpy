@@ -5,10 +5,13 @@ name: S3 Tests
 # (packages/canvod-store-metadata/tests/test_s3_store.py), a run writing
 # the same stores on S3 as in a local folder (canvodpy/tests/test_s3_run.py,
 # #350), producing a settings file from a store
-# (canvodpy/tests/test_config_from_store_s3.py, #356), and two
-# `canvodpy run` processes writing one store at the same time
-# (canvodpy/tests/test_s3_two_runs.py, #358). Without an S3 service these
-# tests skip, so the platform tests don't run them.
+# (canvodpy/tests/test_config_from_store_s3.py, #356), two `canvodpy run`
+# processes writing one store at the same time
+# (canvodpy/tests/test_s3_two_runs.py, #358), and maintenance on a store on
+# S3 being a dry run only (#357: the store tests refuse every mutating
+# action, packages/canvod-store/tests/test_s3_maintenance.py, and the CLI
+# reports a dry run, canvodpy/tests/test_s3_maintenance_cli.py). Without an
+# S3 service these tests skip, so the platform tests don't run them.
 #
 # The emulator is RustFS (Apache-2.0), the one Icechunk's own CI tests
 # against, at the tag Icechunk's compose.yaml uses at the version in
@@ -109,6 +112,8 @@ jobs:
                       canvodpy/tests/test_s3_run.py \
                       canvodpy/tests/test_config_from_store_s3.py \
                       canvodpy/tests/test_s3_two_runs.py \
+                      packages/canvod-store/tests/test_s3_maintenance.py \
+                      canvodpy/tests/test_s3_maintenance_cli.py \
                       --verbose --color=no -rs | tee pytest.log
                   if grep -q SKIPPED pytest.log; then
                       echo "::error::S3 tests were skipped; the emulator setup is broken."

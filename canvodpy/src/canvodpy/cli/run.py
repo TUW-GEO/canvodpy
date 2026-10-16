@@ -525,7 +525,7 @@ def _main_impl(args: SimpleNamespace) -> int:
                 # Before any processing: a VOD group fed by data preprocessed
                 # differently would refuse every day at the write.
                 stage = "preprocessing_check"
-                vod_computer.check_preprocessing(list(vod_analyses))
+                vod_computer.check_gnss_hash()
 
                 def _on_group_written(
                     group_name: str, _site_name: str = site_name

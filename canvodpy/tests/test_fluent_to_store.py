@@ -61,6 +61,11 @@ class TestGnssStore:
 
 class TestVodStore:
     def test_vod_goes_to_the_listed_analysis_of_the_pair(self, site_settings):
+        # A VOD store records the content-settings hash of the GNSS store it
+        # is computed from, so write GNSS data first (that store gets content
+        # settings) before the VOD store.
+        _workflow(canopy_01=1, reference_01=1).to_store()
+
         workflow = _workflow()
         workflow._vod_result = xr.Dataset(
             {"VOD": (("epoch",), np.zeros(4, np.float32))},

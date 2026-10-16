@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
+from canvodpy.factories import VODFactory
 from canvodpy.vod_computer import VodComputer
 
 from canvod.config.models import (
@@ -16,6 +17,30 @@ from canvod.config.models import (
     PreprocessingMismatchError,
     preprocessing_record,
 )
+from canvod.vod import VODCalculator
+
+
+class _ParamCalculator(VODCalculator):
+    """A test calculator with defaulted parameters (#355/#375)."""
+
+    alpha: float = 1.0
+    beta: float = 2.0
+
+    def calculate_vod(self):  # pragma: no cover - never run
+        raise NotImplementedError
+
+
+class _RequiredParamCalculator(VODCalculator):
+    """A test calculator with a required parameter without a default."""
+
+    gamma: float
+
+    def calculate_vod(self):  # pragma: no cover - never run
+        raise NotImplementedError
+
+
+VODFactory.register("param_test", _ParamCalculator)
+VODFactory.register("required_param_test", _RequiredParamCalculator)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -519,3 +544,33 @@ class TestComputeBulkFromDayBlocks:
         assert canopy.sizes["epoch"] == 96
         assert canopy.epoch.values[-1] < day + np.timedelta64(1, "D")
         np.testing.assert_array_equal(canopy.epoch.values[:4], epochs)
+
+
+class TestEffectiveCalculatorParams:
+    """#375 (review 5): passed parameters are merged over the model defaults."""
+
+    def test_defaults_are_written_out_when_nothing_is_passed(self):
+        site = _make_site()
+        assert VodComputer(site, calculator="param_test").calculator_params == {
+            "alpha": 1.0,
+            "beta": 2.0,
+        }
+
+    def test_passed_parameters_merge_over_the_defaults(self):
+        site = _make_site()
+        partial = VodComputer(
+            site, calculator="param_test", calculator_params={"alpha": 5.0}
+        )
+        explicit = VodComputer(
+            site,
+            calculator="param_test",
+            calculator_params={"alpha": 5.0, "beta": 2.0},
+        )
+        # `{"a": 1}` and `{"a": 1, "b": 2}` (b defaulting to 2) are the same.
+        assert partial.calculator_params == {"alpha": 5.0, "beta": 2.0}
+        assert partial.calculator_params == explicit.calculator_params
+
+    def test_a_required_field_without_a_default_raises(self):
+        site = _make_site()
+        with pytest.raises(ValueError, match="gamma"):
+            VodComputer(site, calculator="required_param_test").calculator_params

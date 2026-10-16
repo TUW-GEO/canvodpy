@@ -10,7 +10,7 @@ canvod-store (`{group}/metadata/table`).
 |---|---|
 | `schema.py` | The metadata models: `RepositoryMetadata` in Icechunk's repository metadata, `StoreMetadata` as read from one snapshot (repository metadata, snapshot summary and commit metadata); the old root attribute `canvod_metadata` only in snapshots from before ADR 0014 |
 | `amend.py`, `migration.py` | `amend_metadata` (amendable fields, with a reason), `migrate_metadata` (stores from before ADR 0014) and `migrate_content_settings` (stores from before ADR 0019) |
-| `content.py` | Content settings (ADR 0019): which settings count (`CONTENT_KEYS`, `RECEIVER_KEYS`), their stored form, the key-by-key comparison and its error |
+| `content.py` | Content settings (ADR 0019): which settings count (`CONTENT_KEYS`, `VOD_CONTENT_KEYS`, `RECEIVER_KEYS`), their stored form (`stored_form`, with `gnss_content_hash` for a VOD store), the key-by-key comparison (`differences`, `check_content_settings`) and the GNSS-hash check (`check_gnss_hash`) |
 | `identity.py` | Store id, UUID, naming authority and catalog link of a new store |
 | `collectors.py` | `collect_metadata`: fills the model from settings, dataset and environment |
 | `io.py` | Write a new store's metadata, read a snapshot's; `commit_with_rebase`, the one commit function |
@@ -35,10 +35,14 @@ recipes run these from the command line (`just metadata-show <store>`,
   added by amendment adds its own entry. `ensure_store_metadata` (when a
   run starts) and `commit_with_rebase` (at the tip, for commits of data)
   refuse a run whose settings differ; `ensure_store_metadata` also refuses
-  a GNSS store without them. A new content setting goes into
-  `CONTENT_KEYS` and the table in `docs/guides/configuration.md`; it then
-  needs a new `CONTENT_SETTINGS_FORMAT` and a migration for stores that
-  lack it.
+  a GNSS store without them. A VOD store keeps its own content settings
+  (`VOD_CONTENT_KEYS` plus `gnss_content_hash`, the content-settings hash
+  of the GNSS store it was computed from); the calculator and its
+  parameters are recorded per VOD group in the group's attributes (ADR
+  0019 D2, see `packages/canvod-store/src/canvod/store/store.py`). A new
+  content setting goes into `CONTENT_KEYS` or `VOD_CONTENT_KEYS` and the
+  table in `docs/guides/configuration.md`; it then needs a new
+  `CONTENT_SETTINGS_FORMAT` and a migration for stores that lack it.
 - `commit_with_rebase` refuses a store without repository metadata. Tests
   that write to a store directly give it made-up metadata first with
   `canvod.store_metadata.testing.give_test_metadata`.

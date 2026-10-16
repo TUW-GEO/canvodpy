@@ -11,6 +11,7 @@ import shutil
 import socket
 import subprocess
 import sys
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -485,6 +486,7 @@ def collect_metadata(
     store_path: StoreLocation | Path | str | None = None,
     dask_workers: int | None = None,
     dask_threads_per_worker: int | None = None,
+    gnss_repository: Mapping[str, Any] | None = None,
 ) -> StoreMetadata:
     """Collect all metadata sections into a StoreMetadata object.
 
@@ -541,7 +543,12 @@ def collect_metadata(
             collect_vod_analyses(site_config) if store_type == "vod_store" else {}
         ),
         content_settings=(
-            new_content_settings(config, site_name)
+            new_content_settings(
+                config,
+                site_name,
+                store_type=store_type,
+                gnss_repository=gnss_repository,
+            )
             if store_type in CONTENT_STORE_TYPES
             else None
         ),

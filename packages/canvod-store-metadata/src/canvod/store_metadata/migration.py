@@ -16,6 +16,7 @@ can also replace the attributes of variables older versions wrote wrong
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
@@ -26,6 +27,14 @@ from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
 from .amend import check_amendable
+from .content import (
+    CONTENT_KEYS,
+    CONTENT_SETTINGS_FIELD,
+    GNSS_CONTENT_HASH,
+    RECEIVER_KEYS,
+    VOD_CONTENT_KEYS,
+    _put,
+)
 from .identity import check_naming_authority, new_uuid, stac_link, store_id
 from .io import (
     _set_field,
@@ -44,7 +53,7 @@ from .schema import (
     rule_breaks,
     validate_existing,
 )
-from .snapshot import preview_metadata
+from .snapshot import RESERVED_GROUP, preview_metadata
 from .validate import validate_all
 
 #: Attributes xarray writes to encode a variable; kept when a variable's
@@ -233,6 +242,127 @@ def _recorded(settings: Mapping[str, Any], key: str) -> Any:
     return data
 
 
+def _gnss_content_settings(
+    recorded: Mapping[str, Any],
+    values: Mapping[str, Any],
+    repository: Mapping[str, Any],
+    site: str,
+    store_path: StoreLocation | Path | str,
+) -> tuple[dict[str, Any], list[str], list[str], Any]:
+    """The content settings a migrated GNSS store records.
+
+    Returns ``(settings, missing, unknown, gnss_hash)``; ``gnss_hash`` is
+    ``None`` for a GNSS store.
+    """
+    settings: dict[str, Any] = {}
+    missing: list[str] = []
+    for key in CONTENT_KEYS:
+        if key in values:
+            value = values[key]
+        else:
+            try:
+                value = _recorded(recorded, key)
+            except KeyError:
+                missing.append(key)
+                continue
+        _put(settings, key, value)
+    receivers: dict[str, dict[str, Any]] = {}
+    listed = repository.get("instruments", {}).get("receivers", {})
+    for name, receiver in listed.items():
+        entry: dict[str, Any] = {}
+        for key in RECEIVER_KEYS:
+            dotted = f"sites.{site}.receivers.{name}.{key}"
+            if dotted in values:
+                entry[key] = values[dotted]
+            elif key in receiver:
+                entry[key] = receiver[key]
+            elif key == "paired_canopies" and receiver.get("type") == "canopy":
+                entry[key] = None  # never set for a canopy receiver
+            else:
+                missing.append(dotted)
+        receivers[name] = entry
+    _put(settings, f"sites.{site}.receivers", receivers)
+    unknown = sorted(
+        set(values)
+        - set(CONTENT_KEYS)
+        - {
+            f"sites.{site}.receivers.{name}.{key}"
+            for name in listed
+            for key in RECEIVER_KEYS
+        }
+    )
+    return settings, missing, unknown, None
+
+
+def _vod_content_settings(
+    recorded: Mapping[str, Any],
+    values: Mapping[str, Any],
+    store_path: StoreLocation | Path | str,
+    site: str,
+) -> tuple[dict[str, Any], list[str], list[str], Any]:
+    """The content settings a migrated VOD store records (D1 keys + GNSS hash).
+
+    Returns ``(settings, missing, unknown, gnss_hash)``. The per-group
+    calculator parameters of a VOD group are recorded in the group's
+    attributes, not in the content settings (ADR 0019 D2).
+    """
+    settings: dict[str, Any] = {}
+    missing: list[str] = []
+    for key in VOD_CONTENT_KEYS:
+        if key in values:
+            value = values[key]
+        else:
+            try:
+                value = _recorded(recorded, key)
+            except KeyError:
+                missing.append(key)
+                continue
+        _put(settings, key, value)
+    gnss_hash: Any = None
+    if GNSS_CONTENT_HASH in values:
+        gnss_hash = values[GNSS_CONTENT_HASH]
+    else:
+        derived, err = _derive_gnss_hash(recorded)
+        if err is None:
+            gnss_hash = derived
+        else:
+            missing.append(GNSS_CONTENT_HASH)
+    unknown = sorted(set(values) - set(VOD_CONTENT_KEYS) - {GNSS_CONTENT_HASH})
+    return settings, missing, unknown, gnss_hash
+
+
+def _derive_gnss_hash(recorded: Mapping[str, Any]) -> tuple[Any, str | None]:
+    """The GNSS store's content-settings hash, from the recorded settings.
+
+    Returns ``(hash, None)`` on success or ``(None, reason)`` when the GNSS
+    store path is not recorded, not readable, or has no content settings.
+    """
+    from .location import store_location
+
+    try:
+        root = _recorded(recorded, "processing.storage.stores_root_dir")
+        name = _recorded(recorded, "processing.storage.gnss_store_name")
+    except KeyError:
+        return None, "no GNSS store path recorded"
+    try:
+        gnss_path = (
+            f"{str(root).rstrip('/')}/{name}"
+            if isinstance(root, str) and root.startswith("s3://")
+            else Path(str(root)) / name
+        )
+        from .io import read_repository_metadata
+
+        repository = read_repository_metadata(store_location(gnss_path))
+    except Exception:
+        return None, "GNSS store not readable"
+    hash_ = (
+        repository.get(CONTENT_SETTINGS_FIELD, {}).get("hash") if repository else None
+    )
+    if not hash_:
+        return None, "GNSS store has no content settings"
+    return hash_, None
+
+
 def migrate_content_settings(
     store_path: StoreLocation | Path | str,
     *,
@@ -278,14 +408,7 @@ def migrate_content_settings(
     """
     from canvod.config.models import SidsConfig
 
-    from .content import (
-        CONTENT_KEYS,
-        CONTENT_SETTINGS_FIELD,
-        CONTENT_STORE_TYPES,
-        RECEIVER_KEYS,
-        _put,
-        stored_form,
-    )
+    from .content import CONTENT_STORE_TYPES, stored_form
     from .io import store_command
     from .schema import ConfigSnapshot
 
@@ -319,43 +442,14 @@ def migrate_content_settings(
         snapshot_id, recorded = first
 
         site = repository["spatial"]["site"]["name"]
-        settings: dict[str, Any] = {}
-        missing: list[str] = []
-        for key in CONTENT_KEYS:
-            if key in values:
-                value = values[key]
-            else:
-                try:
-                    value = _recorded(recorded, key)
-                except KeyError:
-                    missing.append(key)
-                    continue
-            _put(settings, key, value)
-        receivers: dict[str, dict[str, Any]] = {}
-        listed = repository.get("instruments", {}).get("receivers", {})
-        for name, receiver in listed.items():
-            entry: dict[str, Any] = {}
-            for key in RECEIVER_KEYS:
-                dotted = f"sites.{site}.receivers.{name}.{key}"
-                if dotted in values:
-                    entry[key] = values[dotted]
-                elif key in receiver:
-                    entry[key] = receiver[key]
-                elif key == "paired_canopies" and receiver.get("type") == "canopy":
-                    entry[key] = None  # never set for a canopy receiver
-                else:
-                    missing.append(dotted)
-            receivers[name] = entry
-        _put(settings, f"sites.{site}.receivers", receivers)
-        unknown = sorted(
-            set(values)
-            - set(CONTENT_KEYS)
-            - {
-                f"sites.{site}.receivers.{name}.{key}"
-                for name in listed
-                for key in RECEIVER_KEYS
-            }
-        )
+        if store_type == "vod_store":
+            settings, missing, unknown, gnss_hash = _vod_content_settings(
+                recorded, values, store_path, site
+            )
+        else:
+            settings, missing, unknown, gnss_hash = _gnss_content_settings(
+                recorded, values, repository, site, store_path
+            )
         if unknown:
             msg = f"{', '.join(unknown)}: not a content setting of this store."
             raise ValueError(msg)
@@ -372,13 +466,39 @@ def migrate_content_settings(
             )
             raise ValueError(msg)
 
-        sids = SidsConfig.model_validate(settings["sids"]).get_sids()
-        content = stored_form(settings, sids, set_by=who, origin="migrated")
+        resolved_sids = None
+        if store_type == "gnss_store":
+            resolved_sids = SidsConfig.model_validate(settings["sids"]).get_sids()
+        content = stored_form(
+            settings,
+            resolved_sids,
+            set_by=who,
+            origin="migrated",
+            gnss_content_hash=gnss_hash,
+        )
         content["migrated_from_snapshot"] = snapshot_id
         content["values_given"] = sorted(values)
         updated = {**repository, CONTENT_SETTINGS_FIELD: content}
+        session = repo.writable_session(branch)
+        if store_type == "vod_store":
+            unknown_calculators = _record_vod_calculator_params(session)
+            if unknown_calculators:
+                listed = "\n".join(
+                    f"  - {name!r}" for name in sorted(unknown_calculators)
+                )
+                msg = (
+                    f"The VOD store at {store_path} has groups of a "
+                    "calculator whose parameters the migration cannot "
+                    "record (ADR 0019 D2):\n"
+                    f"{listed}\n"
+                    "A group written before the parameters were recorded "
+                    "is otherwise never checked. Record its parameters by "
+                    "writing it again, or use a calculator whose parameters "
+                    "are empty (tau_omega)."
+                )
+                raise ValueError(msg)
         commit_id = commit_with_rebase(
-            repo.writable_session(branch),
+            session,
             "Write content settings from the first commit (ADR 0019)",
             store_path=store_path,
             config=ConfigSnapshot.model_validate(recorded),
@@ -386,6 +506,51 @@ def migrate_content_settings(
         )
         repo.set_metadata(updated)
         return commit_id
+
+
+#: Group attributes of a VOD data group that record its calculator and its
+#: parameters. The names match ``canvod.store.store`` (ADR 0019 D2);
+#: canvod-store-metadata cannot import it, so they are kept in step here.
+_VOD_CALCULATOR_ATTR = "calculator"
+_VOD_CALCULATOR_PARAMS_ATTR = "calculator_params"
+
+#: Calculators whose parameters are always empty (ADR 0019 D2): the migration
+#: records ``{}`` for them. Any other calculator's parameters cannot be
+#: derived, so the migration lists its groups as unknown.
+_EMPTY_PARAMS_CALCULATORS = {"tau_omega"}
+
+
+def _record_vod_calculator_params(
+    session: Any,
+) -> set[str]:
+    """Record a VOD store's per-group calculator parameters (ADR 0019 D2).
+
+    A group written before the parameters were recorded is otherwise never
+    checked. Each VOD data group is ``{calculator}/{analysis}``; the
+    calculator's parameters are recorded on the group. A calculator whose
+    parameters are always empty (``tau_omega``) is recorded as ``{}``; any
+    other calculator is returned, so the migration can list its groups as
+    unknown (its parameters cannot be derived from the store).
+
+    Returns
+    -------
+    set[str]
+        Calculator names whose groups the migration cannot record.
+    """
+    root = zarr.open_group(session.store, mode="a")
+    unknown: set[str] = set()
+    for calc_name, calc in root.groups():
+        if calc_name == RESERVED_GROUP:
+            continue
+        for analysis, group in calc.groups():
+            if analysis == RESERVED_GROUP:
+                continue
+            if calc_name in _EMPTY_PARAMS_CALCULATORS:
+                group.attrs[_VOD_CALCULATOR_ATTR] = calc_name
+                group.attrs[_VOD_CALCULATOR_PARAMS_ATTR] = json.dumps({})
+            else:
+                unknown.add(calc_name)
+    return unknown
 
 
 def _with_values(

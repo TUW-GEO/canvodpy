@@ -81,6 +81,17 @@ analyses.
     The result passes `canvod.readers.validate_vod_dataset`, which the VOD store
     checks on every write.
 
+!!! info "Calculator parameters and the GNSS store"
+
+    `VodComputer(site, calculator=..., calculator_params=...)` passes
+    `calculator_params` to the calculator. On the first write to a VOD group
+    `{calculator}/{analysis}`, `VodComputer` records the calculator and its
+    parameters in the group's attributes; every later write compares them, and
+    a group never holds results computed with other parameters (ADR 0019 D2).
+    The VOD store also records the content-settings hash of the GNSS store it
+    was computed from (`gnss_content_hash`, ADR 0019 D1/D3): a run that reads a
+    GNSS store with other content settings stops before anything is written.
+
 ---
 
 ## Output
