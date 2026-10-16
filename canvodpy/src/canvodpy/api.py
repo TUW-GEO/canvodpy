@@ -165,6 +165,7 @@ class Site:
         label: str | None = None,
         on_discovery_start: Callable[[str, Path], None] | None = None,
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
+        on_new_files: Callable[[list[tuple[str, str]]], None] | None = None,
     ) -> Pipeline:
         """Create a processing pipeline for this site.
 
@@ -205,6 +206,10 @@ class Site:
             Called with the receiver name, the number of files found, the
             number of days and the elapsed seconds when the run has found
             them.
+        on_new_files : Callable[[list[tuple[str, str]]], None], optional
+            With ``new_files_only``, called with the ``(YYYYDOY, receiver)``
+            pairs that have a file the GNSS store doesn't hold, before they
+            are processed.
 
         Returns
         -------
@@ -230,6 +235,7 @@ class Site:
             label=label,
             on_discovery_start=on_discovery_start,
             on_discovery_end=on_discovery_end,
+            on_new_files=on_new_files,
         )
 
     def __repr__(self) -> str:
@@ -283,6 +289,10 @@ class Pipeline:
     on_discovery_end : Callable[[str, int, int, float], None], optional
         Called with the receiver name, the number of files found, the number
         of days and the elapsed seconds when the run has found them.
+    on_new_files : Callable[[list[tuple[str, str]]], None], optional
+        With ``new_files_only``, called with the ``(YYYYDOY, receiver)``
+        pairs that have a file the GNSS store doesn't hold, before they are
+        processed.
 
     A pipeline that is not a dry run is a run: it records itself in the run
     history of the log folder (ADR 0018) from its creation until
@@ -324,6 +334,7 @@ class Pipeline:
         label: str | None = None,
         on_discovery_start: Callable[[str, Path], None] | None = None,
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
+        on_new_files: Callable[[list[tuple[str, str]]], None] | None = None,
     ) -> None:
         # Handle both Site object and string
         if isinstance(site, str):
@@ -407,6 +418,7 @@ class Pipeline:
                 on_group_written=on_group_written,
                 on_discovery_start=on_discovery_start,
                 on_discovery_end=on_discovery_end,
+                on_new_files=on_new_files,
                 config=config,
                 run=active_run,
             )
@@ -511,6 +523,8 @@ class Pipeline:
         self,
         start: str,
         end: str,
+        *,
+        new_files_only: bool = False,
     ) -> Generator[tuple[str, dict[str, xr.Dataset]]]:
         """Process RINEX data for a date range.
 
@@ -520,6 +534,10 @@ class Pipeline:
             Start date (YYYYDOY)
         end : str
             End date (YYYYDOY)
+        new_files_only : bool, default False
+            Process only the dates on which a receiver has a file the GNSS
+            store doesn't hold (by canonical file name); a run without
+            dates uses this (#386).
 
         Yields
         ------
@@ -542,6 +560,7 @@ class Pipeline:
                 keep_vars=self.keep_vars,
                 start_from=start,
                 end_at=end,
+                new_files_only=new_files_only,
             ):
                 yield date_key, datasets
         except Exception:
@@ -589,6 +608,8 @@ class Pipeline:
         self,
         start: str | None = None,
         end: str | None = None,
+        *,
+        new_files_only: bool = False,
     ) -> dict:
         """Preview processing plan without execution.
 
@@ -600,6 +621,9 @@ class Pipeline:
         end : str, optional
             YYYYDOY string to end at (inclusive). ``None`` previews every
             available date.
+        new_files_only : bool, default False
+            Preview only the dates on which a receiver has a file the GNSS
+            store doesn't hold, as :meth:`process_range`.
 
         Returns
         -------
@@ -613,7 +637,9 @@ class Pipeline:
         >>> print(f"Total files: {plan['total_files']}")
 
         """
-        return self._orchestrator.preview_processing_plan(start, end)
+        return self._orchestrator.preview_processing_plan(
+            start, end, new_files_only=new_files_only
+        )
 
     def __repr__(self) -> str:
         return (

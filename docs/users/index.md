@@ -366,9 +366,10 @@ Files that are already in the store are skipped.
     canvodpy run --site ExampleSite --start 2025001 --end 2025031
     ```
 
-    Leave out `--start` and the run continues from the last day in the
-    store. Leave out `--end` and it processes up to today. So this command
-    picks up wherever the last run stopped:
+    Leave out `--start` and the run processes the days of the last 30
+    with files that are not in the store yet. Leave out `--end` and it
+    processes up to today. So this command picks up the new files, also
+    a file that arrived late for an earlier day:
 
     ```bash
     canvodpy run --site ExampleSite
