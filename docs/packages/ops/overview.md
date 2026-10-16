@@ -322,14 +322,16 @@ assign_grid_cells_in_store(
 ```
 
 It runs the same operation as `grid_assignment` in a run on all data of the
-group and writes only the new `cell_id_*` variable; the data, the log book and
-the other subgroups stay as they are. The log book receives one row for the
+group and writes only the new `cell_id_*` variable; the data, the group's
+attributes, the log book and the other subgroups stay as they are. In a group
+of day blocks, the cells of each day go into the day's block, and the empty
+epochs that pad the block stay empty. The log book receives one row for the
 whole group (action `add_variables`, no time range) whose record holds the
 `grid_assign` step. From then on, the data already in the group count as
 preprocessed with that step as well:
 
 - A later run must set `grid_assignment` to the same `grid_type` and
-  `angular_resolution`; its data then carry the cells, and the append goes
+  `angular_resolution`; its data then carry the cells, and the write goes
   through. A run without it is refused with `PreprocessingMismatchError`.
 - A VOD analysis group accepts only VOD computed from GNSS data with the same
   grid assignment: assign the cells to the receiver groups too, or compute the

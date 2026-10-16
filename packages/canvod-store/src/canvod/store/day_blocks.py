@@ -821,6 +821,49 @@ def _slot_positions(blocks: Collection[DayBlock]) -> np.ndarray:
     )
 
 
+def to_stored_axis(ds: xr.Dataset, store: Any, group: str) -> xr.Dataset:
+    """Variables of ``ds``, as :func:`load_group` reads them, on the stored axis.
+
+    The reverse of :func:`load_group`: each day's slots go back into the
+    day's block, and the padding gets each variable's missing value
+    (:func:`fill_value`). Variables without ``epoch`` stay as they are; the
+    ``epoch`` coordinate is left out, since the stored one stays.
+
+    Raises
+    ------
+    LayoutError
+        If ``group`` is not made of day blocks.
+    ValueError
+        If ``ds`` does not have one epoch per slot of the group.
+    """
+    zgroup = zarr.open_group(store, mode="r", path=group)
+    _require_day_blocks(zgroup, group)
+    length = int(_epoch_array(zgroup, group).shape[0])
+    blocks = _blocks_from_index(_index(zgroup, group), length, group)
+    positions = _slot_positions(blocks.values())
+    if ds.sizes.get("epoch") != positions.size:
+        msg = (
+            f"Group '{group}' has {positions.size} slots, the data "
+            f"{ds.sizes.get('epoch', 0)} epochs."
+        )
+        raise ValueError(msg)
+    source = np.zeros(length, dtype=np.int64)
+    source[positions] = np.arange(positions.size)
+    is_slot = np.zeros(length, dtype=bool)
+    is_slot[positions] = True
+    slot = xr.DataArray(is_slot, dims="epoch")
+
+    ds = ds.drop_vars("epoch", errors="ignore")
+    out = ds.isel(epoch=source)
+    for name, var in ds.data_vars.items():
+        if "epoch" in var.dims:
+            fill = fill_value(var, str(name))
+            out[name] = xr.where(slot, out[name], fill, keep_attrs=True).astype(
+                var.dtype
+            )
+    return out
+
+
 def drop_empty_slots(ds: xr.Dataset, group: str) -> xr.Dataset:
     """``ds`` without its empty slots.
 
