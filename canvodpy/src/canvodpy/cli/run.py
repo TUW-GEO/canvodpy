@@ -859,6 +859,7 @@ def run(
         GroupVariablesMismatchError,
     )
     from canvodpy.orchestrator.discovery import DiscoveryError
+    from canvodpy.orchestrator.memory_budget import MemoryBudgetError
 
     try:
         code = _main_impl(args)
@@ -879,6 +880,11 @@ def run(
     ) as e:
         # Every later day would be refused the same way: stop, and say
         # what to change.
+        print(f"Error: {e}", file=sys.stderr)
+        code = 1
+    except MemoryBudgetError as e:
+        # Not even one worker fits: the message says how much memory the
+        # run needs.
         print(f"Error: {e}", file=sys.stderr)
         code = 1
     except StorageUnreachableError as e:

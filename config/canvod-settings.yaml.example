@@ -138,7 +138,8 @@ processing:
     # https://canvodpy.eu/guides/settings/#processing-params-ephemeris_source
     ephemeris_source: final
 
-    # How many calendar days to pool per loky wave (ge=1, le=30)
+    # Days read together in one batch, 1 to 30; lowered if they don't fit
+    # in the memory budget (max_memory_gb)
     # https://canvodpy.eu/guides/settings/#processing-params-days_per_batch
     days_per_batch: 1
 
@@ -161,6 +162,12 @@ processing:
     # https://canvodpy.eu/guides/settings/#processing-params-nice_priority
     # nice_priority: -5          # OS priority (-20 = highest, 0 = normal, 19 = lowest;
     #                            # negative needs root/CAP_SYS_NICE on Linux, else no-op)
+
+    # Memory budget of a run in GB, in auto and manual mode. The run starts
+    # fewer workers, or lowers days_per_batch, to fit it, and stops before
+    # reading if one worker doesn't fit. Unset: the memory available at start.
+    # https://canvodpy.eu/guides/settings/#processing-params-max_memory_gb
+    # max_memory_gb: 8
 
   # ---------------------------------------------------------------------------
   # Preprocessing (optional; nothing is applied unless set)

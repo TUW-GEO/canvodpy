@@ -275,7 +275,7 @@ Days processed together in one batch (1 = one day at a time). A high value may c
 
 #### `processing.params.max_memory_gb` {#processing-params-max_memory_gb}
 
-Left over from development; has no effect, canVODpy does not limit memory. Removed with the next major version.
+Memory budget of a run in GB (null = the memory available when the run starts). The run sizes the workers and `days_per_batch` to fit it, and stops before reading a file if not even one worker fits with one day per batch.
 
 - Type: number, or null
 - Limits: > 0

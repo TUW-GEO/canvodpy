@@ -123,8 +123,10 @@ class ProcessingParams(_StrictModel):
         None,
         gt=0,
         description=(
-            "Left over from development; has no effect, canVODpy does not "
-            "limit memory. Removed with the next major version."
+            "Memory budget of a run in GB (null = the memory available when "
+            "the run starts). The run sizes the workers and days_per_batch to "
+            "fit it, and stops before reading a file if not even one worker "
+            "fits with one day per batch."
         ),
     )
     cpu_affinity: list[int] | None = Field(
@@ -186,21 +188,6 @@ class ProcessingParams(_StrictModel):
         ),
     )
 
-    @model_validator(mode="before")
-    @classmethod
-    def _warn_max_memory_gb(cls, data: object) -> object:
-        if isinstance(data, dict) and data.get("max_memory_gb") is not None:
-            import warnings
-
-            warnings.warn(
-                "The processing setting 'max_memory_gb' is left over from development and will be removed with the next major version. "
-                "It has no effect: canVODpy does not limit memory. "
-                "Remove it from your settings; to lower memory use, set fewer workers (n_max_threads) or a smaller days_per_batch.",
-                FutureWarning,
-                stacklevel=2,
-            )
-        return data
-
     @model_validator(mode="after")
     def validate_resource_mode(self) -> ProcessingParams:
         """Validate resource_mode constraints.
@@ -245,7 +232,7 @@ class ProcessingParams(_StrictModel):
                 n_workers = max(1, (os.cpu_count() or 2) - 2)
             return {
                 "n_workers": n_workers,
-                "max_memory_gb": None,
+                "max_memory_gb": self.max_memory_gb,
                 "cpu_affinity": None,
                 "nice_priority": -5,
                 "threads_per_worker": self.threads_per_worker,

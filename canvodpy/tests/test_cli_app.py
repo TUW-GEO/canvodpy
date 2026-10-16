@@ -45,3 +45,20 @@ class TestRunStopsOnPreprocessingMismatch:
         assert result.exit_code == 1
         assert "Group 'canopy_01' holds data with" in result.output
         assert "Traceback" not in result.output
+
+    def test_a_run_that_does_not_fit_in_memory_exits_with_the_message(
+        self, monkeypatch
+    ):
+        """Not even one worker fits: the run stops before reading (exit 1)."""
+        from canvodpy.cli import run as run_module
+        from canvodpy.orchestrator.memory_budget import MemoryBudgetError
+
+        def refuse(_args):
+            raise MemoryBudgetError("The run needs at least 2.1 GB of memory")
+
+        monkeypatch.setattr(run_module, "_main_impl", refuse)
+        result = runner.invoke(main_app, ["run", "--site", "fangorn"])
+
+        assert result.exit_code == 1
+        assert "The run needs at least 2.1 GB of memory" in result.output
+        assert "Traceback" not in result.output

@@ -18,10 +18,6 @@ from canvod.utils.tools import deprecated_argument
 logger = structlog.get_logger(__name__)
 
 _NO_EFFECT_ARGUMENTS = {
-    "max_memory_gb": (
-        "It has no effect: canVODpy does not limit memory. "
-        "To lower memory use, use fewer workers or a smaller days_per_batch."
-    ),
     "cpu_affinity": (
         "It has no effect: the worker processes take their CPU cores from "
         "processing.params.cpu_affinity in canvod-settings.yaml. Set it there."
@@ -89,6 +85,44 @@ class MemoryMonitor:
             available_gb=round(mem.available / (1024**3), 2),
             used_percent=round(mem.percent, 1),
             total_gb=round(mem.total / (1024**3), 2),
+        )
+
+
+def run_measured[R](input_bytes: int, func: Callable[..., R], *args: object) -> R:
+    """Run ``func(*args)`` in a worker and log the worker's memory peak.
+
+    The peak is sampled every 20 ms while the task runs. The log event
+    ``worker_memory_peak`` gives the worker's memory before the task, its
+    peak during the task, and the size of the task's input files, so the
+    memory budget (``processing.params.max_memory_gb``) can be tuned.
+    """
+    process = psutil.Process()
+    before = process.memory_info().rss
+    peak = before
+    done = threading.Event()
+
+    def sample() -> None:
+        nonlocal peak
+        while not done.wait(0.02):
+            peak = max(peak, process.memory_info().rss)
+
+    sampler = threading.Thread(target=sample, name="worker-memory", daemon=True)
+    sampler.start()
+    t0 = time.perf_counter()
+    try:
+        return func(*args)
+    finally:
+        done.set()
+        sampler.join()
+        peak = max(peak, process.memory_info().rss)
+        logger.info(
+            "worker_memory_peak",
+            pid=os.getpid(),
+            task=getattr(func, "__name__", repr(func)),
+            input_mb=round(input_bytes / 1024**2, 2),
+            before_gb=round(before / 1024**3, 3),
+            peak_gb=round(peak / 1024**3, 3),
+            seconds=round(time.perf_counter() - t0, 2),
         )
 
 

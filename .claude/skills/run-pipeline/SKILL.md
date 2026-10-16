@@ -54,6 +54,12 @@ runs, for example the repetitions of a benchmark. See
 - Exit code 3: the run finished, but receiver-days failed; it names them
   at the end, and the error log says why (`docs/guides/diagnostics.md`).
   Report them to the user.
+- Exit code 1 with "The run needs at least N GB of memory": one worker
+  doesn't fit the memory budget (`processing.params.max_memory_gb`, or
+  the memory available at start). Tell the user the number; don't raise
+  the budget for them. The `memory_budget` log line says when the budget
+  lowered the workers or `days_per_batch`
+  (`docs/guides/parallel-processing.md`).
 - `just store-info <site>` and `just store-log <site>` show what the
   store holds and its history.
 - With `--write-catalog`, the run writes the STAC catalog of the data
