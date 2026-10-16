@@ -288,6 +288,11 @@ store-log SITE STORE="gnss":
 store-ops SITE STORE="gnss":
     uv run canvodpy store log {{ SITE }} --store {{ STORE }} --ops {{ config_flag }}
 
+# move a store written before repository metadata to the current form; asks first (STORE: gnss|vod; ARGS: options such as --set identity.description="Beech forest site")
+[positional-arguments]
+store-migrate-metadata SITE STORE="gnss" *ARGS:
+    site="$1"; store="$2"; shift 2; uv run canvodpy store migrate-metadata "$site" --store "$store" "$@" {{ config_flag }}
+
 # move a store written by appending files to day blocks; shows the plan, asks first (STORE: gnss|vod)
 store-migrate-layout SITE STORE="gnss":
     uv run canvodpy store migrate-layout {{ SITE }} --store {{ STORE }} {{ config_flag }}
