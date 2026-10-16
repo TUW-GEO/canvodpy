@@ -350,9 +350,12 @@ them:
   workers, version or settings differ is not a set of repetitions of the
   same thing, and the dashboard says so.
 - For each stage, the median time of the group's finished runs that
-  recorded it, with the minimum and the maximum. In total, the median of
-  the sum of a run's stage seconds, with the minimum and the maximum.
-  The median is the middle of the sorted times; the spread is min to max.
+  recorded it, with the minimum and the maximum. Per stage a run's time
+  is the sum over its receivers and days (across its worker processes).
+  In total, the median of the runs' wall time (ended minus started),
+  with the minimum and the maximum. Stages run in parallel, so the stage
+  times can add up to more than the total. The median is the middle of
+  the sorted times; the spread is min to max.
 
 A run's status is one of:
 
