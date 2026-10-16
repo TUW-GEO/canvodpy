@@ -25,7 +25,7 @@ counts count epochs with data, never the length of the axis.
 The epoch chunk stays at 180 epochs: one 15-minute file at 5 s. A day
 has ceil(86400 s / cadence) slots, and its block is padded to whole
 chunks, so days never share a chunk and every cadence is stored. Padding
-epochs lie between the day's last slot and the next day, hold missing
+epochs are the last nanoseconds before the next day, hold missing
 values, and are dropped on load. Because a block's length no longer gives
 its cadence, the group keeps a block index in its attributes
 (`day_block_index`: start, stop, slots and cadence per day).

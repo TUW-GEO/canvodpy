@@ -198,16 +198,22 @@ def test_every_cadence_is_stored_in_a_block_padded_to_whole_chunks(
     np.testing.assert_array_equal(kept.SNR.values, ds_in.SNR.values)
 
 
-def test_padding_lies_between_the_last_slot_and_the_next_day(session):
+def test_padding_is_the_last_nanoseconds_before_the_next_day(session):
+    # 23:52 is nearest to the last slot (23:45) and is stored at its real
+    # time; the stored epochs still rise through the whole block.
     _write(session, _file(DAY_1, 0, 10, 900), 900)
+    _write(session, _file(DAY_1, 95 * 900 + 420, 1, 900), 900)
     raw = zarr.open_group(session.store, mode="r", path=GROUP)
 
-    times = np.asarray(raw["epoch"][96:180]).astype("M8[ns]")  # ty: ignore[invalid-argument-type]
+    times = np.asarray(raw["epoch"][:180]).astype("M8[ns]")  # ty: ignore[invalid-argument-type]
     snr = np.asarray(raw["SNR"][96:180])  # ty: ignore[invalid-argument-type]
 
+    assert times[95] == DAY_1.astype("M8[ns]") + np.timedelta64(95 * 900 + 420, "s")
     assert np.all(np.diff(times.astype(np.int64)) > 0)
-    assert times[0] > DAY_1.astype("M8[ns]") + np.timedelta64(95 * 900, "s")
-    assert times[-1] < DAY_2.astype("M8[ns]")
+    np.testing.assert_array_equal(
+        times[96:],
+        DAY_2.astype("M8[ns]") - np.arange(84, 0, -1).astype("m8[ns]"),
+    )
     assert np.isnan(snr).all()
 
 

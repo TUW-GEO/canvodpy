@@ -9,10 +9,11 @@ of the axis in the order the days are first written. The group's block index
 (:data:`~canvod.store_metadata.layout.DAY_BLOCK_INDEX_ATTR`) gives each
 day's block. An epoch goes to the nearest slot. The coordinate holds the
 real time of the epoch where there are data and the grid time in empty
-slots; padding slots hold times between the day's last slot and the next
-day, so the coordinate never has missing values. Variables hold their
-missing value in empty and padding slots: NaN for floating-point variables,
-the declared ``_FillValue`` for integer ones. Loading drops the padding.
+slots; padding slots hold the last nanoseconds before the next day, so the
+coordinate never has missing values and keeps rising within the block.
+Variables hold their missing value in empty and padding slots: NaN for
+floating-point variables, the declared ``_FillValue`` for integer ones.
+Loading drops the padding.
 
 The functions take an Icechunk session (or fork) for writes and its Zarr
 store for reads; the caller commits.
@@ -138,17 +139,17 @@ def _padded(slots: int, epoch_chunk: int) -> int:
 def _block_times(block: DayBlock) -> np.ndarray:
     """The grid times of ``block``, padding included, in ns since 1970.
 
-    Slot ``k`` is 00:00 plus ``k`` cadences; the padding slots are spread
-    between the last slot and the next day, so the times keep rising.
+    Slot ``k`` is 00:00 plus ``k`` cadences; the padding slots are the last
+    nanoseconds before the next day. The last slot can hold a real time
+    after its grid time (an epoch near midnight goes to it), so padding
+    right after the grid time could come before that real time.
     """
     day_ns = int(block.day.astype("M8[ns]").astype(np.int64))
     grid = day_ns + np.arange(block.slots, dtype=np.int64) * block.cadence_ns
     pad = block.stop - block.start - block.slots
     if not pad:
         return grid
-    last = int(grid[-1])
-    gap = day_ns + _DAY_NS - last
-    padding = last + (np.arange(1, pad + 1, dtype=np.int64) * gap) // (pad + 1)
+    padding = day_ns + _DAY_NS - pad + np.arange(pad, dtype=np.int64)
     return np.concatenate([grid, padding])
 
 

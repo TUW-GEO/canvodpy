@@ -1257,12 +1257,17 @@ class MyIcechunkStore:
         """
         if not self.group_exists(group_name, branch):
             raise ValueError(f"Group '{group_name}' does not exist on '{branch}'")
+        # Every read below comes from this one snapshot, and the temporary
+        # branch starts from it, so a run that moves the branch meanwhile
+        # makes the promotion fail instead of mixing two states.
         with self.readonly_session(branch) as session:
-            existing = xr.open_zarr(session.store, group=group_name, consolidated=False)
-            day_blocked = holds_day_blocks(session.store, group_name)
-            # A day-block group is read without its padding and with its days
-            # in time order (load_group); the new variables come from there.
-            read = load_group(session.store, group_name) if day_blocked else existing
+            tip = session.snapshot_id
+            zstore = session.store
+        existing = xr.open_zarr(zstore, group=group_name, consolidated=False)
+        day_blocked = holds_day_blocks(zstore, group_name)
+        # A day-block group is read without its padding and with its days
+        # in time order (load_group); the new variables come from there.
+        read = load_group(zstore, group_name) if day_blocked else existing
         new_names = [str(name) for name in variables.data_vars]
         if not new_names:
             raise ValueError("No variables to add")
@@ -1288,8 +1293,7 @@ class MyIcechunkStore:
         # stored ones (the day-block layout and its block index among them).
         to_write.attrs = dict(existing.attrs)
         if day_blocked:
-            with self.readonly_session(branch) as session:
-                to_write = to_stored_axis(to_write, session.store, group_name)
+            to_write = to_stored_axis(to_write, zstore, group_name)
         for name in new_names:
             to_write[name].encoding.clear()
             if day_blocked and "epoch" in to_write[name].dims:
@@ -1314,7 +1318,6 @@ class MyIcechunkStore:
                 )
                 to_write[name].encoding["chunks"] = chunks
 
-        tip = self.repo.lookup_branch(branch)
         temp_branch = f"add_variables_{group_name.replace('/', '__')}"
         if temp_branch in self.repo.list_branches():
             raise ValueError(
