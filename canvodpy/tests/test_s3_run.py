@@ -1,11 +1,12 @@
 """A run writes its stores on S3 as it writes them in a local folder (#350).
 
 Against a real S3 service, like the store tests of canvod-store-metadata
-(``packages/canvod-store-metadata/tests/test_s3_store.py``): CI runs them
-against an S3 emulator (RustFS, ``.github/workflows/test_s3.yml``). They
-need ``CANVOD_TEST_S3_URL`` (``s3://bucket/prefix``, a bucket that exists)
-and the ``AWS_*`` variables the service needs; without the URL they are
-skipped.
+(``packages/canvod-store-metadata/tests/test_s3_store.py``), and locally
+only: they read the test data, which CI never checks out. Run them against
+an S3 emulator such as RustFS (``.github/workflows/test_s3.yml`` shows the
+setup). They need ``CANVOD_TEST_S3_URL`` (``s3://bucket/prefix``, a bucket
+that exists) and the ``AWS_*`` variables the service needs; without the URL
+they are skipped.
 """
 
 from __future__ import annotations
