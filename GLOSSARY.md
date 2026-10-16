@@ -211,6 +211,13 @@ _Avoid_: resolution, frequency
 One committed state of a store, which can be read again later.
 _Avoid_: version (for a store state), checkpoint
 
+**Provisional branch**:
+A branch of a store that holds the most recent days processed with a
+quicker orbit product than the store's own, until those days are
+processed again with the store's product; the main branch never holds
+them.
+_Avoid_: rapid branch, test branch
+
 **Repository metadata** (Icechunk's term):
 The description of a store that belongs to no snapshot and no branch:
 who made it, what it holds, where, under which license. Some of its
