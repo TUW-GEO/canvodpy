@@ -302,7 +302,7 @@ def gnss_content_hash_from(repository: Mapping[str, Any] | None) -> str:
 
 def check_gnss_hash(
     vod_repository: Mapping[str, Any],
-    gnss_repository: Mapping[str, Any] | None,
+    gnss_repository: Mapping[str, Any],
     store_path: StoreLocation | Path | str,
 ) -> None:
     """Refuse a VOD write from a GNSS store with other content settings.
@@ -323,21 +323,7 @@ def check_gnss_hash(
     from .io import store_command
 
     stored_hash = vod_repository.get(CONTENT_SETTINGS_FIELD, {}).get(GNSS_CONTENT_HASH)
-    current_hash = (
-        gnss_repository.get(CONTENT_SETTINGS_FIELD, {}).get("hash")
-        if gnss_repository
-        else None
-    )
-    if gnss_repository is None:
-        site = _site_name(vod_repository)
-        msg = (
-            f"The GNSS store the VOD store at {store_path} was computed from "
-            "cannot be read, so its content settings cannot be checked. "
-            "Make the GNSS store reachable and migrate it if it has no "
-            "content settings ("
-            f"{store_command('migrate-metadata', site, 'gnss_store')})."
-        )
-        raise MissingContentSettingsError(msg)
+    current_hash = gnss_repository.get(CONTENT_SETTINGS_FIELD, {}).get("hash")
     if not current_hash:
         site = _site_name(gnss_repository)
         msg = (
