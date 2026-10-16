@@ -15,6 +15,11 @@ EPOCH_LAYOUT_ATTR = "epoch_layout"
 #: Value of :data:`EPOCH_LAYOUT_ATTR` for a group made of day blocks.
 DAY_BLOCKS = "day_blocks"
 
+#: Group attribute of a day-block group holding its block index: for each
+#: day (ISO date), the block's ``start`` and ``stop`` on the epoch axis, its
+#: number of ``slots`` and its ``cadence_ns``.
+DAY_BLOCK_INDEX_ATTR = "day_block_index"
+
 
 class LayoutError(Exception):
     """A write that does not fit the layout of a group's epoch axis.

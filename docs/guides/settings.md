@@ -417,7 +417,7 @@ Chunk shape of each store: a chunk is the piece of an array that is read, compre
 
 ### `processing.icechunk.chunk_strategies.gnss_store` {#processing-icechunk-chunk_strategies-gnss_store}
 
-Chunks of the GNSS store. A day holds whole chunks, so the cadence of a day must divide 86400 s / epoch: 480 s for 180 epochs (1 s, 5 s, 15 s, 30 s, or 1 min, for example).
+Chunks of the GNSS store. A day of ceil(86400 s / cadence) epochs is stored in whole chunks, padded with empty epochs where it does not fill the last one: with 180, days at 1 s, 5 s, 15 s, 30 s or 1 min need no padding, a day at 15 min gets 84 empty epochs.
 
 #### `processing.icechunk.chunk_strategies.gnss_store.epoch` {#processing-icechunk-chunk_strategies-gnss_store-epoch}
 
@@ -437,7 +437,7 @@ Signals per chunk, for groups created from now on; -1 puts all signals in one ch
 
 ### `processing.icechunk.chunk_strategies.vod_store` {#processing-icechunk-chunk_strategies-vod_store}
 
-Chunks of the VOD store. As in the GNSS store, a day holds whole chunks, so the cadence of a day must divide 86400 s / epoch; with the same epoch as the GNSS store, every GNSS day fits.
+Chunks of the VOD store. As in the GNSS store, each day is stored in whole chunks, padded with empty epochs where it does not fill the last one.
 
 #### `processing.icechunk.chunk_strategies.vod_store.epoch` {#processing-icechunk-chunk_strategies-vod_store-epoch}
 

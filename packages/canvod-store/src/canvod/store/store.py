@@ -58,7 +58,6 @@ from zarr.dtype import VariableLengthUTF8
 
 from canvod.store.day_blocks import (
     add_day_block,
-    cadence_ns,
     clear_day_block,
     day_blocks,
     drop_empty_slots,
@@ -4575,16 +4574,15 @@ class MyIcechunkStore:
     ) -> None:
         """Refuse epoch chunks that would split the day blocks of a group.
 
-        Every day block must hold whole epoch chunks (see
-        :func:`~canvod.store.day_blocks.cadence_ns`), so a write into a day
-        never touches the chunks of another one.
+        Every day block holds whole epoch chunks (it is padded to them when
+        it is added), so a write into a day never touches the chunks of
+        another one; new chunks must divide the length of every block.
 
         Raises
         ------
         ValueError
-            If ``chunks`` gives no positive epoch chunk size.
-        CadenceError
-            If a day's cadence does not fit the new chunks.
+            If ``chunks`` gives no positive epoch chunk size, or one that
+            does not divide the length of a day block.
         """
         epoch_chunk = chunks.get("epoch")
         if not isinstance(epoch_chunk, int) or epoch_chunk <= 0:
@@ -4595,7 +4593,15 @@ class MyIcechunkStore:
             )
             raise ValueError(msg)
         for block in day_blocks(store, group_name).values():
-            cadence_ns(block.cadence_s, epoch_chunk)
+            if (block.stop - block.start) % epoch_chunk:
+                msg = (
+                    f"Chunks of {epoch_chunk} epochs would split the day block "
+                    f"of {block.day} in group '{group_name}' "
+                    f"({block.stop - block.start} epochs, padded to the chunks "
+                    "the group was written with); a write into one day would "
+                    "then touch another day's chunks."
+                )
+                raise ValueError(msg)
 
     def promote_branch(
         self,

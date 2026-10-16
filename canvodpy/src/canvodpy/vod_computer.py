@@ -341,13 +341,13 @@ class VodComputer:
 
         store = self._site.gnss_store
 
+        from canvod.store.day_blocks import load_group
+
+        # load_group, not xr.open_zarr: it drops the padding of day blocks,
+        # whose times canopy and reference groups share.
         with store.readonly_session() as session:
-            canopy_ds = xr.open_zarr(
-                store=session.store, group=canopy_name, consolidated=False
-            )
-            sky_ds = xr.open_zarr(
-                store=session.store, group=ref_group, consolidated=False
-            )
+            canopy_ds = load_group(session.store, canopy_name)
+            sky_ds = load_group(session.store, ref_group)
 
         # Time-range filter
         if start or end:

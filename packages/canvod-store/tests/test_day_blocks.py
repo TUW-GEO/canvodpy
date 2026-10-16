@@ -173,9 +173,98 @@ def test_an_empty_slot_reads_as_missing_never_zero(repo, session):
     assert (ds.LLI.isel(epoch=0).values == 0).all()
 
 
-def test_a_cadence_not_dividing_480_s_is_refused(session):
-    with pytest.raises(CadenceError, match="temporal_aggregation"):
-        add_day_block(session, GROUP, DAY_1, 7, template=_file(DAY_1, 0, 10, 7))
+@pytest.mark.parametrize(
+    ("cadence_s", "slots", "padded"),
+    [(7, 12343, 12420), (45, 1920, 1980), (900, 96, 180), (3600, 24, 180)],
+)
+def test_every_cadence_is_stored_in_a_block_padded_to_whole_chunks(
+    session, cadence_s, slots, padded
+):
+    # 7 s does not even divide a day: its last slot is 23:59:54.
+    ds_in = _file(DAY_1, 0, 10, cadence_s)
+
+    _write(session, ds_in, cadence_s)
+
+    block = day_blocks(session.store, GROUP)[DAY_1]
+    assert (block.slots, block.stop - block.start) == (slots, padded)
+    ds = load_group(session.store, GROUP)
+    assert ds.sizes["epoch"] == slots
+    assert bool(ds.indexes["epoch"].is_monotonic_increasing)
+    assert ds.epoch.values[-1] == DAY_1.astype("M8[ns]") + np.timedelta64(
+        (slots - 1) * cadence_s, "s"
+    )
+    kept = load_group(session.store, GROUP, drop_empty=True)
+    np.testing.assert_array_equal(kept.epoch.values, ds_in.epoch.values)
+    np.testing.assert_array_equal(kept.SNR.values, ds_in.SNR.values)
+
+
+def test_padding_lies_between_the_last_slot_and_the_next_day(session):
+    _write(session, _file(DAY_1, 0, 10, 900), 900)
+    raw = zarr.open_group(session.store, mode="r", path=GROUP)
+
+    times = np.asarray(raw["epoch"][96:180]).astype("M8[ns]")  # ty: ignore[invalid-argument-type]
+    snr = np.asarray(raw["SNR"][96:180])  # ty: ignore[invalid-argument-type]
+
+    assert np.all(np.diff(times.astype(np.int64)) > 0)
+    assert times[0] > DAY_1.astype("M8[ns]") + np.timedelta64(95 * 900, "s")
+    assert times[-1] < DAY_2.astype("M8[ns]")
+    assert np.isnan(snr).all()
+
+
+def test_days_of_different_cadences_share_a_group_in_any_order(session):
+    days = [(DAY_2, 900), (DAY_1, 1), (np.datetime64("2025-01-03", "D"), 7)]
+    files = [_file(day, 600, 20, cadence) for day, cadence in days]
+    for (_, cadence), ds_in in zip(days, files, strict=True):
+        _write(session, ds_in, cadence)
+
+    blocks = day_blocks(session.store, GROUP)
+    ds = load_group(session.store, GROUP, drop_empty=True)
+
+    assert [blocks[day].cadence_s for day, _ in days] == [900, 1, 7]
+    assert all((b.stop - b.start) % 180 == 0 for b in blocks.values())
+    expected = xr.concat(files, dim="epoch").sortby("epoch")
+    np.testing.assert_array_equal(ds.epoch.values, expected.epoch.values)
+    np.testing.assert_array_equal(ds.SNR.values, expected.SNR.values)
+    assert load_group(session.store, GROUP).sizes["epoch"] == 96 + 86400 + 12343
+
+
+@pytest.mark.parametrize("cadence_s", [0, -5, 86401])
+def test_a_cadence_no_day_can_hold_is_refused(session, cadence_s):
+    with pytest.raises(CadenceError, match="no longer than one day"):
+        add_day_block(session, GROUP, DAY_1, cadence_s, template=_file(DAY_1, 0, 10, 5))
+
+
+def test_finding_the_blocks_reads_no_epochs(session, monkeypatch):
+    # Reading the epoch axis reads every epoch chunk of the group; the block
+    # index makes that unnecessary.
+    from canvod.store import day_blocks as module
+
+    _write(session, _file(DAY_1, 0, 10, 5), 5)
+    original = module._epoch_array
+
+    class _ShapeOnly:
+        def __init__(self, array):
+            self.shape = array.shape
+
+        def __getitem__(self, key):
+            raise AssertionError("the epoch axis was read")
+
+    monkeypatch.setattr(
+        module,
+        "_epoch_array",
+        lambda zgroup, group: _ShapeOnly(original(zgroup, group)),
+    )
+
+    assert set(day_blocks(session.store, GROUP)) == {DAY_1}
+
+
+def test_a_day_block_group_without_its_block_index_is_refused(session):
+    _write(session, _file(DAY_1, 0, 10, 5), 5)
+    zgroup = zarr.open_group(session.store, mode="r+", path=GROUP)
+    del zgroup.attrs["day_block_index"]
+
+    with pytest.raises(LayoutError, match="no block index"):
+        day_blocks(session.store, GROUP)
 
 
 def test_stored_epochs_keep_their_real_times(session):
@@ -268,24 +357,25 @@ def test_a_file_with_other_sids_is_refused_as_a_write(session):
 
 def test_an_existing_group_keeps_its_epoch_chunk(session):
     # Created with chunks of 90 epochs; the settings now say 180. A day at
-    # 960 s has 90 slots: whole chunks of 90, not of 180.
+    # 960 s has 90 slots: one chunk of 90, no padding.
     first = _file(DAY_1, 0, 10, 30)
     add_day_block(session, GROUP, DAY_1, 30, template=first, epoch_chunk=90)
 
     block = add_day_block(session, GROUP, DAY_2, 960, template=None, epoch_chunk=180)
 
-    assert block.slots == 90
+    assert (block.slots, block.stop - block.start) == (90, 90)
     assert stored_epoch_chunk(session.store, GROUP) == 90
 
 
-def test_a_cadence_off_the_stored_chunks_is_refused(session):
-    # Created with chunks of 180 epochs; the settings now say 90. 90 slots
-    # would end a day inside a chunk.
+def test_a_block_is_padded_to_the_stored_chunks(session):
+    # Created with chunks of 180 epochs; the settings now say 90. The 90
+    # slots of a 960 s day are padded to one chunk of 180.
     first = _file(DAY_1, 0, 10, 30)
     add_day_block(session, GROUP, DAY_1, 30, template=first, epoch_chunk=180)
 
-    with pytest.raises(CadenceError):
-        add_day_block(session, GROUP, DAY_2, 960, template=None, epoch_chunk=90)
+    block = add_day_block(session, GROUP, DAY_2, 960, template=None, epoch_chunk=90)
+
+    assert (block.slots, block.stop - block.start) == (90, 180)
 
 
 def test_a_new_group_takes_the_signal_chunks(session):
