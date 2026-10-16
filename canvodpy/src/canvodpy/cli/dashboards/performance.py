@@ -41,9 +41,9 @@ def _():
         """Human text for an ETA; an estimate, never a fact."""
         if eta_seconds is None:
             return "none (only for a running run with a finished receiver-day)."
-        finish = datetime.now() + timedelta(seconds=eta_seconds)
+        finish = datetime.now(UTC) + timedelta(seconds=eta_seconds)
         return (
-            f"done about {finish.strftime('%H:%M')} "
+            f"done about {finish.strftime('%H:%M')} UTC "
             f"({format_duration(eta_seconds)} left). This is an estimate."
         )
 
@@ -57,11 +57,19 @@ def _():
             "unknown": "Unknown (started on another machine)",
         }[status]
 
-    def elapsed_seconds(run):
-        """Seconds the run has taken, from its records."""
+    def elapsed_seconds(run, last_activity):
+        """Seconds the run has taken, from its records.
+
+        Finished and failed runs run to their end. A running run counts up
+        to now. An interrupted or unknown run has no end record, so it
+        counts only to the last activity the run history saw; this keeps
+        its throughput from falling while the dashboard is open.
+        """
         now = datetime.now(UTC)
         if run.ended_at is not None and run.status in ("finished", "failed"):
             return max((run.ended_at - run.started_at).total_seconds(), 0.0)
+        if run.status in ("interrupted", "unknown") and last_activity is not None:
+            return max((last_activity - run.started_at).total_seconds(), 0.0)
         return max((now - run.started_at).total_seconds(), 0.0)
 
     def last_step_text(last_step):
@@ -98,15 +106,15 @@ def _():
                     "Site": run.site,
                     "Run": run.run_id,
                     "Status": status_text(run.status),
-                    "Started": run.started_at.strftime("%Y-%m-%d %H:%M"),
-                    "Ended": (
+                    "Started (UTC)": run.started_at.strftime("%Y-%m-%d %H:%M"),
+                    "Ended (UTC)": (
                         run.ended_at.strftime("%Y-%m-%d %H:%M") if run.ended_at else ""
                     ),
                     "Planned": planned,
                     "Written": written,
                     "Skipped": skipped,
                     "Failed": failed,
-                    "Missing": planned - (written + skipped + failed),
+                    "Not yet done": planned - (written + skipped + failed),
                 }
             )
         return rows
@@ -116,7 +124,10 @@ def _():
         now = datetime.now(UTC)
         finished = [d for d in days if d.result is not None]
         pending = [d for d in days if d.result is None]
-        elapsed = elapsed_seconds(run)
+        activity = [d.finished_at for d in days if d.finished_at is not None]
+        activity += [t.recorded_at for t in timings]
+        last_activity = max(activity) if activity else None
+        elapsed = elapsed_seconds(run, last_activity)
         hours = elapsed / 3600 if elapsed else 0.0
 
         eta_seconds = None
@@ -146,7 +157,7 @@ def _():
                 "Written": p.written,
                 "Skipped": p.skipped,
                 "Failed": p.failed,
-                "Missing": p.planned - (p.written + p.skipped + p.failed),
+                "Not yet done": p.planned - (p.written + p.skipped + p.failed),
                 "Bytes added": p.bytes_added,
             }
             for p in progress
@@ -154,7 +165,7 @@ def _():
 
         problem_rows = [
             {
-                "Time": problem.recorded_at.strftime("%Y-%m-%d %H:%M"),
+                "Time (UTC)": problem.recorded_at.strftime("%Y-%m-%d %H:%M"),
                 "Level": problem.level,
                 "Message": problem.message,
                 "Receiver": problem.receiver or "",
@@ -188,19 +199,24 @@ def _():
 
 @app.cell
 def _(mo):
-    import pathlib
+    from importlib.resources import files
 
-    logo_dir = pathlib.Path(__file__).resolve().parent
-    bright_svg = (logo_dir / "canvodpy_logo_bright_mode.svg").read_text()
-    dark_svg = (logo_dir / "canvodpy_logo_dark_mode.svg").read_text()
-    mo.md("## canvodpy — Run dashboard")
-    mo.Html(
-        f'<div class="canvodpy-logo">'
-        f'<div class="canvodpy-logo-bright">{bright_svg}</div>'
-        f'<div class="canvodpy-logo-dark">{dark_svg}</div>'
-        "</div>"
+    logos = files("canvodpy.cli.dashboards")
+    bright_svg = logos.joinpath("canvodpy_logo_bright_mode.svg").read_text(
+        encoding="utf-8"
     )
-    return
+    dark_svg = logos.joinpath("canvodpy_logo_dark_mode.svg").read_text(encoding="utf-8")
+    mo.vstack(
+        [
+            mo.md("## canvodpy run dashboard"),
+            mo.Html(
+                f'<div class="canvodpy-logo">'
+                f'<div class="canvodpy-logo-bright">{bright_svg}</div>'
+                f'<div class="canvodpy-logo-dark">{dark_svg}</div>'
+                "</div>"
+            ),
+        ]
+    )
 
 
 @app.cell
@@ -322,14 +338,27 @@ def _(mo, overview):
 
 
 @app.cell
-def _(mo, runs):
+def _(mo):
+    chosen_get, chosen_set = mo.state(None)
+    return (chosen_get, chosen_set)
+
+
+@app.cell
+def _(chosen_get, chosen_set, mo, runs):
     selected = None
     if runs:
         labels = {f"{run.site} · {run.run_id}": run.run_id for run in runs}
+        value = chosen_get()
+        if value not in labels.values():
+            value = next(iter(labels))
         selected = mo.ui.dropdown(
-            options=labels, value=next(iter(labels)), label="Run", full_width=False
+            options=labels,
+            value=value,
+            label="Run",
+            full_width=False,
+            on_change=chosen_set,
         )
-    return (selected,)
+    selected
 
 
 @app.cell
@@ -364,8 +393,8 @@ def _(mo, run_view, status_text):
             f"## Run: {run_record.run_id}\n\n"
             f"**Site:** {run_record.site}  ·  **Status:** {status_text(run_record.status)}  ·  "
             f"**Label:** {run_record.label or 'none'}\n\n"
-            f"**Started:** {run_record.started_at.strftime('%Y-%m-%d %H:%M')}  ·  "
-            f"**Ended:** {run_record.ended_at.strftime('%Y-%m-%d %H:%M') if run_record.ended_at else 'running'}\n\n"
+            f"**Started (UTC):** {run_record.started_at.strftime('%Y-%m-%d %H:%M')}  ·  "
+            f"**Ended (UTC):** {run_record.ended_at.strftime('%Y-%m-%d %H:%M') if run_record.ended_at else 'running'}\n\n"
             f"**canvodpy:** {run_record.canvodpy_version}"
             + (f" ({run_record.commit})" if run_record.commit else "")
             + f"  ·  **Workers:** {run_record.workers or 'n/a'}"
