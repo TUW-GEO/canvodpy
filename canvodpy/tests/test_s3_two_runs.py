@@ -234,16 +234,13 @@ def test_two_runs_write_one_s3_store_at_the_same_time(tmp_path, monkeypatch) -> 
         assert stored.len() == stored.n_unique() == 2 * _FILES_PER_DAY
         assert set(rows["rinex_hash"]) == set(stored)
 
-    # The content settings are those the store was created with.
-    created = next(
-        meta.content_settings
-        for snapshot in reversed(history)
-        if (
-            meta := read_metadata(store.store_path, snapshot_id=snapshot.id)
-        ).content_settings
-        is not None
-    )
-    assert read_metadata(store.store_path).content_settings == created
+    # The store was created once, and its content settings are those it was
+    # created with.
+    creations = [s for s in history if s.message == "Write store metadata"]
+    assert len(creations) == 1
+    created = read_metadata(store.store_path, snapshot_id=creations[0].id)
+    assert created.content_settings is not None
+    assert read_metadata(store.store_path).content_settings == created.content_settings
 
 
 def _changed(f: Path, folder: Path) -> Path:
