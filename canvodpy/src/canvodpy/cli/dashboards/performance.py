@@ -287,6 +287,194 @@ def _():
             "charts": chart_data(run, days, timings, samples),
         }
 
+    def chart_style(chart):
+        """Make a chart follow the marimo theme: a transparent frame."""
+        return chart.properties(background="transparent").configure_view(stroke=None)
+
+    def chart_palette(dark):
+        """The altair data colors for a theme, from the canvodpy palette."""
+        return (
+            ["#C4D7A4", "#C47070", "#E1E6B9"]
+            if dark
+            else ["#375D3B", "#8B3A3A", "#183128"]
+        )
+
+    def comparison_view(log_dir):
+        """The compare-by-label items, or a message when there is nothing.
+
+        Groups the finished runs by label; a run without a label or not
+        finished is left out. The spread is min to max. Per stage, only
+        the runs that recorded that stage count.
+        """
+        import json
+        import statistics
+
+        import altair as alt
+
+        from canvodpy.run_history import (
+            NetworkDriveError,
+            RunHistory,
+            RunHistoryError,
+            RunHistoryVersionError,
+        )
+
+        def _json_key(obj):
+            return json.dumps(obj, sort_keys=True)
+
+        def _shared(values, render):
+            """The one shared value of a group, or "differs" if not uniform."""
+            unique = {str(v) for v in values}
+            if len(unique) == 1:
+                return render(values[0])
+            return "differs"
+
+        intro = mo.md(
+            "A run gets an optional `--label` when it starts "
+            "(`canvodpy run --label <text>`). Runs with the same label are "
+            "grouped and compared. Only **finished** runs are compared, and "
+            "a run without a label is left out. Each group shows the median "
+            "time per stage and in total, with the spread from the minimum "
+            "to the maximum."
+        )
+
+        items = [mo.md("## Compare runs by label")]
+        if log_dir is None:
+            items.append(mo.md("_No log folder to compare._"))
+            return items
+
+        try:
+            with RunHistory.open(log_dir, read_only=True) as history:
+                all_runs = history.runs()
+                compare_labels = sorted(
+                    {r.label for r in all_runs if r.status == "finished" and r.label}
+                )
+                group_rows = []
+                stage_rows = []
+                chart_rows = []
+                any_differs = False
+                for label in compare_labels:
+                    group = [
+                        r for r in history.runs(label=label) if r.status == "finished"
+                    ]
+                    group.sort(key=lambda r: r.run_id)
+                    machine = _shared([r.machine for r in group], _json_key)
+                    workers = _shared(
+                        [r.workers for r in group],
+                        lambda v: "n/a" if v is None else str(v),
+                    )
+                    version = _shared(
+                        [
+                            f"{r.canvodpy_version} ({r.commit})"
+                            if r.commit
+                            else r.canvodpy_version
+                            for r in group
+                        ],
+                        lambda v: v,
+                    )
+                    settings = _shared([r.settings for r in group], _json_key)
+                    group_differs = any(
+                        value == "differs"
+                        for value in (machine, workers, version, settings)
+                    )
+                    any_differs = any_differs or group_differs
+                    group_rows.append(
+                        {
+                            "Label": label,
+                            "Runs": len(group),
+                            "Machine": machine,
+                            "Workers": workers,
+                            "Version": version,
+                            "Settings": settings,
+                        }
+                    )
+                    # Time per stage, and in total, across the group's runs.
+                    stage_seconds = {}
+                    totals = []
+                    for run in group:
+                        per_stage = {}
+                        for timing in history.stage_timings(run.run_id):
+                            per_stage[timing.stage] = per_stage.get(
+                                timing.stage, 0.0
+                            ) + (timing.seconds or 0.0)
+                        totals.append(sum(per_stage.values()))
+                        for stage, seconds in per_stage.items():
+                            stage_seconds.setdefault(stage, []).append(seconds)
+                    for stage in sorted(stage_seconds):
+                        secs = sorted(stage_seconds[stage])
+                        stage_rows.append(
+                            {
+                                "Label": label,
+                                "Stage": stage,
+                                "Runs": len(secs),
+                                "Median (s)": round(statistics.median(secs), 1),
+                                "Min (s)": round(secs[0], 1),
+                                "Max (s)": round(secs[-1], 1),
+                            }
+                        )
+                        chart_rows.append(
+                            {
+                                "Label": label,
+                                "Stage": stage,
+                                "Median (s)": statistics.median(secs),
+                            }
+                        )
+                    if totals:
+                        tot = sorted(totals)
+                        stage_rows.append(
+                            {
+                                "Label": label,
+                                "Stage": "Total",
+                                "Runs": len(tot),
+                                "Median (s)": round(statistics.median(tot), 1),
+                                "Min (s)": round(tot[0], 1),
+                                "Max (s)": round(tot[-1], 1),
+                            }
+                        )
+        except FileNotFoundError:
+            items.append(mo.md("_No run has been recorded in this folder yet._"))
+            return items
+        except (NetworkDriveError, RunHistoryVersionError, RunHistoryError) as error:
+            items.append(mo.md(f"_{error}_"))
+            return items
+
+        items.append(intro)
+        if not group_rows:
+            items.append(mo.md("_No finished labeled runs to compare yet._"))
+            return items
+
+        items.append(mo.ui.table(group_rows, selection=None, label="Run groups"))
+        if any_differs:
+            items.append(
+                mo.callout(
+                    mo.md(
+                        "A group whose machine, workers, version or settings "
+                        "differ is not a set of repetitions of the same run."
+                    ),
+                    kind="warn",
+                )
+            )
+        series = chart_palette(mo.app_meta().theme == "dark")
+        items.append(mo.md("### Median time per stage"))
+        items.append(
+            mo.ui.altair_chart(
+                chart_style(
+                    alt.Chart({"values": chart_rows})  # type: ignore
+                    .mark_bar()
+                    .encode(
+                        x=alt.X("Stage:N", axis=alt.Axis(title="Stage")),
+                        y=alt.Y("Median (s):Q", axis=alt.Axis(title="Median time (s)")),
+                        color=alt.Color("Label:N").scale(range=series),
+                    )
+                )
+            )
+        )
+        items.append(
+            mo.ui.table(
+                stage_rows, selection=None, label="Timing per stage and in total"
+            )
+        )
+        return items
+
     return (
         mo,
         format_duration,
@@ -295,6 +483,9 @@ def _():
         site_overview_rows,
         last_step_text,
         build_run_view,
+        chart_style,
+        chart_palette,
+        comparison_view,
     )
 
 
@@ -574,23 +765,15 @@ def _(mo, run_view):
 
 
 @app.cell
-def _(mo, run_view):
+def _(chart_palette, chart_style, mo, run_view):
     import altair as alt
-
-    def chart_style(chart):
-        return chart.properties(background="transparent").configure_view(stroke=None)
 
     run_charts = run_view["charts"] if run_view is not None else {}
     chart_items = [mo.md("### Charts")]
     if not run_charts:
         chart_items.append(mo.md("_No chart data for this run yet._"))
     else:
-        chart_dark = mo.app_meta().theme == "dark"
-        chart_series = (
-            ["#C4D7A4", "#C47070", "#E1E6B9"]
-            if chart_dark
-            else ["#375D3B", "#8B3A3A", "#183128"]
-        )
+        chart_series = chart_palette(mo.app_meta().theme == "dark")
 
         if "stage" in run_charts:
             chart_items.append(mo.md("**Time per stage.** Total time of each stage."))
@@ -723,6 +906,13 @@ def _(mo, run_view):
             )
 
     mo.vstack(chart_items)
+    return
+
+
+@app.cell
+def _(comparison_view, log_dir, mo, refresh):
+    _ = refresh  # re-read the comparison on refresh
+    mo.vstack(comparison_view(log_dir))
     return
 
 
