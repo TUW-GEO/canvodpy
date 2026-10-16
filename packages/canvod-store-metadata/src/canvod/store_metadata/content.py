@@ -157,16 +157,16 @@ def _canvodpy_version() -> str | None:
 def settings_hash(
     settings: Mapping[str, Any], resolved_sids: Any, gnss_hash: str | None = None
 ) -> str:
-    """SHA-256 of the content settings, for display and a quick check."""
-    text = json.dumps(
-        {
-            "settings": settings,
-            "resolved_sids": resolved_sids,
-            "gnss_content_hash": gnss_hash,
-        },
-        sort_keys=True,
-        default=str,
-    )
+    """SHA-256 of the content settings, for display and a quick check.
+
+    ``gnss_hash`` is the ``gnss_content_hash`` of a VOD store (ADR 0019 D1).
+    It is included in the hash only when it is not ``None``, so a GNSS
+    store's hash is what it was before this hash was recorded.
+    """
+    hashed: dict[str, Any] = {"settings": settings, "resolved_sids": resolved_sids}
+    if gnss_hash is not None:
+        hashed["gnss_content_hash"] = gnss_hash
+    text = json.dumps(hashed, sort_keys=True, default=str)
     return hashlib.sha256(text.encode()).hexdigest()
 
 
@@ -302,23 +302,63 @@ def gnss_content_hash_from(repository: Mapping[str, Any] | None) -> str:
 
 def check_gnss_hash(
     vod_repository: Mapping[str, Any],
-    gnss_repository: Mapping[str, Any],
+    gnss_repository: Mapping[str, Any] | None,
     store_path: StoreLocation | Path | str,
 ) -> None:
     """Refuse a VOD write from a GNSS store with other content settings.
 
     A VOD store records ``gnss_content_hash`` (ADR 0019 D1). A run whose
     GNSS store has a different content-settings hash would compute VOD from
-    data this VOD store does not describe.
+    data this VOD store does not describe. A missing hash is refused instead
+    of silently turning the check off (#355).
 
     Raises
     ------
+    MissingContentSettingsError
+        If the GNSS store has no content settings, or the VOD store records
+        no ``gnss_content_hash``.
     ContentSettingsError
         If the hashes differ (both hashes and the two stores are named).
     """
+    from .io import store_command
+
     stored_hash = vod_repository.get(CONTENT_SETTINGS_FIELD, {}).get(GNSS_CONTENT_HASH)
-    current_hash = gnss_repository.get(CONTENT_SETTINGS_FIELD, {}).get("hash")
-    if not stored_hash or not current_hash or stored_hash == current_hash:
+    current_hash = (
+        gnss_repository.get(CONTENT_SETTINGS_FIELD, {}).get("hash")
+        if gnss_repository
+        else None
+    )
+    if gnss_repository is None:
+        site = _site_name(vod_repository)
+        msg = (
+            f"The GNSS store the VOD store at {store_path} was computed from "
+            "cannot be read, so its content settings cannot be checked. "
+            "Make the GNSS store reachable and migrate it if it has no "
+            "content settings ("
+            f"{store_command('migrate-metadata', site, 'gnss_store')})."
+        )
+        raise MissingContentSettingsError(msg)
+    if not current_hash:
+        site = _site_name(gnss_repository)
+        msg = (
+            "The GNSS store this VOD run reads has no content settings, so "
+            "its hash cannot be checked. Write them once, from the settings "
+            "recorded in the store's first commit:\n"
+            f"  {store_command('migrate-metadata', site, 'gnss_store')}"
+        )
+        raise MissingContentSettingsError(msg)
+    if not stored_hash:
+        site = _site_name(vod_repository)
+        msg = (
+            f"The VOD store at {store_path} records no gnss_content_hash, so "
+            "its content settings cannot be checked against the GNSS store "
+            "this run reads. Write it once, from the GNSS store's content "
+            "settings:\n"
+            f"  {store_command('migrate-metadata', site, 'vod_store')} "
+            f"--set gnss_content_hash={current_hash}"
+        )
+        raise MissingContentSettingsError(msg)
+    if stored_hash == current_hash:
         return
     msg = (
         f"The GNSS store this VOD run reads has content-settings hash "
@@ -329,6 +369,11 @@ def check_gnss_hash(
         "new VOD store (processing.storage.vod_store_name)."
     )
     raise ContentSettingsError(msg)
+
+
+def _site_name(repository: Mapping[str, Any]) -> str:
+    """The site a repository metadata names, for an error message."""
+    return str(repository.get("spatial", {}).get("site", {}).get("name", "SITE"))
 
 
 def _flatten(data: Any, prefix: str = "") -> dict[str, Any]:

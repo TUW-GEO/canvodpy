@@ -4,6 +4,8 @@ ADR 0019. Through the steps every writer takes: ``ensure_store_metadata``
 when a run starts and ``commit_with_rebase`` at the tip.
 """
 
+import hashlib
+import json
 from pathlib import Path
 
 import pytest
@@ -154,6 +156,23 @@ def test_a_store_without_content_settings_is_refused(tmp_path, settings):
             source_format="rinex3",
             names=["canopy_01"],
         )
+
+
+def test_a_gnss_stores_hash_is_what_it_was_before(store):
+    """#355: settings_hash without a gnss hash is unchanged from before (#375)."""
+    from canvod.store_metadata.content import settings_hash
+
+    content = read_repository_metadata(store)["content_settings"]
+    settings = content["settings"]
+    sids = content["resolved_sids"]
+    old = hashlib.sha256(
+        json.dumps(
+            {"settings": settings, "resolved_sids": sids},
+            sort_keys=True,
+            default=str,
+        ).encode()
+    ).hexdigest()
+    assert settings_hash(settings, sids, None) == old
 
 
 def test_content_settings_are_not_amendable(store):

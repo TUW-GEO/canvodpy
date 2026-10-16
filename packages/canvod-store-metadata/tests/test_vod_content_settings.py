@@ -88,6 +88,30 @@ def test_a_new_vod_store_records_its_content_settings(vod, settings, gnss):
     assert content["gnss_content_hash"] == gnss["content_settings"]["hash"]
 
 
+def test_a_vod_stores_hash_covers_gnss_content_hash(vod, gnss):
+    """#355: a VOD store's hash includes gnss_content_hash (#375)."""
+    import hashlib
+    import json
+
+    from canvod.store_metadata.content import settings_hash
+
+    content = read_repository_metadata(vod)["content_settings"]
+    ghash = gnss["content_settings"]["hash"]
+    expected = hashlib.sha256(
+        json.dumps(
+            {
+                "settings": content["settings"],
+                "resolved_sids": content["resolved_sids"],
+                "gnss_content_hash": ghash,
+            },
+            sort_keys=True,
+            default=str,
+        ).encode()
+    ).hexdigest()
+    assert content["hash"] == expected
+    assert content["hash"] != settings_hash(content["settings"], None, None)
+
+
 def test_a_run_with_other_content_settings_stops_before_writing(vod, settings, gnss):
     other = settings.model_copy(deep=True)
     other.processing.icechunk.chunk_strategies.vod_store.epoch = 8640
@@ -120,6 +144,41 @@ def test_a_vod_store_fed_by_a_gnss_store_without_content_settings_is_refused(
 
     with pytest.raises(MissingContentSettingsError, match="migrate-metadata"):
         _vod(tmp_path / "vod", settings, gnss_without)
+
+
+def test_check_gnss_hash_refuses_a_gnss_store_without_content_settings(
+    vod, settings, gnss
+):
+    """#355: a missing GNSS hash refuses instead of silently passing (#375)."""
+    from canvod.store_metadata.content import check_gnss_hash
+
+    gnss_without = dict(gnss)
+    gnss_without.pop("content_settings")
+    vod_repo = read_repository_metadata(vod)
+
+    with pytest.raises(MissingContentSettingsError, match="migrate-metadata") as caught:
+        check_gnss_hash(vod_repo, gnss_without, vod)
+
+    message = str(caught.value)
+    assert "--store gnss" in message
+    assert "--set gnss_content_hash" not in message
+
+
+def test_check_gnss_hash_refuses_a_vod_store_without_the_recorded_hash(
+    vod, settings, gnss
+):
+    """#355: a VOD store without ``gnss_content_hash`` refuses, not passes (#375)."""
+    from canvod.store_metadata.content import check_gnss_hash
+
+    vod_without = read_repository_metadata(vod)
+    vod_without["content_settings"].pop("gnss_content_hash")
+
+    with pytest.raises(MissingContentSettingsError, match="migrate-metadata") as caught:
+        check_gnss_hash(vod_without, gnss, vod)
+
+    message = str(caught.value)
+    assert "--set gnss_content_hash" in message
+    assert "--store vod" in message
 
 
 class TestMigration:
@@ -169,6 +228,51 @@ class TestMigration:
 
         assert "gnss_content_hash" in str(caught.value)
         assert open_repository(path).lookup_branch("main") == before
+
+    def test_a_tau_omega_group_is_recorded_with_empty_parameters(
+        self, settings, tmp_path, gnss
+    ):
+        """#355: the migration records ``{}`` on a tau_omega VOD group (#375)."""
+        from canvod.store_metadata.migration import migrate_content_settings
+        from canvod.store_metadata.testing import give_test_metadata
+
+        path = give_test_metadata(tmp_path / "vod", store_type="vod_store")
+        session = open_repository(path).writable_session("main")
+        zarr.open_group(session.store, mode="a").require_group(
+            "tau_omega/canopy_01_vs_reference_01"
+        )
+        commit_with_rebase(session, "data", store_path=path, config=settings)
+
+        ghash = gnss["content_settings"]["hash"]
+        migrate_content_settings(path, who="JRRT", values={"gnss_content_hash": ghash})
+
+        read = open_repository(path).readonly_session("main")
+        group = zarr.open_group(read.store, mode="r")[
+            "tau_omega/canopy_01_vs_reference_01"
+        ]
+        assert group.attrs["calculator"] == "tau_omega"
+        assert group.attrs["calculator_params"] == "{}"
+
+    def test_an_other_calculator_is_listed_as_unknown(self, settings, tmp_path, gnss):
+        """#355: a group of an unknown calculator is listed, not guessed (#375)."""
+        from canvod.store_metadata.migration import migrate_content_settings
+        from canvod.store_metadata.testing import give_test_metadata
+
+        path = give_test_metadata(tmp_path / "vod", store_type="vod_store")
+        session = open_repository(path).writable_session("main")
+        zarr.open_group(session.store, mode="a").require_group(
+            "double_parameter/canopy_01_vs_reference_01"
+        )
+        commit_with_rebase(session, "data", store_path=path, config=settings)
+
+        ghash = gnss["content_settings"]["hash"]
+        with pytest.raises(ValueError, match="double_parameter") as caught:
+            migrate_content_settings(
+                path, who="JRRT", values={"gnss_content_hash": ghash}
+            )
+
+        assert "double_parameter" in str(caught.value)
+        assert "not guessed" not in str(caught.value)
 
 
 def test_the_metadata_view_shows_the_vod_content_settings(vod):

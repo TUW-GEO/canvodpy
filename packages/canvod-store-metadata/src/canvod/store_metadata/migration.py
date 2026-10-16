@@ -16,6 +16,7 @@ can also replace the attributes of variables older versions wrote wrong
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
@@ -52,7 +53,7 @@ from .schema import (
     rule_breaks,
     validate_existing,
 )
-from .snapshot import preview_metadata
+from .snapshot import RESERVED_GROUP, preview_metadata
 from .validate import validate_all
 
 #: Attributes xarray writes to encode a variable; kept when a variable's
@@ -478,8 +479,26 @@ def migrate_content_settings(
         content["migrated_from_snapshot"] = snapshot_id
         content["values_given"] = sorted(values)
         updated = {**repository, CONTENT_SETTINGS_FIELD: content}
+        session = repo.writable_session(branch)
+        if store_type == "vod_store":
+            unknown_calculators = _record_vod_calculator_params(session)
+            if unknown_calculators:
+                listed = "\n".join(
+                    f"  - {name!r}" for name in sorted(unknown_calculators)
+                )
+                msg = (
+                    f"The VOD store at {store_path} has groups of a "
+                    "calculator whose parameters the migration cannot "
+                    "record (ADR 0019 D2):\n"
+                    f"{listed}\n"
+                    "A group written before the parameters were recorded "
+                    "is otherwise never checked. Record its parameters by "
+                    "writing it again, or use a calculator whose parameters "
+                    "are empty (tau_omega)."
+                )
+                raise ValueError(msg)
         commit_id = commit_with_rebase(
-            repo.writable_session(branch),
+            session,
             "Write content settings from the first commit (ADR 0019)",
             store_path=store_path,
             config=ConfigSnapshot.model_validate(recorded),
@@ -487,6 +506,51 @@ def migrate_content_settings(
         )
         repo.set_metadata(updated)
         return commit_id
+
+
+#: Group attributes of a VOD data group that record its calculator and its
+#: parameters. The names match ``canvod.store.store`` (ADR 0019 D2);
+#: canvod-store-metadata cannot import it, so they are kept in step here.
+_VOD_CALCULATOR_ATTR = "calculator"
+_VOD_CALCULATOR_PARAMS_ATTR = "calculator_params"
+
+#: Calculators whose parameters are always empty (ADR 0019 D2): the migration
+#: records ``{}`` for them. Any other calculator's parameters cannot be
+#: derived, so the migration lists its groups as unknown.
+_EMPTY_PARAMS_CALCULATORS = {"tau_omega"}
+
+
+def _record_vod_calculator_params(
+    session: Any,
+) -> set[str]:
+    """Record a VOD store's per-group calculator parameters (ADR 0019 D2).
+
+    A group written before the parameters were recorded is otherwise never
+    checked. Each VOD data group is ``{calculator}/{analysis}``; the
+    calculator's parameters are recorded on the group. A calculator whose
+    parameters are always empty (``tau_omega``) is recorded as ``{}``; any
+    other calculator is returned, so the migration can list its groups as
+    unknown (its parameters cannot be derived from the store).
+
+    Returns
+    -------
+    set[str]
+        Calculator names whose groups the migration cannot record.
+    """
+    root = zarr.open_group(session.store, mode="a")
+    unknown: set[str] = set()
+    for calc_name, calc in root.groups():
+        if calc_name == RESERVED_GROUP:
+            continue
+        for analysis, group in calc.groups():
+            if analysis == RESERVED_GROUP:
+                continue
+            if calc_name in _EMPTY_PARAMS_CALCULATORS:
+                group.attrs[_VOD_CALCULATOR_ATTR] = calc_name
+                group.attrs[_VOD_CALCULATOR_PARAMS_ATTR] = json.dumps({})
+            else:
+                unknown.add(calc_name)
+    return unknown
 
 
 def _with_values(

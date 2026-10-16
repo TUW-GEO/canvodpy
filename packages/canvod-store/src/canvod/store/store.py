@@ -3115,7 +3115,7 @@ class MyIcechunkStore:
         try:
             with self.readonly_session(branch) as session:
                 group = zarr.open_group(session.store, mode="r")[group_name]
-        except Exception:
+        except KeyError:
             return  # no group yet: a first write
         if VOD_CALCULATOR_ATTR not in group.attrs:
             return  # an older store without the record
@@ -3374,6 +3374,7 @@ class MyIcechunkStore:
                     action=plan.action,
                     commit_msg=plan.commit_message,
                     calculator_name=plan.item.calculator_name,
+                    calculator_params=plan.item.calculator_params,
                     dataset_attrs=dict(dataset.attrs),
                     write_strategy=VOD_DAY_BLOCK_WRITE_STRATEGY,
                     epochs=drop_empty_slots(dataset, group_name).sizes["epoch"],

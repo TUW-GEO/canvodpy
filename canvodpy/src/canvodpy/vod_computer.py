@@ -133,23 +133,41 @@ class VodComputer:
         return self._effective_calculator_params()
 
     def _effective_calculator_params(self) -> dict[str, Any]:
-        """The calculator parameters in effect: passed, or the model's defaults.
+        """The calculator parameters in effect, defaults written out.
 
         The parameters are the calculator model's fields other than
         ``canopy_ds`` and ``sky_ds``, with their defaults written out
-        (``{}`` for ``tau_omega`` today).
+        (``{}`` for ``tau_omega`` today). Passed parameters are merged
+        over the defaults, so ``{\"a\": 1}`` and ``{\"a\": 1, \"b\": 2}``
+        (with ``b`` defaulting to 2) compute and record the same thing.
+
+        Raises
+        ------
+        ValueError
+            If a parameter field has no default (``PydanticUndefined``):
+            it must be given in the configuration.
         """
+        from pydantic_core import PydanticUndefined
+
         from canvodpy.factories import VODFactory
 
-        if self._calculator_params is not None:
-            return self._calculator_params
         cls = VODFactory.component_class(self._calculator_name)
         base = {"canopy_ds", "sky_ds"}
-        return {
-            name: getattr(field, "default", None)
-            for name, field in cls.model_fields.items()
-            if name not in base
-        }
+        defaults: dict[str, Any] = {}
+        for name, field in cls.model_fields.items():
+            if name in base:
+                continue
+            if field.default is PydanticUndefined:
+                msg = (
+                    f"The VOD calculator {self._calculator_name!r} has a "
+                    f"required parameter {name!r} without a default. Give "
+                    "it in the configuration (vod.calculators)."
+                )
+                raise ValueError(msg)
+            defaults[name] = field.default
+        if self._calculator_params is None:
+            return defaults
+        return {**defaults, **self._calculator_params}
 
     @deprecated(
         "`check_preprocessing` is left over from development: the VOD write now "
@@ -186,7 +204,7 @@ class VodComputer:
                 f"{self._calculator_name}/{analysis_name}", settings
             )
 
-    def check_gnss_hash(self, analysis_names: list[str]) -> None:
+    def check_gnss_hash(self) -> None:
         """Refuse a VOD write from a GNSS store with other content settings.
 
         A VOD store records the content-settings hash of the GNSS store it
@@ -197,6 +215,9 @@ class VodComputer:
 
         Raises
         ------
+        MissingContentSettingsError
+            If the GNSS store has no content settings, or the VOD store
+            records no ``gnss_content_hash``.
         ContentSettingsError
             If the GNSS store's content-settings hash differs from the VOD
             store's (the error names both hashes and both stores).
@@ -209,15 +230,10 @@ class VodComputer:
 
         if not store_exists(self._site.vod_store_path):
             return  # a first run: the store is created with this GNSS store
-        vod_store_path = (
-            self._site._site.vod_store.store_path
-            if hasattr(self._site._site, "vod_store")
-            else self._site.vod_store_path
-        )
         check_gnss_hash(
-            read_repository_metadata(vod_store_path),
+            read_repository_metadata(self._site.vod_store_path),
             read_repository_metadata(self._site._site.gnss_store.store_path),
-            vod_store_path,
+            self._site.vod_store_path,
         )
 
     def compute_day(
@@ -656,7 +672,7 @@ class VodComputer:
         """
         research_site = self._site._site
         gnss_store_path = str(research_site.gnss_store.store_path)
-        self.check_gnss_hash([name for name, *_ in entries])
+        self.check_gnss_hash()
 
         items = []
         for analysis_name, vod_ds, canopy_ds, sky_ds in entries:

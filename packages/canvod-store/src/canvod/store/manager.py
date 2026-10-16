@@ -418,9 +418,12 @@ class GnssResearchSite:
             try:
                 gnss_repository = read_repository_metadata(self.gnss_store_path)
             except FileNotFoundError, ValueError:
-                # A VOD store that already holds content settings is checked
-                # against its recorded hash; a missing GNSS store fails the
-                # run later reading data, so it needs no hash check here.
+                # A missing GNSS repository must not turn the hash check
+                # off silently: when it can be read, ``check_content_settings``
+                # compares the VOD store's recorded ``gnss_content_hash``, and
+                # ``check_gnss_hash`` now refuses a missing hash (#375). A run
+                # whose GNSS store cannot be read still fails when it reads
+                # the data.
                 gnss_repository = None
         return ensure_store_metadata(
             store_path,
