@@ -37,9 +37,11 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - name: Check out the test data
               # Only the readers' test data, without its history; the demo
-              # submodule is not needed for the tests. Switched off for now:
-              # remove the `if` to run the tests that need the data.
-              if: false
+              # submodule is not needed for the tests. The readers' tests on
+              # real files and the end-to-end runs on the Rosalia data need
+              # it; without it they skip. It costs time only: a shallow clone
+              # of about 3 GB per job (public repository, no Git LFS, no
+              # minute limit for public repositories on GitHub's runners).
               run: git submodule update --init --depth 1 packages/canvod-readers/tests/test_data
             - name: Install uv and set the python version
               uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0

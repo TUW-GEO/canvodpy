@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 import pytest
+import yaml
 
 from canvod.config import loader as config_loader_module
 from canvod.config.models import ReceiverConfig, VodAnalysisConfig
@@ -32,9 +33,12 @@ def _restore_config_env():
 
 # ── One day of the Rosalia test data through the pipeline ─────────────────
 
-# Check if config files and store paths are available
-CONFIG_DIR = Path.cwd() / "config"
-HAS_CONFIG = (CONFIG_DIR / "canvod-settings.yaml").exists()
+# The settings template of the repository: the Rosalia tests start from it,
+# not from the local settings file, so they run the same on every machine
+# and in CI.
+_SETTINGS_TEMPLATE = (
+    Path(__file__).resolve().parents[2] / "config" / "canvod-settings.yaml.example"
+)
 
 # Reference test data inside the test-data submodule
 _TEST_DATA = (
@@ -74,13 +78,14 @@ _TEST_VOD_ANALYSES = {
 def rosalia_site(tmp_path, monkeypatch):
     """The made-up site on the Rosalia test data, ready to run.
 
-    Uses self-contained test data and receiver config so the run is
-    independent of the user's local ``config/canvod-settings.yaml`` (which
-    must exist, though: the settings are loaded from it and then patched).
-    Returns the patched settings and the site's ``GnssResearchSite``.
+    Uses self-contained test data and receiver config, and settings loaded
+    from the settings template (``config/canvod-settings.yaml.example``)
+    with the made-up person filled in, so the run is independent of the
+    user's local settings file. Returns the patched settings and the site's
+    ``GnssResearchSite``.
     """
-    if not (HAS_CONFIG and HAS_TEST_DATA):
-        pytest.skip("Integration test requires config files and test data")
+    if not HAS_TEST_DATA:
+        pytest.skip("Integration test requires the test data (git submodule)")
 
     import canvod.config as config_pkg
     import canvod.config.loader as config_loader
@@ -110,7 +115,18 @@ def rosalia_site(tmp_path, monkeypatch):
     # local config/canvod-settings.yaml with an external-drive
     # aux_data_dir leak into this "self-contained" test's aux-pipeline
     # setup and fail with PermissionError when the drive wasn't mounted.)
-    patched_config = config_pkg.load_config()
+    settings = yaml.safe_load(_SETTINGS_TEMPLATE.read_text(encoding="utf-8"))
+    settings["processing"]["metadata"].update(
+        author=testing.PERSON_NAME,
+        email=testing.PERSON_EMAIL,
+        institution=testing.INSTITUTION,
+    )
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "canvod-settings.yaml").write_text(
+        yaml.safe_dump(settings), encoding="utf-8"
+    )
+    patched_config = config_pkg.load_config(config_dir=config_dir)
     patched_config.processing.storage.stores_root_dir = tmp_path / "stores"
     patched_config.processing.storage.aux_data_dir = tmp_path / "aux"
     patched_config.processing.storage.shared_aux_cache_dir = None
