@@ -925,10 +925,10 @@ def recorded_run(
     more when it ends, also when it fails.
 
     The run takes the run ID of the caller's context
-    (:func:`canvod.utils.logging.get_run_id`), or a new one. Run IDs name
-    the second a run starts, so a run ID the run history already holds
-    gets a number (``fangorn-20261014-120000-2``); the run ID is set for
-    the time of the block. The run ends as finished when the block ends,
+    (:func:`canvod.utils.logging.get_run_id`), or a new one. A run ID the
+    run history already holds (a caller set one used before) gets a number
+    (``fangorn-20261014-120000-3f9a1c-2``); the run ID is set for the time
+    of the block. The run ends as finished when the block ends,
     as failed with the error when it raises.
 
     Parameters
