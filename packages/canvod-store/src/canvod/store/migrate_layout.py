@@ -36,6 +36,7 @@ from typing import Any
 import numpy as np
 import xarray as xr
 import zarr
+import zarr.errors
 from canvod.store_metadata import RESERVED_GROUP
 from canvod.store_metadata.collectors import collect_config_snapshot
 from canvod.store_metadata.io import commit_lock, commit_with_rebase
@@ -358,7 +359,9 @@ def _rebuilt_index(
     LayoutError
         If the epoch axis is not made of such blocks.
     """
-    epoch_chunk = int(zgroup["epoch"].chunks[0])
+    epoch = zgroup["epoch"]
+    assert isinstance(epoch, zarr.Array)
+    epoch_chunk = int(epoch.chunks[0])
     days = epochs // _DAY_NS
     edges = np.flatnonzero(np.diff(days)) + 1
     starts = np.concatenate([[0], edges]).astype(int)
@@ -448,7 +451,8 @@ def _count_epochs(session: Any, plan: GroupLayoutMigration) -> int:
     table = zgroup["metadata/table"]
     assert isinstance(table, zarr.Group)
     starts, ends = (
-        np.asarray(table[name][...]).astype("M8[ns]") for name in ("start", "end")
+        np.asarray(_column(table, name)[...]).astype("M8[ns]")
+        for name in ("start", "end")
     )
     latest = {key: row for row, key in enumerate(keys) if key is not None}
     owner = np.full(plan._times.size, -1, dtype=np.int64)
@@ -465,5 +469,11 @@ def _count_epochs(session: Any, plan: GroupLayoutMigration) -> int:
         table.create_array(
             "epochs", shape=(len(keys),), dtype="i8", chunks=(1024,), fill_value=-1
         )
-    table["epochs"][:] = counts
+    _column(table, "epochs")[:] = counts
     return int((owner < 0).sum())
+
+
+def _column(table: zarr.Group, name: str) -> zarr.Array:
+    column = table[name]
+    assert isinstance(column, zarr.Array)
+    return column
