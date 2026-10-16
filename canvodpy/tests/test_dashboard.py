@@ -113,7 +113,15 @@ def _seed(log_dir: Path) -> None:
             rid3, "reference_01", "2025001", "written", bytes_added=0
         )
         history.record_stage(rid3, "reading", 2.0, receiver="canopy_01", day="2025001")
+        history.record_stage(rid3, "reading", 2.5, receiver="canopy_01", day="2025002")
         history.record_stage(rid3, "writing", 4.0, receiver="canopy_01", day="2025001")
+        history.record_stage(rid3, "writing", 4.5, receiver="canopy_01", day="2025002")
+        history.record_resources(
+            rid3, cpu_percent=40.0, memory_percent=30.0, free_disk={"/stores": 20}
+        )
+        history.record_resources(
+            rid3, cpu_percent=60.0, memory_percent=35.0, free_disk={"/stores": 19}
+        )
         history.end_run(rid3, "finished")
 
 
