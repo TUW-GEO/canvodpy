@@ -170,7 +170,7 @@ Before a file's data goes into the GNSS store, the run checks three things:
 2. Does the file's time span overlap data already in the store?
 3. Does the file's time span overlap another file of the same batch?
 
-A file that fails a check counts as already stored. What happens then
+A file with the same hash counts as already stored. What happens then
 depends on `gnss_store_strategy` in the settings:
 
 - `skip`, the default: the data isn't written, and the run logs the file.
@@ -179,6 +179,15 @@ depends on `gnss_store_strategy` in the settings:
 - `unsafe_append`: the data is written again on top of what's there. The
   store then holds the same epochs twice. Use it only if you have a
   specific reason.
+
+A file with another hash whose time span overlaps stored data (check 2)
+is a conflict between two files, and neither is preferred silently: with
+`skip`, the run stops and names both files, the receiver, and the time
+spans. To replace the stored data with the new file, run those days with
+`overwrite`; the log book records the file as `overwritten`. The check
+runs again just before each commit, against the files that other runs
+stored meanwhile. A file that overlaps another file of the same batch
+(check 3) is skipped and logged.
 
 Epochs stored twice break the matching of canopy and reference receivers
 without an error. With `skip`, running the same job twice, for example

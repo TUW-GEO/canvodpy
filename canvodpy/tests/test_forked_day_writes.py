@@ -37,6 +37,7 @@ from test_day_block_write import _config, _DayBlockProcessor, _inputs
 from canvod.config.models import PreprocessingConfig
 from canvod.store import MyIcechunkStore
 from canvod.store.day_blocks import ChunkOwnershipError
+from canvod.store.store import StoredOverlapError
 from canvod.store_metadata.io import read_metadata
 from canvod.utils.tools import YYYYDOY
 
@@ -242,6 +243,33 @@ def test_two_days_planned_together_both_commit(seeded, files) -> None:
     assert summary.total_epochs == stored.sizes["epoch"]
 
 
+def test_a_changed_file_over_a_stored_file_stops_the_day(seeded, files) -> None:
+    # The day's first file came again with other content (another hash).
+    files[_name(0)] = _dataset(0, offset=100.0)
+    n_commits = _commits(seeded)
+
+    with pytest.raises(StoredOverlapError, match=_name(0)):
+        _write_day(_Processor(seeded))
+
+    assert _commits(seeded) == n_commits
+    assert _log_book(seeded).height == 1
+
+
+def test_overwrite_replaces_another_stored_file_and_says_so(seeded, files) -> None:
+    files[_name(0)] = _dataset(0, offset=100.0)
+
+    out = _write_day(_Processor(seeded, strategy="overwrite"))
+
+    assert out[_GROUP].actions["overwritten"] == 1
+    assert out[_GROUP].actions["written"] == _FILES_PER_DAY - 1
+    log = _log_book(seeded)
+    assert log.filter(log["rinex_hash"] == files[_name(0)].attrs["File Hash"])[
+        "action"
+    ].to_list() == ["overwritten"]
+    stored = seeded.read_group(_GROUP, drop_empty=True)
+    np.testing.assert_array_equal(stored["S1C"].values, _day(files)["S1C"].values)
+
+
 def _orchestrator(gnss_store: MyIcechunkStore) -> PipelineOrchestrator:
     pipe = PipelineOrchestrator.__new__(PipelineOrchestrator)
     pipe.site = SimpleNamespace(
@@ -281,12 +309,38 @@ def test_a_day_that_lost_a_conflict_is_written_again(seeded, files) -> None:
         proc, planned, _descriptors(range(_FILES_PER_DAY)), results, _submit, 1
     )
 
-    # The other run's files had other hashes: only the seed's is known.
-    assert out[_GROUP].actions["overwritten"] == 1
-    assert out[_GROUP].actions["written"] == _FILES_PER_DAY - 1
+    # The seed's file by its hash; the others write over the other run's
+    # files of other hashes, and the log book says so (#351).
+    assert out[_GROUP].actions["overwritten"] == _FILES_PER_DAY
+    assert out[_GROUP].actions["written"] == 0
     stored = seeded.read_group(_GROUP, drop_empty=True)
     expected = _day(files)
     np.testing.assert_array_equal(stored["S1C"].values, expected["S1C"].values)
+
+
+def test_a_day_whose_files_another_run_stored_first_stops_after_the_replan(
+    seeded, files
+) -> None:
+    # Two runs plan the same day with different files for its epochs; the
+    # other commits first. After the lost conflict this run plans the day
+    # again at the new tip and stops (#351).
+    proc = _Processor(seeded)
+    planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
+    assert planned is not None
+    results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
+    for index in range(1, _FILES_PER_DAY):
+        files[_name(index)] = _dataset(index, offset=100.0)
+    _write_day(_Processor(seeded))
+    for index in range(1, _FILES_PER_DAY):
+        files[_name(index)] = _dataset(index)
+    n_commits = _commits(seeded)
+
+    with pytest.raises(StoredOverlapError, match="gnss_store_strategy: overwrite"):
+        _orchestrator(seeded)._write_forked_day(
+            proc, planned, _descriptors(range(_FILES_PER_DAY)), results, _submit, 1
+        )
+
+    assert _commits(seeded) == n_commits
 
 
 def test_a_day_that_lost_several_conflicts_is_stored_once(
