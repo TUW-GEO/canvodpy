@@ -298,12 +298,14 @@ failed and hasn't done yet.
 
 **Run page:** pick a run (newest first). It shows the run's settings, the
 canvodpy version and commit, the machine, the workers and the label; the
-progress per receiver (planned, written, skipped, failed, bytes added);
+progress per receiver (planned, written, skipped, failed, not yet done,
+bytes added);
 an estimate of when it finishes; the last finished step; the
 throughput; and the run's warnings and errors in words, with their
 receiver and day.
 
-The page labels three numbers and says how each is computed:
+The page labels the times in UTC and the three numbers above, and says
+how each is computed:
 
 - **Estimate:** for a running run, the mean time per finished
   receiver-day of this run times the receiver-days not yet done. There
@@ -328,12 +330,20 @@ It reloads the run history every 10 seconds by default, so you can watch
 a run while it runs. On a long run, pick a longer interval.
 
 You can open the same notebook without canvodpy installed, on a machine
-that has a run history folder. It installs canvodpy from PyPI and takes
-the folder from `--logs-dir` after `--`:
+that has a run history folder. From v1.0.0 on, canvodpy on PyPI ships the
+run history, and `marimo run --sandbox` installs canvodpy in a sandbox
+and takes the folder from `--logs-dir` after `--`:
 
 ```bash
-uvx marimo run --sandbox <path-to/performance.py> -- --logs-dir /path/to/logs
+uvx marimo run --sandbox \
+  https://raw.githubusercontent.com/nfb2021/canvodpy/main/canvodpy/src/canvodpy/cli/dashboards/performance.py \
+  -- --logs-dir /path/to/logs
 ```
+
+Read from that URL, the notebook takes the run history from the
+installed canvodpy (its logo comes from the installed package too), but
+the style sheet sits next to the notebook, so the app runs with marimo's
+default styling.
 
 !!! example "Try it in a notebook"
 
