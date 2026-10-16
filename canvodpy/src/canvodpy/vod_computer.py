@@ -540,23 +540,38 @@ class VodComputer:
         A VOD epoch is an epoch of both the canopy and the reference group,
         so each group's cadence gives every VOD epoch of the day its own
         slot; the coarser of the two gives the fewer slots. ``None`` when
-        neither group is made of day blocks: the result is then appended.
+        neither group exists.
 
         Raises
         ------
         LayoutError
-            If a day-block group of the analysis has no block for ``day``.
+            If a group of the analysis was written by appending (the GNSS
+            store needs ``canvodpy store migrate-layout`` first), or has no
+            block for ``day``.
         """
         from canvod.store.day_blocks import day_blocks, holds_day_blocks
+        from canvod.store_metadata.io import store_command
         from canvod.store_metadata.layout import LayoutError
 
         analysis_cfg = self._get_analysis_config(analysis_name)
         groups = (analysis_cfg.canopy_receiver, analysis_cfg.reference_store_group)
         cadences = []
-        with self._site._site.gnss_store.readonly_session() as session:
+        gnss_store = self._site._site.gnss_store
+        with gnss_store.readonly_session() as session:
             for group in groups:
                 if not holds_day_blocks(session.store, group):
-                    continue
+                    if not gnss_store.group_exists(group):
+                        continue
+                    command = store_command(
+                        "migrate-layout", self._site.name, "gnss_store"
+                    )
+                    msg = (
+                        f"GNSS group '{group}' was written by appending, so "
+                        f"the VOD of {analysis_name} has no day blocks to "
+                        f"follow. Move the GNSS store to day blocks first:\n"
+                        f"  {command}"
+                    )
+                    raise LayoutError(msg)
                 blocks = day_blocks(session.store, group)
                 if day not in blocks:
                     msg = (

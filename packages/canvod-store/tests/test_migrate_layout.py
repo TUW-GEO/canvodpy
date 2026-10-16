@@ -15,7 +15,11 @@ from _helpers import (
     new_gnss_store,
     new_vod_store,
 )
-from canvod.store_metadata.layout import DAY_BLOCK_INDEX_ATTR, is_day_block_group
+from canvod.store_metadata.layout import (
+    DAY_BLOCK_INDEX_ATTR,
+    LayoutError,
+    is_day_block_group,
+)
 from canvod.store_metadata.summary import summarize_store
 
 from canvod.store import MyIcechunkStore, open_gnss_store, open_vod_store
@@ -241,3 +245,16 @@ def test_each_day_keeps_its_cadence(tmp_path: Path) -> None:
         read.epoch.values, expected.epoch.values.astype("M8[ns]")
     )
     np.testing.assert_array_equal(read["S1C"].values, expected["S1C"].values)
+
+
+def test_a_moved_group_is_never_written_again_as_a_whole(appended) -> None:
+    """``rewrite_group`` would drop the layout and the block index."""
+    store, again, _ = appended
+    migrate_layout(store.store_path, config=store.settings)
+    moved = open_gnss_store(store.store_path)
+
+    with (
+        moved.writable_session("main") as session,
+        pytest.raises(LayoutError, match="day blocks"),
+    ):
+        moved.rewrite_group(session, GROUP, again, [])

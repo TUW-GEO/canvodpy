@@ -1842,7 +1842,21 @@ class MyIcechunkStore:
         the datasets in *metadata_parts* (name -> per-file datasets). A
         metadata dataset left without epochs is not written back. Writes
         into *session* without committing.
+
+        Raises
+        ------
+        LayoutError
+            If the group is made of day blocks: its files are written into
+            their day's block instead, and a whole-group write would drop
+            its layout and block index.
         """
+        if holds_day_blocks(session.store, group_name):
+            msg = (
+                f"Group '{group_name}' is made of day blocks; a file is "
+                "written into its day's block (day_blocks.write_file_region), "
+                "the group is never written again as a whole."
+            )
+            raise LayoutError(msg)
         path = f"{group_name}/metadata"
         table = self.backup_metadata_table(group_name, session)
         base = self.repo.readonly_session(snapshot_id=session.snapshot_id)

@@ -24,7 +24,7 @@ from test_cross_group_batch_write import (
 from canvod.store import MyIcechunkStore
 from canvod.store.day_blocks import day_blocks, load_group
 from canvod.store_metadata.io import read_metadata
-from canvod.store_metadata.layout import is_day_block_group
+from canvod.store_metadata.layout import LayoutError, is_day_block_group
 
 _DAY = "2025-03-28"
 
@@ -224,10 +224,11 @@ def test_a_cadence_off_the_chunk_grid_is_stored(proc, store) -> None:  # noqa: F
     np.testing.assert_array_equal(stored.epoch.values, sevens)
 
 
-def test_a_store_written_by_appending_keeps_appending(proc, store) -> None:  # noqa: F811
+def test_a_store_written_by_appending_is_refused(proc, store) -> None:  # noqa: F811
     proc._write_receiver_batch_forked(_inputs("canopy_01", [_file("a", 0)]))
 
-    assert not proc._writes_day_blocks()
+    with pytest.raises(LayoutError, match="migrate-layout"):
+        proc._writes_day_blocks()
 
 
 def test_a_store_not_created_yet_gets_day_blocks(proc, tmp_path) -> None:

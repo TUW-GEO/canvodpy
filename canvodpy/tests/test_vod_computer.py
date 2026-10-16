@@ -198,12 +198,28 @@ def _vod_output_params(monkeypatch):
     return params
 
 
+_GNSS_CADENCES = VodComputer._gnss_cadences
+
+
 @pytest.fixture(autouse=True)
 def _no_day_blocks(monkeypatch):
-    """The mocked GNSS store holds no day blocks, so VOD is appended."""
+    """The mocked GNSS store gives no cadence, so VOD is appended."""
+    monkeypatch.setattr(VodComputer, "_gnss_cadences", lambda self, a, d: None)
+
+
+def test_appended_gnss_groups_are_refused(monkeypatch) -> None:
+    """VOD follows GNSS day blocks; a GNSS store not moved yet is named."""
+    from canvod.store_metadata.layout import LayoutError
+
     monkeypatch.setattr(
         "canvod.store.day_blocks.holds_day_blocks", lambda store, group: False
     )
+    site = _make_site({"a": _make_analysis_cfg()})
+    site.name = "Fangorn"
+    site._site.gnss_store.group_exists.return_value = True
+
+    with pytest.raises(LayoutError, match="migrate-layout Fangorn --store gnss"):
+        _GNSS_CADENCES(VodComputer(site), "a", np.datetime64("2025-01-01", "D"))
 
 
 def _day_datasets(canopy_epochs: int = 6, ref_epochs: int = 4) -> dict:
