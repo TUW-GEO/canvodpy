@@ -31,6 +31,10 @@ _ON = frozenset({"1", "true", "yes", "on"})
 _OFF = frozenset({"", "0", "false", "no", "off"})
 
 
+class StorageUnreachableError(OSError):
+    """A store's storage can't be reached; the message says what to check."""
+
+
 class StoreLocation(ABC):
     """Where a store's repository lives."""
 
@@ -334,7 +338,7 @@ def _exists(where: StoreLocation, storage: icechunk.Storage) -> bool:
         return icechunk.Repository.exists(storage)
     except icechunk.StorageError as error:
         msg = f"The storage at {where} can't be reached. {where.access_hint}"
-        raise OSError(msg) from error
+        raise StorageUnreachableError(msg) from error
 
 
 def store_exists(location: StoreLocation | Path | str) -> bool:
@@ -346,7 +350,7 @@ def store_exists(location: StoreLocation | Path | str) -> bool:
 
     Raises
     ------
-    OSError
+    StorageUnreachableError
         If the storage at ``location`` can't be reached.
     """
     where = store_location(location)

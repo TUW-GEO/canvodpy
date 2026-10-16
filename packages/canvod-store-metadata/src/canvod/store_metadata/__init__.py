@@ -44,6 +44,7 @@ from .io import (
 from .location import (
     LocalStoreLocation,
     S3StoreLocation,
+    StorageUnreachableError,
     StoreLocation,
     open_repository,
     read_store_uuid,
@@ -65,6 +66,7 @@ __all__ = [
     "MetadataRuleWarning",
     "RESERVED_GROUP",
     "S3StoreLocation",
+    "StorageUnreachableError",
     "StoreLocation",
     "StoreMetadata",
     "amend_metadata",

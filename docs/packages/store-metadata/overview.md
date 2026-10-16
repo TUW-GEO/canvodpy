@@ -269,7 +269,12 @@ but check before choosing one.
 Creating, opening, reading the metadata, and refusing a conflicting
 commit are tested in CI against an S3 emulator.
 
-Processing still writes stores to local directories only.
+Runs write stores on S3 when `processing.storage.stores_root_dir` is an
+`s3://bucket/prefix` URL ([configuration guide](../../guides/configuration.md)).
+The run history and the file index stay in the log folder of the machine
+that runs. When the storage can't be reached, a run stops with an error
+that names the location and the credential sources listed earlier, never the credentials.
+The STAC catalog is written only for a local folder of stores so far.
 
 ## Check against the standards
 

@@ -38,7 +38,12 @@ from canvod.store_metadata.io import (
     store_command,
     wait_after_conflict,
 )
-from canvod.store_metadata.location import open_repository, repository_config
+from canvod.store_metadata.location import (
+    StoreLocation,
+    open_repository,
+    repository_config,
+    store_location,
+)
 from canvod.store_metadata.summary import cadence_ranges
 from canvod.utils.logging import get_run_id, stage_timer
 from canvod.utils.tools import (
@@ -510,8 +515,8 @@ class MyIcechunkStore:
 
     Parameters
     ----------
-    store_path : Path
-        Path to the Icechunk store directory.
+    store_path : StoreLocation | Path | str
+        The store: a local directory or ``s3://bucket/prefix``.
     store_type : str, default "gnss_store"
         Type of store ("gnss_store" or "vod_store").
     compression_level : int | None, optional
@@ -521,8 +526,10 @@ class MyIcechunkStore:
 
     Attributes
     ----------
-    store_path : Path
-        Path to the Icechunk store directory.
+    location : StoreLocation
+        Where the store lives.
+    store_path : Path | str
+        The store's local directory, or its ``s3://`` URL.
     store_type : str
         Type of store ("gnss_store" or "vod_store").
     compression_level : int
@@ -535,7 +542,7 @@ class MyIcechunkStore:
 
     def __init__(
         self,
-        store_path: Path,
+        store_path: StoreLocation | Path | str,
         store_type: str = "gnss_store",
         compression_level: int | None = None,
         compression_algorithm: str | None = None,
@@ -546,8 +553,9 @@ class MyIcechunkStore:
 
         Parameters
         ----------
-        store_path : Path
-            Path to the Icechunk store directory.
+        store_path : StoreLocation | Path | str
+            The store: a local directory, ``s3://bucket/prefix`` or a
+            :class:`~canvod.store_metadata.location.StoreLocation`.
         store_type : str, default "gnss_store"
             Type of store ("gnss_store" or "vod_store").
         compression_level : int | None, optional
@@ -570,7 +578,10 @@ class MyIcechunkStore:
         _gnss_store_strategy = cfg.processing.storage.gnss_store_strategy
         _log_path_depth = cfg.processing.logging.log_path_depth
 
-        self.store_path = Path(store_path)
+        #: Where the store lives; ``store_path`` is its local directory, or
+        #: its ``s3://`` URL for a store on S3 (#350).
+        self.location = store_location(store_path)
+        self.store_path: Path | str = self.location.local_path or str(self.location)
         self.store_type = store_type
 
         # Compression — icechunk v2 only supports zstd
@@ -710,9 +721,12 @@ class MyIcechunkStore:
         """Remove .DS_Store files from the store directory tree.
 
         macOS creates these files automatically and they corrupt icechunk's
-        ref listing, causing 'invalid ref type `.DS_Store`' errors.
+        ref listing, causing 'invalid ref type `.DS_Store`' errors. A store
+        on S3 has no such files.
         """
-        for removed in sanitize_directory(self.store_path):
+        if self.location.local_path is None:
+            return
+        for removed in sanitize_directory(self.location.local_path):
             self._logger.debug(f"Removed {removed}")
 
     def _normalize_encodings(self, ds: xr.Dataset) -> xr.Dataset:
@@ -3512,8 +3526,10 @@ class MyIcechunkStore:
         for anything else (e.g. S3/GCS) since ``os.scandir`` doesn't apply.
         """
         counts: dict[str, int] = {}
+        if self.location.local_path is None:
+            return counts
         for name in ("manifests", "snapshots", "transactions"):
-            d = self.store_path / name
+            d = self.location.local_path / name
             try:
                 with os.scandir(d) as it:
                     counts[name] = sum(1 for _ in it)
@@ -4811,7 +4827,7 @@ def _cadence_info(epochs: np.ndarray) -> dict[str, Any]:
     }
 
 
-def open_gnss_store(store_path: Path) -> MyIcechunkStore:
+def open_gnss_store(store_path: StoreLocation | Path | str) -> MyIcechunkStore:
     """Open the GNSS store at ``store_path``; never create it.
 
     A run creates a site's stores when it first writes to them.
@@ -4824,7 +4840,7 @@ def open_gnss_store(store_path: Path) -> MyIcechunkStore:
     return MyIcechunkStore(store_path=store_path, store_type="gnss_store")
 
 
-def open_vod_store(store_path: Path) -> MyIcechunkStore:
+def open_vod_store(store_path: StoreLocation | Path | str) -> MyIcechunkStore:
     """Open the VOD store at ``store_path``; never create it.
 
     A run creates a site's stores when it first writes to them.

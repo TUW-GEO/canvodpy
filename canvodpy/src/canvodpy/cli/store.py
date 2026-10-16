@@ -31,7 +31,7 @@ console = Console()
 _STORE_KINDS = ("gnss", "vod")
 
 
-def _store_path(site_name: str, store_kind: str) -> tuple[Path, str]:
+def _store_path(site_name: str, store_kind: str) -> tuple[Path | str, str]:
     """Resolve a site + store kind (gnss/vod) to its path and store type.
 
     Exits cleanly with an actionable message if the site is unknown or the
@@ -39,6 +39,7 @@ def _store_path(site_name: str, store_kind: str) -> tuple[Path, str]:
     style (config.py, doctor.py), not a raw traceback.
     """
     from canvod.config import load_config
+    from canvod.store_metadata import store_exists
 
     if store_kind not in _STORE_KINDS:
         console.print(
@@ -62,7 +63,7 @@ def _store_path(site_name: str, store_kind: str) -> tuple[Path, str]:
         path = storage.get_vod_store_path(site_name)
         store_type = "vod_store"
 
-    if not path.exists():
+    if not store_exists(path):
         console.print(
             f"[yellow]⊘ No {store_kind} store yet for '{site_name}'[/yellow] ({path})"
         )
@@ -85,6 +86,7 @@ def list_stores(
 ) -> None:
     """List every configured site's GNSS and VOD store paths and status."""
     from canvod.config import load_config
+    from canvod.store_metadata import store_exists
 
     config = load_config()
     storage = config.processing.storage
@@ -109,7 +111,7 @@ def list_stores(
             path = get_path(site_name)
             status = (
                 "[green]✓ exists[/green]"
-                if path.exists()
+                if store_exists(path)
                 else "[dim]not yet created[/dim]"
             )
             table.add_row(site_name, kind, str(path), status)
@@ -399,6 +401,7 @@ def maintain_due(
         raise typer.Exit(1)
 
     from canvod.config import load_config
+    from canvod.store_metadata import store_exists
     from canvodpy.orchestrator.resources import is_pipeline_running
 
     config = load_config()
@@ -438,7 +441,7 @@ def maintain_due(
                 if kind == "gnss"
                 else storage.get_vod_store_path(site_name)
             )
-            if not path.exists():
+            if not store_exists(path):
                 console.print(
                     f"[dim]{site_name} ({kind}): no store yet, skipping.[/dim]"
                 )

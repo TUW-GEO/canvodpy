@@ -134,13 +134,19 @@ class Site:
         return self._site.vod_store
 
     @property
-    def gnss_store_path(self) -> Path:
-        """Where the site's GNSS store is, from the settings; read-only."""
+    def gnss_store_path(self) -> Path | str:
+        """Where the site's GNSS store is, from the settings; read-only.
+
+        A local directory, or the ``s3://`` URL of a store on S3.
+        """
         return self._site.gnss_store_path
 
     @property
-    def vod_store_path(self) -> Path:
-        """Where the site's VOD store is, from the settings; read-only."""
+    def vod_store_path(self) -> Path | str:
+        """Where the site's VOD store is, from the settings; read-only.
+
+        A local directory, or the ``s3://`` URL of a store on S3.
+        """
         return self._site.vod_store_path
 
     @deprecate_no_effect_arguments
@@ -379,6 +385,7 @@ class Pipeline:
         )
 
         # Lazy import to avoid circular dependency
+        from canvod.store_metadata import store_location
         from canvodpy.orchestrator import PipelineOrchestrator
         from canvodpy.run_history import recorded_run
 
@@ -391,7 +398,14 @@ class Pipeline:
                     log_dir=config.processing.logging.get_log_dir(),
                     settings=config.model_dump(mode="json"),
                     workers=n_workers,
-                    disks=[site.gnss_store_path, site.vod_store_path],
+                    # Free disk of local stores only; S3 has no disk here.
+                    disks=[
+                        location.local_path
+                        for location in map(
+                            store_location, (site.gnss_store_path, site.vod_store_path)
+                        )
+                        if location.local_path is not None
+                    ],
                     label=label,
                 )
             )

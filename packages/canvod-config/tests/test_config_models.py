@@ -594,14 +594,25 @@ class TestStorageConfig:
         assert sc.vod_store_strategy is None
 
     @pytest.mark.parametrize(
-        "url", ["s3://fangorn/stores", "S3://fangorn/stores", "gs://fangorn/stores"]
+        ("url", "root"),
+        [
+            ("s3://fangorn/stores", "s3://fangorn/stores"),
+            ("S3://fangorn/stores/", "s3://fangorn/stores"),
+            ("s3://fangorn", "s3://fangorn"),
+        ],
     )
-    def test_a_url_as_stores_root_dir_is_refused(self, url):
-        """Processing writes stores to local directories only (#240)."""
-        with pytest.raises(ValueError, match="local directory") as error:
+    def test_an_s3_url_is_a_stores_root(self, url, root):
+        """Runs write stores on S3 (#350)."""
+        sc = StorageConfig(stores_root_dir=url)
+        assert sc.stores_root_dir == root
+        assert sc.get_gnss_store_path("fangorn") == f"{root}/fangorn/rinex"
+        assert sc.get_vod_store_path("fangorn") == f"{root}/fangorn/vod"
+
+    @pytest.mark.parametrize("url", ["gs://fangorn/stores", "s3:///stores"])
+    def test_another_url_as_stores_root_dir_is_refused(self, url):
+        with pytest.raises(ValueError, match="s3://bucket/prefix") as error:
             StorageConfig(stores_root_dir=url)
         assert url in str(error.value)
-        assert "S3" in str(error.value)
 
     def test_a_string_path_is_expanded(self):
         sc = StorageConfig(stores_root_dir="~/fangorn")
