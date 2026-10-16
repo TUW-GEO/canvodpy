@@ -394,6 +394,16 @@ canvodpy store migrate-metadata ExampleSite --store gnss \
 In Python, `migrate_content_settings(store_path, who=..., values=...)`
 from `canvod.store_metadata.migration` does the same.
 
+A VOD store also gets its content settings (ADR 0019): the settings that
+shape the VOD output (its chunks and compression, `store_delta_snr` and
+`store_radial_diff`), plus `gnss_content_hash`, the content-settings hash
+of the GNSS store it was computed from. The migration takes the D1 keys
+from the store's first commit and `gnss_content_hash` from the GNSS store
+when it has content settings; otherwise it lists `gnss_content_hash` as
+missing, to give with `values={"gnss_content_hash": "..."}`. The
+calculator and its parameters of each group are recorded in the group's
+attributes (ADR 0019 D2), not in the content settings.
+
 ## List the stores of a directory
 
 ```python

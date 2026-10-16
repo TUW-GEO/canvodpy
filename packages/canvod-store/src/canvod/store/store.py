@@ -190,6 +190,12 @@ GROUP_WIDE_ACTION = "add_variables"
 #: Recorded in the ``write_strategy`` column of the VOD store's log book.
 VOD_WRITE_STRATEGY = "skip"
 
+#: Group attributes of a VOD group that record the calculator and its
+#: parameters (ADR 0019 D2): a group written with other parameters is
+#: refused rather than mixed silently.
+VOD_CALCULATOR_ATTR = "calculator"
+VOD_CALCULATOR_PARAMS_ATTR = "calculator_params"
+
 #: What a VOD write into day blocks does with a day already in the store:
 #: it skips a result from the same GNSS files and writes any other result
 #: into the day's slots, replacing what was there (ADR 0016).
@@ -454,6 +460,7 @@ class VodWriteItem:
     source_file_hashes: dict[str, str]
     source_gnss_stores: dict[str, str]
     calculator_name: str
+    calculator_params: dict | None = None
     commit_message: str | None = None
     #: Cadence in seconds of the day of ``dataset``, by day. Given, the
     #: result is written into day blocks (ADR 0016) and must cover exactly
@@ -2761,6 +2768,7 @@ class MyIcechunkStore:
         commit_msg: str,
         calculator_name: str,
         dataset_attrs: dict,
+        calculator_params: dict | None = None,
         write_strategy: str = VOD_WRITE_STRATEGY,
         epochs: int | None = None,
     ) -> None:
@@ -2794,6 +2802,7 @@ class MyIcechunkStore:
         """
         dataset_attrs, record = split_preprocessing(dataset_attrs)
         written_at = datetime.now(UTC).isoformat()
+        self._set_vod_calculator(zroot, group_name, calculator_name, calculator_params)
         row = {
             "source_file_hashes": json.dumps(source_file_hashes, sort_keys=True),
             "source_gnss_stores": json.dumps(source_gnss_stores, sort_keys=True),
@@ -2936,6 +2945,7 @@ class MyIcechunkStore:
         source_file_hashes: dict[str, str],
         source_gnss_stores: dict[str, str],
         calculator_name: str,
+        calculator_params: dict | None = None,
         append_dim: str = "epoch",
         branch: str = "main",
         commit_message: str | None = None,
@@ -2987,6 +2997,9 @@ class MyIcechunkStore:
         """
         validate_vod_dataset(dataset)
         self.check_preprocessing_matches(group_name, dataset, branch)
+        self._check_vod_calculator(
+            group_name, calculator_name, calculator_params, branch
+        )
         start = dataset.epoch.min().values
         end = dataset.epoch.max().values
 
@@ -3070,6 +3083,7 @@ class MyIcechunkStore:
                 commit_msg=commit_message,
                 calculator_name=calculator_name,
                 dataset_attrs=dict(dataset.attrs),
+                calculator_params=calculator_params,
             )
             commit_with_rebase(
                 session,
@@ -3083,6 +3097,65 @@ class MyIcechunkStore:
             f"({len(dataset.epoch)} epochs, calculator={calculator_name})"
         )
         return True
+
+    def _check_vod_calculator(
+        self,
+        group_name: str,
+        calculator_name: str,
+        calculator_params: dict | None,
+        branch: str = "main",
+    ) -> None:
+        """D2 (#355): refuse a VOD write with other calculator parameters.
+
+        Reads the group's recorded ``calculator`` and ``calculator_params``
+        attributes (ADR 0019 D2). A group without them (a first write, or a
+        store from before) accepts any and is recorded on write.
+        """
+        params = dict(calculator_params or {})
+        try:
+            with self.readonly_session(branch) as session:
+                group = zarr.open_group(session.store, mode="r")[group_name]
+        except KeyError:
+            return  # no group yet: a first write
+        if VOD_CALCULATOR_ATTR not in group.attrs:
+            return  # an older store without the record
+        stored_name = group.attrs[VOD_CALCULATOR_ATTR]
+        stored_params = json.loads(group.attrs.get(VOD_CALCULATOR_PARAMS_ATTR, "{}"))
+        if stored_name == calculator_name and stored_params == params:
+            return
+        differing = [
+            key
+            for key in sorted(set(stored_params) | set(params))
+            if stored_params.get(key) != params.get(key)
+        ]
+        listed = "\n".join(
+            f"  {key}: stored {json.dumps(stored_params.get(key))}, "
+            f"this run {json.dumps(params.get(key))}"
+            for key in differing
+        )
+        msg = (
+            f"Group '{group_name}' in {self.store_path} was written with "
+            f"calculator {stored_name} (parameters {stored_params}), but this "
+            f"run uses {calculator_name} (parameters {params}); "
+            f"{len(differing)} parameter(s) differ:\n{listed}\n"
+            "One VOD group must not mix calculator parameters. Use a new "
+            "analysis name (canvodpy store amend --add-vod-analysis) or a "
+            "new VOD store."
+        )
+        raise ValueError(msg)
+
+    def _set_vod_calculator(
+        self,
+        zroot: zarr.Group,
+        group_name: str,
+        calculator_name: str,
+        calculator_params: dict | None,
+    ) -> None:
+        """Record the calculator and its parameters on a VOD data group."""
+        params = json.dumps(dict(calculator_params or {}), sort_keys=True)
+        group = zroot[group_name]
+        group.attrs[VOD_CALCULATOR_ATTR] = calculator_name
+        group.attrs[VOD_CALCULATOR_PARAMS_ATTR] = params
 
     def _prepare_vod_write(
         self,
@@ -3106,6 +3179,9 @@ class MyIcechunkStore:
         """
         validate_vod_dataset(item.dataset)
         self.check_preprocessing_matches(item.group_name, item.dataset, branch)
+        self._check_vod_calculator(
+            item.group_name, item.calculator_name, item.calculator_params, branch
+        )
         start = item.dataset.epoch.min().values
         end = item.dataset.epoch.max().values
         day_blocked = item.cadences is not None
@@ -3214,6 +3290,7 @@ class MyIcechunkStore:
             action=plan.action,
             commit_msg=plan.commit_message,
             calculator_name=plan.item.calculator_name,
+            calculator_params=plan.item.calculator_params,
             dataset_attrs=dict(dataset.attrs),
         )
         return VodWriteResult(
@@ -3297,6 +3374,7 @@ class MyIcechunkStore:
                     action=plan.action,
                     commit_msg=plan.commit_message,
                     calculator_name=plan.item.calculator_name,
+                    calculator_params=plan.item.calculator_params,
                     dataset_attrs=dict(dataset.attrs),
                     write_strategy=VOD_DAY_BLOCK_WRITE_STRATEGY,
                     epochs=drop_empty_slots(dataset, group_name).sizes["epoch"],
@@ -3415,6 +3493,7 @@ class MyIcechunkStore:
                         action="write",
                         commit_msg=plan.commit_message,
                         calculator_name=plan.item.calculator_name,
+                        calculator_params=plan.item.calculator_params,
                         dataset_attrs=dict(plan.dataset.attrs),
                     )
                     results[group_name] = VodWriteResult(

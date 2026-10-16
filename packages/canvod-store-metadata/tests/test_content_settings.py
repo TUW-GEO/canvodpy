@@ -156,6 +156,21 @@ def test_a_store_without_content_settings_is_refused(tmp_path, settings):
         )
 
 
+def test_a_gnss_stores_hash_is_what_it_was_before():
+    """#355: settings_hash without a gnss hash is unchanged from before (#375).
+
+    The literal is what ``settings_hash`` of release/v1.0.0 (before #375)
+    gives for these settings.
+    """
+    from canvod.store_metadata.content import settings_hash
+
+    settings = {"sites": {"fangorn": {"receivers": {"canopy_01": {"type": "canopy"}}}}}
+    sids = {"canopy_01": ["G01|L1|C"]}
+    assert settings_hash(settings, sids) == (
+        "51125f03be366464a6718186b3e33aa014f0f6ed520261d0f19a34082c51221d"
+    )
+
+
 def test_content_settings_are_not_amendable(store):
     from canvod.store_metadata import amend_metadata
 

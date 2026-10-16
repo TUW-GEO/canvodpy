@@ -19,6 +19,7 @@ from .content import (
     ContentSettingsError,
     MissingContentSettingsError,
     check_content_settings,
+    check_gnss_hash,
 )
 from .inventory import (
     scan_stores,
@@ -84,6 +85,7 @@ __all__ = [
     "build_catalog",
     "apply_updates",
     "check_content_settings",
+    "check_gnss_hash",
     "check_receivers",
     "check_vod_analyses",
     "collect_config_snapshot",

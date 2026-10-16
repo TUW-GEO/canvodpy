@@ -638,8 +638,10 @@ def migrate_metadata_command(
 
 def _is_content_key(field: str) -> bool:
     """Whether a --set field of migrate-metadata names a content setting."""
-    from canvod.store_metadata.content import SETTINGS_ROOTS
+    from canvod.store_metadata.content import GNSS_CONTENT_HASH, SETTINGS_ROOTS
 
+    if field == GNSS_CONTENT_HASH:
+        return True
     return field.split(".", 1)[0] in SETTINGS_ROOTS
 
 
