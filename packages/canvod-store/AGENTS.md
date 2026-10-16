@@ -23,7 +23,10 @@ Background: `docs/packages/store/overview.md`,
 
 - **Dedup before writing**, in three layers: file hash already in the
   metadata table; time range overlapping stored files; overlap inside the
-  batch. A rejected file is reported, never written silently.
+  batch. A rejected file is reported, never written silently. A file of
+  another hash over stored epochs stops the run (`StoredOverlapError`)
+  unless the strategy writes over stored data; runs check it again at the
+  tip before each commit (#351).
 - **Write strategies** (`processing.storage.gnss_store_strategy`):
   `skip`, `overwrite`, `unsafe_append`; VOD writes always skip
   (`vod_store_strategy` is deprecated, has no effect). Their

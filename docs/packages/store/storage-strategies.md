@@ -32,11 +32,18 @@ settings. `canvodpy config show` prints the strategy in use under
 
 ## The strategies
 
-| Strategy | File already stored | New file |
-|---|---|---|
-| `skip` (default) | Not written; the run logs it. | Written |
-| `overwrite` | Its time range is replaced. | Written |
-| `unsafe_append` | Written again, next to the stored data. | Written |
+| Strategy | File already stored (same hash) | Another file over stored epochs | New file |
+|---|---|---|---|
+| `skip` (default) | Not written; the run logs it. | The run stops and names both files. | Written |
+| `overwrite` | Its time range is replaced. | Replaces the stored data; the log book says `overwritten`. | Written |
+| `unsafe_append` | Written again, next to the stored data. | As `overwrite` in a store of day blocks | Written |
+
+"Another file over stored epochs" is a file with another hash whose time
+span overlaps data stored from another file, for example a file that was
+exported again with other content, or another run's file for the same
+time. Neither file is preferred silently. The run checks this before it
+writes and again at the tip, just before each commit, so a run that lost
+a conflict to another run finds that run's files too.
 
 In a store made of [day blocks](overview.md#day-blocks), a file that is
 written again goes into the same slots, so `overwrite` and `unsafe_append`

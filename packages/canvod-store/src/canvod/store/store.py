@@ -123,6 +123,16 @@ def _with_run_id(commit_message: str) -> str:
     return f"{commit_message} (run={run_id})"
 
 
+class StoredOverlapError(Exception):
+    """A file's epochs fall on epochs a file with another hash already filled.
+
+    Deliberately not a ``ValueError``: the run stops on it instead of
+    skipping the file (grilling on two writers, 2026-10-15, Q11). Neither
+    file is preferred silently; ``gnss_store_strategy: overwrite`` replaces
+    the stored data on purpose.
+    """
+
+
 class BranchMovedError(RuntimeError):
     """A branch moved while work for it was staged on a temporary branch.
 
