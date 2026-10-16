@@ -257,14 +257,30 @@ def _write_day_block_group(
     """A day-block group with its log book.
 
     ``days`` maps each day (days after 2025-01-01) to its cadence in seconds;
-    every day gets all its slots. ``rows`` are log-book rows
+    every day gets all its slots, padded to whole chunks of 180 epochs, and
+    an entry in the block index. ``rows`` are log-book rows
     ``(hash, action, start_s, end_s, epochs)``, times in seconds after
     2025-01-01.
     """
-    seconds = np.concatenate(
-        [day * _DAY + np.arange(0, _DAY, cadence) for day, cadence in days.items()]
+    blocks, index, start = [], {}, 0
+    for day, cadence in days.items():
+        grid = day * _DAY + np.arange(0, _DAY, cadence)
+        pad = -grid.size % 180
+        # Padding times: just before the next day (whole seconds here).
+        blocks.append(np.concatenate([grid, (day + 1) * _DAY - pad + np.arange(pad)]))
+        stop = start + grid.size + pad
+        date = str(np.datetime64("2025-01-01") + np.timedelta64(day, "D"))
+        index[date] = {
+            "start": start,
+            "stop": stop,
+            "slots": grid.size,
+            "cadence_ns": cadence * 10**9,
+        }
+        start = stop
+    seconds = np.concatenate(blocks)
+    g = root.create_group(
+        name, attributes={"epoch_layout": "day_blocks", "day_block_index": index}
     )
-    g = root.create_group(name, attributes={"epoch_layout": "day_blocks"})
     epoch = g.create_array("epoch", shape=(seconds.size,), dtype="i8")
     epoch[:] = seconds
     epoch.attrs["units"] = "seconds since 2025-01-01 00:00:00"
@@ -329,7 +345,7 @@ def test_day_block_epochs_are_the_epochs_with_data(tmp_path):
     assert updates["summaries.temporal_resolution_s"] == 5.0
 
 
-def test_day_block_cadences_come_from_the_slots(tmp_path):
+def test_day_block_cadences_come_from_the_block_index(tmp_path):
     # Day 2 at 1 s was written before day 1 at 30 s; day 3 has a block but
     # no data (its file failed).
     store_path = _day_block_store(
@@ -360,6 +376,26 @@ def test_day_block_cadences_come_from_the_slots(tmp_path):
         },
     ]
     assert updates["summaries.temporal_resolution_s"] == 1.0
+
+
+def test_a_padded_day_keeps_its_cadence(tmp_path):
+    # 15 min: 96 slots, padded to 180 epochs; the block's length is not
+    # the cadence's.
+    store_path = _day_block_store(
+        tmp_path,
+        {"canopy_01": ({0: 900}, [("a", "initial", 0, 85500, 96)])},
+    )
+
+    updates = summarize_store(store_path, receivers={"canopy_01": "canopy"})
+
+    assert updates["instruments.receivers.canopy_01.cadences"] == [
+        {
+            "start": "2025-01-01T00:00:00Z",
+            "end": "2025-01-01T23:45:00Z",
+            "cadence_s": 900.0,
+        }
+    ]
+    assert updates["summaries.total_epochs"] == 96
 
 
 def test_a_file_over_midnight_counts_on_both_days(tmp_path):

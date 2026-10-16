@@ -17,7 +17,7 @@ import numpy as np
 import zarr
 from canvod.config.models.sites import reference_store_group
 
-from .layout import is_day_block_group
+from .layout import DAY_BLOCK_INDEX_ATTR, is_day_block_group
 
 if TYPE_CHECKING:
     from .location import StoreLocation
@@ -226,33 +226,49 @@ def _logged_files(
     return files
 
 
+def _block_index(group: zarr.Group) -> dict[np.datetime64, tuple[int, int]]:
+    """Each day's cadence (ns) and number of slots, from the block index.
+
+    The block index (``DAY_BLOCK_INDEX_ATTR``) gives them; the length of a
+    day's block does not, since blocks are padded to whole chunks.
+    """
+    index = group.attrs.get(DAY_BLOCK_INDEX_ATTR)
+    if not isinstance(index, Mapping):
+        msg = (
+            f"Day-block group {group.path} has no block index; its cadences "
+            "cannot be summarized"
+        )
+        raise ValueError(msg)
+    return {
+        np.datetime64(str(day), "D"): (int(entry["cadence_ns"]), int(entry["slots"]))
+        for day, entry in index.items()
+    }
+
+
 def _block_days(
-    epochs: np.ndarray, files: Mapping[str, tuple[int, np.datetime64, np.datetime64]]
+    index: Mapping[np.datetime64, tuple[int, int]],
+    files: Mapping[str, tuple[int, np.datetime64, np.datetime64]],
 ) -> dict[np.datetime64, _DaySpan]:
     """Each day's cadence and first and last epoch, in a day-block group.
 
-    A day's cadence is the day divided by its slots; its first and last
-    epoch come from the files covering it. Days without files (a block
-    whose files failed) are left out.
+    A day's cadence comes from the block index (:func:`_block_index`); its
+    first and last epoch come from the files covering it, up to the day's
+    last slot. Days without files (a block whose files failed) are left out.
     """
-    days, slots = np.unique(epochs.astype("M8[D]"), return_counts=True)
-    cadences = {
-        day: round(86400 / int(n), 3) for day, n in zip(days, slots, strict=True)
-    }
     spans: dict[np.datetime64, _DaySpan] = {}
     for _, start, end in files.values():
         day = start.astype("M8[D]")
         while day <= end.astype("M8[D]"):
-            cadence = cadences[day]
-            last_slot = (day + _DAY).astype("M8[ns]") - np.timedelta64(
-                int(cadence * 1e9), "ns"
+            cadence_ns, slots = index[day]
+            last_slot = day.astype("M8[ns]") + np.timedelta64(
+                (slots - 1) * cadence_ns, "ns"
             )
             first = max(start, day.astype("M8[ns]"))
             last = min(end, last_slot)
             if day in spans:
                 _, f, la = spans[day]
                 first, last = min(first, f), max(last, la)
-            spans[day] = (cadence, first, last)
+            spans[day] = (cadence_ns / 1e9, first, last)
             day = day + _DAY
     return spans
 
@@ -266,14 +282,13 @@ def _group_summary(group: zarr.Group) -> dict[str, Any]:
     hold data and ``epochs`` is empty. ``days`` gives each day's cadence
     and its first and last epoch with data.
     """
-    all_epochs = _decode_epochs(_array(group, "epoch"))
     if is_day_block_group(group.attrs):
         files = _logged_files(group)
         epochs = np.array([], dtype="M8[ns]")
-        days = _block_days(all_epochs, files)
+        days = _block_days(_block_index(group), files)
     else:
         files = {}
-        epochs = np.unique(all_epochs)
+        epochs = np.unique(_decode_epochs(_array(group, "epoch")))
         days = _epoch_days(epochs)
     variables = sorted(name for name, arr in group.arrays() if len(arr.shape) >= 2)
     sids = np.asarray(_array(group, "sid")[...]) if "sid" in group else np.array([])
