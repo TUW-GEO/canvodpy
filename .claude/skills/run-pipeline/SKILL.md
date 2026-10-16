@@ -30,7 +30,8 @@ just run <site> <YYYYDOY> <YYYYDOY>
 ```
 
 The recipe and the `canvodpy run` command are the same code. Without
-`--start`, `canvodpy run` resumes after the last day in the store; other
+`--start`, `canvodpy run` processes the receiver-days of the last 30 days
+with files the store doesn't hold (older gaps need `--start`); other
 options (`--no-vod`, `--workers`, `--ephemeris-source`, `--config`,
 `--write-catalog`, `--label`) are in
 `docs/guides/api-levels.md`. A settings folder other than the default:

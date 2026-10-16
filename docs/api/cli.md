@@ -56,12 +56,11 @@ $ canvodpy run [OPTIONS]
 **Options**:
 
 * `--site <str>`: Site name, as defined under sites: in canvod-settings.yaml, for example ExampleSite. Repeat the option for several sites, which run one after the other.  [required]
-* `--start <str>`: Start date in YYYYDOY format, for example 2025001. If omitted, resumes from the last processed date in the store.
+* `--start <str>`: Start date in YYYYDOY format, for example 2025001. If omitted, processes the days of the last 30 with files the GNSS store doesn't hold yet (all days if the store is empty).
 * `--end <str>`: End date in YYYYDOY format, for example 2025007. If omitted, processes up to today.
 * `--no-vod / --vod`: Skip the VOD calculation: only write the observations to the GNSS store.  [default: vod]
 * `--label <str>`: Free-text label of the run, stored in the run history, for example to group the repetitions of a benchmark.
 * `--dry-run / --no-dry-run`: Preview processing plan without executing.  [default: no-dry-run]
-* `--rescan`: List every folder of the receiver directories and renew the file index (a dry run does not save it). Without it, a run takes folders whose files are all older than 30 days from the file index in the run history, so a file added to, deleted from or compressed in such a folder is seen only with --rescan.
 * `--workers <int>`: Number of worker processes. Default: from the resource settings in canvod-settings.yaml.
 * `--days-per-batch <int>`: Number of days that the workers process together. Default: processing.params.days_per_batch in canvod-settings.yaml.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
@@ -494,7 +493,7 @@ by day: every day gets a block of slots at its cadence, the finest step
 between its epochs. An epoch stored more than once keeps the entry
 written last. The groups keep their attributes, log books and other
 metadata, and get the chunks of the settings
-(processing.icechunk.chunk_strategies).
+(`processing.icechunk.chunk_strategies`).
 
 Shows what it will do and asks first. Everything goes into one commit;
 snapshots from before stay readable. A store written before repository

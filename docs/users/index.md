@@ -43,7 +43,7 @@ You need:
   Windows. All commands on this page are typed there.
 - **uv**, the tool that installs canVODpy and Python for you. Follow the
   [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
-  canVODpy needs Python 3.14 or later; if you don't have it, uv downloads
+  canVODpy needs Python 3.14; if you don't have it, uv downloads
   it.
 - **An internet connection** during processing, to download the
   satellite orbits and clocks.
@@ -333,9 +333,9 @@ example, `2025001` is January 1, 2025 and `2025032` is February 1, 2025.
     site. On a network drive this can take minutes. The CLI says, for each
     receiver, which folder it is scanning, and afterwards how many files and
     days it found, so you can see that the run is working. The next run is
-    faster: it takes folders whose files are all older than 30 days from a
-    [file index](../packages/naming/overview.md#old-folders-come-from-the-file-index).
-    A file added to such an old folder is found only with `--rescan`.
+    faster: it lists only the folders of the days it processes and takes
+    the others from a
+    [file index](../packages/naming/overview.md#folders-of-other-days-come-from-the-file-index).
 
     To see what a run would process without running it, add `--dry-run`.
 
@@ -366,9 +366,10 @@ Files that are already in the store are skipped.
     canvodpy run --site ExampleSite --start 2025001 --end 2025031
     ```
 
-    Leave out `--start` and the run continues from the last day in the
-    store. Leave out `--end` and it processes up to today. So this command
-    picks up wherever the last run stopped:
+    Leave out `--start` and the run processes the days of the last 30
+    with files that are not in the store yet. Leave out `--end` and it
+    processes up to today. So this command picks up the new files, also
+    a file that arrived late for an earlier day:
 
     ```bash
     canvodpy run --site ExampleSite

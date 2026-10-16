@@ -44,13 +44,12 @@ import subprocess
 import sys
 import time
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import datetime, timedelta
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Annotated
 
-import numpy as np
 import structlog
 import typer
 import xarray as xr
@@ -71,10 +70,14 @@ from canvod.utils.logging import (
 )
 from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
 from canvodpy.logging import emit_run_summary
-from canvodpy.orchestrator.discovery import RECENT_DAYS
 from canvodpy.orchestrator.store_retry import call_with_store_retries
 
 log = structlog.get_logger(__name__)
+
+# A run without dates looks at this many days before the end for files the
+# GNSS store doesn't hold yet (#386): late files and receivers whose files
+# arrive days after the others. Older gaps need --start/--end.
+RESUME_WINDOW_DAYS = 30
 
 
 def _pick_free_port(host: str) -> int:
@@ -133,57 +136,6 @@ class EphemerisSourceChoice(enum.StrEnum):
     broadcast = "broadcast"
 
 
-def _last_processed_date(store) -> str | None:
-    """Query the store's metadata tables for the latest processed epoch.
-
-    Returns YYYYDOY string or None if the store is empty.
-    """
-    try:
-        groups = store.list_groups()
-    except Exception:
-        return None
-
-    if not groups:
-        return None
-
-    latest_epoch = None
-    with store.readonly_session() as session:
-        for group in groups:
-            try:
-                df = store.read_metadata_table(session, group)
-                if df.is_empty():
-                    continue
-                group_max = df["end"].max()
-                if latest_epoch is None or group_max > latest_epoch:
-                    latest_epoch = group_max
-            except Exception:
-                continue
-
-    if latest_epoch is None:
-        return None
-
-    # Convert polars datetime to YYYYDOY
-    if hasattr(latest_epoch, "to_pydatetime"):
-        dt = latest_epoch  # polars Datetime
-    else:
-        dt = latest_epoch
-
-    # polars returns python datetime
-    import polars as pl
-
-    if isinstance(latest_epoch, pl.Series):
-        latest_epoch = latest_epoch.item()
-
-    if hasattr(latest_epoch, "timetuple"):
-        tt = latest_epoch.timetuple()
-        return f"{tt.tm_year}{tt.tm_yday:03d}"
-
-    # numpy datetime64 fallback
-    ts = (latest_epoch - np.datetime64("1970-01-01T00:00:00")) / np.timedelta64(1, "s")
-    dt = datetime.fromtimestamp(float(ts), tz=UTC).replace(tzinfo=None)
-    return f"{dt.year}{dt.timetuple().tm_yday:03d}"
-
-
 def _today_yyyydoy() -> str:
     now = datetime.now()
     return f"{now.year}{now.timetuple().tm_yday:03d}"
@@ -207,32 +159,52 @@ def _site_groups(site) -> list[str]:
     return canopy_names + pair_names
 
 
-def _resolve_date_range(args, site) -> tuple[str, str]:
-    """Resolve start/end from args, store state, and today's date."""
-    # End date: explicit or today
+def _store_has_data(site) -> bool:
+    """Whether the site's GNSS store exists and holds a receiver group."""
+    if not store_exists(site.gnss_store_path):
+        return False
+    return bool(site.gnss_store.list_groups())
+
+
+def _resolve_date_range(args, site) -> tuple[str, str, bool]:
+    """The run's first and last day (``YYYYDOY``), and whether only new files count.
+
+    Explicit dates process every day in the range. Without ``--start`` a
+    run resumes: it looks at the last :data:`RESUME_WINDOW_DAYS` days up to
+    the end and processes only the receiver-days with a file the GNSS store
+    doesn't hold (#386). A first run on an empty store starts from the
+    oldest data.
+    """
     end = args.end or _today_yyyydoy()
-
-    # Start date: explicit, or resume from store
     if args.start:
-        start = args.start
-    else:
-        last = (
-            _last_processed_date(site.gnss_store)
-            if store_exists(site.gnss_store_path)
-            else None
-        )
-        if last is not None:
-            # Start from the day after the last processed date
-            # (the skip strategy handles overlap, but this avoids
-            #  scanning days we know are complete)
-            start = last  # include last day too — skip handles duplicates
-            print(f"  resuming from store (last processed: {last})")
-        else:
-            # Empty store: start from earliest available data
-            start = "2000001"
-            print("  empty store, scanning all available data")
+        return args.start, end, False
+    if not _store_has_data(site):
+        print("  empty store, scanning all available data")
+        return "2000001", end, False
+    last = datetime.strptime(end, "%Y%j") - timedelta(days=RESUME_WINDOW_DAYS)
+    return last.strftime("%Y%j"), end, True
 
-    return start, end
+
+def _print_resume_line(
+    emit: Callable[[str], None],
+    start: str,
+    end: str,
+    receiver_days: list[tuple[str, str]],
+) -> None:
+    """Say through ``emit`` which receiver-days a run without dates resumes.
+
+    ``receiver_days`` are ``(YYYYDOY, receiver)`` pairs with a file the
+    GNSS store doesn't hold.
+    """
+    if not receiver_days:
+        emit(f"  resuming: no receiver-days with new files from {start} to {end}")
+        return
+    shown = ", ".join(f"{day} {receiver}" for day, receiver in receiver_days[:10])
+    more = len(receiver_days) - 10
+    if more > 0:
+        shown += f" and {more} more"
+    noun = "receiver-day" if len(receiver_days) == 1 else "receiver-days"
+    emit(f"  resuming: {len(receiver_days)} {noun} with new files ({shown})")
 
 
 def _compute_vod_for_day(
@@ -401,7 +373,7 @@ def _main_impl(args: SimpleNamespace) -> int:
     if args.dry_run:
         for site_name in site_names:
             site = Site(site_name)
-            start, end = _resolve_date_range(args, site)
+            start, end, new_files_only = _resolve_date_range(args, site)
 
             on_discovery_start, on_discovery_end = _discovery_callbacks(print)
             with site.pipeline(
@@ -410,9 +382,11 @@ def _main_impl(args: SimpleNamespace) -> int:
                 dry_run=True,
                 on_discovery_start=on_discovery_start,
                 on_discovery_end=on_discovery_end,
-                rescan=args.rescan,
+                on_new_files=partial(_print_resume_line, print, start, end),
             ) as pipeline:
-                plan = pipeline.preview(start=start, end=end)
+                plan = pipeline.preview(
+                    start=start, end=end, new_files_only=new_files_only
+                )
                 print(f"Dry-run plan for {site_name}:")
                 for k, v in plan.items():
                     print(f"  {k}: {v}")
@@ -429,15 +403,15 @@ def _main_impl(args: SimpleNamespace) -> int:
 
     # Resolve every site upfront: date range + receiver-group rows, so a
     # multi-site run shows the full picture from the start.
-    site_infos: list[tuple[str, Site, str, str]] = []
+    site_infos: list[tuple[str, Site, str, str, bool]] = []
     rows: list[tuple[str, str, int]] = []
     for site_name in site_names:
         site = Site(site_name)
-        start, end = _resolve_date_range(args, site)
+        start, end, new_files_only = _resolve_date_range(args, site)
         total = day_count(start, end)
         for group in _site_groups(site):
             rows.append((site_name, group, total))
-        site_infos.append((site_name, site, start, end))
+        site_infos.append((site_name, site, start, end, new_files_only))
 
     total_days = 0
     total_vod = 0
@@ -453,7 +427,7 @@ def _main_impl(args: SimpleNamespace) -> int:
     # instead of racing an in-progress write. Same-host only; see
     # PipelineRunLock's docstring for the network-mounted-store caveat.
     with PipelineRunLock(), make_reporter(rows) as reporter:
-        for site_name, site, start, end in site_infos:
+        for site_name, site, start, end, new_files_only in site_infos:
             # One run_id per site: failures are site-scoped, and this keeps
             # correlation with Icechunk commits (also per-site-store) clean.
             run_id = new_run_id(site_name)
@@ -547,9 +521,11 @@ def _main_impl(args: SimpleNamespace) -> int:
                     label=args.label,
                     on_discovery_start=on_discovery_start,
                     on_discovery_end=on_discovery_end,
-                    rescan=args.rescan,
+                    on_new_files=partial(_print_resume_line, reporter.log, start, end),
                 ) as pipeline:
-                    gen = pipeline.process_range(start=start, end=end)
+                    gen = pipeline.process_range(
+                        start=start, end=end, new_files_only=new_files_only
+                    )
                     while True:
                         t_pipeline = time.perf_counter()
                         try:
@@ -703,7 +679,8 @@ def run(
             "--start",
             help=(
                 "Start date in YYYYDOY format, for example 2025001. If omitted, "
-                "resumes from the last processed date in the store."
+                "processes the days of the last 30 with files the GNSS store "
+                "doesn't hold yet (all days if the store is empty)."
             ),
         ),
     ] = None,
@@ -736,20 +713,6 @@ def run(
         typer.Option(
             "--dry-run/--no-dry-run",
             help="Preview processing plan without executing.",
-        ),
-    ] = False,
-    rescan: Annotated[
-        bool,
-        typer.Option(
-            "--rescan",
-            help=(
-                "List every folder of the receiver directories and renew the "
-                "file index (a dry run does not save it). Without it, a run "
-                f"takes folders whose files are all older than {RECENT_DAYS} "
-                "days from the file index in the run history, so a file "
-                "added to, deleted from or compressed in such a folder is "
-                "seen only with --rescan."
-            ),
         ),
     ] = False,
     workers: Annotated[
@@ -842,7 +805,6 @@ def run(
         no_vod=no_vod,
         label=label,
         dry_run=dry_run,
-        rescan=rescan,
         workers=workers,
         days_per_batch=days_per_batch,
         config=config,

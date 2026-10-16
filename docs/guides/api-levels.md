@@ -45,7 +45,6 @@ Dates are `YYYYDDD`: the year and the day of year, for example
 | `--no-vod` | Leave out `site.vod` | Write the observations to the GNSS store and compute no VOD. |
 | `--dry-run` | `pipeline.preview(start, end)` | List the days, receivers and files a run would process, without processing them. |
 | `--write-catalog` | `write_catalog(stores_root_dir)` after the run | After a successful run, write the [STAC catalog](../packages/store-metadata/overview.md#write-the-stac-catalog) of every store under the data root. Without it, a run writes no catalog. |
-| `--rescan` | `site.pipeline(rescan=True)` | List every folder of the receiver directories. Without it, folders whose files are all older than 30 days come from the [file index](../packages/naming/overview.md#old-folders-come-from-the-file-index), so a file added to such a folder is found only with `--rescan`. |
 | `--label` | `site.pipeline(label=...)` | Free-text label stored with the run in the [run history](diagnostics.md#the-run-history), for example to group the repetitions of a benchmark. |
 | `--workers` | `site.pipeline(n_workers=...)` | Number of worker processes. |
 | `--days-per-batch` | `site.pipeline(days_per_batch=...)` | Number of days the workers process together. |
@@ -90,14 +89,26 @@ In Python, you name the days: `process_date` processes one,
 On the command line, `--start` and `--end` are optional:
 
 - Without `--end`, the run ends today.
-- Without `--start`, the run starts at the last day in the site's GNSS
-  store and processes that day again, in case it was incomplete. If the
-  store is empty, the run processes every day it finds data for.
+- Without `--start`, the run looks at the last 30 days up to the end and
+  processes only the days on which a receiver has a file that the site's
+  GNSS store doesn't hold yet. It compares file names with the store's
+  log book, so it reads no file to find them. If the store is empty, the
+  run processes every day it finds data for.
 
-So `canvodpy run --site ExampleSite` picks up wherever the last run
-stopped. With the default `gnss_store_strategy: skip`, files that are
-already in the store are skipped, so running a day twice doesn't
-duplicate data.
+So `canvodpy run --site ExampleSite` picks up the new files of the last
+30 days: the days since the last run, a file that arrived late for an
+earlier day, and the days of a receiver whose files arrive a few days
+after the others. It prints them first, for example
+`resuming: 2 receiver-days with new files (2026285 canopy_01, 2026286 canopy_01)`.
+A day with no files in the archive is not looked at again. For new files
+older than 30 days, give `--start` and `--end`: with explicit dates the
+run processes every day in the range. With the default
+`gnss_store_strategy: skip`, files that are already in the store are
+skipped, so running a day twice doesn't duplicate data.
+
+In Python, `process_range(start, end, new_files_only=True)` does the
+same for any range, and `site.pipeline(on_new_files=...)` receives the
+`(day, receiver)` pairs it found.
 
 ---
 
@@ -133,8 +144,8 @@ GNSS store. Use it in a `with` block, which closes it at the end.
 | Method | What it does |
 |---|---|
 | `process_date(date)` | Processes one day. Returns one dataset per receiver. |
-| `process_range(start, end)` | Processes the days from `start` to `end`. Yields `(date, datasets)` for one day at a time. |
-| `preview(start=None, end=None)` | Returns the days, receivers and files a run would process. Without dates, it covers every day it finds data for. |
+| `process_range(start, end, new_files_only=False)` | Processes the days from `start` to `end`. Yields `(date, datasets)` for one day at a time. With `new_files_only=True`, only the days on which a receiver has a file the GNSS store doesn't hold. |
+| `preview(start=None, end=None, new_files_only=False)` | Returns the days, receivers and files a run would process. Without dates, it covers every day it finds data for. |
 | `failed_receiver_days` | The receiver-days of this pipeline that failed, as `(receiver, date)` pairs. Empty when every one is written or skipped. |
 | `close()` | Ends the pipeline. The `with` block calls it for you. The worker processes stay for reuse; see [Parallel processing](parallel-processing.md#the-worker-processes). |
 

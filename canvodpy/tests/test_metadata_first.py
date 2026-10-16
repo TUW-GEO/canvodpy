@@ -179,11 +179,11 @@ class TestFirstRun:
 
         site = Site(testing.SITE_KEY)
 
-        start, end = _resolve_date_range(
+        start, end, new_files_only = _resolve_date_range(
             SimpleNamespace(start=None, end="2025002"), site
         )
 
-        assert (start, end) == ("2000001", "2025002")
+        assert (start, end, new_files_only) == ("2000001", "2025002", False)
         assert not site.gnss_store_path.exists()
 
     def test_the_pipeline_content_settings_check_passes_without_a_gnss_store(

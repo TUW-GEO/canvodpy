@@ -40,6 +40,8 @@ def _orchestrator(base: Path, canopy_format: str = "sbf") -> PipelineOrchestrato
         },
     )
     orch._logger = mock.MagicMock()
+    # Scheduling only: the lookups below list every folder themselves.
+    orch._find_files = lambda start, end: None
     return orch
 
 

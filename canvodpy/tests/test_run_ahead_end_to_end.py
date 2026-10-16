@@ -54,9 +54,7 @@ def two_days(rosalia_site, tmp_path):
 def _pipeline():
     from canvodpy import Site
 
-    # rescan: the file index of an earlier run would hide files added to a
-    # folder of old days (#299)
-    return Site(testing.SITE_KEY).pipeline(n_workers=2, days_per_batch=1, rescan=True)
+    return Site(testing.SITE_KEY).pipeline(n_workers=2, days_per_batch=1)
 
 
 def _stored(store_path: Path) -> dict[str, set[str]]:

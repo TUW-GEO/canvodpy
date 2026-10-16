@@ -78,7 +78,9 @@ def _day_files(
     Same discovery and the same receiver checks as ``canvodpy run`` (see
     :mod:`canvodpy.orchestrator.discovery`): the receiver's naming recipe if
     it has one, otherwise canonical canVOD names only, found anywhere below
-    the receiver's directory by the date in their names.
+    the receiver's directory by the date in their names. Like a run of
+    this one day, it lists the folders holding the day and takes the others
+    from the file index in the run history (ADR 0020), without saving it.
 
     Parameters
     ----------
@@ -109,11 +111,23 @@ def _day_files(
         clear_discovery_cache,
         discover_files,
         recipe_file,
+        saved_file_index,
+        scan_directory,
     )
 
     base = site_cfg.get_base_path()
     # Files may have arrived since the previous task in this process.
     clear_discovery_cache()
+    day = date_obj.to_str()
+    config = load_config()
+    for rcfg in site_cfg.receivers.values():
+        directory, recipe = base / rcfg.directory, recipe_file(site, rcfg.recipe)
+        scan_directory(
+            directory,
+            recipe,
+            file_index=saved_file_index(config, directory, recipe),
+            days=(day, day),
+        )
     check_receivers(
         {name: rcfg.model_dump() for name, rcfg in site_cfg.receivers.items()},
         base,

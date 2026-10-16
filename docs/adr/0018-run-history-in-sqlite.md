@@ -16,8 +16,9 @@ canvodpy that groups runs by label. The log files stay for diagnosing a
 run; they are no longer a data source.
 
 The same file may hold an index of the files found per receiver folder,
-in tables of its own. If the index is lost or out of date, the next run
-builds it again.
+in tables of its own. A run takes from it only the folders that hold none
+of the days it processes (ADR 0020). If the index is lost or can't be
+read, the next run lists every folder and builds it again.
 
 ## Considered options
 
