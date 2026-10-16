@@ -23,6 +23,7 @@ from .identity import (
     stac_link,
     store_id,
 )
+from .location import StoreLocation, store_location
 from .schema import (
     ConfigSnapshot,
     Creator,
@@ -481,7 +482,7 @@ def collect_metadata(
     site_config: Any,
     store_type: str,
     source_format: str,
-    store_path: Path | None = None,
+    store_path: StoreLocation | Path | str | None = None,
     dask_workers: int | None = None,
     dask_threads_per_worker: int | None = None,
 ) -> StoreMetadata:
@@ -529,7 +530,10 @@ def collect_metadata(
         ),
         processing=collect_processing_provenance(store_type, source_format),
         environment=collect_environment(
-            store_path, dask_workers, dask_threads_per_worker
+            # The free disk of a local store's folder; S3 has none.
+            None if store_path is None else store_location(store_path).local_path,
+            dask_workers,
+            dask_threads_per_worker,
         ),
         config=collect_config_snapshot(config),
         references=collect_references(config),

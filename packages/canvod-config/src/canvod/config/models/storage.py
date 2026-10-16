@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Literal
 
@@ -10,6 +11,9 @@ from pydantic import Field, field_validator, model_validator
 from canvod.utils.tools import deprecated
 
 from .base import _StrictModel
+
+#: ``scheme://rest`` of a URL in ``stores_root_dir``.
+_URL = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*)://(.*)$")
 
 
 class MaintenanceConfig(_StrictModel):
@@ -94,11 +98,13 @@ class StorageConfig(_StrictModel):
     This is a Pydantic model for configuration validation.
     """
 
-    stores_root_dir: Path = Field(
+    stores_root_dir: Path | str = Field(
         ...,
         description=(
             "Folder of the stores: each site's GNSS store and VOD store are "
-            "under it. Must exist and be writable."
+            "under it. A local folder (must exist and be writable) or "
+            "s3://bucket/prefix; credentials, region and endpoint of S3 come "
+            "from the environment."
         ),
     )
     gnss_store_name: str = Field(
@@ -191,18 +197,24 @@ class StorageConfig(_StrictModel):
     @field_validator("stores_root_dir", mode="before")
     @classmethod
     def validate_stores_dir(cls, v: object) -> object:
-        """Expand ~ and reject placeholder values and URLs in stores_root_dir.
+        """Expand ~, keep an S3 URL, reject placeholders and other URLs.
 
         Checked before the value becomes a ``Path``, which would turn
         ``s3://bucket/prefix`` into the local path ``s3:/bucket/prefix``.
+        An S3 URL stays a string, as ``s3://bucket/prefix`` without a
+        trailing slash (#350).
         """
         if isinstance(v, str):
-            if "://" in v:
-                raise ValueError(
-                    f"stores_root_dir is set to {v!r}: processing writes "
-                    "stores to a local directory only; writing stores to S3 "
-                    "comes later. Set a local directory in canvod-settings.yaml."
-                )
+            match = _URL.match(v.strip())
+            if match is not None:
+                scheme, rest = match.groups()
+                bucket = rest.partition("/")[0]
+                if scheme.lower() != "s3" or not bucket:
+                    raise ValueError(
+                        f"stores_root_dir is set to {v!r}: give a local "
+                        "directory or s3://bucket/prefix in canvod-settings.yaml."
+                    )
+                return f"s3://{rest.strip('/')}"
             if v.strip() in {"/path/to/stores", "/path/to/your/stores"}:
                 raise ValueError(
                     f"stores_root_dir is set to placeholder {v!r}: "
@@ -211,7 +223,13 @@ class StorageConfig(_StrictModel):
             return Path(v).expanduser()
         return v
 
-    def get_gnss_store_path(self, site_name: str) -> Path:
+    def _site_store(self, site_name: str, store_name: str) -> Path | str:
+        """The store ``store_name`` of ``site_name`` below ``stores_root_dir``."""
+        if isinstance(self.stores_root_dir, str):
+            return f"{self.stores_root_dir}/{site_name}/{store_name}"
+        return self.stores_root_dir / site_name / store_name
+
+    def get_gnss_store_path(self, site_name: str) -> Path | str:
         """Get the GNSS store path for a site.
 
         Parameters
@@ -221,20 +239,21 @@ class StorageConfig(_StrictModel):
 
         Returns
         -------
-        Path
-            Path to the site's GNSS store.
+        Path | str
+            Path to the site's GNSS store, or its ``s3://`` URL when
+            ``stores_root_dir`` is one.
         """
-        return self.stores_root_dir / site_name / self.gnss_store_name
+        return self._site_store(site_name, self.gnss_store_name)
 
     @deprecated(
         "StorageConfig.get_rinex_store_path() is left over from development and will be removed with the next major version. "
         "Use StorageConfig.get_gnss_store_path() instead."
     )
-    def get_rinex_store_path(self, site_name: str) -> Path:
+    def get_rinex_store_path(self, site_name: str) -> Path | str:
         """Deprecated: use get_gnss_store_path instead."""
         return self.get_gnss_store_path(site_name)
 
-    def get_vod_store_path(self, site_name: str) -> Path:
+    def get_vod_store_path(self, site_name: str) -> Path | str:
         """Get the VOD store path for a site.
 
         Parameters
@@ -244,12 +263,13 @@ class StorageConfig(_StrictModel):
 
         Returns
         -------
-        Path
-            Path to the site's VOD store.
+        Path | str
+            Path to the site's VOD store, or its ``s3://`` URL when
+            ``stores_root_dir`` is one.
         """
-        return self.stores_root_dir / site_name / self.vod_store_name
+        return self._site_store(site_name, self.vod_store_name)
 
-    def get_statistics_store_path(self, site_name: str) -> Path:
+    def get_statistics_store_path(self, site_name: str) -> Path | str:
         """Get the statistics store path for a site.
 
         Parameters
@@ -259,12 +279,13 @@ class StorageConfig(_StrictModel):
 
         Returns
         -------
-        Path
-            Path to the site's statistics store.
+        Path | str
+            Path to the site's statistics store, or its ``s3://`` URL when
+            ``stores_root_dir`` is one.
         """
-        return self.stores_root_dir / site_name / self.statistics_store_name
+        return self._site_store(site_name, self.statistics_store_name)
 
-    def get_rollup_store_path(self, site_name: str) -> Path:
+    def get_rollup_store_path(self, site_name: str) -> Path | str:
         """Get the hemigrid rollup store path for a site.
 
         Parameters
@@ -274,10 +295,11 @@ class StorageConfig(_StrictModel):
 
         Returns
         -------
-        Path
-            Path to the site's hemigrid rollup store.
+        Path | str
+            Path to the site's hemigrid rollup store, or its ``s3://`` URL when
+            ``stores_root_dir`` is one.
         """
-        return self.stores_root_dir / site_name / self.rollup_store_name
+        return self._site_store(site_name, self.rollup_store_name)
 
     def get_aux_data_dir(self) -> Path:
         """Get the directory for auxiliary data files.

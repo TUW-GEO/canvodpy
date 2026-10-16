@@ -649,7 +649,7 @@ def ensure_metadata(
 
 
 def ensure_store_metadata(
-    store_path: Path,
+    store_path: StoreLocation | Path | str,
     *,
     config: Any,
     site_name: str,
