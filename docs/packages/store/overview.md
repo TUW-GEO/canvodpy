@@ -126,7 +126,8 @@ store again, uses the blocks already there, and adds the rest.
   day_blocks`) and the block of each day in `day_block_index` (start and
   stop on the `epoch` axis, slots, cadence). A store whose groups were
   written by appending files to the `epoch` axis, by canVODpy versions
-  before day blocks, is still written that way.
+  before day blocks, is refused by runs until it is moved to day blocks
+  (see [Moving a store to day blocks](#moving-a-store-to-day-blocks)).
 
 `GnssResearchSite.read_receiver_data()` returns only the slots with data.
 `MyIcechunkStore.read_group()` returns every slot; with `drop_empty=True`
@@ -150,15 +151,46 @@ has its own slot. Slots without VOD hold NaN.
   after more files of the day were stored, is written into the day's
   slots and replaces the VOD that was there. Its log-book row records the
   action `overwrite`.
-- When the GNSS groups were written by appending, the VOD group is
-  written by appending too, and a result whose epochs overlap stored VOD
-  isn't written. A VOD store group written by appending can't take VOD of
-  GNSS groups made of day blocks (`LayoutError`): write it to a new VOD
-  store (set another `processing.storage.vod_store_name`).
+- VOD is computed only from GNSS groups made of day blocks, and written
+  only into VOD store groups made of day blocks. Either store written by
+  appending is refused (`LayoutError`, naming the command that moves it).
 
 `GnssResearchSite.read_vod_analysis()` leaves out the empty slots, as
 `read_receiver_data()` does; with `drop_empty=False` it returns every
 slot.
+
+### Moving a store to day blocks
+
+A store written by canVODpy versions before day blocks holds groups
+written by appending files to the `epoch` axis. Runs write day blocks
+only, so they refuse such a store. Move it once:
+
+```bash
+canvodpy store migrate-layout SITE --store gnss
+canvodpy store migrate-layout SITE --store vod
+```
+
+The command shows, for each group, its days, their cadences, its epochs
+and the duplicate entries it drops, and asks before it changes anything
+(`--yes` skips the question).
+
+- Each group written by appending is written again, day by day. Each day
+  gets a block at its cadence: the finest step between its epochs,
+  rounded to 1 ms. A day with a single epoch takes the finest cadence of
+  the group. Days may have different cadences.
+- An epoch stored more than once, for example by `unsafe_append`, keeps
+  the entry written last, as `read_group_deduplicated()` reads it.
+- A group keeps its attributes, its log book and its other metadata
+  (`sbf_obs`). It gets the chunks of the settings
+  (`processing.icechunk.chunk_strategies`).
+- The log book gets the `epochs` column, so the snapshot summary counts
+  each epoch once, for the latest write of its file.
+- Everything goes into one commit. Snapshots from before keep the old
+  layout and stay readable.
+
+A store written before repository metadata needs
+`canvodpy store migrate-metadata` first; `migrate-layout` refuses it and
+names that command.
 
 ## How a run writes
 
@@ -186,10 +218,9 @@ For each receiver and day, a run does the following:
 1. Applies the preprocessing in `processing.preprocessing`, if set.
 1. Checks each file against the group's log book (see
    [Duplicate checks](#duplicate-checks)).
-1. Writes the new data with one commit. In a store made of day blocks,
-   the worker processes write the files into their slots and one commit
-   writes the day of all receivers; otherwise each receiver and day gets
-   its own commit. The same commit writes the snapshot summary and
+1. Writes the new data with one commit: the worker processes write the
+   files into their slots, and one commit writes the day of all
+   receivers. The same commit writes the snapshot summary and
    records the commit metadata (see
    [canvod-store-metadata](../store-metadata/overview.md)).
 
@@ -209,7 +240,8 @@ A write must match the group. A run stops with an error if:
   NMEA epochs were UTC, 18 s earlier); write to a new store;
 - a day stored at a coarser cadence gets a file sampled more often
   (`CadenceError`);
-- a file would be appended to a group made of day blocks (`LayoutError`).
+- a file would be appended to a group made of day blocks, or the store
+  holds groups written by appending (`LayoutError`).
 
 A file with two epochs in one slot, for example because its name gives a
 coarser sampling than its data, isn't stored: the run logs a
@@ -219,8 +251,8 @@ run tries it again.
 If another commit lands while a write is in progress, canVODpy rebases the
 write onto it when the two changed different groups. If both changed the
 same data, the later commit fails with `icechunk.RebaseFailedError` and
-writes nothing. In a store made of day blocks, the run then writes the
-day again on top of the other commit, up to five tries in all, with a
+writes nothing. The run then writes the day again on top of the other
+commit, up to five tries in all, with a
 growing wait in between. When the last try fails too,
 the run records the receivers and days as failed in its run history,
 with the error, and goes on with the next days. It does the same when
@@ -364,6 +396,7 @@ canvodpy store info ExampleSite --group canopy_01   # the dataset and log book o
 canvodpy store log ExampleSite                      # commit graph
 canvodpy store log ExampleSite --ops                # operations on the store
 canvodpy store maintain ExampleSite                 # what expiry and garbage collection would delete
+canvodpy store migrate-layout ExampleSite           # move a store written by appending to day blocks
 ```
 
 `--store vod` opens the VOD store instead of the GNSS store, and `--branch`
