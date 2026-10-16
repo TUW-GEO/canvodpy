@@ -25,20 +25,25 @@ settings. `canvodpy config show` prints the strategy in use under
 !!! note "The VOD store"
     The strategy applies to the GNSS store only. A run skips a VOD result
     when the VOD store already holds one computed from the same GNSS
-    files. In a VOD store made of
-    [day blocks](overview.md#the-vod-store), a result from other files
-    replaces the stored VOD of its day; in a VOD store written by
-    appending, a result whose epochs overlap stored VOD is skipped too. To
-    compute VOD again from the same GNSS files, write to a new VOD store:
-    set another `processing.storage.vod_store_name`.
+    files. A result from other files replaces the stored VOD of its day
+    (see [The VOD store](overview.md#the-vod-store)). To compute VOD again
+    from the same GNSS files, write to a new VOD store: set another
+    `processing.storage.vod_store_name`.
+
+!!! note "Stores written by appending"
+    A run writes [day blocks](overview.md#day-blocks) only. A store whose
+    groups were written by appending files, by canVODpy versions before
+    day blocks, is refused until it is moved to day blocks with
+    `canvodpy store migrate-layout` (see
+    [Moving a store to day blocks](overview.md#moving-a-store-to-day-blocks)).
 
 ## The strategies
 
 | Strategy | File already stored (same hash) | Another file over stored epochs | New file |
 |---|---|---|---|
 | `skip` (default) | Not written; the run logs it. | The run stops and names both files. | Written |
-| `overwrite` | Its time range is replaced. | Replaces the stored data; the log book says `overwritten`. | Written |
-| `unsafe_append` | Written again, next to the stored data. | As `overwrite` in a store of day blocks | Written |
+| `overwrite` | Its slots are replaced; the log book says `overwritten`. | Replaces the stored data; the log book says `overwritten`. | Written |
+| `unsafe_append` | As `overwrite` | As `overwrite` | Written |
 
 "Another file over stored epochs" is a file with another hash whose time
 span overlaps data stored from another file, for example a file that was
@@ -47,15 +52,6 @@ time. Neither file is preferred silently. The run checks this before it
 writes and again at the tip, just before each commit, so a run that lost
 a conflict to another run finds that run's files too.
 
-In a store made of [day blocks](overview.md#day-blocks), a file that is
-written again goes into the same slots, so `overwrite` and
-`unsafe_append` both replace all of the file's slots in the run's commit,
-also those of its earlier write (found in the log book by its canonical
-name) it now has no epochs for, and the log book records `overwritten`.
-Slots inside another stored file's span are never emptied. No temporary branch is needed, and no epoch is
-stored twice. The `sbf_obs` of such a file stays as first stored. The
-sections below describe a store written by appending.
-
 ### `skip`
 
 A file that's already stored isn't written, and the store doesn't change.
@@ -63,42 +59,22 @@ Running again over the same files writes nothing new. This is the default.
 
 ### `overwrite`
 
-The run replaces the stored data in the file's time range with the file's
-data. Use it to correct stored data, for example after a fix in a reader
+The run writes the file into the slots of its day again, in the run's
+commit. Use it to correct stored data, for example after a fix in a reader
 or another ephemeris source.
 
-- The run merges the group's other epochs with the new data and rewrites
-  the group in epoch order, so an overwrite writes the whole group.
-- The log book keeps all its rows. For an SBF receiver, `sbf_obs` loses
-  that time range and gets the new file's rows.
-- The new version is written to a temporary branch,
-  `overwrite_{receiver}_{YYYYDOY}`, and moved to `main` only if nothing
-  else was committed to `main` in the meantime. Otherwise the run stops
-  with `BranchMovedError`: `main` keeps the other commit, and the new
-  version stays on the temporary branch.
+- All of the file's slots are replaced, also those of its earlier write
+  (found in the log book by its canonical name) it now has no epochs for.
+  Slots inside another stored file's span are never emptied.
+- No epoch is stored twice, and no other day is written.
+- The log book keeps all its rows and records `overwritten`. The `sbf_obs`
+  of an SBF file stays as first stored.
 - The replaced data stays in earlier snapshots until they're expired and
   garbage is collected (`canvodpy store maintain`).
 
 ### `unsafe_append`
 
-The run writes the file's data again, with no check for epochs that are
-already stored. The group then holds the same `epoch` values twice, and
-xarray doesn't require unique index values.
-
-!!! danger "Duplicate epochs break reads that don't remove them"
-    Two reads remove duplicate epochs:
-
-    - `GnssResearchSite.read_receiver_data()` reads with
-      `read_group_deduplicated()` when the strategy is `unsafe_append`.
-    - `VodComputer.compute_bulk()` removes duplicate epochs from every read,
-      whatever the strategy.
-
-    `MyIcechunkStore.read_group()` doesn't. On data with duplicate epochs,
-    `.sel()` can raise an error or return several values, and aligning two
-    datasets that both have the duplicates (for example canopy and
-    reference) pairs each duplicate with each other one, without an
-    error.
-
-    The duplicates are stored: garbage collection doesn't remove them,
-    because the current snapshot still uses them. Don't use
-    `unsafe_append` unless you have a specific reason.
+Kept from versions before day blocks, where it wrote a file again next to
+the stored data, so the group held its epochs twice. In a store made of
+day blocks, a file written again goes into the same slots, so
+`unsafe_append` does what `overwrite` does.

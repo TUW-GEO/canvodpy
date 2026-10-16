@@ -147,11 +147,9 @@ class StorageConfig(_StrictModel):
         description=(
             "What a run does with a file that is already in the GNSS store; new "
             "files are always written. 'skip' (default): nothing is written. "
-            "'overwrite': the run replaces the file's stored data. "
-            "'unsafe_append': the file is written again next to the stored "
-            "data. In a store made of day blocks, 'overwrite' and "
-            "'unsafe_append' both replace the file's slots; in a store written "
-            "by appending, 'unsafe_append' stores the file's epochs twice."
+            "'overwrite': the run replaces the file's slots. "
+            "'unsafe_append': kept from versions before day blocks, where it "
+            "stored the file's epochs twice; it now does what 'overwrite' does."
         ),
     )
     vod_store_strategy: Literal["skip", "overwrite", "unsafe_append"] | None = Field(
@@ -159,8 +157,7 @@ class StorageConfig(_StrictModel):
         description=(
             "Deprecated, has no effect. A VOD write skips a result from the "
             "same GNSS files as a stored one. Another result replaces the "
-            "stored VOD of its day in a VOD store made of day blocks, and is "
-            "skipped in one written by appending. To recompute VOD from the "
+            "stored VOD of its day. To recompute VOD from the "
             "same GNSS files, write to a new VOD store (set another "
             "vod_store_name)."
         ),

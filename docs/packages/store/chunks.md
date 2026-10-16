@@ -85,25 +85,12 @@ length of every day block of the group, padding included.
 
 ### Groups written by appending
 
-A GNSS store whose groups were written by canVODpy versions before day
-blocks is still written by appending each file to the end of the `epoch`
-axis. In such a group, a file that ends inside a chunk makes the next
-file rewrite that chunk. The epoch chunk works best when it equals the
-epochs of one file:
-
-$$
-\text{epoch} = \frac{\text{file length in s}}{\text{sampling interval in s}}
-$$
-
-!!! note "GNSS stores created before 1.0.0b1"
-    Before 1.0.0b1, the GNSS store default was `epoch: 17280`. Groups
-    created then keep those chunks: reads work as before, but every file a
-    run adds rewrites the last chunk. To change a group to the current
-    default:
-
-    ```python
-    store.rechunk_group("canopy_01", {"epoch": 180, "sid": -1})
-    ```
+A group written by canVODpy versions before day blocks appended each file
+to the end of the `epoch` axis, so a file that ended inside a chunk made
+the next file rewrite that chunk. Runs refuse such a store;
+`canvodpy store migrate-layout` writes its groups again as day blocks,
+with the chunks of the settings (see
+[Moving a store to day blocks](overview.md#moving-a-store-to-day-blocks)).
 
 ## VOD store
 
@@ -111,20 +98,6 @@ A VOD store group made of [day blocks](overview.md#the-vod-store) is
 chunked like the GNSS store: each day is a block of whole chunks, padded
 where its slots don't fill the last one. A day of VOD has the cadence of
 its GNSS data.
-
-### Groups written by appending
-
-A VOD store group written by canVODpy versions before day blocks is still
-written by appending one day at a time. A day that ends inside a chunk
-makes the next day rewrite that chunk, so the epoch chunk works best at
-the epochs of one day:
-
-$$
-\text{epoch} = \frac{86400\,\text{s}}{\text{sampling interval in s}}
-$$
-
-For example, data at a 2.5 s interval need `epoch: 34560`. To change the
-chunks of an existing VOD store group, use `store.rechunk_group()`.
 
 ## Reads are lazy
 
@@ -134,8 +107,7 @@ example `.compute()`, `.values`, or a plot), and then only the chunks the
 result needs.
 
 With the default `sid: -1`, a chunk holds all signals, so one signal over a
-year at 5 s reads 35,040 chunks of either store, 96 per day. A VOD store
-group written by appending, with one day per chunk, reads 365. If you read
+year at 5 s reads 35,040 chunks of either store, 96 per day. If you read
 single signals over long periods, rechunk the group along `sid` with
 `rechunk_group()`.
 

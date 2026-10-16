@@ -178,11 +178,9 @@ flowchart TD
   is read. Then the worker processes write the files into their slots,
   each worker into its own fork of the day's session, and one writer thread
   merges the forks of all receivers of a day and commits them with the
-  day's log-book rows. Files that share a chunk go to one worker task. In
-  a store written by appending, as soon as all files of a receiver and day
-  are read, the run writes them with one commit for the data and its
-  log-book rows. With the `overwrite` strategy, it writes on a temporary
-  branch first and then moves `main` to it. On a file system, Icechunk
+  day's log-book rows. Files that share a chunk go to one worker task. A
+  store written by appending, by versions before day blocks, is refused
+  until `canvodpy store migrate-layout` moves it. On a file system, Icechunk
   can't detect two commits at the same time, so every commit takes the
   store's commit lock. A commit from another process waits for it (see
   [How a run writes](packages/store/overview.md#how-a-run-writes)).

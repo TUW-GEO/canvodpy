@@ -306,11 +306,22 @@ def find_overlaps[T](
     -------
     list[tuple]
         Overlapping pairs, earlier-starting file first, sorted by start.
+
+    Raises
+    ------
+    TypeError
+        If an item (or ``key`` of an item) is not a :class:`CanVODFilename`.
     """
     groups: dict[tuple[str, str], list[tuple[CanVODFilename, int, T]]] = {}
     for i, item in enumerate(items):
         cn = key(item) if key is not None else item
-        assert isinstance(cn, CanVODFilename)
+        if not isinstance(cn, CanVODFilename):
+            msg = (
+                f"find_overlaps: item {i} ({item!r}) gives a "
+                f"{type(cn).__name__}, not a CanVODFilename; pass a key that "
+                "returns the canonical name of each item"
+            )
+            raise TypeError(msg)
         identity = (
             f"{cn.site}{cn.receiver_type.value}{cn.receiver_number:02d}{cn.agency}"
         )

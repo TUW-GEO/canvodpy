@@ -268,14 +268,11 @@ processing:
     # What a run does with a file that is already in the GNSS store
     # (new files are always written):
     #   skip:          nothing is written (default; a re-run writes nothing)
-    #   overwrite:     the file's stored data are replaced (to correct
-    #                   stored data, e.g. after a fix in a reader)
-    #   unsafe_append: the file is written again next to the stored data.
-    #                   In a store made of day blocks, overwrite and
-    #                   unsafe_append both replace the file's slots; in a
-    #                   store written by appending, unsafe_append stores the
-    #                   file's epochs twice. Avoid it unless you have a
-    #                   specific reason.
+    #   overwrite:     the file's slots are replaced (to correct stored
+    #                   data, e.g. after a fix in a reader)
+    #   unsafe_append: kept from versions before day blocks, where it
+    #                   stored the file's epochs twice; it now does what
+    #                   overwrite does.
     # https://canvodpy.eu/guides/settings/#processing-storage-gnss_store_strategy
     gnss_store_strategy: skip
 

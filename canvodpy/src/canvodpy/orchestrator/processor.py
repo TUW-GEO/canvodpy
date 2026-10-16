@@ -75,8 +75,8 @@ from canvod.store.day_blocks import (
 from canvod.store.prepare import prepare_write
 from canvod.store.store import StoredOverlapError, _with_run_id
 from canvod.store.time_encoding import with_time_units
-from canvod.store_metadata.io import commit_lock, commit_with_rebase
-from canvod.store_metadata.layout import is_day_block_group
+from canvod.store_metadata.io import commit_lock, commit_with_rebase, store_command
+from canvod.store_metadata.layout import LayoutError, is_day_block_group
 from canvod.store_metadata.location import store_exists
 from canvod.utils.logging import (
     get_run_id,
@@ -3270,8 +3270,13 @@ class RinexDataProcessor:
         """Whether this run writes day blocks into the GNSS store.
 
         A store not created yet, without receiver groups, or whose groups are
-        all made of day blocks, gets day blocks. A store whose groups were written by
-        appending keeps appending until it is moved to day blocks.
+        all made of day blocks, gets day blocks.
+
+        Raises
+        ------
+        LayoutError
+            If a group of the store was written by appending: the store has
+            to be moved to day blocks first (``canvodpy store migrate-layout``).
         """
         # Before self.site.gnss_store, which opens the store.
         if not store_exists(self.site.gnss_store_path):
@@ -3282,9 +3287,20 @@ class RinexDataProcessor:
             return True
         with store.readonly_session("main") as session:
             root = zarr.open_group(session.store, mode="r")
-            return all(
-                is_day_block_group(root[name].attrs) for name in groups if name in root
+            appended = [
+                name
+                for name in groups
+                if name in root and not is_day_block_group(root[name].attrs)
+            ]
+        if appended:
+            msg = (
+                f"The GNSS store at {self.site.gnss_store_path} holds groups "
+                f"written by appending ({', '.join(sorted(appended))}); runs "
+                "write day blocks only. Move the store to day blocks first:\n"
+                f"  {store_command('migrate-layout', self.site.site_name, 'gnss_store')}"
             )
+            raise LayoutError(msg)
+        return True
 
     def _day_block_cadence_s(
         self, receiver_name: str, augmented_datasets: list[tuple[Path, xr.Dataset]]
