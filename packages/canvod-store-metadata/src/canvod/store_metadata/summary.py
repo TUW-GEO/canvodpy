@@ -276,10 +276,13 @@ def _block_index(group: zarr.Group) -> dict[np.datetime64, tuple[int, int]]:
             "cannot be summarized"
         )
         raise ValueError(msg)
-    return {
-        np.datetime64(str(day), "D"): (int(entry["cadence_ns"]), int(entry["slots"]))
-        for day, entry in index.items()
-    }
+    days: dict[np.datetime64, tuple[int, int]] = {}
+    for day, entry in index.items():
+        assert isinstance(entry, Mapping)
+        cadence_ns, slots = entry["cadence_ns"], entry["slots"]
+        assert isinstance(cadence_ns, int) and isinstance(slots, int)
+        days[np.datetime64(str(day), "D")] = (cadence_ns, slots)
+    return days
 
 
 def _block_days(
