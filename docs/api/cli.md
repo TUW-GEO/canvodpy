@@ -360,6 +360,10 @@ for confirmation, expires the old snapshots and, unless you pass
 
 Don't run it while a canvodpy run writes to the same store.
 
+On a store on S3, maintenance is a dry run only: a store there may be
+written by several machines, so ``--execute`` is refused (exit 1) and
+only the report is printed.
+
 **Usage**:
 
 ```console
@@ -405,6 +409,11 @@ maintenance.manifest_count_threshold manifest files.
 While maintenance.dry_run_until_confirmed is true, the default, a
 store that's due is only reported, not changed. Set it to
 false once the reports look right.
+
+On a store on S3, maintenance is a dry run only: a store there may
+be written by several machines, so a due store is always reported,
+never changed, and this command still exits 0 (a cron job does not
+fail overnight).
 
 **Usage**:
 

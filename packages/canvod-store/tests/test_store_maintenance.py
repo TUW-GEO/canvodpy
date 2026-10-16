@@ -504,3 +504,24 @@ class TestCompactionRecordsCommitMetadata:
 
         meta = read_metadata(store.store_path)
         assert meta.environment.uv_lock_text == "version = 1\nrevision = 3\n"
+
+
+class TestCleanupStaleBranches:
+    """``cleanup_stale_branches`` deletes stale temp branches on a local
+    store (#357: it must still work as before there; only S3 refuses)."""
+
+    def test_deletes_a_stale_temp_branch_and_keeps_main(self, tmp_path) -> None:
+        store_path = tmp_path / "test_site" / "vod_store"
+        store = open_vod_store(create_test_store(store_path))
+        with store.writable_session() as session:
+            root = zarr.open(session.store, mode="w")
+            root.create_group("canopy")
+            snapshot_id = session.commit("test commit")
+        store.repo.create_branch("_rechunked_temp_abc", snapshot_id)
+
+        deleted = store.cleanup_stale_branches()
+
+        assert "_rechunked_temp_abc" in deleted
+        branches = store.repo.list_branches()
+        assert "_rechunked_temp_abc" not in branches
+        assert "main" in branches

@@ -40,6 +40,7 @@ from canvod.store_metadata.io import (
 )
 from canvod.store_metadata.layout import LayoutError
 from canvod.store_metadata.location import (
+    S3StoreLocation,
     StoreLocation,
     open_repository,
     repository_config,
@@ -141,6 +142,18 @@ class BranchMovedError(RuntimeError):
 
     Promoting the temporary branch would drop the commits made in the
     meantime, so canVODpy refuses and keeps the temporary branch.
+    """
+
+
+class MaintenanceOnS3Error(RuntimeError):
+    """Maintenance on a store on S3 is not supported yet (#357).
+
+    Deliberately not a ``ValueError``: nothing records it as a failed file
+    and carries on. A store on S3 may be written by several machines, and
+    maintenance only knows the runs of its own machine
+    (``is_pipeline_running``), so a maintenance action that changes the
+    store is refused. A garbage-collection dry run and ``maintenance_due``
+    still work: they change nothing.
     """
 
 
@@ -3918,6 +3931,28 @@ class MyIcechunkStore:
         )
         return overlapping
 
+    def _refuse_maintenance_on_s3(self, action: str) -> None:
+        """Refuse a maintenance action on a store on S3 (#357).
+
+        On S3 a store can be written by several machines at once, and
+        maintenance only knows the runs of its own machine, so an action
+        that changes the store is refused. The dry run (``dry_run=True``)
+        and ``maintenance_due`` keep working: they change nothing.
+
+        Raises
+        ------
+        MaintenanceOnS3Error
+            If the store is on S3.
+        """
+        if isinstance(self.location, S3StoreLocation):
+            raise MaintenanceOnS3Error(
+                f"{action} on a store on S3 is not supported yet: another "
+                "machine may be writing to the store, and maintenance only "
+                "knows the runs of its own machine. Nothing was changed. "
+                "A dry run (garbage_collect(dry_run=True), or `canvodpy "
+                "store maintain` without --execute) still works."
+            )
+
     def expire_old_snapshots(
         self,
         days: int | None = None,
@@ -3963,6 +3998,7 @@ class MyIcechunkStore:
         set[str]
             Expired snapshot IDs.
         """
+        self._refuse_maintenance_on_s3("Expiring old snapshots")
         if days is None:
             days = 90
         cutoff = datetime.now(UTC) - timedelta(days=days)
@@ -4021,6 +4057,8 @@ class MyIcechunkStore:
         dict
             Summary of (would-be-)deleted objects.
         """
+        if not dry_run:
+            self._refuse_maintenance_on_s3("Garbage collection")
         cutoff = datetime.now(UTC) - timedelta(days=days)
         with commit_lock(self.store_path):
             summary = self.repo.garbage_collect(
@@ -4296,6 +4334,7 @@ class MyIcechunkStore:
         str
             Snapshot ID of the compaction commit.
         """
+        self._refuse_maintenance_on_s3("Compacting manifests")
         self._logger.info(
             f"Compacting manifests on store '{self.store_type}' (branch '{branch}')"
         )
@@ -4803,6 +4842,7 @@ class MyIcechunkStore:
         list[str]
             Names of deleted branches
         """
+        self._refuse_maintenance_on_s3("Cleaning up stale branches")
         if keep_patterns is None:
             keep_patterns = ["main", "dev"]
 
@@ -4945,6 +4985,7 @@ class MyIcechunkStore:
         dict
             Summary of maintenance actions.
         """
+        self._refuse_maintenance_on_s3("Maintenance")
         self._logger.info(f"Starting maintenance on {self.store_type}")
 
         results = {"expired_snapshots": 0, "deleted_branches": [], "gc_summary": None}
