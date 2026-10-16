@@ -1,7 +1,7 @@
 [project]
 name = "canvod-store"
 version = "0.4.0"
-description = "Icechunk storage for GNSS-T observations and VOD"
+description = "Versioned Icechunk stores for GNSS-T observations and VOD"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]

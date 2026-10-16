@@ -1,7 +1,7 @@
 [project]
 name = "canvod-viz"
 version = "0.4.0"
-description = "Basic visualization tools for GNSS-Transmissometry VOD data"
+description = "2D and 3D hemispheric plots of GNSS-T observations and VOD"
 readme = "README.md"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},

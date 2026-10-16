@@ -1,7 +1,7 @@
 [project]
 name = "canvod-ops"
 version = "0.4.0"
-description = "Operational data processing pipeline for GNSS-Transmissometry"
+description = "Preprocessing of GNSS observations: temporal aggregation and grid cell assignment"
 readme = "README.md"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
