@@ -16,7 +16,7 @@
   "codeRepository": "https://github.com/nfb2021/canvodpy",
   "datePublished": "2026-02-13",
   "description": "canvodpy aims to be the central community-driven software suite for GNSS-Transmissometry (GNSS-T), providing the core ecosystem for deriving and analyzing canopy Vegetation Optical Depth (VOD) from GNSS signal-to-noise ratio (SNR) observations. It provides modular packages for RINEX data reading, auxiliary data handling, hemispheric grid operations, Icechunk-based versioned storage, visualization, and VOD calculation algorithms, all tied together by Pydantic-validated configuration and a pipeline orchestrator.",
-  "identifier": "https://doi.org/10.5281/zenodo.19445061",
+  "identifier": "https://doi.org/10.5281/zenodo.18496233",
   "keywords": [
     "GNSS-Transmissometry",
     "GNSS-T",
