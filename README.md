@@ -1,27 +1,3 @@
-<!-- CI/CD & Quality -->
-[![Platform Tests](https://github.com/nfb2021/canvodpy/actions/workflows/test_platforms.yml/badge.svg)](https://github.com/nfb2021/canvodpy/actions/workflows/test_platforms.yml)
-[![Code Coverage](https://github.com/nfb2021/canvodpy/actions/workflows/test_coverage.yml/badge.svg)](https://github.com/nfb2021/canvodpy/actions/workflows/test_coverage.yml)
-[![FAIR Software Check](https://github.com/nfb2021/canvodpy/actions/workflows/fair-software.yml/badge.svg)](https://github.com/nfb2021/canvodpy/actions/workflows/fair-software.yml)
-
-<!-- Python, Platforms & Package Manager -->
-[![PyPI](https://img.shields.io/pypi/v/canvodpy.svg)](https://pypi.org/project/canvodpy/)
-[![Python](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
-[![Platforms](https://img.shields.io/badge/platform-Linux%20|%20macOS%20(Apple%20silicon)%20|%20Windows-lightgrey)](https://github.com/nfb2021/canvodpy/actions/workflows/test_platforms.yml)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
-
-<!-- Identity -->
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18496233.svg)](https://doi.org/10.5281/zenodo.18496233)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![CLIMERS @ TU Wien](https://img.shields.io/badge/CLIMERS-TU_Wien-006699)](https://www.tuwien.at/en/mg/geo/climers)
-[![VODnet](https://img.shields.io/badge/-VODnet-2d6a4f?labelColor=555555&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAHhlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAA6gAwAEAAAAAQAAAA4AAAAAjn8NzQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAflJREFUKBWtUEtoE1EUPe+9SczHiam/aixtqi1E7aai4kK0CAVBDFZwrQs3xp2KIriYtiKuav3QRVxYKIjFVihWrCBIaaWioKidQBsxi3SwYmMmkxidYWaemYEEKUgRPHDhXu4575x3gf+NKfVD3UQ2u/Zv7wrLF8mPfV2ZH1ZCNIM7xUCAHHjyfN6wQ8mZo3vvE4Av57tzOjfd/WZpivfJSW5wkzvomnzFe2SFTyyU+iFJtCpk1eaRfOIw84TuRsN7kEkVMDzyEjPvUtga2YiDTRFM5+m+F8XYHMZuzDqaWlQf8yVMpmJ0/DUu9g6hVNQAy8au3W04NHAV85oFRulZS+LDkIjtWmcyHT6vQHYoXwrouTWKkv4LLOAHE4N4K6dxZ2AISl4DpawVDVrYcXSFZtTPGSV8IatjUVErJ+Cwbdstx3Vw8CG+pmQIHg+HUVlWo7aSp/qz9Kn3W5p5S/x4DJ8/lfGt4kAow7bmBpQ9fuQ3RUFtM4Uz61Qk/vijbpLbgtc61n05zjQ1hCvXHmB9fT3OnT8NOWfi+uxP0IJxE4S4jrXzxrffm1xlb75Aud/cEFmD9vYW6KaNUoUmCpS3BblUPNk45sR0UBM6Qzx2qd9LVnfqujGS+64puaX8olEuj4uMHHnc2dTrcFZGtCOMxv11KxP/kfEbTTzNcyb5ar0AAAAASUVORK5CYII=&logoColor=white)](https://www.gfz.de/en/section/remote-sensing-and-geoinformatics/projects/vodnet)
-<!-- [![VODnet](https://img.shields.io/badge/VODnet-GNSS--T%20network-2d6a4f?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAHhlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAA6gAwAEAAAAAQAAAA4AAAAAjn8NzQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAflJREFUKBWtUEtoE1EUPe+9SczHiam/aixtqi1E7aai4kK0CAVBDFZwrQs3xp2KIriYtiKuav3QRVxYKIjFVihWrCBIaaWioKidQBsxi3SwYmMmkxidYWaemYEEKUgRPHDhXu4575x3gf+NKfVD3UQ2u/Zv7wrLF8mPfV2ZH1ZCNIM7xUCAHHjyfN6wQ8mZo3vvE4Av57tzOjfd/WZpivfJSW5wkzvomnzFe2SFTyyU+iFJtCpk1eaRfOIw84TuRsN7kEkVMDzyEjPvUtga2YiDTRFM5+m+F8XYHMZuzDqaWlQf8yVMpmJ0/DUu9g6hVNQAy8au3W04NHAV85oFRulZS+LDkIjtWmcyHT6vQHYoXwrouTWKkv4LLOAHE4N4K6dxZ2AISl4DpawVDVrYcXSFZtTPGSV8IatjUVErJ+Cwbdstx3Vw8CG+pmQIHg+HUVlWo7aSp/qz9Kn3W5p5S/x4DJ8/lfGt4kAow7bmBpQ9fuQ3RUFtM4Uz61Qk/vijbpLbgtc61n05zjQ1hCvXHmB9fT3OnT8NOWfi+uxP0IJxE4S4jrXzxrffm1xlb75Aud/cEFmD9vYW6KaNUoUmCpS3BblUPNk45sR0UBM6Qzx2qd9LVnfqujGS+64puaX8olEuj4uMHHnc2dTrcFZGtCOMxv11KxP/kfEbTTzNcyb5ar0AAAAASUVORK5CYII=&logoColor=white)](https://www.gfz.de/en/section/remote-sensing-and-geoinformatics/projects/vodnet) -->
-
-<!-- Trust & FAIR -->
-[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F-green)](https://fair-software.eu)
-[![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/12329/badge)](https://bestpractices.coreinfrastructure.org/projects/12329)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/nfb2021/canvodpy/badge)](https://securityscorecards.dev/viewer/?uri=github.com/nfb2021/canvodpy)
-
-
 <h1 align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo/canvodpy_logo_dark_mode.svg">
@@ -29,362 +5,155 @@
   </picture>
 </h1>
 
-An open Python ecosystem for GNSS-Transmissometry (GNSS-T) canopy VOD retrievals. canVODpy is a community-driven software suite for deriving and analyzing Vegetation Optical Depth from GNSS signal-to-noise ratio observations.
+[![Platform Tests](https://github.com/nfb2021/canvodpy/actions/workflows/test_platforms.yml/badge.svg)](https://github.com/nfb2021/canvodpy/actions/workflows/test_platforms.yml)
+[![Code Coverage](https://github.com/nfb2021/canvodpy/actions/workflows/test_coverage.yml/badge.svg)](https://github.com/nfb2021/canvodpy/actions/workflows/test_coverage.yml)
+[![PyPI](https://img.shields.io/pypi/v/canvodpy.svg)](https://pypi.org/project/canvodpy/)
+[![Python](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
+[![Platforms](https://img.shields.io/badge/platform-Linux%20|%20macOS%20(Apple%20silicon)%20|%20Windows-lightgrey)](https://github.com/nfb2021/canvodpy/actions/workflows/test_platforms.yml)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18496233-blue)](https://doi.org/10.5281/zenodo.18496233)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F-green)](https://fair-software.eu)
+[![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/12329/badge)](https://bestpractices.coreinfrastructure.org/projects/12329)
+[![CLIMERS @ TU Wien](https://img.shields.io/badge/CLIMERS-TU_Wien-006699)](https://www.tuwien.at/en/mg/geo/climers)
+[![VODnet](https://img.shields.io/badge/-VODnet-2d6a4f?labelColor=555555&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAAXNSR0IArs4c6QAAAHhlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAA6gAwAEAAAAAQAAAA4AAAAAjn8NzQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAflJREFUKBWtUEtoE1EUPe+9SczHiam/aixtqi1E7aai4kK0CAVBDFZwrQs3xp2KIriYtiKuav3QRVxYKIjFVihWrCBIaaWioKidQBsxi3SwYmMmkxidYWaemYEEKUgRPHDhXu4575x3gf+NKfVD3UQ2u/Zv7wrLF8mPfV2ZH1ZCNIM7xUCAHHjyfN6wQ8mZo3vvE4Av57tzOjfd/WZpivfJSW5wkzvomnzFe2SFTyyU+iFJtCpk1eaRfOIw84TuRsN7kEkVMDzyEjPvUtga2YiDTRFM5+m+F8XYHMZuzDqaWlQf8yVMpmJ0/DUu9g6hVNQAy8au3W04NHAV85oFRulZS+LDkIjtWmcyHT6vQHYoXwrouTWKkv4LLOAHE4N4K6dxZ2AISl4DpawVDVrYcXSFZtTPGSV8IatjUVErJ+Cwbdstx3Vw8CG+pmQIHg+HUVlWo7aSp/qz9Kn3W5p5S/x4DJ8/lfGt4kAow7bmBpQ9fuQ3RUFtM4Uz61Qk/vijbpLbgtc61n05zjQ1hCvXHmB9fT3OnT8NOWfi+uxP0IJxE4S4jrXzxrffm1xlb75Aud/cEFmD9vYW6KaNUoUmCpS3BblUPNk45sR0UBM6Qzx2qd9LVnfqujGS+64puaX8olEuj4uMHHnc2dTrcFZGtCOMxv11KxP/kfEbTTzNcyb5ar0AAAAASUVORK5CYII=&logoColor=white)](https://www.gfz.de/en/section/remote-sensing-and-geoinformatics/projects/vodnet)
 
-<p align="center">
-  <a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_convenience_speedrun.py"><img alt="Open in molab" src="https://marimo.io/molab-shield.svg" height="44"></a>
-</p>
-<p align="center">
-  <b>See canVODpy at work:</b> the speedrun notebook goes through the whole pipeline on real test data, from receiver files to VOD.<br>
-  Open it in molab, or read it with its results on <a href="https://canvodpy.eu/notebooks/_build/03_convenience_speedrun.html">canvodpy.eu</a>. All notebooks: <a href="https://canvodpy.eu/notebooks/">canvodpy.eu/notebooks</a>
-</p>
+**An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrievals**
 
-| Toolchain                                                                                                                                                                                                                                                                                                                                                                                                                            | Scientific Stack                                                                                                                                                                                                                                                                                                                                                | Standards                                                                                                                                                                                                                           | Notebooks                                                                                  | AI                                                                                                                                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![ty](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ty/main/assets/badge/v0.json)](https://github.com/astral-sh/ty)[![Just](https://img.shields.io/badge/%F0%9F%A4%96-Just-2d6a4f?labelColor=6c757d)](https://github.com/casey/just) | [![xarray](https://img.shields.io/badge/xarray-N--D%20arrays-4c78a8)](https://xarray.dev/) [![Dask](https://img.shields.io/badge/Dask-Parallel-FDA061?logo=dask&logoColor=white)](https://www.dask.org/) [![Polars](https://img.shields.io/badge/Polars-Tabular-CD792C?logo=polars&logoColor=white)](https://pola.rs/)                                          | [![DataCite 4.5](https://img.shields.io/badge/DataCite-4.5-3F51B5)](https://schema.datacite.org/) [![ACDD 1.3](https://img.shields.io/badge/ACDD-1.3-4CAF50)](https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery_1-3) | [![marimo](https://marimo.io/shield.svg)](https://canvodpy.eu/notebooks/) | [![Claude Code](https://img.shields.io/badge/Claude_Code-AI_Assisted-cc785c?logo=anthropic&logoColor=white)](https://claude.com/claude-code) |
-| [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)                                                                                                                                                                                                                                                             | [![Pydantic v2](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)](https://docs.pydantic.dev/) [![Icechunk](https://img.shields.io/badge/Icechunk-Storage-00A3E0)](https://icechunk.io/) | [![STAC 1.1](https://img.shields.io/badge/STAC-1.1-FF9800)](https://stacspec.org/) [![REUSE](https://img.shields.io/badge/REUSE-3.3-blue)](https://reuse.software/)                                                                 |                                                                                            |                                                                                                                                              |
+canVODpy aims to be the central community-driven software suite for
+deriving canopy Vegetation Optical Depth (VOD) from the signal-to-noise
+ratio of the same [GNSS](https://gssc.esa.int/navipedia/index.php/GNSS)
+signal, received at the same time by one receiver below the canopy and one
+with an unobstructed view of the sky.
 
----
+## Try it
 
-> [!IMPORTANT]
-> Development requires `uv` and `just`:
-> - Install `uv`: [uv documentation](https://docs.astral.sh/uv/getting-started/installation/)
-> - Install `just`: [just documentation](https://github.com/casey/just)
+<a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_convenience_speedrun.py"><img alt="Open in molab" src="https://marimo.io/molab-shield.svg" height="32"></a>
 
----
+The speedrun notebook goes through the whole pipeline on real test data,
+from receiver files to VOD, in your browser. **All 21 notebooks** are at
+[canvodpy.eu/notebooks](https://canvodpy.eu/notebooks/), each with its
+results and a link to open it in molab.
 
-## Overview
+To run a notebook on your own machine instead, install
+[uv](https://docs.astral.sh/uv/getting-started/installation/) and run:
 
-canVODpy is organized as a monorepo with independent, composable packages:
-
-```mermaid
-graph TB
-    subgraph UI[User Interface]
-        Config["🔧 Configuration<br/>YAML files"]
-    end
-
-    subgraph Umbrella[Umbrella Package]
-        Canvodpy["📦 canvodpy<br/>Orchestrator & API"]
-    end
-
-    subgraph CorePkg[Core Processing Packages]
-        Readers["📖 canvod-readers<br/>RINEX & SBF Parsing"]
-        Aux["📡 canvod-auxiliary<br/>SP3/CLK/Position"]
-        Store["💾 canvod-store<br/>Icechunk Storage"]
-        StoreMeta["📋 canvod-store-metadata<br/>Provenance & Standards"]
-        CanvodConfig["⚙️ canvod-config<br/>Settings & Validation"]
-        Utils["🛠️ canvod-utils<br/>Date & Diagnostics"]
-    end
-
-    subgraph AnalysisPkg[Analysis and Output Packages]
-        VOD["🌳 canvod-vod<br/>VOD Calculator"]
-        Grids["🔲 canvod-grids<br/>Hemisphere Grids"]
-        Viz["📊 canvod-viz<br/>2D/3D Visualization"]
-    end
-
-    subgraph InfraPkg[Infrastructure Packages]
-        Ops["⚙️ canvod-ops<br/>Preprocessing Pipeline"]
-        Preflight["🚦 canvod-preflight<br/>Naming Convention"]
-    end
-
-    subgraph ExtPkg["Optional Extensions (canvodpy-extensions repo)"]
-        Filemap["🏷️ canvod-filemap<br/>Non-canonical Filename Mapping"]
-    end
-
-    Config --> Canvodpy
-    Canvodpy --> Readers
-    Canvodpy --> Aux
-    Canvodpy --> Store
-    Canvodpy --> StoreMeta
-    Canvodpy --> CanvodConfig
-    Canvodpy --> VOD
-    Canvodpy --> Grids
-    Canvodpy --> Viz
-    Canvodpy --> Ops
-    Canvodpy --> Preflight
-    Canvodpy -.optional.-> Filemap
-
-    Aux --> Readers
-    Store --> Grids
-    StoreMeta --> Utils
-    Viz --> Grids
-    Ops --> Grids
-    Ops --> Utils
+```bash
+uvx marimo edit --sandbox https://raw.githubusercontent.com/nfb2021/canvodpy-demo/main/03_convenience_speedrun.py
 ```
 
-## How it works
+The notebooks download their test data on first use (about 350 MB).
 
-```mermaid
-flowchart TD
-    Start([🚀 Start Processing]) --> Input
-
-    subgraph Input[📥 Data Ingestion]
-        RINEX["📄 RINEX OBS Files<br/>(.rnx)"]
-        SBF["📦 SBF Binary Files<br/>(.sbf)"]
-    end
-
-    subgraph Ephemeris[🛰️ Ephemeris Sources]
-        SP3["🏛️ Agency Final<br/>SP3 + CLK<br/>(12-18 day latency)"]
-        SBFVIS["📡 SBF Broadcast<br/>SatVisibility block<br/>(immediate)"]
-        NAV["📄 RINEX NAV 🚧<br/>.YYp / .YYn<br/>(planned)"]
-    end
-
-    subgraph Reading[🔍 Reading and Parsing]
-        RinexReader["Rnxv3Obs<br/>Parse RINEX v3.04"]
-        SbfReader["SbfReader<br/>Parse Septentrio Binary"]
-        AuxReader["SP3/CLK Parsers<br/>Load Auxiliary Data"]
-    end
-
-    subgraph Processing[⚙️ Geometry Augmentation]
-        Interp["Hermite Interpolation<br/>Orbits/clocks → obs epochs"]
-        Position["Coordinate Transform<br/>ECEF → spherical (r, θ, φ)"]
-        DirectGeom["Direct θ, φ<br/>From receiver firmware"]
-        Augment["Dataset Augmentation<br/>Merge observations + geometry"]
-    end
-
-    subgraph Storage[💾 Versioned Storage - Icechunk]
-        Dedup["3-Layer Deduplication<br/>Hash · Temporal · Intra-batch"]
-        Icechunk["Observations Store<br/>(epoch × sid)"]
-        Meta["Metadata Table<br/>File provenance"]
-    end
-
-    subgraph Analysis[📊 Analysis]
-        VODCalc["VodComputer<br/>Tau-Omega model · canopy vs reference"]
-        GridAssign["Hemispheric Grid Assignment<br/>Equal-area / Equal-angle / ..."]
-        Aggregate["Aggregation<br/>Per-cell statistics"]
-    end
-
-    subgraph Output[📈 Output]
-        Viz2D["2D Hemisphere Plots<br/>Polar projection"]
-        Viz3D["3D Interactive Plots<br/>Plotly surface"]
-        Export["Data Export<br/>NetCDF / CSV"]
-    end
-
-    RINEX --> RinexReader
-    SBF --> SbfReader
-    SP3 --> AuxReader
-    SBFVIS -.-> DirectGeom
-    NAV -.-> AuxReader
-
-    RinexReader --> Augment
-    SbfReader --> Augment
-    AuxReader --> Interp
-    Interp --> Position
-    Position --> Augment
-    DirectGeom --> Augment
-    Augment --> Dedup
-    Dedup --> Icechunk
-    Dedup --> Meta
-
-    Icechunk --> VODCalc
-    VODCalc --> GridAssign
-    GridAssign --> Aggregate
-
-    Aggregate --> Viz2D
-    Aggregate --> Viz3D
-    Aggregate --> Export
-
-    Viz2D --> End([✅ Complete])
-    Viz3D --> End
-    Export --> End
-```
-
-## Installation
+## Install
 
 ```bash
 uv add canvodpy
-
-# Or install specific components
-uv add canvod-readers canvod-grids
 ```
 
-canVODpy requires Python 3.14. On macOS, the tests run on Apple silicon.
+canVODpy requires Python 3.14. It is tested on Linux, macOS (Apple
+silicon), and Windows.
 
-## Quick Start
+## Quick start
+
+Create the settings file, check it, and process a week:
 
 ```bash
-# Run the pipeline — resumes from the last processed date when --start is omitted
-uv run canvodpy run --site ExampleSite --start 2025001 --end 2025007
+canvodpy config init --interactive     # asks for your site and folders
+canvodpy config validate --site MySite # lists what a run would process
+canvodpy run --site MySite --start 2025001 --end 2025007
 ```
 
-Or from Python, when you need to script a run (looping over sites, embedding
-in a notebook):
+Days are given as `YYYYDDD` (year and day of year). The same from Python:
 
 ```python
 from canvodpy import Site
 
-site = Site("ExampleSite")
-
-with site.pipeline(n_workers=8) as pipeline:
+site = Site("MySite")
+with site.pipeline() as pipeline:
     for date_key, datasets in pipeline.process_range("2025001", "2025007"):
         site.vod.compute_day(datasets, "canopy_01_vs_reference_01")
 ```
 
-One supported Python surface, plus the CLI on top of it:
+[Start here](https://canvodpy.eu/users/) walks through the first run step
+by step.
 
-```mermaid
-flowchart TD
-    subgraph CLI_["CLI — recommended"]
-        CLI["canvodpy run --site ... --start ... --end ..."]
-    end
+## Packages
 
-    subgraph L3["Site.pipeline() — Python-native scripting"]
-        L3A["Site('ExampleSite')"]
-        L3A --> L3B[".pipeline(n_workers=8)"]
-        L3B --> L3C[".process_range(start, end)"]
-        L3A --> L3E["site.vod.compute_bulk(...)"]
-    end
+`canvodpy` installs all of them. Each can also be installed on its own.
 
-    subgraph Shared["Shared Components"]
-        FM["File discovery"]
-        EP["EphemerisProvider"]
-        READER["GNSSDataReader"]
-        STORE["Icechunk Store"]
-        VOD["VodComputer"]
-    end
+| Package | What it does |
+| --- | --- |
+| `canvodpy` | The command line, the `Site` API and the processing pipeline |
+| `canvod-readers` | Readers for RINEX, SBF, and NMEA files |
+| `canvod-auxiliary` | Orbit and clock products, satellite angles |
+| `canvod-store` | Icechunk stores for observations and VOD |
+| `canvod-store-metadata` | Store metadata (DataCite, ACDD, STAC) and the STAC catalog |
+| `canvod-vod` | VOD retrieval |
+| `canvod-grids` | Hemispheric grids |
+| `canvod-viz` | 2D and 3D plots |
+| `canvod-ops` | Preprocessing: temporal aggregation, grid cell assignment |
+| `canvod-config` | The settings file and its checks |
+| `canvod-preflight` | The canVOD file name convention |
+| `canvod-utils` | Shared utilities |
 
-    CLI -.wraps.-> L3A
+Optional extensions, such as `canvod-filemap` for file names that don't
+follow the convention, are in
+[canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions).
 
-    L3C --> FM
-    L3C --> EP
-    L3C --> READER
-    L3C --> STORE
-    L3E --> VOD
-```
+## Development
 
-The optional `canvod-airflow` extension builds its DAGs on
-`canvodpy.workflows.tasks`, a dedicated set of Airflow-compatible task
-functions. `FluentWorkflow`, the flat `process_date()` /
-`calculate_vod()` / `preview_processing()` functions, `VODWorkflow`, and the
-single-step functions of `canvodpy.functional` are deprecated (`FutureWarning`
-on use) — kept working until the next major version, no longer taught;
-`VODWorkflow` additionally has a broken augmentation step and shouldn't be
-used regardless. See the
-[API Levels guide](https://canvodpy.eu/guides/api-levels/) for details.
-
-## Development Setup
+Development needs [uv](https://docs.astral.sh/uv/getting-started/installation/)
+and [just](https://github.com/casey/just).
 
 ```bash
-# Clone repository (with submodules for demo notebooks and test data)
 git clone --recurse-submodules https://github.com/nfb2021/canvodpy.git
 cd canvodpy
-
-# Verify required tools
-just check-dev-tools
-
-# Install dependencies + pre-commit hooks
+just check-dev-tools   # checks that the tools are installed
 uv sync
-just hooks
-
-# Run tests and code quality checks
+just hooks             # installs the pre-commit hooks
 just test
-just check
+just check             # lint, format, type check
 ```
 
-### Common Commands
-
-```bash
-just --list              # Show all commands
-just test                # Run all tests
-just check               # Lint + format + type-check
-just docs                # Preview documentation locally
-just open-notebook NAME  # Edit a marimo notebook interactively
-just app-notebook NAME   # Run a marimo notebook as read-only app
-just notebooks           # List available notebooks
-```
+`just --list` shows every command. The
+[contributor setup](https://canvodpy.eu/guides/contributor-setup/) has the
+details.
 
 ## Documentation
 
-Full documentation is available at **[canvodpy.eu](https://canvodpy.eu/)**.
+All documentation is at **[canvodpy.eu](https://canvodpy.eu/)**:
 
-Key pages:
-
-- [Contributor Setup](https://canvodpy.eu/guides/contributor-setup/)
-- [Architecture](https://canvodpy.eu/architecture/)
-- [Your Own Readers and VOD Calculators](https://canvodpy.eu/guides/plugins/)
+- [Start here](https://canvodpy.eu/users/): from installation to the first VOD
+- [Settings file](https://canvodpy.eu/guides/configuration/)
 - [Command line and Python](https://canvodpy.eu/guides/api-levels/)
-- [Configuration Guide](https://canvodpy.eu/guides/configuration/)
-- [Contributing](CONTRIBUTING.md)
-
-## Project Structure
-
-<details>
-<summary>Directory layout</summary>
-
-```text
-canvodpy/                       # Monorepo root
-├── packages/                   # Independent packages
-│   ├── canvod-readers/         #   RINEX & SBF parsing
-│   ├── canvod-auxiliary/       #   Ephemeris & coordinate transforms
-│   ├── canvod-grids/           #   Hemispheric grid operations
-│   ├── canvod-vod/             #   VOD retrieval algorithms
-│   ├── canvod-store/           #   Icechunk versioned storage
-│   ├── canvod-store-metadata/  #   Store provenance & compliance
-│   ├── canvod-viz/             #   Visualization
-│   ├── canvod-ops/             #   Preprocessing pipeline
-│   ├── canvod-config/          #   Configuration management
-│   ├── canvod-utils/           #   Date/time utilities & diagnostics
-│   └── canvod-preflight/       #   Naming convention
-├── canvodpy/                   # Umbrella package + orchestrator
-├── demo/                       # marimo notebooks (submodule)
-├── config/                     # YAML configuration files
-├── docs/                       # Zensical documentation
-├── .github/                    # CI/CD workflows
-├── CONTRIBUTORS.md             # Project contributors
-├── NOTICE                      # Apache 2.0 attribution
-└── LICENSE                     # Apache License 2.0
-```
-
-Optional packages — `canvod-filemap` (naming recipes for non-canonical
-filenames), `canvod-airflow` (Airflow DAGs) and `canvod-adapters` (data
-exchange with gnssvod) — are developed in
-[canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions), not
-in this repo's `packages/`, and are released on GitHub only. In this
-repository, `canvod-filemap` installs as a dependency group
-(`uv sync --group filemap`), pinned to a release tag.
-
-</details>
-
-## Related repositories
-
-canvodpy spans a few separate repositories, each with a distinct purpose:
-
-| Repository | Purpose | Relationship to this repo |
-| --- | --- | --- |
-| [canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions) | Optional, GitHub-only packages: `canvod-filemap` (non-canonical filename mapping) and `canvod-airflow` (Airflow DAG definitions) | Independent repo, installed as an optional extra when needed — not a submodule |
-| [canvodpy-demo](https://github.com/nfb2021/canvodpy-demo) | marimo notebook walkthroughs of the pipeline | Git submodule at `demo/` |
-| [canvodpy-test-data](https://github.com/nfb2021/canvodpy-test-data) | Real RINEX/SBF fixtures used by the test suite | Git submodule at `packages/canvod-readers/tests/test_data/` |
-
-## AI-Assisted Development
-
-This project uses [Claude Code](https://claude.com/claude-code) as a development and maintenance tool. The repository includes a comprehensive `CLAUDE.md` that provides the AI agent with:
-
-- **Scientific domain knowledge** — GNSS-T, VOD, signal processing concepts
-- **Architecture context** — monorepo structure, API levels, data contracts
-- **15+ domain skills** — xarray, Zarr, Pydantic, pytest, marimo, and more
-- **Persistent memory** — project decisions, conventions, and known issues across sessions
-
-New contributors can run `claude` in the repo root to get an AI assistant with full project context — it can explain any module, run tests, generate diagrams, and navigate the 12-package monorepo.
+- [Your own readers and VOD calculators](https://canvodpy.eu/guides/plugins/)
+- [Monorepo structure](https://canvodpy.eu/architecture/) and
+  [developing with coding agents](https://canvodpy.eu/guides/ai-development/)
 
 ## Contributing
 
-Contributions of all kinds are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions of all kinds are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+First-time contributors: add yourself to [CONTRIBUTORS.md](CONTRIBUTORS.md)
+in your pull request.
 
-First-time contributors: add yourself to [CONTRIBUTORS.md](CONTRIBUTORS.md) in your PR.
+## How to cite
+
+If you use canVODpy, please cite it with its DOI,
+[`10.5281/zenodo.18496233`](https://doi.org/10.5281/zenodo.18496233). This
+DOI always leads to the newest version, and Zenodo also lists a DOI for
+each version. [CITATION.cff](CITATION.cff) has the full citation, and GitHub
+shows it in the "Cite this repository" menu.
 
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE).
 
 This software is provided "as is" without warranty of any kind. See the
-[Impressum](https://canvodpy.eu/impressum/) for full legal notice
-and AI disclosure.
+[Impressum](https://canvodpy.eu/impressum/) for the full legal notice and
+AI disclosure.
 
 ## Affiliation
-
-Founded by **Nicolas François Bader**
 
 [Climate and Environmental Remote Sensing Research Unit (CLIMERS)](https://www.tuwien.at/en/mg/geo/climers)
 Department of Geodesy and Geoinformation, TU Wien
 
-Email: support@canvodpy.eu
+Contact: support@canvodpy.eu
