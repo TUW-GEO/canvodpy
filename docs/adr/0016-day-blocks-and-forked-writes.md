@@ -50,7 +50,8 @@ loses a conflict is planned again on the new tip, against its log
 book, and its tasks run again; a commit is tried up to five times, with
 a growing, partly random wait in between. If the day or the growth
 loses every try, the run records the receiver-days as failed with the
-error and goes on with the next days. Two machines never write one store.
+error and goes on with the next days. Several machines write one store
+only on S3 (ADR 0019).
 
 Memory is a budget (`max_memory_gb`, in `auto` the available memory):
 the run sizes its workers and `days_per_batch` to fit it and fails at
@@ -61,10 +62,9 @@ Existing stores are moved to this layout by one explicit command,
 `canvodpy store migrate-layout`, after `migrate-metadata`; a store not
 yet moved is refused with a message naming it. The temporal-overlap
 check, deduplication on read and the overwrite branch are not needed
-for day blocks and are deprecated (ADR 0005). On S3 the same single
-writer works; several independent writers on S3 are a later design,
-after v1.0.0, and need no change to this layout, since different days
-are different chunks.
+for day blocks and are deprecated (ADR 0005). Several runs on different
+machines write one store on S3 (ADR 0019); this layout needs no change
+for them, since different days are different chunks.
 
 ## Considered options
 

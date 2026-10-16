@@ -70,7 +70,7 @@ The FAIR principles, originally developed for research data[^17], have been adap
 
 - GitHub repository with persistent URL
 - Apache 2.0 open source license
-- Zenodo DOI: [`10.5281/zenodo.19445061`](https://doi.org/10.5281/zenodo.19445061)
+- Zenodo DOI: [`10.5281/zenodo.18496233`](https://doi.org/10.5281/zenodo.18496233)
 - Citation metadata (CITATION.cff, codemeta.json)
 - OpenSSF Best Practices certification
 - Automated FAIR compliance checking
@@ -132,7 +132,7 @@ The project is actively maintained with:
 Academic users should cite **canvodpy** using the provided citation metadata:
 
 - **Citation file**: [CITATION.cff](../CITATION.cff)
-- **Zenodo record**: [`10.5281/zenodo.19445061`](https://doi.org/10.5281/zenodo.19445061)
+- **Zenodo record**: [`10.5281/zenodo.18496233`](https://doi.org/10.5281/zenodo.18496233)
 
 Proper citation ensures software developers receive academic credit, addressing a key sustainability challenge for research software.[^15]
 

@@ -686,3 +686,28 @@ body.dark-theme .xr-wrap .xr-index-data-in,
     scroll-behavior: auto !important;
   }
 }
+
+/* =========================================================
+   Dashboard logo: one image per theme, the other hidden
+   ========================================================= */
+.canvodpy-logo .canvodpy-logo-dark {
+  display: none;
+}
+.canvodpy-logo .canvodpy-logo-bright {
+  display: inline-block;
+}
+.dark .canvodpy-logo .canvodpy-logo-bright,
+.dark-theme .canvodpy-logo .canvodpy-logo-bright,
+body.dark-theme .canvodpy-logo .canvodpy-logo-bright {
+  display: none;
+}
+.dark .canvodpy-logo .canvodpy-logo-dark,
+.dark-theme .canvodpy-logo .canvodpy-logo-dark,
+body.dark-theme .canvodpy-logo .canvodpy-logo-dark {
+  display: inline-block;
+}
+.canvodpy-logo svg {
+  width: 180px;
+  height: auto;
+  display: block;
+}

@@ -46,29 +46,35 @@ def _settings(monkeypatch, module):
     monkeypatch.setattr(module, "load_config", lambda: config)
 
 
-def test_orchestrator_checks_every_group_it_writes(monkeypatch):
+def test_orchestrator_refuses_other_preprocessing_before_reading(site_settings):
+    """Preprocessing is part of the content settings (ADR 0019, #349)."""
     from canvodpy.orchestrator.pipeline import PipelineOrchestrator
 
-    store = _Store()
-    orchestrator = PipelineOrchestrator.__new__(PipelineOrchestrator)
-    monkeypatch.setattr("canvodpy.orchestrator.pipeline.store_exists", lambda _: True)
-    orchestrator.site = SimpleNamespace(gnss_store=store, gnss_store_path=None)
-    orchestrator._config = SimpleNamespace(
-        processing=SimpleNamespace(preprocessing=CONFIG)
-    )
-    dates = [
-        ("2025001", {"canopy_01": (), "reference_01_canopy_01": ()}),
-        ("2025002", {"canopy_01": ()}),
-    ]
-    orchestrator._check_preprocessing_before_run(dates)
-    assert store.checked == [
-        ("canopy_01", PLANNED),
-        ("reference_01_canopy_01", PLANNED),
-    ]
+    from canvod.config import load_config
+    from canvod.store import GnssResearchSite
+    from canvod.store_metadata import ContentSettingsError, ensure_store_metadata
+    from canvod.utils import testing
 
-    store.refuse = "reference_01_canopy_01"
-    with pytest.raises(PreprocessingMismatchError, match="reference_01_canopy_01"):
-        orchestrator._check_preprocessing_before_run(dates)
+    config = load_config()
+    site = GnssResearchSite(testing.SITE_KEY)
+    ensure_store_metadata(
+        site.gnss_store_path,
+        config=config,
+        site_name=testing.SITE_KEY,
+        store_type="gnss_store",
+        source_format="rinex3",
+        names=["canopy_01"],
+    )
+    orchestrator = PipelineOrchestrator.__new__(PipelineOrchestrator)
+    orchestrator.site = site
+    orchestrator._config = config
+    orchestrator._check_content_settings_before_run()
+
+    other = config.model_copy(deep=True)
+    other.processing.preprocessing = CONFIG
+    orchestrator._config = other
+    with pytest.raises(ContentSettingsError, match=r"processing\.preprocessing"):
+        orchestrator._check_content_settings_before_run()
 
 
 def test_vod_computer_checks_each_analysis_group(monkeypatch):

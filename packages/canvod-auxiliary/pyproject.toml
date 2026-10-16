@@ -1,7 +1,7 @@
 [project]
 name = "canvod-auxiliary"
 version = "0.4.0"
-description = "Ephemeris and auxiliary data handling for GNSS-Transmissometry"
+description = "Satellite orbits and clocks, and the satellite angles of each GNSS observation"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"}
 ]

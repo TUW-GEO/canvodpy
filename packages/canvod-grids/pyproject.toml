@@ -1,7 +1,7 @@
 [project]
 name = "canvod-grids"
 version = "0.4.0"
-description = "Equal-area hemispheric grid operations for GNSS-Transmissometry"
+description = "Hemispheric grids for GNSS-Transmissometry"
 readme = "README.md"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},

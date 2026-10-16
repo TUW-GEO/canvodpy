@@ -275,8 +275,8 @@ is working. From the second run on, folders whose files are all older than
 and the listing is much shorter; the log event `files_found` says per
 receiver how many folders were listed and how many came from the index.
 
-`canvodpy dashboard` opens a [marimo](https://marimo.io/) app that shows
-the timing events of `machine/performance*.json`:
+`canvodpy dashboard` opens a [marimo](https://marimo.io/) app that reads
+the run history of a log folder:
 
 ```bash
 canvodpy dashboard                         # log folder from the settings
@@ -288,24 +288,103 @@ To start it together with a run, use `canvodpy run --dashboard`; the
 dashboard keeps running after the run ends. `--dashboard-host` and
 `--dashboard-port` set its address.
 
-The dashboard shows, per site, receiver and VOD receiver pair:
+The dashboard reads the run history, not the log files, so nothing
+disappears when the log files rotate, and it knows a run's settings,
+machine, progress, and problems.
 
-- the duration of each step per day: `reading`, `validating`,
-  `augmenting` (adding the satellite angles), and `writing` for each
-  receiver, and `vod_calc` (computing the VOD) and `vod_store` (writing
-  it) for each pair;
-- the total time per day;
-- a table with the exact figures.
+**Site overview:** one row per site: its last run, that run's status and
+its start and end, and the receiver-days it planned, wrote, skipped,
+failed and hasn't done yet.
 
-It reloads the logs every 10 seconds by default, so you can watch a run
-while it runs. On a long run, pick a longer interval.
+**Run page:** pick a run (newest first). It shows the run's settings, the
+canvodpy version and commit, the machine, the workers and the label; the
+progress per receiver (planned, written, skipped, failed, not yet done,
+bytes added);
+an estimate of when it finishes; the last finished step; the
+throughput; and the run's warnings and errors in words, with their
+receiver and day.
 
-The dashboard takes the site from the run ID. Events logged outside a
-run carry none; the dashboard shows them with "(no run ID)" as the site.
+The page labels the times in UTC and the three numbers above, and says
+how each is computed:
 
-The memory, CPU, and disk use of a run are in the run history and in
-the `memory_stats` and `resource_sample` events; see
-[Parallel processing](parallel-processing.md#memory-use).
+- **Estimate:** for a running run, the mean time per finished
+  receiver-day of this run times the receiver-days not yet done. There
+  is no estimate before the first receiver-day finishes.
+- **Last finished step:** the newest recorded stage of a run (stage,
+  receiver, day, how long ago). The run history records a stage when it
+  ends, so this is the last finished step, not the step running now.
+- **Throughput:** receiver-days finished per hour and bytes added per
+  hour over the run (so far, for a running run).
+
+**Charts:** the run page also shows charts of the run, built from the
+run history queries only:
+
+- **Time per stage:** the total time of each stage. A long bar is a
+  stage that takes a lot of the run.
+- **Time per day:** the stage seconds of a day, added up over all its
+  receivers. Receivers run in parallel, so this is not wall time; a day
+  can show more seconds than it took.
+- **Store growth per day:** the bytes each day added to the store. The
+  y-axis is in megabytes.
+- **CPU and memory:** the percent of the CPU and memory used, sampled
+  during the run. A line near 100 % shows what limits the run.
+- **Free disk:** the free space of each folder, sampled during the run.
+  Free disk is one value per folder, so a chart has one line per folder;
+  the y-axis is in gigabytes.
+- **Throughput over time:** the receiver-days finished, cumulative from
+  the run start. The slope is the pace; a steep line is a fast run.
+
+The charts follow marimo's light and dark theme. The frame (background,
+axes, text) uses the theme, and the data colors come from the canvodpy
+palette for that theme.
+
+**Compare runs by label:** a run can take a free-text label with
+`canvodpy run --label <text>`, for example to group the repetitions of a
+benchmark. The dashboard groups the runs that share a label and compares
+them:
+
+- Only **finished** runs are compared, and a run without a label is left
+  out.
+- Each group shows its machine, workers, version and settings, or
+  "differs" when the group is not uniform. A group whose machine,
+  workers, version or settings differ is not a set of repetitions of the
+  same thing, and the dashboard says so.
+- For each stage, the median time of the group's finished runs that
+  recorded it, with the minimum and the maximum. Per stage a run's time
+  is the sum over its receivers and days (across its worker processes).
+  In total, the median of the runs' wall time (ended minus started),
+  with the minimum and the maximum. Stages run in parallel, so the stage
+  times can add up to more than the total. The median is the middle of
+  the sorted times; the spread is min to max.
+
+A run's status is one of:
+
+- **Running:** the run's process lives.
+- **Finished:** it ended and wrote a result.
+- **Failed:** it ended with an error.
+- **Interrupted:** its process is gone without an end (killed or
+  crashed).
+- **Unknown:** it started on another machine, whose processes can't be
+  checked from here.
+
+It reloads the run history every 10 seconds by default, so you can watch
+a run while it runs. On a long run, pick a longer interval.
+
+You can open the same notebook without canvodpy installed, on a machine
+that has a run history folder. From v1.0.0 on, canvodpy on PyPI ships the
+run history, and `marimo run --sandbox` installs canvodpy in a sandbox
+and takes the folder from `--logs-dir` after `--`:
+
+```bash
+uvx marimo run --sandbox \
+  https://raw.githubusercontent.com/nfb2021/canvodpy/main/canvodpy/src/canvodpy/cli/dashboards/performance.py \
+  -- --logs-dir /path/to/logs
+```
+
+Read from that URL, the notebook takes the run history from the
+installed canvodpy (its logo comes from the installed package too), but
+the style sheet sits next to the notebook, so the app runs with marimo's
+default styling.
 
 !!! example "Try it in a notebook"
 

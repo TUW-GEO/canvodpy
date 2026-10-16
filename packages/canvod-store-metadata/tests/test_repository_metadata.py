@@ -9,8 +9,20 @@ import pytest
 import zarr
 from canvod.utils import testing
 
-from canvod.store_metadata import collect_metadata, metadata_exists, write_metadata
+from canvod.store_metadata import (
+    collect_metadata,
+    collectors,
+    metadata_exists,
+    write_metadata,
+)
 from canvod.store_metadata.schema import ConfigSnapshot
+
+
+@pytest.fixture(autouse=True)
+def _no_content_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The mocked settings here have no site sections to take them from;
+    content settings are tested in test_content_settings.py."""
+    monkeypatch.setattr(collectors, "new_content_settings", lambda *a, **k: None)
 
 
 def _config(naming_authority: str | None = "org.middle-earth") -> MagicMock:

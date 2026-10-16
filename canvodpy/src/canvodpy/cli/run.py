@@ -112,6 +112,7 @@ def _start_dashboard(log_dir: Path, host: str, port: int) -> None:
             "-m",
             "marimo",
             "run",
+            "--no-sandbox",
             str(_NOTEBOOK_PATH),
             "--host",
             host,

@@ -211,6 +211,13 @@ _Avoid_: resolution, frequency
 One committed state of a store, which can be read again later.
 _Avoid_: version (for a store state), checkpoint
 
+**Provisional branch**:
+A branch of a store that holds the most recent days processed with a
+quicker orbit product than the store's own, until those days are
+processed again with the store's product; the main branch never holds
+them.
+_Avoid_: rapid branch, test branch
+
 **Repository metadata** (Icechunk's term):
 The description of a store that belongs to no snapshot and no branch:
 who made it, what it holds, where, under which license. Some of its
@@ -231,6 +238,12 @@ _Avoid_: statistics, store state
 A field of the repository metadata that never changes once the store
 exists, such as its id or creation date.
 _Avoid_: immutable field
+
+**Content settings**:
+The settings that shape a store's data, such as the signals kept, the
+preprocessing, the orbit product and the chunking: set by whoever creates
+the store, fixed with it, and the same for every run that writes to it.
+_Avoid_: fingerprint, store config
 
 **Amendable field**:
 A field of the repository metadata that changes only by amendment, such

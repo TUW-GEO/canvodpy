@@ -541,17 +541,17 @@ docs:
 docs-build:
     uv run zensical build
 
-# check the language of the docs pages (Vale, Google style)
-docs-lint *FILES="docs":
+# check the language of the docs pages, README.md and CONTRIBUTING.md (Vale, Google style)
+docs-lint *FILES="docs README.md CONTRIBUTING.md":
     uvx --from vale vale sync
     uvx --from vale vale {{ FILES }}
 
-# check the language of the docs pages changed since BASE (Vale; what CI runs)
+# check the language of the docs pages, README.md and CONTRIBUTING.md changed since BASE (Vale; what CI runs)
 docs-lint-changed BASE="origin/main":
     #!/usr/bin/env bash
     set -euo pipefail
-    files=$(git diff --name-only --diff-filter=d "{{ BASE }}...HEAD" -- 'docs/*.md' 'docs/**/*.md')
-    if [ -z "$files" ]; then echo "No docs pages changed since {{ BASE }}."; exit 0; fi
+    files=$(git diff --name-only --diff-filter=d "{{ BASE }}...HEAD" -- 'docs/*.md' 'docs/**/*.md' README.md CONTRIBUTING.md)
+    if [ -z "$files" ]; then echo "No docs pages, README.md or CONTRIBUTING.md changed since {{ BASE }}."; exit 0; fi
     uvx --from vale vale sync
     uvx --from vale vale $files
 
@@ -575,11 +575,11 @@ settings-docs:
 settings-docs-check:
     uv run python scripts/settings_docs.py --check
 
-# check every link of the built docs site (lychee; brew install lychee)
+# check every link of the built docs site and of README.md (lychee; brew install lychee)
 docs-links:
     @command -v lychee >/dev/null || { echo "lychee is not installed: brew install lychee" >&2; exit 1; }
     uv run zensical build --clean
-    lychee --root-dir "$(pwd)/site" 'site/**/*.html'
+    lychee --root-dir "$(pwd)/site" 'site/**/*.html' README.md
 
 
 # deploy the documentation via GitHub Actions

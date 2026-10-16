@@ -151,6 +151,69 @@ sites:
 
 ---
 
+## Content settings: fixed for each store
+
+Some settings shape the data a store holds: which signals are kept, how
+the files are read, the orbit product, the preprocessing, the chunk
+sizes and the compression. These are the store's **content settings**.
+The run that creates a store records them in it, and every later run that
+writes to the store must have the same ones, also a run on another
+computer. Data written with other content settings would sit next to the
+old data in one store without anything showing the difference.
+
+A run compares its settings with the store's twice: when it starts,
+before it reads a file, and again just before each commit, because
+another run may have created the store or written to it meanwhile. On a
+difference the run stops and lists each setting with the store's value
+and its own. You then have two options:
+
+- use the store's settings: `canvodpy config init --from-store <store>`
+  writes a settings file from them, or
+- write to a new store, for example with another
+  `processing.storage.gnss_store_name` or `stores_root_dir`.
+
+There is no option to write anyway. A store's content settings never
+change; to process with other settings, create a new store.
+
+| Content setting | Where |
+| --------------- | ----- |
+| The signals kept | `sids.mode`, `sids.preset`, `sids.custom_sids`, and the list of signals they give |
+| Observables and how they are stored | `processing.params.keep_gnss_observables`, `aggregate_glonass_fdma`, `store_radial_distance`, `store_delta_snr`, `store_radial_diff`, `store_sbf_raw_observables`, `store_sbf_metadata` |
+| How files are read and paired | `processing.params.rinex_v3_parser`, `file_pairing`, `receiver_position_mode`, `ephemeris_source` |
+| The orbit product | `processing.aux_data.agency`, `product_type`, `fetch_clock` |
+| Preprocessing | all of `processing.preprocessing`, statistics included |
+| Store layout | `processing.icechunk.compression_algorithm`, `compression_level`, `inline_chunk_threshold_bytes`, `manifest_splitting_enabled`, `manifest_splitting_epoch_range`, `chunk_strategies.gnss_store` |
+| Maintenance | all of `processing.storage.maintenance` |
+| Each receiver | `type`, `reader_format`, `paired_canopies` |
+
+Every other setting may differ from run to run: the resources
+(`resource_mode`, `n_max_threads`, `days_per_batch`, memory), the
+Icechunk cache and concurrency settings, `aux_data.ftp_timeout_s`,
+logging, folders, credentials, the store strategies, `keeper_tags`,
+`netcdf_compression`, and a receiver's `directory`, `naming` and
+`recipe`. The metadata (`processing.metadata`, `processing.references`,
+descriptions, receiver hardware and antenna) is written into the store
+when it's created and changes only with `canvodpy store amend`.
+
+`canvodpy store info <site>` shows when and by whom a store's content
+settings were set, and their hash. In Python,
+`show_metadata(store_path, section="content")` from
+`canvod.store_metadata` lists them in full.
+A receiver added to a store with `canvodpy store amend --add-receiver`
+brings its own three content settings from the settings file.
+
+A store created before canVODpy kept content settings is refused by
+runs until it has them. `canvodpy store migrate-metadata <site>` takes
+them from the settings recorded in the store's first commit. A setting
+that commit doesn't record, such as the `paired_canopies` of a reference
+receiver, isn't guessed: the command stops, lists it, and you give the
+value the data was written with, for example
+`--set sites.mysite.receivers.reference_01.paired_canopies=[canopy_01]`.
+
+ADR 0019 records why ([Decisions](../adr/index.md)).
+
+---
+
 ## `processing:`
 
 Metadata, resources, storage, and ephemeris products.

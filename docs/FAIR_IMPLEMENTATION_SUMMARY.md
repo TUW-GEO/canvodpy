@@ -81,7 +81,7 @@ Added new "Security & FAIR" section with:
 | 1 | **Repository** | ✅ Pass | Public GitHub repository with version control |
 | 2 | **License** | ✅ Pass | Apache 2.0 in LICENSE file |
 | 3 | **Registry** | ✅ Pass | Published to PyPI ([canvodpy](https://pypi.org/project/canvodpy/) + 11 sub-packages, v0.2.1+) |
-| 4 | **Citation** | ✅ Pass | CITATION.cff + Zenodo DOI (`10.5281/zenodo.19445061`) |
+| 4 | **Citation** | ✅ Pass | CITATION.cff + Zenodo DOI (`10.5281/zenodo.18496233`) |
 | 5 | **Checklist** | ✅ Pass | **OpenSSF Best Practices badge obtained!** ([Project 12329](https://www.bestpractices.dev/projects/12329)) |
 
 **Overall:** 🟢 **5/5 complete**

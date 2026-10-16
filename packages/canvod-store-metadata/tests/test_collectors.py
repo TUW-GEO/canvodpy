@@ -23,6 +23,13 @@ from canvod.store_metadata.collectors import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _no_content_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The mocked settings here have no site sections to take them from;
+    content settings are tested in test_content_settings.py."""
+    monkeypatch.setattr(collectors, "new_content_settings", lambda *a, **k: None)
+
+
 class TestCollectors:
     def test_collect_software_versions(self):
         versions = collect_software_versions()

@@ -35,14 +35,17 @@ from loky import get_reusable_executor as _loky_reusable
 
 from canvod.config import CanvodConfig, load_config
 from canvod.config.models import mixed_format_error, reference_store_group
-from canvod.ops import planned_settings, preprocess_files
+from canvod.ops import preprocess_files
 from canvod.readers import MatchedDirs
 from canvod.readers.gnss_specs.constants import UREG
 from canvod.store import GnssResearchSite
 from canvod.store.store import _with_run_id
 from canvod.store_metadata import (
+    check_content_settings,
     missing_store_settings,
     missing_store_settings_message,
+    read_repository_metadata,
+    store_command,
     store_exists,
 )
 from canvod.utils.logging import (
@@ -1554,29 +1557,35 @@ class PipelineOrchestrator:
             expected_counts.clear()
             gc.collect()
 
-    def _check_preprocessing_before_run(
-        self,
-        dates: list[
-            tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]
-        ],
-    ) -> None:
-        """Refuse the run before processing if a group holds other preprocessing.
+    def _check_content_settings_before_run(self) -> None:
+        """Refuse the run before any file is read if its settings don't fit the store.
 
-        Compares ``processing.preprocessing`` with the log books of every
-        GNSS store group the run writes. The same comparison runs again on
-        each dataset at write time; this one stops a run before it spends
-        time on data that would be refused.
+        Compares the run's content settings (ADR 0019), preprocessing
+        included, with those of the GNSS store, key by key. The same
+        comparison runs at the tip before each commit; this one stops a run
+        before it spends time on data that would be refused. A store
+        without content settings is refused too, naming the migrate
+        command.
 
         Raises
         ------
-        PreprocessingMismatchError
-            If a group holds data preprocessed differently.
+        ContentSettingsError
+            If a content setting differs, or the store has none.
         """
-        if not store_exists(self.site.gnss_store_path):
-            return  # a first run: the store holds nothing to compare with
-        settings = planned_settings(self._config.processing.preprocessing)
-        for group in sorted({group for _, receivers in dates for group in receivers}):
-            self.site.gnss_store.check_settings_match(group, settings)
+        path = self.site.gnss_store_path
+        if not store_exists(path):
+            return  # a first run: the run's settings become the store's
+        repository = read_repository_metadata(path)
+        if not repository:
+            return  # predates repository metadata; the write names the migration
+        check_content_settings(
+            repository,
+            self._config,
+            store_path=path,
+            migrate_command=store_command(
+                "migrate-metadata", self.site.site_name, "gnss_store"
+            ),
+        )
 
     def _check_new_store_settings(self) -> None:
         """Refuse a first run before processing if a new store's settings are missing.
@@ -1853,8 +1862,10 @@ class PipelineOrchestrator:
             return
 
         # A first run whose new store is missing settings is refused before
-        # any file is read; the write would refuse every day at the end.
+        # any file is read; the write would refuse every day at the end. So
+        # is a run whose settings don't fit the store's content settings.
         self._check_new_store_settings()
+        self._check_content_settings_before_run()
 
         grouped = self._group_by_date_and_receiver()
         filtered_dates = self._filter_dates(grouped, start_from, end_at)
@@ -1865,7 +1876,6 @@ class PipelineOrchestrator:
             )
             return
 
-        self._check_preprocessing_before_run(filtered_dates)
         if self._run is not None:
             self._run.plan(
                 (group, date_key)

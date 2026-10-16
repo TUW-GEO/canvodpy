@@ -506,11 +506,14 @@ class RunHistory:
         machine: dict[str, Any],
         workers: int | None,
         label: str | None = None,
+        started_at: datetime | None = None,
     ) -> None:
         """Record the start of a run, by the process calling this.
 
         The host and process of the caller are recorded, so a run whose
         process is gone without :meth:`end_run` shows as interrupted.
+        *started_at* defaults to now; pass an aware UTC time (as the tests
+        do) to fix the run's wall time.
         """
         process = psutil.Process()
         with self._write() as db:
@@ -522,7 +525,7 @@ class RunHistory:
                     run_id,
                     site,
                     label,
-                    _now(),
+                    _now() if started_at is None else started_at.isoformat(),
                     socket.gethostname(),
                     process.pid,
                     process.create_time(),
@@ -619,13 +622,27 @@ class RunHistory:
             )
 
     def end_run(
-        self, run_id: str, result: RunResult, *, error: str | None = None
+        self,
+        run_id: str,
+        result: RunResult,
+        *,
+        error: str | None = None,
+        ended_at: datetime | None = None,
     ) -> None:
-        """Record the end of a run; *error* says why a failed run failed."""
+        """Record the end of a run; *error* says why a failed run failed.
+
+        *ended_at* defaults to now; pass an aware UTC time (as the tests
+        do) to fix the run's wall time.
+        """
         with self._write() as db:
             db.execute(
                 "UPDATE runs SET ended_at = ?, result = ?, error = ? WHERE run_id = ?",
-                (_now(), result, error, run_id),
+                (
+                    _now() if ended_at is None else ended_at.isoformat(),
+                    result,
+                    error,
+                    run_id,
+                ),
             )
 
     def save_file_index(
@@ -954,7 +971,16 @@ def recorded_run(
             run_id = base_id
             for number in itertools.count(2):
                 try:
-                    history.start_run(run_id, **facts)
+                    history.start_run(
+                        run_id,
+                        site=facts["site"],
+                        settings=facts["settings"],
+                        canvodpy_version=facts["canvodpy_version"],
+                        commit=facts["commit"],
+                        machine=facts["machine"],
+                        workers=facts["workers"],
+                        label=facts["label"],
+                    )
                     break
                 except sqlite3.IntegrityError:
                     run_id = f"{base_id}-{number}"

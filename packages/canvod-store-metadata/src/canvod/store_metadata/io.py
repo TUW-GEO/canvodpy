@@ -125,6 +125,11 @@ def commit_with_rebase(
     different groups) onto the new tip; overlapping changes fail with
     ``icechunk.RebaseFailedError``.
 
+    A commit of data checks the run's content settings against the
+    store's at the tip, after the rebase (ADR 0019): another run may have
+    created the store or written first. A commit that changes the
+    repository metadata (creation, amendment, migration) is not checked.
+
     The commit also writes the root copy and the snapshot summary of the
     rebased session (ADR 0014), stores the lockfile text once per hash, and
     records software, environment and settings as commit metadata, next to
@@ -159,7 +164,10 @@ def commit_with_rebase(
         If the store has no repository metadata and ``repository`` is not
         given, or the root group last committed differs from the repository
         metadata (written by an older canvodpy or edited by hand).
+    ContentSettingsError
+        If the run's content settings differ from the store's.
     """
+    changes_repository = repository is not None
     with commit_lock(store_path):
         repo = open_repository(store_path)
         if repository is None:
@@ -186,6 +194,8 @@ def commit_with_rebase(
             from canvod.config import load_config
 
             config = load_config()
+        if not changes_repository:
+            _check_content_at_tip(repository, config, store_path)
         root = zarr.open_group(session.store, mode="a")
         metadata = {
             **prepare_commit(root, repository, store_path=store_path, config=config),
@@ -194,6 +204,39 @@ def commit_with_rebase(
         return session.commit(
             message, metadata=metadata, rebase_with=icechunk.ConflictDetector()
         )
+
+
+def _check_content_at_tip(
+    repository: dict[str, Any], config: Any, store_path: StoreLocation | Path | str
+) -> None:
+    """Refuse a commit whose settings differ from the store's content settings.
+
+    Checked only for a run's full settings (not a recorded snapshot) and a
+    store that has content settings: a store without them is refused when
+    the run starts (:func:`ensure_store_metadata`).
+    """
+    from .content import (
+        CONTENT_SETTINGS_FIELD,
+        check_content_settings,
+        is_settings_object,
+    )
+
+    if not is_settings_object(config) or not repository.get(CONTENT_SETTINGS_FIELD):
+        return
+    check_content_settings(
+        repository,
+        config,
+        store_path=store_path,
+        migrate_command=_migrate_command(repository),
+    )
+
+
+def _migrate_command(repository: dict[str, Any]) -> str:
+    return store_command(
+        "migrate-metadata",
+        repository["spatial"]["site"]["name"],
+        repository["identity"]["store_type"],
+    )
 
 
 def rewrite_manifests(
@@ -620,7 +663,9 @@ def ensure_store_metadata(
 
     Gives a new store its repository metadata from the settings, then
     refuses ``names`` the metadata doesn't list: receivers and their pair
-    groups for a GNSS store, VOD analyses for a VOD store. Runs from the
+    groups for a GNSS store, VOD analyses for a VOD store. Then refuses
+    settings that differ from the store's content settings, and a store
+    without them (ADR 0019). Runs from the
     command line, Python and Airflow all take this step, so they behave
     the same.
 
@@ -648,8 +693,12 @@ def ensure_store_metadata(
         ``source_format`` is ``None``, the store predates repository
         metadata (names the migrate command), or a name is not listed in
         the metadata (names the amend command).
+    ContentSettingsError
+        If the settings differ from the store's content settings, or the
+        store has none (names the migrate command).
     """
     from .collectors import collect_metadata
+    from .content import check_content_settings
 
     names = list(names)
 
@@ -687,6 +736,12 @@ def ensure_store_metadata(
         check_vod_analyses(repository, names, store_path=store_path)
     else:
         check_receivers(repository, names, store_path=store_path)
+    check_content_settings(
+        repository,
+        config,
+        store_path=store_path,
+        migrate_command=store_command("migrate-metadata", site_name, store_type),
+    )
     return repository
 
 

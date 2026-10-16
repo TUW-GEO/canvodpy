@@ -1,7 +1,7 @@
 [project]
 name = "canvodpy"
 version = "0.4.0"
-description = "Python ecosystem for GNSS-Transmissometry canopy VOD retrievals"
+description = "An open Python ecosystem for GNSS-Transmissometry canopy VOD retrievals"
 readme = "README.md"
 requires-python = ">=3.14"
 authors = [
@@ -30,21 +30,18 @@ dependencies = [
     "canvod-vod==0.4.0",
     "canvod-ops==0.4.0",
     "canvod-preflight==0.4.0",
-    "matplotlib>=3.8.0",
+    "numpy>=1.26.0",
+    "pandas>=2.1.0",
+    "polars>=1.0.0",
+    "xarray>=2024.1.0",
+    "zarr>=3.1.2",
     "pint>=0.20",
     "structlog>=23.0",
     "pydantic>=2.0",
-    "tqdm>=4.65",
     "natsort>=8.0.0",
     "loky>=3.5.6",
-    "mystmd>=1.8.0",
-    "docker>=7.1.0",
-    "howfairis>=0.13.0",
     "pyarrow>=23.0.1",
-    "palettable>=3.3.3",
     "altair>=6.0.0",
-    "tabulate>=0.10.0",
-    "sqlglot>=29.0.1",
     "icechunk>=2.0.1",
     "typer>=0.9",
     "rich>=13.0",

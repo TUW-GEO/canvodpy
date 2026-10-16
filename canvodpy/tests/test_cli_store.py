@@ -448,6 +448,8 @@ def _write_old_form_store(
     import icechunk
     import zarr
 
+    from canvod.config import load_config
+    from canvod.store_metadata import collect_config_snapshot
     from canvod.store_metadata.schema import (
         Creator,
         Publisher,
@@ -459,7 +461,14 @@ def _write_old_form_store(
     )
 
     kind = store_type.removesuffix("_store")
+    # Older versions recorded the settings of the run in the attribute too;
+    # the tests keep their settings next to the stores (tmp_path/config).
+    settings = collect_config_snapshot(
+        load_config(config_dir=store_path.parents[2] / "config")
+    )
+    loader_module.load_config.cache_clear()  # a test may change them after
     old = StoreMetadata(
+        config=settings,
         identity=StoreIdentity(
             id=f"TestSite/{store_type}",
             title=f"TestSite {kind.title()} Store",
@@ -552,6 +561,26 @@ class TestStoreMigrateMetadata:
         from canvod.store_metadata import read_metadata
 
         assert read_metadata(store_path).migration.who == testing.PERSON_INITIALS
+
+    def test_a_migrated_store_gets_its_content_settings(self, tmp_path):
+        """ADR 0019: from the settings of the first commit (#349)."""
+        from canvod.store_metadata import migrate_metadata, read_repository_metadata
+
+        config_dir, store_path = self._setup(tmp_path)
+        migrate_metadata(store_path, who=testing.PERSON_INITIALS)
+        assert not read_repository_metadata(store_path).get("content_settings")
+        command = ["store", "migrate-metadata", "TestSite", "--store", "gnss", "--yes"]
+
+        result = runner.invoke(main_app, command, env=_env(config_dir))
+
+        assert result.exit_code == 0, result.output
+        assert "Content settings written" in result.output
+        content = read_repository_metadata(store_path)["content_settings"]
+        assert content["origin"] == "migrated"
+        assert content["set_by"] == testing.PERSON_INITIALS
+        again = runner.invoke(main_app, command, env=_env(config_dir))
+        assert again.exit_code == 0, again.output
+        assert "already migrated" in again.output
 
     def test_missing_initials_refuse_the_migration(self, tmp_path):
         config_dir, store_path = self._setup(tmp_path)

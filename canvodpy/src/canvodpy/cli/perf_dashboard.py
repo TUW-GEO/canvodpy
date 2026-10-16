@@ -1,9 +1,8 @@
-"""``canvodpy dashboard``: launch the marimo performance dashboard.
+"""``canvodpy dashboard``: launch the marimo run dashboard.
 
-Reads `stage_timing` events (see `canvodpy.logging.stage_timer`) from
-`machine/performance*.json` and displays a per-iteration stage breakdown
-plus an elapsed-time-per-receiver-per-day view. Works during a live run
-(partial data, refresh button to reload) or after it's finished.
+Reads the run history (see ``canvodpy.run_history``) and shows the site
+overview and a run page. Works during a live run (auto-refresh) or after
+it finishes.
 """
 
 from __future__ import annotations
@@ -66,7 +65,14 @@ def dashboard(
     env["CANVODPY_PERF_LOG_DIR"] = str(log_dir)
 
     marimo_subcommand = "edit" if edit else "run"
-    cmd = [sys.executable, "-m", "marimo", marimo_subcommand, str(_NOTEBOOK_PATH)]
+    cmd = [
+        sys.executable,
+        "-m",
+        "marimo",
+        marimo_subcommand,
+        "--no-sandbox",
+        str(_NOTEBOOK_PATH),
+    ]
     if host is not None:
         cmd += ["--host", host]
     if port is not None:
