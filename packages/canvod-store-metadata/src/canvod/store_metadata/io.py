@@ -46,6 +46,15 @@ CONFLICT_TRIES = 5
 CONFLICT_WAIT_SECONDS = 1.0
 
 
+#: How long a run that lost the creation of a store to another run waits
+#: for that run's repository metadata (:func:`ensure_metadata`, #358).
+CREATION_WAIT_SECONDS = 60.0
+
+
+class StoreCreatedByAnotherRunError(ValueError):
+    """Another run created the store after this run found it without metadata."""
+
+
 def wait_after_conflict(retry: int) -> float:
     """Wait before try ``retry + 1`` of a commit that lost a conflict.
 
@@ -114,6 +123,7 @@ def commit_with_rebase(
     store_path: StoreLocation | Path | str,
     config: Any = None,
     repository: dict[str, Any] | None = None,
+    rebase: bool = True,
 ) -> str:
     """Commit a session, rebasing it if the branch moved since it was opened.
 
@@ -157,6 +167,12 @@ def commit_with_rebase(
         ``Repository.set_metadata`` only after the commit succeeded, so a
         failed commit leaves the repository metadata as it was. ``None``
         uses the store's current repository metadata.
+    rebase
+        ``False`` commits only onto the snapshot the session was opened
+        on: if the branch moved, the commit fails with
+        ``icechunk.ConflictError`` instead of rebasing. The creation of a
+        store uses it, so of two runs that create one store at the same
+        time only one commit lands (:func:`write_metadata`).
 
     Returns
     -------
@@ -204,7 +220,9 @@ def commit_with_rebase(
         # Rebase first, if the branch moved, so the summary describes
         # everything the commit will hold and the root group is changed by
         # this commit only.
-        if branch is None or repo.lookup_branch(branch) != session.snapshot_id:
+        if rebase and (
+            branch is None or repo.lookup_branch(branch) != session.snapshot_id
+        ):
             session.rebase(icechunk.ConflictDetector())
         root = zarr.open_group(session.store, mode="a")
         metadata = {
@@ -217,6 +235,8 @@ def commit_with_rebase(
             ),
             **(metadata or {}),
         }
+        if not rebase:
+            return session.commit(message, metadata=metadata)
         return session.commit(
             message, metadata=metadata, rebase_with=icechunk.ConflictDetector()
         )
@@ -374,10 +394,15 @@ def write_metadata(
 
     Raises
     ------
+    StoreCreatedByAnotherRunError
+        If the store already has repository metadata, or another run
+        committed its creation first. A store on S3 has no commit lock, so
+        two runs may both find it without metadata; the creation commit
+        does not rebase, so only one of them creates it (#358).
     ValueError
-        If the store already has repository metadata, ``metadata`` lacks a
-        fixed field (build it with ``collect_metadata``), or a field breaks
-        a rule of its standard (e.g. a license outside SPDX).
+        If ``metadata`` lacks a fixed field (build it with
+        ``collect_metadata``), or a field breaks a rule of its standard
+        (e.g. a license outside SPDX).
     """
     try:
         repository_metadata = RepositoryMetadata.from_store_metadata(metadata)
@@ -398,6 +423,8 @@ def write_metadata(
         )
         raise ValueError(msg) from exc
 
+    from .snapshot import REPOSITORY_METADATA_ATTR
+
     with commit_lock(store_path):
         repo = open_repository(store_path)
         existing = repo.get_metadata()
@@ -407,17 +434,28 @@ def write_metadata(
                 f"The store at {store_path} already has repository metadata "
                 f"(store {store}); open it instead of creating it again."
             )
-            raise ValueError(msg)
+            raise StoreCreatedByAnotherRunError(msg)
         repository = repository_metadata.model_dump(mode="json")
         session = repo.writable_session(branch)
-        zarr.open_group(session.store, mode="a")
-        snapshot_id = commit_with_rebase(
-            session,
-            "Write store metadata",
-            store_path=store_path,
-            config=metadata.config,
-            repository=repository,
+        root = zarr.open_group(session.store, mode="a")
+        created_meanwhile = (
+            f"Another run created the store at {store_path} first; nothing "
+            "was committed."
         )
+        if REPOSITORY_METADATA_ATTR in root.attrs:
+            # Committed, but its repository metadata is not written yet.
+            raise StoreCreatedByAnotherRunError(created_meanwhile)
+        try:
+            snapshot_id = commit_with_rebase(
+                session,
+                "Write store metadata",
+                store_path=store_path,
+                config=metadata.config,
+                repository=repository,
+                rebase=False,
+            )
+        except icechunk.ConflictError as exc:
+            raise StoreCreatedByAnotherRunError(created_meanwhile) from exc
         repo.set_metadata(repository)
         return snapshot_id
 
@@ -680,12 +718,20 @@ def ensure_metadata(
         store. ``None`` uses the defaults of the ``processing.icechunk``
         settings.
 
+    Two runs may create one store at the same time (on S3, which has no
+    commit lock): the run that loses waits up to
+    :data:`CREATION_WAIT_SECONDS` for the other run's repository metadata
+    and returns it, so it goes on with the other run's store; its own
+    settings are then checked against that store's content settings
+    (#358).
+
     Raises
     ------
     ValueError
         If the store holds data or old-form metadata but no repository
         metadata: it predates ADR 0014 and must be migrated first. Also if
-        the location holds files but no store.
+        the location holds files but no store, or another run created the
+        store but wrote no repository metadata in time.
     """
     # Created before the lock: Icechunk creates a store only in an empty
     # location, and the lock file lives in the store's directory.
@@ -703,8 +749,39 @@ def ensure_metadata(
                 f"  {store_command('migrate-metadata', site_name, store_type)}"
             )
             raise ValueError(msg)
-        write_metadata(store_path, collect())
-    return open_repository(store_path).get_metadata()
+        try:
+            write_metadata(store_path, collect())
+        except StoreCreatedByAnotherRunError:
+            _logger.info("store_created_by_another_run", store=str(store_path))
+        else:
+            return open_repository(store_path).get_metadata()
+    return _wait_for_repository_metadata(store_path)
+
+
+def _wait_for_repository_metadata(
+    store_path: StoreLocation | Path | str,
+) -> dict[str, Any]:
+    """The repository metadata another run writes after its creation commit.
+
+    The creating run writes it right after the commit
+    (:func:`write_metadata`); this waits up to
+    :data:`CREATION_WAIT_SECONDS`.
+    """
+    deadline = time.monotonic() + CREATION_WAIT_SECONDS
+    while True:
+        existing = open_repository(store_path).get_metadata()
+        if existing:
+            return existing
+        if time.monotonic() > deadline:
+            msg = (
+                f"Another run created the store at {store_path} but wrote no "
+                f"repository metadata within {CREATION_WAIT_SECONDS:.0f} s; it "
+                "may have stopped. This run wrote nothing. The store holds no "
+                "data yet; ask whoever started the other run before you "
+                "remove it and run again."
+            )
+            raise ValueError(msg)
+        time.sleep(0.5)
 
 
 def ensure_store_metadata(

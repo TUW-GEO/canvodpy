@@ -198,6 +198,14 @@ def _vod_output_params(monkeypatch):
     return params
 
 
+@pytest.fixture(autouse=True)
+def _no_day_blocks(monkeypatch):
+    """The mocked GNSS store holds no day blocks, so VOD is appended."""
+    monkeypatch.setattr(
+        "canvod.store.day_blocks.holds_day_blocks", lambda store, group: False
+    )
+
+
 def _day_datasets(canopy_epochs: int = 6, ref_epochs: int = 4) -> dict:
     canopy = _make_ds(n_epochs=canopy_epochs, n_sids=3)
     canopy["SNR"] = canopy["SNR"] * 30.0
@@ -376,6 +384,41 @@ class TestVodOutputOptions:
 
 
 class TestComputeBulkAll:
+    def test_one_commit_per_day(self):
+        """Results spanning two days are written as two batches, a day each."""
+        site = _make_site({"a": _make_analysis_cfg(), "b": _make_analysis_cfg()})
+        vc = VodComputer(site)
+        datasets = _day_datasets()
+        cut = datasets["reference_01_canopy_01"].epoch.values[2]
+        for name, ds in datasets.items():
+            # The epochs from ``cut`` on move to the next day.
+            shifted = ds.epoch.values.copy()
+            shifted[shifted >= cut] += np.timedelta64(1, "D")
+            datasets[name] = ds.assign_coords(epoch=shifted)
+
+        def entry(name, start, end):
+            c, r = vc._aligned_pair(datasets, name)
+            return vc._compute(c, r, name), c, r
+
+        with (
+            unittest.mock.patch.object(vc, "_compute_bulk_entry", side_effect=entry),
+            unittest.mock.patch("canvodpy.vod_computer.ensure_vod_store_metadata"),
+        ):
+            vc.compute_bulk_all()
+
+        batches = [
+            c.kwargs["items"]
+            for c in site._site.store_vod_analyses_batch.call_args_list
+        ]
+        assert [[i["analysis_name"] for i in b] for b in batches] == [
+            ["a", "b"],
+            ["a", "b"],
+        ]
+        for batch in batches:
+            for item in batch:
+                days = np.unique(item["vod_dataset"].epoch.values.astype("M8[D]"))
+                assert days.size == 1
+
     def test_one_commit_for_all_analyses(self):
         site = _make_site({"a": _make_analysis_cfg(), "b": _make_analysis_cfg()})
         vc = VodComputer(site)
@@ -434,3 +477,45 @@ class TestVodStoreMetadata:
         with pytest.raises(OSError, match="disk full"):
             vc.compute_day(_day_datasets(), "a")
         site._site.store_vod_analyses_batch.assert_not_called()
+
+
+class TestComputeBulkFromDayBlocks:
+    def test_padding_slots_never_reach_the_vod(self):
+        # 15-min data: 96 slots padded to 180 per day, and the padding of the
+        # canopy and the reference group has the same times.
+        import contextlib
+
+        import icechunk
+
+        from canvod.store.day_blocks import add_day_block, write_file_region
+
+        repo = icechunk.Repository.create(icechunk.in_memory_storage())
+        session = repo.writable_session("main")
+        cfg = _make_analysis_cfg()
+        day = np.datetime64("2025-01-01", "D")
+        epochs = day.astype("M8[ns]") + np.arange(4) * np.timedelta64(15, "m")
+        for group in (cfg.canopy_receiver, cfg.reference_store_group):
+            ds = _make_ds(n_epochs=4).assign_coords(
+                epoch=("epoch", epochs, {"time_system": "GPS"})
+            )
+            add_day_block(session, group, day, 900, template=ds)
+            write_file_region(session, group, ds)
+        session.commit("two receivers, one day")
+
+        class _Store:
+            @contextlib.contextmanager
+            def readonly_session(self, branch="main"):
+                yield repo.readonly_session(branch)
+
+        site = _make_site({"a": cfg})
+        site.gnss_store = _Store()
+        vc = VodComputer(site)
+
+        with unittest.mock.patch.object(
+            vc, "_compute", side_effect=lambda canopy, sky, name: canopy
+        ):
+            _, canopy, sky = vc._compute_bulk_entry("a", None, None)
+
+        assert canopy.sizes["epoch"] == 96
+        assert canopy.epoch.values[-1] < day + np.timedelta64(1, "D")
+        np.testing.assert_array_equal(canopy.epoch.values[:4], epochs)

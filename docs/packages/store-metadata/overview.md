@@ -269,6 +269,13 @@ conditional writes keep two commits from overwriting each other. The
 S3 service must support them (`If-Match` and `If-None-Match`); most do,
 but check before choosing one.
 
+Two runs may also create one store at the same time. Only one of them
+creates it: the commit that creates a store does not rebase, so the
+second one fails. That run then waits up to a minute for the first
+run's repository metadata and goes on with that store, as if it had
+found it; its settings are checked against the store's content settings
+like those of any later run.
+
 Creating, opening, reading the metadata, and refusing a conflicting
 commit are tested in CI against an S3 emulator.
 

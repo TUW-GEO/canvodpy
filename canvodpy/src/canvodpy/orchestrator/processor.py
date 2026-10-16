@@ -106,7 +106,10 @@ from canvodpy.orchestrator.forked_writes import (
     ForkedDay,
     ForkResult,
     ForkTask,
+    StoredSpan,
     chunk_groups,
+    rewrite_spans,
+    stored_spans,
 )
 
 # ============================================================================
@@ -3387,7 +3390,10 @@ class RinexDataProcessor:
         (:func:`~canvod.store.day_blocks.write_file_region`). The data, the
         ``sbf_obs`` of new files and the log-book rows (with each file's
         epoch count) go into one commit; no temporary branch is needed,
-        since writing a file again replaces its slots.
+        since a file written again goes into the same slots and empties
+        those of its earlier write that it now has no epochs for, but none
+        of another file's
+        (:func:`~canvodpy.orchestrator.forked_writes.rewrite_spans`).
 
         Files already stored (by hash or by time, see
         :meth:`_check_existing_with_temporal_overlap`) are skipped with
@@ -3482,6 +3488,9 @@ class RinexDataProcessor:
                     # axis, and writing a file keeps them as they are.
                     blocks = day_blocks(session.store, receiver_name)
 
+                # The log book before this batch: a file written again
+                # empties the slots of its earlier write, none of another's.
+                stored = self._stored_rows(session, receiver_name)
                 new_fnames: list[Path] = []
                 for idx, (fname, ds) in enumerate(hashed):
                     rinex_hash = str(file_hash_map[fname])
@@ -3493,6 +3502,12 @@ class RinexDataProcessor:
                         action = "skipped"
                         log.debug("Skipped: %s", rel_path)
                     else:
+                        earlier, others = rewrite_spans(
+                            stored,
+                            ds.attrs.get("canonical_name")
+                            or self._canonical_name(fname),
+                            rinex_hash,
+                        )
                         try:
                             region = write_file_region(
                                 session,
@@ -3501,6 +3516,8 @@ class RinexDataProcessor:
                                     store._cleanse_dataset_attrs(ds)
                                 ),
                                 blocks=blocks,
+                                earlier=earlier,
+                                keep=others,
                             )
                         except (OSError, RuntimeError, ValueError):  # fmt: skip
                             log.exception("Failed to write %s", fname.name)
@@ -3680,7 +3697,7 @@ class RinexDataProcessor:
                 for d, b in group_blocks.items()
                 if d in (day, day + np.timedelta64(1, "D"))
             }
-        stored = {g: self._stored_hashes_around(g, day) for g in all_groups}
+        stored = {g: self._stored_rows_around(g, day) for g in all_groups}
         params = self._config.processing.params
         preprocessing = self._config.processing.preprocessing
         whole_lanes = (
@@ -3727,7 +3744,10 @@ class RinexDataProcessor:
                         for g in groups
                     },
                     blocks={g: blocks[g] for g in groups},
-                    stored_hashes={g: stored[g] for g in groups},
+                    stored_hashes={
+                        g: frozenset(h for _, h, _, _ in stored[g] if h) for g in groups
+                    },
+                    stored_spans={g: stored[g] for g in groups},
                     strategy=self._gnss_store_strategy,
                     preprocessing=preprocessing,
                     canonical_names={Path(m[0]): names[Path(m[0])] for m in members},
@@ -3782,20 +3802,23 @@ class RinexDataProcessor:
             chunks |= {(group, chunk) for chunk in span}
         return chunks
 
-    def _stored_hashes_around(self, group: str, day: np.datetime64) -> frozenset[str]:
-        """Hashes of ``group``'s log-book rows from the day before to the day after.
+    def _stored_rows_around(
+        self, group: str, day: np.datetime64
+    ) -> tuple[StoredSpan, ...]:
+        """``group``'s log-book rows from the day before to the day after.
 
         A file has one time span, so a file of ``day`` is in the log book
         only with a row near it; the rest of the log book is not sent to
-        the workers.
+        the workers (:func:`~canvodpy.orchestrator.forked_writes.stored_spans`).
         """
         df = self.site.gnss_store.load_metadata_for_dedup(group)
         if df is None or df.is_empty():
-            return frozenset()
+            return ()
         low = datetime.fromisoformat(str(day - np.timedelta64(1, "D")))
         high = datetime.fromisoformat(str(day + np.timedelta64(2, "D")))
-        near = df.filter((pl.col("end") >= low) & (pl.col("start") < high))
-        return frozenset(str(h) for h in near["rinex_hash"].to_list() if h)
+        return stored_spans(
+            df.filter((pl.col("end") >= low) & (pl.col("start") < high))
+        )
 
     def _check_stored_overlaps(
         self, session: icechunk.Session, numbers: Sequence[FileNumbers]
@@ -3910,10 +3933,14 @@ class RinexDataProcessor:
             self._check_stored_overlaps(session, numbers)
 
             kept: list[FileNumbers] = []
+            # The log book at the tip, read once per group with deferred files.
+            tip_rows: dict[str, tuple[StoredSpan, ...]] = {}
             for n in numbers:
                 if n.deferred is not None:
+                    if n.group not in tip_rows:
+                        tip_rows[n.group] = self._stored_rows(session, n.group)
                     try:
-                        n.epochs = self._write_deferred(session, n)
+                        n.epochs = self._write_deferred(session, n, tip_rows[n.group])
                     except (OSError, RuntimeError, ValueError):  # fmt: skip
                         log.exception(
                             "file_write_failed", file=n.fname.name, group=n.group
@@ -4033,11 +4060,21 @@ class RinexDataProcessor:
             )
         return out
 
-    def _write_deferred(self, session: Session, n: FileNumbers) -> int:
+    def _stored_rows(self, session: Session, group: str) -> tuple[StoredSpan, ...]:
+        """``group``'s log-book rows in ``session``; none without a log book."""
+        if f"{group}/metadata/table" not in zarr.open_group(session.store, mode="r"):
+            return ()
+        return stored_spans(self.site.gnss_store.load_metadata(session.store, group))
+
+    def _write_deferred(
+        self, session: Session, n: FileNumbers, stored: Sequence[StoredSpan]
+    ) -> int:
         """Write a file a worker left to the writer thread; its epochs written.
 
         A day of the file without a block gets one at the cadence of the
-        processing day's block.
+        processing day's block. ``stored`` are the group's log-book rows: the
+        file empties the slots of its earlier write, none of another file's
+        (:func:`~canvodpy.orchestrator.forked_writes.rewrite_spans`).
         """
         if n.deferred is None:
             msg = f"{n.fname.name} has no data left for the writer thread to write."
@@ -4058,7 +4095,15 @@ class RinexDataProcessor:
             )
         if missing:
             blocks = day_blocks(session.store, n.group)
-        return write_file_region(session, n.group, n.deferred, blocks=blocks).epochs
+        earlier, others = rewrite_spans(stored, n.canonical_name, n.rinex_hash)
+        return write_file_region(
+            session,
+            n.group,
+            n.deferred,
+            blocks=blocks,
+            earlier=earlier,
+            keep=others,
+        ).epochs
 
     def _append_to_icechunk(
         self,

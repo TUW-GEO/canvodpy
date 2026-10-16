@@ -126,9 +126,12 @@ class VODCalculator(ABC, BaseModel):
 
         store = MyIcechunkStore(icechunk_store_pth)
 
+        from canvod.store.day_blocks import load_group
+
+        # load_group, not xr.open_zarr: it drops the padding of day blocks.
         with store.readonly_session() as session:
-            canopy_ds = xr.open_zarr(store=session.store, group=canopy_group)
-            sky_ds = xr.open_zarr(store=session.store, group=sky_group)
+            canopy_ds = load_group(session.store, canopy_group)
+            sky_ds = load_group(session.store, sky_group)
 
         return cls.from_datasets(canopy_ds=canopy_ds, sky_ds=sky_ds)
 

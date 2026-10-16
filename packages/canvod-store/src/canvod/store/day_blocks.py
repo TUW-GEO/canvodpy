@@ -1,13 +1,18 @@
 """Day blocks: the layout of a group's epoch axis (ADR 0016).
 
 A group's epoch axis is a sequence of day blocks, one per day, each holding
-every slot of the day at the day's cadence. Blocks are added at the end of
-the axis in the order the days are first written; a day is found by its
-epoch coordinate. An epoch goes to the nearest slot (00:00 plus a multiple
-of the cadence). The coordinate holds the real time of the epoch where there
-are data and the grid time in empty slots, so it never has missing values.
-Variables hold their missing value in empty slots: NaN for floating-point
-variables, the declared ``_FillValue`` for integer ones.
+every slot of the day at the day's cadence: ``ceil(86400 s / cadence)``
+slots, 00:00 plus a multiple of the cadence. Each block is padded to a whole
+number of epoch chunks, so days never share a chunk and every cadence fits;
+the cadence may change from one day to the next. Blocks are added at the end
+of the axis in the order the days are first written. The group's block index
+(:data:`~canvod.store_metadata.layout.DAY_BLOCK_INDEX_ATTR`) gives each
+day's block. An epoch goes to the nearest slot. The coordinate holds the
+real time of the epoch where there are data and the grid time in empty
+slots; padding slots hold times between the day's last slot and the next
+day, so the coordinate never has missing values. Variables hold their
+missing value in empty and padding slots: NaN for floating-point variables,
+the declared ``_FillValue`` for integer ones. Loading drops the padding.
 
 The functions take an Icechunk session (or fork) for writes and its Zarr
 store for reads; the caller commits.
@@ -15,7 +20,7 @@ store for reads; the caller commits.
 
 from __future__ import annotations
 
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -25,6 +30,7 @@ import zarr
 import zarr.errors
 from canvod.readers.gnss_specs.metadata import INTEGER_FILL_VALUE
 from canvod.store_metadata.layout import (
+    DAY_BLOCK_INDEX_ATTR,
     DAY_BLOCKS,
     EPOCH_LAYOUT_ATTR,
     LayoutError,
@@ -71,22 +77,22 @@ class ChunkOwnershipError(ValueError):
 
 @dataclass(frozen=True)
 class DayBlock:
-    """One day's block: positions ``start:stop`` of the group's epoch axis."""
+    """One day's block: positions ``start:stop`` of the group's epoch axis.
+
+    The first ``slots`` positions are the day's slots; the rest, up to
+    ``stop``, pad the block to whole epoch chunks.
+    """
 
     day: np.datetime64
     start: int
     stop: int
     cadence_ns: int
+    slots: int
 
     @property
     def cadence_s(self) -> float:
         """The block's cadence in seconds."""
         return self.cadence_ns / 1e9
-
-    @property
-    def slots(self) -> int:
-        """Number of slots in the block."""
-        return self.stop - self.start
 
 
 @dataclass(frozen=True)
@@ -98,30 +104,52 @@ class FileRegion:
     end: np.datetime64
 
 
-def cadence_ns(cadence_s: float, epoch_chunk: int) -> int:
+def cadence_ns(cadence_s: float) -> int:
     """Check a day block's cadence and return it in nanoseconds.
 
-    A day must hold a whole number of slots and of epoch chunks, so the
-    cadence must divide ``86400 / epoch_chunk`` seconds (480 s for chunks of
-    180 epochs: 1 s, 5 s, 15 s, 30 s or 1 min, for example).
+    Any cadence from 1 ns to one day fits: a day holds
+    ``ceil(86400 s / cadence)`` slots, padded to whole epoch chunks.
 
     Raises
     ------
     CadenceError
-        If the cadence does not divide the length of one chunk.
+        If the cadence is not positive or longer than a day.
     """
     step = round(cadence_s * 1e9)
-    chunk_ns = _DAY_NS // epoch_chunk
-    if step <= 0 or _DAY_NS % epoch_chunk or chunk_ns % step:
+    if step <= 0 or step > _DAY_NS:
         msg = (
-            f"A cadence of {cadence_s:g} s does not fit the store: each day "
-            f"must hold whole chunks of {epoch_chunk} epochs, so the cadence "
-            f"must divide {chunk_ns / 1e9:g} s (e.g. 1 s, 5 s, 15 s, 30 s or "
-            f"1 min). Set {AGGREGATION_SETTING} to such a cadence to store "
-            "these data."
+            f"A cadence of {cadence_s:g} s cannot be stored: a day block "
+            "needs a cadence longer than 0 s and no longer than one day."
         )
         raise CadenceError(msg)
     return step
+
+
+def day_slots(step: int) -> int:
+    """The number of slots of a day at a cadence of ``step`` ns."""
+    return -(-_DAY_NS // step)
+
+
+def _padded(slots: int, epoch_chunk: int) -> int:
+    """``slots`` rounded up to whole chunks of ``epoch_chunk`` epochs."""
+    return -(-slots // epoch_chunk) * epoch_chunk
+
+
+def _block_times(block: DayBlock) -> np.ndarray:
+    """The grid times of ``block``, padding included, in ns since 1970.
+
+    Slot ``k`` is 00:00 plus ``k`` cadences; the padding slots are spread
+    between the last slot and the next day, so the times keep rising.
+    """
+    day_ns = int(block.day.astype("M8[ns]").astype(np.int64))
+    grid = day_ns + np.arange(block.slots, dtype=np.int64) * block.cadence_ns
+    pad = block.stop - block.start - block.slots
+    if not pad:
+        return grid
+    last = int(grid[-1])
+    gap = day_ns + _DAY_NS - last
+    padding = last + (np.arange(1, pad + 1, dtype=np.int64) * gap) // (pad + 1)
+    return np.concatenate([grid, padding])
 
 
 def _open_group(store: Any, group: str) -> zarr.Group | None:
@@ -175,9 +203,72 @@ def stored_epoch_chunk(store: Any, group: str) -> int:
     return int(_epoch_array(zgroup, group).chunks[0])
 
 
-def _epochs_ns(zgroup: zarr.Group, group: str) -> np.ndarray:
-    """The group's epoch coordinate as nanoseconds since 1970."""
-    return np.asarray(_epoch_array(zgroup, group)[...], dtype=np.int64)
+def _index(zgroup: zarr.Group, group: str) -> dict[str, dict[str, int]]:
+    """The block index of a day-block group (``DAY_BLOCK_INDEX_ATTR``)."""
+    index = zgroup.attrs.get(DAY_BLOCK_INDEX_ATTR)
+    if not isinstance(index, Mapping):
+        msg = (
+            f"Group '{group}' is made of day blocks but has no block index "
+            f"('{DAY_BLOCK_INDEX_ATTR}' attribute). It was written by a "
+            "development version of canVODpy; write it again from its files."
+        )
+        raise LayoutError(msg)
+    out: dict[str, dict[str, int]] = {}
+    for day, entry in index.items():
+        fields = dict(entry) if isinstance(entry, Mapping) else {}
+        if set(fields) != {"start", "stop", "slots", "cadence_ns"} or not all(
+            isinstance(value, int) for value in fields.values()
+        ):
+            msg = f"The block index of group '{group}' is damaged at {day}."
+            raise LayoutError(msg)
+        out[str(day)] = {
+            str(key): value for key, value in fields.items() if isinstance(value, int)
+        }
+    return out
+
+
+def _blocks_from_index(
+    index: Mapping[str, Mapping[str, int]], length: int, group: str
+) -> dict[np.datetime64, DayBlock]:
+    """The blocks of a block index, checked against the epoch axis length.
+
+    Raises
+    ------
+    LayoutError
+        If the blocks do not tile the epoch axis, or a block's slots do not
+        fit it.
+    """
+    blocks = {
+        np.datetime64(day, "D"): DayBlock(
+            np.datetime64(day, "D"),
+            int(entry["start"]),
+            int(entry["stop"]),
+            int(entry["cadence_ns"]),
+            int(entry["slots"]),
+        )
+        for day, entry in index.items()
+    }
+    position = 0
+    for block in sorted(blocks.values(), key=lambda b: b.start):
+        if (
+            block.start != position
+            or block.cadence_ns <= 0
+            or block.slots != day_slots(block.cadence_ns)
+            or not block.slots <= block.stop - block.start
+        ):
+            msg = (
+                f"The block index of group '{group}' does not fit its epoch "
+                f"axis at {block.day}."
+            )
+            raise LayoutError(msg)
+        position = block.stop
+    if position != length:
+        msg = (
+            f"The block index of group '{group}' covers {position} epochs; "
+            f"its epoch axis has {length}."
+        )
+        raise LayoutError(msg)
+    return blocks
 
 
 def day_blocks(store: Any, group: str) -> dict[np.datetime64, DayBlock]:
@@ -186,33 +277,15 @@ def day_blocks(store: Any, group: str) -> dict[np.datetime64, DayBlock]:
     Raises
     ------
     LayoutError
-        If the group is not made of day blocks, or its epoch axis is not a
-        sequence of whole days.
+        If the group is not made of day blocks, or its block index does not
+        fit its epoch axis.
     """
     zgroup = _open_group(store, group)
     if zgroup is None:
         return {}
     _require_day_blocks(zgroup, group)
-    epochs = _epochs_ns(zgroup, group)
-    if epochs.size == 0:
-        return {}
-    days = epochs // _DAY_NS
-    edges = np.flatnonzero(np.diff(days)) + 1
-    starts = np.r_[0, edges]
-    stops = np.r_[edges, days.size]
-    blocks: dict[np.datetime64, DayBlock] = {}
-    for start, stop in zip(starts.tolist(), stops.tolist(), strict=True):
-        day = np.datetime64(int(days[start]), "D")
-        length = stop - start
-        if day in blocks or _DAY_NS % length:
-            problem = "appears twice" if day in blocks else "is not a whole day"
-            msg = (
-                f"The epoch axis of group '{group}' is not a sequence of day "
-                f"blocks: {day} {problem}."
-            )
-            raise LayoutError(msg)
-        blocks[day] = DayBlock(day, start, stop, _DAY_NS // length)
-    return blocks
+    length = int(_epoch_array(zgroup, group).shape[0])
+    return _blocks_from_index(_index(zgroup, group), length, group)
 
 
 def fill_value(var: xr.Variable | xr.DataArray, name: str) -> Any:
@@ -251,7 +324,11 @@ def _create_group(
     a dimension it leaves out, or gives ``-1``, is one chunk.
     """
     empty = template.isel(epoch=slice(0, 0)).copy()
-    empty.attrs = {**empty.attrs, EPOCH_LAYOUT_ATTR: DAY_BLOCKS}
+    empty.attrs = {
+        **empty.attrs,
+        EPOCH_LAYOUT_ATTR: DAY_BLOCKS,
+        DAY_BLOCK_INDEX_ATTR: {},
+    }
     sizes = {str(dim): size for dim, size in empty.sizes.items()}
     for dim, size in (dim_chunks or {}).items():
         if dim != "epoch" and dim in sizes and size != -1:
@@ -294,18 +371,18 @@ def add_day_block(
     epochs and, along the other dimensions, of ``dim_chunks`` (for example
     ``{"sid": 64}``; ``-1`` or a dimension left out is one chunk); without
     a template the group must exist. An existing group
-    keeps the chunks it was created with (:func:`stored_epoch_chunk`), and
-    the cadence must fit those. A new block is added at the end of
-    the epoch axis; its slots hold their grid times and missing values. A day
-    that has a block keeps it, so files written again land in the same
-    slots, and a block grown for a day that failed later is reused.
+    keeps the chunks it was created with (:func:`stored_epoch_chunk`). A new
+    block is added at the end of the epoch axis, padded to whole chunks; its
+    slots hold their grid times and missing values. A day that has a block
+    keeps it, so files written again land in the same slots, and a block
+    grown for a day that failed later is reused.
 
     Raises
     ------
     CadenceError
-        If the cadence does not fit the chunks (see :func:`cadence_ns`), or
-        the day has a block at a coarser cadence: its slots cannot take the
-        new epochs.
+        If the cadence is not positive or longer than a day (see
+        :func:`cadence_ns`), or the day has a block at a coarser cadence: its
+        slots cannot take the new epochs.
     LayoutError
         If ``group`` exists but is not made of day blocks, or does not exist
         and no ``template`` is given.
@@ -315,7 +392,7 @@ def add_day_block(
     if existing is not None:
         _require_day_blocks(existing, group)
         epoch_chunk = int(_epoch_array(existing, group).chunks[0])
-    step = cadence_ns(cadence_s, epoch_chunk)
+    step = cadence_ns(cadence_s)
     if existing is None:
         if template is None:
             msg = (
@@ -340,22 +417,88 @@ def add_day_block(
         return block
 
     zgroup = zarr.open_group(session.store, mode="r+", path=group)
-    slots = _DAY_NS // step
+    slots = day_slots(step)
     start = int(_epoch_array(zgroup, group).shape[0])
+    block = DayBlock(day, start, start + _padded(slots, epoch_chunk), step, slots)
     for _, array in zgroup.arrays():
         dims = _dimension_names(array)
         if "epoch" not in dims:
             continue
         axis = dims.index("epoch")
         shape = list(array.shape)
-        shape[axis] += slots
+        shape[axis] += block.stop - block.start
         array.resize(tuple(shape))
-    day_ns = int(day.astype("M8[ns]").astype(np.int64))
     # A fresh handle: the one from before the resize has the old shape.
-    _epoch_array(zgroup, group)[start : start + slots] = (
-        day_ns + np.arange(slots) * step
+    _epoch_array(zgroup, group)[block.start : block.stop] = _block_times(block)
+    index = _index(zgroup, group)
+    index[str(day)] = {
+        "start": block.start,
+        "stop": block.stop,
+        "slots": block.slots,
+        "cadence_ns": block.cadence_ns,
+    }
+    zgroup.attrs.update({DAY_BLOCK_INDEX_ATTR: index})
+    return block
+
+
+def clear_day_block(session: Any, group: str, block: DayBlock) -> None:
+    """Empty every slot of ``block``: missing values at the grid times.
+
+    A write replaces only the slots from its first to its last epoch
+    (:func:`write_file_region`); a result that replaces a whole day, such
+    as the VOD of the day, clears the day's block first, so nothing of an
+    earlier write stays outside its span.
+
+    Raises
+    ------
+    LayoutError
+        If ``group`` is not made of day blocks.
+    """
+    zgroup = zarr.open_group(session.store, mode="r+", path=group)
+    _require_day_blocks(zgroup, group)
+    _clear_slots(zgroup, group, block, 0, block.slots)
+
+
+def _clear_slots(
+    zgroup: zarr.Group, group: str, block: DayBlock, first: int, stop: int
+) -> None:
+    """Empty slots ``first`` to ``stop`` (exclusive) of ``block``."""
+    for name, array in zgroup.arrays():
+        dims = _dimension_names(array)
+        if name == "epoch" or "epoch" not in dims:
+            continue
+        where = [slice(None)] * len(dims)
+        where[dims.index("epoch")] = slice(block.start + first, block.start + stop)
+        array[tuple(where)] = array.fill_value
+    day_ns = int(block.day.astype("M8[ns]").astype(np.int64))
+    _epoch_array(zgroup, group)[block.start + first : block.start + stop] = (
+        day_ns + np.arange(first, stop) * block.cadence_ns
     )
-    return DayBlock(day, start, start + slots, step)
+
+
+def _span_slots(
+    blocks: Mapping[np.datetime64, DayBlock],
+    start: np.datetime64,
+    last: np.datetime64,
+) -> list[tuple[DayBlock, int, int]]:
+    """The slots from ``start`` to ``last`` (both included), block by block.
+
+    ``start`` and ``last`` are a file's first and last epoch and go to their
+    nearest slots as epochs do. Days without a block hold nothing and are
+    left out.
+    """
+    start_ns = int(np.datetime64(start, "ns").astype(np.int64))
+    last_ns = int(np.datetime64(last, "ns").astype(np.int64))
+    out = []
+    for day_number in range(start_ns // _DAY_NS, last_ns // _DAY_NS + 1):
+        block = blocks.get(np.datetime64(day_number, "D"))
+        if block is None:
+            continue
+        day_ns = day_number * _DAY_NS
+        offsets = np.array([max(start_ns, day_ns), min(last_ns, day_ns + _DAY_NS - 1)])
+        first, final = _slots(offsets - day_ns, block).tolist()
+        out.append((block, first, final + 1))
+    return out
 
 
 def _dimension_names(array: zarr.Array) -> tuple[str, ...]:
@@ -398,13 +541,15 @@ def write_file_region(
     *,
     blocks: Mapping[np.datetime64, DayBlock] | None = None,
     chunks: Collection[int] | None = None,
+    earlier: Sequence[tuple[np.datetime64, np.datetime64]] = (),
+    keep: Sequence[tuple[np.datetime64, np.datetime64]] = (),
 ) -> FileRegion:
     """Write a file's epochs into the blocks of their days.
 
     Each epoch goes to its nearest slot; the slots between the file's first
     and last epoch that it has no epoch for are written as empty (missing
-    values, grid times), so writing a file again replaces what it wrote
-    before. Every day of the file needs a block (:func:`add_day_block`).
+    values, grid times). Every day of the file needs a block
+    (:func:`add_day_block`).
 
     Parameters
     ----------
@@ -415,6 +560,16 @@ def write_file_region(
         The epoch chunks the write may touch, numbered along the group's
         epoch axis; ``None`` allows all. A write into a fork passes the
         chunks its task owns (see :class:`ChunkOwnershipError`).
+    earlier
+        The ``(first epoch, last epoch)`` of the file's earlier writes, from
+        its log-book rows: their slots outside the file's new span are
+        emptied, so nothing of an earlier write stays when the file now has
+        fewer epochs at its start or end. Empty for a first write: only the
+        slots from the file's first to its last epoch are written.
+    keep
+        The ``(first epoch, last epoch)`` of other stored files: their slots
+        are never emptied, also where an earlier write of this file
+        reached into them.
 
     Raises
     ------
@@ -462,9 +617,30 @@ def write_file_region(
             raise SlotCollisionError(msg)
         regions.append((block, idx, slots))
 
+    written = [
+        (block, int(slots.min()), int(slots.max()) + 1) for block, _, slots in regions
+    ]
+    kept = [span for first, last in keep for span in _span_slots(blocks, first, last)]
+    cleared = _outside(
+        [span for first, last in earlier for span in _span_slots(blocks, first, last)],
+        written + kept,
+    )
     if chunks is not None:
         _check_chunks(session, group, regions, chunks)
+        _check_chunks(
+            session,
+            group,
+            [
+                (block, None, np.array([first, stop - 1]))
+                for block, first, stop in cleared
+            ],
+            chunks,
+        )
 
+    if cleared:
+        zgroup = zarr.open_group(session.store, mode="r+", path=group)
+        for block, first, stop in cleared:
+            _clear_slots(zgroup, group, block, first, stop)
     for block, idx, slots in regions:
         _write_region(session, group, ds, block, idx, slots)
 
@@ -475,10 +651,31 @@ def write_file_region(
     )
 
 
+def _outside(
+    spans: list[tuple[DayBlock, int, int]],
+    holes: list[tuple[DayBlock, int, int]],
+) -> list[tuple[DayBlock, int, int]]:
+    """The slots of ``spans`` outside every one of ``holes``, block by block."""
+    out = []
+    for block, first, stop in spans:
+        pieces = [(first, stop)]
+        for other, low, high in holes:
+            if other.day != block.day:
+                continue
+            pieces = [
+                (a, b)
+                for p_first, p_stop in pieces
+                for a, b in ((p_first, min(p_stop, low)), (max(p_first, high), p_stop))
+                if a < b
+            ]
+        out += [(block, a, b) for a, b in pieces]
+    return out
+
+
 def _check_chunks(
     session: Any,
     group: str,
-    regions: list[tuple[DayBlock, np.ndarray, np.ndarray]],
+    regions: Sequence[tuple[DayBlock, Any, np.ndarray]],
     chunks: Collection[int],
 ) -> None:
     """Refuse regions that reach beyond the epoch chunks a fork may write."""
@@ -544,7 +741,7 @@ def _write_region(
     where = slice(block.start + first, block.start + last)
     to_icechunk(region, session, group=group, region={"epoch": where})
     # The write leaves the stored index coordinate as it was; set the real
-    # times (the group stores them in TIME_UNITS, see _epochs_ns).
+    # times (the group stores them in TIME_UNITS, see _epoch_array).
     zgroup = zarr.open_group(session.store, mode="r+", path=group)
     _epoch_array(zgroup, group)[where] = times
 
@@ -559,9 +756,9 @@ def load_group(
     """Open a group with its epochs in time order.
 
     Integer variables keep their dtype: their empty slots hold their
-    ``_FillValue`` (kept in ``encoding``), not NaN. The layout attribute
-    stays in the store: data read from a group and written elsewhere must
-    not claim a layout.
+    ``_FillValue`` (kept in ``encoding``), not NaN. The padding slots of a
+    day-block group are dropped. The layout attributes stay in the store:
+    data read from a group and written elsewhere must not claim a layout.
 
     Parameters
     ----------
@@ -584,7 +781,12 @@ def load_group(
         consolidated=False,
     )
     day_blocked = is_day_block_group(ds.attrs)
+    if day_blocked:
+        zgroup = zarr.open_group(store, mode="r", path=group)
+        blocks = _blocks_from_index(_index(zgroup, group), ds.sizes["epoch"], group)
+        ds = ds.isel(epoch=_slot_positions(blocks.values()))
     ds.attrs.pop(EPOCH_LAYOUT_ATTR, None)
+    ds.attrs.pop(DAY_BLOCK_INDEX_ATTR, None)
     for name in list(ds.variables):
         var = ds[name]
         dtype = var.encoding.get("dtype")
@@ -603,6 +805,63 @@ def load_group(
     if drop_empty and day_blocked:
         ds = drop_empty_slots(ds, group)
     return ds
+
+
+def _slot_positions(blocks: Collection[DayBlock]) -> np.ndarray:
+    """The positions of the blocks' slots on the epoch axis, day by day.
+
+    The padding is left out; the days come in time order, whatever order
+    their blocks have on the axis.
+    """
+    ordered = sorted(blocks, key=lambda b: b.day)
+    if not ordered:
+        return np.empty(0, dtype=np.int64)
+    return np.concatenate(
+        [np.arange(b.start, b.start + b.slots, dtype=np.int64) for b in ordered]
+    )
+
+
+def to_stored_axis(ds: xr.Dataset, store: Any, group: str) -> xr.Dataset:
+    """Variables of ``ds``, as :func:`load_group` reads them, on the stored axis.
+
+    The reverse of :func:`load_group`: each day's slots go back into the
+    day's block, and the padding gets each variable's missing value
+    (:func:`fill_value`). Variables without ``epoch`` stay as they are; the
+    ``epoch`` coordinate is left out, since the stored one stays.
+
+    Raises
+    ------
+    LayoutError
+        If ``group`` is not made of day blocks.
+    ValueError
+        If ``ds`` does not have one epoch per slot of the group.
+    """
+    zgroup = zarr.open_group(store, mode="r", path=group)
+    _require_day_blocks(zgroup, group)
+    length = int(_epoch_array(zgroup, group).shape[0])
+    blocks = _blocks_from_index(_index(zgroup, group), length, group)
+    positions = _slot_positions(blocks.values())
+    if ds.sizes.get("epoch") != positions.size:
+        msg = (
+            f"Group '{group}' has {positions.size} slots, the data "
+            f"{ds.sizes.get('epoch', 0)} epochs."
+        )
+        raise ValueError(msg)
+    source = np.zeros(length, dtype=np.int64)
+    source[positions] = np.arange(positions.size)
+    is_slot = np.zeros(length, dtype=bool)
+    is_slot[positions] = True
+    slot = xr.DataArray(is_slot, dims="epoch")
+
+    ds = ds.drop_vars("epoch", errors="ignore")
+    out = ds.isel(epoch=source)
+    for name, var in ds.data_vars.items():
+        if "epoch" in var.dims:
+            fill = fill_value(var, str(name))
+            out[name] = xr.where(slot, out[name], fill, keep_attrs=True).astype(
+                var.dtype
+            )
+    return out
 
 
 def drop_empty_slots(ds: xr.Dataset, group: str) -> xr.Dataset:

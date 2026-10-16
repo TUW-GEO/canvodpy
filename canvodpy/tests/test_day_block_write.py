@@ -22,7 +22,7 @@ from test_cross_group_batch_write import (
 )
 
 from canvod.store import MyIcechunkStore
-from canvod.store.day_blocks import CadenceError
+from canvod.store.day_blocks import day_blocks, load_group
 from canvod.store_metadata.io import read_metadata
 from canvod.store_metadata.layout import is_day_block_group
 
@@ -48,10 +48,18 @@ def _config(*, aggregation: str | None = None, store_sbf_metadata: bool = True):
 
 
 def _file(file_id: str, slot: int, sampling: str = "05S", day: str = _DAY):
-    """A 10-epoch file at 5 s whose canonical name gives ``sampling``."""
-    ds = _make_ds(file_id, slot=slot, day=day)
+    """A 10-epoch file at 5 s from the start of 15-minute period ``slot``.
+
+    Its canonical name gives the period and ``sampling``.
+    """
+    ds = _make_ds(file_id, slot=0, day=day)
+    ds = ds.assign_coords(epoch=ds.epoch + np.timedelta64(slot * 15, "m"))
     doy = int(np.datetime64(day, "D").astype(object).strftime("%j"))
-    ds.attrs["canonical_name"] = f"FANR35INK_R_2025{doy:03d}0000_15M_{sampling}_AA.rnx"
+    minutes = slot * 15
+    ds.attrs["canonical_name"] = (
+        f"FANR35INK_R_2025{doy:03d}{minutes // 60:02d}{minutes % 60:02d}"
+        f"_15M_{sampling}_AA.rnx"
+    )
     return Path(f"{file_id}.rnx"), ds
 
 
@@ -126,6 +134,43 @@ def test_overwrite_rewrites_the_file_region(store) -> None:  # noqa: F811
     assert read_metadata(store.store_path).summaries.total_epochs == 10
 
 
+def test_a_file_written_again_with_fewer_epochs_leaves_nothing_of_before(
+    store,  # noqa: F811
+) -> None:
+    proc = _DayBlockProcessor(store, strategy="overwrite")
+    proc._config = _config()
+    path, ds = _file("a", 0)
+    proc._write_day_blocks(_inputs("canopy_01", [(path, ds)]))
+    # The same file, two epochs fewer at the start and three at the end.
+    shorter = ds.isel(epoch=slice(2, 7))
+
+    results = proc._write_day_blocks(_inputs("canopy_01", [(path, shorter)]))
+
+    assert results["canopy_01"].actions["overwritten"] == 1
+    stored = store.read_group("canopy_01", drop_empty=True)
+    np.testing.assert_array_equal(stored.epoch.values, shorter.epoch.values)
+    assert read_metadata(store.store_path).summaries.total_epochs == 5
+
+
+def test_a_first_write_leaves_the_rest_of_its_period_alone(proc, store) -> None:  # noqa: F811
+    # A receiver restart: Y starts at 00:10 and is stored first; X, named
+    # for 00:00, ends before 00:10 and is written later for the first time.
+    y_path, y = _file("y", 0)
+    y = y.assign_coords(epoch=y.epoch + np.timedelta64(10, "m"))
+    y.attrs["canonical_name"] = y.attrs["canonical_name"].replace(
+        "0000_15M", "0010_15M"
+    )
+    x = _file("x", 0)
+    proc._write_day_blocks(_inputs("canopy_01", [(y_path, y)]))
+
+    proc._write_day_blocks(_inputs("canopy_01", [x]))
+
+    stored = store.read_group("canopy_01", drop_empty=True)
+    expected = np.concatenate([x[1].epoch.values, y.epoch.values])
+    np.testing.assert_array_equal(stored.epoch.values, expected)
+    assert read_metadata(store.store_path).summaries.total_epochs == 20
+
+
 def test_days_out_of_order_and_two_groups(proc, store) -> None:  # noqa: F811
     day_2 = _file("d2", 0, day="2025-03-29")
     day_1 = _file("d1", 0)
@@ -163,9 +208,20 @@ def test_a_file_finer_than_its_name_is_not_stored(proc, store) -> None:  # noqa:
     assert "canopy_01" not in (store.list_groups() or [])
 
 
-def test_a_cadence_off_the_chunk_grid_stops_the_run(proc) -> None:
-    with pytest.raises(CadenceError):
-        proc._write_day_blocks(_inputs("canopy_01", [_file("a", 0, sampling="07S")]))
+def test_a_cadence_off_the_chunk_grid_is_stored(proc, store) -> None:  # noqa: F811
+    # 7 s divides neither 480 s (the old limit for chunks of 180 epochs) nor
+    # a day: the day's block is padded to whole chunks.
+    path, ds = _file("a", 0, sampling="07S")
+    sevens = ds.epoch.values[0] + np.arange(ds.sizes["epoch"]) * np.timedelta64(7, "s")
+    ds = ds.assign_coords(epoch=ds.epoch.copy(data=sevens))
+
+    proc._write_day_blocks(_inputs("canopy_01", [(path, ds)]))
+
+    with store.readonly_session("main") as session:
+        block = day_blocks(session.store, "canopy_01")[np.datetime64(_DAY, "D")]
+        stored = load_group(session.store, "canopy_01", drop_empty=True)
+    assert block.cadence_s == 7
+    np.testing.assert_array_equal(stored.epoch.values, sevens)
 
 
 def test_a_store_written_by_appending_keeps_appending(proc, store) -> None:  # noqa: F811
@@ -184,40 +240,3 @@ def test_without_preprocessing_the_names_set_the_cadence(proc) -> None:
     proc._config.processing.preprocessing = None
 
     assert proc._day_block_cadence_s("canopy_01", [_file("a", 0)]) == 5.0
-
-
-def _epoch_axis_reads(monkeypatch, proc, files) -> int:
-    """How often writing ``files`` reads a group's whole epoch axis."""
-    from canvod.store import day_blocks as module
-
-    reads = []
-    original = module._epochs_ns
-
-    def counting(zgroup, group):
-        reads.append(group)
-        return original(zgroup, group)
-
-    monkeypatch.setattr(module, "_epochs_ns", counting)
-    proc._write_day_blocks(_inputs("canopy_01", files))
-    return len(reads)
-
-
-def test_the_epoch_axis_is_read_once_not_per_file(store, monkeypatch) -> None:  # noqa: F811
-    # Reading the epoch axis reads every epoch chunk of the group, so a
-    # day's files share one read of their day blocks.
-    def proc():
-        p = _DayBlockProcessor(store)
-        p._config = _config()
-        return p
-
-    two = _epoch_axis_reads(
-        monkeypatch,
-        proc(),
-        [_file("a", 0, day="2025-03-28"), _file("b", 1, day="2025-03-28")],
-    )
-    five = _epoch_axis_reads(
-        monkeypatch,
-        proc(),
-        [_file(f"c{i}", i, day="2025-03-29") for i in range(5)],
-    )
-    assert five == two

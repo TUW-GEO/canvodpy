@@ -234,6 +234,50 @@ ADR 0019 records why ([Decisions](../adr/index.md)).
 
 ---
 
+## Join or reproduce a store
+
+A store's content settings are what a second machine must match to write
+into that store. `canvodpy config init --from-store <store>` writes a
+settings file from them, which is how a fresh worker joins a store, and
+how anyone reproduces the processing of a store they can open (a published
+one, or a copy):
+
+```bash
+canvodpy config init --from-store /data/stores/fangorn/rinex
+canvodpy config init --from-store s3://my-bucket/fangorn/rinex
+```
+
+`<store>` is the store's directory, or its `s3://bucket/prefix` URL. The
+written file keeps:
+
+- the store's content settings, unchanged. They must stay as they are:
+  other settings mean a different store (see
+  [Content settings](#content-settings-fixed-for-each-store));
+- the site and its receivers as the store describes them (the site name,
+  description, coordinates, the store's description, and each receiver's
+  description, recipe and recorded data directory as the default);
+- `processing.storage.stores_root_dir` and `gnss_store_name`, taken from
+  the store argument: `<root>/<site>/<name>`;
+
+and writes `TODO` for the machine values the run owner fills in: the
+`gnss_site_data_root`, each receiver's `directory`, `aux_data_dir`,
+`shared_aux_cache_dir`, `log_dir`, and `processing.metadata.author`,
+`email` and `institution`. Interactive (the default) asks for each and
+offers the store's recorded receiver directory as the default;
+`--no-interactive` keeps the `TODO` values.
+
+Credentials are never written. At the end the command prints the
+environment variables to set instead: the NASA Earthdata one for CDDIS,
+and the `AWS_*` ones for a store on S3. An existing settings file is not
+overwritten, also with `--force`.
+
+`canvodpy config validate` lists every `TODO` value with its dotted key
+and exits with code 1, so a settings file written this way is easy to
+finish. A store without content settings (created before canVODpy kept
+them) is refused, naming `canvodpy store migrate-metadata`.
+
+---
+
 ## `processing:`
 
 Metadata, resources, storage, and ephemeris products.
@@ -297,7 +341,7 @@ processing:
         epoch: 180    # epochs per file (15 min at 5 s sampling)
         sid: -1
       vod_store:
-        epoch: 17280  # epochs per day (5 s sampling)
+        epoch: 180    # as gnss_store
         sid: -1
 
   storage:
@@ -336,7 +380,10 @@ processing:
     alone, so a second run over the same files changes nothing.
     `overwrite` deletes the stored epochs of the file's time span and
     writes the file again. Use it after a fix in canVODpy, such as in a
-    reader, to recompute stored data.
+    reader, to recompute stored data. The VOD of those days stays as it
+    was: the rewritten files are the same files, so their VOD results
+    are skipped. For VOD of the recomputed data, write it to a new VOD
+    store (set another `storage.vod_store_name`).
 
     `unsafe_append` writes the file again on top of the stored data,
     without checking for epochs that are already there. The store then

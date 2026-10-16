@@ -68,23 +68,24 @@ class ChunkStrategies(_StrictModel):
     leaving that store unchunked.
     """
 
-    # gnss_store: a run appends one file at a time, and an append that ends
-    # inside a chunk rewrites that whole chunk. 180 = one 15-minute file at
-    # a 5 s sampling interval, so each append fills its own chunks.
-    # vod_store: a run appends one day at a time; 17280 = one day at 5 s.
+    # Each day of a group is stored in whole chunks (ADR 0016), padded where
+    # its epochs do not fill the last one. 180 = one 15-minute file at a 5 s
+    # sampling interval, and 1 s to 1 min days need no padding.
     gnss_store: ChunkStrategy = Field(
         default_factory=lambda: ChunkStrategy(epoch=180, sid=-1),
         description=(
-            "Chunks of the GNSS store. A day holds whole chunks, so the "
-            "cadence of a day must divide 86400 s / epoch: 480 s for 180 "
-            "epochs (1 s, 5 s, 15 s, 30 s, or 1 min, for example)."
+            "Chunks of the GNSS store. A day of ceil(86400 s / cadence) epochs "
+            "is stored in whole chunks, padded with empty epochs where it does "
+            "not fill the last one: with 180, days at 1 s, 5 s, 15 s, 30 s or "
+            "1 min need no padding, a day at 15 min gets 84 empty epochs."
         ),
     )
     vod_store: ChunkStrategy = Field(
-        default_factory=lambda: ChunkStrategy(epoch=17280, sid=-1),
+        default_factory=lambda: ChunkStrategy(epoch=180, sid=-1),
         description=(
-            "Chunks of the VOD store. A run adds one day at a time, so set "
-            "epoch to the epochs of one day: 17280 is one day at 5 s."
+            "Chunks of the VOD store. As in the GNSS store, each day is stored "
+            "in whole chunks, padded with empty epochs where it does not fill "
+            "the last one."
         ),
     )
 

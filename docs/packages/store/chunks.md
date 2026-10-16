@@ -24,14 +24,14 @@ processing:
         epoch: 180    # epochs per chunk
         sid: -1       # all signals in one chunk
       vod_store:
-        epoch: 17280
+        epoch: 180
         sid: -1
 ```
 
 | Store | Default chunk | What it covers at 5 s |
 |---|---|---|
 | GNSS store | 180 epochs, all signals | one 15-minute file ($900\,\text{s} / 5\,\text{s}$) |
-| VOD store | 17280 epochs, all signals | one day ($86400\,\text{s} / 5\,\text{s}$) |
+| VOD store | 180 epochs, all signals | 15 minutes of VOD ($900\,\text{s} / 5\,\text{s}$) |
 
 `chunk_strategies` has exactly two keys, `gnss_store` and `vod_store`. A
 store that you leave out keeps the default, and any other key fails
@@ -53,28 +53,35 @@ in the settings reference, or run
 
 A new GNSS store is made of [day blocks](overview.md#day-blocks): each
 receiver-day is a block of slots, one slot per sampling interval of the
-day (its **cadence**). A day always holds a whole number of chunks, so
-the cadence must divide the length of one chunk:
+day (its **cadence**). The cadence may change from one day to the next.
+A day has
 
 $$
-\frac{86400\,\text{s}}{\text{epoch}}
-\qquad\text{for example}\qquad
-\frac{86400\,\text{s}}{180} = 480\,\text{s}
+\text{slots} = \left\lceil \frac{86400\,\text{s}}{\text{cadence}} \right\rceil
 $$
 
-With the default of 180 epochs, cadences of 1 s, 5 s, 15 s, 30 s, or 1 min
-fit, for example. A run refuses a day whose cadence doesn't fit, and the
-message names the setting that can fix it,
-`processing.preprocessing.temporal_aggregation.freq`.
+and its block always holds a whole number of chunks, so days never share
+a chunk. When the slots don't fill the last chunk, the block is padded with
+empty epochs, which loading leaves out. With the default of 180 epochs:
+
+| Cadence | Slots per day | Padding |
+| --- | --- | --- |
+| 1 s, 5 s, 15 s, 30 s, 1 min | 86400, 17280, 5760, 2880, 1440 | none |
+| 7 s | 12343 | 77 |
+| 45 s | 1920 | 60 |
+| 15 min | 96 | 84 |
+
+Every cadence fits; the padding costs at most one chunk per day.
 
 How many files share a chunk depends on the cadence. At 5 s, a chunk of
 180 epochs is one 15-minute file. At 30 s, a chunk is 90 minutes, so six
-15-minute files share it. The files that share a chunk are always written
-together by one worker, so no write replaces the data of another file.
+15-minute files share it; at 15 min, the whole day is one chunk. The files
+that share a chunk are always written together by one worker, so no write
+replaces the data of another file.
 
 To change the chunks of an existing group made of day blocks, use
-`store.rechunk_group()`. It refuses an epoch chunk that doesn't divide every
-day of the group into whole chunks.
+`store.rechunk_group()`. It refuses an epoch chunk that doesn't divide the
+length of every day block of the group, padding included.
 
 ### Groups written by appending
 
@@ -100,9 +107,17 @@ $$
 
 ## VOD store
 
-A run adds VOD results one day at a time. A day that ends inside a chunk
-makes the next day rewrite that chunk, so set the epoch chunk to the
-epochs of one day:
+A VOD store group made of [day blocks](overview.md#the-vod-store) is
+chunked like the GNSS store: each day is a block of whole chunks, padded
+where its slots don't fill the last one. A day of VOD has the cadence of
+its GNSS data.
+
+### Groups written by appending
+
+A VOD store group written by canVODpy versions before day blocks is still
+written by appending one day at a time. A day that ends inside a chunk
+makes the next day rewrite that chunk, so the epoch chunk works best at
+the epochs of one day:
 
 $$
 \text{epoch} = \frac{86400\,\text{s}}{\text{sampling interval in s}}
@@ -119,9 +134,10 @@ example `.compute()`, `.values`, or a plot), and then only the chunks the
 result needs.
 
 With the default `sid: -1`, a chunk holds all signals, so one signal over a
-year reads 365 chunks of the VOD store and 35,040 of the GNSS store at
-5 s. If you read single signals of the VOD store over long periods,
-rechunk it along `sid` with `rechunk_group()`.
+year at 5 s reads 35,040 chunks of either store, 96 per day. A VOD store
+group written by appending, with one day per chunk, reads 365. If you read
+single signals over long periods, rechunk the group along `sid` with
+`rechunk_group()`.
 
 `read_group()` returns Dask chunks equal to the chunks on disk, whatever
 `chunk_strategies` says now. Its `chunks` argument sets other Dask chunks

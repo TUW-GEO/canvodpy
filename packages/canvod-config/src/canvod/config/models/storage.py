@@ -157,10 +157,12 @@ class StorageConfig(_StrictModel):
     vod_store_strategy: Literal["skip", "overwrite", "unsafe_append"] | None = Field(
         None,
         description=(
-            "Deprecated, has no effect. VOD writes always skip a result "
-            "whose source files or epoch range are already in the VOD "
-            "store. To recompute VOD for days already stored, write to a "
-            "new VOD store (set another vod_store_name)."
+            "Deprecated, has no effect. A VOD write skips a result from the "
+            "same GNSS files as a stored one. Another result replaces the "
+            "stored VOD of its day in a VOD store made of day blocks, and is "
+            "skipped in one written by appending. To recompute VOD from the "
+            "same GNSS files, write to a new VOD store (set another "
+            "vod_store_name)."
         ),
     )
     keeper_tags: bool = Field(
@@ -185,7 +187,7 @@ class StorageConfig(_StrictModel):
 
             warnings.warn(
                 "The storage setting 'vod_store_strategy' is left over from development and will be removed with the next major version. "
-                "It has no effect: VOD writes always skip results already in the store. "
+                "It has no effect: VOD writes skip results from GNSS files already in the store. "
                 "Remove it from your settings; to recompute VOD, set another 'vod_store_name'.",
                 FutureWarning,
                 stacklevel=2,

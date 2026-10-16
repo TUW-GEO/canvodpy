@@ -38,6 +38,7 @@ from canvod.store_metadata.io import (
     store_command,
     wait_after_conflict,
 )
+from canvod.store_metadata.layout import LayoutError
 from canvod.store_metadata.location import (
     StoreLocation,
     open_repository,
@@ -57,11 +58,14 @@ from zarr.dtype import VariableLengthUTF8
 
 from canvod.store.day_blocks import (
     add_day_block,
-    cadence_ns,
+    clear_day_block,
     day_blocks,
     drop_empty_slots,
+    fill_value,
     holds_day_blocks,
     load_group,
+    to_stored_axis,
+    write_file_region,
 )
 from canvod.store.prepare import prepare_write
 from canvod.store.time_encoding import with_time_units
@@ -191,6 +195,11 @@ VOD_WRITE_STRATEGY = "skip"
 #: refused rather than mixed silently.
 VOD_CALCULATOR_ATTR = "calculator"
 VOD_CALCULATOR_PARAMS_ATTR = "calculator_params"
+
+#: What a VOD write into day blocks does with a day already in the store:
+#: it skips a result from the same GNSS files and writes any other result
+#: into the day's slots, replacing what was there (ADR 0016).
+VOD_DAY_BLOCK_WRITE_STRATEGY = "overwrite"
 
 
 def _extend_record(record: str, added: list[str], vod: bool) -> str:
@@ -453,6 +462,11 @@ class VodWriteItem:
     calculator_name: str
     calculator_params: dict | None = None
     commit_message: str | None = None
+    #: Cadence in seconds of the day of ``dataset``, by day. Given, the
+    #: result is written into day blocks (ADR 0016) and must cover exactly
+    #: that one day; ``None`` appends it to a group written by appending,
+    #: from GNSS groups that are not day blocks.
+    cadences: Mapping[np.datetime64, float] | None = None
 
 
 @dataclass
@@ -460,11 +474,30 @@ class VodWritePlan:
     """A `VodWriteItem` after dedup-check + normalization, ready to write."""
 
     item: VodWriteItem
-    action: str  # "write" | "append"
+    action: str  # "write" | "append" | "overwrite"
     start: np.datetime64
     end: np.datetime64
     commit_message: str  # per-group description, then the batch commit message
     dataset: xr.Dataset
+
+
+def _require_one_day(plan: VodWritePlan) -> None:
+    """Refuse a day-block VOD result that does not cover exactly one day.
+
+    The log book keeps one row per write; with one day per row, the
+    latest row of a day says what the day holds (the snapshot summary
+    counts epochs that way).
+    """
+    cadences = plan.item.cadences or {}
+    days = np.unique(plan.dataset.epoch.values.astype("M8[D]"))
+    if len(cadences) != 1 or days.size != 1 or days[0] not in cadences:
+        msg = (
+            f"VOD result for '{plan.item.group_name}' covers the days "
+            f"{[str(d) for d in days]} with cadences for "
+            f"{[str(d) for d in cadences]}; a day-block write takes one day "
+            "and its cadence."
+        )
+        raise LayoutError(msg)
 
 
 def _vod_batch_commit(
@@ -1186,9 +1219,9 @@ class MyIcechunkStore:
 
         For example the grid cells of every observation
         (``canvod.ops.assign_grid_cells_in_store``). Only the new variables are
-        written; the group's other variables, its log book and its other
-        subgroups stay as they are. The write is staged on a temporary
-        branch and moved to ``branch`` with :meth:`promote_branch`.
+        written; the group's other variables, its attributes, its log book and
+        its other subgroups stay as they are. The write is staged on a
+        temporary branch and moved to ``branch`` with :meth:`promote_branch`.
 
         The log book receives one group-wide row (:data:`GROUP_WIDE_ACTION`)
         whose preprocessing record holds ``step``. From then on, the
@@ -1203,7 +1236,9 @@ class MyIcechunkStore:
             Store group, e.g. ``"canopy_01"`` or a VOD analysis group.
         variables : xr.Dataset
             The new variables, with the group's dimensions and coordinate
-            values (all of its epochs and signals, in the same order).
+            values as :meth:`read_group` reads them (all of its epochs and
+            signals, in the same order). In a group of day blocks they are
+            written into each day's block, and the padding stays empty.
         step : dict
             The operation that computed them, as a preprocessing step
             ``{"op", "settings", "result"}`` (``canvod.ops.OpResult.step``).
@@ -1231,6 +1266,10 @@ class MyIcechunkStore:
             raise ValueError(f"Group '{group_name}' does not exist on '{branch}'")
         with self.readonly_session(branch) as session:
             existing = xr.open_zarr(session.store, group=group_name, consolidated=False)
+            day_blocked = holds_day_blocks(session.store, group_name)
+            # A day-block group is read without its padding and with its days
+            # in time order (load_group); the new variables come from there.
+            read = load_group(session.store, group_name) if day_blocked else existing
         new_names = [str(name) for name in variables.data_vars]
         if not new_names:
             raise ValueError("No variables to add")
@@ -1240,11 +1279,11 @@ class MyIcechunkStore:
                 f"Group '{group_name}' already has {present}; they are not replaced."
             )
         for dim in variables.dims:
-            if dim not in existing.dims:
+            if dim not in read.dims:
                 raise ValueError(f"Group '{group_name}' has no dimension '{dim}'")
-            if variables.sizes[dim] != existing.sizes[dim] or (
+            if variables.sizes[dim] != read.sizes[dim] or (
                 dim in variables.coords
-                and not np.array_equal(variables[dim].values, existing[dim].values)
+                and not np.array_equal(variables[dim].values, read[dim].values)
             ):
                 raise ValueError(
                     f"The new variables do not cover the {dim!r} values of group "
@@ -1252,8 +1291,19 @@ class MyIcechunkStore:
                 )
 
         to_write = variables.drop_vars(list(variables.coords))
+        # The write replaces the group's attributes with these: keep the
+        # stored ones (the day-block layout and its block index among them).
+        to_write.attrs = dict(existing.attrs)
+        if day_blocked:
+            with self.readonly_session(branch) as session:
+                to_write = to_stored_axis(to_write, session.store, group_name)
         for name in new_names:
             to_write[name].encoding.clear()
+            if day_blocked and "epoch" in to_write[name].dims:
+                # Padding and empty slots read back as missing (load_group).
+                fill = fill_value(to_write[name], name)
+                to_write[name].attrs.pop("_FillValue", None)
+                to_write[name].encoding.update({"_FillValue": fill, "fill_value": fill})
             template = next(
                 (
                     existing[v]
@@ -2719,6 +2769,8 @@ class MyIcechunkStore:
         calculator_name: str,
         dataset_attrs: dict,
         calculator_params: dict | None = None,
+        write_strategy: str = VOD_WRITE_STRATEGY,
+        epochs: int | None = None,
     ) -> None:
         """Write one VOD metadata row into an already-open zarr group.
 
@@ -2745,6 +2797,8 @@ class MyIcechunkStore:
                                  the preprocessing records of the GNSS data
                                  behind the result, see
                                  ``canvod.config.models.vod_preprocessing_record``)
+            epochs              int64 (epochs with data, given for day
+                                 blocks; -1 in rows without it)
         """
         dataset_attrs, record = split_preprocessing(dataset_attrs)
         written_at = datetime.now(UTC).isoformat()
@@ -2759,11 +2813,13 @@ class MyIcechunkStore:
             "commit_msg": str(commit_msg),
             "run_id": get_run_id() or "",
             "written_at": written_at,
-            "write_strategy": VOD_WRITE_STRATEGY,
+            "write_strategy": str(write_strategy),
             "calculator_name": str(calculator_name),
             "attrs": json.dumps(dataset_attrs, default=str),
             "preprocessing": record,
         }
+        if epochs is not None:
+            row["epochs"] = int(epochs)
         df_row = pl.DataFrame(
             [row],
             schema_overrides={"start": pl.Datetime("ns"), "end": pl.Datetime("ns")},
@@ -3115,6 +3171,11 @@ class MyIcechunkStore:
         batch before any fork exists. Returns `(skip_result, None)` if this
         item should be skipped as a duplicate, else `(None, plan)`. Raises
         `ValueError` if the dataset does not meet the VOD dataset contract.
+
+        A result for day blocks (``item.cadences`` given) is skipped only
+        when it comes from the same GNSS files as a stored one; a result
+        that overlaps a stored one in time replaces it in its slots
+        (action ``overwrite``).
         """
         validate_vod_dataset(item.dataset)
         self.check_preprocessing_matches(item.group_name, item.dataset, branch)
@@ -3123,7 +3184,9 @@ class MyIcechunkStore:
         )
         start = item.dataset.epoch.min().values
         end = item.dataset.epoch.max().values
+        day_blocked = item.cadences is not None
 
+        overlaps = False
         if dedup:
             skip, reason = self.should_skip_vod_write(
                 group_name=item.group_name,
@@ -3132,6 +3195,8 @@ class MyIcechunkStore:
                 time_end=end,
                 branch=branch,
             )
+            if skip and day_blocked and reason == "temporal_overlap":
+                skip, overlaps = False, True
             if skip:
                 self._logger.warning(
                     "write_or_append_vod_group_skipped_duplicate",
@@ -3150,6 +3215,8 @@ class MyIcechunkStore:
         start = dataset.epoch.min().values
         end = dataset.epoch.max().values
         action = "append" if self.group_exists(item.group_name, branch) else "write"
+        if overlaps:
+            action = "overwrite"
         # A description of this group's write; the batch combines the
         # descriptions of all groups sharing a commit into its message.
         commit_message = item.commit_message or (
@@ -3232,6 +3299,101 @@ class MyIcechunkStore:
             duration_seconds=time.perf_counter() - t_start,
         )
 
+    def _write_vod_day_blocks(
+        self,
+        plans: Sequence[VodWritePlan],
+        branch: str,
+        version: str,
+    ) -> dict[str, VodWriteResult]:
+        """Write VOD results into the day blocks of their groups, in one commit.
+
+        One session, the groups one after the other: each day of a result
+        gets a block at its cadence
+        (:func:`~canvod.store.day_blocks.add_day_block`; a new group is
+        created from the result), then the result is written into its
+        slots (:func:`~canvod.store.day_blocks.write_file_region`). A day
+        written before is emptied first
+        (:func:`~canvod.store.day_blocks.clear_day_block`), so the result
+        replaces all of it. The data and
+        the log-book rows go into one commit.
+
+        Raises
+        ------
+        CadenceError
+            A cadence the chunks cannot take, or finer than the day's block.
+        LayoutError
+            A group written by appending, a day of a result without a
+            cadence, or a result of more than one day.
+        """
+        for plan in plans:
+            _require_one_day(plan)
+        epoch_chunk = int((self.chunk_strategy or {}).get("epoch", 180))
+        message, metadata = _vod_batch_commit(version, "write", plans)
+        results: dict[str, VodWriteResult] = {}
+        with self.writable_session(branch) as session:
+            for plan in plans:
+                t_start = time.perf_counter()
+                group_name = plan.item.group_name
+                dataset = plan.dataset
+                cadences = plan.item.cadences or {}
+                self._logger.info(
+                    "icechunk_write_data_started",
+                    group=group_name,
+                    action=plan.action,
+                    n_data_vars=len(dataset.data_vars),
+                    data_vars=list(dataset.data_vars.keys()),
+                    n_epochs=int(dataset.sizes.get("epoch", 0)),
+                    days=[str(day) for day in cadences],
+                    approx_size_mb=round(dataset.nbytes / 1e6, 2),
+                )
+                stored_days = day_blocks(session.store, group_name)
+                for day, cadence_s in cadences.items():
+                    block = add_day_block(
+                        session,
+                        group_name,
+                        day,
+                        cadence_s,
+                        dataset,
+                        epoch_chunk=epoch_chunk,
+                        dim_chunks=self.chunk_strategy,
+                    )
+                    if day in stored_days:
+                        # The result replaces the whole day, also slots
+                        # outside its span that the earlier result filled.
+                        clear_day_block(session, group_name, block)
+                write_file_region(session, group_name, dataset)
+                zroot = zarr.open_group(session.store, mode="a")
+                self._append_vod_metadata_row(
+                    zroot=zroot,
+                    group_name=group_name,
+                    source_file_hashes=plan.item.source_file_hashes,
+                    source_gnss_stores=plan.item.source_gnss_stores,
+                    start=plan.start,
+                    end=plan.end,
+                    snapshot_id="",
+                    action=plan.action,
+                    commit_msg=plan.commit_message,
+                    calculator_name=plan.item.calculator_name,
+                    dataset_attrs=dict(dataset.attrs),
+                    write_strategy=VOD_DAY_BLOCK_WRITE_STRATEGY,
+                    epochs=drop_empty_slots(dataset, group_name).sizes["epoch"],
+                )
+                results[group_name] = VodWriteResult(
+                    group_name=group_name,
+                    written=True,
+                    duration_seconds=time.perf_counter() - t_start,
+                )
+            snapshot_id = commit_with_rebase(
+                session,
+                message,
+                metadata=metadata,
+                store_path=self.store_path,
+                config=self.settings,
+            )
+        for result in results.values():
+            result.snapshot_id = snapshot_id
+        return results
+
     def write_or_append_vod_groups_batch(
         self,
         items: Sequence[VodWriteItem],
@@ -3268,17 +3430,25 @@ class MyIcechunkStore:
 
         new_plans: list[VodWritePlan] = []
         append_plans: dict[str, VodWritePlan] = {}
+        day_block_plans: list[VodWritePlan] = []
 
         for item in items:
             skip_result, plan = self._prepare_vod_write(item, branch, dedup)
             if skip_result is not None:
                 results[item.group_name] = skip_result
                 continue
-            assert plan is not None
-            if plan.action == "write":
+            if plan is None:
+                msg = f"No write plan for VOD group '{item.group_name}'."
+                raise RuntimeError(msg)
+            if item.cadences is not None:
+                day_block_plans.append(plan)
+            elif plan.action == "write":
                 new_plans.append(plan)
             else:
                 append_plans[item.group_name] = plan
+
+        if day_block_plans:
+            results.update(self._write_vod_day_blocks(day_block_plans, branch, version))
 
         if not new_plans and not append_plans:
             return results
@@ -4501,16 +4671,15 @@ class MyIcechunkStore:
     ) -> None:
         """Refuse epoch chunks that would split the day blocks of a group.
 
-        Every day block must hold whole epoch chunks (see
-        :func:`~canvod.store.day_blocks.cadence_ns`), so a write into a day
-        never touches the chunks of another one.
+        Every day block holds whole epoch chunks (it is padded to them when
+        it is added), so a write into a day never touches the chunks of
+        another one; new chunks must divide the length of every block.
 
         Raises
         ------
         ValueError
-            If ``chunks`` gives no positive epoch chunk size.
-        CadenceError
-            If a day's cadence does not fit the new chunks.
+            If ``chunks`` gives no positive epoch chunk size, or one that
+            does not divide the length of a day block.
         """
         epoch_chunk = chunks.get("epoch")
         if not isinstance(epoch_chunk, int) or epoch_chunk <= 0:
@@ -4521,7 +4690,15 @@ class MyIcechunkStore:
             )
             raise ValueError(msg)
         for block in day_blocks(store, group_name).values():
-            cadence_ns(block.cadence_s, epoch_chunk)
+            if (block.stop - block.start) % epoch_chunk:
+                msg = (
+                    f"Chunks of {epoch_chunk} epochs would split the day block "
+                    f"of {block.day} in group '{group_name}' "
+                    f"({block.stop - block.start} epochs, padded to the chunks "
+                    "the group was written with); a write into one day would "
+                    "then touch another day's chunks."
+                )
+                raise ValueError(msg)
 
     def promote_branch(
         self,

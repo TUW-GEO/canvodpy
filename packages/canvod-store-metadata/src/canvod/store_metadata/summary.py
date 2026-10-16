@@ -44,6 +44,8 @@ _CF_UNITS = {
 
 # Log-book actions whose file is part of the stored data.
 _STORED_ACTIONS = {"initial", "written", "appended", "overwritten"}
+# Actions of a VOD log book's rows whose result is part of the stored data.
+_VOD_STORED_ACTIONS = {"write", "append", "overwrite"}
 
 _DAY = np.timedelta64(1, "D")
 
@@ -158,14 +160,37 @@ def _observation_groups(root: zarr.Group) -> dict[str, zarr.Group]:
 def _logged_files(
     group: zarr.Group,
 ) -> dict[str, tuple[int, np.datetime64, np.datetime64]]:
-    """Stored files of a day-block group: epochs with data, first and last.
+    """Stored writes of a day-block group: epochs with data, first and last.
 
-    From the group's log book, by file hash; the latest stored row of a file
-    counts.
+    From the group's log book; the latest stored row of a key counts. A
+    GNSS log book (``rinex_hash`` column) is keyed by the file's canonical
+    name, the period whose slots the file writes, so a file written again
+    with other data (a new hash) replaces its earlier row; a row without a
+    canonical name is keyed by file hash. A file stored in several groups
+    counts once. A VOD log book
+    (``source_file_hashes`` column) has one row per day written, and a day
+    written again replaces it, so it is keyed by group and day.
     """
     table = group["metadata/table"] if "metadata/table" in group else None
-    columns = ("rinex_hash", "action", "start", "end", "epochs")
-    if not isinstance(table, zarr.Group) or not set(columns) <= set(table.array_keys()):
+    if not isinstance(table, zarr.Group):
+        msg = (
+            f"Day-block group {group.path} has no log book; its epoch count "
+            "cannot be summarized"
+        )
+        raise ValueError(msg)
+    keys = set(table.array_keys())
+    if "rinex_hash" in keys:
+        key_column, stored_actions = "rinex_hash", _STORED_ACTIONS
+    elif "source_file_hashes" in keys:
+        key_column, stored_actions = "source_file_hashes", _VOD_STORED_ACTIONS
+    else:
+        msg = (
+            f"Day-block group {group.path} has no GNSS or VOD log book; its "
+            "epoch count cannot be summarized"
+        )
+        raise ValueError(msg)
+    columns = (key_column, "action", "start", "end", "epochs")
+    if not set(columns) <= keys:
         msg = (
             f"Day-block group {group.path} has no log book with the columns "
             f"{', '.join(columns)}; its epoch count cannot be summarized"
@@ -174,23 +199,30 @@ def _logged_files(
     hashes, actions, starts, ends, counts = (
         np.asarray(_array(table, name)[...]) for name in columns
     )
+    names = (
+        np.asarray(_array(table, "canonical_name")[...])
+        if key_column == "rinex_hash" and "canonical_name" in keys
+        else np.full(hashes.shape, "", dtype=object)
+    )
     files = {}
-    for file_hash, action, start, end, count in zip(
-        hashes, actions, starts, ends, counts, strict=True
+    for file_hash, name, action, start, end, count in zip(
+        hashes, names, actions, starts, ends, counts, strict=True
     ):
-        if action not in _STORED_ACTIONS:
+        if action not in stored_actions:
             continue
         if count < 0:
             msg = (
                 f"Log book of day-block group {group.path} has a stored row "
-                f"without an epoch count (file {file_hash})"
+                f"without an epoch count ({key_column} {file_hash})"
             )
             raise ValueError(msg)
-        files[str(file_hash)] = (
-            int(count),
-            np.datetime64(start, "ns"),
-            np.datetime64(end, "ns"),
+        start = np.datetime64(start, "ns")
+        key = (
+            str(name or file_hash)
+            if key_column == "rinex_hash"
+            else f"{group.path}@{start.astype('M8[D]')}"
         )
+        files[key] = (int(count), start, np.datetime64(end, "ns"))
     return files
 
 
@@ -289,7 +321,10 @@ def _coverage(
 
 
 def _stored_file_count(group: zarr.Group) -> int | None:
-    """Distinct stored files in a GNSS group's log book, if it has one."""
+    """Distinct stored files in a GNSS group's log book, if it has one.
+
+    Keyed as in :func:`_logged_files`: by canonical name, else by hash.
+    """
     if "metadata/table" not in group:
         return None
     table = group["metadata/table"]
@@ -301,8 +336,17 @@ def _stored_file_count(group: zarr.Group) -> int | None:
         return None
     hashes = np.asarray(_array(table, "rinex_hash")[...])
     actions = np.asarray(_array(table, "action")[...])
+    names = (
+        np.asarray(_array(table, "canonical_name")[...])
+        if "canonical_name" in table
+        else np.full(hashes.shape, "", dtype=object)
+    )
     return len(
-        {str(h) for h, a in zip(hashes, actions, strict=True) if a in _STORED_ACTIONS}
+        {
+            str(n or h)
+            for h, n, a in zip(hashes, names, actions, strict=True)
+            if a in _STORED_ACTIONS
+        }
     )
 
 
