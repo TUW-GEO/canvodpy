@@ -169,7 +169,13 @@ def _logged_files(
     written again replaces it, so it is keyed by group and day.
     """
     table = group["metadata/table"] if "metadata/table" in group else None
-    keys = set(table.array_keys()) if isinstance(table, zarr.Group) else set()
+    if not isinstance(table, zarr.Group):
+        msg = (
+            f"Day-block group {group.path} has no log book; its epoch count "
+            "cannot be summarized"
+        )
+        raise ValueError(msg)
+    keys = set(table.array_keys())
     if "rinex_hash" in keys:
         key_column, stored_actions = "rinex_hash", _STORED_ACTIONS
     elif "source_file_hashes" in keys:
