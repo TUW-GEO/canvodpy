@@ -41,9 +41,10 @@ settings. `canvodpy config show` prints the strategy in use under
 | `unsafe_append` | Written again, next to the stored data. | Written |
 
 In a store made of [day blocks](overview.md#day-blocks), a file that is
-written again goes into the same slots, so `overwrite` and `unsafe_append`
-both replace the file's slots in the run's commit, and the log book
-records `overwritten`. No temporary branch is needed, and no epoch is
+written again goes into the same slots, the slots of the period in its
+name, so `overwrite` and `unsafe_append` both replace all of the file's
+slots in the run's commit, also those it now has no epochs for, and the
+log book records `overwritten`. No temporary branch is needed, and no epoch is
 stored twice. The `sbf_obs` of such a file stays as first stored. The
 sections below describe a store written by appending.
 

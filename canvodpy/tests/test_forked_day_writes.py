@@ -208,6 +208,24 @@ def test_an_overwrite_rerun_gives_the_same_data_in_one_commit(seeded, files) -> 
     assert summary.total_epochs == after.sizes["epoch"]
 
 
+def test_a_changed_file_with_fewer_epochs_leaves_nothing_of_before(
+    seeded, files
+) -> None:
+    _write_day(_Processor(seeded))
+    # File 5 again, changed (a new hash) and with fewer epochs at its start
+    # and end.
+    name = _name(5)
+    files[name] = _dataset(5, offset=100.0).isel(epoch=slice(3, 25))
+
+    _write_day(_Processor(seeded, strategy="overwrite"))
+
+    stored = seeded.read_group(_GROUP, drop_empty=True)
+    np.testing.assert_array_equal(stored.epoch.values, _day(files).epoch.values)
+    np.testing.assert_array_equal(stored["S1C"].values, _day(files)["S1C"].values)
+    summary = read_metadata(seeded.store_path).summaries
+    assert summary.total_epochs == stored.sizes["epoch"]
+
+
 def test_a_rerun_with_skip_writes_no_data(seeded) -> None:
     _write_day(_Processor(seeded))
     before = seeded.read_group(_GROUP, drop_empty=True)

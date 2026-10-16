@@ -256,6 +256,24 @@ def write_files_into_fork(fork: ForkSession, task: ForkTask) -> ForkResult:
     return result
 
 
+def named_period(canonical_name: str) -> tuple[np.datetime64, np.datetime64] | None:
+    """The period ``(start, end)`` a file's canonical name gives; ``None`` if none.
+
+    The slots of the period belong to the file: a write empties the ones
+    its epochs leave out (:func:`~canvod.store.day_blocks.write_file_region`),
+    so a file written again with fewer epochs leaves nothing of its earlier
+    write. A file without a canonical name (possible with temporal
+    aggregation) has no known period; only the slots from its first to
+    its last epoch are written.
+    """
+    if not canonical_name:
+        return None
+    from canvod.preflight.convention import CanVODFilename
+
+    named = CanVODFilename.from_filename(canonical_name)
+    return np.datetime64(named.start, "ns"), np.datetime64(named.end, "ns")
+
+
 def _write_one(
     fork: ForkSession,
     task: ForkTask,
@@ -299,6 +317,7 @@ def _write_one(
             clean,
             blocks=task.blocks.get(group),
             chunks=task.chunks.get(group, frozenset()),
+            period=named_period(numbers.canonical_name),
         )
     except ChunkOwnershipError, LayoutError:
         # Beyond the task's chunks or days: the writer thread writes it

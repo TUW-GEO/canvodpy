@@ -48,10 +48,18 @@ def _config(*, aggregation: str | None = None, store_sbf_metadata: bool = True):
 
 
 def _file(file_id: str, slot: int, sampling: str = "05S", day: str = _DAY):
-    """A 10-epoch file at 5 s whose canonical name gives ``sampling``."""
-    ds = _make_ds(file_id, slot=slot, day=day)
+    """A 10-epoch file at 5 s from the start of 15-minute period ``slot``.
+
+    Its canonical name gives the period and ``sampling``.
+    """
+    ds = _make_ds(file_id, slot=0, day=day)
+    ds = ds.assign_coords(epoch=ds.epoch + np.timedelta64(slot * 15, "m"))
     doy = int(np.datetime64(day, "D").astype(object).strftime("%j"))
-    ds.attrs["canonical_name"] = f"FANR35INK_R_2025{doy:03d}0000_15M_{sampling}_AA.rnx"
+    minutes = slot * 15
+    ds.attrs["canonical_name"] = (
+        f"FANR35INK_R_2025{doy:03d}{minutes // 60:02d}{minutes % 60:02d}"
+        f"_15M_{sampling}_AA.rnx"
+    )
     return Path(f"{file_id}.rnx"), ds
 
 
@@ -124,6 +132,24 @@ def test_overwrite_rewrites_the_file_region(store) -> None:  # noqa: F811
     assert stored.sizes["epoch"] == 10
     assert float(stored["S1C"].max()) == 11.0
     assert read_metadata(store.store_path).summaries.total_epochs == 10
+
+
+def test_a_file_written_again_with_fewer_epochs_leaves_nothing_of_before(
+    store,  # noqa: F811
+) -> None:
+    proc = _DayBlockProcessor(store, strategy="overwrite")
+    proc._config = _config()
+    path, ds = _file("a", 0)
+    proc._write_day_blocks(_inputs("canopy_01", [(path, ds)]))
+    # The same file, two epochs fewer at the start and three at the end.
+    shorter = ds.isel(epoch=slice(2, 7))
+
+    results = proc._write_day_blocks(_inputs("canopy_01", [(path, shorter)]))
+
+    assert results["canopy_01"].actions["overwritten"] == 1
+    stored = store.read_group("canopy_01", drop_empty=True)
+    np.testing.assert_array_equal(stored.epoch.values, shorter.epoch.values)
+    assert read_metadata(store.store_path).summaries.total_epochs == 5
 
 
 def test_days_out_of_order_and_two_groups(proc, store) -> None:  # noqa: F811

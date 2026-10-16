@@ -106,6 +106,7 @@ from canvodpy.orchestrator.forked_writes import (
     ForkResult,
     ForkTask,
     chunk_groups,
+    named_period,
 )
 
 # ============================================================================
@@ -3297,7 +3298,9 @@ class RinexDataProcessor:
         (:func:`~canvod.store.day_blocks.write_file_region`). The data, the
         ``sbf_obs`` of new files and the log-book rows (with each file's
         epoch count) go into one commit; no temporary branch is needed,
-        since writing a file again replaces its slots.
+        since a file's slots are those of the period its name gives
+        (:func:`~canvodpy.orchestrator.forked_writes.named_period`) and a
+        write replaces all of them.
 
         Files already stored (by hash or by time, see
         :meth:`_check_existing_with_temporal_overlap`) are skipped with
@@ -3411,6 +3414,10 @@ class RinexDataProcessor:
                                     store._cleanse_dataset_attrs(ds)
                                 ),
                                 blocks=blocks,
+                                period=named_period(
+                                    ds.attrs.get("canonical_name")
+                                    or self._canonical_name(fname)
+                                ),
                             )
                         except (OSError, RuntimeError, ValueError):  # fmt: skip
                             log.exception("Failed to write %s", fname.name)
@@ -3914,7 +3921,13 @@ class RinexDataProcessor:
             )
         if missing:
             blocks = day_blocks(session.store, n.group)
-        return write_file_region(session, n.group, n.deferred, blocks=blocks).epochs
+        return write_file_region(
+            session,
+            n.group,
+            n.deferred,
+            blocks=blocks,
+            period=named_period(n.canonical_name),
+        ).epochs
 
     def _append_to_icechunk(
         self,

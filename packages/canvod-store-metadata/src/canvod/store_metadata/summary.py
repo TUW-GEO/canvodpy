@@ -163,8 +163,11 @@ def _logged_files(
     """Stored writes of a day-block group: epochs with data, first and last.
 
     From the group's log book; the latest stored row of a key counts. A
-    GNSS log book (``rinex_hash`` column) is keyed by file hash, so a file
-    stored in several groups counts once. A VOD log book
+    GNSS log book (``rinex_hash`` column) is keyed by the file's canonical
+    name, the period whose slots the file writes, so a file written again
+    with other data (a new hash) replaces its earlier row; a row without a
+    canonical name is keyed by file hash. A file stored in several groups
+    counts once. A VOD log book
     (``source_file_hashes`` column) has one row per day written, and a day
     written again replaces it, so it is keyed by group and day.
     """
@@ -196,9 +199,14 @@ def _logged_files(
     hashes, actions, starts, ends, counts = (
         np.asarray(_array(table, name)[...]) for name in columns
     )
+    names = (
+        np.asarray(_array(table, "canonical_name")[...])
+        if key_column == "rinex_hash" and "canonical_name" in keys
+        else np.full(hashes.shape, "", dtype=object)
+    )
     files = {}
-    for file_hash, action, start, end, count in zip(
-        hashes, actions, starts, ends, counts, strict=True
+    for file_hash, name, action, start, end, count in zip(
+        hashes, names, actions, starts, ends, counts, strict=True
     ):
         if action not in stored_actions:
             continue
@@ -210,7 +218,7 @@ def _logged_files(
             raise ValueError(msg)
         start = np.datetime64(start, "ns")
         key = (
-            str(file_hash)
+            str(name or file_hash)
             if key_column == "rinex_hash"
             else f"{group.path}@{start.astype('M8[D]')}"
         )
@@ -313,7 +321,10 @@ def _coverage(
 
 
 def _stored_file_count(group: zarr.Group) -> int | None:
-    """Distinct stored files in a GNSS group's log book, if it has one."""
+    """Distinct stored files in a GNSS group's log book, if it has one.
+
+    Keyed as in :func:`_logged_files`: by canonical name, else by hash.
+    """
     if "metadata/table" not in group:
         return None
     table = group["metadata/table"]
@@ -325,8 +336,17 @@ def _stored_file_count(group: zarr.Group) -> int | None:
         return None
     hashes = np.asarray(_array(table, "rinex_hash")[...])
     actions = np.asarray(_array(table, "action")[...])
+    names = (
+        np.asarray(_array(table, "canonical_name")[...])
+        if "canonical_name" in table
+        else np.full(hashes.shape, "", dtype=object)
+    )
     return len(
-        {str(h) for h, a in zip(hashes, actions, strict=True) if a in _STORED_ACTIONS}
+        {
+            str(n or h)
+            for h, n, a in zip(hashes, names, actions, strict=True)
+            if a in _STORED_ACTIONS
+        }
     )
 
 

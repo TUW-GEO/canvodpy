@@ -101,7 +101,13 @@ store again, uses the blocks already there, and adds the rest.
 - A slot without data holds its grid time in `epoch`, NaN in
   floating-point variables, and -1 in integer variables such as `LLI` and
   `SSI` (their `_FillValue`).
-- Writing a file again writes the same slots, so it never adds epochs.
+- The slots of a file are those of the period in its canonical name
+  (`15M`: 15 minutes from its start). A write fills them all: the file's
+  epochs, and empty slots where it has none. Writing a file again
+  therefore never adds epochs, and a file that now has fewer epochs
+  leaves nothing of its earlier write. A file without a canonical name
+  (possible with `temporal_aggregation`) writes the slots from its first
+  to its last epoch.
 - The cadence of a day is the finest sampling interval in the names of the
   files of the day, or the bin length of
   `processing.preprocessing.temporal_aggregation` when it is set. A day
