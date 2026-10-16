@@ -117,33 +117,40 @@ def _seed(log_dir: Path) -> None:
         history.end_run(rid3, "finished")
 
 
-def _export(log_dir: Path, app_dir: Path) -> subprocess.CompletedProcess:
+def _export(
+    log_dir: Path, app_dir: Path, *, via_cli_arg: bool = False
+) -> subprocess.CompletedProcess:
     import shutil
 
     # Run on a copy of the notebook so marimo's session state never lands in
-    # the repository. The notebook reads its style sheet and logos next to it.
+    # the repository. The notebook reads its style sheet next to the notebook
+    # and the logos from the installed canvodpy package, so only the notebook
+    # and the style sheet need copying.
     source = Path(canvodpy.__file__).parent / "cli" / "dashboards"
-    for name in (
-        "performance.py",
-        "canvod_nordic.css",
-        "canvodpy_logo_bright_mode.svg",
-        "canvodpy_logo_dark_mode.svg",
-    ):
+    for name in ("performance.py", "canvod_nordic.css"):
         shutil.copy(source / name, app_dir / name)
 
     out = app_dir / "dashboard_out.html"
-    env = {**os.environ, "CANVODPY_PERF_LOG_DIR": str(log_dir)}
+    env = {**os.environ}
+    cmd = [
+        sys.executable,
+        "-m",
+        "marimo",
+        "export",
+        "html",
+        str(app_dir / "performance.py"),
+        "-o",
+        str(out),
+        "--no-sandbox",
+    ]
+    if via_cli_arg:
+        # No environment variable: the log folder comes from --logs-dir after
+        # `--`, the first of the three sources the notebook checks.
+        cmd += ["--", "--logs-dir", str(log_dir)]
+    else:
+        env["CANVODPY_PERF_LOG_DIR"] = str(log_dir)
     return subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "marimo",
-            "export",
-            "html",
-            str(app_dir / "performance.py"),
-            "-o",
-            str(out),
-        ],
+        cmd,
         cwd=app_dir,
         env=env,
         capture_output=True,
@@ -168,4 +175,16 @@ def test_dashboard_exports_without_run_history(tmp_path: Path) -> None:
     app_dir = tmp_path / "app"
     app_dir.mkdir()
     result = _export(log_dir, app_dir)
+    assert result.returncode == 0, result.stderr + result.stdout
+
+
+def test_dashboard_export_via_cli_logs_dir(tmp_path: Path) -> None:
+    # The log folder comes from `-- --logs-dir <folder>`, the first of the
+    # three sources the notebook checks (CLI arg, then environment, then the
+    # settings file). The notebook must not read the environment here.
+    log_dir = tmp_path / "logs"
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    _seed(log_dir)
+    result = _export(log_dir, app_dir, via_cli_arg=True)
     assert result.returncode == 0, result.stderr + result.stdout
