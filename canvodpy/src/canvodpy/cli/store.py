@@ -18,6 +18,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
 
+from canvod.store_metadata.location import S3StoreLocation
 from canvodpy.cli.options import CONFIG_DIR_OPTION
 
 if TYPE_CHECKING:
@@ -298,6 +299,10 @@ def maintain(
     --no-gc, collects garbage.
 
     Don't run it while a canvodpy run writes to the same store.
+
+    On a store on S3, maintenance is a dry run only: a store there may be
+    written by several machines, so ``--execute`` is refused (exit 1) and
+    only the report is printed.
     """
     if store not in _STORE_KINDS:
         console.print(
@@ -308,13 +313,20 @@ def maintain(
     from datetime import UTC, datetime, timedelta
 
     icestore = _open_store(site, store)
+    on_s3 = isinstance(icestore.location, S3StoreLocation)
     cutoff = datetime.now(UTC) - timedelta(days=expire_days)
 
-    if not execute:
+    if not execute or on_s3:
         console.print(
             f"\n[bold]{site}[/bold]: {store} store, [yellow]DRY RUN[/yellow] "
             f"(cutoff: {cutoff.isoformat()})\n"
         )
+
+        if on_s3:
+            console.print(
+                "[dim]Maintenance on a store on S3 is not supported yet "
+                "(another machine may be writing to it): a dry run only.[/dim]\n"
+            )
 
         if gc:
             gc_result = icestore.garbage_collect(days=expire_days, dry_run=True)
@@ -337,10 +349,18 @@ def maintain(
             if snap.written_at < cutoff
         )
         console.print(f"\n[bold]Ancestry entries older than cutoff:[/bold] {stale}")
-        console.print(
-            "\n[dim]Nothing was deleted or expired. Re-run with --execute "
-            "to actually run maintenance (after confirming).[/dim]"
-        )
+        if on_s3:
+            console.print(
+                "\n[dim]Nothing was deleted or expired.[/dim]\n"
+                "[yellow]--execute is not supported on S3 yet.[/yellow]"
+            )
+        else:
+            console.print(
+                "\n[dim]Nothing was deleted or expired. Re-run with --execute "
+                "to actually run maintenance (after confirming).[/dim]"
+            )
+        if execute:
+            raise typer.Exit(1)
         return
 
     console.print(
@@ -405,6 +425,11 @@ def maintain_due(
     While maintenance.dry_run_until_confirmed is true, the default, a
     store that's due is only reported, not changed. Set it to
     false once the reports look right.
+
+    On a store on S3, maintenance is a dry run only: a store there may
+    be written by several machines, so a due store is always reported,
+    never changed, and this command still exits 0 (a cron job does not
+    fail overnight).
     """
     if store == "both":
         store_kinds = _STORE_KINDS
@@ -472,6 +497,7 @@ def maintain_due(
             icestore = MyIcechunkStore(
                 path, store_type="gnss_store" if kind == "gnss" else "vod_store"
             )
+            on_s3 = isinstance(icestore.location, S3StoreLocation)
             due = icestore.maintenance_due(
                 expire_interval_days=mcfg.expire_interval_days,
                 gc_delay_days=mcfg.gc_delay_days,
@@ -500,10 +526,14 @@ def maintain_due(
                 f"manifests={due['manifests_due']}"
             )
 
-            if mcfg.dry_run_until_confirmed:
-                console.print(
-                    "[yellow]DRY RUN[/yellow] (maintenance.dry_run_until_confirmed=true)"
+            dry_run = on_s3 or mcfg.dry_run_until_confirmed
+            if dry_run:
+                header = (
+                    "DRY RUN (store on S3: maintenance on S3 is not supported yet)"
+                    if on_s3
+                    else "DRY RUN (maintenance.dry_run_until_confirmed=true)"
                 )
+                console.print(f"[yellow]{header}[/yellow]")
                 if due["gc_due"]:
                     gc_result = icestore.garbage_collect(
                         days=mcfg.retention_days, dry_run=True

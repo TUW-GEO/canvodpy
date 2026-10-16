@@ -19,6 +19,7 @@ from canvod.store.grid_storage import load_grid, store_grid
 from canvod.store.manager import GnssResearchSite
 from canvod.store.reader import IcechunkDataReader
 from canvod.store.store import (
+    MaintenanceOnS3Error,
     MyIcechunkStore,
     create_gnss_store,
     create_vod_store,
@@ -36,6 +37,7 @@ __all__ = [
     "FLOAT_TOLERANCES",
     "GnssResearchSite",
     "IcechunkDataReader",
+    "MaintenanceOnS3Error",
     "MyIcechunkStore",
     "StoreComparison",
     "compare_stores",
