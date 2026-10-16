@@ -15,6 +15,11 @@ from .collectors import (
     missing_store_settings,
     missing_store_settings_message,
 )
+from .content import (
+    ContentSettingsError,
+    MissingContentSettingsError,
+    check_content_settings,
+)
 from .inventory import (
     scan_stores,
     scan_stores_as_stac,
@@ -38,6 +43,7 @@ from .io import (
     read_metadata,
     read_repository_metadata,
     rewrite_manifests,
+    store_command,
     update_metadata,
     write_metadata,
 )
@@ -60,9 +66,11 @@ from .validate import validate_all, validate_datacite, validate_fair
 
 __all__ = [
     "COMMIT_LOCK_NAME",
+    "ContentSettingsError",
     "LocalStoreLocation",
     "MIGRATE_COMMAND",
     "MetadataRuleWarning",
+    "MissingContentSettingsError",
     "RESERVED_GROUP",
     "S3StoreLocation",
     "StoreLocation",
@@ -71,6 +79,7 @@ __all__ = [
     "amendments_since",
     "build_catalog",
     "apply_updates",
+    "check_content_settings",
     "check_receivers",
     "check_vod_analyses",
     "collect_config_snapshot",
@@ -87,6 +96,7 @@ __all__ = [
     "missing_store_settings",
     "missing_store_settings_message",
     "open_repository",
+    "store_command",
     "store_exists",
     "read_metadata",
     "read_repository_metadata",

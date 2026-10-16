@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from .content import CONTENT_STORE_TYPES, new_content_settings
 from .identity import (
     NAMING_AUTHORITY_SETTING,
     check_naming_authority,
@@ -534,5 +535,10 @@ def collect_metadata(
         references=collect_references(config),
         vod_analyses=(
             collect_vod_analyses(site_config) if store_type == "vod_store" else {}
+        ),
+        content_settings=(
+            new_content_settings(config, site_name)
+            if store_type in CONTENT_STORE_TYPES
+            else None
         ),
     )

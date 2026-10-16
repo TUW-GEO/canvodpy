@@ -190,6 +190,204 @@ def migrate_metadata(
         return snapshot_id
 
 
+def first_recorded_settings(
+    store_path: StoreLocation | Path | str, branch: str = "main"
+) -> tuple[str, dict[str, Any]] | None:
+    """The settings recorded in the store's first commit that records any.
+
+    A commit records its settings in its commit metadata (ADR 0014); a
+    commit from before, in the ``config`` section of the root attribute
+    ``canvod_metadata``. Returns the snapshot ID and the settings, ``None``
+    if no commit records settings.
+    """
+    repo = open_repository(store_path)
+    for snapshot in reversed(list(repo.ancestry(branch=branch))):
+        recorded = (snapshot.metadata or {}).get("config")
+        if not recorded:
+            session = repo.readonly_session(snapshot_id=snapshot.id)
+            try:
+                attrs = zarr.open_group(session.store, mode="r").attrs
+            except zarr_errors.GroupNotFoundError:
+                continue
+            old_form = attrs.get(_METADATA_KEY)
+            recorded = old_form.get("config") if isinstance(old_form, dict) else None
+        # A store created with made-up metadata records empty settings.
+        if isinstance(recorded, dict) and any(
+            v for k, v in recorded.items() if k != "config_hash"
+        ):
+            return snapshot.id, recorded
+    return None
+
+
+def _recorded(settings: Mapping[str, Any], key: str) -> Any:
+    """A content setting in recorded settings (a ``ConfigSnapshot``).
+
+    The snapshot keeps ``sids`` and ``processing`` (with its sections) at
+    the top. Raises ``KeyError`` if the key is not recorded.
+    """
+    data: Any = settings
+    for part in key.split("."):
+        if not isinstance(data, Mapping) or part not in data:
+            raise KeyError(key)
+        data = data[part]
+    return data
+
+
+def migrate_content_settings(
+    store_path: StoreLocation | Path | str,
+    *,
+    who: str,
+    values: Mapping[str, Any] | None = None,
+    branch: str = "main",
+) -> str:
+    """Give a store its content settings, from the settings of its first commit.
+
+    For a store created before stores kept content settings (ADR 0019).
+    Every content setting is taken from the settings recorded in the
+    store's first commit (:func:`first_recorded_settings`), each receiver's
+    type and reader format from the repository metadata. A setting not
+    recorded there (an older canvodpy, or a reference receiver's
+    ``paired_canopies``, which no commit records) is not guessed: it must
+    be given in ``values``, or nothing is written and the error lists what
+    is missing.
+
+    Parameters
+    ----------
+    who
+        Who migrates the store, e.g. ``"NFB"``; recorded with the content
+        settings.
+    values
+        Content settings by their key in ``canvod-settings.yaml``, e.g.
+        ``{"sites.rosalia.receivers.reference_01.paired_canopies":
+        ["canopy_01"]}``: those the first commit doesn't record. A value
+        given replaces a recorded one.
+    branch
+        The branch whose first commit is read.
+
+    Returns
+    -------
+    str
+        Snapshot ID of the commit that carries the new root copy.
+
+    Raises
+    ------
+    ValueError
+        If ``who`` is blank, the store has no repository metadata (migrate
+        it first), already has content settings, is a store type without
+        them, no commit records settings, or settings are missing.
+    """
+    from canvod.config.models import SidsConfig
+
+    from .content import (
+        CONTENT_KEYS,
+        CONTENT_SETTINGS_FIELD,
+        CONTENT_STORE_TYPES,
+        RECEIVER_KEYS,
+        _put,
+        stored_form,
+    )
+    from .io import store_command
+    from .schema import ConfigSnapshot
+
+    who = check_who(who)
+    values = dict(values or {})
+    store_path = store_location(store_path)
+    with commit_lock(store_path):
+        repo = open_repository(store_path)
+        repository = repo.get_metadata()
+        if not repository:
+            msg = (
+                f"The store at {store_path} has no repository metadata; migrate "
+                "it to the current form first (migrate_metadata)."
+            )
+            raise ValueError(msg)
+        store_type = repository["identity"]["store_type"]
+        if store_type not in CONTENT_STORE_TYPES:
+            msg = f"A {store_type} keeps no content settings."
+            raise ValueError(msg)
+        if repository.get(CONTENT_SETTINGS_FIELD):
+            msg = f"The store at {store_path} already has content settings."
+            raise ValueError(msg)
+        first = first_recorded_settings(store_path, branch)
+        if first is None:
+            msg = (
+                f"No commit of the store at {store_path} records its settings, "
+                "so its content settings are unknown; write the data to a new "
+                "store."
+            )
+            raise ValueError(msg)
+        snapshot_id, recorded = first
+
+        site = repository["spatial"]["site"]["name"]
+        settings: dict[str, Any] = {}
+        missing: list[str] = []
+        for key in CONTENT_KEYS:
+            if key in values:
+                value = values[key]
+            else:
+                try:
+                    value = _recorded(recorded, key)
+                except KeyError:
+                    missing.append(key)
+                    continue
+            _put(settings, key, value)
+        receivers: dict[str, dict[str, Any]] = {}
+        listed = repository.get("instruments", {}).get("receivers", {})
+        for name, receiver in listed.items():
+            entry: dict[str, Any] = {}
+            for key in RECEIVER_KEYS:
+                dotted = f"sites.{site}.receivers.{name}.{key}"
+                if dotted in values:
+                    entry[key] = values[dotted]
+                elif key in receiver:
+                    entry[key] = receiver[key]
+                elif key == "paired_canopies" and receiver.get("type") == "canopy":
+                    entry[key] = None  # never set for a canopy receiver
+                else:
+                    missing.append(dotted)
+            receivers[name] = entry
+        _put(settings, f"sites.{site}.receivers", receivers)
+        unknown = sorted(
+            set(values)
+            - set(CONTENT_KEYS)
+            - {
+                f"sites.{site}.receivers.{name}.{key}"
+                for name in listed
+                for key in RECEIVER_KEYS
+            }
+        )
+        if unknown:
+            msg = f"{', '.join(unknown)}: not a content setting of this store."
+            raise ValueError(msg)
+        if missing:
+            given = " ".join(f"--set {key}=VALUE" for key in missing)
+            msg = (
+                f"The first commit of the store at {store_path} (snapshot "
+                f"{snapshot_id[:12]}) does not record these content settings, "
+                f"and they are not guessed:\n"
+                + "\n".join(f"  - {key}" for key in missing)
+                + f"\nGive each with the value the store's data was written "
+                f"with:\n  {store_command('migrate-metadata', site, store_type)} "
+                f"{given}"
+            )
+            raise ValueError(msg)
+
+        sids = SidsConfig.model_validate(settings["sids"]).get_sids()
+        content = stored_form(settings, sids, set_by=who, origin="migrated")
+        content["migrated_from_snapshot"] = snapshot_id
+        content["values_given"] = sorted(values)
+        updated = {**repository, CONTENT_SETTINGS_FIELD: content}
+        commit_id = commit_with_rebase(
+            repo.writable_session(branch),
+            "Write content settings from the first commit (ADR 0019)",
+            store_path=store_path,
+            config=ConfigSnapshot.model_validate(recorded),
+            repository=updated,
+        )
+        repo.set_metadata(updated)
+        return commit_id
+
+
 def _with_values(
     old: StoreMetadata,
     values: dict[str, Any],

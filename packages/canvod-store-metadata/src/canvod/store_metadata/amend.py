@@ -36,6 +36,7 @@ FIXED_FIELDS = (
     "identity.naming_authority",
     "identity.stac_link",
     "temporal.created",
+    "content_settings",
 )
 
 #: Fields canVODpy keeps itself.
@@ -88,6 +89,7 @@ def amend_metadata(
     reason: str,
     who: str,
     config: Any = None,
+    receiver_content: dict[str, dict[str, Any]] | None = None,
 ) -> str:
     """Change amendable fields of a store's repository metadata.
 
@@ -106,6 +108,11 @@ def amend_metadata(
     config
         The settings recorded in the commit metadata (see
         :func:`~canvod.store_metadata.io.commit_with_rebase`).
+    receiver_content
+        The content settings of each receiver added (``type``,
+        ``reader_format``, ``paired_canopies``, ADR 0019), by name. Needed
+        to add a receiver to a store that has content settings: they are
+        added with it, and never changed later.
 
     Returns
     -------
@@ -116,7 +123,9 @@ def amend_metadata(
     ------
     ValueError
         If there is no reason, no ``who`` or no change, a field is fixed, computed or
-        unknown, a value is invalid, or the store has no repository metadata.
+        unknown, a value is invalid, the store has no repository metadata,
+        or a receiver is added to a store with content settings without its
+        ``receiver_content``.
     """
     if not reason or not reason.strip():
         msg = "An amendment needs a reason: say why the fields change."
@@ -163,6 +172,7 @@ def amend_metadata(
                     msg = f"`{field}` has no field(s) {', '.join(unknown)}."
                     raise ValueError(msg)
 
+        added = _add_receiver_content(current, amended, receiver_content or {})
         when = datetime.now(UTC).isoformat()
         amended["amendments"] = [
             *current.get("amendments", []),
@@ -177,6 +187,17 @@ def amend_metadata(
                 }
                 for field in changes
             ),
+            *(
+                {
+                    "field": field,
+                    "old": previous,
+                    "new": _get(amended, field),
+                    "reason": reason.strip(),
+                    "who": who,
+                    "when": when,
+                }
+                for field, previous in added
+            ),
         ]
         snapshot_id = commit_with_rebase(
             repo.writable_session("main"),
@@ -187,3 +208,60 @@ def amend_metadata(
         )
         repo.set_metadata(amended)
         return snapshot_id
+
+
+def _add_receiver_content(
+    current: dict[str, Any],
+    amended: dict[str, Any],
+    receiver_content: dict[str, dict[str, Any]],
+) -> list[tuple[str, Any]]:
+    """Add the content settings of the receivers an amendment adds.
+
+    A store's content settings list every receiver's type, reader format
+    and paired canopies (ADR 0019); a receiver added by amendment brings
+    its own. The hash is computed again. Returns each changed field with
+    its old value, to record as amendments.
+
+    Raises
+    ------
+    ValueError
+        If a receiver is added without its content settings, or they don't
+        match its entry.
+    """
+    from .content import CONTENT_SETTINGS_FIELD, RECEIVER_KEYS, settings_hash
+
+    content = amended.get(CONTENT_SETTINGS_FIELD)
+    new = sorted(
+        set(amended.get("instruments", {}).get("receivers", {}))
+        - set(current.get("instruments", {}).get("receivers", {}))
+    )
+    if not content or not new:
+        return []
+    (site,) = content["settings"]["sites"]
+    receivers = content["settings"]["sites"][site]["receivers"]
+    fields: list[tuple[str, Any]] = []
+    for name in new:
+        entry = receiver_content.get(name)
+        if entry is None or set(entry) != set(RECEIVER_KEYS):
+            msg = (
+                f"The store has content settings (ADR 0019): adding receiver "
+                f"{name!r} needs its {', '.join(RECEIVER_KEYS)} "
+                "(canvodpy store amend --add-receiver takes them from the "
+                "settings). Nothing was changed."
+            )
+            raise ValueError(msg)
+        listed = amended["instruments"]["receivers"][name]
+        for key in ("type", "reader_format"):
+            if listed.get(key) != entry[key]:
+                msg = (
+                    f"Receiver {name!r}: {key} {entry[key]!r} in its content "
+                    f"settings differs from {listed.get(key)!r} in its entry. "
+                    "Nothing was changed."
+                )
+                raise ValueError(msg)
+        receivers[name] = dict(entry)
+        field = f"{CONTENT_SETTINGS_FIELD}.settings.sites.{site}.receivers.{name}"
+        fields.append((field, None))
+    fields.append((f"{CONTENT_SETTINGS_FIELD}.hash", content["hash"]))
+    content["hash"] = settings_hash(content["settings"], content.get("resolved_sids"))
+    return fields

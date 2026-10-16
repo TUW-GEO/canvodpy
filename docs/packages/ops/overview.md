@@ -297,11 +297,14 @@ mismatch, the write raises `PreprocessingMismatchError` and `canvodpy run`
 stops with exit code 1, since every later day would be refused the same way:
 keep the setting for the life of a store, or start a new store.
 
-`canvodpy run` makes the same comparison before it processes any data: the
-configured `processing.preprocessing` against every GNSS group the run writes
-and every VOD analysis group of the selected calculator. A mismatch therefore
-stops the run at once, also when a new GNSS store would feed an existing VOD
-store. `canvod.ops.planned_settings(config)` gives the settings a
+`canvodpy run` checks before it processes any data. For the GNSS store,
+`processing.preprocessing` is one of the store's
+[content settings](../../guides/configuration.md#content-settings-fixed-for-each-store):
+the run compares it with the settings the store was created with, when it
+starts and again before each commit. For the VOD store, it compares the
+configured preprocessing with every VOD analysis group of the selected
+calculator. A mismatch therefore stops the run at once, also when a new GNSS
+store would feed an existing VOD store. `canvod.ops.planned_settings(config)` gives the settings a
 configuration records, and `MyIcechunkStore.check_settings_match` compares
 them with a group.
 

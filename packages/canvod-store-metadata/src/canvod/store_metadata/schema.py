@@ -717,6 +717,13 @@ class StoreMetadata(BaseModel):
     vod_analyses: dict[str, VodAnalysisInfo] = Field(
         default_factory=dict, description="VOD analyses of a VOD store"
     )
+    content_settings: dict[str, Any] | None = Field(
+        None,
+        description=(
+            "The settings that shape the store's data, set when it is created "
+            "(ADR 0019); see canvod.store_metadata.content"
+        ),
+    )
     amendments: list[Amendment] = Field(default_factory=list)
     migration: MigrationRecord | None = Field(
         None, description="Set when the store was migrated (ADR 0014)"
@@ -813,6 +820,7 @@ class RepositoryMetadata(BaseModel):
     instruments: RepositoryInstruments = Field(default_factory=RepositoryInstruments)
     references: References = Field(default_factory=References)
     vod_analyses: dict[str, VodAnalysisInfo] = Field(default_factory=dict)
+    content_settings: dict[str, Any] | None = None
     amendments: list[Amendment] = Field(default_factory=list)
     migration: MigrationRecord | None = None
 

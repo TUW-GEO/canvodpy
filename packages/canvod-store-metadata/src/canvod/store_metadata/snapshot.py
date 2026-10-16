@@ -233,6 +233,10 @@ def _replay_amendments(copy: dict[str, Any], repository: dict[str, Any]) -> bool
     if amendments[: len(done)] != done:
         return False
     replayed = copy_module.deepcopy({**copy, "amendments": amendments})
+    # Content settings are written once into a store that has none
+    # (canvodpy store migrate-metadata, ADR 0019); never changed after.
+    if not copy.get("content_settings"):
+        replayed["content_settings"] = repository.get("content_settings")
     for amendment in amendments[len(done) :]:
         _set_field(replayed, amendment["field"], amendment["new"])
     # An amendment under an unset section (e.g. a receiver's antenna) creates
