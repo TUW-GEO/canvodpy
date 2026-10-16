@@ -8,7 +8,7 @@ store doesn't. A first run on an empty store starts from the oldest data.
 from __future__ import annotations
 
 import os
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -39,7 +39,8 @@ def _fresh():
 
 
 def _day(days_ago: int) -> str:
-    return (datetime.now(UTC).date() - timedelta(days=days_ago)).strftime("%Y%j")
+    # Local time, as the run's "today" (just after midnight UTC differs).
+    return (datetime.now().date() - timedelta(days=days_ago)).strftime("%Y%j")
 
 
 def _name(station: str, day: str) -> str:
