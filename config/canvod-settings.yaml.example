@@ -219,12 +219,12 @@ processing:
     chunk_strategies:
       gnss_store:
         # https://canvodpy.eu/guides/settings/#processing-icechunk-chunk_strategies-gnss_store-epoch
-        epoch: 180    # epochs per chunk; a day's cadence must divide 86400 s / 180 = 480 s
+        epoch: 180    # epochs per chunk; each day fills whole chunks, padded if needed
         # https://canvodpy.eu/guides/settings/#processing-icechunk-chunk_strategies-gnss_store-sid
         sid: -1       # all signals in one chunk
       vod_store:
         # https://canvodpy.eu/guides/settings/#processing-icechunk-chunk_strategies-vod_store-epoch
-        epoch: 180    # epochs per chunk; as gnss_store, so every GNSS day fits
+        epoch: 180    # epochs per chunk; as gnss_store
         # https://canvodpy.eu/guides/settings/#processing-icechunk-chunk_strategies-vod_store-sid
         sid: -1
 

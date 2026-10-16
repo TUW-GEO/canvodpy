@@ -2,14 +2,14 @@ name: S3 Tests
 
 # Stores on S3 against an S3 emulator (#303): created, opened, metadata
 # written and read, and conflicting commits refused
-# (packages/canvod-store-metadata/tests/test_s3_store.py), and two
-# `canvodpy run` processes writing one store at the same time
-# (canvodpy/tests/test_s3_two_runs.py, #358). Maintenance on an S3 store
-# is a dry run only (#357): the store tests refuse every mutating action
-# (packages/canvod-store/tests/test_s3_maintenance.py) and the CLI reports
-# a dry run (canvodpy/tests/test_s3_maintenance.py). Without an S3 service
-# these tests skip, so the platform tests don't run them.
-#
+# (packages/canvod-store-metadata/tests/test_s3_store.py), producing a
+# settings file from a store (`canvodpy/tests/test_config_from_store_s3.py`,
+# #356), two `canvodpy run` processes writing one store at the same time
+# (`canvodpy/tests/test_s3_two_runs.py`, #358), and maintenance on a store
+# on S3 being a dry run only (#357: the store tests refuse every mutating
+# action, `packages/canvod-store/tests/test_s3_maintenance.py`, and the CLI
+# reports a dry run, `canvodpy/tests/test_s3_maintenance.py`). Without an
+# S3 service
 # The emulator is RustFS (Apache-2.0), the one Icechunk's own CI tests
 # against, at the tag Icechunk's compose.yaml uses at the version in
 # uv.lock (icechunk v2.3.0: rustfs/rustfs:1.0.0-rc.6). When uv.lock moves
@@ -106,6 +106,7 @@ jobs:
               run: |
                   set -o pipefail
                   uv run pytest packages/canvod-store-metadata/tests/test_s3_store.py \
+                      canvodpy/tests/test_config_from_store_s3.py \
                       canvodpy/tests/test_s3_two_runs.py \
                       packages/canvod-store/tests/test_s3_maintenance.py \
                       canvodpy/tests/test_s3_maintenance.py \

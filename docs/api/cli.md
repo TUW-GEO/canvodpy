@@ -171,11 +171,16 @@ $ canvodpy config [OPTIONS] COMMAND [ARGS]...
 
 ### `canvodpy config init`
 
-Create canvod-settings.yaml from its template.
+Create canvod-settings.yaml from its template, or from a store.
 
 The file goes into the configuration directory that --config-dir sets.
 Create a naming recipe for each receiver with
 just naming-init SITE NAME.
+
+With --from-store STORE, the file is written from the store's content
+settings (a folder or an s3:// URL): the settings that shape its data
+stay as they are, and the machine values are asked (or left as TODO
+with --no-interactive).
 
 **Usage**:
 
@@ -186,8 +191,10 @@ $ canvodpy config init [OPTIONS]
 **Options**:
 
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
-* `-f, --force`: Overwrite existing files
+* `-f, --force`: Overwrite existing files (no effect with --from-store)
 * `-i, --interactive`: Walk through setup with a guided Q&A instead of hand-editing YAML
+* `--from-store <str>`: Write the settings of a store from its content settings: a local dir or an s3://bucket/prefix URL
+* `--no-interactive`: With --from-store: keep the machine-value placeholders (TODO) instead of asking
 * `--help`: Show this message and exit.
 
 ### `canvodpy config validate`
@@ -195,7 +202,9 @@ $ canvodpy config init [OPTIONS]
 Validate the configuration and the receiver data it points to.
 
 It finds the data files the same way as canvodpy run, so every error
-it reports would stop a run or make its results wrong.
+it reports would stop a run or make its results wrong. A settings file
+written from a store (:meth:`init`) that still has placeholder values is
+listed, and the command exits with code 1.
 
 **Usage**:
 

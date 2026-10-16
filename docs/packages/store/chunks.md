@@ -53,28 +53,35 @@ in the settings reference, or run
 
 A new GNSS store is made of [day blocks](overview.md#day-blocks): each
 receiver-day is a block of slots, one slot per sampling interval of the
-day (its **cadence**). A day always holds a whole number of chunks, so
-the cadence must divide the length of one chunk:
+day (its **cadence**). The cadence may change from one day to the next.
+A day has
 
 $$
-\frac{86400\,\text{s}}{\text{epoch}}
-\qquad\text{for example}\qquad
-\frac{86400\,\text{s}}{180} = 480\,\text{s}
+\text{slots} = \left\lceil \frac{86400\,\text{s}}{\text{cadence}} \right\rceil
 $$
 
-With the default of 180 epochs, cadences of 1 s, 5 s, 15 s, 30 s, or 1 min
-fit, for example. A run refuses a day whose cadence doesn't fit, and the
-message names the setting that can fix it,
-`processing.preprocessing.temporal_aggregation.freq`.
+and its block always holds a whole number of chunks, so days never share
+a chunk. When the slots don't fill the last chunk, the block is padded with
+empty epochs, which loading leaves out. With the default of 180 epochs:
+
+| Cadence | Slots per day | Padding |
+| --- | --- | --- |
+| 1 s, 5 s, 15 s, 30 s, 1 min | 86400, 17280, 5760, 2880, 1440 | none |
+| 7 s | 12343 | 77 |
+| 45 s | 1920 | 60 |
+| 15 min | 96 | 84 |
+
+Every cadence fits; the padding costs at most one chunk per day.
 
 How many files share a chunk depends on the cadence. At 5 s, a chunk of
 180 epochs is one 15-minute file. At 30 s, a chunk is 90 minutes, so six
-15-minute files share it. The files that share a chunk are always written
-together by one worker, so no write replaces the data of another file.
+15-minute files share it; at 15 min, the whole day is one chunk. The files
+that share a chunk are always written together by one worker, so no write
+replaces the data of another file.
 
 To change the chunks of an existing group made of day blocks, use
-`store.rechunk_group()`. It refuses an epoch chunk that doesn't divide every
-day of the group into whole chunks.
+`store.rechunk_group()`. It refuses an epoch chunk that doesn't divide the
+length of every day block of the group, padding included.
 
 ### Groups written by appending
 
@@ -101,11 +108,9 @@ $$
 ## VOD store
 
 A VOD store group made of [day blocks](overview.md#the-vod-store) is
-chunked like the GNSS store: a day holds a whole number of chunks, so the
-cadence of a day must divide 86400 s / epoch. A day of VOD has the cadence
-of its GNSS data, so the default, 180 epochs as in the GNSS store, takes
-every day the GNSS store takes. With another epoch chunk, a run refuses a
-day of VOD whose cadence doesn't fit (`CadenceError`).
+chunked like the GNSS store: each day is a block of whole chunks, padded
+where its slots don't fill the last one. A day of VOD has the cadence of
+its GNSS data.
 
 ### Groups written by appending
 

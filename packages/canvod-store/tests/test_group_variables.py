@@ -148,6 +148,22 @@ class TestAddGroupVariables:
         assert row["start"] is None
         assert store.repo.list_branches() == {"main"}
 
+    def test_keeps_the_group_attributes(self, store) -> None:
+        def stored_attrs() -> dict:
+            with store.readonly_session() as session:
+                return dict(
+                    zarr.open_group(session.store, mode="r", path="canopy_01").attrs
+                )
+
+        before = stored_attrs()
+        cells = _cells(store)
+        cells.attrs = {"File Hash": "other"}
+
+        store.add_group_variables("canopy_01", cells, _STEP, _SOFTWARE)
+
+        assert before
+        assert stored_attrs() == before
+
     def test_keeps_other_subgroups(self, store) -> None:
         session = store.repo.writable_session("main")
         zarr.open_group(session.store, mode="a").create_group("canopy_01/metadata/x")
@@ -264,3 +280,104 @@ class TestWriteChunks:
         dataset = _dataset(1, "h1", _record([])).chunk({"epoch": 2})
         store.write_or_append_group(dataset, "canopy_01")
         assert self._stored_chunks(store, "canopy_01") == (3, 2)
+
+
+_DAY_1 = np.datetime64("2025-01-01", "D")
+_DAY_2 = np.datetime64("2025-01-02", "D")
+
+
+def _day_file(day: np.datetime64) -> xr.Dataset:
+    """Three 15-min epochs of ``day``; its block holds 96 slots, 84 of padding."""
+    epochs = day.astype("M8[ns]") + np.arange(3) * np.timedelta64(900, "s")
+    return xr.Dataset(
+        {"SNR": (("epoch", "sid"), np.full((3, 2), 40.0, dtype=np.float32))},
+        coords={"epoch": ("epoch", epochs, {"time_system": "GPS"}), "sid": _SIDS},
+    )
+
+
+def _log_row(region, file_hash: str) -> dict:
+    return {
+        "fname": f"/data/{file_hash}.rnx",
+        "rinex_hash": file_hash,
+        "start": region.start,
+        "end": region.end,
+        "epochs": region.epochs,
+        "dataset_attrs": "{}",
+        "exists": False,
+        "rel_path": f"data/{file_hash}.rnx",
+        "canonical_name": "",
+        "physical_path": f"/data/{file_hash}.rnx",
+        "action": "initial",
+        "write_strategy": "skip",
+        "run_id": "run-1",
+        "commit_msg": "two days",
+        "snapshot_id": "",
+    }
+
+
+@pytest.fixture
+def day_block_store(tmp_path):
+    """A store whose group holds two days of 15-min data, the later day first."""
+    from canvod.store_metadata.io import commit_with_rebase
+
+    from canvod.store.day_blocks import add_day_block, write_file_region
+
+    store = new_gnss_store(tmp_path / "site" / "gnss_store")
+    with store.writable_session("main") as session:
+        for day in (_DAY_2, _DAY_1):
+            add_day_block(session, "canopy_01", day, 900, template=_day_file(day))
+            region = write_file_region(session, "canopy_01", _day_file(day))
+            store.append_metadata_bulk(
+                "canopy_01", [_log_row(region, str(day))], session=session
+            )
+        commit_with_rebase(
+            session, "two days", store_path=store.store_path, config=store.settings
+        )
+    return store
+
+
+class TestAddGroupVariablesToDayBlocks:
+    def test_the_variables_of_every_slot_are_added(self, day_block_store) -> None:
+        group = day_block_store.read_group("canopy_01")
+        assert group.sizes["epoch"] == 2 * 96
+        cells = _cells(day_block_store)
+        cells["cell_id_x"] = (
+            cells["cell_id_x"] * np.arange(group.sizes["epoch"])[:, None]
+        )
+
+        day_block_store.add_group_variables("canopy_01", cells, _STEP, _SOFTWARE)
+
+        after = day_block_store.read_group("canopy_01").compute()
+        xr.testing.assert_equal(after["cell_id_x"], cells["cell_id_x"])
+        xr.testing.assert_equal(after["SNR"], group["SNR"].compute())
+
+    def test_the_padding_stays_missing(self, day_block_store) -> None:
+        day_block_store.add_group_variables(
+            "canopy_01", _cells(day_block_store), _STEP, _SOFTWARE
+        )
+
+        with day_block_store.readonly_session() as session:
+            stored = xr.open_zarr(session.store, group="canopy_01", consolidated=False)
+            cells = stored["cell_id_x"].values
+        assert cells.shape == (2 * 180, 2)
+        assert np.isnan(cells).sum() == 2 * 84 * 2
+
+    def test_integer_variables_keep_their_dtype(self, day_block_store) -> None:
+        cells = _cells(day_block_store).astype("i4")
+        cells["cell_id_x"].attrs["_FillValue"] = -1
+
+        day_block_store.add_group_variables("canopy_01", cells, _STEP, _SOFTWARE)
+
+        after = day_block_store.read_group("canopy_01")["cell_id_x"]
+        assert after.dtype == np.dtype("i4")
+        assert (after.values == 1).all()
+
+    def test_variables_on_the_stored_axis_are_refused(self, day_block_store) -> None:
+        with day_block_store.readonly_session() as session:
+            stored = xr.open_zarr(session.store, group="canopy_01", consolidated=False)
+        cells = xr.Dataset(
+            {"cell_id_x": (("epoch", "sid"), np.ones((stored.sizes["epoch"], 2)))},
+            coords={"epoch": stored["epoch"].values, "sid": _SIDS},
+        )
+        with pytest.raises(ValueError, match="exactly"):
+            day_block_store.add_group_variables("canopy_01", cells, _STEP, _SOFTWARE)

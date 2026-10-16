@@ -22,10 +22,18 @@ one slot is refused (ADR 0004). Loading returns every slot;
 `drop_empty=True` drops slots where every SNR is missing. Coverage and
 counts count epochs with data, never the length of the axis.
 
-The epoch chunk stays at 180 epochs: one 15-minute file at 5 s, and a
-whole number of chunks per day for every cadence that divides 480 s
-(1 s, 5 s, 15 s, 30 s, 1 min). Other cadences are refused, and the
-error names the aggregation setting.
+The epoch chunk stays at 180 epochs: one 15-minute file at 5 s. A day
+has ceil(86400 s / cadence) slots, and its block is padded to whole
+chunks, so days never share a chunk and every cadence is stored. Padding
+epochs lie between the day's last slot and the next day, hold missing
+values, and are dropped on load. Because a block's length no longer gives
+its cadence, the group keeps a block index in its attributes
+(`day_block_index`: start, stop, slots and cadence per day).
+
+*Amended 2026-10-16 (#376).* The first version refused every cadence
+that does not divide 86400 s / 180 = 480 s, so that a day held whole
+chunks without padding. Existing users store such cadences (for example
+15 min after aggregation), so blocks are padded instead.
 
 A run grows the axis once per batch, in one small commit, only for the
 days whose ephemerides are ready, so days that cannot be processed never
