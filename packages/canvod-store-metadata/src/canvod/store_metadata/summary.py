@@ -201,15 +201,25 @@ def logged_keys(group: zarr.Group) -> list[str | None]:
             "epoch count cannot be summarized"
         )
         raise ValueError(msg)
-    if not {key_column, "action", "start"} <= keys:
+    if not {key_column, "start"} <= keys or not keys & {"action", "exists"}:
         msg = (
             f"Day-block group {group.path} has no log book with the columns "
             f"{key_column}, action, start; its epoch count cannot be summarized"
         )
         raise ValueError(msg)
-    hashes, actions, starts = (
-        np.asarray(_array(table, name)[...]) for name in (key_column, "action", "start")
+    hashes, starts = (
+        np.asarray(_array(table, name)[...]) for name in (key_column, "start")
     )
+    if "action" in keys:
+        actions = np.asarray(_array(table, "action")[...])
+    else:
+        # canVODpy 0.x wrote no action, only whether the file was in the
+        # store already (skipped) or not (written), as canvod.store reads it.
+        exists = np.asarray(_array(table, "exists")[...])
+        actions = np.array(
+            ["skipped" if str(e) == "True" else "written" for e in exists],
+            dtype=object,
+        )
     names = (
         np.asarray(_array(table, "canonical_name")[...])
         if key_column == "rinex_hash" and "canonical_name" in keys

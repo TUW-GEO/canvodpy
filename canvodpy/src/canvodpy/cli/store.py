@@ -619,16 +619,32 @@ def migrate_metadata_command(
     migration is refused and lists them. In a VOD store, the attributes of
     VOD are replaced with the current ones: older versions copied the
     attributes of SNR and theta to VOD, among them the valid range of theta.
-    The migration record keeps who migrated the store, the initials set in
-    processing.metadata.initials.
+    A VOD store also lists each VOD analysis it holds a group of, with its
+    receivers from the settings. The migration record keeps who migrated
+    the store, the initials set in processing.metadata.initials.
 
-    A GNSS store also gets its content settings (ADR 0019), also when it
-    was moved to repository metadata before: the settings that shape its
-    data, taken from the settings recorded in its first commit. A setting
-    that commit does not record is not guessed: the command stops and
-    lists it, to be given with --set by its key in canvod-settings.yaml.
+    Fields the store lacks and the settings hold are taken from them: the
+    site's store_description, the publisher and license, the site's
+    latitude and longitude. A value given with --set wins.
+
+    canVODpy 0.x stored epochs without recording their time scale. The
+    epochs of groups read from RINEX files are GPS time and are recorded
+    as such; a VOD store's, when its site's GNSS store holds RINEX epochs
+    only. A group read from SBF or NMEA files holds UTC epochs: the
+    command stops, and the store is rebuilt from the raw files.
+
+    A GNSS or VOD store also gets its content settings (ADR 0019), also
+    when it was moved to repository metadata before: the settings that
+    shape its data, taken from the settings recorded in its first commit.
+    A setting that commit does not record is not guessed: the command
+    stops and lists it, to be given with --set by its key in
+    canvod-settings.yaml. A setting the data show (the preprocessing,
+    store_delta_snr, store_radial_diff, store_radial_distance) is read
+    from the data: canVODpy 0.x recorded settings its runs didn't follow.
     """
+    from canvod.config import load_config
     from canvod.store_metadata import read_metadata
+    from canvod.store_metadata.migration import epochs_to_label
 
     path, _ = _store_path(site, store)
     try:
@@ -642,6 +658,21 @@ def migrate_metadata_command(
     values = _amend_changes(site, store_type, set_values or [], [], [])
     content_values = {k: v for k, v in values.items() if _is_content_key(k)}
     values = {k: v for k, v in values.items() if k not in content_values}
+    # Each store's migration reads the other store of the site: a VOD
+    # store's epochs and content-settings hash come from the GNSS store,
+    # and the GNSS store records VOD settings the VOD data show.
+    storage = load_config().processing.storage
+    gnss_store = (
+        storage.get_gnss_store_path(site) if store_type == "vod_store" else None
+    )
+    vod_store = storage.get_vod_store_path(site) if store_type == "gnss_store" else None
+    # Checked before anything is written: a store whose epochs cannot be
+    # labelled is rebuilt, not migrated.
+    try:
+        unlabelled = epochs_to_label(path, gnss_store=gnss_store)
+    except ValueError as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(1) from None
 
     asked = False
     if old.written_before_migration:
@@ -655,15 +686,59 @@ def migrate_metadata_command(
             f"{', '.join(values)} with canvodpy store amend.[/red]"
         )
         raise typer.Exit(1)
+    if unlabelled:
+        _label_epoch_time_system(
+            site, store, path, unlabelled, gnss_store, yes=yes or asked
+        )
+        asked = True
     if (
         not _migrate_content_settings(
-            site, store, path, store_type, content_values, yes=yes or asked
+            site,
+            store,
+            path,
+            store_type,
+            content_values,
+            gnss_store,
+            vod_store,
+            yes=yes or asked,
         )
         and not asked
     ):
         console.print(
             f"[green]✓ The {store} store of '{site}' is already migrated.[/green]"
         )
+
+
+def _label_epoch_time_system(
+    site: str,
+    store: str,
+    path: Path | str,
+    groups: list[str],
+    gnss_store: Path | str | None,
+    *,
+    yes: bool,
+) -> None:
+    """Record GPS time on epochs canVODpy 0.x stored without a time scale."""
+    from canvod.store_metadata.migration import label_epoch_time_system
+
+    console.print(f"\n[bold]{site}[/bold]: {store} store ({path})")
+    console.print(
+        "  Epochs:            recorded as GPS time, stored by canVODpy 0.x "
+        "without their time scale"
+    )
+    for group in groups:
+        console.print(f"    {group}")
+    if not yes and not typer.confirm("Record the time scale of the epochs?"):
+        raise typer.Exit(1)
+    try:
+        _, snapshot_id = label_epoch_time_system(path, gnss_store=gnss_store)
+    except ValueError as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(1) from None
+    console.print(
+        f"[green]✓ Epochs recorded as GPS time[/green] "
+        f"(snapshot {(snapshot_id or '')[:12]})"
+    )
 
 
 def _is_content_key(field: str) -> bool:
@@ -690,6 +765,16 @@ def _migrate_repository_metadata(
     from canvod.store_metadata.identity import check_naming_authority, store_id
 
     who = _who()
+    from_settings = {
+        field: value
+        for field, value in _fields_from_settings(site, old).items()
+        if field not in values
+    }
+    from_groups = {
+        field: value
+        for field, value in _vod_analyses_from_groups(site, path, old).items()
+        if field not in values
+    }
     source = "--naming-authority"
     if naming_authority is None:
         source = "the store"
@@ -714,6 +799,14 @@ def _migrate_repository_metadata(
     )
     for field, value in values.items():
         console.print(f"  Set {field}: {value!r}")
+    for field, value in from_settings.items():
+        console.print(f"  Set {field}: {value!r} (from the settings)")
+    for field, value in from_groups.items():
+        console.print(
+            f"  Set {field}: {value!r} (its group is in the store; receivers "
+            "from the settings)"
+        )
+    values = {**from_settings, **from_groups, **values}
     variable_attrs = {}
     if old.identity.store_type == "vod_store":
         from canvod.vod.calculator import VOD_ATTRS
@@ -737,12 +830,99 @@ def _migrate_repository_metadata(
     console.print(f"[green]✓ Migrated[/green] (snapshot {snapshot_id[:12]})")
 
 
+def _fields_from_settings(site: str, old: StoreMetadata) -> dict[str, object]:
+    """Fields an old store lacks that the settings hold, by dotted path.
+
+    The site's store description, the publisher and license, the site's
+    position: what a new store takes from the settings when it is created.
+    """
+    from canvod.config import load_config
+    from canvod.store_metadata.collectors import (
+        _site_store_description,
+        collect_publisher,
+    )
+
+    config = load_config()
+    meta_cfg = config.processing.metadata
+    site_cfg = config.sites.sites[site]
+    publisher = collect_publisher(meta_cfg)
+    candidates: dict[str, tuple[object, object]] = {
+        "identity.description": (
+            old.identity.description,
+            _site_store_description(site_cfg, meta_cfg) or None,
+        ),
+        "publisher.name": (old.publisher.name, publisher.name),
+        "publisher.url": (
+            old.publisher.url,
+            str(publisher.url) if publisher.url else None,
+        ),
+        "publisher.license": (old.publisher.license, publisher.license),
+        "publisher.license_uri": (
+            old.publisher.license_uri,
+            str(publisher.license_uri) if publisher.license_uri else None,
+        ),
+        "spatial.geospatial_lat": (
+            old.spatial.geospatial_lat,
+            getattr(site_cfg, "latitude", None),
+        ),
+        "spatial.geospatial_lon": (
+            old.spatial.geospatial_lon,
+            getattr(site_cfg, "longitude", None),
+        ),
+    }
+    return {
+        field: new
+        for field, (stored, new) in candidates.items()
+        if stored is None and new is not None
+    }
+
+
+def _vod_analyses_from_groups(
+    site: str, path: Path | str, old: StoreMetadata
+) -> dict[str, object]:
+    """VOD analyses an old VOD store holds groups of but does not list.
+
+    canVODpy 0.x listed no VOD analyses. A data group
+    ``{calculator}/{analysis}`` shows the analysis; its receivers come from
+    the settings (``sites.<site>.vod_analyses``), as ``canvodpy store amend
+    --add-vod-analysis`` takes them. An analysis the settings do not define
+    is left out.
+    """
+    import zarr
+
+    from canvod.config import load_config
+    from canvod.store_metadata.location import open_repository, store_location
+    from canvod.store_metadata.snapshot import RESERVED_GROUP
+
+    if old.identity.store_type != "vod_store":
+        return {}
+    analyses = load_config().sites.sites[site].vod_analyses or {}
+    session = open_repository(store_location(path)).readonly_session(branch="main")
+    root = zarr.open_group(session.store, mode="r")
+    held = {
+        name
+        for calculator, group in root.groups()
+        if calculator != RESERVED_GROUP
+        for name, _ in group.groups()
+    }
+    listed = set(old.vod_analyses or {})
+    return {
+        f"vod_analyses.{name}": {
+            "canopy_receiver": analyses[name].canopy_receiver,
+            "reference_receiver": analyses[name].reference_receiver,
+        }
+        for name in sorted((held & set(analyses)) - listed)
+    }
+
+
 def _migrate_content_settings(
     site: str,
     store: str,
     path: Path | str,
     store_type: str,
     values: dict[str, object],
+    gnss_store: Path | str | None = None,
+    vod_store: Path | str | None = None,
     *,
     yes: bool,
 ) -> bool:
@@ -786,7 +966,13 @@ def _migrate_content_settings(
     if not yes and not typer.confirm("Write the content settings?"):
         raise typer.Exit(1)
     try:
-        snapshot_id = migrate_content_settings(path, who=who, values=values)
+        snapshot_id = migrate_content_settings(
+            path,
+            who=who,
+            values=values,
+            gnss_store=gnss_store,
+            vod_store=vod_store,
+        )
     except ValueError as exc:
         console.print(f"[red]❌ {exc}[/red]")
         raise typer.Exit(1) from None
@@ -831,6 +1017,12 @@ def _amend_changes(
         field, sep, value = item.partition("=")
         if not sep:
             console.print(f"[red]❌ --set takes field.path=value, not {item!r}[/red]")
+            raise typer.Exit(1)
+        if not value.strip():
+            console.print(
+                f"[red]❌ --set {field.strip()}= has no value; give one after "
+                "the =.[/red]"
+            )
             raise typer.Exit(1)
         changes[field.strip()] = yaml.safe_load(value)
 

@@ -12,6 +12,10 @@ A migrated store must pass the standards checks like a new one
 lacks, such as its description, are given at migration time. The caller
 can also replace the attributes of variables older versions wrote wrong
 (e.g. ``VOD``, which inherited SNR's and theta's attributes).
+
+canVODpy 0.x stored epochs without recording their time scale.
+:func:`label_epoch_time_system` labels those it can tell are GPS time;
+a group it cannot tell is rebuilt from the raw files, never shifted.
 """
 
 from __future__ import annotations
@@ -20,8 +24,9 @@ import json
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
+import numpy as np
 import zarr
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
@@ -199,6 +204,172 @@ def migrate_metadata(
         return snapshot_id
 
 
+#: Group attribute canVODpy 0.x copied from the header of a RINEX file.
+#: Its readers kept RINEX epochs as the file gives them, GPS time for the
+#: files canVODpy reads (GPS and mixed observation files); SBF and NMEA
+#: epochs were stored in UTC, 18 s behind GPS time.
+_RINEX_VERSION_ATTR = "RINEX Version"
+
+#: The time scale every stored epoch is in (``epoch.attrs["time_system"]``).
+_GPS = "GPS"
+
+
+def epochs_to_label(
+    store_path: StoreLocation | Path | str,
+    *,
+    gnss_store: StoreLocation | Path | str | None = None,
+    branch: str = "main",
+) -> list[str]:
+    """The data groups whose epochs :func:`label_epoch_time_system` labels.
+
+    canVODpy 0.x stored epochs without their time scale. A GNSS group read
+    from RINEX files (it records the RINEX version) holds GPS time. A VOD
+    group holds the epochs of the site's GNSS store, so it holds GPS time
+    when every data group of ``gnss_store`` does or will after its own
+    migration. A group that records its time scale already is not listed.
+
+    Raises
+    ------
+    ValueError
+        If a group does not record its time scale and is not known to hold
+        GPS time: a GNSS group read from SBF or NMEA files (UTC in 0.x), or
+        a VOD group whose GNSS store holds such groups, is missing or is not
+        given. Its epochs are not shifted: the epoch grid and the satellite
+        positions were computed for the old epochs, so the store is rebuilt
+        from the raw files.
+    """
+    from .summary import _observation_groups
+
+    store_path = store_location(store_path)
+    root = _root_group(store_path, branch)
+    unlabelled = {
+        path: group
+        for path, group in _observation_groups(root).items()
+        if group["epoch"].attrs.get("time_system") is None
+    }
+    if not unlabelled:
+        return []
+    if _store_type(root, store_path) != "vod_store":
+        not_rinex = sorted(
+            path
+            for path, group in unlabelled.items()
+            if _RINEX_VERSION_ATTR not in group.attrs
+        )
+        if not_rinex:
+            _refuse_unknown_time_system(
+                store_path, not_rinex, "were not read from RINEX files"
+            )
+        return sorted(unlabelled)
+    if gnss_store is None:
+        _refuse_unknown_time_system(
+            store_path, sorted(unlabelled), "come from a GNSS store that was not given"
+        )
+    gnss_store = store_location(gnss_store)
+    try:
+        epochs_to_label(gnss_store, branch=branch)
+    except ValueError:
+        _refuse_unknown_time_system(
+            store_path,
+            sorted(unlabelled),
+            f"come from the GNSS store at {gnss_store}, which holds epochs not "
+            "read from RINEX files",
+        )
+    except Exception:
+        _refuse_unknown_time_system(
+            store_path,
+            sorted(unlabelled),
+            f"come from the GNSS store at {gnss_store}, which cannot be read",
+        )
+    return sorted(unlabelled)
+
+
+def label_epoch_time_system(
+    store_path: StoreLocation | Path | str,
+    *,
+    gnss_store: StoreLocation | Path | str | None = None,
+    branch: str = "main",
+) -> tuple[list[str], str | None]:
+    """Record GPS time on epochs canVODpy 0.x stored without a time scale.
+
+    Every stored epoch is GPS time and records it
+    (``epoch.attrs["time_system"]``); a write refuses a group whose epochs
+    do not. :func:`epochs_to_label` says which groups are labelled and
+    which are refused. Only the attribute changes; the epochs stay as
+    stored. For a store with repository metadata (migrate it first).
+
+    Parameters
+    ----------
+    gnss_store
+        The site's GNSS store, for a VOD store: its epochs come from there.
+
+    Returns
+    -------
+    tuple[list[str], str | None]
+        The labelled groups and the snapshot ID of the commit; ``([],
+        None)`` if every group records its time scale.
+
+    Raises
+    ------
+    ValueError
+        See :func:`epochs_to_label`. Nothing is written then.
+    """
+    store_path = store_location(store_path)
+    with commit_lock(store_path):
+        groups = epochs_to_label(store_path, gnss_store=gnss_store, branch=branch)
+        if not groups:
+            return [], None
+        repo = open_repository(store_path)
+        session = repo.writable_session(branch)
+        root = zarr.open_group(session.store, mode="a")
+        for path in groups:
+            group = root[path]
+            assert isinstance(group, zarr.Group)
+            group["epoch"].attrs["time_system"] = _GPS
+        snapshot_id = commit_with_rebase(
+            session,
+            "Record that the epochs are GPS time: "
+            + ", ".join(groups)
+            + " (stored by canVODpy 0.x without their time scale)",
+            store_path=store_path,
+            repository=repo.get_metadata(),
+        )
+        return groups, snapshot_id
+
+
+def _root_group(store_path: StoreLocation, branch: str) -> zarr.Group:
+    """The store's root group on ``branch``, read-only."""
+    session = open_repository(store_path).readonly_session(branch=branch)
+    return zarr.open_group(session.store, mode="r")
+
+
+def _store_type(root: zarr.Group, store_path: StoreLocation) -> str:
+    """The store type, from the repository metadata or the old root attribute."""
+    repository = open_repository(store_path).get_metadata()
+    if repository:
+        return repository["identity"]["store_type"]
+    old = root.attrs.get(_METADATA_KEY)
+    if isinstance(old, dict):
+        return old.get("identity", {}).get("store_type", "")
+    return ""
+
+
+def _refuse_unknown_time_system(
+    store_path: StoreLocation, groups: list[str], why: str
+) -> NoReturn:
+    """Refuse groups whose epochs may not be GPS time."""
+    listed = "\n".join(f"  - {group}" for group in groups)
+    msg = (
+        f"The epochs of these groups of the store at {store_path} record no "
+        f"time scale and {why}:\n{listed}\n"
+        "canVODpy 0.x stored SBF and NMEA epochs in UTC, 18 s behind GPS "
+        "time. They are not shifted: the epoch grid and the satellite "
+        "positions were computed for the old epochs. Rebuild the store from "
+        "the raw files with the current canVODpy (canvodpy run, writing to "
+        "a new stores_root_dir)."
+    )
+    raise ValueError(msg)
+
+
 def first_recorded_settings(
     store_path: StoreLocation | Path | str, branch: str = "main"
 ) -> tuple[str, dict[str, Any]] | None:
@@ -248,17 +419,36 @@ def _gnss_content_settings(
     repository: Mapping[str, Any],
     site: str,
     store_path: StoreLocation | Path | str,
+    vod_store: StoreLocation | Path | str | None = None,
 ) -> tuple[dict[str, Any], list[str], list[str], Any]:
     """The content settings a migrated GNSS store records.
 
     Returns ``(settings, missing, unknown, gnss_hash)``; ``gnss_hash`` is
     ``None`` for a GNSS store.
+
+    The settings the data show are taken from the data
+    (:func:`_settings_from_data`), not from the recorded settings; those
+    of the VOD data from ``vod_store``, the site's VOD store, if it is
+    given and readable.
     """
     settings: dict[str, Any] = {}
     missing: list[str] = []
+    from_data = _settings_from_data(store_path, _GNSS_SWITCHES, preprocessing=True)
+    if vod_store is not None:
+        try:
+            from_data |= _settings_from_data(
+                vod_store, _VOD_SWITCHES, preprocessing=False
+            )
+        except Exception:  # no VOD store: the recorded settings count
+            pass
     for key in CONTENT_KEYS:
         if key in values:
             value = values[key]
+        elif key in from_data:
+            value = from_data[key]
+            if value is _UNCLEAR:
+                missing.append(key)
+                continue
         else:
             try:
                 value = _recorded(recorded, key)
@@ -294,23 +484,108 @@ def _gnss_content_settings(
     return settings, missing, unknown, None
 
 
+#: Content settings that say whether a GNSS store holds a variable.
+_GNSS_SWITCHES = {"processing.params.store_radial_distance": "r"}
+
+#: Content settings that say whether a VOD store holds a variable. The GNSS
+#: store records them too (ADR 0019), read from the site's VOD store.
+_VOD_SWITCHES = {
+    "processing.params.store_delta_snr": "delta_snr",
+    "processing.params.store_radial_diff": "radial_diff",
+}
+
+#: The content setting of a GNSS store's preprocessing steps.
+_PREPROCESSING_KEY = "processing.preprocessing"
+
+#: Group attribute canVODpy 0.x wrote when its preprocessing pipeline ran.
+_OLD_PREPROCESSING_ATTR = "preprocessing_ops"
+
+#: A setting the data groups disagree on: it must be given.
+_UNCLEAR = object()
+
+
+def _settings_from_data(
+    store_path: StoreLocation | Path | str,
+    switches: Mapping[str, str],
+    *,
+    preprocessing: bool,
+) -> dict[str, Any]:
+    """Content settings the store's data groups show, by key.
+
+    canVODpy 0.x recorded settings its runs did not follow: the
+    preprocessing settings with every run, though ``canvodpy run`` never
+    applied them, and ``store_delta_snr``, though VOD always held
+    ``delta_snr``. So a setting the data show is read from the data:
+
+    - each ``store_*`` switch of ``switches`` (:data:`_GNSS_SWITCHES`,
+      :data:`_VOD_SWITCHES`): whether the data groups hold its variable;
+    - ``processing.preprocessing``, if ``preprocessing``: none (``null``)
+      when no data group
+      shows a preprocessing step, in its attributes (``preprocessing_ops``,
+      canVODpy 0.x; ``Preprocessing``) or its log book (``preprocessing``
+      column). Steps that did run are taken from the recorded settings.
+
+    A switch whose variable some groups hold and others don't maps to
+    :data:`_UNCLEAR`. A store without data groups shows nothing.
+    """
+    from canvod.config.models.preprocessing import PREPROCESSING_ATTR
+
+    from .summary import _observation_groups
+
+    groups = list(
+        _observation_groups(_root_group(store_location(store_path), "main")).values()
+    )
+    if not groups:
+        return {}
+    shown: dict[str, Any] = {}
+    for key, variable in switches.items():
+        held = {variable in group for group in groups}
+        shown[key] = held.pop() if len(held) == 1 else _UNCLEAR
+    if preprocessing and not any(
+        _shows_preprocessing(group, PREPROCESSING_ATTR) for group in groups
+    ):
+        shown[_PREPROCESSING_KEY] = None
+    return shown
+
+
+def _shows_preprocessing(group: zarr.Group, attr: str) -> bool:
+    """Whether a data group shows a preprocessing step."""
+    if group.attrs.get(_OLD_PREPROCESSING_ATTR) or group.attrs.get(attr):
+        return True
+    table = group.get("metadata/table")
+    if isinstance(table, zarr.Group) and "preprocessing" in table:
+        column = table["preprocessing"]
+        return isinstance(column, zarr.Array) and any(
+            str(record) for record in np.asarray(column[...])
+        )
+    return False
+
+
 def _vod_content_settings(
     recorded: Mapping[str, Any],
     values: Mapping[str, Any],
     store_path: StoreLocation | Path | str,
     site: str,
+    gnss_store: StoreLocation | Path | str | None = None,
 ) -> tuple[dict[str, Any], list[str], list[str], Any]:
     """The content settings a migrated VOD store records (D1 keys + GNSS hash).
 
     Returns ``(settings, missing, unknown, gnss_hash)``. The per-group
     calculator parameters of a VOD group are recorded in the group's
-    attributes, not in the content settings (ADR 0019 D2).
+    attributes, not in the content settings (ADR 0019 D2). The settings the
+    data show are taken from the data (:func:`_settings_from_data`).
     """
     settings: dict[str, Any] = {}
     missing: list[str] = []
+    from_data = _settings_from_data(store_path, _VOD_SWITCHES, preprocessing=False)
     for key in VOD_CONTENT_KEYS:
         if key in values:
             value = values[key]
+        elif key in from_data:
+            value = from_data[key]
+            if value is _UNCLEAR:
+                missing.append(key)
+                continue
         else:
             try:
                 value = _recorded(recorded, key)
@@ -322,7 +597,7 @@ def _vod_content_settings(
     if GNSS_CONTENT_HASH in values:
         gnss_hash = values[GNSS_CONTENT_HASH]
     else:
-        derived, err = _derive_gnss_hash(recorded)
+        derived, err = _derive_gnss_hash(recorded, gnss_store)
         if err is None:
             gnss_hash = derived
         else:
@@ -331,32 +606,49 @@ def _vod_content_settings(
     return settings, missing, unknown, gnss_hash
 
 
-def _derive_gnss_hash(recorded: Mapping[str, Any]) -> tuple[Any, str | None]:
-    """The GNSS store's content-settings hash, from the recorded settings.
+def _derive_gnss_hash(
+    recorded: Mapping[str, Any],
+    gnss_store: StoreLocation | Path | str | None = None,
+) -> tuple[Any, str | None]:
+    """The GNSS store's content-settings hash.
 
-    Returns ``(hash, None)`` on success or ``(None, reason)`` when the GNSS
-    store path is not recorded, not readable, or has no content settings.
+    Read from ``gnss_store``, the site's GNSS store where the settings put
+    it now; if it is not given or not readable, from the GNSS store at the
+    path the recorded settings name (the stores may have moved since).
+    Returns ``(hash, None)`` on success or ``(None, reason)`` when no GNSS
+    store is readable or it has no content settings.
     """
-    from .location import store_location
+    from .io import read_repository_metadata
 
+    candidates: list[StoreLocation | Path | str] = []
+    if gnss_store is not None:
+        candidates.append(gnss_store)
     try:
         root = _recorded(recorded, "processing.storage.stores_root_dir")
         name = _recorded(recorded, "processing.storage.gnss_store_name")
     except KeyError:
-        return None, "no GNSS store path recorded"
-    try:
-        gnss_path = (
+        pass
+    else:
+        candidates.append(
             f"{str(root).rstrip('/')}/{name}"
             if isinstance(root, str) and root.startswith("s3://")
             else Path(str(root)) / name
         )
-        from .io import read_repository_metadata
-
-        repository = read_repository_metadata(store_location(gnss_path))
-    except Exception:
+    if not candidates:
+        return None, "no GNSS store path given or recorded"
+    repository = None
+    for candidate in candidates:
+        try:
+            repository = read_repository_metadata(store_location(candidate))
+        except Exception:
+            continue
+        break
+    else:
         return None, "GNSS store not readable"
     hash_ = (
-        repository.get(CONTENT_SETTINGS_FIELD, {}).get("hash") if repository else None
+        (repository.get(CONTENT_SETTINGS_FIELD) or {}).get("hash")
+        if repository
+        else None
     )
     if not hash_:
         return None, "GNSS store has no content settings"
@@ -368,6 +660,8 @@ def migrate_content_settings(
     *,
     who: str,
     values: Mapping[str, Any] | None = None,
+    gnss_store: StoreLocation | Path | str | None = None,
+    vod_store: StoreLocation | Path | str | None = None,
     branch: str = "main",
 ) -> str:
     """Give a store its content settings, from the settings of its first commit.
@@ -391,6 +685,14 @@ def migrate_content_settings(
         ``{"sites.rosalia.receivers.reference_01.paired_canopies":
         ["canopy_01"]}``: those the first commit doesn't record. A value
         given replaces a recorded one.
+    gnss_store
+        The site's GNSS store, for a VOD store: its content-settings hash
+        is recorded (``gnss_content_hash``). Not given, or not readable:
+        the GNSS store at the path the first commit's settings name.
+    vod_store
+        The site's VOD store, for a GNSS store: whether its groups hold
+        ``delta_snr`` and ``radial_diff`` gives ``store_delta_snr`` and
+        ``store_radial_diff``, which the GNSS store records too.
     branch
         The branch whose first commit is read.
 
@@ -444,11 +746,11 @@ def migrate_content_settings(
         site = repository["spatial"]["site"]["name"]
         if store_type == "vod_store":
             settings, missing, unknown, gnss_hash = _vod_content_settings(
-                recorded, values, store_path, site
+                recorded, values, store_path, site, gnss_store
             )
         else:
             settings, missing, unknown, gnss_hash = _gnss_content_settings(
-                recorded, values, repository, site, store_path
+                recorded, values, repository, site, store_path, vod_store
             )
         if unknown:
             msg = f"{', '.join(unknown)}: not a content setting of this store."
