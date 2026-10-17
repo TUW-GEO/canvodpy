@@ -57,6 +57,7 @@ from canvod.utils.logging import (
     record_stage_timing,
     reset_run_id,
     set_run_id,
+    stage_timer,
 )
 from canvod.utils.tools import YYYYDOY, deprecated, get_version_from_pyproject
 from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
@@ -1382,15 +1383,16 @@ class PipelineOrchestrator:
                 forked_days: dict[str, ForkedDay] = {}
                 for date_key, (processor, _receiver_file_map) in doy_contexts.items():
                     try:
-                        planned = call_with_store_retries(
-                            partial(
-                                processor.plan_forked_day,
-                                task_descriptors_by_date[date_key],
-                            ),
-                            logger=self._logger,
-                            date=date_key,
-                            op="plan_forked_day",
-                        )
+                        with stage_timer("planning", date_key=date_key):
+                            planned = call_with_store_retries(
+                                partial(
+                                    processor.plan_forked_day,
+                                    task_descriptors_by_date[date_key],
+                                ),
+                                logger=self._logger,
+                                date=date_key,
+                                op="plan_forked_day",
+                            )
                     except STORE_ERROR_TYPES as exc:
                         self._logger.exception(
                             "forked_day_planning_failed", date=date_key
@@ -1765,16 +1767,8 @@ class PipelineOrchestrator:
                                 assembly_source = "memory"
                             else:
                                 try:
-                                    daily_ds = call_with_store_retries(
-                                        partial(
-                                            self.site.read_receiver_data,
-                                            receiver_name=receiver_name,
-                                            time_range=time_range,
-                                        ),
-                                        logger=self._logger,
-                                        date=date_key,
-                                        receiver=receiver_name,
-                                        op="read_back",
+                                    daily_ds = self._read_back_day(
+                                        receiver_name, date_key, time_range
                                     )
                                 except STORE_ERROR_TYPES:
                                     self._logger.exception(
@@ -2037,7 +2031,8 @@ class PipelineOrchestrator:
                     waited_seconds=round(seconds, 1),
                     error=str(exc),
                 )
-            replanned = processor.plan_forked_day(task_descriptors)
+            with stage_timer("planning", date_key=planned.date_key):
+                replanned = processor.plan_forked_day(task_descriptors)
             if replanned is None:
                 msg = (
                     f"Day {planned.date_key} could not be planned again after a "
@@ -2052,6 +2047,29 @@ class PipelineOrchestrator:
             ]
             planned = replanned
         return processor._commit_forked_day(planned, results)
+
+    def _read_back_day(
+        self,
+        receiver_name: str,
+        date_key: str,
+        time_range: tuple[datetime, datetime],
+    ) -> xr.Dataset:
+        """Read a written receiver-day back from the GNSS store, for VOD.
+
+        Timed as the stage ``assembly``.
+        """
+        with stage_timer("assembly", receiver=receiver_name, date_key=date_key):
+            return call_with_store_retries(
+                partial(
+                    self.site.read_receiver_data,
+                    receiver_name=receiver_name,
+                    time_range=time_range,
+                ),
+                logger=self._logger,
+                date=date_key,
+                receiver=receiver_name,
+                op="read_back",
+            )
 
     def _finish_forked_day(
         self,
@@ -2101,17 +2119,7 @@ class PipelineOrchestrator:
             day_result: DayResult = "written" if bytes_added else "skipped"
             t_read = _time.monotonic()
             try:
-                daily_ds = call_with_store_retries(
-                    partial(
-                        self.site.read_receiver_data,
-                        receiver_name=receiver_name,
-                        time_range=time_range,
-                    ),
-                    logger=self._logger,
-                    date=date_key,
-                    receiver=receiver_name,
-                    op="read_back",
-                )
+                daily_ds = self._read_back_day(receiver_name, date_key, time_range)
             except STORE_ERROR_TYPES:
                 self._logger.exception(
                     "read_back_failed", date=date_key, receiver=receiver_name
