@@ -482,3 +482,34 @@ def test_metadata_datasets_of_a_group_are_not_data(tmp_path):
 
     assert updates["summaries.total_epochs"] == 180
     assert "cn0_extra" not in updates["summaries.variables"]
+
+
+def test_the_summary_reads_each_log_book_column_once(tmp_path, monkeypatch):
+    from collections import Counter
+
+    from canvod.store_metadata import summary
+
+    store_path = _day_block_store(
+        tmp_path,
+        {
+            name: ({0: 5}, [("a", "initial", 0, 895, 180)])
+            for name in ("canopy_01", "reference_01_canopy_01")
+        },
+    )
+    reads: Counter = Counter()
+    array = summary._array
+
+    def counting_array(group, path):
+        if group.path.endswith("metadata/table"):
+            reads[(group.path, path)] += 1
+        return array(group, path)
+
+    monkeypatch.setattr(summary, "_array", counting_array)
+
+    summarize_store(
+        store_path,
+        receivers={"canopy_01": "canopy", "reference_01": "reference"},
+    )
+
+    assert reads
+    assert max(reads.values()) == 1, reads
