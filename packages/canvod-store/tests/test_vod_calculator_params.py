@@ -9,10 +9,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 from _helpers import make_synthetic_vod_dataset, new_vod_store
 
 from canvod.store import MyIcechunkStore
+from canvod.store.store import VodWriteItem
 
 
 @pytest.fixture
@@ -27,14 +29,16 @@ GROUP = "tau_omega/canopy_01_vs_reference_01"
 
 def _write(store: MyIcechunkStore, params: dict | None, day: str) -> bool:
     ds = make_synthetic_vod_dataset(slot=0, day=day, seed=hash(day) % 1000)
-    return store.write_or_append_vod_group(
-        dataset=ds,
+    item = VodWriteItem(
         group_name=GROUP,
+        dataset=ds,
         source_file_hashes={"canopy_01": f"hash_{day}"},
         source_gnss_stores={"canopy_01": "/fake/gnss_store"},
         calculator_name="tau_omega",
         calculator_params=params,
+        cadences={np.datetime64(day, "D"): 5.0},
     )
+    return store.write_or_append_vod_groups_batch([item])[GROUP].written
 
 
 def test_the_same_parameters_write_twice(store: MyIcechunkStore) -> None:

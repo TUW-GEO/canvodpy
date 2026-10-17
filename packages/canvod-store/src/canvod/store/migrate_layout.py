@@ -4,8 +4,7 @@
 group of the store (a group with an ``epoch`` array, at any depth) is moved:
 
 - A group written by appending is written again as day blocks, day by
-  day. An epoch stored more than once keeps the entry written last, as
-  :meth:`~canvod.store.MyIcechunkStore.read_group_deduplicated` reads it.
+  day. An epoch stored more than once keeps the entry written last.
   A day's cadence is the finest step between its epochs, rounded to 1 ms;
   a day with a single epoch takes the finest cadence of the group. The
   group gets the epoch chunk and the dimension chunks given (those of the

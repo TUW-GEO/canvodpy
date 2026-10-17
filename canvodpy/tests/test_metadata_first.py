@@ -112,7 +112,8 @@ class TestResearchSite:
 
         site = GnssResearchSite(testing.SITE_KEY)
 
-        site.ingest_receiver_data(_observations(), "canopy_01", "first day")
+        with pytest.warns(FutureWarning, match="canvodpy run"):
+            site.ingest_receiver_data(_observations(), "canopy_01", "first day")
 
         reopened = icechunk.Repository.open(
             icechunk.local_filesystem_storage(str(site.gnss_store_path))
@@ -123,7 +124,8 @@ class TestResearchSite:
     def test_ingested_data_lands_in_a_store_with_metadata(self, site_settings):
         site = GnssResearchSite(testing.SITE_KEY)
 
-        site.ingest_receiver_data(_observations(), "canopy_01", "first day")
+        with pytest.warns(FutureWarning, match="canvodpy run"):
+            site.ingest_receiver_data(_observations(), "canopy_01", "first day")
 
         repository = _repository(site.gnss_store.store_path)
         assert repository["identity"]["id"] == f"{testing.SITE_KEY}-gnss"

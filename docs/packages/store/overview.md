@@ -179,7 +179,7 @@ and the duplicate entries it drops, and asks before it changes anything
   rounded to 1 ms. A day with a single epoch takes the finest cadence of
   the group. Days may have different cadences.
 - An epoch stored more than once, for example by `unsafe_append`, keeps
-  the entry written last, as `read_group_deduplicated()` reads it.
+  the entry written last.
 - A group keeps its attributes, its log book and its other metadata
   (`sbf_obs`). It gets the chunks of the settings
   (`processing.icechunk.chunk_strategies`).
@@ -265,8 +265,8 @@ book, in three ways:
 
 | Check | What it finds | Where |
 |---|---|---|
-| Hash | The same file, already stored (SHA-256 of the file) | The orchestrator, and again in `append_to_group()` |
-| Time span | A file whose time span overlaps stored data, also when it has another name or other start and end times | The orchestrator, and again in `append_to_group()` |
+| Hash | The same file, already stored (SHA-256 of the file) | The orchestrator, and again just before the commit |
+| Time span | A file whose time span overlaps stored data, also when it has another name or other start and end times | The orchestrator, and again just before the commit |
 | Batch | Two files of one batch that cover the same time | The orchestrator |
 
 A file with the same hash counts as already stored: the default write

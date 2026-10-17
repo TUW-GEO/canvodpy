@@ -1444,6 +1444,11 @@ class MyIcechunkStore:
             )
             return ds
 
+    @deprecated(
+        "`read_group_deduplicated()` is left over from development and will be "
+        "removed with the next major version. Day blocks hold every epoch once; "
+        "use `read_group()` instead."
+    )
     def read_group_deduplicated(
         self,
         group_name: str,
@@ -1655,6 +1660,12 @@ class MyIcechunkStore:
         )
         raise RuntimeError(msg) from last_error
 
+    @deprecated(
+        "`write_initial_group()` is left over from development and will be "
+        "removed with the next major version. Runs write files into day blocks "
+        "(ADR 0016); write files with `canvodpy run` or "
+        "`Site(<site>).pipeline()` instead."
+    )
     def write_initial_group(
         self,
         dataset: xr.Dataset,
@@ -1664,9 +1675,7 @@ class MyIcechunkStore:
     ) -> None:
         """Write initial data to a new group."""
         if self.group_exists(group_name, branch):
-            raise ValueError(
-                f"Group '{group_name}' already exists. Use append_to_group() instead."
-            )
+            raise ValueError(f"Group '{group_name}' already exists.")
 
         dataset = self._normalize_encodings(dataset)
 
@@ -1927,6 +1936,12 @@ class MyIcechunkStore:
                 mode="w",
             )
 
+    @deprecated(
+        "`overwrite_file_in_group()` is left over from development and will be "
+        "removed with the next major version. Runs write files into day blocks "
+        "(ADR 0016); write files with `canvodpy run` or "
+        "`Site(<site>).pipeline()` instead."
+    )
     def overwrite_file_in_group(
         self,
         dataset: xr.Dataset,
@@ -2346,6 +2361,12 @@ class MyIcechunkStore:
 
         return stats
 
+    @deprecated(
+        "`append_to_group()` is left over from development and will be removed "
+        "with the next major version. Runs write files into day blocks (ADR "
+        "0016); write files with `canvodpy run` or `Site(<site>).pipeline()` "
+        "instead."
+    )
     def append_to_group(
         self,
         dataset: xr.Dataset,
@@ -2433,6 +2454,12 @@ class MyIcechunkStore:
                 f"hash={rinex_hash}"
             )
 
+    @deprecated(
+        "`write_or_append_group()` is left over from development and will be "
+        "removed with the next major version. Runs write files into day blocks "
+        "(ADR 0016); write files with `canvodpy run` or "
+        "`Site(<site>).pipeline()` instead."
+    )
     def write_or_append_group(
         self,
         dataset: xr.Dataset,
@@ -2968,6 +2995,13 @@ class MyIcechunkStore:
             return True, "hash_match"
         return True, "temporal_overlap"
 
+    @deprecated(
+        "`write_or_append_vod_group()` is left over from development and will "
+        "be removed with the next major version. It cannot write into VOD "
+        "groups made of day blocks (ADR 0016); use "
+        "`write_or_append_vod_groups_batch()` with the day's `cadences` "
+        "instead."
+    )
     def write_or_append_vod_group(
         self,
         dataset: xr.Dataset,

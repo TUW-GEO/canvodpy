@@ -63,8 +63,12 @@ Background: `docs/packages/store/overview.md`,
   replaces the chunk whole and the other's data are lost without an
   error. `day_blocks.write_file_region(chunks=...)` refuses a write
   outside them (`ChunkOwnershipError`); `span_chunks` gives a span's
-  chunks. Forked writes check the hash only: day blocks need no time-span
-  check (ADR 0016), and it is deprecated. A group keeps the epoch chunk
+  chunks. Forked writes check the hash and the time span again at the
+  tip, right before the commit (#351): with `skip`, a file over epochs
+  another file filled meanwhile stops the run (`StoredOverlapError`).
+  The old append path (`append_to_group`, `write_or_append_group`,
+  `write_or_append_vod_group` and the other deprecated writers) is for
+  groups written by appending only. A group keeps the epoch chunk
   it was created with (`stored_epoch_chunk`); the settings apply to new
   groups only.
 - canvod-store does not import `canvodpy`.

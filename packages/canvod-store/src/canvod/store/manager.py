@@ -435,6 +435,12 @@ class GnssResearchSite:
             gnss_repository=gnss_repository,
         )
 
+    @deprecated(
+        "GnssResearchSite.ingest_receiver_data() is left over from development "
+        "and will be removed with the next major version. Runs write files into "
+        "day blocks (ADR 0016); write files with `canvodpy run` or "
+        "`Site(<site>).pipeline()` instead."
+    )
     def ingest_receiver_data(
         self, dataset: xr.Dataset, receiver_name: str, commit_message: str | None = None
     ) -> None:
@@ -553,13 +559,15 @@ class GnssResearchSite:
                 np.datetime64(time_range[0], "ns"), np.datetime64(time_range[1], "ns")
             )
         )
-        if self.gnss_store._gnss_store_strategy == "unsafe_append":
-            return self.gnss_store.read_group_deduplicated(
-                receiver_name, keep="last", time_slice=time_slice, drop_empty=drop_empty
-            )
-        return self.gnss_store.read_group(
+        ds = self.gnss_store.read_group(
             receiver_name, time_slice=time_slice, drop_empty=drop_empty
         )
+        if self.gnss_store._gnss_store_strategy == "unsafe_append":
+            # A group written by appending can hold an epoch more than once;
+            # the last entry is the one written last. Day blocks hold every
+            # epoch once.
+            ds = ds.drop_duplicates("epoch", keep="last")
+        return ds
 
     def store_vod_analysis(
         self,
