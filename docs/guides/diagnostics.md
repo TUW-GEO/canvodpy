@@ -468,8 +468,9 @@ stage: the seconds it waited for the commit lock (`lock_wait_seconds`),
 opened the repository (`open_seconds`), checked the content settings
 (`content_check_seconds`) and the stored lockfile
 (`lockfile_check_seconds`), rebased (`rebase_seconds`), wrote the
-store metadata and snapshot summary (`summary_seconds`) and committed
-(`icechunk_commit_seconds`), with the commit message and the number of
+store metadata and snapshot summary (`summary_seconds`), committed
+(`icechunk_commit_seconds`) and released the lock
+(`lock_release_seconds`), with the commit message and the number of
 the commit in this process (`commit_number`).
 
 ---

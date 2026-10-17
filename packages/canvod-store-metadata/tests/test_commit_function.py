@@ -464,6 +464,7 @@ class TestCommitParts:
         "rebase_seconds",
         "summary_seconds",
         "icechunk_commit_seconds",
+        "lock_release_seconds",
     )
 
     def test_a_commit_logs_its_parts_and_its_number_in_the_process(

@@ -270,6 +270,7 @@ def commit_with_rebase(
                 message, metadata=metadata, rebase_with=icechunk.ConflictDetector()
             )
         lap("icechunk_commit")
+    lap("lock_release")
     _log_commit_parts(store_path, message, time.perf_counter() - started, parts)
     return snapshot_id
 
