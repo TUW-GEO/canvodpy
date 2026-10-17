@@ -15,7 +15,7 @@ The archives (ADR 0017):
 
 ``ARCHIVES`` is the single list of what each archive holds;
 ``just demo-archives`` builds the zips from it. The sha256 values are
-those of zips built from the test data at commit 077aa69 of
+those of zips built from the test data at commit 2024c42 of
 ``packages/canvod-readers/tests/test_data``, which is archived on Zenodo
 (10.5281/zenodo.19708759). The zips are in the Hugging Face dataset
 ``nfb2021/canvodpy-demo-data``; the URLs name one commit of it, so the
