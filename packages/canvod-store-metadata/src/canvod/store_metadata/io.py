@@ -20,6 +20,7 @@ from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
 from .icechunk_logs import apply_icechunk_log_filter
+from .layout import DAY_BLOCK_INDEX_ATTR, is_day_block_group
 from .location import (
     MIGRATE_COMMAND,
     StoreLocation,
@@ -124,6 +125,7 @@ def commit_with_rebase(
     config: Any = None,
     repository: dict[str, Any] | None = None,
     rebase: bool = True,
+    keep_summary: bool = False,
 ) -> str:
     """Commit a session, rebasing it if the branch moved since it was opened.
 
@@ -173,6 +175,16 @@ def commit_with_rebase(
         ``icechunk.ConflictError`` instead of rebasing. The creation of a
         store uses it, so of two runs that create one store at the same
         time only one commit lands (:func:`write_metadata`).
+    keep_summary
+        ``True`` keeps the snapshot summary of the snapshot before, with
+        only its time updated, instead of computing it from the data: for a
+        commit that writes no data, such as growing day blocks
+        (``MyIcechunkStore.grow_day_blocks``). It writes the same summary a
+        computation would (ADR 0014), without reading every group's log
+        book. The commit is refused unless its only changes are new day
+        blocks in day-block groups: epoch axes grown at the end, epoch
+        chunks and new block-index entries. It is also refused together
+        with ``repository``, and if the root group holds no summary.
 
     Returns
     -------
@@ -184,11 +196,20 @@ def commit_with_rebase(
     ValueError
         If the store has no repository metadata and ``repository`` is not
         given, or the root group last committed differs from the repository
-        metadata (written by an older canvodpy or edited by hand).
+        metadata (written by an older canvodpy or edited by hand), or
+        ``keep_summary`` is set and the commit is more than new day blocks.
     ContentSettingsError
         If the run's content settings differ from the store's.
     """
     changes_repository = repository is not None
+    if keep_summary and changes_repository:
+        msg = (
+            f"A commit to {store_path} that changes the repository metadata "
+            "cannot keep the snapshot summary: the summary's spatial extent "
+            "and receivers come from it. Commit it with a summary computed "
+            "from the data."
+        )
+        raise ValueError(msg)
     parts: dict[str, float] = {}
     started = mark = time.perf_counter()
 
@@ -201,6 +222,8 @@ def commit_with_rebase(
     with commit_lock(store_path):
         lap("lock_wait")
         repo = open_repository(store_path)
+        if keep_summary:
+            _check_writes_no_data(session, repo, store_path)
         if repository is None:
             repository = repo.get_metadata()
         if not repository:
@@ -246,6 +269,7 @@ def commit_with_rebase(
                 store_path=store_path,
                 config=config,
                 write_environment=not stores_lockfile_first,
+                keep_summary=keep_summary,
             ),
             **(metadata or {}),
         }
@@ -260,6 +284,109 @@ def commit_with_rebase(
     lap("lock_release")
     _log_commit_parts(store_path, message, time.perf_counter() - started, parts)
     return snapshot_id
+
+
+def _check_writes_no_data(
+    session: icechunk.Session,
+    repo: icechunk.Repository,
+    store_path: StoreLocation | Path | str,
+) -> None:
+    """Refuse a session whose changes are more than new day blocks.
+
+    A day-block growth resizes arrays of day-block groups along the epoch
+    axis, writes the epoch values of the new blocks and adds the new days
+    to the groups' block index. The summary of a day-block group reads its
+    cadences from the block index and its time span from the log book, not
+    from the epoch values. Anything else could change the snapshot summary,
+    so the session is compared with the snapshot it was opened on.
+
+    Raises
+    ------
+    ValueError
+        Naming the changes that are not day-block growth.
+    """
+    diff = session.status()
+    before = zarr.open_group(
+        repo.readonly_session(snapshot_id=session.snapshot_id).store, mode="r"
+    )
+    after = zarr.open_group(session.store, mode="r")
+
+    # The layout marker is read after the changes only: a changed marker
+    # is refused by _group_changes.
+    def day_block_group(path: str) -> bool:
+        group = path.rsplit("/", 1)[0].strip("/")
+        return bool(group) and is_day_block_group(after[group].attrs)
+
+    other = [
+        *(f"new array {path}" for path in diff.new_arrays),
+        *(f"new group {path}" for path in diff.new_groups),
+        *(f"deleted array {path}" for path in diff.deleted_arrays),
+        *(f"deleted group {path}" for path in diff.deleted_groups),
+        *(f"moved {move}" for move in diff.moved_nodes),
+        *(
+            f"chunks of {path}"
+            for path in diff.updated_chunks
+            if path.rsplit("/", 1)[-1] != "epoch" or not day_block_group(path)
+        ),
+        *(
+            change
+            for path in diff.updated_groups
+            for change in _group_changes(before, after, path.strip("/"))
+        ),
+        *(
+            change
+            for path in diff.updated_arrays
+            for change in _array_changes(
+                before, after, path.strip("/"), day_block_group(path)
+            )
+        ),
+    ]
+    if other:
+        msg = (
+            f"A commit to {store_path} that keeps the snapshot summary may "
+            "only grow day blocks, but this one also changes: "
+            f"{', '.join(sorted(other))}. Commit it with a summary computed "
+            "from the data."
+        )
+        raise ValueError(msg)
+
+
+def _group_changes(before: zarr.Group, after: zarr.Group, path: str) -> list[str]:
+    """What changed in a group's attributes, besides new block-index days."""
+    if not path:
+        return ["the root group"]
+    old, new = dict(before[path].attrs), dict(after[path].attrs)
+    if not (is_day_block_group(old) and is_day_block_group(new)):
+        return [f"the attributes of {path}"]
+    old_index = old.pop(DAY_BLOCK_INDEX_ATTR, {})
+    new_index = new.pop(DAY_BLOCK_INDEX_ATTR, {})
+    changes = [f"the attributes of {path}"] if old != new else []
+    changes += [
+        f"the block of {day} in {path}"
+        for day in old_index
+        if new_index.get(day) != old_index[day]
+    ]
+    return changes
+
+
+def _array_changes(
+    before: zarr.Group, after: zarr.Group, path: str, in_day_block_group: bool
+) -> list[str]:
+    """What changed in an array's metadata, besides growing its epoch axis."""
+    old, new = before[path], after[path]
+    assert isinstance(old, zarr.Array) and isinstance(new, zarr.Array)
+    old_meta, new_meta = old.metadata.to_dict(), new.metadata.to_dict()
+    old_meta.pop("shape"), new_meta.pop("shape")
+    dims = [str(d) for d in getattr(new.metadata, "dimension_names", None) or ()]
+    grows_epoch = (
+        in_day_block_group
+        and "epoch" in dims
+        and all(
+            n >= o if dim == "epoch" else n == o
+            for dim, o, n in zip(dims, old.shape, new.shape, strict=True)
+        )
+    )
+    return [] if grows_epoch and old_meta == new_meta else [f"the array {path}"]
 
 
 #: Commits of this process per store, for :func:`_log_commit_parts`.
