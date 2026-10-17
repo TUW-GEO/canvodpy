@@ -6,7 +6,7 @@ description: What to do before your first run with canVODpy v1.0.0 - migrate you
 # Upgrading to v1.0.0
 
 This page is for everyone who used canVODpy 0.x. Do the
-[three steps](#before-your-first-run) before your first run with v1.0.0;
+[four steps](#before-your-first-run) before your first run with v1.0.0;
 the rest of the page lists what changed, what is deprecated and what is new.
 
 !!! warning "Stores written with 0.x must be migrated"
@@ -39,11 +39,12 @@ dotted key. A settings file from 0.x typically needs:
 
 !!! warning "Preprocessing in your settings is now applied"
 
-    In 0.x, `processing.preprocessing` had no effect, and the settings
-    template set `temporal_aggregation` and `grid_assignment` to
+    In 0.x, `canvodpy run` didn't apply `processing.preprocessing`, and the
+    settings template set `temporal_aggregation` and `grid_assignment` to
     `enabled: true`. Since v1.0.0 a run applies every preprocessing
-    section that is set. If you copied the template and don't want your
-    data aggregated in time or assigned to grid cells before it's stored,
+    section that is set. A store you migrate records the preprocessing its
+    data show, none for a store written by `canvodpy run` in 0.x, and runs
+    with other preprocessing are refused. So if you copied the template,
     delete the `preprocessing` section. See
     [Preprocessing](../packages/ops/overview.md).
 
@@ -58,7 +59,8 @@ keep a copy until you've checked the result. A store is a folder: copy it
 
 ### 3. Migrate each store
 
-For each site, the GNSS store first, then the VOD store:
+For each site, the GNSS store first, then the VOD store; the VOD store
+takes the GNSS store's content settings:
 
 ```bash
 canvodpy store migrate-metadata SITE --store gnss
@@ -68,27 +70,62 @@ canvodpy store migrate-layout   SITE --store vod
 ```
 
 - **`migrate-metadata`** moves the store to repository metadata: its
-  description, a store id and UUID, and its *content settings*, the
-  settings that shape its data and that every later run must match
+  description, a store id and UUID, the time scale of its epochs, and
+  its *content settings*, the settings that shape its data and that
+  every later run must match
   ([Content settings](configuration.md#content-settings-fixed-for-each-store)).
-  It takes them from the settings recorded in the store's first commit.
-  A value that commit doesn't record isn't guessed: the command stops and
-  lists it, and you give it with `--set`, for example
-  `--set sites.mysite.receivers.reference_01.paired_canopies=[canopy_01]`.
-  A store that is already migrated is left as it is.
+  Metadata the store lacks, such as the publisher and license, comes from
+  the settings file, marked `(from the settings)`. A store that is
+  already migrated is left as it is.
 - **`migrate-layout`** writes the groups again as day blocks, the layout
   v1.0.0 runs write ([Moving a store to day blocks](../packages/store/overview.md#moving-a-store-to-day-blocks)).
   An epoch stored twice keeps the entry written last.
 
 Both commands show what they change and ask first (`--yes` skips the
-question). Each one is a single commit.
+question). Each one is a single commit. The details are in
+[Move an older store to the current form](../packages/store-metadata/overview.md#move-an-older-store-to-the-current-form).
 
-Then check the store and try a run without writing:
+**Settings the store doesn't record.** `migrate-metadata` takes the
+content settings from the settings recorded in the store's first commit.
+A value that commit doesn't record isn't guessed: the command stops,
+lists it, and you give it with `--set`, as your settings file had it when
+the store was written. For a GNSS store from canVODpy 0.4.0 these are
+typically:
+
+```bash
+canvodpy store migrate-metadata SITE --store gnss \
+  --set processing.params.store_sbf_metadata=true \
+  --set processing.params.rinex_v3_parser=validated \
+  --set "sites.SITE.receivers.reference_01.paired_canopies=[canopy_01]"
+```
+
+Some settings are read from the data instead, because canVODpy 0.x
+recorded settings its runs didn't follow: the preprocessing (none, unless
+the data show a step) and whether the stores hold `r`, `delta_snr` and
+`radial_diff`. canVODpy 0.x always wrote `delta_snr` to the VOD store, so
+a migrated store records `store_delta_snr: true`: set it in your settings
+file too.
+
+**Stores from SBF or NMEA files.** canVODpy 0.x stored their epochs in
+UTC, 18 s behind the GPS time v1.0.0 uses for every epoch. The
+migration refuses these stores before it writes anything, and so does
+the VOD store computed from them: rebuild them from the raw files with
+`canvodpy run`. Stores from RINEX files hold GPS time and migrate as
+they are.
+
+### 4. Check the result
 
 ```bash
 canvodpy store info SITE            # content settings: set, with their hash
-canvodpy run --site SITE --start 2025001 --end 2025001 --dry-run
+canvodpy run --site SITE --start 2025001 --end 2025001
 ```
+
+A run compares your settings with the store's content settings before it
+reads a file, and stops if they differ, listing each setting with both
+values. Change your settings to the store's values, or write a settings
+file from the store with `canvodpy config init --from-store <store>`.
+A dry run (`--dry-run`) lists the files a run would process, but doesn't
+compare the settings.
 
 ---
 
