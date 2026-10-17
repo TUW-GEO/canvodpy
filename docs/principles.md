@@ -194,9 +194,9 @@ without an error. With `skip`, running the same job twice, for example
 after a crash, leaves the store as it was after the first run.
 
 The run makes the three checks in
-`_check_existing_with_temporal_overlap()` of the orchestrator.
-`append_to_group()` in `canvod-store` checks the hash and the time span
-again when it writes.
+`_check_existing_with_temporal_overlap()` of the orchestrator, and the
+hash and time span checks again in `_check_stored_overlaps()` just
+before each commit.
 
 ---
 

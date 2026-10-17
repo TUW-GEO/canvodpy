@@ -8,7 +8,7 @@ for a research site and provides high-level operations across them.
 from __future__ import annotations
 
 import functools
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -435,6 +435,12 @@ class GnssResearchSite:
             gnss_repository=gnss_repository,
         )
 
+    @deprecated(
+        "GnssResearchSite.ingest_receiver_data() is left over from development "
+        "and will be removed with the next major version. Runs write files into "
+        "day blocks (ADR 0016); write files with `canvodpy run` or "
+        "`Site(<site>).pipeline()` instead."
+    )
     def ingest_receiver_data(
         self, dataset: xr.Dataset, receiver_name: str, commit_message: str | None = None
     ) -> None:
@@ -553,13 +559,15 @@ class GnssResearchSite:
                 np.datetime64(time_range[0], "ns"), np.datetime64(time_range[1], "ns")
             )
         )
-        if self.gnss_store._gnss_store_strategy == "unsafe_append":
-            return self.gnss_store.read_group_deduplicated(
-                receiver_name, keep="last", time_slice=time_slice, drop_empty=drop_empty
-            )
-        return self.gnss_store.read_group(
+        ds = self.gnss_store.read_group(
             receiver_name, time_slice=time_slice, drop_empty=drop_empty
         )
+        if self.gnss_store._gnss_store_strategy == "unsafe_append":
+            # A group written by appending can hold an epoch more than once;
+            # the last entry is the one written last. Day blocks hold every
+            # epoch once.
+            ds = ds.drop_duplicates("epoch", keep="last")
+        return ds
 
     def store_vod_analysis(
         self,
@@ -570,12 +578,15 @@ class GnssResearchSite:
         source_gnss_stores: dict[str, str],
         commit_message: str | None = None,
         dedup: bool = True,
+        cadences: Mapping[np.datetime64, float] | None = None,
     ) -> bool:
         """
         Store VOD analysis results under ``{calculator_name}/{analysis_name}``.
 
         The model layer disambiguates results from different VOD
-        calculators computed over the same analysis pair.
+        calculators computed over the same analysis pair. A VOD group made
+        of day blocks (ADR 0016) takes one day per call, with its
+        ``cadences``; ``VodComputer`` writes them that way.
 
         Parameters
         ----------
@@ -598,6 +609,11 @@ class GnssResearchSite:
         dedup : bool, default True
             Skip the write if this exact source-hash combination was
             already written, or the epoch range overlaps an existing row.
+        cadences : Mapping[np.datetime64, float], optional
+            ``{day: seconds}``, the cadence of the one day of
+            ``vod_dataset``: the result is written into that day's block,
+            replacing what the block held. ``None`` appends to a group
+            written by appending (from GNSS groups that are not day blocks).
 
         Returns
         -------
@@ -607,36 +623,31 @@ class GnssResearchSite:
         Raises
         ------
         ValueError
-            If ``analysis_name`` is not configured.
+            If ``analysis_name`` is not configured, or ``cadences`` is given
+            and ``vod_dataset`` does not cover exactly that one day.
+        LayoutError
+            If the group is made of day blocks and ``cadences`` is ``None``.
         """
-        if analysis_name not in self.vod_analyses:
-            available_analyses = list(self.vod_analyses.keys())
-            raise ValueError(
-                f"VOD analysis '{analysis_name}' not configured. "
-                f"Available: {available_analyses}"
-            )
-
-        group_name = f"{calculator_name}/{analysis_name}"
-        self._logger.info(f"Storing VOD analysis results: '{group_name}'")
-
-        self.ensure_store_metadata("vod_store", [analysis_name], calculator_name)
-        written = self.vod_store.write_or_append_vod_group(
-            dataset=vod_dataset,
-            group_name=group_name,
-            source_file_hashes=source_file_hashes,
-            source_gnss_stores=source_gnss_stores,
-            calculator_name=calculator_name,
-            commit_message=commit_message,
+        results = self.store_vod_analyses_batch(
+            [
+                {
+                    "vod_dataset": vod_dataset,
+                    "analysis_name": analysis_name,
+                    "calculator_name": calculator_name,
+                    "source_file_hashes": source_file_hashes,
+                    "source_gnss_stores": source_gnss_stores,
+                    "commit_message": commit_message,
+                    "cadences": cadences,
+                }
+            ],
             dedup=dedup,
         )
-
-        if written:
-            self._logger.info(f"Successfully stored VOD analysis: '{group_name}'")
-        return written
+        return results[f"{calculator_name}/{analysis_name}"].written
 
     def store_vod_analyses_batch(
         self,
         items: Sequence[dict[str, Any]],
+        dedup: bool = True,
     ) -> dict[str, VodWriteResult]:
         """Store multiple VOD analysis results in one fork/merge batch write.
 
@@ -654,6 +665,9 @@ class GnssResearchSite:
             ``source_gnss_stores``, and optionally ``commit_message`` and
             ``cadences`` (``{day: seconds}``: write into day blocks, see
             :class:`~canvod.store.store.VodWriteItem`).
+        dedup : bool, default True
+            Skip a pair whose exact source-hash combination was already
+            written, or whose epoch range overlaps an existing row.
 
         Returns
         -------
@@ -696,7 +710,9 @@ class GnssResearchSite:
                 [entry["analysis_name"] for entry in items],
                 items[0]["calculator_name"],
             )
-        results = self.vod_store.write_or_append_vod_groups_batch(write_items)
+        results = self.vod_store.write_or_append_vod_groups_batch(
+            write_items, dedup=dedup
+        )
 
         for group_name, result in results.items():
             if result.written:
