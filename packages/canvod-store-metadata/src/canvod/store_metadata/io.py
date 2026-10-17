@@ -311,6 +311,8 @@ def _check_writes_no_data(
     )
     after = zarr.open_group(session.store, mode="r")
 
+    # The layout marker is read after the changes only: a changed marker
+    # is refused by _group_changes.
     def day_block_group(path: str) -> bool:
         group = path.rsplit("/", 1)[0].strip("/")
         return bool(group) and is_day_block_group(after[group].attrs)
