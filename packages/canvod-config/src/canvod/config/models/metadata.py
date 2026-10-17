@@ -110,7 +110,8 @@ class MetadataConfig(_StrictModel):
     initials: str | None = Field(
         None,
         description=(
-            "How a store's metadata records who changed it (for example 'NFB'). "
+            "How a store's metadata records who set its content settings or "
+            "changed it (for example 'NFB'); the author when not set. "
             "Required to amend or migrate a store's metadata."
         ),
     )

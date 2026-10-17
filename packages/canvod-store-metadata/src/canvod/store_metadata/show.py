@@ -168,7 +168,8 @@ def format_processing(meta: StoreMetadata) -> str:
 def format_environment(meta: StoreMetadata) -> str:
     e = meta.environment
     lines = [_section("Environment")]
-    lines.append(_kv("Hostname", e.hostname))
+    if e.hostname is not None:  # recorded only by stores before 1.0.0
+        lines.append(_kv("Hostname", e.hostname))
     lines.append(_kv("OS", e.os))
     lines.append(_kv("Arch", e.arch))
     lines.append(_kv("CPUs", e.cpu_count))

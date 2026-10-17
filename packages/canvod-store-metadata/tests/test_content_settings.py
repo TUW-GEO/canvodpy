@@ -77,6 +77,37 @@ def test_a_new_store_records_its_content_settings(store, settings):
     assert "resource_mode" not in params
 
 
+def test_a_new_store_records_who_by_initials_not_the_computer(store):
+    content = read_repository_metadata(store)["content_settings"]
+
+    assert content["set_by"] == testing.PERSON_INITIALS
+
+
+def test_a_store_records_no_folder_or_name_of_the_computer(store, settings, tmp_path):
+    import getpass
+    import socket
+
+    from canvod.store_metadata import read_metadata
+
+    _commit(store, settings)
+
+    text = read_metadata(store).model_dump_json()
+    assert str(tmp_path / "settings") not in text
+    assert socket.gethostname() not in text
+    assert f'"{getpass.getuser()}' not in text
+
+
+def test_without_initials_a_new_store_records_the_author(tmp_path):
+    settings = _settings(tmp_path)
+    settings.processing.metadata.initials = None
+    path = tmp_path / "gnss"
+    _start(path, settings)
+
+    content = read_repository_metadata(path)["content_settings"]
+
+    assert content["set_by"] == testing.PERSON_NAME
+
+
 def test_a_run_with_the_same_settings_writes(store, settings):
     _start(store, settings)
     _commit(store, settings)

@@ -8,7 +8,6 @@ import json
 import os
 import platform
 import shutil
-import socket
 import subprocess
 import sys
 from collections.abc import Mapping
@@ -25,6 +24,7 @@ from .identity import (
     store_id,
 )
 from .location import StoreLocation, store_location
+from .machine import without_machine_settings
 from .schema import (
     ConfigSnapshot,
     Creator,
@@ -176,7 +176,6 @@ def collect_environment(
         pyproject_text, uv_lock_text, uv_lock_hash = _project_files(root)
 
     return Environment(
-        hostname=socket.gethostname(),
         os=platform.platform(),
         arch=platform.machine(),
         cpu_count=os.cpu_count(),
@@ -197,8 +196,11 @@ _PRIVATE_PROCESSING_KEYS = ("credentials",)
 def collect_config_snapshot(config: Any) -> ConfigSnapshot:
     """Serialize config sections + compute SHA256 hash.
 
-    ``processing.credentials`` is left out (and out of the hash): stores
-    are shared, account details are not.
+    Left out (and out of the hash), because stores are shared:
+    ``processing.credentials``, the account details for data servers, and
+    the settings of one computer (:data:`~.machine.MACHINE_SETTINGS`, and
+    the stores' root when it is a local folder). The same settings on two
+    computers give the same hash.
     """
     sections: dict[str, Any] = {}
     keys = (
@@ -227,11 +229,15 @@ def collect_config_snapshot(config: Any) -> ConfigSnapshot:
                 sections[key] = str(obj)
 
     if isinstance(sections.get("processing"), dict):
-        sections["processing"] = {
-            k: v
-            for k, v in sections["processing"].items()
-            if k not in _PRIVATE_PROCESSING_KEYS
-        }
+        sections["processing"] = without_machine_settings(
+            {
+                "processing": {
+                    k: v
+                    for k, v in sections["processing"].items()
+                    if k not in _PRIVATE_PROCESSING_KEYS
+                }
+            }
+        )["processing"]
 
     config_str = json.dumps(sections, sort_keys=True, default=str)
     config_hash = hashlib.sha256(config_str.encode()).hexdigest()
@@ -348,8 +354,13 @@ def collect_vod_analyses(site_config: Any) -> dict[str, VodAnalysisInfo]:
 def collect_processing_provenance(
     store_type: str,
     source_format: str,
+    facility: str | None = None,
 ) -> ProcessingProvenance:
-    """Build ProcessingProvenance."""
+    """Build ProcessingProvenance.
+
+    ``facility`` is the institution that processed the data
+    (``processing.metadata.institution``), never the computer.
+    """
     now = datetime.now(UTC).isoformat()
     return ProcessingProvenance(
         software=collect_software_versions(),
@@ -357,7 +368,7 @@ def collect_processing_provenance(
         uv_version=collect_uv_version(),
         level="L1" if store_type == "gnss_store" else "L2",
         lineage=f"Raw {source_format} data ingested into Icechunk store",
-        facility=socket.gethostname(),
+        facility=facility,
         datetime=now,
     )
 
@@ -538,7 +549,9 @@ def collect_metadata(
         instruments=collect_instruments(
             site_config, hardware=store_type != "vod_store"
         ),
-        processing=collect_processing_provenance(store_type, source_format),
+        processing=collect_processing_provenance(
+            store_type, source_format, getattr(meta_cfg, "institution", None)
+        ),
         environment=collect_environment(
             # The free disk of a local store's folder; S3 has none.
             None if store_path is None else store_location(store_path).local_path,

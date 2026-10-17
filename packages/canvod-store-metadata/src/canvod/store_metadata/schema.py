@@ -573,13 +573,20 @@ class ProcessingProvenance(BaseModel):
     uv_version: str | None = Field(None, description="uv version")
     level: str = Field("L1", description="Processing level")
     lineage: str | None = Field(None, description="Processing lineage description")
-    facility: str | None = Field(None, description="Processing facility")
+    facility: str | None = Field(
+        None, description="The institution that processed the data"
+    )
     datetime: str | None = Field(None, description="Processing timestamp")
 
 
 # §8 — Environment
 class Environment(BaseModel):
-    hostname: str | None = Field(None)
+    hostname: str | None = Field(
+        None,
+        description=(
+            "The computer's name; recorded only by stores written before canVODpy 1.0.0"
+        ),
+    )
     os: str | None = Field(None, description="Platform string")
     arch: str | None = Field(None, description="Machine architecture")
     cpu_count: int | None = Field(None)
