@@ -455,14 +455,28 @@ lacks, such as its description, are given with --set, otherwise the
 migration is refused and lists them. In a VOD store, the attributes of
 VOD are replaced with the current ones: older versions copied the
 attributes of SNR and theta to VOD, among them the valid range of theta.
-The migration record keeps who migrated the store, the initials set in
-processing.metadata.initials.
+A VOD store also lists each VOD analysis it holds a group of, with its
+receivers from the settings. The migration record keeps who migrated
+the store, the initials set in processing.metadata.initials.
 
-A GNSS store also gets its content settings (ADR 0019), also when it
-was moved to repository metadata before: the settings that shape its
-data, taken from the settings recorded in its first commit. A setting
-that commit does not record is not guessed: the command stops and
-lists it, to be given with --set by its key in canvod-settings.yaml.
+Fields the store lacks and the settings hold are taken from them: the
+site's store_description, the publisher and license, the site's
+latitude and longitude. A value given with --set wins.
+
+canVODpy 0.x stored epochs without recording their time scale. The
+epochs of groups read from RINEX files are GPS time and are recorded
+as such; a VOD store's, when its site's GNSS store holds RINEX epochs
+only. A group read from SBF or NMEA files holds UTC epochs: the
+command stops, and the store is rebuilt from the raw files.
+
+A GNSS or VOD store also gets its content settings (ADR 0019), also
+when it was moved to repository metadata before: the settings that
+shape its data, taken from the settings recorded in its first commit.
+A setting that commit does not record is not guessed: the command
+stops and lists it, to be given with --set by its key in
+canvod-settings.yaml. A setting the data show (the preprocessing,
+store_delta_snr, store_radial_diff, store_radial_distance) is read
+from the data: canVODpy 0.x recorded settings its runs didn't follow.
 
 **Usage**:
 
