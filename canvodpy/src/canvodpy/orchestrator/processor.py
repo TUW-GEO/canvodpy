@@ -822,6 +822,11 @@ def _stored_overlaps(
     )
 
 
+def _short_hash(rinex_hash: Any) -> str:
+    """The first 12 characters of a file hash: enough to tell two files apart."""
+    return str(rinex_hash)[:12]
+
+
 def _stored_overlap_message(
     receiver_name: str,
     files: list[tuple[Path, str, Any, Any]],
@@ -830,19 +835,21 @@ def _stored_overlap_message(
     """The error of files whose epochs other stored files already filled (#351).
 
     ``files`` are ``(name, hash, first epoch, last epoch)``. Names each with
-    its time range and the log-book rows of the stored files it overlaps.
+    its hash and time range and the log-book rows of the stored files it
+    overlaps; the hashes tell apart two files of the same name.
     """
     lines = []
     for fname, rinex_hash, start, end in files:
         rows = _stored_overlaps(stored, rinex_hash, start, end)
         name_col = "canonical_name" if "canonical_name" in rows.columns else "fname"
         others = ", ".join(
-            f"{Path(str(row[name_col])).name} ({_second(row['start'])} to "
-            f"{_second(row['end'])})"
+            f"{Path(str(row[name_col])).name} (hash {_short_hash(row['rinex_hash'])}, "
+            f"{_second(row['start'])} to {_second(row['end'])})"
             for row in rows.unique(subset=["rinex_hash"]).iter_rows(named=True)
         )
         lines.append(
-            f"  {fname.name} ({_second(start)} to {_second(end)}) overlaps {others}"
+            f"  {fname.name} (hash {_short_hash(rinex_hash)}, {_second(start)} to "
+            f"{_second(end)}) overlaps {others}"
         )
     return (
         f"Receiver '{receiver_name}': {len(files)} file(s) cover epochs that "

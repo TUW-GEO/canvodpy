@@ -476,6 +476,14 @@ def missing_store_settings_message(
     )
 
 
+_ACRONYMS = {"gnss": "GNSS", "vod": "VOD"}
+
+
+def _store_title(store_type: str) -> str:
+    """``gnss_store`` -> ``GNSS Store``; other words title-cased."""
+    return " ".join(_ACRONYMS.get(word, word.title()) for word in store_type.split("_"))
+
+
 def collect_metadata(
     *,
     config: Any,
@@ -515,7 +523,7 @@ def collect_metadata(
         identity=StoreIdentity(
             id=sid,
             uuid=new_uuid(),
-            title=f"{site_name} {store_type.replace('_', ' ').title()}",
+            title=f"{site_name} {_store_title(store_type)}",
             description=description,
             store_type=store_type,
             source_format=source_format,
