@@ -64,6 +64,7 @@ from canvodpy.orchestrator.discovery import (
     clear_discovery_cache,
     detect_reader_format,
     discover_files,
+    files_per_day,
     is_compressed,
     receiver_days,
     recipe_file,
@@ -359,6 +360,14 @@ class PipelineOrchestrator:
         With ``new_files_only``, called with the ``(YYYYDOY, receiver)``
         pairs that have a file the GNSS store doesn't hold, before they are
         processed. Default None (no-op).
+    on_incomplete_day : Callable[[str, str, int, int], None] | None
+        Called with ``(receiver, YYYYDOY, files_found, files_expected)`` for
+        each receiver-day to process with missing files
+        (:meth:`_warn_incomplete_days`). Default None (no-op).
+    on_days_without_vod : Callable[[str, list[str]], None] | None
+        Called with a receiver and the days in the range on which it has no
+        files while its pair has (:meth:`_warn_days_without_vod`). Default
+        None (no-op).
 
     """
 
@@ -377,6 +386,8 @@ class PipelineOrchestrator:
         on_discovery_start: Callable[[str, Path], None] | None = None,
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
         on_new_files: Callable[[list[tuple[str, str]]], None] | None = None,
+        on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
+        on_days_without_vod: Callable[[str, list[str]], None] | None = None,
         config: CanvodConfig | None = None,
         run: ActiveRun | None = None,
     ) -> None:
@@ -395,6 +406,9 @@ class PipelineOrchestrator:
         self._on_discovery_start = on_discovery_start
         self._on_discovery_end = on_discovery_end
         self._on_new_files = on_new_files
+        self._on_incomplete_day = on_incomplete_day
+        self._on_days_without_vod = on_days_without_vod
+        self._days_without_pair: dict[str, set[str]] = {}
         self._run = run
         self._logger = structlog.get_logger(__name__).bind(site=site.site_name)
         # The log location comes from the configuration of this run.
@@ -629,10 +643,16 @@ class PipelineOrchestrator:
                 if name not in days_of:
                     days_of[name] = self._receiver_days(name)
 
+        # The days on which one receiver of a pair has files and the other
+        # none: they are not processed (_warn_days_without_vod).
+        self._days_without_pair = defaultdict(set)
         for analysis in analyses:
             canopy_rx = analysis["canopy_receiver"]
             ref_name = analysis["reference_receiver"]
-            common = sorted(set(days_of[canopy_rx]) & set(days_of[ref_name]))
+            canopy_days, ref_days = set(days_of[canopy_rx]), set(days_of[ref_name])
+            self._days_without_pair[ref_name] |= canopy_days - ref_days
+            self._days_without_pair[canopy_rx] |= ref_days - canopy_days
+            common = sorted(canopy_days & ref_days)
             for date_key in common:
                 canopy_day = days_of[canopy_rx][date_key]
                 reference_day = days_of[ref_name][date_key]
@@ -718,6 +738,8 @@ class PipelineOrchestrator:
         dates = self._filter_dates(grouped, start, end)
         if new_files_only:
             dates = self._dates_with_new_files(dates)
+        self._warn_days_without_vod(start, end)
+        self._warn_incomplete_days(dates)
 
         plan = {
             "site": self.site.site_name,
@@ -861,6 +883,74 @@ class PipelineOrchestrator:
         if self._on_new_files is not None:
             self._on_new_files(new_receiver_days)
         return kept
+
+    def _warn_incomplete_days(
+        self,
+        dates: list[
+            tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]
+        ],
+    ) -> None:
+        """Warn of each receiver-day to process that misses files (#387).
+
+        A receiver-day is complete with as many files as its file length
+        gives for a whole day (:func:`files_per_day`). Today is not checked:
+        its files are still arriving. Each warning is logged, so it reaches
+        the run history, and passed to ``on_incomplete_day``.
+        """
+        today = datetime.now().strftime("%Y%j")
+        for date_key, groups in dates:
+            if date_key == today:
+                continue
+            checked: set[str] = set()
+            for day, _type, _position, fmt in groups.values():
+                if day.receiver in checked:
+                    continue
+                checked.add(day.receiver)
+                files = discover_files(day, fmt)
+                expected = files_per_day(files)
+                if len(files) >= expected:
+                    continue
+                self._logger.warning(
+                    "receiver_day_incomplete",
+                    receiver=day.receiver,
+                    date=date_key,
+                    files_found=len(files),
+                    files_expected=expected,
+                    summary=(
+                        f"{day.receiver} has {len(files)} of {expected} files "
+                        f"on {date_key}"
+                    ),
+                )
+                if self._on_incomplete_day is not None:
+                    self._on_incomplete_day(
+                        day.receiver, date_key, len(files), expected
+                    )
+
+    def _warn_days_without_vod(self, start: str | None, end: str | None) -> None:
+        """Warn of the days in the range that one receiver of a pair lacks.
+
+        Such a day is not processed, so it gets no VOD (#387). One warning
+        per receiver, logged and passed to ``on_days_without_vod``.
+        """
+        for receiver, days in sorted(self._days_without_pair.items()):
+            in_range = sorted(
+                d for d in days if (not start or d >= start) and (not end or d <= end)
+            )
+            if not in_range:
+                continue
+            self._logger.warning(
+                "days_without_vod",
+                receiver=receiver,
+                n_days=len(in_range),
+                first=in_range[0],
+                last=in_range[-1],
+                summary=(
+                    f"no VOD on {len(in_range)} day(s) from {in_range[0]} to "
+                    f"{in_range[-1]}: {receiver} has no files"
+                ),
+            )
+            if self._on_days_without_vod is not None:
+                self._on_days_without_vod(receiver, in_range)
 
     def _held_file_names(self, groups: set[str]) -> dict[str, set[str]]:
         """The canonical names in each group's log book; none without a store."""
@@ -2093,6 +2183,8 @@ class PipelineOrchestrator:
         filtered_dates = self._filter_dates(grouped, start_from, end_at)
         if new_files_only:
             filtered_dates = self._dates_with_new_files(filtered_dates)
+        self._warn_days_without_vod(start_from, end_at)
+        self._warn_incomplete_days(filtered_dates)
 
         if not filtered_dates:
             self._logger.warning(

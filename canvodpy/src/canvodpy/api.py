@@ -166,6 +166,8 @@ class Site:
         on_discovery_start: Callable[[str, Path], None] | None = None,
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
         on_new_files: Callable[[list[tuple[str, str]]], None] | None = None,
+        on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
+        on_days_without_vod: Callable[[str, list[str]], None] | None = None,
     ) -> Pipeline:
         """Create a processing pipeline for this site.
 
@@ -210,6 +212,14 @@ class Site:
             With ``new_files_only``, called with the ``(YYYYDOY, receiver)``
             pairs that have a file the GNSS store doesn't hold, before they
             are processed.
+        on_incomplete_day : Callable[[str, str, int, int], None], optional
+            Called with ``(receiver, YYYYDOY, files_found, files_expected)``
+            for each receiver-day to process that has fewer files than its
+            file length gives for a whole day. Today is not checked.
+        on_days_without_vod : Callable[[str, list[str]], None], optional
+            Called with a receiver and the days in the range on which it has
+            no files while its pair has: those days are not processed and
+            get no VOD.
 
         Returns
         -------
@@ -236,6 +246,8 @@ class Site:
             on_discovery_start=on_discovery_start,
             on_discovery_end=on_discovery_end,
             on_new_files=on_new_files,
+            on_incomplete_day=on_incomplete_day,
+            on_days_without_vod=on_days_without_vod,
         )
 
     def __repr__(self) -> str:
@@ -293,6 +305,14 @@ class Pipeline:
         With ``new_files_only``, called with the ``(YYYYDOY, receiver)``
         pairs that have a file the GNSS store doesn't hold, before they are
         processed.
+    on_incomplete_day : Callable[[str, str, int, int], None], optional
+        Called with ``(receiver, YYYYDOY, files_found, files_expected)`` for
+        each receiver-day to process that has fewer files than its file
+        length gives for a whole day. Today is not checked.
+    on_days_without_vod : Callable[[str, list[str]], None], optional
+        Called with a receiver and the days in the range on which it has no
+        files while its pair has: those days are not processed and get no
+        VOD.
 
     A pipeline that is not a dry run is a run: it records itself in the run
     history of the log folder (ADR 0018) from its creation until
@@ -335,6 +355,8 @@ class Pipeline:
         on_discovery_start: Callable[[str, Path], None] | None = None,
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
         on_new_files: Callable[[list[tuple[str, str]]], None] | None = None,
+        on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
+        on_days_without_vod: Callable[[str, list[str]], None] | None = None,
     ) -> None:
         # Handle both Site object and string
         if isinstance(site, str):
@@ -419,6 +441,8 @@ class Pipeline:
                 on_discovery_start=on_discovery_start,
                 on_discovery_end=on_discovery_end,
                 on_new_files=on_new_files,
+                on_incomplete_day=on_incomplete_day,
+                on_days_without_vod=on_days_without_vod,
                 config=config,
                 run=active_run,
             )
