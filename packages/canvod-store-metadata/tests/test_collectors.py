@@ -198,6 +198,7 @@ class TestCollectors:
         config, site_cfg = _settings()
         meta = _collect(config, site_cfg)
         assert meta.identity.id == "fangorn-gnss"
+        assert meta.identity.title.endswith(" GNSS Store")
         assert meta.identity.description == testing.SITE_DESCRIPTION
         assert meta.creator.name == testing.PERSON_NAME
         assert meta.publisher.name == testing.PUBLISHER

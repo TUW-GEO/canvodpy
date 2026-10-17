@@ -118,6 +118,23 @@ class TestStoredOverlap:
         assert "2025-01-01T00:10" in message
         assert "gnss_store_strategy" in message
 
+    def test_a_changed_file_of_the_same_name_is_told_apart_by_its_hash(
+        self,
+    ) -> None:
+        stored = _log_book(("FAN0_0000.rnx", "2025-01-01T00:00", 15)).with_columns(
+            rinex_hash=pl.lit("a" * 64)
+        )
+        fname, ds = _file("FAN0_0000.rnx", "2025-01-01T00:00", 15)
+
+        with pytest.raises(StoredOverlapError) as caught:
+            _processor(stored)._check_existing_with_temporal_overlap(
+                "canopy_01", [(fname, ds)], {fname: "b" * 64}
+            )
+
+        message = str(caught.value)
+        assert f"FAN0_0000.rnx (hash {'b' * 12}," in message
+        assert f"overlaps FAN0_0000.rnx (hash {'a' * 12}," in message
+
     def test_the_same_file_again_is_still_skipped(self) -> None:
         stored = _log_book(("ROSA_0000.rnx", "2025-01-01T00:00", 15))
 

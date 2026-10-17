@@ -476,6 +476,12 @@ def missing_store_settings_message(
     )
 
 
+def _store_title(store_type: str) -> str:
+    """``gnss_store`` -> ``GNSS Store``: the kind is an acronym, not a word."""
+    kind, _, rest = store_type.partition("_")
+    return f"{kind.upper()} {rest.title()}".strip()
+
+
 def collect_metadata(
     *,
     config: Any,
@@ -515,7 +521,7 @@ def collect_metadata(
         identity=StoreIdentity(
             id=sid,
             uuid=new_uuid(),
-            title=f"{site_name} {store_type.replace('_', ' ').title()}",
+            title=f"{site_name} {_store_title(store_type)}",
             description=description,
             store_type=store_type,
             source_format=source_format,
