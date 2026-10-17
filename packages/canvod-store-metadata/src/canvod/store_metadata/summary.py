@@ -86,11 +86,12 @@ class _LogBook:
 
     The summary of a commit reads the same columns for several parts (epoch
     counts, file count, header positions); reading each once keeps the
-    commit's cost to one pass over the log book.
+    commit's cost to one pass over the log book. A column only one part
+    reads, such as the header attributes, is read with :meth:`read` and
+    not kept.
     """
 
     def __init__(self, table: zarr.Group) -> None:
-        self.path = table.path
         self._table = table
         self.columns = set(table.array_keys())
         self._values: dict[str, np.ndarray] = {}
@@ -100,8 +101,12 @@ class _LogBook:
 
     def __getitem__(self, column: str) -> np.ndarray:
         if column not in self._values:
-            self._values[column] = np.asarray(_array(self._table, column)[...])
+            self._values[column] = self.read(column)
         return self._values[column]
+
+    def read(self, column: str) -> np.ndarray:
+        """The values of ``column``, read without keeping them."""
+        return np.asarray(_array(self._table, column)[...])
 
 
 def _log_book(group: zarr.Group) -> _LogBook | None:
@@ -463,7 +468,7 @@ def _header_positions(
     """Header positions of the stored files in a group's log book, by hash."""
     if book is None or not {"rinex_hash", "action", "attrs"} <= book.columns:
         return {}
-    rows = zip(book["rinex_hash"], book["action"], book["attrs"], strict=True)
+    rows = zip(book["rinex_hash"], book["action"], book.read("attrs"), strict=True)
     positions = {}
     for file_hash, action, attrs in rows:
         if action not in _STORED_ACTIONS:
