@@ -180,3 +180,45 @@ def test_a_run_logs_its_sizes_and_the_worker_peaks(rosalia_site):
     assert peaks
     assert all(p["peak_gb"] >= p["before_gb"] > 0 for p in peaks)
     assert all(p["input_mb"] > 0 for p in peaks)
+
+
+@pytest.mark.integration
+def test_each_run_sizes_from_the_asked_days_and_records_the_sized_workers(
+    rosalia_site, monkeypatch
+):
+    import canvodpy.orchestrator.pipeline as pipeline_module
+    from canvodpy.orchestrator.memory_budget import MemoryPlan
+    from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+    from canvodpy.run_history import RunHistory, recorded_run
+
+    asked = []
+
+    def one_worker_one_day(**kwargs):
+        asked.append(kwargs["days_per_batch"])
+        return MemoryPlan(
+            budget_bytes=kwargs["budget_bytes"],
+            main_bytes=0,
+            day_bytes=0,
+            task_peak_bytes=0,
+            largest_task=(),
+            workers=1,
+            days_per_batch=1,
+        )
+
+    monkeypatch.setattr(pipeline_module, "plan_memory", one_worker_one_day)
+    config, site = rosalia_site
+    log_dir = Path(config.processing.logging.log_dir)
+    with (
+        recorded_run(site.site_name, log_dir=log_dir, settings={}, workers=4) as run,
+        PipelineOrchestrator(
+            site=site, n_max_workers=4, days_per_batch=3, config=config, run=run
+        ) as orchestrator,
+    ):
+        for _ in range(2):
+            assert list(orchestrator.process_by_date(keep_vars=None))
+
+    # The second run of the orchestrator asks for 3 days again, not the 1
+    # the first one was lowered to.
+    assert asked == [3, 3]
+    with RunHistory.open(log_dir, read_only=True) as history:
+        assert history.run(run.run_id).workers == 1

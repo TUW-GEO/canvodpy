@@ -440,6 +440,9 @@ class PipelineOrchestrator:
         self._workers: int | None = None
         self.dry_run = dry_run
         self.days_per_batch = days_per_batch
+        # Each run sizes from the asked value, not from what an earlier run
+        # of this orchestrator lowered it to.
+        self._asked_days_per_batch = days_per_batch
         self._batch_duration: pint.Quantity = days_per_batch * 24 * UREG.hour
         self._threads_per_worker = threads_per_worker
         self._memory_monitor = MemoryMonitor()
@@ -2123,6 +2126,8 @@ class PipelineOrchestrator:
                 pairings[key] += 1
                 days[key] = (day, fmt)
             this_day = 0
+            # discover_files reads the scans _find_files cached for this
+            # run: no folder is listed again.
             for key, (day, fmt) in days.items():
                 files = [
                     InputFile(
@@ -2156,22 +2161,25 @@ class PipelineOrchestrator:
                 whole_day=whole_day,
             ),
             max_workers=max_workers,
-            days_per_batch=self.days_per_batch,
+            days_per_batch=self._asked_days_per_batch,
             budget_source=source,
         )
         limited = (
-            plan.workers < max_workers or plan.days_per_batch < self.days_per_batch
+            plan.workers < max_workers
+            or plan.days_per_batch < self._asked_days_per_batch
         )
         (self._logger.warning if limited else self._logger.info)(
             "memory_budget",
             budget_source=source,
             max_workers=max_workers,
-            asked_days_per_batch=self.days_per_batch,
+            asked_days_per_batch=self._asked_days_per_batch,
             **plan.log_fields(),
         )
         self._workers = plan.workers
         self.days_per_batch = plan.days_per_batch
         self._batch_duration = plan.days_per_batch * 24 * UREG.hour
+        if self._run is not None:
+            self._run.set_workers(plan.workers)
 
     def process_by_date(
         self,

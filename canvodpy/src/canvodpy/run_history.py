@@ -621,6 +621,13 @@ class RunHistory:
                 (run_id, _now(), level, message, receiver, day),
             )
 
+    def set_workers(self, run_id: str, workers: int) -> None:
+        """Record the worker processes the run was sized to."""
+        with self._write() as db:
+            db.execute(
+                "UPDATE runs SET workers = ? WHERE run_id = ?", (workers, run_id)
+            )
+
     def end_run(
         self,
         run_id: str,
@@ -872,6 +879,10 @@ class ActiveRun:
         """Record one resource sample (:meth:`RunHistory.record_resources`)."""
         self._try(self.history.record_resources, self.run_id, **sample)
 
+    def set_workers(self, workers: int) -> None:
+        """Record the worker processes the run was sized to."""
+        self._try(self.history.set_workers, self.run_id, workers)
+
     def finish(
         self,
         receiver: str,
@@ -940,7 +951,8 @@ def recorded_run(
     settings : dict
         The settings of the run, as JSON-compatible values.
     workers : int or None
-        Worker processes of the run.
+        Worker processes of the run, as asked; a pipeline run replaces it
+        with the count it was sized to (:meth:`ActiveRun.set_workers`).
     disks : iterable of Path or str
         Folders whose disk the machine facts describe (the stores); the log
         folder is always included.
