@@ -136,7 +136,6 @@ git tag -a v0.1.0b2 -m "Test Zenodo DOI creation"
 git push origin v0.1.0b2
 ```
 
-- Creates TestPyPI release
 - Zenodo creates DOI
 - You can test the process safely
 

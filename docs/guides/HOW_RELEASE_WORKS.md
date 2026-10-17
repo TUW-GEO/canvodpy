@@ -38,8 +38,7 @@ the versions are in [Versioning](../VERSIONING.md).
 
     ---
 
-    `publish_testpypi.yml` (canvodpy pre-release tags) and
-    `publish_pypi.yml` (started by hand, never by a tag) publish the
+    `publish_pypi.yml`, started by hand and never by a tag, publishes the
     packages whose release tag points at the commit.
 
     [:octicons-arrow-right-24: Details](#4-pypi-publishing)
@@ -155,26 +154,26 @@ Maintainer                          GitHub Actions               GitHub
 
 | Workflow | Runs on | Publishes to |
 |----------|---------|--------------|
-| `publish_testpypi.yml` | push of a canvodpy pre-release tag (`v*.*.*a*`, `b*`, `rc*`), or by hand | TestPyPI |
 | `publish_pypi.yml` | by hand only: `gh workflow run publish_pypi.yml --ref v1.1.0` | PyPI |
 
-Both check out the tagged commit with all tags and build exactly the
+It checks out the tagged commit with all tags and build exactly the
 packages whose release tag points at that commit
 (`scripts/release.py tagged`): for the `v1.1.0` example, canvodpy and
 canvod-store, nothing else. Tagging and publishing to PyPI are separate
 decisions: a tag is not a promise that PyPI has the version.
 
-**PyPI** (Python Package Index) hosts wheels and source distributions;
-**TestPyPI** is its sandbox. Uploads to PyPI are permanent: a version can
-never be uploaded twice, so a broken release is fixed by the next patch
-version. The one-time account and project setup is in
+**PyPI** (Python Package Index) hosts wheels and source distributions.
+A pre-release (`1.0.0b1`) goes to PyPI too, through the same workflow;
+uv and pip install it only when asked for it. Uploads to PyPI are
+permanent: a version can never be uploaded twice, so a broken release is
+fixed by the next patch version. The one-time account and project setup is in
 [PyPI Setup](PYPI_SETUP.md).
 
 ---
 
 ## 5. Trusted Publishing with OIDC
 
-The workflows authenticate to (Test)PyPI with OpenID Connect instead of
+The workflow authenticates to PyPI with OpenID Connect instead of
 stored API tokens:
 
 1. GitHub issues the workflow run a short-lived token (JWT) saying which
@@ -191,12 +190,12 @@ publisher once:
 ```
 Owner:             nfb2021
 Repository name:   canvodpy
-Workflow name:     publish_pypi.yml   (publish_testpypi.yml on TestPyPI)
-Environment name:  pypi               (testpypi on TestPyPI)
+Workflow name:     publish_pypi.yml
+Environment name:  pypi
 ```
 
-The GitHub environments `pypi` and `testpypi` (Settings $\rightarrow$ Environments)
-can require a reviewer and a wait timer before the upload runs.
+The GitHub environment `pypi` (Settings $\rightarrow$ Environments) can
+require a reviewer and a wait timer before the upload runs.
 
 **Why OIDC:** no secret to store or rotate, the token is valid for minutes
 and only for this repository and workflow.

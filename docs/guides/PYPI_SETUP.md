@@ -26,7 +26,7 @@ uv add canvodpy  # Gets all packages automatically
     ---
 
     Account created · First manual upload · OIDC trusted publishers configured.
-    Beta/alpha releases publish here automatically.
+    No workflow publishes here any more; pre-releases go to PyPI.
 
 -   :fontawesome-solid-box-open: &nbsp; **Phase 2, real PyPI** *(Active)*
 
@@ -51,11 +51,8 @@ just publish-testpypi
 # Manual publish to PyPI (requires credentials)
 just publish-pypi
 
-# Automated publish (canvodpy pre-release tag) - triggers publish_testpypi.yml
-# for the packages whose release tag points at that commit
-just tag-release && git push origin v1.1.0rc1 canvod-store-v1.1.0rc1
-
-# Production publish - started by hand on the canvodpy tag, never by a tag push
+# Publish - started by hand on the canvodpy tag, never by a tag push;
+# a pre-release (v1.1.0rc1) goes the same way, to PyPI
 gh workflow run publish_pypi.yml --ref v1.1.0
 ```
 
@@ -432,7 +429,9 @@ uv run --isolated --no-project --with canvodpy \
     ```bash
     just release canvod-store=1.1.0rc1 canvodpy=1.1.0rc1   # then PR, merge, and on main:
     just tag-release && git push origin v1.1.0rc1 canvod-store-v1.1.0rc1
-    # → publishes the tagged packages to TestPyPI automatically
+    gh workflow run publish_pypi.yml --ref v1.1.0rc1
+    # → publishes the tagged pre-releases to PyPI; uv and pip install
+    #   them only when asked for one (VERSIONING.md)
     ```
 
 === "Stable releases"
@@ -455,10 +454,9 @@ uv run --isolated --no-project --with canvodpy \
 
 ## Good practice
 
-!!! tip "Test on TestPyPI first"
-    Use `-beta.X` or `-alpha.X` version suffixes to publish to TestPyPI.
-    Verify that the TestPyPI install works (see Test installation)
-    before creating a stable release.
+!!! tip "Try a pre-release first"
+    Release a beta (`1.1.0b1`) or release candidate (`1.1.0rc1`) to PyPI
+    and install it in a clean environment before the final version.
 
 !!! warning "Version numbers are permanent"
     PyPI does not allow deleting packages or reusing version numbers.
@@ -498,6 +496,5 @@ uv run --isolated --no-project --with canvodpy \
 
 ## Next steps
 
-- [ ] Test with beta release on TestPyPI
 - [ ] First production release v0.1.0
 - [ ] Set up Zenodo for DOI ([Zenodo Setup](ZENODO_SETUP.md))
