@@ -25,6 +25,11 @@ ratio of the same [GNSS](https://gssc.esa.int/navipedia/index.php/GNSS)
 signal, received at the same time by one receiver below the canopy and one
 with an unobstructed view of the sky.
 
+> **Upgrading from 0.x?** Stores written with canVODpy 0.x must be migrated
+> before a v1.0.0 run writes to them. See
+> [Upgrading to v1.0.0](https://canvodpy.eu/guides/upgrading/) for the
+> commands, the changed settings and what is deprecated.
+
 ## Try it
 
 <a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_convenience_speedrun.py"><img alt="Open in molab" src="https://marimo.io/molab-shield.svg" height="32"></a>

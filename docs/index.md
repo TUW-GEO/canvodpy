@@ -34,6 +34,13 @@ with an unobstructed view of the sky.
 
 </div>
 
+!!! warning "Upgrading from 0.x?"
+
+    Stores written with canVODpy 0.x must be migrated before a v1.0.0 run
+    writes to them. [Upgrading to v1.0.0](guides/upgrading.md) has the
+    commands, the changed settings and what is deprecated.
+
+
 ---
 
 ## What makes canVODpy different
