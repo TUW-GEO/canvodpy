@@ -331,6 +331,15 @@ To start it together with a run, use `canvodpy run --dashboard`; the
 dashboard keeps running after the run ends. `--dashboard-host` and
 `--dashboard-port` set its address.
 
+No runs of your own yet? `canvodpy.demo_data("run_history")` downloads
+an anonymized example: nine runs of the same seven days of two
+receivers with 1 to 126 workers, and a warm-up run with failed orbit
+downloads. Open it with
+`canvodpy dashboard --logs-dir <folder>/run_history`, where `<folder>`
+is the folder `demo_data` returns. The demo notebook
+[23 · Run Dashboard](https://github.com/nfb2021/canvodpy-demo/blob/main/23_run_dashboard.py)
+shows the dashboard on it.
+
 The dashboard reads the run history, not the log files, so nothing
 disappears when the log files rotate, and it knows a run's settings,
 machine, progress, and problems.

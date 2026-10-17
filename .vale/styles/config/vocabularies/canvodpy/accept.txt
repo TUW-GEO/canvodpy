@@ -140,3 +140,4 @@ speedrun
 Okabe
 viridis
 grayscale
+anonymized
