@@ -394,7 +394,7 @@ memory, get cream, blue, amber and brick red, which differ in hue and in
 lightness. More series, such as a comparison of eight worker counts, run
 from dark blue over sky blue and amber to canvodpy's cream, so they get
 lighter in the sorted order of their labels. Both stay readable with a
-red-green color vision deficiency and in greyscale.
+red-green color vision deficiency and in grayscale.
 
 Every chart of a duration (time per stage, time per day, the
 comparison) has a **Time axis** switch between a linear axis from zero
