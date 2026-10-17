@@ -339,6 +339,41 @@ class TestStoreMaintainDue:
         assert result.exit_code == 1
         assert "must be one of" in result.output
 
+    def test_skips_while_a_run_is_active(self, tmp_path):
+        """Maintenance never runs next to a live `canvodpy run` (#401)."""
+        from canvodpy.orchestrator.resources import PipelineRunLock
+
+        config_dir = tmp_path / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        (config_dir / "canvod-settings.yaml").write_text(
+            yaml.safe_dump(
+                {
+                    "processing": {
+                        "metadata": {
+                            "author": "A",
+                            "email": "a@example.com",
+                            "institution": "B",
+                        },
+                        "storage": {
+                            "stores_root_dir": str(tmp_path / "stores"),
+                            "maintenance": {"enabled": True},
+                        },
+                    },
+                    "sites": {},
+                }
+            )
+        )
+
+        with PipelineRunLock():
+            result = runner.invoke(
+                main_app,
+                ["store", "maintain-due", "--all-sites"],
+                env=_env(config_dir),
+            )
+
+        assert result.exit_code == 0, result.output
+        assert "A canvodpy run is active" in result.output
+
     def test_unknown_site_exits_nonzero(self, tmp_path):
         """Regression lock: an unrecognized site must not exit 0 -- a cron
         job silently exiting clean on a real misconfiguration would never
