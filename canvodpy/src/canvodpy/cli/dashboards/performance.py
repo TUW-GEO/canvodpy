@@ -319,6 +319,7 @@ def _():
         import altair as alt
 
         from canvodpy.cli.dashboards.comparison import build_comparison
+        from canvodpy.cli.dashboards.export import export_zip
         from canvodpy.run_history import (
             NetworkDriveError,
             RunHistory,
@@ -415,6 +416,32 @@ def _():
                 comparison.stage_rows,
                 selection=None,
                 label="Timing per stage and in total",
+            )
+        )
+        items.append(
+            mo.download(
+                data=lambda: export_zip(
+                    log_dir,
+                    comparison.run_ids,
+                    {
+                        "run_groups": (
+                            "the Run groups table",
+                            comparison.group_rows,
+                        ),
+                        "timing_per_stage": (
+                            "the Timing per stage and in total table",
+                            comparison.stage_rows,
+                        ),
+                        "median_time_per_stage": (
+                            "the data of the Median time per stage chart",
+                            comparison.chart_rows,
+                        ),
+                    },
+                    title="canvodpy run dashboard: Compare runs by label",
+                ),
+                filename="canvodpy_compare_runs.zip",
+                mimetype="application/zip",
+                label="Download the data of this comparison",
             )
         )
         return items
@@ -642,6 +669,63 @@ def _(mo, run_view, status_text):
         machine_block = mo.vstack([mo.md("**Machine**"), mo.json(run_record.machine)])
         header_items = [header_md, settings_block, machine_block]
     mo.vstack(header_items)
+    return
+
+
+@app.cell
+def _(log_dir, mo, run_view):
+    from canvodpy.cli.dashboards.export import export_zip
+
+    if run_view is None or log_dir is None:
+        download_items = [mo.md("")]
+    else:
+        run_id = run_view["run"].run_id
+        charts = run_view["charts"]
+        tables = {
+            "progress": ("the Progress table", run_view["progress_rows"]),
+            "warnings_and_errors": (
+                "the Warnings and errors table",
+                run_view["problem_rows"],
+            ),
+            "time_per_stage": (
+                "the data of the Time per stage chart",
+                charts.get("stage", []),
+            ),
+            "time_per_day": (
+                "the data of the Time per day chart",
+                charts.get("day", []),
+            ),
+            "store_growth_per_day": (
+                "the data of the Store growth per day chart",
+                charts.get("store", []),
+            ),
+            "cpu_and_memory": (
+                "the data of the CPU and memory chart",
+                charts.get("resources", []),
+            ),
+            "free_disk": (
+                "the data of the Free disk chart",
+                charts.get("disk", []),
+            ),
+            "throughput_over_time": (
+                "the data of the Throughput over time chart",
+                charts.get("throughput", []),
+            ),
+        }
+        download_items = [
+            mo.download(
+                data=lambda: export_zip(
+                    log_dir,
+                    [run_id],
+                    tables,
+                    title=f"canvodpy run dashboard: run {run_id}",
+                ),
+                filename=f"canvodpy_run_{run_id}.zip",
+                mimetype="application/zip",
+                label="Download the data of this run",
+            )
+        ]
+    mo.vstack(download_items)
     return
 
 

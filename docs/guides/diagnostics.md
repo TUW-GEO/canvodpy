@@ -407,6 +407,24 @@ them:
   labels (with zero-padded numbers, such as `w001`, `w016`, `w126`, that
   is the order of the numbers). Hover over a bar for its label and time.
 
+**Download the data:** the run page and the comparison each have a
+download button (**Download the data of this run**, **Download the data
+of this comparison**). Each gives a zip with:
+
+- `run_history.sqlite`: every record of the runs shown (settings,
+  machine, receiver-days, stage timings, resource samples, warnings and
+  errors) and nothing of other runs.
+- One CSV file per table and chart of the view, with the rows the
+  dashboard showed.
+- `README.txt`: the canvodpy version, the log folder, the runs, and
+  what each file holds.
+
+Unzipped, the folder opens like a log folder, so
+`canvodpy dashboard --logs-dir <folder>` shows the same runs on another
+machine. The zip is made when you click, so for a running run its run
+history can hold records newer than the page. Each table's own
+**Export** button saves just that table as CSV or JSON.
+
 A run's status is one of:
 
 - **Running:** the run's process lives.
