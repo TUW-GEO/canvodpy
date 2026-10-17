@@ -223,7 +223,9 @@ writes the stored `pyproject.toml` and `uv.lock` to a directory.
 
 ## Stores on S3
 
-The functions that read or write the metadata take a store location:
+[Stores on S3](../../guides/s3.md) covers choosing a provider,
+credentials, access policies and the bucket settings to avoid. The
+functions that read or write the metadata take a store location:
 a local directory, or an `s3://bucket/prefix` URL. A URL without a
 bucket or a prefix is refused, and so are other schemes such as `gs://`.
 
@@ -266,8 +268,8 @@ On a local directory, commits hold a lock file in the store's directory,
 because Icechunk on a local file system can lose one of two concurrent
 commits without an error. On S3 there is no lock: Icechunk's
 conditional writes keep two commits from overwriting each other. The
-S3 service must support them (`If-Match` and `If-None-Match`); most do,
-but check before choosing one.
+S3 service must support them
+([Conditional writes](../../guides/s3.md#conditional-writes)).
 
 Two runs may also create one store at the same time. Only one of them
 creates it: the commit that creates a store does not rebase, so the

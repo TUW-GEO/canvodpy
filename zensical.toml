@@ -38,6 +38,7 @@ nav = [
     { "Configure" = [
       { "Settings file" = "guides/configuration.md" },
       { "Settings reference" = "guides/settings.md" },
+      { "Stores on S3" = "guides/s3.md" },
       { "Settings models" = "packages/config/overview.md" },
       { "File names" = "packages/naming/overview.md" },
     ]},
