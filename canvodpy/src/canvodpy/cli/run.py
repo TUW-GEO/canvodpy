@@ -199,12 +199,31 @@ def _print_resume_line(
     if not receiver_days:
         emit(f"  resuming: no receiver-days with new files from {start} to {end}")
         return
-    shown = ", ".join(f"{day} {receiver}" for day, receiver in receiver_days[:10])
-    more = len(receiver_days) - 10
-    if more > 0:
-        shown += f" and {more} more"
+    shown = _first_ten([f"{day} {receiver}" for day, receiver in receiver_days])
     noun = "receiver-day" if len(receiver_days) == 1 else "receiver-days"
     emit(f"  resuming: {len(receiver_days)} {noun} with new files ({shown})")
+
+
+def _first_ten(items: list[str]) -> str:
+    """The first ten items, comma-separated, and how many more there are."""
+    shown = ", ".join(items[:10])
+    more = len(items) - 10
+    return f"{shown} and {more} more" if more > 0 else shown
+
+
+def _print_incomplete_day(
+    emit: Callable[[str], None], receiver: str, day: str, found: int, expected: int
+) -> None:
+    """Say through ``emit`` that a receiver-day misses files (#387)."""
+    emit(f"  incomplete: {receiver} has {found} of {expected} files on {day}")
+
+
+def _print_days_without_vod(
+    emit: Callable[[str], None], receiver: str, days: list[str]
+) -> None:
+    """Say through ``emit`` which days get no VOD as ``receiver`` has no files."""
+    noun = "day" if len(days) == 1 else "days"
+    emit(f"  no VOD on {len(days)} {noun}, {receiver} has no files: {_first_ten(days)}")
 
 
 def _compute_vod_for_day(
@@ -218,9 +237,9 @@ def _compute_vod_for_day(
 
     Each analysis goes through ``VodComputer.compute_day`` (the same code as
     ``site.vod`` in Python). Terminal-only behavior: an analysis whose
-    receiver groups are missing is skipped, and a failing analysis is
-    logged and reported instead of stopping the run. The caller writes the
-    results with ``VodComputer.write_day``.
+    receiver groups are missing is skipped with a line naming them, and a
+    failing analysis is logged and reported instead of stopping the run.
+    The caller writes the results with ``VodComputer.write_day``.
 
     Parameters
     ----------
@@ -245,12 +264,27 @@ def _compute_vod_for_day(
         try:
             vod_ds = vod_computer.compute_day(datasets, analysis_name, write=False)
         except KeyError as e:
+            # A receiver-day that failed leaves its group out of the day.
+            cfg = vod_analyses[analysis_name]
+            missing = ", ".join(
+                group
+                for group in (cfg.canopy_receiver, cfg.reference_store_group)
+                if group not in datasets
+            )
             log.warning(
                 "vod_skipped",
                 analysis=analysis_name,
                 reason=str(e),
                 date=date_key,
             )
+            line = (
+                f"  VOD {analysis_name}: skipped, no data of {missing} on "
+                f"{date_key} (the log says why)"
+            )
+            if reporter:
+                reporter.log(line)
+            else:
+                print(line)
             continue
         except Exception as e:
             log.error(
@@ -383,6 +417,8 @@ def _main_impl(args: SimpleNamespace) -> int:
                 on_discovery_start=on_discovery_start,
                 on_discovery_end=on_discovery_end,
                 on_new_files=partial(_print_resume_line, print, start, end),
+                on_incomplete_day=partial(_print_incomplete_day, print),
+                on_days_without_vod=partial(_print_days_without_vod, print),
             ) as pipeline:
                 plan = pipeline.preview(
                     start=start, end=end, new_files_only=new_files_only
@@ -522,6 +558,8 @@ def _main_impl(args: SimpleNamespace) -> int:
                     on_discovery_start=on_discovery_start,
                     on_discovery_end=on_discovery_end,
                     on_new_files=partial(_print_resume_line, reporter.log, start, end),
+                    on_incomplete_day=partial(_print_incomplete_day, reporter.log),
+                    on_days_without_vod=partial(_print_days_without_vod, reporter.log),
                 ) as pipeline:
                     gen = pipeline.process_range(
                         start=start, end=end, new_files_only=new_files_only

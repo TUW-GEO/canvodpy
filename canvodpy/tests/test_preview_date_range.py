@@ -35,6 +35,9 @@ def _fake_orchestrator(
     orch.site = SimpleNamespace(site_name="test_site", _site_config=site_config)
     orch._logger = mock.MagicMock()
     orch._group_by_date_and_receiver = lambda *_: grouped
+    orch._days_without_pair = {}
+    orch._on_incomplete_day = None
+    orch._on_days_without_vod = None
     return orch
 
 

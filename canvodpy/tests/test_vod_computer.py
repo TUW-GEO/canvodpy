@@ -397,6 +397,22 @@ class TestCliVodForDay:
         )
         reporter.on_vod_failed.assert_called_once_with("broken", "boom")
 
+    def test_a_skipped_analysis_says_which_group_has_no_data(self):
+        # A receiver-day that failed leaves its group out of the day's
+        # datasets; the run says so instead of skipping silently (#387).
+        from canvodpy.cli.run import _compute_vod_for_day
+
+        analyses = {"missing": _make_analysis_cfg(canopy="canopy_02")}
+        vc = VodComputer(_make_site(analyses))
+        reporter = unittest.mock.MagicMock()
+
+        _compute_vod_for_day(vc, _day_datasets(), analyses, "2025001", reporter)
+
+        reporter.log.assert_called_once_with(
+            "  VOD missing: skipped, no data of canopy_02, "
+            "reference_01_canopy_02 on 2025001 (the log says why)"
+        )
+
 
 class TestVodOutputOptions:
     def test_delta_snr_dropped_by_default(self):

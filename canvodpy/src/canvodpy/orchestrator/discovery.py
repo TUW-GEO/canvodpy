@@ -792,6 +792,26 @@ def discover_files(
     return _of_format(index.get(day.yyyydoy, ()), reader_format, day.recipe)
 
 
+def files_per_day(files: list[DiscoveredFile]) -> int:
+    """How many files a whole day has at the file length of ``files``.
+
+    The file length is the period field of the canonical names, e.g. 96 for
+    ``15M``. Files of different lengths count by the most common one.
+    """
+    from collections import Counter
+    from datetime import timedelta
+
+    from canvod.preflight.convention import CanVODFilename
+
+    if not files:
+        return 0
+    lengths = Counter(
+        CanVODFilename.from_filename(f.canonical_name).batch_duration for f in files
+    )
+    length = lengths.most_common(1)[0][0]
+    return max(1, timedelta(days=1) // length)
+
+
 def unprocessed_files(
     directory: Path,
     reader_format: str | None = None,

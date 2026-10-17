@@ -136,6 +136,45 @@ main process: `writing` (the GNSS store), `vod_calc`, and `vod_store`.
 The reading steps run in the worker processes; their times are in the
 log files and in the [dashboard](#see-where-a-run-spends-its-time).
 
+### Missing files and days without VOD
+
+Before it processes anything, a run checks the files of each of its
+receiver-days. A receiver-day is complete when it has as
+many files as its file length gives for a whole day: 96 files of 15
+minutes (`15M` in the name), 24 of an hour, one daily file. For
+each receiver-day with fewer files, the run prints one line and logs a
+`receiver_day_incomplete` warning with the receiver, the day, the files
+found (`files_found`) and the files expected (`files_expected`):
+
+```
+  incomplete: canopy_01 has 81 of 96 files on 2025001
+```
+
+The run still processes that day, with the files it has. Today is not
+checked, because its files are still arriving.
+
+A day on which one receiver of a pair has files and the other has none
+is not processed, so it gets no VOD. The run prints one line per
+receiver that lacks files and logs a `days_without_vod` warning:
+
+```
+  no VOD on 2 days, reference_01 has no files: 2025002, 2025003
+```
+
+When the VOD of a processed day is skipped because the data of a
+receiver is missing, for example because that receiver-day failed, the
+run prints which data is missing and logs a `vod_skipped` warning; the
+log says why the receiver-day failed:
+
+```
+  VOD canopy_01_vs_reference_01: skipped, no data of canopy_01 on 2025001 (the log says why)
+```
+
+In Python, `site.pipeline(on_incomplete_day=..., on_days_without_vod=...)`
+receives the same findings: `(receiver, day, files_found, files_expected)`
+for each incomplete receiver-day, and a receiver with its days without
+VOD.
+
 ### Search the logs
 
 Each line of `machine/agent.json` is one JSON object, so you can search
@@ -222,7 +261,9 @@ records:
   CPU use and memory use of the machine (percent) and the free space of
   the disks of the log folder and the stores
   (`history.resource_samples(run_id)`);
-- its warnings and errors, in words, with their receiver and day;
+- its warnings and errors, in words, with their receiver and day (a
+  receiver-day with missing files reads, for example,
+  `canopy_01 has 81 of 96 files on 2025001`);
 - its end: `finished`, or `failed` with the error.
 
 The same file holds the [file index](../packages/naming/overview.md#folders-of-other-days-come-from-the-file-index):

@@ -102,8 +102,14 @@ class RunHistoryHandler(logging.Handler):
 
 
 def _plain_message(record: logging.LogRecord, event: dict[str, Any]) -> str:
-    """The event in words, with the exception that came with it."""
-    if event:
+    """The event in words, with the exception that came with it.
+
+    An event with a ``summary`` (a sentence with its numbers) is recorded in
+    those words, otherwise by its name.
+    """
+    if event.get("summary"):
+        text = str(event["summary"])
+    elif event:
         text = str(event.get("event", "")).replace("_", " ")
     else:
         text = record.getMessage()
