@@ -113,10 +113,13 @@ The settings are under `processing.params` in `canvod-settings.yaml`.
         days_per_batch: 1
     ```
 
-    The run starts one worker per CPU core, minus two for the operating
-    system, and at least one, or fewer if they do not fit in the
-    [memory budget](#memory-use). With `auto_uncapped: true` it uses all
-    cores; use that only on a machine nobody else uses.
+    The run starts one worker per physical CPU core, but leaves at least
+    two of the CPU threads free for the operating system, and starts at
+    least one worker; fewer if they do not fit in the
+    [memory budget](#memory-use). A second thread per core
+    (hyper-threading, SMT) would add a worker process and its memory, not
+    speed. With `auto_uncapped: true` the run uses all CPU threads; use
+    that only on a machine nobody else uses.
 
 === "Manual, for shared servers"
 
@@ -134,7 +137,7 @@ The settings are under `processing.params` in `canvod-settings.yaml`.
 |---|---|---|
 | `resource_mode` | `auto` | `auto` chooses the number of workers; `manual` uses the settings below. |
 | `n_max_threads` | none | Most worker processes, 1 to 100; fewer run if they do not fit in the [memory budget](#memory-use). Required with `manual`; `auto` ignores it and warns. |
-| `auto_uncapped` | `false` | With `auto`: use all CPU cores instead of all but two. |
+| `auto_uncapped` | `false` | With `auto`: one worker per CPU thread, instead of one per physical core with two threads left free. |
 | `days_per_batch` | `1` | Days per batch, 1 to 30. Lowered if the days do not fit in the [memory budget](#memory-use). |
 | `threads_per_worker` | none (1) | Threads that numerical libraries such as OpenBLAS and MKL use in each worker, 1 to 8. If you set `OMP_NUM_THREADS` or a similar variable yourself, your value applies. |
 | `cpu_affinity` | none | With `manual`: the CPU cores the workers run on. Works on Linux and Windows; macOS ignores it. |
