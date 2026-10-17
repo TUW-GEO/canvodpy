@@ -379,9 +379,20 @@ run history queries only:
 
 The dashboard is always dark, whatever the machine's or the browser's
 setting: the notebook's script header sets the marimo theme. The data
-colors are the Okabe-Ito colors that are readable on a dark background
-(Okabe and Ito, *Color Universal Design*, 2008), a palette meant to be
-told apart also with a red-green color vision deficiency.
+colors fit canvodpy's colors, those of this documentation. A chart
+with one series is canvodpy's green. Up to four series, such as CPU and
+memory, get cream, blue, amber and brick red, which differ in hue and in
+lightness. More series, such as a comparison of eight worker counts, run
+from dark blue over sky blue and amber to canvodpy's cream, so they get
+lighter in the sorted order of their labels. Both stay readable with a
+red-green color vision deficiency and in greyscale.
+
+Every chart of a duration (time per stage, time per day, the
+comparison) has a **Time axis** switch between a linear axis from zero
+and a logarithmic one, which spreads short and long stages apart. The
+free-disk chart starts its axis near the lowest value, not at zero, so
+a change in free space is visible. The settings and the machine of a
+run are folded in; click to open them.
 
 **Compare runs by label:** a run can take a free-text label with
 `canvodpy run --label <text>`, for example to group the repetitions of a
@@ -402,9 +413,8 @@ them:
   times can add up to more than the total. The median is the middle of
   the sorted times; the spread is min to max.
 - A grouped bar chart shows the median time per stage: per stage one bar
-  per label, side by side. Up to seven labels get one Okabe-Ito color
-  each; more labels get colors along viridis, in the sorted order of the
-  labels (with zero-padded numbers, such as `w001`, `w016`, `w126`, that
+  per label, side by side, colored as described above, in the sorted
+  order of the labels (with zero-padded numbers, such as `w001`, `w016`, `w126`, that
   is the order of the numbers). Hover over a bar for its label and time.
 
 **Download the data:** the run page and the comparison each have a

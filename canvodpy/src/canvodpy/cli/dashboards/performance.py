@@ -294,22 +294,75 @@ def _():
         """Make a chart follow the marimo theme: a transparent frame."""
         return chart.properties(background="transparent").configure_view(stroke=None)
 
-    def chart_palette():
-        """The altair data colors: the Okabe-Ito colors readable on the dark
-        background, which people with a red-green color vision deficiency
-        can tell apart. The dashboard is always dark (the script header
-        sets the marimo theme)."""
-        return [
-            "#56B4E9",
-            "#E69F00",
-            "#F0E442",
-            "#CC79A7",
-            "#009E73",
-            "#D55E00",
-            "#0072B2",
+    def chart_palette(count=1):
+        """The altair data colors for one series or for labels with an order,
+        such as worker counts. One series is canvodpy's green (the docs
+        theme, ``docs/assets/canvod-nordic.css``). Several run from dark
+        blue over sky blue and amber to canvodpy's cream: the lightness
+        rises along the order, which people with a red-green color vision
+        deficiency can follow, and the hue changes too, so neighbors stay
+        apart. The dashboard is always dark (the script header sets the
+        marimo theme)."""
+        anchors = [
+            (0x4A, 0x6F, 0xA5),
+            (0x6F, 0xB7, 0xDE),
+            (0xE0, 0xB2, 0x68),
+            (0xE1, 0xE6, 0xB9),
         ]
+        if count == 1:
+            return ["#ABC8A4"]
+        colors = []
+        for index in range(count):
+            position = index / (count - 1) * (len(anchors) - 1)
+            low = min(int(position), len(anchors) - 2)
+            share = position - low
+            rgb = [
+                round(a + (b - a) * share)
+                for a, b in zip(anchors[low], anchors[low + 1], strict=True)
+            ]
+            colors.append("#{:02X}{:02X}{:02X}".format(*rgb))
+        return colors
 
-    def comparison_view(log_dir):
+    def chart_categories(count):
+        """``count`` colors for labels without an order, such as CPU and
+        memory: canvodpy's cream, then blue, amber and brick red. They
+        differ in hue and in lightness (they stay apart in greyscale), and
+        also with a red-green color vision deficiency. More labels than
+        these four get the colors of :func:`chart_palette`."""
+        colors = ["#E1E6B9", "#4C93C4", "#E0A84E", "#B5605A"]
+        if count <= len(colors):
+            return colors[:count]
+        return chart_palette(count)
+
+    def time_bars(channel, field, title, rows, scale_type):
+        """The rows and the altair encoding of a bar chart's time axis.
+
+        ``"linear"`` starts the axis at zero. ``"log"`` spreads short and
+        long stages apart; a log axis has no zero, so the axis runs from
+        the power of ten below the shortest time to the one above the
+        longest, the bars start at its bottom, and rows without a positive
+        time are left out.
+        """
+        import math
+
+        import altair as alt
+
+        channels = {"x": (alt.X, alt.X2), "y": (alt.Y, alt.Y2)}[channel]
+        axis = alt.Axis(title=title)
+        positive = [row for row in rows if (row.get(field) or 0) > 0]
+        if scale_type != "log" or not positive:
+            scale = alt.Scale(type="linear", zero=True)
+            return rows, {channel: channels[0](f"{field}:Q", axis=axis, scale=scale)}
+        times = [row[field] for row in positive]
+        lower = 10 ** math.floor(math.log10(min(times)))
+        upper = 10 ** math.ceil(math.log10(max(times)))
+        scale = alt.Scale(type="log", domain=[lower, max(upper, 10 * lower)])
+        return positive, {
+            channel: channels[0](f"{field}:Q", axis=axis, scale=scale),
+            f"{channel}2": channels[1](datum=lower),
+        }
+
+    def comparison_view(log_dir, scale_type):
         """The compare-by-label items, or a message when there is nothing.
 
         The grouping and the statistics live in
@@ -327,16 +380,16 @@ def _():
             RunHistoryVersionError,
         )
 
-        def _charts(rows, labels, series):
+        def _charts(rows, labels):
             """One grouped bar chart: per stage, one bar per label side by
-            side. Up to as many labels as the palette has colors, each gets
-            one of them; more labels get colors along viridis (its darkest
-            part left out, it would vanish on the dark background), in the
-            sorted order of the labels."""
-            if len(labels) <= len(series):
-                scale = alt.Scale(range=series)
-            else:
-                scale = alt.Scale(scheme={"name": "viridis", "extent": [0.25, 1]})
+            side. Up to four labels get the colors of
+            :func:`chart_categories`; more, such as a series of worker
+            counts, get colors from dark to light in the sorted order of the
+            labels."""
+            scale = alt.Scale(range=chart_categories(len(labels)))
+            rows, time_encoding = time_bars(
+                "y", "Median (s)", "Median time (s)", rows, scale_type
+            )
             return [
                 mo.ui.altair_chart(
                     chart_style(
@@ -345,10 +398,7 @@ def _():
                         .encode(
                             x=alt.X("Stage:N", axis=alt.Axis(title="Stage")),
                             xOffset=alt.XOffset("Label:N", sort="ascending"),
-                            y=alt.Y(
-                                "Median (s):Q",
-                                axis=alt.Axis(title="Median time (s)"),
-                            ),
+                            **time_encoding,
                             color=alt.Color(
                                 "Label:N",
                                 sort="ascending",
@@ -408,9 +458,8 @@ def _():
                 )
             )
         labels = [row["Label"] for row in comparison.group_rows]
-        series = chart_palette()
         items.append(mo.md("### Median time per stage"))
-        items.extend(_charts(comparison.chart_rows, labels, series))
+        items.extend(_charts(comparison.chart_rows, labels))
         items.append(
             mo.ui.table(
                 comparison.stage_rows,
@@ -456,6 +505,8 @@ def _():
         build_run_view,
         chart_style,
         chart_palette,
+        chart_categories,
+        time_bars,
         comparison_view,
     )
 
@@ -469,16 +520,19 @@ def _(mo):
         encoding="utf-8"
     )
     dark_svg = logos.joinpath("canvodpy_logo_dark_mode.svg").read_text(encoding="utf-8")
-    mo.vstack(
+    mo.hstack(
         [
-            mo.md("## canvodpy run dashboard"),
             mo.Html(
                 f'<div class="canvodpy-logo">'
                 f'<div class="canvodpy-logo-bright">{bright_svg}</div>'
                 f'<div class="canvodpy-logo-dark">{dark_svg}</div>'
                 "</div>"
             ),
-        ]
+            mo.md("## Run Dashboard"),
+        ],
+        justify="start",
+        align="center",
+        gap=2,
     )
 
 
@@ -533,6 +587,16 @@ def _(mo):
     )
     refresh
     return (refresh,)
+
+
+@app.cell
+def _(mo):
+    # Linear or logarithmic time axes, for every chart that shows a
+    # duration: the stage and day charts and the comparison.
+    time_axis = mo.ui.radio(
+        options=["linear", "log"], value="linear", label="Time axis", inline=True
+    )
+    return (time_axis,)
 
 
 @app.cell
@@ -663,11 +727,15 @@ def _(mo, run_view, status_text):
             + (f" ({run_record.commit})" if run_record.commit else "")
             + f"  ·  **Workers:** {run_record.workers or 'n/a'}"
         )
-        settings_block = mo.vstack(
-            [mo.md("**Settings**"), mo.json(run_record.settings)]
+        # Folded by default: long, and rarely needed while a run goes.
+        details = mo.accordion(
+            {
+                "Settings": mo.json(run_record.settings),
+                "Machine": mo.json(run_record.machine),
+            },
+            multiple=True,
         )
-        machine_block = mo.vstack([mo.md("**Machine**"), mo.json(run_record.machine)])
-        header_items = [header_md, settings_block, machine_block]
+        header_items = [header_md, details]
     mo.vstack(header_items)
     return
 
@@ -793,11 +861,11 @@ def _(mo, run_view):
 
 
 @app.cell
-def _(chart_palette, chart_style, mo, run_view):
+def _(chart_categories, chart_palette, chart_style, mo, run_view, time_axis, time_bars):
     import altair as alt
 
     run_charts = run_view["charts"] if run_view is not None else {}
-    chart_items = [mo.md("### Charts")]
+    chart_items = [mo.md("### Charts"), time_axis]
     if not run_charts:
         chart_items.append(mo.md("_No chart data for this run yet._"))
     else:
@@ -805,10 +873,13 @@ def _(chart_palette, chart_style, mo, run_view):
 
         if "stage" in run_charts:
             chart_items.append(mo.md("**Time per stage.** Total time of each stage."))
+            stage_rows, stage_time = time_bars(
+                "x", "Seconds", "Time (s)", run_charts["stage"], time_axis.value
+            )
             chart_items.append(
                 mo.ui.altair_chart(
                     chart_style(
-                        alt.Chart({"values": run_charts["stage"]})  # type: ignore
+                        alt.Chart({"values": stage_rows})  # type: ignore
                         .mark_bar(color=chart_series[0])
                         .encode(
                             y=alt.Y(
@@ -816,7 +887,7 @@ def _(chart_palette, chart_style, mo, run_view):
                                 sort="-x",
                                 axis=alt.Axis(title="Stage"),
                             ),
-                            x=alt.X("Seconds:Q", axis=alt.Axis(title="Time (s)")),
+                            **stage_time,
                         )
                     )
                 )
@@ -829,14 +900,17 @@ def _(chart_palette, chart_style, mo, run_view):
                     "added up. Receivers run in parallel, so this is not wall time."
                 )
             )
+            day_rows, day_time = time_bars(
+                "y", "Seconds", "Time (s)", run_charts["day"], time_axis.value
+            )
             chart_items.append(
                 mo.ui.altair_chart(
                     chart_style(
-                        alt.Chart({"values": run_charts["day"]})  # type: ignore
+                        alt.Chart({"values": day_rows})  # type: ignore
                         .mark_bar(color=chart_series[0])
                         .encode(
                             x=alt.X("Day:N", axis=alt.Axis(title="Day")),
-                            y=alt.Y("Seconds:Q", axis=alt.Axis(title="Time (s)")),
+                            **day_time,
                         )
                     )
                 )
@@ -878,7 +952,9 @@ def _(chart_palette, chart_style, mo, run_view):
                             y=alt.Y(
                                 "Percent:Q", axis=alt.Axis(title="Percent used (%)")
                             ),
-                            color=alt.Color("Metric:N").scale(range=chart_series),
+                            color=alt.Color("Metric:N").scale(
+                                range=chart_categories(2)
+                            ),
                         )
                     )
                 )
@@ -887,7 +963,9 @@ def _(chart_palette, chart_style, mo, run_view):
         if "disk" in run_charts:
             chart_items.append(
                 mo.md(
-                    "**Free disk.** Free space of each folder, sampled during the run."
+                    "**Free disk.** Free space of each folder, sampled during the "
+                    "run. Folders on the same disk have the same free space, so "
+                    "their lines lie on top of each other; hover for the folder."
                 )
             )
             chart_items.append(
@@ -900,8 +978,14 @@ def _(chart_palette, chart_style, mo, run_view):
                             y=alt.Y(
                                 "Free disk (GB):Q",
                                 axis=alt.Axis(title="Free disk (GB)"),
+                                scale=alt.Scale(zero=False),
                             ),
-                            color=alt.Color("Folder:N").scale(range=chart_series),
+                            tooltip=["Folder:N", "Time:T", "Free disk (GB):Q"],
+                            color=alt.Color("Folder:N").scale(
+                                range=chart_categories(
+                                    len({row["Folder"] for row in run_charts["disk"]})
+                                )
+                            ),
                         )
                     )
                 )
@@ -938,9 +1022,9 @@ def _(chart_palette, chart_style, mo, run_view):
 
 
 @app.cell
-def _(comparison_view, log_dir, mo, refresh):
+def _(comparison_view, log_dir, mo, refresh, time_axis):
     _ = refresh  # re-read the comparison on refresh
-    mo.vstack(comparison_view(log_dir))
+    mo.vstack([time_axis, *comparison_view(log_dir, time_axis.value)])
     return
 
 
