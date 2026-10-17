@@ -347,7 +347,7 @@ def _():
 
         import altair as alt
 
-        channels = {"x": (alt.X, alt.X2), "y": (alt.Y, alt.Y2)}[channel]
+        channels = {"x": (alt.X, alt.X2Datum), "y": (alt.Y, alt.Y2Datum)}[channel]
         axis = alt.Axis(title=title)
         positive = [row for row in rows if (row.get(field) or 0) > 0]
         if scale_type != "log" or not positive:
@@ -359,7 +359,7 @@ def _():
         scale = alt.Scale(type="log", domain=[lower, max(upper, 10 * lower)])
         return positive, {
             channel: channels[0](f"{field}:Q", axis=axis, scale=scale),
-            f"{channel}2": channels[1](datum=lower),
+            f"{channel}2": channels[1](lower),
         }
 
     def comparison_view(log_dir, scale_type):
