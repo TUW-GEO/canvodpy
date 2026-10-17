@@ -5,7 +5,7 @@
 The `canvod-readers` package provides validated parsers for [GNSS](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"} observation data. It transforms raw receiver files into analysis-ready [xarray Datasets](https://docs.xarray.dev){:target="_blank"}, serving as the data ingestion layer for GNSS Transmissometry (GNSS-T) analysis.
 !!! note "Storage stack"
 
-    [**xarray**](https://docs.xarray.dev){:target="_blank"} provides labeled N-D arrays with named axes and coordinates, like NumPy with named dimensions and attached metadata. Readers output xarray Datasets that flow into [**Zarr**](https://zarr.dev){:target="_blank"}, a chunked, compressed array format designed for parallel cloud reads. [**Icechunk**](https://icechunk.io){:target="_blank"} sits on top of Zarr and adds git-like version control: every append is a commit-snapshot retrievable by ID. Together they form part of the [**Pangeo**](https://pangeo.io){:target="_blank"} open scientific Python ecosystem for large geoscience datasets that canvodpy builds on.
+    [**xarray**](https://docs.xarray.dev){:target="_blank"} provides labeled N-D arrays with named axes and coordinates, like NumPy with named dimensions and attached metadata. Readers output xarray Datasets that flow into [**Zarr**](https://zarr.dev){:target="_blank"}, a chunked, compressed array format designed for parallel cloud reads. [**Icechunk**](https://icechunk.io){:target="_blank"} sits on top of Zarr and adds git-like version control: every write is a commit, a snapshot retrievable by its ID. Together they form part of the [**Pangeo**](https://pangeo.io){:target="_blank"} open scientific Python ecosystem for large geoscience datasets that canvodpy builds on.
 
 <div class="grid cards" markdown>
 
