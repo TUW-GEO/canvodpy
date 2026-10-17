@@ -198,12 +198,28 @@ class TestProcessingParams:
         with pytest.raises(ValidationError):
             ProcessingParams(nice_priority=20)  # le=19
 
-    def test_resolve_resources_auto(self):
+    @pytest.mark.parametrize(
+        ("logical", "physical", "expected"),
+        [
+            (128, 64, 64),  # two threads per core: one worker per core
+            (8, 4, 4),
+            (8, 8, 6),  # one thread per core: two cores left free
+            (2, 1, 1),
+            (8, None, 6),  # physical cores unknown: logical ones count
+        ],
+    )
+    def test_resolve_resources_auto(self, monkeypatch, logical, physical, expected):
         import os
 
+        import psutil
+
+        monkeypatch.setattr(os, "cpu_count", lambda: logical)
+        monkeypatch.setattr(
+            psutil, "cpu_count", lambda logical=True: (logical and 999) or physical
+        )
         p = ProcessingParams(resource_mode="auto")
         r = p.resolve_resources()
-        assert r["n_workers"] == max(1, (os.cpu_count() or 2) - 2)
+        assert r["n_workers"] == expected
         assert r["max_memory_gb"] is None
         assert r["nice_priority"] == -5
 

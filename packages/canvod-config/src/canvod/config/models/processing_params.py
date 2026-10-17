@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from typing import Literal
 
+import psutil
 from pydantic import Field, model_validator
 
 from .base import _StrictModel
@@ -221,15 +222,20 @@ class ProcessingParams(_StrictModel):
         dict
             Resolved resource values with keys: ``n_workers``,
             ``max_memory_gb``, ``cpu_affinity``, ``nice_priority``.
-            In auto mode with ``auto_uncapped=False``, ``n_workers`` is
-            ``max(1, cpu_count - 2)`` to leave headroom for the OS.
-            With ``auto_uncapped=True``, ``n_workers`` is ``None`` (no cap).
+            In auto mode with ``auto_uncapped=False``, ``n_workers`` is one
+            per physical CPU core, but at most ``cpu_count - 2`` to leave
+            headroom for the OS, and at least 1. A second hardware thread
+            per core (SMT) adds memory, one worker process each, but not
+            speed. With ``auto_uncapped=True``, ``n_workers`` is ``None``
+            (no cap).
         """
         if self.resource_mode == "auto":
             if self.auto_uncapped:
                 n_workers = None
             else:
-                n_workers = max(1, (os.cpu_count() or 2) - 2)
+                logical = os.cpu_count() or 2
+                physical = psutil.cpu_count(logical=False) or logical
+                n_workers = max(1, min(physical, logical - 2))
             return {
                 "n_workers": n_workers,
                 "max_memory_gb": self.max_memory_gb,

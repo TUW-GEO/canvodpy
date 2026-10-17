@@ -148,7 +148,7 @@ processing:
     # https://canvodpy.eu/guides/settings/#processing-params-resource_mode
     resource_mode: auto
 
-    # In auto mode, workers are capped at max(1, cpu_count - 2) to leave headroom.
+    # In auto mode, one worker per physical core, at most cpu_count - 2, at least 1.
     # Set auto_uncapped: true ONLY when the machine is exclusively yours.
     # WARNING: uncapped on a shared server can starve other users' processes.
     # https://canvodpy.eu/guides/settings/#processing-params-auto_uncapped
