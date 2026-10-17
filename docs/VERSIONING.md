@@ -75,10 +75,9 @@ version:
   pre-release. A notebook or script that installs canVODpy packages next
   to canvodpy pins each of them too: a package that nothing pins to its
   pre-release is installed at its last final version.
-- Tags carry the suffix (`v1.0.0b1`, `canvod-store-v1.0.0b1`). Pushing a
-  pre-release tag of canvodpy publishes the packages released at that
-  commit to TestPyPI, and the draft GitHub release is marked as a
-  pre-release. Publishing to PyPI stays a separate step
+- Tags carry the suffix (`v1.0.0b1`, `canvod-store-v1.0.0b1`), and the
+  draft GitHub release is marked as a pre-release. Publishing to PyPI
+  stays a separate step, as for a final version
   ([Releasing](RELEASING.md)).
 
 ---
