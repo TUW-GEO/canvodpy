@@ -46,7 +46,7 @@ DOWNLOAD_ATTEMPTS = 5
 # The Hugging Face dataset at one commit; a new commit means new archives.
 _HF_FILES = (
     "https://huggingface.co/datasets/nfb2021/canvodpy-demo-data/resolve/"
-    "96ee47a817460e2a21b815c2bf5a72618533cf9f/"
+    "ff65707ac41d6d416fa278633ffbdc4a23301f08/"
 )
 
 
@@ -122,7 +122,7 @@ ARCHIVES: tuple[DemoArchive, ...] = (
     DemoArchive(
         name="canvodpy-demo-run-history.zip",
         kind="run_history",
-        url=None,
+        url=_HF_FILES + "canvodpy-demo-run-history.zip",
         sha256="f4d87b3c67c8ee52dc9c46039f6a90012af451de28b83d3dc45299fb9ba2bac5",
         members=("run_history/run_history.sqlite",),
     ),
