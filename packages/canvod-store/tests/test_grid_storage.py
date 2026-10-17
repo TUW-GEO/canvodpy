@@ -371,7 +371,11 @@ def test_store_and_load_log_instead_of_printing(
     with capture_logs() as logs:
         store_grid(small_equal_area_grid, vod_store, "logged")
         load_grid(vod_store, "logged")
-    events = [(e["event"], e["group"], e["ncells"]) for e in logs]
+    events = [
+        (e["event"], e["group"], e["ncells"])
+        for e in logs
+        if e["event"] != "commit_parts"  # the commit's own timing
+    ]
     ncells = small_equal_area_grid.ncells
     assert events == [
         ("grid_stored", "grids/logged", ncells),

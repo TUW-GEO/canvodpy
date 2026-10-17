@@ -7,9 +7,11 @@ import time
 
 import icechunk
 import pytest
+import structlog
 import zarr
 from structlog.testing import capture_logs
 
+from canvod.store_metadata import io
 from canvod.store_metadata.io import (
     COMMIT_LOCK_NAME,
     commit_lock,
@@ -218,7 +220,7 @@ def _commit_script(store_path, body: str) -> str:
 class TestCommitLock:
     """Commits to one store run one after the other, also across processes."""
 
-    def test_commit_waits_for_another_process(self, tmp_path):
+    def test_commit_waits_for_another_process(self, tmp_path, monkeypatch):
         store_path = _store_with_metadata(tmp_path / "store")
         holder = subprocess.Popen(
             [
@@ -245,6 +247,9 @@ class TestCommitLock:
             zarr.open_group(session.store, mode="a").attrs["x"] = 1
             start = time.monotonic()
             with capture_logs() as logs:
+                # A logger made now logs into the capture, also when every
+                # commit before cached io's logger with the run's settings.
+                monkeypatch.setattr(io, "_logger", structlog.get_logger(io.__name__))
                 commit_with_rebase(session, "waits", store_path=store_path)
             assert time.monotonic() - start > 1
             assert logs[0]["event"] == "waiting_for_commit_lock"

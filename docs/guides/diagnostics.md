@@ -463,6 +463,16 @@ The events go to `machine/performance.json`. The dashboard draws events
 that carry a `date_key` (`YYYYDDD`) and a `receiver` or `analysis`
 field.
 
+Every commit to a store also writes a `commit_parts` event there, not a
+stage: the seconds it waited for the commit lock (`lock_wait_seconds`),
+opened the repository (`open_seconds`), checked the content settings
+(`content_check_seconds`) and the stored lockfile
+(`lockfile_check_seconds`), rebased (`rebase_seconds`), wrote the
+store metadata and snapshot summary (`summary_seconds`), committed
+(`icechunk_commit_seconds`) and released the lock
+(`lock_release_seconds`), with the commit message and the number of
+the commit in this process (`commit_number`).
+
 ---
 
 **Next in the trail:** [parallel processing](parallel-processing.md) · [configuration](configuration.md) · [architecture](../architecture.md)

@@ -189,7 +189,17 @@ def commit_with_rebase(
         If the run's content settings differ from the store's.
     """
     changes_repository = repository is not None
+    parts: dict[str, float] = {}
+    started = mark = time.perf_counter()
+
+    def lap(part: str) -> None:
+        nonlocal mark
+        now = time.perf_counter()
+        parts[f"{part}_seconds"] = now - mark
+        mark = now
+
     with commit_lock(store_path):
+        lap("lock_wait")
         repo = open_repository(store_path)
         if repository is None:
             repository = repo.get_metadata()
@@ -211,12 +221,15 @@ def commit_with_rebase(
             config = load_config()
         branch = session.branch
         stores_lockfile_first = not changes_repository and branch is not None
+        lap("open")
         if not changes_repository:
             _check_content_at_tip(repository, config, store_path)
+        lap("content_check")
         if stores_lockfile_first:
             store_lockfile(
                 repo, branch, repository, store_path=store_path, config=config
             )
+        lap("lockfile_check")
         # Rebase first, if the branch moved, so the summary describes
         # everything the commit will hold and the root group is changed by
         # this commit only.
@@ -224,6 +237,7 @@ def commit_with_rebase(
             branch is None or repo.lookup_branch(branch) != session.snapshot_id
         ):
             session.rebase(icechunk.ConflictDetector())
+        lap("rebase")
         root = zarr.open_group(session.store, mode="a")
         metadata = {
             **prepare_commit(
@@ -235,11 +249,46 @@ def commit_with_rebase(
             ),
             **(metadata or {}),
         }
+        lap("summary")
         if not rebase:
-            return session.commit(message, metadata=metadata)
-        return session.commit(
-            message, metadata=metadata, rebase_with=icechunk.ConflictDetector()
-        )
+            snapshot_id = session.commit(message, metadata=metadata)
+        else:
+            snapshot_id = session.commit(
+                message, metadata=metadata, rebase_with=icechunk.ConflictDetector()
+            )
+        lap("icechunk_commit")
+    lap("lock_release")
+    _log_commit_parts(store_path, message, time.perf_counter() - started, parts)
+    return snapshot_id
+
+
+#: Commits of this process per store, for :func:`_log_commit_parts`.
+_commit_counts: dict[str, int] = {}
+
+
+def _log_commit_parts(
+    store_path: StoreLocation | Path | str,
+    message: str,
+    seconds: float,
+    parts: Mapping[str, float],
+) -> None:
+    """Log the seconds of a commit's parts as the event ``commit_parts``.
+
+    Into the JSON log only (``machine/performance.json``), not as a stage
+    of the run history. ``commit_number`` counts this process's commits to
+    the store, so slow first commits can be told from slow commits.
+    """
+    store = str(store_location(store_path))
+    with _locks_guard:
+        number = _commit_counts[store] = _commit_counts.get(store, 0) + 1
+    _logger.info(
+        "commit_parts",
+        store=store,
+        message=message,
+        commit_number=number,
+        duration_seconds=round(seconds, 4),
+        **{part: round(value, 4) for part, value in parts.items()},
+    )
 
 
 def store_lockfile(
