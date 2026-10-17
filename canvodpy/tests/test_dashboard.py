@@ -7,7 +7,11 @@ asserting the exporter exits 0.
 """
 
 import io
+import json
 import os
+import re
+import shutil
+import sqlite3
 import statistics
 import subprocess
 import sys
@@ -15,11 +19,14 @@ import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+from canvodpy.cli.dashboards.charts import chart_categories, chart_palette, time_bars
 from canvodpy.cli.dashboards.comparison import build_comparison
 from canvodpy.cli.dashboards.export import export_zip
 from canvodpy.run_history import RunHistory
 
 import canvodpy
+from canvod.utils import testing
 
 
 def _seed(log_dir: Path) -> dict[str, list[float]]:
@@ -400,3 +407,132 @@ def test_dashboard_download_comparison(tmp_path: Path) -> None:
         zf.extractall(unzipped)
     with RunHistory.open(unzipped, read_only=True) as copy:
         assert sorted(run.run_id for run in copy.runs()) == sorted(comparison.run_ids)
+
+
+# The anonymized example run history in the test data: nine finished runs
+# of one site, seven days of two receivers with 1 to 126 workers, labeled
+# pilot-w001 ... pilot-w126 and pilot-warmup. The demo notebook shows it.
+EXAMPLE = (
+    Path(__file__).resolve().parents[2]
+    / "packages/canvod-readers/tests/test_data/valid/run_history"
+)
+needs_example = pytest.mark.skipif(
+    not (EXAMPLE / "run_history.sqlite").exists(),
+    reason="the test data has no example run history",
+)
+
+
+def _example_copy(tmp_path: Path) -> Path:
+    """A copy of the example log folder, so no test writes to the test data."""
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    shutil.copy(EXAMPLE / "run_history.sqlite", log_dir / "run_history.sqlite")
+    return log_dir
+
+
+@needs_example
+def test_example_history_names_no_person_machine_or_place() -> None:
+    # Every text value of every table: no home folder, no e-mail but the
+    # persona's; the runs carry the persona, its site and the example machine.
+    path = EXAMPLE / "run_history.sqlite"
+    with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as db:
+        tables = [
+            row[0]
+            for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+        ]
+        texts = [
+            value
+            for table in tables
+            for row in db.execute(f"SELECT * FROM {table}")
+            for value in row
+            if isinstance(value, str)
+        ]
+        runs = db.execute("SELECT site, host, settings, machine FROM runs").fetchall()
+        file_index = db.execute("SELECT count(*) FROM file_index").fetchone()[0]
+
+    joined = "\n".join(texts)
+    assert not re.search(r"/(home|Users)/", joined)
+    emails = set(re.findall(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", joined))
+    assert emails <= {testing.PERSON_EMAIL}
+    assert file_index == 0
+    for site, host, settings, machine in runs:
+        assert site == testing.SITE_KEY
+        assert host == "example-host"
+        metadata = json.loads(settings)["processing"]["metadata"]
+        assert metadata["author"] == testing.PERSON_NAME
+        assert metadata["orcid"] == testing.PERSON_ORCID
+        assert json.loads(settings)["processing"]["references"]["funding"] == []
+        site_settings = json.loads(settings)["sites"]["sites"][testing.SITE_KEY]
+        assert site_settings["latitude"] == testing.LATITUDE
+        assert json.loads(machine)["cpu_model"] == "Example CPU"
+
+
+@needs_example
+def test_dashboard_exports_the_example_history(tmp_path: Path) -> None:
+    app_dir = tmp_path / "app"
+    app_dir.mkdir()
+    result = _export(_example_copy(tmp_path), app_dir)
+    assert result.returncode == 0, result.stderr + result.stdout
+
+
+@needs_example
+def test_example_comparison_has_one_group_per_worker_count(tmp_path: Path) -> None:
+    with RunHistory.open(_example_copy(tmp_path), read_only=True) as history:
+        comparison = build_comparison(history)
+    labels = sorted(row["Label"] for row in comparison.group_rows)
+    assert labels == [
+        "pilot-w001",
+        "pilot-w002",
+        "pilot-w004",
+        "pilot-w008",
+        "pilot-w016",
+        "pilot-w032",
+        "pilot-w064",
+        "pilot-w126",
+        "pilot-warmup",
+    ]
+    assert all(row["Runs"] == 1 for row in comparison.group_rows)
+
+
+def _lightness(color: str) -> float:
+    """Relative luminance of a "#RRGGBB" color (WCAG)."""
+    channels = [int(color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
+    linear = [
+        c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels
+    ]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+@pytest.mark.parametrize("count", [2, 3, 8, 12])
+def test_ordered_colors_get_lighter_along_the_labels(count: int) -> None:
+    colors = chart_palette(count)
+    assert len(colors) == len(set(colors)) == count
+    lightness = [_lightness(color) for color in colors]
+    assert lightness[0] < lightness[-1]
+    assert lightness == sorted(lightness)
+
+
+def test_unordered_colors_are_the_four_then_the_ordered_ones() -> None:
+    four = chart_categories(4)
+    assert chart_categories(2) == four[:2]
+    assert len(set(four)) == 4
+    assert chart_categories(5) == chart_palette(5)
+
+
+def test_linear_time_axis_starts_at_zero_and_keeps_every_row() -> None:
+    rows = [{"Seconds": 0.0}, {"Seconds": 3.0}]
+    kept, encoding = time_bars("y", "Seconds", "Time (s)", rows, "linear")
+    assert kept == rows
+    assert set(encoding) == {"y"}
+    assert encoding["y"].to_dict()["scale"] == {"type": "linear", "zero": True}
+
+
+def test_log_time_axis_spans_whole_decades_and_drops_zero() -> None:
+    # A log axis has no zero: the row without time is left out, the axis
+    # runs from the decade below the shortest time to the one above the
+    # longest, and the bars start at its bottom.
+    rows = [{"Seconds": 0.0}, {"Seconds": 0.4}, {"Seconds": 60.0}]
+    kept, encoding = time_bars("x", "Seconds", "Time (s)", rows, "log")
+    assert kept == rows[1:]
+    assert encoding["x"].to_dict()["scale"] == {"type": "log", "domain": [0.1, 100]}
+    assert encoding["x2"].to_dict() == {"datum": 0.1}

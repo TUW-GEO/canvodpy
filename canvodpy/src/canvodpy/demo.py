@@ -35,7 +35,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-DemoKind = Literal["rinex", "sbf", "aux"]
+DemoKind = Literal["rinex", "sbf", "aux", "run_history"]
 
 DEMO_DATA_VERSION = "1"
 """Folder name under the cache; raise it when the archives change."""
@@ -119,6 +119,13 @@ ARCHIVES: tuple[DemoArchive, ...] = (
             "aux_data/aux_2025001.zarr/**/*",
         ),
     ),
+    DemoArchive(
+        name="canvodpy-demo-run-history.zip",
+        kind="run_history",
+        url=None,
+        sha256="f4d87b3c67c8ee52dc9c46039f6a90012af451de28b83d3dc45299fb9ba2bac5",
+        members=("run_history/run_history.sqlite",),
+    ),
 )
 
 
@@ -134,10 +141,12 @@ def demo_data(kind: DemoKind, *, cache_dir: Path | None = None) -> Path:
 
     Parameters
     ----------
-    kind : {"rinex", "sbf", "aux"}
+    kind : {"rinex", "sbf", "aux", "run_history"}
         ``"rinex"``: RINEX v3.04 of both receivers, the whole day.
         ``"sbf"``: SBF of both receivers, 00:00 to 02:00.
         ``"aux"``: SP3 and CLK files and the auxiliary store.
+        ``"run_history"``: an anonymized run history of nine runs, a log
+        folder for the run dashboard (``<folder>/run_history``).
     cache_dir : Path, optional
         Where to keep the data. Default: the user cache folder of
         canvodpy (``default_cache_dir()``).
