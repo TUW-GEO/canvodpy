@@ -23,7 +23,7 @@ def _repository(store_path) -> dict:
     ).get_metadata()
 
 
-def _observations() -> xr.Dataset:
+def _observations(source_format: str | None = "rinex3") -> xr.Dataset:
     epochs = np.datetime64("2025-01-01T00:00:00") + np.arange(4) * np.timedelta64(
         5, "s"
     )
@@ -33,7 +33,8 @@ def _observations() -> xr.Dataset:
             "epoch": ("epoch", epochs, {"time_system": "GPS"}),
             "sid": ["G01|L1|C", "G02|L1|C"],
         },
-        attrs={"File Hash": "hash-canopy_01"},
+        attrs={"File Hash": "hash-canopy_01"}
+        | ({} if source_format is None else {"Source Format": source_format}),
     )
 
 
@@ -130,6 +131,34 @@ class TestResearchSite:
         repository = _repository(site.gnss_store.store_path)
         assert repository["identity"]["id"] == f"{testing.SITE_KEY}-gnss"
         assert "canopy_01" in site.gnss_store.list_groups()
+
+    def test_a_new_store_records_the_format_of_the_reader_never_auto(
+        self, site_settings
+    ):
+        # The settings leave reader_format at "auto"; the dataset names the
+        # format of the reader that read it, as a run records it (#328).
+        site = GnssResearchSite(testing.SITE_KEY)
+
+        with pytest.warns(FutureWarning, match="canvodpy run"):
+            site.ingest_receiver_data(
+                _observations(source_format="sbf"), "canopy_01", "first day"
+            )
+
+        repository = _repository(site.gnss_store.store_path)
+        assert repository["identity"]["source_format"] == "sbf"
+
+    def test_data_without_its_readers_format_is_refused_naming_the_receiver(
+        self, site_settings
+    ):
+        site = GnssResearchSite(testing.SITE_KEY)
+
+        with (
+            pytest.warns(FutureWarning, match="canvodpy run"),
+            pytest.raises(ValueError, match="canopy_01"),
+        ):
+            site.ingest_receiver_data(
+                _observations(source_format=None), "canopy_01", "first day"
+            )
 
     def test_vod_of_an_unlisted_analysis_is_refused(self, site_settings):
         site = GnssResearchSite(testing.SITE_KEY)

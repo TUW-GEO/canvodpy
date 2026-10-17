@@ -1,6 +1,12 @@
-"""FluentWorkflow.to_store gives a new store its metadata first (#214)."""
+"""FluentWorkflow.to_store gives a new store its metadata first (#214).
+
+The store records the format of the reader that read the files, as a run
+records it (#328).
+"""
 
 from __future__ import annotations
+
+from types import SimpleNamespace
 
 import icechunk
 import numpy as np
@@ -11,7 +17,7 @@ from canvodpy.fluent import FluentWorkflow
 from canvod.utils import testing
 
 
-def _observations(receiver: str) -> xr.Dataset:
+def _observations(receiver: str, source_format: str | None = "rinex3") -> xr.Dataset:
     epochs = np.datetime64("2025-01-01T00:00:00") + np.arange(4) * np.timedelta64(
         5, "s"
     )
@@ -21,7 +27,8 @@ def _observations(receiver: str) -> xr.Dataset:
             "epoch": ("epoch", epochs, {"time_system": "GPS"}),
             "sid": ["G01|L1|C", "G02|L1|C"],
         },
-        attrs={"File Hash": f"hash-{receiver}", "receiver": receiver},
+        attrs={"File Hash": f"hash-{receiver}", "receiver": receiver}
+        | ({} if source_format is None else {"Source Format": source_format}),
     )
 
 
@@ -57,6 +64,54 @@ class TestGnssStore:
 
         with pytest.raises(ValueError, match="--add-receiver canopy_02"):
             _workflow(canopy_02=1).to_store()
+
+
+class _Rinex2Reader:
+    """A reader of the registry name ``rinex_v2`` whose format is ``rinex2``."""
+
+    source_format = "rinex2"
+
+    def __init__(self, fpath) -> None:
+        self.receiver = fpath
+
+    def to_ds(self, write_global_attrs: bool = True) -> xr.Dataset:
+        return _observations(self.receiver, source_format=None)
+
+
+class TestSourceFormat:
+    def test_a_new_store_records_the_readers_format_not_its_name(
+        self, site_settings, monkeypatch
+    ):
+        import canvodpy.fluent
+        import canvodpy.workflows.tasks
+
+        monkeypatch.setattr(
+            canvodpy.workflows.tasks,
+            "_day_files",
+            lambda *args: {"canopy_01": [SimpleNamespace(path="canopy_01")]},
+        )
+        monkeypatch.setattr(
+            canvodpy.fluent.ReaderFactory,
+            "create",
+            lambda name, fpath: _Rinex2Reader(fpath),
+        )
+        workflow = FluentWorkflow(
+            site=testing.SITE_KEY, reader="rinex_v2", keep_vars=["SNR"]
+        )
+
+        workflow.read("2025001", receivers=["canopy_01"]).to_store()
+
+        repository = _repository(workflow._site.gnss_store.store_path)
+        assert repository["identity"]["source_format"] == "rinex2"
+
+    def test_data_without_its_readers_format_is_refused_naming_the_receiver(
+        self, site_settings
+    ):
+        workflow = _workflow(canopy_01=1)
+        workflow._datasets["canopy_01"].attrs.pop("Source Format")
+
+        with pytest.raises(ValueError, match="canopy_01"):
+            workflow.to_store()
 
 
 class TestVodStore:

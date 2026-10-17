@@ -224,6 +224,7 @@ class FluentWorkflow:
         log = self.log.bind(date=date)
 
         from canvod.config import load_config
+        from canvodpy.orchestrator.processor import SOURCE_FORMAT_ATTR
         from canvodpy.workflows.tasks import _day_files, _resolve_date
 
         reader_format = _READER_FILE_FORMATS.get(self._reader_name)
@@ -249,6 +250,8 @@ class FluentWorkflow:
             for file in files:
                 reader_obj = ReaderFactory.create(self._reader_name, fpath=file.path)
                 ds = reader_obj.to_ds(write_global_attrs=True)
+                # As a run does: the store records the reader's format.
+                ds.attrs[SOURCE_FORMAT_ATTR] = reader_obj.source_format
 
                 # Filter variables
                 if self._keep_vars:
@@ -425,8 +428,8 @@ class FluentWorkflow:
         ------
         ValueError
             If no VOD analysis of the settings pairs the ``.vod()``
-            receivers, or the store refuses the write (names the command
-            to run).
+            receivers, a dataset does not name the format of its reader,
+            or the store refuses the write (names the command to run).
         """
         research_site = self._site._site
         if self._vod_result is not None:
@@ -439,8 +442,13 @@ class FluentWorkflow:
                 self._vod_result, f"{self._vod_calculator_name}/{analysis}"
             )
         else:
+            from canvodpy.orchestrator.processor import _source_format_of
+
+            receivers = list(self._datasets)
             research_site.ensure_store_metadata(
-                "gnss_store", list(self._datasets), self._reader_name
+                "gnss_store",
+                receivers,
+                _source_format_of(self._datasets.values(), receivers),
             )
             for name, ds in self._datasets.items():
                 self.log.info("to_store_dataset", receiver=name)
