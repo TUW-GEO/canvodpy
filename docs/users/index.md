@@ -5,6 +5,11 @@ description: Install canVODpy, describe your site and data in canvod-settings.ya
 
 # Retrieve VOD from your GNSS data
 
+!!! warning "Upgrading from 0.x?"
+
+    Migrate your stores and check your settings first:
+    [Upgrading to v1.0.0](../guides/upgrading.md).
+
 There are two ways to run canVODpy, and they're equivalent:
 
 - **From the command line**, with `canvodpy run`. This suits processing

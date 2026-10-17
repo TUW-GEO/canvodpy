@@ -21,6 +21,12 @@ to PyPI.
 - canvod-filemap is taken from a tag or commit of canvodpy-extensions, not
   a branch (root `pyproject.toml`, see the `extensions-dependency` guide).
 - Deprecated code stays in every 1.x release; v2.0.0 removes it.
+- A major release (and its pre-releases) has an upgrade guide,
+  `docs/guides/upgrading.md` for v1.0.0: stores to migrate, changed
+  settings and behavior, everything deprecated, what is new. The notices
+  in `README.md` (also the PyPI page), `docs/index.md`,
+  `docs/users/index.md`, the release's `CHANGELOG.md` section and the
+  GitHub release notes (Zenodo takes its text from them) link it.
 - `just check` and `just test` pass.
 - The release files (`pyproject.toml` files, `uv.lock`, the `CHANGELOG.md`
   files, `CITATION.cff`, `.zenodo.json`, `codemeta.json`) have no

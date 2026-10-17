@@ -35,6 +35,7 @@ nav = [
 
   { "Retrieve VOD" = [
     { "Start here" = "users/index.md" },
+    { "Upgrading to v1.0.0" = "guides/upgrading.md" },
     { "Configure" = [
       { "Settings file" = "guides/configuration.md" },
       { "Settings reference" = "guides/settings.md" },

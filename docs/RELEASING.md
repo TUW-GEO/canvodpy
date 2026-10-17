@@ -31,7 +31,7 @@ increment of each package you release:
 |------|-------------|---------|-------------|
 | Patch | `1.1.X` | 1.1.0 $\rightarrow$ 1.1.1 | Bug fixes only, fully backwards compatible |
 | Minor | `1.X.0` | 1.1.0 $\rightarrow$ 1.2.0 | New features, backwards compatible |
-| Major | `X.0.0` | 1.4.0 $\rightarrow$ 2.0.0 | Breaking changes; requires a migration guide |
+| Major | `X.0.0` | 1.4.0 $\rightarrow$ 2.0.0 | Breaking changes; requires an upgrade guide ([Upgrading to v1.0.0](guides/upgrading.md) is the one for v1.0.0), linked from the README, the docs landing page, the changelog, and the release notes |
 
 canvodpy is part of every release, and its increment is at least the
 largest of the packages released with it.
