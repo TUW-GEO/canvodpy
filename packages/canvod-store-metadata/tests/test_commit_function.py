@@ -451,3 +451,47 @@ class TestCheck:
             commit_with_rebase(session, "write", store_path=path, config=_CONFIG)
 
         assert repo.lookup_branch("main") == before
+
+
+class TestCommitParts:
+    """Each commit logs the seconds of its parts (JSON log only, not a stage)."""
+
+    PARTS = (
+        "lock_wait_seconds",
+        "open_seconds",
+        "content_check_seconds",
+        "lockfile_check_seconds",
+        "rebase_seconds",
+        "summary_seconds",
+        "icechunk_commit_seconds",
+        "lock_release_seconds",
+    )
+
+    def test_a_commit_logs_its_parts_and_its_number_in_the_process(
+        self, tmp_path, monkeypatch
+    ):
+        import structlog
+        from structlog.testing import capture_logs
+
+        from canvod.store_metadata import io
+
+        path = _store(tmp_path)
+        with capture_logs() as logs:
+            # A logger made now logs into the capture, also when an earlier
+            # test configured structlog to cache its loggers.
+            monkeypatch.setattr(io, "_logger", structlog.get_logger(io.__name__))
+            _commit(path, lambda s: _write_receiver(s, "canopy_01", "2025-01-01", 4))
+            _commit(path, lambda s: _write_receiver(s, "reference_01", "2025-01-01", 4))
+
+        events = [e for e in logs if e["event"] == "commit_parts"]
+        assert [e["message"] for e in events] == ["write", "write"]
+        first, second = events
+        assert second["commit_number"] == first["commit_number"] + 1
+        for event in events:
+            assert event["store"] == str(path)
+            assert all(event[part] >= 0 for part in self.PARTS)
+            # The parts make up the commit (each rounded to 0.1 ms).
+            assert sum(event[part] for part in self.PARTS) == pytest.approx(
+                event["duration_seconds"], abs=1e-3
+            )
+            assert "stage" not in event  # not a stage_timing row

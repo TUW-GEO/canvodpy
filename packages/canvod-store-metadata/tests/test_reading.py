@@ -143,6 +143,7 @@ class TestShowMetadata:
         path = _store(tmp_path)
         _commit(path, "canopy_01")
         _commit(path, "reference_01")
+        capsys.readouterr()  # the commits' own log lines are not the history
 
         show_metadata(path)
 
