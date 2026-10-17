@@ -376,7 +376,7 @@ class GnssResearchSite:
             return []
 
     def ensure_store_metadata(
-        self, store_type: str, names: Sequence[str], source_format: str
+        self, store_type: str, names: Sequence[str], source_format: str | None
     ) -> dict[str, Any]:
         """Make a store of the site ready for data: the step every run takes first.
 
@@ -390,9 +390,10 @@ class GnssResearchSite:
         names : Sequence[str]
             The groups about to be written: receivers and their pair groups,
             or VOD analyses.
-        source_format : str
+        source_format : str | None
             The reader format (GNSS store) or VOD calculator (VOD store) a
-            new store records.
+            new store records; ``None`` if unknown, which only a store with
+            metadata accepts.
 
         Returns
         -------
@@ -402,9 +403,9 @@ class GnssResearchSite:
         Raises
         ------
         ValueError
-            If the store predates repository metadata (names the migrate
-            command), or a group is not listed in it (names the amend
-            command).
+            If the store is new and ``source_format`` is ``None``, the store
+            predates repository metadata (names the migrate command), or a
+            group is not listed in it (names the amend command).
         """
         from canvod.store_metadata import ensure_store_metadata
 
@@ -450,7 +451,9 @@ class GnssResearchSite:
         Parameters
         ----------
         dataset : xr.Dataset
-            Processed RINEX dataset to store.
+            Processed RINEX dataset to store. Its attribute
+            ``"Source Format"`` names the format of the reader that read it,
+            which a new store records.
         receiver_name : str
             Name of the receiver (must be configured).
         commit_message : str, optional
@@ -459,7 +462,8 @@ class GnssResearchSite:
         Raises
         ------
         ValueError
-            If ``receiver_name`` is not configured.
+            If ``receiver_name`` is not configured, or the store is new and
+            the dataset does not name its reader's format.
         """
         if receiver_name not in self.receivers:
             available_receivers = list(self.receivers.keys())
@@ -468,15 +472,14 @@ class GnssResearchSite:
                 f"Available: {available_receivers}"
             )
 
+        # The format of the reader that read the data, as a run sets it
+        # (``GNSSDataReader.source_format``); a new store refuses None.
+        source_format = dataset.attrs.get("Source Format")
         dataset = self.add_receiver_metadata(dataset, receiver_name)
 
         self._logger.info(f"Ingesting RINEX data for receiver '{receiver_name}'")
 
-        self.ensure_store_metadata(
-            "gnss_store",
-            [receiver_name],
-            self._site_config.receivers[receiver_name].reader_format,
-        )
+        self.ensure_store_metadata("gnss_store", [receiver_name], source_format)
         self.gnss_store.write_or_append_group(
             dataset=dataset, group_name=receiver_name, commit_message=commit_message
         )
