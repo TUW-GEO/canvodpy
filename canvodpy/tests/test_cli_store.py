@@ -490,12 +490,15 @@ def _write_old_form_store(
     *,
     complete=True,
     store_type="gnss_store",
+    source="rinex3",
 ) -> None:
     """A store as canVODpy wrote it before ADR 0014: one canvod_metadata attr.
 
     ``complete=False`` leaves out what older stores lack: description,
     publisher, license and site position. A VOD store holds a VOD array
-    with the attributes older versions wrote.
+    with the attributes older versions wrote. As in canVODpy 0.x, the
+    epochs record no time scale, and a group read from RINEX files records
+    the RINEX version (``source="sbf"`` writes a group read from SBF).
     """
     import icechunk
     import zarr
@@ -527,7 +530,7 @@ def _write_old_form_store(
             description="Test site observations." if complete else None,
             keywords=["GNSS"],
             store_type=store_type,
-            source_format="rinex3",
+            source_format=source,
             naming_authority=naming_authority,
         ),
         creator=Creator(name="A", email="a@example.com", institution="B"),
@@ -571,6 +574,11 @@ def _write_old_form_store(
             "sid": ["G01|L1|C", "G02|L1|C"],
             "system": ("sid", ["G", "G"]),
         },
+        attrs=(
+            {"RINEX Version": 3.04}
+            if store_type == "gnss_store" and source.startswith("rinex")
+            else {}
+        ),
     ).to_zarr(session.store, group=group, consolidated=False)
     session.commit("old form")
 
@@ -847,6 +855,7 @@ class TestStoreMigrateMetadata:
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
         store_path = stores_root / "TestSite" / "vod"
+        _write_old_form_store(stores_root / "TestSite" / "rinex")
         _write_old_form_store(store_path, store_type="vod_store")
 
         result = runner.invoke(
@@ -875,6 +884,288 @@ class TestStoreMigrateMetadata:
         assert repo.get_metadata()["migration"]["variables_replaced"] == [
             "tau_omega/canopy_01_vs_reference_01/VOD"
         ]
+
+    def _epoch_time_systems(self, store_path) -> dict[str, object]:
+        """The time scale each data group's epochs record, by group."""
+        import zarr
+
+        from canvod.store_metadata.location import open_repository, store_location
+
+        repo = open_repository(store_location(store_path))
+        root = zarr.open_group(repo.readonly_session(branch="main").store, mode="r")
+        return {
+            path: node["epoch"].attrs.get("time_system")
+            for path, node in root.members(max_depth=None)
+            if isinstance(node, zarr.Group) and "epoch" in node
+        }
+
+    def _migrate(self, config_dir, store="gnss", *args):
+        loader_module.load_config.cache_clear()
+        return runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", store, "--yes", *args],
+            env=_env(config_dir),
+        )
+
+    def test_rinex_epochs_are_labelled_gps_time(self, tmp_path):
+        """canVODpy 0.x stored RINEX epochs as read: GPS time, unlabelled."""
+        config_dir, store_path = self._setup(tmp_path)
+
+        result = self._migrate(config_dir)
+
+        assert result.exit_code == 0, result.output
+        assert "GPS time" in result.output
+        assert self._epoch_time_systems(store_path) == {"canopy_01": "GPS"}
+        again = self._migrate(config_dir)
+        assert again.exit_code == 0, again.output
+        assert "already migrated" in again.output
+
+    def test_sbf_epochs_refuse_the_migration(self, tmp_path):
+        """canVODpy 0.x stored SBF epochs in UTC: rebuilt, never shifted."""
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        store_path = stores_root / "TestSite" / "rinex"
+        _write_old_form_store(store_path, source="sbf")
+
+        result = self._migrate(config_dir)
+
+        assert result.exit_code == 1, result.output
+        assert "canopy_01" in result.output
+        assert "UTC" in result.output
+        assert "raw files" in result.output
+        from canvod.store_metadata import metadata_exists
+
+        assert not metadata_exists(store_path)
+
+    def test_vod_epochs_are_labelled_after_the_gnss_store(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        _write_old_form_store(stores_root / "TestSite" / "rinex")
+        store_path = stores_root / "TestSite" / "vod"
+        _write_old_form_store(store_path, store_type="vod_store")
+
+        result = self._migrate(
+            config_dir, "vod", "--set", "gnss_content_hash=" + "a" * 64
+        )
+
+        assert result.exit_code == 0, result.output
+        assert self._epoch_time_systems(store_path) == {
+            "tau_omega/canopy_01_vs_reference_01": "GPS"
+        }
+
+    def test_vod_epochs_from_sbf_refuse_the_migration(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        _write_old_form_store(stores_root / "TestSite" / "rinex", source="sbf")
+        store_path = stores_root / "TestSite" / "vod"
+        _write_old_form_store(store_path, store_type="vod_store")
+
+        result = self._migrate(
+            config_dir, "vod", "--set", "gnss_content_hash=" + "a" * 64
+        )
+
+        assert result.exit_code == 1, result.output
+        assert "raw files" in result.output
+        from canvod.store_metadata import metadata_exists
+
+        assert not metadata_exists(store_path)
+
+    def test_missing_fields_come_from_the_settings(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        settings = yaml.safe_load((config_dir / "canvod-settings.yaml").read_text())
+        settings["processing"]["metadata"].update(
+            {
+                "publisher": "B",
+                "publisher_url": "https://b.example",
+                "license": "CC-BY-4.0",
+            }
+        )
+        settings["sites"]["TestSite"].update(
+            {
+                "store_description": "Test site observations.",
+                "latitude": testing.LATITUDE,
+                "longitude": testing.LONGITUDE,
+            }
+        )
+        (config_dir / "canvod-settings.yaml").write_text(yaml.safe_dump(settings))
+        store_path = stores_root / "TestSite" / "rinex"
+        _write_old_form_store(store_path, complete=False)
+
+        result = self._migrate(config_dir, "gnss", "--set", "publisher.name=C")
+
+        assert result.exit_code == 0, result.output
+        assert "from the settings" in result.output
+        from canvod.store_metadata import read_metadata, validate_all
+
+        meta = read_metadata(store_path)
+        assert meta.identity.description == "Test site observations."
+        assert meta.publisher.name == "C"
+        assert str(meta.publisher.url).rstrip("/") == "https://b.example"
+        assert meta.spatial.geospatial_lat == testing.LATITUDE
+        assert not any(validate_all(meta, recommended=False).values())
+
+    def test_the_gnss_content_hash_comes_from_the_sites_gnss_store(self, tmp_path):
+        """The stores were moved: the recorded GNSS store path is gone."""
+        from canvod.store_metadata import read_repository_metadata
+
+        config_dir = tmp_path / "config"
+        old_root = tmp_path / "stores"
+        _write_config(config_dir, old_root)
+        _write_old_form_store(old_root / "TestSite" / "rinex")
+        _write_old_form_store(old_root / "TestSite" / "vod", store_type="vod_store")
+        new_root = tmp_path / "moved"
+        old_root.rename(new_root)
+        _write_config(config_dir, new_root)
+        assert self._migrate(config_dir, "gnss").exit_code == 0
+
+        result = self._migrate(config_dir, "vod")
+
+        assert result.exit_code == 0, result.output
+        gnss = read_repository_metadata(new_root / "TestSite" / "rinex")
+        vod = read_repository_metadata(new_root / "TestSite" / "vod")
+        assert (
+            vod["content_settings"]["gnss_content_hash"]
+            == gnss["content_settings"]["hash"]
+        )
+
+    def test_a_gnss_store_without_content_settings_lists_the_hash(self, tmp_path):
+        """The VOD store waits for the GNSS store's content settings."""
+        from canvod.store_metadata import migrate_metadata
+
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        _write_old_form_store(stores_root / "TestSite" / "rinex")
+        _write_old_form_store(stores_root / "TestSite" / "vod", store_type="vod_store")
+        migrate_metadata(stores_root / "TestSite" / "rinex", who="JD")
+
+        result = self._migrate(config_dir, "vod")
+
+        assert result.exit_code == 1, result.output
+        assert "gnss_content_hash" in result.output
+
+    def test_preprocessing_the_data_do_not_show_is_not_recorded(self, tmp_path):
+        """canVODpy 0.x recorded preprocessing settings its runs never applied."""
+        from canvod.store_metadata import read_repository_metadata
+
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        path = config_dir / "canvod-settings.yaml"
+        plain = path.read_text()
+        settings = yaml.safe_load(plain)
+        settings["processing"]["preprocessing"] = {
+            "temporal_aggregation": {
+                "enabled": True,
+                "freq": "1min",
+                "method": "mean",
+                "integer_method": "first",
+            }
+        }
+        path.write_text(yaml.safe_dump(settings))
+        store_path = stores_root / "TestSite" / "rinex"
+        _write_old_form_store(store_path)
+        path.write_text(plain)
+
+        result = self._migrate(config_dir)
+
+        assert result.exit_code == 0, result.output
+        content = read_repository_metadata(store_path)["content_settings"]
+        assert content["settings"]["processing"]["preprocessing"] is None
+
+    def test_vod_analyses_come_from_the_groups_of_the_store(self, tmp_path):
+        """canVODpy 0.x listed no VOD analyses; its groups show them."""
+        from canvod.store_metadata import read_repository_metadata
+
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        path = config_dir / "canvod-settings.yaml"
+        settings = yaml.safe_load(path.read_text())
+        settings["sites"]["TestSite"]["receivers"]["reference_01"] = {
+            "type": "reference",
+            "directory": "01_reference",
+            "paired_canopies": ["canopy_01"],
+        }
+        path.write_text(yaml.safe_dump(settings))
+        _write_old_form_store(stores_root / "TestSite" / "rinex")
+        store_path = stores_root / "TestSite" / "vod"
+        _write_old_form_store(store_path, store_type="vod_store")
+
+        result = self._migrate(
+            config_dir, "vod", "--set", "gnss_content_hash=" + "a" * 64
+        )
+
+        assert result.exit_code == 0, result.output
+        assert read_repository_metadata(store_path)["vod_analyses"] == {
+            "canopy_01_vs_reference_01": {
+                "canopy_receiver": "canopy_01",
+                "reference_receiver": "reference_01",
+            }
+        }
+
+    def test_stored_variables_decide_their_switches(self, tmp_path):
+        """canVODpy 0.x wrote delta_snr whatever store_delta_snr said."""
+        import icechunk
+        import zarr
+
+        from canvod.store_metadata import read_repository_metadata
+
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        _write_old_form_store(stores_root / "TestSite" / "rinex")
+        store_path = stores_root / "TestSite" / "vod"
+        _write_old_form_store(store_path, store_type="vod_store")
+        repo = icechunk.Repository.open(
+            icechunk.local_filesystem_storage(str(store_path))
+        )
+        session = repo.writable_session("main")
+        group = zarr.open_group(
+            session.store, mode="a", path="tau_omega/canopy_01_vs_reference_01"
+        )
+        vod = group["VOD"]
+        group.create_array(
+            "delta_snr",
+            shape=vod.shape,
+            dtype="f8",
+            dimension_names=("epoch", "sid"),
+        )
+        session.commit("as canVODpy 0.x wrote it")
+
+        result = self._migrate(
+            config_dir, "vod", "--set", "gnss_content_hash=" + "a" * 64
+        )
+
+        assert result.exit_code == 0, result.output
+        params = read_repository_metadata(store_path)["content_settings"]["settings"][
+            "processing"
+        ]["params"]
+        assert params["store_delta_snr"] is True
+        assert params["store_radial_diff"] is False
+        # The GNSS store records the VOD switches too, as the VOD data show.
+        assert self._migrate(config_dir, "gnss").exit_code == 0
+        gnss = read_repository_metadata(stores_root / "TestSite" / "rinex")
+        params = gnss["content_settings"]["settings"]["processing"]["params"]
+        assert params["store_delta_snr"] is True
+        assert params["store_radial_distance"] is False
+
+    def test_an_empty_value_is_refused(self, tmp_path):
+        config_dir, store_path = self._setup(tmp_path)
+
+        result = self._migrate(config_dir, "gnss", "--set", "identity.description=")
+
+        assert result.exit_code == 1, result.output
+        assert "identity.description" in result.output
+        assert "no value" in result.output
+        from canvod.store_metadata import metadata_exists
+
+        assert not metadata_exists(store_path)
 
 
 def _write_current_store(stores_root, site="TestSite") -> None:

@@ -229,6 +229,10 @@ that commit doesn't record, such as the `paired_canopies` of a reference
 receiver, isn't guessed: the command stops, lists it, and you give the
 value the data was written with, for example
 `--set sites.mysite.receivers.reference_01.paired_canopies=[canopy_01]`.
+A setting the data show, such as `processing.preprocessing` or
+`store_delta_snr`, is read from the data, since canVODpy 0.x recorded
+settings its runs didn't follow
+([Move an older store](../packages/store-metadata/overview.md#move-an-older-store-to-the-current-form)).
 
 ADR 0019 records why ([Decisions](../adr/index.md)).
 

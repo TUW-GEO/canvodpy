@@ -366,14 +366,39 @@ canvodpy store migrate-metadata ExampleSite --store gnss \
 The migration writes the repository metadata, gives the store its new id
 and a UUID, and keeps the old id in the migration record, with who
 migrated it and when. A migrated store must pass the standards checks
-like a new one. Fields it lacks, such as its description, are given with
-`--set`; otherwise the migration is refused and lists them. A license
+like a new one. Fields it lacks are taken from the settings, as a new
+store takes them: the site's `store_description`, the publisher and
+license, the site's latitude and longitude. The command marks each one
+`(from the settings)`. A field neither the store nor the settings hold is
+given with `--set`; otherwise the migration is refused and lists it. A
+value given with `--set` wins over the settings, and `--set FIELD=` with
+no value is refused. A license
 outside SPDX, or another value that breaks a metadata rule, is refused
 too, naming the field to give, for example
 `--set publisher.license=Apache-2.0`. A computed value that breaks a
 rule, such as a duration, only warns: the migration computes it again. In a VOD
-store, the attributes of `VOD` are replaced with the current ones.
+store, the attributes of `VOD` are replaced with the current ones, and
+each VOD analysis the store holds a group of (`tau_omega/<analysis>`) is
+listed, with its receivers from the settings (canVODpy 0.x listed none).
 Snapshots from before the migration stay readable.
+
+canVODpy 0.x stored epochs without recording their time scale. Every
+stored epoch is GPS time now, and a write refuses a group whose epochs
+don't record it (`epoch.attrs["time_system"]`). The migration records it
+where it can tell:
+
+- A GNSS group read from RINEX files (it holds the attribute
+  `RINEX Version`) holds the epochs as the files give them, GPS time.
+- A VOD group holds the epochs of the site's GNSS store: it's GPS time
+  when every group of that store is.
+- A GNSS group read from SBF or NMEA files holds UTC epochs, 18 s behind
+  GPS time. The migration stops before it writes anything. The epochs
+  aren't shifted, because the epoch grid and the satellite positions were
+  computed for the old epochs: rebuild the store from the raw files.
+
+Only the attribute changes; the epochs stay as stored. In Python,
+`label_epoch_time_system()` from `canvod.store_metadata.migration` does
+the same.
 
 A GNSS store also gets its
 [content settings](../../guides/configuration.md#content-settings-fixed-for-each-store)
@@ -382,7 +407,21 @@ before: runs refuse a GNSS store without them. The command takes them
 from the settings recorded in the store's first commit, and each
 receiver's type and reader format from the repository metadata. A
 setting that commit doesn't record is not guessed: the command stops and
-lists it. The `paired_canopies` of a reference receiver is never
+lists it.
+
+A setting the data show is read from the data instead, because canVODpy
+0.x recorded settings its runs didn't follow:
+
+- `processing.preprocessing` is none (`null`) when no group shows a
+  preprocessing step. canVODpy 0.x recorded its preprocessing settings
+  with every run, but `canvodpy run` never applied them.
+- `store_radial_distance` is whether the GNSS groups hold `r`;
+  `store_delta_snr` and `store_radial_diff` are whether the site's VOD
+  groups hold `delta_snr` and `radial_diff` (canVODpy 0.x always wrote
+  `delta_snr`). Groups that disagree make the command list the setting,
+  to give with `--set`.
+
+The `paired_canopies` of a reference receiver is never
 recorded, so give it with the value the data was written with, by its
 key in `canvod-settings.yaml`:
 
@@ -398,9 +437,12 @@ A VOD store also gets its content settings (ADR 0019): the settings that
 shape the VOD output (its chunks and compression, `store_delta_snr` and
 `store_radial_diff`), plus `gnss_content_hash`, the content-settings hash
 of the GNSS store it was computed from. The migration takes the D1 keys
-from the store's first commit and `gnss_content_hash` from the GNSS store
-when it has content settings; otherwise it lists `gnss_content_hash` as
-missing, to give with `values={"gnss_content_hash": "..."}`. The
+from the store's first commit and `gnss_content_hash` from the site's
+GNSS store where the settings put it now, or else where the settings
+of the first commit name it, once the GNSS store has content settings. So
+migrate the GNSS store first; otherwise the command lists
+`gnss_content_hash` as missing, to give with
+`--set gnss_content_hash=...`. The
 calculator and its parameters of each group are recorded in the group's
 attributes (ADR 0019 D2), not in the content settings.
 
