@@ -679,6 +679,50 @@ class RunHistory:
                 ],
             )
 
+    # -- copies --------------------------------------------------------
+
+    def copy_runs(self, run_ids: Iterable[str], target: Path | str) -> None:
+        """Write a copy of the run history that holds only *run_ids*.
+
+        The copy keeps every record of those runs and the schema version,
+        so a folder holding it as ``run_history.sqlite`` opens like a log
+        folder (``RunHistory.open``, ``canvodpy dashboard --logs-dir``).
+        The other runs and the file index (this machine's folder
+        listings) are left out.
+
+        Raises
+        ------
+        FileExistsError
+            If *target* exists.
+        """
+        target = Path(target)
+        if target.exists():
+            msg = f"{target} exists"
+            raise FileExistsError(msg)
+        keep = sorted(set(run_ids))
+        copy = sqlite3.connect(target, autocommit=True)
+        try:
+            with self._lock:
+                self._db.backup(copy)
+            copy.execute("PRAGMA journal_mode = DELETE")
+            copy.execute("CREATE TEMP TABLE keep (run_id TEXT PRIMARY KEY)")
+            copy.executemany("INSERT INTO keep VALUES (?)", [(r,) for r in keep])
+            for table in (
+                "receiver_days",
+                "stage_timings",
+                "resource_samples",
+                "problems",
+                "runs",
+            ):
+                copy.execute(
+                    f"DELETE FROM {table} WHERE run_id NOT IN (SELECT run_id FROM keep)"
+                )
+            copy.execute("DELETE FROM file_index")
+            copy.execute("DROP TABLE keep")
+            copy.execute("VACUUM")
+        finally:
+            copy.close()
+
     # -- queries -------------------------------------------------------
 
     def file_index(self, root: Path, recipe: Path | None) -> dict[str, FolderListing]:

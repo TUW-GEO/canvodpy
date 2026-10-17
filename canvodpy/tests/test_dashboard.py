@@ -6,14 +6,17 @@ raises, marimo still writes the HTML but exits 1 and prints
 asserting the exporter exits 0.
 """
 
+import io
 import os
 import statistics
 import subprocess
 import sys
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
 from canvodpy.cli.dashboards.comparison import build_comparison
+from canvodpy.cli.dashboards.export import export_zip
 from canvodpy.run_history import RunHistory
 
 import canvodpy
@@ -322,3 +325,78 @@ def test_dashboard_compare_runs(tmp_path: Path) -> None:
     assert total["Min (s)"] == round(expected[0], 1)
     assert total["Median (s)"] == round(statistics.median(expected), 1)
     assert total["Max (s)"] == round(expected[-1], 1)
+
+
+def test_dashboard_download_one_run(tmp_path: Path) -> None:
+    # The run page's zip: the README, one CSV per table with rows, and a run
+    # history that holds every record of that run and nothing of the others,
+    # which opens like a log folder.
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    _seed(log_dir)
+    rid = "fangorn-20261014-100000"
+    rows = [{"Stage": "reading", "Seconds": 3.2}, {"Stage": "writing", "Seconds": 3.2}]
+    data = export_zip(
+        log_dir,
+        [rid],
+        {
+            "time_per_stage": ("the Time per stage chart", rows),
+            "free_disk": ("the Free disk chart", []),
+        },
+        title="test",
+    )
+
+    unzipped = tmp_path / "unzipped"
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        assert sorted(zf.namelist()) == [
+            "README.txt",
+            "run_history.sqlite",
+            "time_per_stage.csv",
+        ]
+        zf.extractall(unzipped)
+
+    assert (unzipped / "time_per_stage.csv").read_text().splitlines() == [
+        "Stage,Seconds",
+        "reading,3.2",
+        "writing,3.2",
+    ]
+    readme = (unzipped / "README.txt").read_text()
+    assert rid in readme
+    assert canvodpy.__version__ in readme
+
+    with (
+        RunHistory.open(log_dir, read_only=True) as original,
+        RunHistory.open(unzipped, read_only=True) as copy,
+    ):
+        assert [run.run_id for run in copy.runs()] == [rid]
+        assert copy.run(rid) == original.run(rid)
+        assert copy.receiver_days(rid) == original.receiver_days(rid)
+        assert copy.stage_timings(rid) == original.stage_timings(rid)
+        assert copy.resource_samples(rid) == original.resource_samples(rid)
+        assert copy.problems(rid) == original.problems(rid)
+
+
+def test_dashboard_download_comparison(tmp_path: Path) -> None:
+    # The comparison's zip holds the run history of the compared runs only:
+    # the finished runs with a label.
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir()
+    _seed(log_dir)
+    with RunHistory.open(log_dir, read_only=True) as history:
+        comparison = build_comparison(history)
+    assert sorted(comparison.run_ids) == [
+        "isengard-20261014-123000",
+        "isengard-20261014-133000",
+        "isengard-20261014-140000",
+    ]
+    data = export_zip(
+        log_dir,
+        comparison.run_ids,
+        {"timing_per_stage": ("the timing table", comparison.stage_rows)},
+        title="test",
+    )
+    unzipped = tmp_path / "unzipped"
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        zf.extractall(unzipped)
+    with RunHistory.open(unzipped, read_only=True) as copy:
+        assert sorted(run.run_id for run in copy.runs()) == sorted(comparison.run_ids)

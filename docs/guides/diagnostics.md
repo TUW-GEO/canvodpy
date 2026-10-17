@@ -377,9 +377,22 @@ run history queries only:
 - **Throughput over time:** the receiver-days finished, cumulative from
   the run start. The slope is the pace; a steep line is a fast run.
 
-The charts follow marimo's light and dark theme. The frame (background,
-axes, text) uses the theme, and the data colors come from the canvodpy
-palette for that theme.
+The dashboard is always dark, whatever the machine's or the browser's
+setting: the notebook's script header sets the marimo theme. The data
+colors fit canvodpy's colors, those of this documentation. A chart
+with one series is canvodpy's green. Up to four series, such as CPU and
+memory, get cream, blue, amber and brick red, which differ in hue and in
+lightness. More series, such as a comparison of eight worker counts, run
+from dark blue over sky blue and amber to canvodpy's cream, so they get
+lighter in the sorted order of their labels. Both stay readable with a
+red-green color vision deficiency and in grayscale.
+
+Every chart of a duration (time per stage, time per day, the
+comparison) has a **Time axis** switch between a linear axis from zero
+and a logarithmic one, which spreads short and long stages apart. The
+free-disk chart starts its axis near the lowest value, not at zero, so
+a change in free space is visible. The settings and the machine of a
+run are folded in; click to open them.
 
 **Compare runs by label:** a run can take a free-text label with
 `canvodpy run --label <text>`, for example to group the repetitions of a
@@ -399,6 +412,28 @@ them:
   with the minimum and the maximum. Stages run in parallel, so the stage
   times can add up to more than the total. The median is the middle of
   the sorted times; the spread is min to max.
+- A grouped bar chart shows the median time per stage: per stage one bar
+  per label, side by side, colored as described above, in the sorted
+  order of the labels (with zero-padded numbers, such as `w001`, `w016`, `w126`, that
+  is the order of the numbers). Hover over a bar for its label and time.
+
+**Download the data:** the run page and the comparison each have a
+download button (**Download the data of this run**, **Download the data
+of this comparison**). Each gives a zip with:
+
+- `run_history.sqlite`: every record of the runs shown (settings,
+  machine, receiver-days, stage timings, resource samples, warnings and
+  errors) and nothing of other runs.
+- One CSV file per table and chart of the view, with the rows the
+  dashboard showed.
+- `README.txt`: the canvodpy version, the log folder, the runs, and
+  what each file holds.
+
+Unzipped, the folder opens like a log folder, so
+`canvodpy dashboard --logs-dir <folder>` shows the same runs on another
+machine. The zip is made when you click, so for a running run its run
+history can hold records newer than the page. Each table's own
+**Export** button saves just that table as CSV or JSON.
 
 A run's status is one of:
 

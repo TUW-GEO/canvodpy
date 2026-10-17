@@ -137,3 +137,6 @@ Wiedner
 zlib
 Ceph
 speedrun
+Okabe
+viridis
+grayscale

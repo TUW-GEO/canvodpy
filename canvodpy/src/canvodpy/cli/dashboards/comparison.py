@@ -35,12 +35,16 @@ class RunComparison:
 
     ``any_differs``: whether any group is not uniform, so the notebook
     can warn that such runs are not repetitions of the same thing.
+
+    ``run_ids``: the runs compared, so the download button can put
+    their run history in the zip.
     """
 
     group_rows: list[dict[str, Any]]
     stage_rows: list[dict[str, Any]]
     chart_rows: list[dict[str, Any]]
     any_differs: bool
+    run_ids: list[str]
 
 
 def _json_key(value: Any) -> str:
@@ -75,10 +79,12 @@ def build_comparison(history: RunHistory) -> RunComparison:
     stage_rows: list[dict[str, Any]] = []
     chart_rows: list[dict[str, Any]] = []
     any_differs = False
+    run_ids: list[str] = []
 
     for label in labels:
         group = [run for run in history.runs(label=label) if run.status == "finished"]
         group.sort(key=lambda run: run.run_id)
+        run_ids.extend(run.run_id for run in group)
 
         machine = _shared([run.machine for run in group], _json_key)
         workers = _shared(
@@ -159,4 +165,4 @@ def build_comparison(history: RunHistory) -> RunComparison:
                 }
             )
 
-    return RunComparison(group_rows, stage_rows, chart_rows, any_differs)
+    return RunComparison(group_rows, stage_rows, chart_rows, any_differs, run_ids)
