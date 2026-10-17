@@ -32,6 +32,20 @@ def _restore_config_env():
             os.environ[name] = value
 
 
+@pytest.fixture(autouse=True)
+def _isolated_run_pid_file(tmp_path, monkeypatch):
+    """Point the run lock at a temporary file (#401).
+
+    ``canvodpy run`` writes its PID to ``~/.cache/canvodpy/run.pid`` and
+    ``canvodpy store maintain-due`` skips while that PID lives. With the
+    real file, a run on this machine made the maintain-due tests fail, and
+    a test run deleted the file of the live run on exit.
+    """
+    from canvodpy.orchestrator import resources
+
+    monkeypatch.setattr(resources, "DEFAULT_RUN_PID_FILE", tmp_path / "run.pid")
+
+
 # ── One day of the Rosalia test data through the pipeline ─────────────────
 
 # The settings template of the repository: the Rosalia tests start from it,

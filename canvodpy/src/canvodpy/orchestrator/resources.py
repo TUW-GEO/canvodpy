@@ -271,7 +271,7 @@ def _free_disk(folders: Iterable[str]) -> dict[str, int]:
 DEFAULT_RUN_PID_FILE = Path.home() / ".cache" / "canvodpy" / "run.pid"
 
 
-def is_pipeline_running(pid_file: Path = DEFAULT_RUN_PID_FILE) -> bool:
+def is_pipeline_running(pid_file: Path | None = None) -> bool:
     """Check whether a `canvodpy run` process is currently active.
 
     Used by ``canvodpy store maintain-due`` (a cron-safe, non-interactive
@@ -290,14 +290,17 @@ def is_pipeline_running(pid_file: Path = DEFAULT_RUN_PID_FILE) -> bool:
 
     Parameters
     ----------
-    pid_file : Path
-        Location written by :class:`PipelineRunLock`.
+    pid_file : Path, optional
+        Location written by :class:`PipelineRunLock`; ``DEFAULT_RUN_PID_FILE``
+        if not given.
 
     Returns
     -------
     bool
         True if the recorded PID belongs to a live process.
     """
+    # Read the default when called, not when defined, so tests can move it.
+    pid_file = pid_file or DEFAULT_RUN_PID_FILE
     if not pid_file.exists():
         return False
     try:
@@ -318,8 +321,8 @@ class PipelineRunLock:
     itself while a pipeline write is in progress.
     """
 
-    def __init__(self, pid_file: Path = DEFAULT_RUN_PID_FILE) -> None:
-        self.pid_file = pid_file
+    def __init__(self, pid_file: Path | None = None) -> None:
+        self.pid_file = pid_file or DEFAULT_RUN_PID_FILE
 
     def __enter__(self) -> PipelineRunLock:
         self.pid_file.parent.mkdir(parents=True, exist_ok=True)
