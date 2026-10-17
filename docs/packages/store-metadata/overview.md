@@ -77,11 +77,22 @@ Every other field of the repository metadata is **amendable**.
 | `vod_analyses` | `VodAnalysisInfo` | Per VOD analysis of a VOD store: its canopy and reference receiver | Repository metadata |
 | `references` | `References` | Repository, documentation, publications, funding | Repository metadata |
 | `summaries` | `Summaries` | Number of epochs and signals, constellations, variables, number of files | Snapshot summary |
-| `processing` | `ProcessingProvenance` | Versions of canvodpy and of the 11 `canvod-*` packages it installs, and of the main libraries (Icechunk, Zarr, xarray, Dask, NumPy, Polars, Pydantic); Python and uv versions; processing level | Commit metadata |
-| `environment` | `Environment` | Host name, operating system, architecture, CPUs, memory, free disk space, the hash and text of `uv.lock`, and the text of `pyproject.toml` | Commit metadata |
-| `config` | `ConfigSnapshot` | The processing, preprocessing, auxiliary data, compression, Icechunk, and signal settings, and their hash | Commit metadata |
+| `processing` | `ProcessingProvenance` | Versions of canvodpy and of the 11 `canvod-*` packages it installs, and of the main libraries (Icechunk, Zarr, xarray, Dask, NumPy, Polars, Pydantic); Python and uv versions; processing level; facility: the institution that processed the data (`processing.metadata.institution`) | Commit metadata |
+| `environment` | `Environment` | Operating system, architecture, CPUs, memory, free disk space, the hash and text of `uv.lock`, and the text of `pyproject.toml` | Commit metadata |
+| `config` | `ConfigSnapshot` | The processing, preprocessing, auxiliary data, compression, Icechunk, and signal settings, and their hash, without the settings of one computer (below) | Commit metadata |
 | `amendments` | `Amendment` | Each amendment: field, old and new value, reason, who, when | Repository metadata |
 | `migration` | `MigrationRecord` | For a migrated store: old id, who migrated it and when, fields given | Repository metadata |
+
+Stores are shared, so they record nothing that belongs to one computer
+or its user account. The recorded settings leave out the folders of the
+computer that ran: `gnss_site_data_root`, `aux_data_dir`,
+`shared_aux_cache_dir`, `log_dir`, and `stores_root_dir` when it is a
+local folder (an `s3://` URL is kept). The same settings on two computers
+therefore give the same hash. The content settings record who set them by
+`processing.metadata.initials` (the author when no initials are set),
+and no host name is recorded. Credentials are never recorded. Stores
+written by canVODpy before 1.0.0 keep the folders, host name and
+`user@host` they recorded: their snapshots can't be changed.
 
 The field names follow three metadata standards: the DataCite Metadata Schema 4.5, the
 Attribute Convention for Data Discovery (ACDD) 1.3, and the SpatioTemporal

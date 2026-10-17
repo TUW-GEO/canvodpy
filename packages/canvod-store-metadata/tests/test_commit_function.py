@@ -277,7 +277,8 @@ class TestCommitMetadata:
 
         meta = _commit_metadata(path)
         assert "canvod-store-metadata" in meta["processing"]["software"]
-        assert meta["environment"]["hostname"]
+        assert meta["environment"]["hostname"] is None
+        assert meta["environment"]["os"]
         assert "uv_lock_text" not in meta["environment"]
         assert meta["config"]["processing"] == {"batch_hours": 24}
         assert len(meta["config"]["config_hash"]) == 64

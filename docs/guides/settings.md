@@ -126,7 +126,7 @@ Deprecated: one description for the stores of every site. Use `sites.<name>.stor
 
 #### `processing.metadata.initials` {#processing-metadata-initials}
 
-How a store's metadata records who changed it (for example `NFB`). Required to amend or migrate a store's metadata.
+How a store's metadata records who set its content settings or changed it (for example `NFB`); the author when not set. Required to amend or migrate a store's metadata.
 
 - Type: text, or null
 - Default: `null`

@@ -62,7 +62,6 @@ class TestCollectors:
 
     def test_collect_environment(self):
         env = collect_environment()
-        assert env.hostname is not None
         assert env.os is not None
         assert env.cpu_count is not None and env.cpu_count > 0
 
@@ -142,6 +141,61 @@ class TestCollectors:
 
         assert snap.processing == {"batch_hours": 24}
         assert snap.config_hash == collect_config_snapshot(without).config_hash
+
+    def test_config_snapshot_leaves_out_the_computers_folders(self):
+        root = "/home/jrrt/stores"
+        local = {
+            "processing": {
+                "batch_hours": 24,
+                "storage": {
+                    "stores_root_dir": root,
+                    "gnss_store_name": "gnss",
+                    "aux_data_dir": "/home/jrrt/aux",
+                    "shared_aux_cache_dir": "/home/jrrt/cache",
+                },
+                "logging": {"log_dir": "/home/jrrt/logs", "level": "INFO"},
+            }
+        }
+        elsewhere = {
+            "processing": {
+                "batch_hours": 24,
+                "storage": {
+                    "stores_root_dir": "/data/stores",
+                    "gnss_store_name": "gnss",
+                    "aux_data_dir": "/scratch/aux",
+                },
+                "logging": {"log_dir": "/var/log/canvod", "level": "INFO"},
+            }
+        }
+
+        snap = collect_config_snapshot(local)
+
+        assert snap.processing == {
+            "batch_hours": 24,
+            "storage": {"gnss_store_name": "gnss"},
+            "logging": {"level": "INFO"},
+        }
+        assert "jrrt" not in snap.model_dump_json()
+        assert local["processing"]["storage"]["stores_root_dir"] == root
+        # The same settings on another computer give the same hash.
+        assert snap.config_hash == collect_config_snapshot(elsewhere).config_hash
+
+    def test_config_snapshot_keeps_a_stores_root_on_s3(self):
+        snap = collect_config_snapshot(
+            {"processing": {"storage": {"stores_root_dir": "s3://fangorn/stores"}}}
+        )
+
+        assert snap.processing == {
+            "storage": {"stores_root_dir": "s3://fangorn/stores"}
+        }
+
+    def test_the_facility_is_the_institution_not_the_computer(self):
+        config, site_cfg = _settings()
+
+        meta = _collect(config, site_cfg)
+
+        assert meta.processing.facility == testing.INSTITUTION
+        assert meta.environment.hostname is None
 
     def test_collect_references_none_config(self):
         config = MagicMock(spec=["processing"])

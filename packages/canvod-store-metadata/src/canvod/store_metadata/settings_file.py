@@ -14,6 +14,7 @@ from typing import Any
 
 from .content import MissingContentSettingsError
 from .io import read_repository_metadata
+from .machine import set_machine_settings
 
 #: Placeholder for a value the run owner fills in: data roots, cache and log
 #: folders and the metadata author/email/institution. ``config init
@@ -120,9 +121,6 @@ def settings_from_store(store: Any) -> dict[str, Any]:
     site_name = next(iter(content["sites"]))
     site = content["sites"][site_name]
 
-    # The site's machine value: the run owner's data root.
-    site["gnss_site_data_root"] = PLACEHOLDER
-
     # The site and the store from the repository metadata: site description
     # and location, the store's description, each receiver's description and
     # recipe. The receivers of a store's content settings are the ones its
@@ -139,8 +137,8 @@ def settings_from_store(store: Any) -> dict[str, Any]:
     receivers = repository.get("instruments", {}).get("receivers", {})
     for name, receiver in site["receivers"].items():
         meta = receivers.get(name, {})
-        # The directory is a machine value; interactive offers the store's
-        # recorded one as the default answer.
+        # The directory is the run owner's to give; interactive offers the
+        # store's recorded one as the default answer.
         receiver["directory"] = PLACEHOLDER
         if meta.get("description") is not None:
             receiver["description"] = meta["description"]
@@ -153,13 +151,12 @@ def settings_from_store(store: Any) -> dict[str, Any]:
     root, name = _store_root_and_name(store, site_name)
     storage["stores_root_dir"] = root
     storage["gnss_store_name"] = name
-    storage["aux_data_dir"] = PLACEHOLDER
-    storage["shared_aux_cache_dir"] = PLACEHOLDER
+    # The settings of the run owner's computer (data root, cache and log
+    # folders), the same list the stores leave out.
+    set_machine_settings(settings, PLACEHOLDER)
     metadata = processing.setdefault("metadata", {})
     metadata["author"] = PLACEHOLDER
     metadata["email"] = PLACEHOLDER
     metadata["institution"] = PLACEHOLDER
-    logging = processing.setdefault("logging", {})
-    logging["log_dir"] = PLACEHOLDER
 
     return settings

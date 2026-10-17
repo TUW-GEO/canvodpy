@@ -20,10 +20,8 @@ store's key by key, when it starts and at the tip before each commit.
 
 from __future__ import annotations
 
-import getpass
 import hashlib
 import json
-import socket
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -210,6 +208,16 @@ def run_content_settings(
     return {"settings": settings, "resolved_sids": resolved_sids}
 
 
+def recorded_by(config: Any) -> str:
+    """Who a store records as setting its content settings.
+
+    ``processing.metadata.initials``, the name metadata changes record, or
+    the author when no initials are set.
+    """
+    meta = config.processing.metadata
+    return (getattr(meta, "initials", None) or "").strip() or meta.author
+
+
 def new_content_settings(
     config: Any,
     site_name: str,
@@ -226,7 +234,9 @@ def new_content_settings(
     store_type
         ``"gnss_store"`` or ``"vod_store"``; picks the keys that count.
     set_by
-        Who sets them; ``None``: the user and computer of this process.
+        Who sets them; ``None``: ``processing.metadata.initials``, or the
+        author when no initials are set. Never the user or computer of the
+        process: stores are shared.
     origin
         ``"created"`` (a new store) or ``"migrated"``
         (``canvodpy store migrate-metadata``).
@@ -247,7 +257,7 @@ def new_content_settings(
     return stored_form(
         content["settings"],
         content["resolved_sids"],
-        set_by=set_by or f"{getpass.getuser()}@{socket.gethostname()}",
+        set_by=set_by or recorded_by(config),
         origin=origin,
         gnss_content_hash=gnss_hash,
     )

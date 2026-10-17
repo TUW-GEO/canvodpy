@@ -308,7 +308,9 @@ def commit_metadata(
 
     identity = repository["identity"]
     processing = collect_processing_provenance(
-        identity["store_type"], identity["source_format"]
+        identity["store_type"],
+        identity["source_format"],
+        repository.get("creator", {}).get("institution"),
     )
     processing.datetime = committed_at
     environment = collect_environment(store_location(store_path).local_path)

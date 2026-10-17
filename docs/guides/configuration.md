@@ -259,10 +259,11 @@ written file keeps:
 - `processing.storage.stores_root_dir` and `gnss_store_name`, taken from
   the store argument: `<root>/<site>/<name>`;
 
-and writes `TODO` for the machine values the run owner fills in: the
-`gnss_site_data_root`, each receiver's `directory`, `aux_data_dir`,
-`shared_aux_cache_dir`, `log_dir`, and `processing.metadata.author`,
-`email` and `institution`. Interactive (the default) asks for each and
+and writes `TODO` for the values the run owner fills in: the folders of
+their computer, which stores never record (`gnss_site_data_root`,
+`aux_data_dir`, `shared_aux_cache_dir`, `log_dir`), each receiver's
+`directory`, and `processing.metadata.author`, `email` and
+`institution`. Interactive (the default) asks for each and
 offers the store's recorded receiver directory as the default;
 `--no-interactive` keeps the `TODO` values.
 
@@ -291,7 +292,7 @@ processing:
     naming_authority: org.example  # your domain in reverse; required to create a store
     publisher: Example University  # required to create a store
     license: CC-BY-4.0  # SPDX identifier, or "other"; required to create a store
-    initials: JD  # recorded with each change of store metadata; required to amend or migrate
+    initials: JD  # who set a new store's content settings or changed its metadata; required to amend or migrate
     # optional: orcid, institution_ror, department, research_group,
     # website, publisher_url, license_uri (required when license is "other")
 
