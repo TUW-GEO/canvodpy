@@ -30,7 +30,7 @@ from zarr_cm import proj as zarr_proj
 from zarr_cm import stac as zarr_stac
 
 from .io import _set_field
-from .location import StoreLocation, store_location
+from .location import MIGRATE_COMMAND, StoreLocation, store_location
 from .schema import (
     _METADATA_KEY,
     ACDD_TYPES,
@@ -361,28 +361,59 @@ def prepare_commit(
     store_path: StoreLocation | Path | str,
     config: Any,
     write_environment: bool = True,
+    keep_summary: bool = False,
 ) -> dict[str, Any]:
     """Write the root copy, summary and lockfile text; return the commit metadata.
 
     ``write_environment=False`` leaves the lockfile text out: a data commit
     finds it stored by a commit of its own before it (#352).
+    ``keep_summary=True`` takes the snapshot summary of the snapshot before
+    instead of computing it from the data, with only its time updated; for
+    a commit that writes no data (see
+    :func:`~canvod.store_metadata.io.commit_with_rebase`).
 
     Raises
     ------
     ValueError
         If the root group last committed differs from the repository
-        metadata (see :func:`check_root_copy`).
+        metadata (see :func:`check_root_copy`), or ``keep_summary`` is set
+        and it holds no snapshot summary.
     """
-    check_root_copy(dict(root.attrs), repository, store_path)
     committed_at = datetime.now(UTC).isoformat()
+    kept = _kept_summary(root, store_path, committed_at) if keep_summary else None
+    check_root_copy(dict(root.attrs), repository, store_path)
     metadata, texts = commit_metadata(repository, config, store_path, committed_at)
     if write_environment:
         _write_environment(root, texts)
 
-    summary = snapshot_summary(root, repository, committed_at)
+    summary = kept or snapshot_summary(root, repository, committed_at)
     attrs = {k: v for k, v in root.attrs.items() if k not in _ROOT_COPY_KEYS}
     root.attrs.put({**attrs, **root_copy(repository, summary)})
     return metadata
+
+
+def _kept_summary(
+    root: zarr.Group, store_path: StoreLocation | Path | str, committed_at: str
+) -> dict[str, Any]:
+    """The snapshot summary in ``root``, with ``committed_at`` as its time.
+
+    Raises
+    ------
+    ValueError
+        If ``root`` holds no snapshot summary (a store written before
+        snapshot summaries): nothing to keep, and no silent recompute.
+    """
+    summary = root.attrs.get(SNAPSHOT_SUMMARY_ATTR)
+    temporal = summary.get("temporal") if isinstance(summary, dict) else None
+    if not isinstance(summary, dict) or not isinstance(temporal, dict):
+        msg = (
+            f"The store at {store_path} has no snapshot summary in its root "
+            "group to keep. A store written before snapshot summaries is "
+            "moved to the current form with:\n"
+            f"  {MIGRATE_COMMAND} SITE --store gnss|vod"
+        )
+        raise ValueError(msg)
+    return {**summary, "temporal": {**temporal, "updated": committed_at}}
 
 
 def _environment_texts(root: zarr.Group, lock_hash: str | None) -> dict[str, str]:

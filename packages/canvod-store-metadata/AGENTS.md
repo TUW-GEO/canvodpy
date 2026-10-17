@@ -29,7 +29,9 @@ recipes run these from the command line (`just metadata-show <store>`,
 - The import is `canvod.store_metadata`, not `canvod.store.metadata`.
 - Repository metadata is written once, when the store gets its metadata;
   every commit through `commit_with_rebase` then writes the root copy and
-  the snapshot summary and checks the root copy (ADR 0014).
+  the snapshot summary and checks the root copy (ADR 0014). Only the
+  day-block growth passes `keep_summary=True` (it writes no data); the
+  commit then refuses any change but epoch axes and block indexes.
 - A GNSS store's content settings (ADR 0019) are a fixed field of its
   repository metadata, written when the store is created; only a receiver
   added by amendment adds its own entry. `ensure_store_metadata` (when a

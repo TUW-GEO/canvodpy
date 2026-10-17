@@ -20,7 +20,9 @@ kind of information:
 - The **snapshot summary** (time coverage, per-receiver counts,
   ranges and position, constellations, variables, size) describes what
   one snapshot holds. It is computed when data is written and stored in the root
-  group in the same commit, so it cannot disagree with the data.
+  group in the same commit, so it cannot disagree with the data. A
+  commit that writes no data rows (the day-block grow) carries the
+  previous snapshot's summary, checked against a recompute by test.
 - **Commit metadata** (Icechunk's per-commit metadata) records how a
   commit was made: software versions, environment, the settings and
   their hash, and the hash of the `uv.lock` in use. The text of

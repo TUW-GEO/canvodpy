@@ -169,3 +169,113 @@ def test_a_growth_that_loses_five_conflicts_fails(store, monkeypatch) -> None:
     with pytest.raises(RuntimeError, match="conflicted 5 times"):
         store.grow_day_blocks({GROUP: {DAY_2: 5}}, message="grow")
     assert len(sleeps) == 4
+
+
+# ── A grow keeps the snapshot summary (ADR 0014) ─────────────────────────────
+
+REFERENCE = "reference_01_canopy_01"
+NEW_YEARS_EVE = np.datetime64("2025-12-31", "D")
+
+
+def _row_for(region, name: str) -> dict:
+    return {**_row(region), "fname": f"/data/{name}", "rinex_hash": name}
+
+
+@pytest.fixture
+def two_receivers(tmp_path: Path) -> MyIcechunkStore:
+    """Canopy and reference, each with one file of the last day of 2025."""
+    path = tmp_path / "gnss_store"
+    path.mkdir()
+    store = new_gnss_store(path)
+    ds = _template(NEW_YEARS_EVE)
+    with store.writable_session("main") as session:
+        for group in (GROUP, REFERENCE):
+            add_day_block(session, group, NEW_YEARS_EVE, 5, template=ds)
+            region = write_file_region(session, group, ds)
+            store.append_metadata_bulk(
+                group, [_row_for(region, f"{group}.rnx")], session=session
+            )
+        commit_with_rebase(
+            session, "last day", store_path=store.store_path, config=store.settings
+        )
+    return store
+
+
+def _root_attrs(store: MyIcechunkStore) -> dict:
+    import zarr
+
+    with store.readonly_session("main") as session:
+        return dict(zarr.open_group(session.store, mode="r").attrs)
+
+
+def _recomputed_summary(store: MyIcechunkStore, committed_at: str) -> dict:
+    import zarr
+    from canvod.store_metadata.snapshot import snapshot_summary
+
+    with store.readonly_session("main") as session:
+        root = zarr.open_group(session.store, mode="r")
+        return snapshot_summary(root, store.repo.get_metadata(), committed_at)
+
+
+def test_a_grow_keeps_the_summary_a_recompute_gives(two_receivers) -> None:
+    from canvod.store_metadata.snapshot import SNAPSHOT_SUMMARY_ATTR
+
+    store = two_receivers
+    before = _root_attrs(store)
+
+    store.grow_day_blocks(
+        {
+            GROUP: {DAY_1 + 365: 5, DAY_2 + 365: 5},  # into 2026
+            REFERENCE: {DAY_1 + 365: 5},
+        },
+        message="grow",
+    )
+
+    after = _root_attrs(store)
+    kept = after[SNAPSHOT_SUMMARY_ATTR]
+    updated = kept["temporal"]["updated"]
+    assert kept == _recomputed_summary(store, updated)
+    assert set(kept["receivers"]) == {"canopy_01", "reference_01"}
+    assert kept["receivers"]["reference_01"]  # its epochs, sids, range
+    assert kept["temporal"]["collected_end"].startswith("2025-12-31")
+    # The snapshot changed, so its modification date did.
+    assert updated != before[SNAPSHOT_SUMMARY_ATTR]["temporal"]["updated"]
+    assert after["date_modified"] == updated
+
+
+def test_keeping_the_summary_refuses_a_commit_that_writes_data(two_receivers) -> None:
+    store = two_receivers
+    ds = _template(NEW_YEARS_EVE)
+    with store.writable_session("main") as session:
+        write_file_region(session, GROUP, ds.assign(SNR=ds.SNR * 2))
+        with pytest.raises(ValueError, match="SNR"):
+            commit_with_rebase(
+                session,
+                "data",
+                store_path=store.store_path,
+                config=store.settings,
+                keep_summary=True,
+            )
+
+
+def test_keeping_the_summary_refuses_a_root_without_one(two_receivers) -> None:
+    import zarr
+    from canvod.store_metadata.snapshot import SNAPSHOT_SUMMARY_ATTR
+
+    store = two_receivers
+    # A snapshot whose root has no summary, as an old store's would be.
+    session = store.repo.writable_session("main")
+    root = zarr.open_group(session.store, mode="a")
+    root.attrs.put({k: v for k, v in root.attrs.items() if k != SNAPSHOT_SUMMARY_ATTR})
+    session.commit("drop the summary")
+
+    with store.writable_session("main") as session:
+        add_day_block(session, GROUP, DAY_1 + 365, 5, template=None)
+        with pytest.raises(ValueError, match="no snapshot summary"):
+            commit_with_rebase(
+                session,
+                "grow",
+                store_path=store.store_path,
+                config=store.settings,
+                keep_summary=True,
+            )

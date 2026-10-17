@@ -124,6 +124,7 @@ def commit_with_rebase(
     config: Any = None,
     repository: dict[str, Any] | None = None,
     rebase: bool = True,
+    keep_summary: bool = False,
 ) -> str:
     """Commit a session, rebasing it if the branch moved since it was opened.
 
@@ -173,6 +174,15 @@ def commit_with_rebase(
         ``icechunk.ConflictError`` instead of rebasing. The creation of a
         store uses it, so of two runs that create one store at the same
         time only one commit lands (:func:`write_metadata`).
+    keep_summary
+        ``True`` keeps the snapshot summary of the snapshot before, with
+        only its time updated, instead of computing it from the data: for a
+        commit that writes no data, such as growing day blocks
+        (``MyIcechunkStore.grow_day_blocks``). It writes the same summary a
+        computation would (ADR 0014), without reading every group's log
+        book. The commit is refused if it writes any chunk other than an
+        epoch axis, adds, removes or moves an array or group, or changes
+        the root group, and if the root group holds no summary.
 
     Returns
     -------
@@ -188,6 +198,8 @@ def commit_with_rebase(
     ContentSettingsError
         If the run's content settings differ from the store's.
     """
+    if keep_summary:
+        _check_writes_no_data(session, store_path)
     changes_repository = repository is not None
     parts: dict[str, float] = {}
     started = mark = time.perf_counter()
@@ -246,6 +258,7 @@ def commit_with_rebase(
                 store_path=store_path,
                 config=config,
                 write_environment=not stores_lockfile_first,
+                keep_summary=keep_summary,
             ),
             **(metadata or {}),
         }
@@ -259,6 +272,44 @@ def commit_with_rebase(
         lap("icechunk_commit")
     _log_commit_parts(store_path, message, time.perf_counter() - started, parts)
     return snapshot_id
+
+
+def _check_writes_no_data(
+    session: icechunk.Session, store_path: StoreLocation | Path | str
+) -> None:
+    """Refuse a session whose changes are more than new day blocks.
+
+    A day-block growth resizes arrays along the epoch axis, writes the
+    epoch values of the new blocks and updates the groups' block index.
+    Anything else could change the snapshot summary.
+
+    Raises
+    ------
+    ValueError
+        Naming the changes that are not day-block growth.
+    """
+    diff = session.status()
+    other = [
+        *(f"new array {path}" for path in diff.new_arrays),
+        *(f"new group {path}" for path in diff.new_groups),
+        *(f"deleted array {path}" for path in diff.deleted_arrays),
+        *(f"deleted group {path}" for path in diff.deleted_groups),
+        *(f"moved {move}" for move in diff.moved_nodes),
+        *(
+            f"chunks of {path}"
+            for path in diff.updated_chunks
+            if path.rsplit("/", 1)[-1] != "epoch"
+        ),
+        *("the root group" for path in diff.updated_groups if not path.strip("/")),
+    ]
+    if other:
+        msg = (
+            f"A commit to {store_path} that keeps the snapshot summary may "
+            "only grow day blocks, but this one also changes: "
+            f"{', '.join(sorted(other))}. Commit it with a summary computed "
+            "from the data."
+        )
+        raise ValueError(msg)
 
 
 #: Commits of this process per store, for :func:`_log_commit_parts`.

@@ -115,7 +115,9 @@ before they write data:
 1. Every commit, of a run or of any other canVODpy command, writes the
    root copy and the snapshot summary in the same commit as the data,
    and records the commit metadata. The snapshot summary therefore can't
-   disagree with the data it describes.
+   disagree with the data it describes. A commit that only gives days
+   their block and writes no data keeps the summary of the snapshot
+   before, with its time updated; it refuses any other change.
 1. A run that writes a receiver (GNSS store) or a VOD analysis (VOD
    store) that the repository metadata doesn't list is refused. The
    error names the `canvodpy store amend` command that adds it.

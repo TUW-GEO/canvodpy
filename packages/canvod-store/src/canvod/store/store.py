@@ -1638,11 +1638,13 @@ class MyIcechunkStore:
                 if not grown:
                     return None
                 try:
+                    # New blocks hold no data: the summary stays as it is.
                     return commit_with_rebase(
                         session,
                         message,
                         store_path=self.store_path,
                         config=self.settings,
+                        keep_summary=True,
                     )
                 except (icechunk.ConflictError, icechunk.RebaseFailedError) as err:
                     last_error = err
