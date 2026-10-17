@@ -46,7 +46,7 @@ dev = [
     { name = "ty", specifier = ">=0.0.86" },
     { name = "zensical", specifier = ">=0.0.69" },
 ]
-filemap = [{ name = "canvod-filemap", git = "https://github.com/nfb2021/canvodpy-extensions.git?subdirectory=packages%2Fcanvod-filemap&rev=d2a77bc443262a89b61ad88ae7fe03648398cd0b" }]
+filemap = [{ name = "canvod-filemap", git = "https://github.com/nfb2021/canvodpy-extensions.git?subdirectory=packages%2Fcanvod-filemap&rev=03df6ac48d2814fab0b0db6feeb10747f16cc628" }]
 
 [[package]]
 name = "altair"
@@ -262,7 +262,7 @@ requires-dist = [
 [[package]]
 name = "canvod-filemap"
 version = "0.1.0"
-source = { git = "https://github.com/nfb2021/canvodpy-extensions.git?subdirectory=packages%2Fcanvod-filemap&rev=d2a77bc443262a89b61ad88ae7fe03648398cd0b#d2a77bc443262a89b61ad88ae7fe03648398cd0b" }
+source = { git = "https://github.com/nfb2021/canvodpy-extensions.git?subdirectory=packages%2Fcanvod-filemap&rev=03df6ac48d2814fab0b0db6feeb10747f16cc628#03df6ac48d2814fab0b0db6feeb10747f16cc628" }
 dependencies = [
     { name = "canvod-preflight" },
     { name = "natsort" },
