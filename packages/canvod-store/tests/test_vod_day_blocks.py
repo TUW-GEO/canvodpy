@@ -221,3 +221,54 @@ def test_result_of_two_days_is_refused(store: MyIcechunkStore) -> None:
     with pytest.raises(LayoutError, match="takes one day"):
         store.write_or_append_vod_groups_batch([item])
     assert _snapshots(store) == before
+
+
+def _site(store: MyIcechunkStore) -> GnssResearchSite:
+    """A site with the VOD store ``store`` and the analysis of ``GROUP``."""
+    site = object.__new__(GnssResearchSite)
+    site.vod_store = store
+    site._logger = unittest.mock.MagicMock()
+    site._site_config = unittest.mock.MagicMock(
+        vod_analyses={GROUP.split("/")[1]: unittest.mock.MagicMock()}
+    )
+    site.ensure_store_metadata = unittest.mock.MagicMock()
+    return site
+
+
+def test_site_stores_one_vod_day_into_its_block(store: MyIcechunkStore) -> None:
+    """``store_vod_analysis`` with the day's cadence writes the day's block."""
+    item = _item(GROUP, slot=0, source_id="a")
+    calculator, analysis = GROUP.split("/")
+
+    written = _site(store).store_vod_analysis(
+        item.dataset,
+        analysis,
+        calculator,
+        source_file_hashes=item.source_file_hashes,
+        source_gnss_stores=item.source_gnss_stores,
+        cadences=item.cadences,
+    )
+
+    assert written
+    (block,) = _blocks(store, GROUP).values()
+    assert block.cadence_s == CADENCE_S
+
+
+def test_site_refuses_vod_without_cadence_on_day_blocks(
+    store: MyIcechunkStore,
+) -> None:
+    """Without the day's cadence nothing is appended to a day-block group."""
+    store.write_or_append_vod_groups_batch([_item(GROUP, slot=0, source_id="a")])
+    later = _item(GROUP, slot=0, source_id="b", day="2025-03-29")
+    calculator, analysis = GROUP.split("/")
+    before = _snapshots(store)
+
+    with pytest.raises(LayoutError, match="day blocks"):
+        _site(store).store_vod_analysis(
+            later.dataset,
+            analysis,
+            calculator,
+            source_file_hashes=later.source_file_hashes,
+            source_gnss_stores=later.source_gnss_stores,
+        )
+    assert _snapshots(store) == before
