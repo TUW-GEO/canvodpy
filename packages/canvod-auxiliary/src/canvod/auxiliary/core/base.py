@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import structlog
 import xarray as xr
 from canvod.utils.tools import YYYYDOY, deprecated
 from pydantic import ConfigDict, Field
@@ -15,6 +16,8 @@ from pydantic.dataclasses import dataclass
 
 from canvod.auxiliary.core.downloader import FileDownloader, FtpDownloader
 from canvod.auxiliary.interpolation import Interpolator
+
+log = structlog.get_logger(__name__)
 
 # How much of the previous and next day AuxFile.join_days keeps: several
 # epochs of any product (15 min orbits, 30 s clocks), enough for the clock
@@ -255,10 +258,9 @@ class AuxFile(ABC):
             try:
                 result = self.downloader.download(url, destination, file_info)
                 if i > 0:
-                    # We got here via fallback — log which server succeeded
-                    print(
-                        f"  ✓ Download succeeded from fallback server: "
-                        f"{server.description or server.url}"
+                    log.info(
+                        "fallback_server_succeeded",
+                        server=server.description or server.url,
                     )
                 return result
             except Exception as e:
@@ -271,13 +273,16 @@ class AuxFile(ABC):
                 server_label = server.description or server.url
                 error_msg = f"{server_label}: {e!s}"
                 errors.append(error_msg)
-                print(f"  ⚠ Download failed from {server_label}: {e!s}")
-
-                # Warn about fallback if there are more servers to try
+                next_label = None
                 if i < len(available_servers) - 1:
                     next_server = available_servers[i + 1]
                     next_label = next_server.description or next_server.url
-                    print(f"  → Trying fallback server: {next_label}")
+                log.warning(
+                    "server_download_failed",
+                    server=server_label,
+                    error=str(e),
+                    next_server=next_label,
+                )
 
         # All servers exhausted
         product_label = f"{product_spec.agency_code}/{product_spec.product_type}"
@@ -397,12 +402,12 @@ class AuxFile(ABC):
         for name in candidates:
             file_path = self.local_dir / name
             if file_path.exists():
-                print(f"File {file_path} exists.")
+                log.debug("aux_file_exists", path=str(file_path))
                 return file_path
 
         errors: list[str] = []
         for name in candidates:
-            print(f"File {self.local_dir / name} does not exist. Downloading...")
+            log.debug("aux_file_downloading", path=str(self.local_dir / name))
             try:
                 self.download_aux_file(name)
             except RuntimeError as e:

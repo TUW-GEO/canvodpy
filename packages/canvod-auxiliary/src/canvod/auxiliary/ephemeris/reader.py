@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import numpy as np
+import structlog
 import xarray as xr
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -17,6 +18,8 @@ from canvod.auxiliary.interpolation import (
     Sp3InterpolationStrategy,
 )
 from canvod.auxiliary.products.registry_config import ProductSpec, get_product_spec
+
+log = structlog.get_logger(__name__)
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
@@ -130,7 +133,9 @@ class Sp3File(AuxFile):
         }
 
         self.download_with_fallback(ftp_path, destination, file_info, self.product_spec)
-        print(f"Downloaded orbit file for {self.agency} on date {self.date}")
+        log.info(
+            "aux_file_downloaded", kind="orbit", agency=self.agency, date=str(self.date)
+        )
 
     def read_file(self) -> xr.Dataset:
         """Read and validate SP3 file.

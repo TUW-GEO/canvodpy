@@ -7,6 +7,7 @@ in CLK format, integrated with the product registry for multi-agency support.
 from pathlib import Path
 
 import numpy as np
+import structlog
 import xarray as xr
 from canvod.utils.tools import get_gps_week_from_filename
 from pydantic import ConfigDict
@@ -22,6 +23,8 @@ from canvod.auxiliary.interpolation import (
     Interpolator,
 )
 from canvod.auxiliary.products.registry_config import get_product_spec
+
+log = structlog.get_logger(__name__)
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
@@ -135,7 +138,9 @@ class ClkFile(AuxFile):
         }
 
         self.download_with_fallback(ftp_path, destination, file_info, spec)
-        print(f"Downloaded clock file for {self.agency} on date {self.date}")
+        log.info(
+            "aux_file_downloaded", kind="clock", agency=self.agency, date=str(self.date)
+        )
 
     def read_file(self) -> xr.Dataset:
         """Read and parse CLK file into xarray Dataset.

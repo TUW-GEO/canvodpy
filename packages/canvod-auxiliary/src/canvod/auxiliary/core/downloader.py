@@ -1,5 +1,6 @@
 """File downloaders for auxiliary GNSS data."""
 
+import functools
 import gzip
 import shutil
 import time
@@ -22,6 +23,24 @@ from rich.progress import (
 )
 
 log = structlog.get_logger(__name__)
+
+
+@functools.cache
+def _log_server_choice(nasa_first: bool) -> None:
+    """Log once per process which servers products come from."""
+    if nasa_first:
+        log.info("aux_servers", primary="NASA CDDIS", fallback="ESA")
+    else:
+        log.info(
+            "aux_servers",
+            primary="ESA",
+            fallback=None,
+            hint=(
+                "To download from NASA CDDIS first, with ESA as the fallback, "
+                "set CANVOD__PROCESSING__CREDENTIALS__NASA_EARTHDATA_ACC_MAIL "
+                "in config/.env or as an environment variable"
+            ),
+        )
 
 
 def _download_progress() -> Progress:
@@ -94,21 +113,14 @@ class FtpDownloader(FileDownloader):
             if user_email is not None:
                 # Primary is NASA (set by caller); fallback to ESA
                 self.alt_servers = [self.ESA_FTP]
-                print("ℹ ESA fallback enabled (primary: NASA CDDIS)")
             else:
                 self.alt_servers = []
-                print("ℹ Using ESA FTP exclusively")
-                print(
-                    "  To download from NASA CDDIS first, with ESA as the "
-                    "fallback, set "
-                    "CANVOD__PROCESSING__CREDENTIALS__NASA_EARTHDATA_ACC_MAIL "
-                    "in config/.env or as an environment variable"
-                )
+            _log_server_choice(nasa_first=user_email is not None)
         else:
             if user_email is None:
                 self.alt_servers = [s for s in alt_servers if "cddis" not in s.lower()]
                 if len(self.alt_servers) < len(alt_servers):
-                    print("⚠ Skipping CDDIS servers (no credentials)")
+                    log.info("cddis_servers_skipped", reason="no credentials")
             else:
                 self.alt_servers = alt_servers
 
@@ -147,7 +159,6 @@ class FtpDownloader(FileDownloader):
         )
 
         try:
-            print(f"Attempting to download from primary server: {url}")
             result = self._try_download_url(url, destination)
             duration = time.time() - start_time
 
@@ -172,7 +183,6 @@ class FtpDownloader(FileDownloader):
                     "   Please check your network and try again."
                 ) from e
 
-            print(f"Primary download failed: {e!s}")
             log.warning(
                 "primary_download_failed",
                 url=url,
@@ -183,7 +193,6 @@ class FtpDownloader(FileDownloader):
             all_errors = [f"Primary server error: {e!s}"]
 
             if not self.alt_servers:
-                print("ℹ No fallback servers available")
                 log.error(
                     "no_fallback_servers",
                     url=url,
@@ -208,7 +217,6 @@ class FtpDownloader(FileDownloader):
                     else:
                         alt_url = self._construct_alternate_url(url, alt_server)
 
-                    print(f"Trying alternate server: {alt_url}")
                     log.info(
                         "fallback_download_started",
                         alt_url=alt_url,
@@ -235,7 +243,12 @@ class FtpDownloader(FileDownloader):
                         ) from alt_e
 
                     error_msg = f"Alternate server {alt_server} error: {alt_e!s}"
-                    print(error_msg)
+                    log.warning(
+                        "fallback_download_failed",
+                        alt_server=alt_server,
+                        error=str(alt_e),
+                        exception=type(alt_e).__name__,
+                    )
                     all_errors.append(error_msg)
 
             raise RuntimeError(
@@ -284,7 +297,7 @@ class FtpDownloader(FileDownloader):
         directory = "/".join(parts[1:-1])
         filename = parts[-1]
 
-        print(f"Connecting to {host} using FTPS...")
+        log.debug("ftps_connecting", host=host)
         ftps = FTP_TLS(host=host, timeout=self.timeout_s)
         ftps.login(user="anonymous", passwd=self.user_email)
         ftps.prot_p()
