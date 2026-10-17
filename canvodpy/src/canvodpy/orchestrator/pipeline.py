@@ -10,7 +10,7 @@ import threading
 import time as _time
 import warnings
 from collections import defaultdict
-from collections.abc import Callable, Generator, Hashable, Sequence
+from collections.abc import Callable, Generator, Hashable, Iterable, Sequence
 from concurrent.futures import (
     FIRST_COMPLETED,
     Future,
@@ -28,7 +28,9 @@ from typing import TypeVar, cast
 
 import icechunk
 import numpy as np
+import pandas as pd
 import pint
+import psutil
 import structlog
 import xarray as xr
 from icechunk.session import ForkSession
@@ -36,7 +38,7 @@ from loky import get_reusable_executor as _loky_reusable
 
 from canvod.config import CanvodConfig, load_config
 from canvod.config.models import mixed_format_error, reference_store_group
-from canvod.ops import preprocess_files
+from canvod.ops import build_default_pipeline, preprocess_files
 from canvod.readers import MatchedDirs
 from canvod.readers.gnss_specs.constants import UREG
 from canvod.store import GnssResearchSite
@@ -80,6 +82,12 @@ from canvodpy.orchestrator.forked_writes import (
     stored_spans,
     write_files_into_fork,
 )
+from canvodpy.orchestrator.memory_budget import (
+    GB,
+    InputFile,
+    largest_task,
+    plan_memory,
+)
 from canvodpy.orchestrator.processor import (
     GroupWriteResult,
     RinexDataProcessor,
@@ -92,6 +100,7 @@ from canvodpy.orchestrator.processor import (
 from canvodpy.orchestrator.resources import (
     MemoryMonitor,
     deprecate_no_effect_arguments,
+    run_measured,
 )
 from canvodpy.orchestrator.store_retry import (
     CONFLICT_TRIES,
@@ -244,6 +253,17 @@ class _ForkJob:
     fork: ForkSession
 
 
+def _input_bytes(files: Iterable[Path | str]) -> int:
+    """The size of a task's input files on disk (0 for a missing file)."""
+    total = 0
+    for f in files:
+        try:
+            total += Path(f).stat().st_size
+        except OSError:
+            continue
+    return total
+
+
 def _round_robin[I](items: Sequence[I], key: Callable[[I], Hashable]) -> list[I]:
     """Reorder *items* round-robin across the values of *key*."""
     by_key: dict[Hashable, list[I]] = {}
@@ -323,12 +343,18 @@ class PipelineOrchestrator:
     site : GnssResearchSite
         Research site configuration
     n_max_workers : int | None
-        Maximum parallel workers per day. ``None`` means auto-detect
-        (via ``os.cpu_count()``).
+        Most parallel workers. ``None`` means the number of cores
+        (``os.cpu_count()``). Fewer workers run if they do not fit in the
+        memory budget (:mod:`canvodpy.orchestrator.memory_budget`).
     dry_run : bool
         If True, only simulate processing without executing
     days_per_batch : int
-        Number of DOYs pooled per loky wave (default: 1)
+        Number of DOYs pooled per loky wave (default: 1). Lowered if the
+        days do not fit in the memory budget.
+    max_memory_gb : float | None
+        Memory budget of the run in GB; ``None`` means the memory available
+        when the run starts. The workers and ``days_per_batch`` are sized to
+        fit it before the first file is read.
     threads_per_worker : int | None
         Threads per worker process (used to cap BLAS thread env vars).
         None defaults to 1.
@@ -423,8 +449,14 @@ class PipelineOrchestrator:
         )
 
         self.n_max_workers = n_max_workers
+        self.max_memory_gb = max_memory_gb
+        # Set by _size_to_memory when a run starts.
+        self._workers: int | None = None
         self.dry_run = dry_run
         self.days_per_batch = days_per_batch
+        # Each run sizes from the asked value, not from what an earlier run
+        # of this orchestrator lowered it to.
+        self._asked_days_per_batch = days_per_batch
         self._batch_duration: pint.Quantity = days_per_batch * 24 * UREG.hour
         self._threads_per_worker = threads_per_worker
         self._memory_monitor = MemoryMonitor()
@@ -1424,7 +1456,7 @@ class PipelineOrchestrator:
                         os.environ[_var] = _thread_str
 
                 t_submit_start = _time.monotonic()
-                n_wrk = self.n_max_workers or os.cpu_count() or 4
+                n_wrk = self._workers or self.n_max_workers or os.cpu_count() or 4
                 _res = self._config.processing.params.resolve_resources()
                 _pool = _loky_reusable(
                     max_workers=n_wrk,
@@ -1445,7 +1477,13 @@ class PipelineOrchestrator:
                 )
 
                 def _submit_fork(job: _ForkJob, *, _pool=_pool) -> Future:
-                    return _pool.submit(write_files_into_fork, job.fork, job.task)
+                    return _pool.submit(
+                        run_measured,
+                        _input_bytes(ft[0] for ft in job.task.file_tasks),
+                        write_files_into_fork,
+                        job.fork,
+                        job.task,
+                    )
 
                 def _submit_task(
                     task: tuple[str, tuple | _ForkJob],
@@ -1460,12 +1498,17 @@ class PipelineOrchestrator:
                     # result, one canopy_positions arg instead of a single
                     # receiver_position/receiver_name pair) vs. the normal
                     # one-file-one-receiver shape -- see prepare_batch_tasks.
-                    if task_args[-1]:
-                        return _pool.submit(
-                            preprocess_reference_with_hermite_aux_fanout,
-                            *task_args[:-1],
-                        )
-                    return _pool.submit(preprocess_with_hermite_aux, *task_args[:-1])
+                    func = (
+                        preprocess_reference_with_hermite_aux_fanout
+                        if task_args[-1]
+                        else preprocess_with_hermite_aux
+                    )
+                    return _pool.submit(
+                        run_measured,
+                        _input_bytes([task_args[0]]),
+                        func,
+                        *task_args[:-1],
+                    )
 
                 fork_results: dict[str, list[ForkResult]] = defaultdict(list)
                 fork_jobs_left = {
@@ -2134,6 +2177,100 @@ class PipelineOrchestrator:
             if self._run is not None:
                 self._run.finish(receiver, date_key, result, bytes_added=bytes_added)
 
+    def _size_to_memory(
+        self,
+        filtered_dates: list[
+            tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]
+        ],
+    ) -> None:
+        """Size the workers and ``days_per_batch`` to the memory budget.
+
+        See :mod:`canvodpy.orchestrator.memory_budget`. A reference receiver
+        paired with several canopies is counted once per pairing: one task
+        reads its file for all pairings.
+
+        Raises
+        ------
+        MemoryBudgetError
+            If not even one worker fits with one day per batch.
+        """
+        preprocessing = self._config.processing.preprocessing
+        aggregation = (
+            None if preprocessing is None else preprocessing.temporal_aggregation
+        )
+        cadence_s = (
+            pd.Timedelta(aggregation.freq).total_seconds()
+            if aggregation is not None and aggregation.enabled
+            else None
+        )
+        whole_day = (
+            preprocessing is not None and len(build_default_pipeline(preprocessing)) > 0
+        )
+        lanes: list[list[InputFile]] = []
+        day_input = 0
+        for _date_key, groups in filtered_dates:
+            pairings: dict[tuple[str, str], int] = defaultdict(int)
+            days: dict[tuple[str, str], tuple[ReceiverDay, str]] = {}
+            for day, _type, _position_day, fmt in groups.values():
+                key = (day.receiver, fmt)
+                pairings[key] += 1
+                days[key] = (day, fmt)
+            this_day = 0
+            # discover_files reads the scans _find_files cached for this
+            # run: no folder is listed again.
+            for key, (day, fmt) in days.items():
+                files = [
+                    InputFile(
+                        path=found.path,
+                        size=_input_bytes([found.path]) * pairings[key],
+                        reader=fmt,
+                        canonical_name=found.canonical_name,
+                    )
+                    for found in discover_files(day, fmt)
+                ]
+                this_day += sum(f.size for f in files)
+                lanes.append(files)
+            day_input = max(day_input, this_day)
+
+        main_now = psutil.Process().memory_info().rss
+        if self.max_memory_gb is not None:
+            budget = int(self.max_memory_gb * GB)
+            source = "processing.params.max_memory_gb"
+        else:
+            budget = psutil.virtual_memory().available + main_now
+            source = "the memory available at the start"
+        max_workers = self.n_max_workers or os.cpu_count() or 4
+        plan = plan_memory(
+            budget_bytes=budget,
+            main_now_bytes=main_now,
+            day_input_bytes=day_input,
+            task=largest_task(
+                lanes,
+                epoch_chunk=self._config.processing.icechunk.chunk_strategies.gnss_store.epoch,
+                cadence_s=cadence_s,
+                whole_day=whole_day,
+            ),
+            max_workers=max_workers,
+            days_per_batch=self._asked_days_per_batch,
+            budget_source=source,
+        )
+        limited = (
+            plan.workers < max_workers
+            or plan.days_per_batch < self._asked_days_per_batch
+        )
+        (self._logger.warning if limited else self._logger.info)(
+            "memory_budget",
+            budget_source=source,
+            max_workers=max_workers,
+            asked_days_per_batch=self._asked_days_per_batch,
+            **plan.log_fields(),
+        )
+        self._workers = plan.workers
+        self.days_per_batch = plan.days_per_batch
+        self._batch_duration = plan.days_per_batch * 24 * UREG.hour
+        if self._run is not None:
+            self._run.set_workers(plan.workers)
+
     def process_by_date(
         self,
         keep_vars: list[str] | None = None,
@@ -2191,6 +2328,8 @@ class PipelineOrchestrator:
                 "no_dates_in_range", start_from=start_from, end_at=end_at
             )
             return
+
+        self._size_to_memory(filtered_dates)
 
         if self._run is not None:
             self._run.plan(

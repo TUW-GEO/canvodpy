@@ -190,7 +190,12 @@ class Site:
         dry_run : bool, default False
             If True, simulate processing without execution.
         days_per_batch : int, optional
-            Number of DOYs per loky wave. Default: from config.
+            Number of DOYs per loky wave. Default: from config. Lowered if
+            the days do not fit in the memory budget.
+        max_memory_gb : float, optional
+            Memory budget of the run in GB: the workers and
+            ``days_per_batch`` are sized to fit it. Default: from config;
+            without a value there, the memory available when the run starts.
         threads_per_worker : int, optional
             Threads per worker process. Default: from config.
         on_group_written : Callable[[str], None], optional
@@ -240,6 +245,7 @@ class Site:
             n_workers=n_workers,
             dry_run=dry_run,
             days_per_batch=days_per_batch,
+            max_memory_gb=max_memory_gb,
             threads_per_worker=threads_per_worker,
             on_group_written=on_group_written,
             label=label,
@@ -287,6 +293,11 @@ class Pipeline:
         If True, simulate without execution.
     days_per_batch : int, optional
         Calendar days to pool per processing wave. Default: from config.
+        Lowered if the days do not fit in the memory budget.
+    max_memory_gb : float, optional
+        Memory budget of the run in GB: the workers and ``days_per_batch``
+        are sized to fit it. Default: from config; without a value there,
+        the memory available when the run starts.
     threads_per_worker : int, optional
         Threads per loky worker process. Default: from config.
     on_group_written : Callable[[str], None], optional
@@ -376,6 +387,8 @@ class Pipeline:
             aux_agency = config.processing.aux_data.agency
         if days_per_batch is None:
             days_per_batch = proc.days_per_batch
+        if max_memory_gb is None:
+            max_memory_gb = proc.max_memory_gb
 
         # Resource resolution: explicit n_workers overrides everything,
         # otherwise use resolve_resources() which respects resource_mode.
@@ -436,6 +449,7 @@ class Pipeline:
                 n_max_workers=n_workers,
                 dry_run=dry_run,
                 days_per_batch=days_per_batch,
+                max_memory_gb=max_memory_gb,
                 threads_per_worker=threads_per_worker,
                 on_group_written=on_group_written,
                 on_discovery_start=on_discovery_start,

@@ -222,9 +222,15 @@ class TestProcessingParams:
         assert r["n_workers"] == 8
         assert r["nice_priority"] == 10
 
-    def test_max_memory_gb_deprecated(self):
-        with pytest.warns(FutureWarning, match="'max_memory_gb' is left over"):
-            ProcessingParams(max_memory_gb=32.0)
+    @pytest.mark.parametrize("mode", ["auto", "manual"])
+    def test_max_memory_gb_is_the_budget_in_both_modes(self, mode):
+        import warnings
+
+        threads = {"n_max_threads": 4} if mode == "manual" else {}
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            p = ProcessingParams(resource_mode=mode, max_memory_gb=32.0, **threads)
+        assert p.resolve_resources()["max_memory_gb"] == 32.0
 
     def test_max_memory_gb_unset_no_warning(self):
         import warnings

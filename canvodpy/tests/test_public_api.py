@@ -190,7 +190,7 @@ class TestNoEffectResourceArguments:
 
     @pytest.mark.parametrize(
         ("name", "value"),
-        [("max_memory_gb", 16.0), ("cpu_affinity", [0, 1]), ("nice_priority", 10)],
+        [("cpu_affinity", [0, 1]), ("nice_priority", 10)],
     )
     def test_pipeline_argument_warns(self, mocked_pipeline_setup, name, value):
         from canvodpy import Pipeline
@@ -202,7 +202,7 @@ class TestNoEffectResourceArguments:
 
     @pytest.mark.parametrize(
         ("name", "value"),
-        [("max_memory_gb", 16.0), ("cpu_affinity", [0, 1]), ("nice_priority", 10)],
+        [("cpu_affinity", [0, 1]), ("nice_priority", 10)],
     )
     def test_site_pipeline_argument_warns_once(
         self, mocked_pipeline_setup, name, value
@@ -229,6 +229,16 @@ class TestNoEffectResourceArguments:
         with warnings.catch_warnings():
             warnings.simplefilter("error", FutureWarning)
             Pipeline("Fangorn", n_workers=2)
+
+    def test_pipeline_passes_the_memory_budget(self, mocked_pipeline_setup):
+        import warnings
+
+        from canvodpy import Pipeline
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            Pipeline("Fangorn", n_workers=2, max_memory_gb=16.0)
+        assert mocked_pipeline_setup.call_args.kwargs["max_memory_gb"] == 16.0
 
     def test_orchestrator_argument_warns(self):
         from canvodpy.orchestrator.pipeline import PipelineOrchestrator
