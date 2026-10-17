@@ -476,10 +476,12 @@ def missing_store_settings_message(
     )
 
 
+_ACRONYMS = {"gnss": "GNSS", "vod": "VOD"}
+
+
 def _store_title(store_type: str) -> str:
-    """``gnss_store`` -> ``GNSS Store``: the kind is an acronym, not a word."""
-    kind, _, rest = store_type.partition("_")
-    return f"{kind.upper()} {rest.title()}".strip()
+    """``gnss_store`` -> ``GNSS Store``; other words title-cased."""
+    return " ".join(_ACRONYMS.get(word, word.title()) for word in store_type.split("_"))
 
 
 def collect_metadata(
