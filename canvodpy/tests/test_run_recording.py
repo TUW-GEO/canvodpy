@@ -73,7 +73,15 @@ def test_site_pipeline_records_its_run(rosalia_site) -> None:
     assert {"finding_files", "auxiliary_data", "reading", "writing"} <= stages
     main_stages = {t.stage for t in timings if t.pid == os.getpid()}
     worker_stages = {t.stage for t in timings if t.pid != os.getpid()}
-    assert {"finding_files", "auxiliary_data", "writing"} <= main_stages
+    # Planning the day's writes and reading the written day back for VOD
+    # run between the days' file reading, in the main process.
+    assert {
+        "finding_files",
+        "auxiliary_data",
+        "planning",
+        "writing",
+        "assembly",
+    } <= main_stages
     assert "reading" in worker_stages
     assert all(t.seconds >= 0 for t in timings)
     assert any(t.day == DAY for t in timings)

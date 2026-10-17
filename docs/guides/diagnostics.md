@@ -132,7 +132,8 @@ After each site, also after a crash, `canvodpy run` logs a `run_summary`
 event with the number of days processed (`days`), the VOD results
 written (`vod_results`), and per step the number of times it ran, its
 total time, and its errors (`stages`). `stages` covers the steps of the
-main process: `writing` (the GNSS store), `vod_calc`, and `vod_store`.
+main process, such as `planning`, `writing` (the GNSS store), `assembly`,
+`vod_calc`, and `vod_store`.
 The reading steps run in the worker processes; their times are in the
 log files and in the [dashboard](#see-where-a-run-spends-its-time).
 
@@ -278,7 +279,10 @@ The stages a run records, from every `stage_timing` event of the run:
 | `auxiliary_data` | main | day: downloading or reading the orbit and clock files |
 | `rinex.process_file` | worker | file: everything below, together |
 | `reading`, `validating`, `augmenting` | worker | file: reading it, checking its signals, adding positions and geometry |
+| `day_block_growth` | main | batch: giving its days a block in the GNSS store, one commit |
+| `planning` | main | day: planning which worker writes which part of the day (reads the store's day blocks and log book) |
 | `writing` | main | receiver-day: writing to the GNSS store |
+| `assembly` | main | receiver-day: reading the written day back from the GNSS store for VOD |
 | `icechunk.write` | main | group write of a store made before day blocks |
 | `vod_calc`, `vod_store` | main | VOD analysis and day (`canvodpy run` only) |
 
