@@ -5,6 +5,9 @@
 #     "marimo",
 #     "altair",
 # ]
+#
+# [tool.marimo.display]
+# theme = "dark"
 # ///
 import marimo
 
@@ -291,13 +294,20 @@ def _():
         """Make a chart follow the marimo theme: a transparent frame."""
         return chart.properties(background="transparent").configure_view(stroke=None)
 
-    def chart_palette(dark):
-        """The altair data colors for a theme, from the canvodpy palette."""
-        return (
-            ["#C4D7A4", "#C47070", "#E1E6B9"]
-            if dark
-            else ["#375D3B", "#8B3A3A", "#183128"]
-        )
+    def chart_palette():
+        """The altair data colors: the Okabe-Ito colors readable on the dark
+        background, which people with a red-green color vision deficiency
+        can tell apart. The dashboard is always dark (the script header
+        sets the marimo theme)."""
+        return [
+            "#56B4E9",
+            "#E69F00",
+            "#F0E442",
+            "#CC79A7",
+            "#009E73",
+            "#D55E00",
+            "#0072B2",
+        ]
 
     def comparison_view(log_dir):
         """The compare-by-label items, or a message when there is nothing.
@@ -317,48 +327,39 @@ def _():
         )
 
         def _charts(rows, labels, series):
-            """One grouped chart, or one chart per label when there are more
-            labels than the palette has colors."""
-            charts = []
+            """One grouped bar chart: per stage, one bar per label side by
+            side. Up to as many labels as the palette has colors, each gets
+            one of them; more labels get colors along viridis (its darkest
+            part left out, it would vanish on the dark background), in the
+            sorted order of the labels."""
             if len(labels) <= len(series):
-                charts.append(
-                    mo.ui.altair_chart(
-                        chart_style(
-                            alt.Chart({"values": rows})  # type: ignore
-                            .mark_bar()
-                            .encode(
-                                x=alt.X("Stage:N", axis=alt.Axis(title="Stage")),
-                                y=alt.Y(
-                                    "Median (s):Q",
-                                    axis=alt.Axis(title="Median time (s)"),
-                                ),
-                                color=alt.Color("Label:N").scale(range=series),
-                            )
+                scale = alt.Scale(range=series)
+            else:
+                scale = alt.Scale(scheme={"name": "viridis", "extent": [0.25, 1]})
+            return [
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": rows})  # type: ignore
+                        .mark_bar()
+                        .encode(
+                            x=alt.X("Stage:N", axis=alt.Axis(title="Stage")),
+                            xOffset=alt.XOffset("Label:N", sort="ascending"),
+                            y=alt.Y(
+                                "Median (s):Q",
+                                axis=alt.Axis(title="Median time (s)"),
+                            ),
+                            color=alt.Color(
+                                "Label:N",
+                                sort="ascending",
+                                scale=scale,
+                                legend=alt.Legend(orient="bottom", columns=4),
+                            ),
+                            tooltip=["Stage:N", "Label:N", "Median (s):Q"],
                         )
+                        .properties(width="container")
                     )
                 )
-                return charts
-            for index, label in enumerate(labels):
-                one = [row for row in rows if row["Label"] == label]
-                color = series[index % len(series)]
-                charts.append(mo.md(f"**{label}**"))
-                charts.append(
-                    mo.ui.altair_chart(
-                        chart_style(
-                            alt.Chart({"values": one})  # type: ignore
-                            .mark_bar()
-                            .encode(
-                                x=alt.X("Stage:N", axis=alt.Axis(title="Stage")),
-                                y=alt.Y(
-                                    "Median (s):Q",
-                                    axis=alt.Axis(title="Median time (s)"),
-                                ),
-                                color=alt.Color("Label:N").scale(range=[color]),
-                            )
-                        )
-                    )
-                )
-            return charts
+            ]
 
         intro = mo.md(
             "A run gets an optional `--label` when it starts "
@@ -406,7 +407,7 @@ def _():
                 )
             )
         labels = [row["Label"] for row in comparison.group_rows]
-        series = chart_palette(mo.app_meta().theme == "dark")
+        series = chart_palette()
         items.append(mo.md("### Median time per stage"))
         items.extend(_charts(comparison.chart_rows, labels, series))
         items.append(
@@ -716,7 +717,7 @@ def _(chart_palette, chart_style, mo, run_view):
     if not run_charts:
         chart_items.append(mo.md("_No chart data for this run yet._"))
     else:
-        chart_series = chart_palette(mo.app_meta().theme == "dark")
+        chart_series = chart_palette()
 
         if "stage" in run_charts:
             chart_items.append(mo.md("**Time per stage.** Total time of each stage."))

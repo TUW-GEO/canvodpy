@@ -377,9 +377,11 @@ run history queries only:
 - **Throughput over time:** the receiver-days finished, cumulative from
   the run start. The slope is the pace; a steep line is a fast run.
 
-The charts follow marimo's light and dark theme. The frame (background,
-axes, text) uses the theme, and the data colors come from the canvodpy
-palette for that theme.
+The dashboard is always dark, whatever the machine's or the browser's
+setting: the notebook's script header sets the marimo theme. The data
+colors are the Okabe-Ito colors that are readable on a dark background
+(Okabe and Ito, *Color Universal Design*, 2008), a palette meant to be
+told apart also with a red-green color vision deficiency.
 
 **Compare runs by label:** a run can take a free-text label with
 `canvodpy run --label <text>`, for example to group the repetitions of a
@@ -399,6 +401,11 @@ them:
   with the minimum and the maximum. Stages run in parallel, so the stage
   times can add up to more than the total. The median is the middle of
   the sorted times; the spread is min to max.
+- A grouped bar chart shows the median time per stage: per stage one bar
+  per label, side by side. Up to seven labels get one Okabe-Ito color
+  each; more labels get colors along viridis, in the sorted order of the
+  labels (with zero-padded numbers, such as `w001`, `w016`, `w126`, that
+  is the order of the numbers). Hover over a bar for its label and time.
 
 A run's status is one of:
 
