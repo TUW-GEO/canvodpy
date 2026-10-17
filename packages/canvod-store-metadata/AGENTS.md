@@ -31,7 +31,8 @@ recipes run these from the command line (`just metadata-show <store>`,
   every commit through `commit_with_rebase` then writes the root copy and
   the snapshot summary and checks the root copy (ADR 0014). Only the
   day-block growth passes `keep_summary=True` (it writes no data); the
-  commit then refuses any change but epoch axes and block indexes.
+  commit then refuses any change but new epoch-axis blocks and new
+  block-index entries in day-block groups.
 - A GNSS store's content settings (ADR 0019) are a fixed field of its
   repository metadata, written when the store is created; only a receiver
   added by amendment adds its own entry. `ensure_store_metadata` (when a

@@ -279,3 +279,110 @@ def test_keeping_the_summary_refuses_a_root_without_one(two_receivers) -> None:
                 config=store.settings,
                 keep_summary=True,
             )
+
+
+def _refused_keeping_the_summary(store: MyIcechunkStore, change, match: str) -> None:
+    """``change(session)`` then a commit keeping the summary: refused."""
+    with store.writable_session("main") as session:
+        change(session)
+        with pytest.raises(ValueError, match=match):
+            commit_with_rebase(
+                session,
+                "grow",
+                store_path=store.store_path,
+                config=store.settings,
+                keep_summary=True,
+            )
+
+
+def _group(session, path: str = GROUP):
+    import zarr
+
+    return zarr.open_group(session.store, mode="r+", path=path)
+
+
+@pytest.mark.parametrize(
+    "rewrite",
+    [
+        pytest.param(
+            lambda attrs: attrs["day_block_index"]["2025-12-31"].update(
+                cadence_ns=attrs["day_block_index"]["2025-12-31"]["cadence_ns"] * 2
+            ),
+            id="an existing day's block",
+        ),
+        pytest.param(
+            lambda attrs: attrs.update(epoch_layout="append"), id="the layout"
+        ),
+    ],
+)
+def test_keeping_the_summary_refuses_a_changed_block_index(
+    two_receivers, rewrite
+) -> None:
+    def change(session) -> None:
+        add_day_block(session, GROUP, DAY_1 + 365, 5, template=None)
+        group = _group(session)
+        attrs = dict(group.attrs)
+        rewrite(attrs)
+        group.attrs.put(attrs)
+
+    _refused_keeping_the_summary(two_receivers, change, GROUP)
+
+
+def test_keeping_the_summary_refuses_epochs_of_an_appending_group(
+    two_receivers,
+) -> None:
+    import zarr
+
+    store = two_receivers
+    # A group written by appending: no day-block layout in its attributes.
+    session = store.repo.writable_session("main")
+    zarr.open_group(session.store, mode="a").create_group("appended").create_array(
+        "epoch", shape=(4,), chunks=(4,), dtype="i8", dimension_names=["epoch"]
+    )[:] = np.arange(4)
+    session.commit("an appending group")
+
+    def change(session) -> None:
+        _group(session, "appended")["epoch"][:] = np.arange(4) + 10
+
+    _refused_keeping_the_summary(store, change, "chunks of /appended/epoch")
+
+
+@pytest.mark.parametrize(
+    "rewrite",
+    [
+        pytest.param(
+            lambda epoch: epoch.attrs.update(units="seconds since 2000-01-01"),
+            id="the epoch units",
+        ),
+        pytest.param(
+            lambda epoch: epoch.resize((epoch.shape[0] - 1,)),
+            id="a shrunk epoch axis",
+        ),
+    ],
+)
+def test_keeping_the_summary_refuses_changed_array_metadata(
+    two_receivers, rewrite
+) -> None:
+    def change(session) -> None:
+        rewrite(_group(session)["epoch"])
+
+    _refused_keeping_the_summary(two_receivers, change, f"the array {GROUP}/epoch")
+
+
+def test_keeping_the_summary_refuses_new_repository_metadata(two_receivers) -> None:
+    store = two_receivers
+
+    def change(session) -> None:
+        add_day_block(session, GROUP, DAY_1 + 365, 5, template=None)
+
+    with store.writable_session("main") as session:
+        change(session)
+        with pytest.raises(ValueError, match="changes the repository metadata"):
+            commit_with_rebase(
+                session,
+                "grow",
+                store_path=store.store_path,
+                config=store.settings,
+                repository=store.repo.get_metadata(),
+                keep_summary=True,
+            )
