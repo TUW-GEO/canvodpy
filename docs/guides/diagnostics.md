@@ -262,6 +262,10 @@ records:
   CPU use and memory use of the machine (percent) and the free space of
   the disks of the log folder and the stores
   (`history.resource_samples(run_id)`);
+- once a day, on the same background thread: the on-disk size of each
+  local store the run writes (the GNSS and VOD stores), so the run
+  history shows how the store grew over the run
+  (`history.store_sizes(run_id)`);
 - its warnings and errors, in words, with their receiver and day (a
   receiver-day with missing files reads, for example,
   `canopy_01 has 81 of 96 files on 2025001`);
@@ -375,13 +379,21 @@ how each is computed:
 **Charts:** the run page also shows charts of the run, built from the
 run history queries only:
 
-- **Time per stage:** the total time of each stage. A long bar is a
-  stage that takes a lot of the run.
+- **Time per stage:** the total time of each stage and, beside it, the
+  median of the stage's per-day seconds, in the same order (by total).
+  The median is over the seconds of a day, added up over the day's
+  receivers; a stage that names no day (such as `day_block_growth`)
+  takes the median of its records. A long bar is a stage that takes a
+  lot of the run.
 - **Time per day:** the stage seconds of a day, added up over all its
-  receivers. Receivers run in parallel, so this is not wall time; a day
-  can show more seconds than it took.
-- **Store growth per day:** the bytes each day added to the store. The
-  y-axis is in megabytes.
+  receivers, as a line over the days so a trend over the run is easy to
+  see. Receivers run in parallel, so this is not wall time; a day can
+  show more seconds than it took.
+- **Store size on disk:** the on-disk size of each local store (GNSS,
+  VOD) as a line, plus a **Total** line, measured once a day on the
+  background sampler thread (never inside a stage or a commit), so the
+  growth of the store over the run is visible. The y-axis is in MB or
+  GB, chosen from the values.
 - **CPU and memory:** the percent of the CPU and memory used, sampled
   during the run. A line near 100 % shows what limits the run.
 - **Free disk:** the free space of each folder, sampled during the run.
