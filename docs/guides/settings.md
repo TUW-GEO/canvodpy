@@ -267,15 +267,15 @@ Store the radial distance difference (`r_canopy` − `r_reference`, m) in the VO
 
 #### `processing.params.days_per_batch` {#processing-params-days_per_batch}
 
-Days processed together in one batch (1 = one day at a time). A high value may cause connection problems with the server the orbit and clock files come from.
+Deprecated: a run derives its days per unit from the memory budget (ADR 0021). If set, a unit has at most this many days.
 
-- Type: whole number
+- Type: whole number, or null
 - Limits: >= 1, <= 30
-- Default: `1`
+- Default: `null`
 
 #### `processing.params.max_memory_gb` {#processing-params-max_memory_gb}
 
-Memory budget of a run in GB (null = the memory available when the run starts). The run sizes the workers and `days_per_batch` to fit it, and stops before reading a file if not even one worker fits with one day per batch.
+Memory budget of a run in GB (null = the memory available when the run starts). The run sizes the workers and its days per unit to fit it, and stops before reading a file if not even one worker fits with one day.
 
 - Type: number, or null
 - Limits: > 0

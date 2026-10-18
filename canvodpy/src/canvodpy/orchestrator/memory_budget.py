@@ -1,20 +1,22 @@
-"""The memory budget of a run: how many workers and days per batch fit.
+"""The memory budget of a run: how many workers and days per unit fit.
 
 ``processing.params.max_memory_gb`` is the budget; without it, the memory
 available when the run starts. The budget holds the main process and the
 workers:
 
 - The main process holds what it holds when the run starts, plus the data
-  of the days in flight: two batches of ``days_per_batch`` days, the one
-  going to VOD and the one being read (:func:`~canvodpy.orchestrator.pipeline._run_ahead`).
-- Each worker holds the Python libraries, plus the files of its largest
-  task while it reads them (a task reads the files that share an epoch
-  chunk, or with ``processing.preprocessing`` set all files of a receiver
-  and day).
+  of the days in flight: two units of days, the one going to VOD and the
+  one being read (:func:`~canvodpy.orchestrator.pipeline._run_ahead`).
+- Each worker holds the Python libraries, plus its largest task: a task
+  reads the files that share an epoch chunk, one after the other, and
+  holds their data until it writes them. With ``processing.preprocessing``
+  set the chunks are counted at the aggregation interval, so the files of
+  a time bin are in one task.
 
-Workers = min(the worker cap, (budget - main process) / largest task).
-``days_per_batch`` is lowered until at least one worker fits; a run in which
-not even one worker fits with one day per batch stops before reading a file
+Workers = min(the worker cap, (budget - main process with one day) /
+largest task). A unit then gets as many days as the rest of the budget
+holds, at most :data:`MAX_UNIT_DAYS` (ADR 0021). A run in which not even
+one worker fits with one day stops before reading a file
 (:class:`MemoryBudgetError`). The estimates come from the factors below,
 measured on the test data; the workers log their real peaks
 (``worker_memory_peak``, :func:`~canvodpy.orchestrator.resources.run_measured`).
@@ -45,6 +47,11 @@ TASK_BYTES_PER_INPUT_BYTE: Mapping[str, float] = {
     "nmea": 15.0,
 }
 
+#: Memory a task holds per byte of its input files once they are read, until
+#: it writes them: the data in memory (0.45 measured on the test data),
+#: twice while preprocessing joins the files.
+TASK_HELD_BYTES_PER_INPUT_BYTE = 1.0
+
 #: For a reader not listed above: the largest factor.
 UNKNOWN_READER_FACTOR = max(TASK_BYTES_PER_INPUT_BYTE.values())
 
@@ -53,12 +60,16 @@ UNKNOWN_READER_FACTOR = max(TASK_BYTES_PER_INPUT_BYTE.values())
 #: ``keep_gnss_observables``).
 MAIN_BYTES_PER_DAY_INPUT_BYTE = 1.0
 
-#: Batches whose data are in memory at the same time (#277).
-BATCHES_IN_MEMORY = 2
+#: Units whose data are in memory at the same time (#277).
+UNITS_IN_MEMORY = 2
+
+#: Most days of a unit, so that a lost conflict or a crash loses little
+#: (ADR 0021).
+MAX_UNIT_DAYS = 31
 
 
 class MemoryBudgetError(ValueError):
-    """Not even one worker fits in the memory budget with one day per batch."""
+    """Not even one worker fits in the memory budget with one day per unit."""
 
 
 @dataclass(frozen=True)
@@ -81,10 +92,18 @@ class MemoryPlan:
     task_peak_bytes: int
     largest_task: tuple[Path, ...]
     workers: int
-    days_per_batch: int
+    unit_days: int
+    unit_limit: str
+    tasks_per_day: float
 
     def log_fields(self) -> dict[str, object]:
-        """The plan for the log, in GB."""
+        """The plan for the log, in GB.
+
+        ``unit_limit`` says what set the days per unit: ``"memory"``,
+        ``"max_unit_days"`` (:data:`MAX_UNIT_DAYS`), ``"days_to_run"``
+        (the run has no more days) or ``"days_per_batch"`` (the
+        deprecated setting).
+        """
         return {
             "budget_gb": round(self.budget_bytes / GB, 2),
             "main_process_gb": round(self.main_bytes / GB, 2),
@@ -92,18 +111,30 @@ class MemoryPlan:
             "task_peak_gb": round(self.task_peak_bytes / GB, 2),
             "largest_task": [p.name for p in self.largest_task],
             "workers": self.workers,
-            "days_per_batch": self.days_per_batch,
+            "unit_days": self.unit_days,
+            "unit_limit": self.unit_limit,
+            "tasks_per_day": round(self.tasks_per_day, 1),
+            "tasks_per_worker": round(
+                self.unit_days * self.tasks_per_day / self.workers, 1
+            ),
         }
 
 
 def task_peak_bytes(files: Sequence[InputFile]) -> int:
-    """Estimated peak memory of a worker that reads ``files`` in one task."""
-    return WORKER_BASE_BYTES + int(
-        sum(
-            f.size * TASK_BYTES_PER_INPUT_BYTE.get(f.reader, UNKNOWN_READER_FACTOR)
-            for f in files
-        )
+    """Estimated peak memory of a worker that reads ``files`` in one task.
+
+    The task reads the files one after the other and holds their data until
+    it writes them: the peak of reading its largest file, plus the data of
+    all of them.
+    """
+    if not files:
+        return WORKER_BASE_BYTES
+    reading = max(
+        f.size * TASK_BYTES_PER_INPUT_BYTE.get(f.reader, UNKNOWN_READER_FACTOR)
+        for f in files
     )
+    held = sum(f.size for f in files) * TASK_HELD_BYTES_PER_INPUT_BYTE
+    return WORKER_BASE_BYTES + int(reading + held)
 
 
 def chunk_tasks(
@@ -111,21 +142,18 @@ def chunk_tasks(
     *,
     epoch_chunk: int,
     cadence_s: float | None,
-    whole_day: bool,
 ) -> list[list[InputFile]]:
     """The files of one receiver and day, grouped as the run's tasks group them.
 
-    With ``whole_day`` (``processing.preprocessing`` set) all files are one
-    task. Otherwise files whose names put them into a shared epoch chunk
-    are one task; the chunks start at 00:00 at the day's ``cadence_s`` (the
-    aggregation interval, or else the finest sampling the names give). A
-    file without a canonical name is a task of its own.
+    Files whose names put them into a shared epoch chunk are one task; the
+    chunks start at 00:00 at the day's ``cadence_s`` (the aggregation
+    interval, or else the finest sampling the names give). A time bin is
+    one slot of the aggregated epochs, so the files of a bin share its
+    chunk. A file without a canonical name is a task of its own.
     """
     from canvod.preflight.convention import CanVODFilename
     from canvodpy.orchestrator.forked_writes import chunk_groups
 
-    if whole_day:
-        return [list(files)] if files else []
     named = [
         (f, CanVODFilename.from_filename(f.canonical_name))
         for f in files
@@ -156,15 +184,12 @@ def largest_task(
     *,
     epoch_chunk: int,
     cadence_s: float | None,
-    whole_day: bool,
 ) -> list[InputFile]:
     """The task of the largest estimated peak over all receiver-days."""
     best: list[InputFile] = []
     best_peak = -1
     for files in receiver_days:
-        for task in chunk_tasks(
-            files, epoch_chunk=epoch_chunk, cadence_s=cadence_s, whole_day=whole_day
-        ):
+        for task in chunk_tasks(files, epoch_chunk=epoch_chunk, cadence_s=cadence_s):
             peak = task_peak_bytes(task)
             if peak > best_peak:
                 best, best_peak = task, peak
@@ -177,11 +202,18 @@ def plan_memory(
     main_now_bytes: int,
     day_input_bytes: int,
     task: Sequence[InputFile],
+    tasks_per_day: float,
     max_workers: int,
-    days_per_batch: int,
+    days_to_run: int,
     budget_source: str,
+    days_per_batch: int | None = None,
 ) -> MemoryPlan:
-    """Size the workers and ``days_per_batch`` to fit ``budget_bytes``.
+    """Size the workers and the days per unit to fit ``budget_bytes``.
+
+    The workers come first: as many as fit next to the main process with
+    one day in flight. A unit then gets the most days the rest of the
+    budget holds, at most :data:`MAX_UNIT_DAYS` and the days the run has
+    (ADR 0021).
 
     Parameters
     ----------
@@ -193,46 +225,59 @@ def plan_memory(
         Size of the input files of the largest day (all receivers).
     task
         The largest task (:func:`largest_task`).
+    tasks_per_day
+        The tasks of a day, on average over the run's days; for the log.
     max_workers
         The worker cap: ``n_max_threads``, or the cores minus two.
-    days_per_batch
-        The days per batch asked for.
+    days_to_run
+        The days the run processes.
     budget_source
         Where the budget comes from, for the error message.
+    days_per_batch
+        The deprecated ``processing.params.days_per_batch``: if given, a
+        unit has at most this many days.
 
     Raises
     ------
     MemoryBudgetError
-        If one worker does not fit with one day per batch.
+        If one worker does not fit with one day per unit.
     """
     peak = task_peak_bytes(task)
     day_bytes = int(day_input_bytes * MAIN_BYTES_PER_DAY_INPUT_BYTE)
 
     def main_bytes(days: int) -> int:
-        return main_now_bytes + BATCHES_IN_MEMORY * days * day_bytes
+        return main_now_bytes + UNITS_IN_MEMORY * days * day_bytes
 
-    days = days_per_batch
-    while days > 1 and main_bytes(days) + peak > budget_bytes:
-        days -= 1
-    main = main_bytes(days)
-    if main + peak > budget_bytes:
+    if main_bytes(1) + peak > budget_bytes:
         files = ", ".join(f.path.name for f in task)
         msg = (
-            f"The run needs at least {(main + peak) / GB:.1f} GB of memory, "
-            f"but its budget is {budget_bytes / GB:.1f} GB ({budget_source}). "
-            f"The main process needs {main / GB:.1f} GB with one day per batch "
-            f"({BATCHES_IN_MEMORY} days in flight), and one worker reading "
+            f"The run needs at least {(main_bytes(1) + peak) / GB:.1f} GB of "
+            f"memory, but its budget is {budget_bytes / GB:.1f} GB "
+            f"({budget_source}). The main process needs "
+            f"{main_bytes(1) / GB:.1f} GB with one day per unit "
+            f"({UNITS_IN_MEMORY} days in flight), and one worker reading "
             f"{files} needs {peak / GB:.1f} GB. Raise "
             "processing.params.max_memory_gb or free memory."
         )
         raise MemoryBudgetError(msg)
-    workers = max(1, min(max_workers, (budget_bytes - main) // peak))
+    workers = int(max(1, min(max_workers, (budget_bytes - main_bytes(1)) // peak)))
+
+    limits = {"max_unit_days": MAX_UNIT_DAYS, "days_to_run": max(1, days_to_run)}
+    if days_per_batch is not None:
+        limits["days_per_batch"] = max(1, days_per_batch)
+    unit_limit = min(limits, key=lambda name: limits[name])
+    days = limits[unit_limit]
+    while days > 1 and main_bytes(days) + workers * peak > budget_bytes:
+        days -= 1
+        unit_limit = "memory"
     return MemoryPlan(
         budget_bytes=budget_bytes,
-        main_bytes=main,
+        main_bytes=main_bytes(days),
         day_bytes=day_bytes,
         task_peak_bytes=peak,
         largest_task=tuple(f.path for f in task),
-        workers=int(workers),
-        days_per_batch=days,
+        workers=workers,
+        unit_days=days,
+        unit_limit=unit_limit,
+        tasks_per_day=tasks_per_day,
     )

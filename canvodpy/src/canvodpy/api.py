@@ -35,7 +35,7 @@ import sys
 from contextlib import ExitStack
 from typing import TYPE_CHECKING
 
-from canvod.utils.tools import deprecated
+from canvod.utils.tools import deprecated, deprecated_argument
 from canvodpy.orchestrator.resources import deprecate_no_effect_arguments
 
 # Lazy imports to avoid circular dependencies
@@ -49,6 +49,15 @@ if TYPE_CHECKING:
 
     from canvod.store import MyIcechunkStore
     from canvodpy.vod_computer import VodComputer
+
+
+def _passed(**arguments: object) -> dict[str, object]:
+    """The arguments that are not ``None``.
+
+    For passing on a deprecated argument only when the caller gave it, so
+    that the callee warns only then.
+    """
+    return {name: value for name, value in arguments.items() if value is not None}
 
 
 class Site:
@@ -150,6 +159,13 @@ class Site:
         return self._site.vod_store_path
 
     @deprecate_no_effect_arguments
+    @deprecated_argument(
+        "days_per_batch",
+        "The 'days_per_batch' argument of Site.pipeline() is left over from "
+        "development and will be removed with the next major version. A run "
+        "derives its days per unit from the memory budget; until then the "
+        "argument caps them. Remove the argument.",
+    )
     def pipeline(
         self,
         keep_vars: list[str] | None = None,
@@ -189,13 +205,10 @@ class Site:
             Number of parallel workers. Default: from config.
         dry_run : bool, default False
             If True, simulate processing without execution.
-        days_per_batch : int, optional
-            Number of DOYs per loky wave. Default: from config. Lowered if
-            the days do not fit in the memory budget.
         max_memory_gb : float, optional
-            Memory budget of the run in GB: the workers and
-            ``days_per_batch`` are sized to fit it. Default: from config;
-            without a value there, the memory available when the run starts.
+            Memory budget of the run in GB: the workers and the days per
+            unit are sized to fit it. Default: from config; without a value
+            there, the memory available when the run starts.
         threads_per_worker : int, optional
             Threads per worker process. Default: from config.
         on_group_written : Callable[[str], None], optional
@@ -244,11 +257,11 @@ class Site:
             aux_agency=aux_agency,
             n_workers=n_workers,
             dry_run=dry_run,
-            days_per_batch=days_per_batch,
             max_memory_gb=max_memory_gb,
             threads_per_worker=threads_per_worker,
             on_group_written=on_group_written,
             label=label,
+            **_passed(days_per_batch=days_per_batch),
             on_discovery_start=on_discovery_start,
             on_discovery_end=on_discovery_end,
             on_new_files=on_new_files,
@@ -291,13 +304,10 @@ class Pipeline:
         (``processing.n_max_threads``).
     dry_run : bool, default False
         If True, simulate without execution.
-    days_per_batch : int, optional
-        Calendar days to pool per processing wave. Default: from config.
-        Lowered if the days do not fit in the memory budget.
     max_memory_gb : float, optional
-        Memory budget of the run in GB: the workers and ``days_per_batch``
-        are sized to fit it. Default: from config; without a value there,
-        the memory available when the run starts.
+        Memory budget of the run in GB: the workers and the days per unit
+        are sized to fit it (ADR 0021). Default: from config; without a
+        value there, the memory available when the run starts.
     threads_per_worker : int, optional
         Threads per loky worker process. Default: from config.
     on_group_written : Callable[[str], None], optional
@@ -349,6 +359,13 @@ class Pipeline:
     """
 
     @deprecate_no_effect_arguments
+    @deprecated_argument(
+        "days_per_batch",
+        "The 'days_per_batch' argument of Pipeline() is left over from "
+        "development and will be removed with the next major version. A run "
+        "derives its days per unit from the memory budget; until then the "
+        "argument caps them. Remove the argument.",
+    )
     def __init__(
         self,
         site: Site | str,
@@ -385,8 +402,6 @@ class Pipeline:
             keep_vars = proc.keep_gnss_observables
         if aux_agency is None:
             aux_agency = config.processing.aux_data.agency
-        if days_per_batch is None:
-            days_per_batch = proc.days_per_batch
         if max_memory_gb is None:
             max_memory_gb = proc.max_memory_gb
 
@@ -407,7 +422,10 @@ class Pipeline:
         self.aux_agency = aux_agency
         self.n_workers = n_workers
         self.dry_run = dry_run
-        self.days_per_batch = days_per_batch
+        # The deprecated cap on the days per unit, if any.
+        self.days_per_batch = (
+            days_per_batch if days_per_batch is not None else proc.days_per_batch
+        )
 
         # Setup logging
         import structlog
@@ -448,7 +466,6 @@ class Pipeline:
                 site=site._site,
                 n_max_workers=n_workers,
                 dry_run=dry_run,
-                days_per_batch=days_per_batch,
                 max_memory_gb=max_memory_gb,
                 threads_per_worker=threads_per_worker,
                 on_group_written=on_group_written,
@@ -459,6 +476,7 @@ class Pipeline:
                 on_days_without_vod=on_days_without_vod,
                 config=config,
                 run=active_run,
+                **_passed(days_per_batch=days_per_batch),
             )
         except Exception:
             self._run.__exit__(*sys.exc_info())
@@ -470,7 +488,6 @@ class Pipeline:
             n_workers=n_workers,
             keep_vars=len(self.keep_vars),
             dry_run=dry_run,
-            days_per_batch=days_per_batch,
             threads_per_worker=threads_per_worker,
         )
 
