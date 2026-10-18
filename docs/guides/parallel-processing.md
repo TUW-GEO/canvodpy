@@ -39,8 +39,9 @@ go to VOD, the workers read the next unit.
 
 1. **Prepare.** Each day of the unit gets its orbit and clock data,
    downloaded and interpolated or taken from the cache, and the receiver
-   positions. The days of a unit are prepared at the same time, one
-   thread per day. A day whose orbit and clock files are not out yet is
+   positions. Up to four days of a unit are prepared at the same time,
+   one thread per day, so that the download server gets at most four
+   requests at once. A day whose orbit and clock files are not out yet is
    left out of the unit and stays open for the next run; the other days
    go on.
 2. **Read and write.** A task for the worker processes holds the files
@@ -60,6 +61,9 @@ go to VOD, the workers read the next unit.
    It also writes the few files whose epochs reach beyond their task's
    chunks. A file that fails gets no entry in the store's log book, so
    the next run tries it again; the other files and days are committed.
+   The commit itself is one for the whole unit: if it fails (a store
+   error, or other runs keep committing first through all tries), every
+   day of the unit is reported as failed and the next run writes them.
    If another run committed to the store first, the unit is read and
    written again on top of it. The first day of a new store is a unit of
    its own, and the first day of a receiver new to the store is read by

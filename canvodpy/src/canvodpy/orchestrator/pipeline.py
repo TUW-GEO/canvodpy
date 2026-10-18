@@ -90,8 +90,8 @@ from canvodpy.orchestrator.memory_budget import (
     GB,
     InputFile,
     chunk_tasks,
+    largest_task,
     plan_memory,
-    task_peak_bytes,
 )
 from canvodpy.orchestrator.processor import (
     GroupWriteResult,
@@ -124,6 +124,11 @@ from canvodpy.run_history import (
 # potentially-uninitialized local inside the nested _submit() closure below.
 # A module-level TypeVar is unambiguous to both type checkers and CodeQL.
 T = TypeVar("T")
+
+#: Days of a unit prepared at the same time. Each one may download its
+#: orbit and clock files, and a unit has up to 31 days; more connections at
+#: once than this risk being refused by the download server.
+PREPARE_THREADS = 4
 
 # A day prepared in Phase 1: its processor, file tasks and files per receiver.
 _PreparedDate = tuple[RinexDataProcessor, list[tuple], list[tuple[str, list[Path]]]]
@@ -1195,7 +1200,7 @@ class PipelineOrchestrator:
         ] = {}
         task_descriptors_by_date: dict[str, list[tuple]] = {}
 
-        phase1_workers = len(batch)
+        phase1_workers = min(len(batch), PREPARE_THREADS)
         batch_receivers_by_date = dict(batch)
         with ThreadPoolExecutor(max_workers=phase1_workers) as tp:
             # Each thread runs in a copy of this context, so its log
@@ -2353,7 +2358,7 @@ class PipelineOrchestrator:
             budget_bytes=budget,
             main_now_bytes=main_now,
             day_input_bytes=day_input,
-            task=max(tasks, key=task_peak_bytes, default=[]),
+            task=largest_task(tasks),
             tasks_per_day=len(tasks) / max(1, len(filtered_dates)),
             max_workers=max_workers,
             days_to_run=len(filtered_dates),

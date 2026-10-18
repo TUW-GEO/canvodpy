@@ -158,11 +158,13 @@ def test_with_preprocessing_the_files_of_a_time_bin_are_one_task():
 
 def test_a_task_reads_its_files_one_after_the_other():
     # The peak of reading the largest file, plus the data of all of them;
-    # the 96 files of a day at 2 MB each give 0.47 GB, not 9 GB (#417).
+    # the 96 files of a day at 2 MB each give under 0.8 GB, not 9 GB (#417).
     files = [_file(f"00{m:02d}", 2 * MB) for m in (0, 15, 30, 45)]
     reading = 2 * MB * TASK_BYTES_PER_INPUT_BYTE["rinex3"]
     held = 4 * 2 * MB * TASK_HELD_BYTES_PER_INPUT_BYTE
-    assert task_peak_bytes(files) == WORKER_BASE_BYTES + reading + held
+    assert task_peak_bytes(files) == pytest.approx(
+        WORKER_BASE_BYTES + reading + held, abs=1
+    )
 
 
 def test_a_daily_file_is_one_task():
@@ -187,7 +189,8 @@ def test_the_largest_task_is_taken():
         _file("0000", 3 * MB, sampling="30S"),
         _file("0015", 3 * MB, sampling="30S"),
     ]
-    assert largest_task([small, large], epoch_chunk=180, cadence_s=None) == large
+    assert largest_task([small, large]) == large
+    assert largest_task([]) == []
 
 
 # ── A run on the test data ───────────────────────────────────────────────

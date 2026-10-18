@@ -221,6 +221,30 @@ class TestNoEffectResourceArguments:
         assert len(messages) == 1
         assert f"'{name}' argument of Site.pipeline()" in messages[0]
 
+    def test_days_per_batch_warns_and_still_caps_the_unit(self, mocked_pipeline_setup):
+        from canvodpy import Pipeline
+
+        with pytest.warns(
+            FutureWarning, match=r"'days_per_batch' argument of Pipeline\(\)"
+        ):
+            Pipeline("Fangorn", days_per_batch=3)
+        assert mocked_pipeline_setup.call_args.kwargs["days_per_batch"] == 3
+
+    def test_site_pipeline_days_per_batch_warns_once(self, mocked_pipeline_setup):
+        import warnings
+
+        from canvodpy import Site
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            Site("Fangorn").pipeline(days_per_batch=3)
+        messages = [
+            str(w.message) for w in caught if issubclass(w.category, FutureWarning)
+        ]
+        assert len(messages) == 1
+        assert "'days_per_batch' argument of Site.pipeline()" in messages[0]
+        assert mocked_pipeline_setup.call_args.kwargs["days_per_batch"] == 3
+
     def test_pipeline_without_them_does_not_warn(self, mocked_pipeline_setup):
         import warnings
 

@@ -32,7 +32,8 @@ Low-level (full control):
 from __future__ import annotations
 
 import sys
-from contextlib import ExitStack
+import warnings
+from contextlib import ExitStack, contextmanager
 from typing import TYPE_CHECKING
 
 from canvod.utils.tools import deprecated, deprecated_argument
@@ -58,6 +59,16 @@ def _passed(**arguments: object) -> dict[str, object]:
     that the callee warns only then.
     """
     return {name: value for name, value in arguments.items() if value is not None}
+
+
+@contextmanager
+def _forwarded_days_per_batch() -> Generator[None]:
+    """Warn about ``days_per_batch`` once: the caller warned, the callee doesn't."""
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "The 'days_per_batch' argument of", FutureWarning
+        )
+        yield
 
 
 class Site:
@@ -251,23 +262,24 @@ class Site:
         >>> data = pipeline.process_date("2025001")
 
         """
-        return Pipeline(
-            site=self,
-            keep_vars=keep_vars,
-            aux_agency=aux_agency,
-            n_workers=n_workers,
-            dry_run=dry_run,
-            max_memory_gb=max_memory_gb,
-            threads_per_worker=threads_per_worker,
-            on_group_written=on_group_written,
-            label=label,
-            **_passed(days_per_batch=days_per_batch),
-            on_discovery_start=on_discovery_start,
-            on_discovery_end=on_discovery_end,
-            on_new_files=on_new_files,
-            on_incomplete_day=on_incomplete_day,
-            on_days_without_vod=on_days_without_vod,
-        )
+        with _forwarded_days_per_batch():
+            return Pipeline(
+                site=self,
+                keep_vars=keep_vars,
+                aux_agency=aux_agency,
+                n_workers=n_workers,
+                dry_run=dry_run,
+                max_memory_gb=max_memory_gb,
+                threads_per_worker=threads_per_worker,
+                on_group_written=on_group_written,
+                label=label,
+                **_passed(days_per_batch=days_per_batch),
+                on_discovery_start=on_discovery_start,
+                on_discovery_end=on_discovery_end,
+                on_new_files=on_new_files,
+                on_incomplete_day=on_incomplete_day,
+                on_days_without_vod=on_days_without_vod,
+            )
 
     def __repr__(self) -> str:
         n_receivers = len(self.active_receivers)
@@ -462,22 +474,23 @@ class Pipeline:
             )
         try:
             # Use proven orchestrator implementation
-            self._orchestrator = PipelineOrchestrator(
-                site=site._site,
-                n_max_workers=n_workers,
-                dry_run=dry_run,
-                max_memory_gb=max_memory_gb,
-                threads_per_worker=threads_per_worker,
-                on_group_written=on_group_written,
-                on_discovery_start=on_discovery_start,
-                on_discovery_end=on_discovery_end,
-                on_new_files=on_new_files,
-                on_incomplete_day=on_incomplete_day,
-                on_days_without_vod=on_days_without_vod,
-                config=config,
-                run=active_run,
-                **_passed(days_per_batch=days_per_batch),
-            )
+            with _forwarded_days_per_batch():
+                self._orchestrator = PipelineOrchestrator(
+                    site=site._site,
+                    n_max_workers=n_workers,
+                    dry_run=dry_run,
+                    max_memory_gb=max_memory_gb,
+                    threads_per_worker=threads_per_worker,
+                    on_group_written=on_group_written,
+                    on_discovery_start=on_discovery_start,
+                    on_discovery_end=on_discovery_end,
+                    on_new_files=on_new_files,
+                    on_incomplete_day=on_incomplete_day,
+                    on_days_without_vod=on_days_without_vod,
+                    config=config,
+                    run=active_run,
+                    **_passed(days_per_batch=days_per_batch),
+                )
         except Exception:
             self._run.__exit__(*sys.exc_info())
             raise

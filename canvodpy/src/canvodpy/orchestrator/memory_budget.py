@@ -48,9 +48,10 @@ TASK_BYTES_PER_INPUT_BYTE: Mapping[str, float] = {
 }
 
 #: Memory a task holds per byte of its input files once they are read, until
-#: it writes them: the data in memory (0.45 measured on the test data),
-#: twice while preprocessing joins the files.
-TASK_HELD_BYTES_PER_INPUT_BYTE = 1.0
+#: it writes them. Measured on a receiver-day of 96 RINEX v3 files of 15
+#: minutes (208 MB, SNR only, preprocessing on): about 1.6, which with the
+#: largest file's read peak gives the 0.78 GB peak measured for the task (#417).
+TASK_HELD_BYTES_PER_INPUT_BYTE = 1.6
 
 #: For a reader not listed above: the largest factor.
 UNKNOWN_READER_FACTOR = max(TASK_BYTES_PER_INPUT_BYTE.values())
@@ -179,21 +180,9 @@ def chunk_tasks(
     return [members for members, _ in chunk_groups(chunks_of)]
 
 
-def largest_task(
-    receiver_days: Iterable[Sequence[InputFile]],
-    *,
-    epoch_chunk: int,
-    cadence_s: float | None,
-) -> list[InputFile]:
-    """The task of the largest estimated peak over all receiver-days."""
-    best: list[InputFile] = []
-    best_peak = -1
-    for files in receiver_days:
-        for task in chunk_tasks(files, epoch_chunk=epoch_chunk, cadence_s=cadence_s):
-            peak = task_peak_bytes(task)
-            if peak > best_peak:
-                best, best_peak = task, peak
-    return best
+def largest_task(tasks: Iterable[Sequence[InputFile]]) -> Sequence[InputFile]:
+    """The task of the largest estimated peak (:func:`task_peak_bytes`); empty if none."""
+    return max(tasks, key=task_peak_bytes, default=[])
 
 
 def plan_memory(

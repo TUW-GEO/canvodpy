@@ -4002,14 +4002,18 @@ class RinexDataProcessor:
 
             # Rows per group, in the order of the days.
             rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
+            # The stored rows at the tip, read once per group for the unit.
+            tip_rows: dict[str, tuple[StoredSpan, ...]] = {}
             for proc, day, _results in days:
                 day_out = out[day.date_key]
                 kept: list[FileNumbers] = []
                 for n in numbers[day.date_key]:
                     if n.deferred is not None:
+                        if n.group not in tip_rows:
+                            tip_rows[n.group] = self._stored_rows(session, n.group)
                         try:
                             n.epochs = proc._write_deferred(
-                                session, n, self._stored_rows(session, n.group)
+                                session, n, tip_rows[n.group]
                             )
                         except (OSError, RuntimeError, ValueError):  # fmt: skip
                             log.exception(

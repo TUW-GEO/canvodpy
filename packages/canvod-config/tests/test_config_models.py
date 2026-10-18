@@ -186,6 +186,18 @@ class TestProcessingParams:
         with pytest.raises(ValidationError):
             ProcessingParams(resource_mode="manual", n_max_threads=101)  # le=100
 
+    def test_days_per_batch_is_deprecated(self):
+        with pytest.warns(FutureWarning, match="days_per_batch"):
+            params = ProcessingParams(days_per_batch=3)
+        assert params.days_per_batch == 3
+
+    def test_without_days_per_batch_nothing_warns(self):
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            assert ProcessingParams().days_per_batch is None
+
     def test_days_per_batch_bounds(self):
         with pytest.raises(ValidationError):
             ProcessingParams(days_per_batch=0)  # ge=1
