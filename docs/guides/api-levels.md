@@ -192,6 +192,27 @@ change the VOD settings:
 === "Python"
 
     ```python
+    from datetime import date, timedelta
+
+    report = site.vod.compute_days(
+        [date(2025, 1, 1) + timedelta(days=i) for i in range(31)],
+        ["canopy_01_vs_reference_01"],
+    )
+    report.missing  # the days without VOD, and why
+    ```
+
+    Each day of each pair is one task in the worker pool, which reads only
+    that day from the GNSS store, so a day takes as long in a large store
+    as in a small one. Without the list of analyses, every pair is
+    computed. A day whose VOD the store already holds from the same GNSS
+    files is not computed again (`report.stored`), so running it twice
+    adds nothing. A day without data in the canopy or the reference group
+    gets no VOD and is listed in `report.missing`.
+
+    To get the VOD of a time range back as one dataset, use
+    `site.vod.compute_bulk`:
+
+    ```python
     from datetime import datetime
 
     vod = site.vod.compute_bulk(
@@ -201,9 +222,13 @@ change the VOD settings:
     )
     ```
 
-    `start` and `end` are times, both included: `datetime(2025, 1, 31)`
-    alone would end at midnight at the start of January 31.
-    `site.vod.compute_bulk_all` computes every pair.
+    It runs `site.vod.compute_days` for the days of the range, then reads
+    the VOD from `start` to `end` back from the VOD store. `start` and
+    `end` are times, both included: `datetime(2025, 1, 31)` alone would
+    end at midnight at the start of January 31. With `write=False`, it
+    reads the range into memory and computes the VOD there, without the
+    worker pool, and writes nothing. `site.vod.compute_bulk_all` computes
+    every pair.
 
 === "Command line"
 
@@ -212,8 +237,9 @@ change the VOD settings:
         --start 2025001 --end 2025031
     ```
 
-    The command line covers whole days: from the start of `--start` to
-    the end of `--end`.
+    The command runs `site.vod.compute_days` for whole days, from
+    `--start` to `--end`; without them, for every day of the GNSS store.
+    It lists the days without VOD.
 
 A day can end up in the GNSS store but not in the VOD store, for example
 when writing the VOD failed. `canvodpy run` warns about such days. To

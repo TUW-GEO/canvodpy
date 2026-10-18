@@ -549,6 +549,25 @@ class VodWriteResult:
     duration_seconds: float = 0.0
 
 
+@dataclass
+class VodDayWrite:
+    """One analysis pair's VOD of one day, for :meth:`MyIcechunkStore.commit_vod_days`.
+
+    ``item.cadences`` holds the one day and its cadence. With ``in_fork``,
+    the day was written into a fork of the commit's session and
+    ``item.dataset`` holds only the result's attributes; otherwise it holds
+    the result, which the commit writes (a group's first days: the forks
+    were made before the group existed).
+    """
+
+    item: VodWriteItem
+    action: str  # "write" | "append" | "overwrite"
+    start: np.datetime64
+    end: np.datetime64
+    epochs: int
+    in_fork: bool
+
+
 @add_rich_display_to_store
 class MyIcechunkStore:
     """
@@ -3416,22 +3435,7 @@ class MyIcechunkStore:
                     days=[str(day) for day in cadences],
                     approx_size_mb=round(dataset.nbytes / 1e6, 2),
                 )
-                stored_days = day_blocks(session.store, group_name)
-                for day, cadence_s in cadences.items():
-                    block = add_day_block(
-                        session,
-                        group_name,
-                        day,
-                        cadence_s,
-                        dataset,
-                        epoch_chunk=epoch_chunk,
-                        dim_chunks=self.chunk_strategy,
-                    )
-                    if day in stored_days:
-                        # The result replaces the whole day, also slots
-                        # outside its span that the earlier result filled.
-                        clear_day_block(session, group_name, block)
-                write_file_region(session, group_name, dataset)
+                self._write_vod_day(session, group_name, dataset, cadences, epoch_chunk)
                 zroot = zarr.open_group(session.store, mode="a")
                 self._append_vod_metadata_row(
                     zroot=zroot,
@@ -3464,6 +3468,148 @@ class MyIcechunkStore:
         for result in results.values():
             result.snapshot_id = snapshot_id
         return results
+
+    def _write_vod_day(
+        self,
+        session: Any,
+        group_name: str,
+        dataset: xr.Dataset,
+        cadences: Mapping[np.datetime64, float],
+        epoch_chunk: int,
+    ) -> None:
+        """Write one day's VOD result into the day's block, replacing the day.
+
+        The day gets a block at its cadence
+        (:func:`~canvod.store.day_blocks.add_day_block`; a new group is
+        created from the result). A day written before is emptied first
+        (:func:`~canvod.store.day_blocks.clear_day_block`), so the result
+        replaces all of it.
+        """
+        stored_days = day_blocks(session.store, group_name)
+        for day, cadence_s in cadences.items():
+            block = add_day_block(
+                session,
+                group_name,
+                day,
+                cadence_s,
+                dataset,
+                epoch_chunk=epoch_chunk,
+                dim_chunks=self.chunk_strategy,
+            )
+            if day in stored_days:
+                # The result replaces the whole day, also slots outside its
+                # span that the earlier result filled.
+                clear_day_block(session, group_name, block)
+        write_file_region(session, group_name, dataset)
+
+    def commit_vod_days(
+        self,
+        session: icechunk.Session,
+        forks: Sequence[ForkSession],
+        days: Sequence[VodDayWrite],
+        branch: str = "main",
+    ) -> str | None:
+        """Merge the forks of a unit of VOD days and commit them once (ADR 0021).
+
+        ``forks`` come from ``session``, which had no changes of its own
+        when they were made; they hold the days the worker pool wrote
+        (:mod:`canvodpy.orchestrator.vod_phase`). Under the store's commit
+        lock: merge them, rebase onto commits made since the session was
+        opened, write the days not in a fork (``VodDayWrite.in_fork``), add
+        a log-book row per day and commit.
+
+        Returns
+        -------
+        str or None
+            Snapshot ID of the commit; ``None`` without days.
+
+        Raises
+        ------
+        PreprocessingMismatchError
+            If a group holds results of data preprocessed differently.
+        ValueError
+            If a group holds results of another calculator, or other
+            calculator parameters.
+        LayoutError
+            If a day's result covers more than its one day.
+        icechunk.RebaseFailedError, icechunk.ConflictError
+            If another writer changed the same chunks first; nothing is
+            committed.
+        """
+        if not days:
+            return None
+        checked: set[str] = set()
+        for day in days:
+            group_name = day.item.group_name
+            if group_name in checked:
+                continue
+            checked.add(group_name)
+            self.check_preprocessing_matches(
+                group_name, xr.Dataset(attrs=day.item.dataset.attrs), branch
+            )
+            self._check_vod_calculator(
+                group_name,
+                day.item.calculator_name,
+                day.item.calculator_params,
+                branch,
+            )
+        plans = [
+            VodWritePlan(
+                item=day.item,
+                action=day.action,
+                start=day.start,
+                end=day.end,
+                commit_message=day.item.commit_message or f"VOD {day.item.group_name}",
+                dataset=day.item.dataset,
+            )
+            for day in days
+        ]
+        for plan, day in zip(plans, days, strict=True):
+            if not day.in_fork:
+                _require_one_day(plan)
+        message, metadata = _vod_batch_commit(
+            get_version_from_pyproject(), "write", plans
+        )
+        epoch_chunk = int((self.chunk_strategy or {}).get("epoch", 180))
+        with commit_lock(self.store_path):
+            if forks:
+                session.merge(*forks)
+            if self.repo.lookup_branch(branch) != session.snapshot_id:
+                session.rebase(icechunk.ConflictDetector())
+            for plan, day in zip(plans, days, strict=True):
+                if not day.in_fork:
+                    self._write_vod_day(
+                        session,
+                        plan.item.group_name,
+                        plan.dataset,
+                        plan.item.cadences or {},
+                        epoch_chunk,
+                    )
+            zroot = zarr.open_group(session.store, mode="a")
+            for plan, day in zip(plans, days, strict=True):
+                self._append_vod_metadata_row(
+                    zroot=zroot,
+                    group_name=plan.item.group_name,
+                    source_file_hashes=plan.item.source_file_hashes,
+                    source_gnss_stores=plan.item.source_gnss_stores,
+                    start=plan.start,
+                    end=plan.end,
+                    snapshot_id="",
+                    action=plan.action,
+                    commit_msg=plan.commit_message,
+                    calculator_name=plan.item.calculator_name,
+                    calculator_params=plan.item.calculator_params,
+                    dataset_attrs=dict(plan.dataset.attrs),
+                    write_strategy=VOD_DAY_BLOCK_WRITE_STRATEGY,
+                    epochs=day.epochs,
+                )
+            return commit_with_rebase(
+                session,
+                message,
+                metadata=metadata,
+                store_path=self.store_path,
+                config=self.settings,
+            )
 
     def write_or_append_vod_groups_batch(
         self,

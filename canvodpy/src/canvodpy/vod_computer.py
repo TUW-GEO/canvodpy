@@ -7,12 +7,19 @@ Every entry point computes and stores VOD through this class: the Python
 - ``compute_day()`` / ``compute_day_all()`` — from the per-day datasets
   yielded by ``Pipeline.process_range()``. Loads them into memory, then
   computes.
-- ``compute_bulk()``: from the site's GNSS Icechunk store. Reads the full
-  (or filtered) time range, drops duplicate epochs, sorts, then computes.
+- ``compute_days()``: from the site's GNSS Icechunk store, the VOD phase
+  (ADR 0021): one task per analysis pair and day in the worker pool, one
+  commit per unit of days (:mod:`canvodpy.orchestrator.vod_phase`).
+  ``canvodpy vod`` and ``canvodpy vod-reconcile`` use it.
+- ``compute_bulk()`` / ``compute_bulk_all()``: from the site's GNSS
+  Icechunk store, returning the VOD. They write with ``compute_days()`` and
+  read the VOD back; without writing, they read the full (or filtered) time
+  range into memory, drop duplicate epochs, sort, then compute.
 
-All three share ``_compute()`` (the calculator, which aligns canopy and
-reference on their shared epochs and signals) and ``_write()`` (one commit
-for all analyses written together, then the VOD store metadata).
+All of them compute with :func:`compute_vod` (the calculator, which aligns
+canopy and reference on their shared epochs and signals). ``compute_day()``
+and ``compute_day_all()`` write with ``_write()`` (one commit per day for all
+analyses written together, after the VOD store metadata).
 ``canvodpy run`` adds only terminal conveniences: it skips a failing
 analysis instead of raising, and retries the store write on transient
 errors.
@@ -27,10 +34,10 @@ Per day (inside a processing loop)::
         for date_key, datasets in pipeline.process_range(...):
             vod.compute_day_all(datasets)
 
-Bulk reprocessing::
+Days from the GNSS store, in the worker pool::
 
     vod = VodComputer(site)
-    vod.compute_bulk("canopy_01_vs_reference_01")
+    report = vod.compute_days(days, ["canopy_01_vs_reference_01"])
 
 Custom calculator::
 
@@ -40,6 +47,8 @@ Custom calculator::
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
+from concurrent.futures import Executor
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -54,7 +63,9 @@ from canvod.utils.tools import deprecated
 if TYPE_CHECKING:
     import xarray as xr
 
+    from canvod.config.models import ProcessingParams
     from canvodpy.api import Site
+    from canvodpy.orchestrator.vod_phase import VodUnitReport
 
 
 def ensure_vod_store_metadata(
@@ -90,6 +101,81 @@ def ensure_vod_store_metadata(
         names=analyses,
         gnss_repository=read_repository_metadata(site._site.gnss_store.store_path),
     )
+
+
+def _vod_pool(params: ProcessingParams) -> Executor:
+    """The worker pool of the VOD phase run alone, with the run's settings."""
+    from loky import get_reusable_executor
+
+    from canvod.utils.logging import get_run_id
+    from canvodpy.logging.logging_config import active_log_dir
+    from canvodpy.orchestrator.processor import _worker_init_with_run_id
+
+    resources = params.resolve_resources()
+    return get_reusable_executor(
+        max_workers=resources["n_workers"],
+        timeout=900,
+        initializer=_worker_init_with_run_id,
+        initargs=(
+            resources["nice_priority"],
+            resources["cpu_affinity"],
+            get_run_id(),
+            active_log_dir(),
+        ),
+    )
+
+
+def compute_vod(
+    canopy_ds: xr.Dataset,
+    sky_ds: xr.Dataset,
+    *,
+    analysis_name: str,
+    canopy_receiver: str,
+    reference_receiver: str,
+    calculator: str,
+    calculator_params: Mapping[str, Any],
+    store_delta_snr: bool,
+    store_radial_diff: bool,
+) -> xr.Dataset:
+    """The VOD of one analysis pair, with the optional outputs.
+
+    The calculator aligns both datasets on their shared epochs and
+    signals. ``store_delta_snr`` keeps ``delta_snr`` (dropped otherwise);
+    ``store_radial_diff`` adds ``radial_diff`` (canopy minus reference
+    slant range, needs ``r`` from ``store_radial_distance`` at ingest).
+    Runs in the main process (:class:`VodComputer`) and in the workers of
+    the VOD phase (:mod:`canvodpy.orchestrator.vod_phase`).
+    """
+    from canvodpy.factories import VODFactory
+
+    vod_calculator = VODFactory.create(
+        calculator, canopy_ds=canopy_ds, sky_ds=sky_ds, **calculator_params
+    )
+    vod_ds = vod_calculator.calculate_vod()
+    if not store_delta_snr:
+        vod_ds = vod_ds.drop_vars("delta_snr", errors="ignore")
+    if store_radial_diff:
+        aligned_canopy, aligned_sky = vod_calculator.canopy_ds, vod_calculator.sky_ds
+        if "r" in aligned_canopy and "r" in aligned_sky:
+            radial_diff = aligned_canopy["r"] - aligned_sky["r"]
+            radial_diff.attrs["units"] = "m"
+            radial_diff.attrs["long_name"] = (
+                "radial distance difference (canopy − reference)"
+            )
+            vod_ds["radial_diff"] = radial_diff
+        else:
+            structlog.get_logger(__name__).warning(
+                "radial_diff_unavailable",
+                reason=(
+                    "store_radial_diff=true but 'r' not present in receiver "
+                    "data; set store_radial_distance=true at ingest time"
+                ),
+            )
+    vod_ds.attrs["analysis_name"] = analysis_name
+    vod_ds.attrs["canopy_receiver"] = canopy_receiver
+    vod_ds.attrs["reference_receiver"] = reference_receiver
+    vod_ds.attrs["calculator"] = calculator
+    return vod_ds
 
 
 class VodComputer:
@@ -348,8 +434,14 @@ class VodComputer:
     ) -> xr.Dataset:
         """Compute VOD from the GNSS Icechunk store.
 
-        Opens canopy and reference groups directly from the store,
-        reads the full (or filtered) time range, then computes VOD.
+        With ``write`` (the default), the days from ``start`` to ``end``
+        go through :meth:`compute_days`: the worker pool, one commit per
+        unit of days, and no new computation for a day the VOD store holds
+        from the same GNSS files. Whole days are written; the VOD from
+        ``start`` to ``end`` is then read back from the VOD store. Without
+        ``write``, the canopy and reference groups are read into memory
+        from ``start`` to ``end`` and the VOD is computed there; nothing is
+        written.
 
         Parameters
         ----------
@@ -366,11 +458,133 @@ class VodComputer:
         -------
         xr.Dataset
             Computed VOD dataset.
+
+        Raises
+        ------
+        ValueError
+            With ``write``, if the GNSS store has no day of the analysis
+            from ``start`` to ``end``.
         """
-        vod_ds, canopy_ds, sky_ds = self._compute_bulk_entry(analysis_name, start, end)
         if write:
-            self._write([(analysis_name, vod_ds, canopy_ds, sky_ds)])
+            return self._compute_and_read_back([analysis_name], start, end)[
+                analysis_name
+            ]
+        vod_ds, _, _ = self._compute_bulk_entry(analysis_name, start, end)
         return vod_ds
+
+    def compute_days(
+        self,
+        days: Sequence[Any],
+        analyses: Sequence[str] | None = None,
+        *,
+        unit_days: int | None = None,
+        executor: Executor | None = None,
+    ) -> VodUnitReport:
+        """Compute the VOD of ``days`` in the worker pool and write it (ADR 0021).
+
+        One task per analysis pair and day reads the day from the GNSS
+        store's committed snapshot and writes its VOD into a fork of the VOD
+        store; the forks of a unit of days are committed once
+        (:mod:`canvodpy.orchestrator.vod_phase`). A day whose VOD the store
+        holds from the same GNSS files is not computed again; a day without
+        data in a group of its pair is skipped and reported.
+
+        Parameters
+        ----------
+        days : sequence of date-like
+            The days to compute, in any order.
+        analyses : sequence of str, optional
+            Configured VOD analyses; all of the site's by default.
+        unit_days : int, optional
+            Most days committed together; ``VOD_UNIT_DAYS`` by default.
+        executor : concurrent.futures.Executor, optional
+            The worker pool; by default one with the run's worker settings
+            (``processing.params``).
+
+        Returns
+        -------
+        VodUnitReport
+            The days written, stored before, and missing, per analysis.
+        """
+        import numpy as np
+
+        from canvod.config import load_config
+        from canvodpy.orchestrator.vod_phase import (
+            VOD_UNIT_DAYS,
+            VodPair,
+            VodPhase,
+            VodUnitReport,
+            units,
+        )
+
+        names = list(analyses or self._site.vod_analyses)
+        pairs = []
+        for name in names:
+            cfg = self._get_analysis_config(name)
+            pairs.append(
+                VodPair(
+                    analysis=name,
+                    canopy_receiver=cfg.canopy_receiver,
+                    reference_receiver=cfg.reference_receiver,
+                    canopy_group=cfg.canopy_receiver,
+                    reference_group=cfg.reference_store_group,
+                )
+            )
+        self.check_gnss_hash()
+        ensure_vod_store_metadata(self._site, self._calculator_name, names)
+        params = load_config().processing.params
+        research_site = self._site._site
+        pool = executor if executor is not None else _vod_pool(params)
+        phase = VodPhase(
+            gnss_store=research_site.gnss_store,
+            vod_store=research_site.vod_store,
+            pairs=pairs,
+            calculator=self._calculator_name,
+            calculator_params=self._effective_calculator_params(),
+            store_delta_snr=params.store_delta_snr,
+            store_radial_diff=params.store_radial_diff,
+            submit=pool.submit,
+            log=self.log,
+        )
+        report = VodUnitReport()
+        for unit in units(
+            [np.datetime64(day, "D") for day in days], unit_days or VOD_UNIT_DAYS
+        ):
+            report.extend(phase.run_unit(unit))
+        return report
+
+    def gnss_days(
+        self,
+        analysis_name: str,
+        start: datetime | None = None,
+        end: datetime | None = None,
+    ) -> list[Any]:
+        """The days that have a block in a GNSS group of the analysis pair.
+
+        In time order, from ``start`` to ``end`` (both days included) when
+        given. Days of one group only are listed too: :meth:`compute_days`
+        reports them as missing.
+        """
+        import numpy as np
+
+        from canvod.store.day_blocks import day_blocks, holds_day_blocks
+
+        analysis_cfg = self._get_analysis_config(analysis_name)
+        days: set[Any] = set()
+        with self._site._site.gnss_store.readonly_session() as session:
+            for group in (
+                analysis_cfg.canopy_receiver,
+                analysis_cfg.reference_store_group,
+            ):
+                if holds_day_blocks(session.store, group):
+                    days |= set(day_blocks(session.store, group))
+        first = None if start is None else np.datetime64(start.date(), "D")
+        last = None if end is None else np.datetime64(end.date(), "D")
+        return sorted(
+            day
+            for day in days
+            if (first is None or day >= first) and (last is None or day <= last)
+        )
 
     def compute_bulk_all(
         self,
@@ -381,8 +595,9 @@ class VodComputer:
     ) -> dict[str, xr.Dataset]:
         """Compute VOD for every configured analysis from the GNSS store.
 
-        Same as ``compute_bulk()`` per analysis; all results are written
-        together, in one commit.
+        Same as ``compute_bulk()`` per analysis; with ``write``, the
+        analyses' days go through one :meth:`compute_days` call, so the
+        analyses of a unit of days share a commit.
 
         Parameters
         ----------
@@ -397,14 +612,59 @@ class VodComputer:
         -------
         dict[str, xr.Dataset]
             VOD dataset per analysis name.
+
+        Raises
+        ------
+        ValueError
+            With ``write``, if the GNSS store has no day of an analysis
+            from ``start`` to ``end``.
         """
-        entries = [
-            (name, *self._compute_bulk_entry(name, start, end))
-            for name in self._site.vod_analyses
-        ]
-        if write and entries:
-            self._write(entries)
-        return {name: vod_ds for name, vod_ds, _, _ in entries}
+        names = list(self._site.vod_analyses)
+        if write:
+            return self._compute_and_read_back(names, start, end) if names else {}
+        return {name: self._compute_bulk_entry(name, start, end)[0] for name in names}
+
+    def _compute_and_read_back(
+        self,
+        names: list[str],
+        start: datetime | None,
+        end: datetime | None,
+    ) -> dict[str, xr.Dataset]:
+        """Write the analyses' days with :meth:`compute_days`; read the VOD back.
+
+        The days are those of the analyses' GNSS groups from ``start`` to
+        ``end``; the VOD read back is that from ``start`` to ``end``.
+        """
+        import numpy as np
+
+        from canvod.store.day_blocks import load_group
+
+        days: set[Any] = set()
+        for name in names:
+            name_days = self.gnss_days(name, start, end)
+            if not name_days:
+                msg = (
+                    f"The GNSS store of {self._site.name} has no day of "
+                    f"analysis {name!r} from {start or 'its first day'} to "
+                    f"{end or 'its last day'}."
+                )
+                raise ValueError(msg)
+            days.update(name_days)
+        self.compute_days(sorted(days), names)
+        window = slice(
+            None if start is None else np.datetime64(start, "ns"),
+            None if end is None else np.datetime64(end, "ns"),
+        )
+        with self._site._site.vod_store.readonly_session() as session:
+            return {
+                name: load_group(
+                    session.store,
+                    f"{self._calculator_name}/{name}",
+                    time_slice=window,
+                    drop_empty=True,
+                ).load()
+                for name in names
+            }
 
     # ------------------------------------------------------------------
     # Shared core
@@ -485,73 +745,27 @@ class VodComputer:
         sky_ds: xr.Dataset,
         analysis_name: str,
     ) -> xr.Dataset:
-        """Compute VOD with the configured calculator.
+        """Compute VOD with the configured calculator (:func:`compute_vod`)."""
+        from canvod.config import load_config
 
-        The calculator itself aligns both datasets on their shared epochs
-        and signals.
-        """
-        from canvodpy.factories import VODFactory
-
-        calculator = VODFactory.create(
-            self._calculator_name,
-            canopy_ds=canopy_ds,
-            sky_ds=sky_ds,
-            **self._effective_calculator_params(),
-        )
-
-        vod_ds = calculator.calculate_vod()
-        vod_ds = self._apply_output_options(
-            vod_ds, calculator.canopy_ds, calculator.sky_ds
-        )
-
+        params = load_config().processing.params
         analysis_cfg = self._get_analysis_config(analysis_name)
-        vod_ds.attrs["analysis_name"] = analysis_name
-        vod_ds.attrs["canopy_receiver"] = analysis_cfg.canopy_receiver
-        vod_ds.attrs["reference_receiver"] = analysis_cfg.reference_receiver
-        vod_ds.attrs["calculator"] = self._calculator_name
-
+        vod_ds = compute_vod(
+            canopy_ds,
+            sky_ds,
+            analysis_name=analysis_name,
+            canopy_receiver=analysis_cfg.canopy_receiver,
+            reference_receiver=analysis_cfg.reference_receiver,
+            calculator=self._calculator_name,
+            calculator_params=self._effective_calculator_params(),
+            store_delta_snr=params.store_delta_snr,
+            store_radial_diff=params.store_radial_diff,
+        )
         self.log.info(
             "vod_computed",
             analysis=analysis_name,
             variables=list(vod_ds.data_vars),
         )
-        return vod_ds
-
-    def _apply_output_options(
-        self,
-        vod_ds: xr.Dataset,
-        canopy_ds: xr.Dataset,
-        sky_ds: xr.Dataset,
-    ) -> xr.Dataset:
-        """Apply the configured optional VOD outputs.
-
-        ``store_delta_snr`` keeps ``delta_snr`` (dropped by default);
-        ``store_radial_diff`` adds ``radial_diff`` (canopy minus reference
-        slant range, needs ``r`` from ``store_radial_distance`` at ingest).
-        """
-        from canvod.config import load_config
-
-        params = load_config().processing.params
-
-        if not params.store_delta_snr:
-            vod_ds = vod_ds.drop_vars("delta_snr", errors="ignore")
-
-        if params.store_radial_diff:
-            if "r" in canopy_ds and "r" in sky_ds:
-                radial_diff = canopy_ds["r"] - sky_ds["r"]
-                radial_diff.attrs["units"] = "m"
-                radial_diff.attrs["long_name"] = (
-                    "radial distance difference (canopy − reference)"
-                )
-                vod_ds["radial_diff"] = radial_diff
-            else:
-                self.log.warning(
-                    "radial_diff_unavailable",
-                    reason=(
-                        "store_radial_diff=true but 'r' not present in receiver "
-                        "data; set store_radial_distance=true at ingest time"
-                    ),
-                )
         return vod_ds
 
     def _write(

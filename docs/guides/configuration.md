@@ -393,7 +393,7 @@ processing:
     `unsafe_append` writes the file again on top of the stored data,
     without checking for epochs that are already there. The store then
     holds each of these epochs twice, and the extra chunks stay in the
-    store. The pipeline and `Site.vod.compute_bulk()` remove the duplicates when they
+    store. The pipeline and `Site.vod.compute_bulk(..., write=False)` remove the duplicates when they
     read; `MyIcechunkStore.read_group()` does not. On duplicated epochs,
     `.sel()` can fail or return several matches, and aligning canopy and
     reference data multiplies the rows. Don't use `unsafe_append` unless
