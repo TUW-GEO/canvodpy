@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 import zarr
 import zarr.errors
@@ -762,6 +763,7 @@ def load_group(
     *,
     drop_empty: bool = False,
     chunks: dict[str, Any] | None = None,
+    time_slice: slice | None = None,
 ) -> xr.Dataset:
     """Open a group with its epochs in time order.
 
@@ -777,32 +779,81 @@ def load_group(
     group : str
         Group to open.
     drop_empty : bool, default False
-        Drop the empty slots of a day-block group (:func:`drop_empty_slots`);
-        a group written by appending has none. This reads the data of the
-        whole group; to read part of it, select first and drop the empty
-        slots of the selection.
+        Drop the empty slots of a day-block group (:func:`drop_empty_slots`),
+        after ``time_slice``; a group written by appending has none.
     chunks : dict, optional
         Dask chunks; the stored chunks if ``None``.
+    time_slice : slice, optional
+        Label-based time selection, as ``ds.sel(epoch=time_slice)``. A
+        day-block group then reads only the blocks of the days it reaches,
+        so reading a day takes the same time however many days are stored.
     """
     ds = xr.open_zarr(
         store,
         group=group,
         chunks={} if chunks is None else chunks,
         consolidated=False,
+        # The epoch index is built after selecting the blocks: building it
+        # first reads every epoch of the group.
+        create_default_indexes=False,
     )
     day_blocked = is_day_block_group(ds.attrs)
     if day_blocked:
         zgroup = zarr.open_group(store, mode="r", path=group)
         blocks = _blocks_from_index(_index(zgroup, group), ds.sizes["epoch"], group)
-        ds = ds.isel(epoch=_slot_positions(blocks.values()))
+        kept = (
+            list(blocks.values())
+            if time_slice is None
+            else _blocks_reached(blocks.values(), time_slice)
+        )
+        ds = ds.isel(epoch=_slot_positions(kept))
+    ds = _with_default_indexes(ds)
     ds.attrs.pop(EPOCH_LAYOUT_ATTR, None)
     ds.attrs.pop(DAY_BLOCK_INDEX_ATTR, None)
     ds = restore_integers(ds)
     if not ds.indexes["epoch"].is_monotonic_increasing:
         ds = ds.sortby("epoch")
+    if time_slice is not None:
+        ds = ds.sel(epoch=time_slice)
     if drop_empty and day_blocked:
         ds = drop_empty_slots(ds, group)
     return ds
+
+
+def _with_default_indexes(ds: xr.Dataset) -> xr.Dataset:
+    """``ds`` with the index xarray builds on opening, for each dimension."""
+    dims = [dim for dim in ds.dims if dim in ds.coords and dim not in ds.xindexes]
+    ds = ds.assign_coords({dim: ds[dim].load() for dim in dims})
+    for dim in dims:
+        ds = ds.set_xindex([dim])
+    return ds
+
+
+def _blocks_reached(blocks: Collection[DayBlock], time_slice: slice) -> list[DayBlock]:
+    """The blocks holding an epoch that ``time_slice`` can select.
+
+    Every epoch of a block lies in its day (:func:`_slots`), so a block is
+    reached when the slice reaches its day. The days' bounds are compared
+    the way ``sel`` compares epochs, partial date strings included.
+    """
+    ordered = sorted(blocks, key=lambda b: b.day)
+    one_day = np.timedelta64(1, "D")
+    bounds = pd.DatetimeIndex(
+        [
+            bound
+            for block in ordered
+            for bound in (
+                block.day.astype("M8[ns]"),
+                (block.day + one_day).astype("M8[ns]") - np.timedelta64(1, "ns"),
+            )
+        ]
+    )
+    first, stop = bounds.slice_locs(time_slice.start, time_slice.stop)
+    # Bounds first..stop-1 lie inside the selection. Day k (bounds 2k and
+    # 2k+1) is reached unless it ends before the selection or starts after.
+    return [
+        block for k, block in enumerate(ordered) if 2 * k + 1 >= first and 2 * k < stop
+    ]
 
 
 def restore_integers(ds: xr.Dataset) -> xr.Dataset:
