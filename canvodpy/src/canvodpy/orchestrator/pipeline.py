@@ -1310,7 +1310,8 @@ class PipelineOrchestrator:
         1. Prepare (:meth:`_prepare_batch`), while the unit before is read
            and written. The prepared dates then get their day blocks in one
            growth commit (:meth:`_grow_day_blocks`), after the unit before
-           is committed, and are planned on one session.
+           is committed, and are planned on one session. The next unit's
+           preparing starts after this growth commit, not beside it.
         2. Process the files of all dates of the unit in loky's reusable
            process pool, at most twice the worker count in flight. Each
            task of a day with its blocks writes into a fork of the unit's
@@ -1395,8 +1396,6 @@ class PipelineOrchestrator:
                 )
 
                 doy_contexts, task_descriptors_by_date = prepared.result()
-                if batch_idx + 1 < len(batches):
-                    prepared = prepare(batch_idx + 1)
 
                 try:
                     self._grow_day_blocks(doy_contexts, batch_idx + 1)
@@ -1416,6 +1415,11 @@ class PipelineOrchestrator:
                             date_key, [name for name, _ in receiver_file_map], exc
                         )
                     continue
+                finally:
+                    # The next unit's Phase 1 starts after the growth commit:
+                    # beside it, the commit took 15 times as long (#433).
+                    if batch_idx + 1 < len(batches):
+                        prepared = prepare(batch_idx + 1)
 
                 forked_days: dict[str, ForkedDay] = {}
                 unit_session = self._unit_session()
