@@ -3852,7 +3852,8 @@ class RinexDataProcessor:
         of runs that committed since the day was planned (#351). With a
         ``gnss_store_strategy`` other than ``skip`` the run writes over the
         stored data on purpose; such a file's log-book row says
-        ``overwritten``.
+        ``overwritten``. The log book comes from the run's copy, which
+        reads only the rows committed since it last looked (ADR 0021).
 
         Raises
         ------
@@ -3860,11 +3861,10 @@ class RinexDataProcessor:
             With ``gnss_store_strategy: skip``, naming each such file and the
             stored files it overlaps.
         """
-        root = zarr.open_group(session.store, mode="r")
         for group in sorted({n.group for n in numbers if n.action == WRITTEN}):
-            if f"{group}/metadata/table" not in root:
+            stored = self.site.gnss_store.log_books.rows(session, group)
+            if stored is None:
                 continue
-            stored = self.site.gnss_store.load_metadata(session.store, group)
             overlapping = [
                 n
                 for n in numbers
