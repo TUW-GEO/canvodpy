@@ -96,16 +96,25 @@ def _run(
     days: list[str],
     unit_days: int,
     no_orbits: str | None = NO_ORBITS,
+    *,
+    read_back: bool = True,
 ) -> PipelineOrchestrator:
     """Run ``days`` in units of ``unit_days``; the days come back in order.
 
-    The orbit products of ``no_orbits`` are not out yet.
+    The orbit products of ``no_orbits`` are not out yet. The units yielded
+    are in ``pipe.units``, the days read back in ``pipe.reads``.
     """
+    reads: list[dict] = []
+
+    def read_receiver_data(**kwargs) -> xr.Dataset:
+        reads.append(kwargs)
+        return xr.Dataset()
+
     pipe = PipelineOrchestrator.__new__(PipelineOrchestrator)
     pipe.site = SimpleNamespace(
         gnss_store=gnss_store,
         gnss_store_path=gnss_store.store_path,
-        read_receiver_data=lambda **_: xr.Dataset(),
+        read_receiver_data=read_receiver_data,
     )
     pipe.unit_days = unit_days
     pipe.n_max_workers = 1
@@ -133,10 +142,13 @@ def _run(
     monkeypatch.setattr(pipe, "_prepare_single_date", prepare)
     monkeypatch.setattr(pipeline_module, "_loky_reusable", lambda **_: _Pool())
     batch = [(day, {_GROUP: (None, None, None, "rinex3")}) for day in days]
-    done = [
-        day
-        for day, _, _ in pipe._process_multi_day_batches(batch, None, threading.Event())
-    ]
+    pipe.units = list(
+        pipe._process_multi_day_batches(
+            batch, None, threading.Event(), read_back=read_back
+        )
+    )
+    pipe.reads = reads
+    done = [day for unit in pipe.units for day, _, _ in unit]
     assert done == [day for day in days if day != no_orbits]
     return pipe
 
@@ -166,6 +178,30 @@ def test_a_backlog_makes_one_growth_and_one_data_commit_per_unit(
     assert sum("(7 days)" in m for m in new) == 2
     assert _stored_days(seeded) == set(DAYS)
     assert sorted(pipe._run.days) == sorted((_GROUP, day, "written") for day in DAYS)
+
+
+def test_without_read_back_a_unit_reads_nothing_and_names_its_groups(
+    seeded, monkeypatch
+) -> None:
+    pipe = _run(seeded, monkeypatch, DAYS, unit_days=7, read_back=False)
+
+    # The GNSS phase of a run reads nothing back (#427); the VOD phase reads
+    # the days from the store. Each unit says which groups each day stored.
+    assert pipe.reads == []
+    assert [[day for day, _, _ in unit] for unit in pipe.units] == [
+        [day for day in DAYS[:7] if day != NO_ORBITS],
+        DAYS[7:],
+    ]
+    assert all(
+        datasets == {_GROUP: None} for unit in pipe.units for _, datasets, _ in unit
+    )
+    assert _stored_days(seeded) == set(DAYS) - {NO_ORBITS}
+
+
+def test_with_read_back_each_stored_day_is_read_back(seeded, monkeypatch) -> None:
+    pipe = _run(seeded, monkeypatch, DAYS[:7], unit_days=7)
+
+    assert len(pipe.reads) == 6
 
 
 def test_a_day_without_orbit_products_fails_alone(seeded, monkeypatch) -> None:

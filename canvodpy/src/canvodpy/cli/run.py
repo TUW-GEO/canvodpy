@@ -52,7 +52,6 @@ from typing import Annotated
 
 import structlog
 import typer
-import xarray as xr
 
 from canvod.config.models import reference_store_group
 from canvod.store_metadata import (
@@ -63,14 +62,12 @@ from canvod.store_metadata import (
 )
 from canvod.utils.logging import (
     new_run_id,
-    record_stage_timing,
     reset_run_id,
     reset_run_stats,
     set_run_id,
 )
 from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
 from canvodpy.logging import emit_run_summary
-from canvodpy.orchestrator.store_retry import call_with_store_retries
 
 log = structlog.get_logger(__name__)
 
@@ -226,99 +223,29 @@ def _print_days_without_vod(
     emit(f"  no VOD on {len(days)} {noun}, {receiver} has no files: {_first_ten(days)}")
 
 
-def _compute_vod_for_day(
-    vod_computer,
-    datasets: dict[str, xr.Dataset],
-    vod_analyses: dict,
-    date_key: str,
-    reporter=None,
-) -> dict[str, xr.Dataset]:
-    """Compute VOD for all configured analysis pairs, without writing.
+def _report_vod_unit(unit, reporter) -> int:
+    """Say what the VOD phase did with a unit's days; return the VOD days written.
 
-    Each analysis goes through ``VodComputer.compute_day`` (the same code as
-    ``site.vod`` in Python). Terminal-only behavior: an analysis whose
-    receiver groups are missing is skipped with a line naming them, and a
-    failing analysis is logged and reported instead of stopping the run.
-    The caller writes the results with ``VodComputer.write_day``.
-
-    Parameters
-    ----------
-    vod_computer
-        ``VodComputer`` for the site and the selected calculator.
-    datasets
-        ``{group_name: ds}`` dict as yielded by ``process_range``.
-        Group names: ``canopy_01``, ``reference_01_canopy_01``, etc.
-    vod_analyses
-        VOD analysis configs from ``site.vod_analyses``.
-    date_key
-        YYYYDOY string for logging.
-
-    Returns
-    -------
-    dict mapping analysis name to its VOD dataset.
+    Per analysis, the days written, and each day without VOD with the
+    reason. A failed VOD phase is said with the days it leaves without
+    VOD; ``canvodpy vod-reconcile`` fills them later.
     """
-    results: dict[str, xr.Dataset] = {}
-
-    for analysis_name in vod_analyses:
-        t0 = time.perf_counter()
-        try:
-            vod_ds = vod_computer.compute_day(datasets, analysis_name, write=False)
-        except KeyError as e:
-            # A receiver-day that failed leaves its group out of the day.
-            cfg = vod_analyses[analysis_name]
-            missing = ", ".join(
-                group
-                for group in (cfg.canopy_receiver, cfg.reference_store_group)
-                if group not in datasets
-            )
-            log.warning(
-                "vod_skipped",
-                analysis=analysis_name,
-                reason=str(e),
-                date=date_key,
-            )
-            line = (
-                f"  VOD {analysis_name}: skipped, no data of {missing} on "
-                f"{date_key} (the log says why)"
-            )
-            if reporter:
-                reporter.log(line)
-            else:
-                print(line)
-            continue
-        except Exception as e:
-            log.error(
-                "vod_failed",
-                analysis=analysis_name,
-                date=date_key,
-                error=str(e),
-            )
-            if reporter:
-                reporter.on_vod_failed(analysis_name, str(e))
-            else:
-                print(f"  VOD {analysis_name}: FAILED: {e}")
-            continue
-
-        dt = time.perf_counter() - t0
-        record_stage_timing(
-            "vod_calc",
-            dt,
-            date_key=date_key,
-            calculator=vod_computer.calculator_name,
-            analysis=analysis_name,
+    days = sorted(unit.days)
+    if unit.vod_error is not None:
+        reporter.log(
+            f"  VOD {days[0]}..{days[-1]}: FAILED: {unit.vod_error} (the log "
+            "says why; 'canvodpy vod-reconcile' computes the days later)"
         )
-        n_valid = int((~vod_ds["VOD"].isnull()).sum())
-        n_total = vod_ds["VOD"].size
-        if reporter:
-            reporter.on_vod_result(analysis_name, n_valid, n_total, dt)
-        else:
-            pct = 100 * n_valid / n_total if n_total else 0
-            print(
-                f"  VOD {analysis_name}: {n_valid}/{n_total} valid ({pct:.0f}%)  {dt:.1f}s"
-            )
-        results[analysis_name] = vod_ds
-
-    return results
+        return 0
+    report = unit.vod
+    for analysis, written in report.written.items():
+        reporter.log(f"  VOD {analysis}: {len(written)} days written")
+    for analysis, stored in report.stored.items():
+        reporter.log(f"  VOD {analysis}: {len(stored)} days already stored")
+    for analysis, missing in report.missing.items():
+        for day, reason in missing:
+            reporter.log(f"  VOD {analysis}: no VOD on {day}: {reason}")
+    return sum(len(written) for written in report.written.values())
 
 
 #: Exit code of a run that finished with failed receiver-days (#334). 2 is taken: typer exits with 2 on a usage error.
@@ -561,80 +488,26 @@ def _main_impl(args: SimpleNamespace) -> int:
                     on_incomplete_day=partial(_print_incomplete_day, reporter.log),
                     on_days_without_vod=partial(_print_days_without_vod, reporter.log),
                 ) as pipeline:
-                    gen = pipeline.process_range(
-                        start=start, end=end, new_files_only=new_files_only
-                    )
-                    while True:
-                        t_pipeline = time.perf_counter()
-                        try:
-                            date_key, datasets = next(gen)
-                        except StopIteration:
-                            break
-                        dt_pipeline = time.perf_counter() - t_pipeline
-
-                        total_days += 1
-                        site_days += 1
-                        reporter.on_day_start(date_key)
-                        reporter.on_datasets(datasets)
-
-                        dt_vod = 0.0
-                        dt_vod_store = 0.0
+                    # The GNSS phase stores a unit of days, then the VOD
+                    # phase computes their VOD in the same worker pool
+                    # (ADR 0021); nothing is read back for VOD.
+                    for unit in pipeline.run(
+                        start,
+                        end,
+                        new_files_only=new_files_only,
+                        vod_analyses=list(vod_analyses),
+                        calculator=args.vod_calculator,
+                    ):
+                        for date_key, groups in unit.days.items():
+                            total_days += 1
+                            site_days += 1
+                            reporter.on_day_start(date_key)
+                            reporter.on_groups(groups)
+                            last_good_date_key = date_key
                         if vod_analyses:
-                            stage = "vod_calc"
-                            t_vod = time.perf_counter()
-                            vod_results = _compute_vod_for_day(
-                                vod_computer,
-                                datasets,
-                                vod_analyses,
-                                date_key,
-                                reporter,
-                            )
-                            dt_vod = time.perf_counter() - t_vod
-
-                            stage = "vod_store"
-                            t_vod_store = time.perf_counter()
-                            if vod_results:
-                                # VodComputer.write_day: one commit for all
-                                # of today's analysis pairs, then the VOD
-                                # store metadata. Retried as one unit: the
-                                # batch write is all-or-nothing (fail-fast,
-                                # no partial merge -- see
-                                # write_or_append_vod_groups_batch), so a
-                                # retry after a transient error is safe --
-                                # any pre-pass commit for a brand-new group
-                                # that already landed is dedup-visible and
-                                # won't be re-attempted.
-                                batch_results = call_with_store_retries(
-                                    partial(
-                                        vod_computer.write_day,
-                                        datasets,
-                                        vod_results,
-                                    ),
-                                    logger=log,
-                                    date=date_key,
-                                    op="vod_write_batch",
-                                )
-                                for analysis_name in vod_results:
-                                    group_name = (
-                                        f"{args.vod_calculator}/{analysis_name}"
-                                    )
-                                    group_result = batch_results.get(group_name)
-                                    record_stage_timing(
-                                        "vod_store",
-                                        group_result.duration_seconds
-                                        if group_result is not None
-                                        else 0.0,
-                                        date_key=date_key,
-                                        calculator=args.vod_calculator,
-                                        analysis=analysis_name,
-                                    )
-                            dt_vod_store = time.perf_counter() - t_vod_store
-                            total_vod += len(vod_results)
-                            site_vod += len(vod_results)
-
-                        reporter.on_timing(dt_pipeline, dt_vod, dt_vod_store)
-                        last_good_date_key = date_key
-                        stage = "pipeline_process"
+                            site_vod += _report_vod_unit(unit, reporter)
+                        reporter.on_timing(unit.gnss_seconds, unit.vod_seconds)
+                    total_vod += site_vod
 
                 failed_days.extend(
                     (site_name, receiver, day)

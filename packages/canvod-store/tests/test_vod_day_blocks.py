@@ -240,15 +240,18 @@ def test_site_stores_one_vod_day_into_its_block(store: MyIcechunkStore) -> None:
     item = _item(GROUP, slot=0, source_id="a")
     calculator, analysis = GROUP.split("/")
 
-    written = _site(store).store_vod_analysis(
-        item.dataset,
-        analysis,
-        calculator,
-        source_file_hashes=item.source_file_hashes,
-        source_gnss_stores=item.source_gnss_stores,
-        cadences=item.cadences,
-    )
+    with pytest.warns(FutureWarning, match="compute_days") as warned:
+        written = _site(store).store_vod_analysis(
+            item.dataset,
+            analysis,
+            calculator,
+            source_file_hashes=item.source_file_hashes,
+            source_gnss_stores=item.source_gnss_stores,
+            cadences=item.cadences,
+        )
 
+    # Deprecated (#427), still writing; one warning, not one per layer.
+    assert len(warned) == 1
     assert written
     (block,) = _blocks(store, GROUP).values()
     assert block.cadence_s == CADENCE_S
@@ -263,7 +266,10 @@ def test_site_refuses_vod_without_cadence_on_day_blocks(
     calculator, analysis = GROUP.split("/")
     before = _snapshots(store)
 
-    with pytest.raises(LayoutError, match="day blocks"):
+    with (
+        pytest.warns(FutureWarning, match="compute_days"),
+        pytest.raises(LayoutError, match="day blocks"),
+    ):
         _site(store).store_vod_analysis(
             later.dataset,
             analysis,

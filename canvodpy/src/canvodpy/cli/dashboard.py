@@ -7,9 +7,9 @@ Usage
         r.set_current_site(site_name, start, end)
         r.print_header(site_name, start, end, config, args)
         r.on_day_start(date_key)
-        r.on_datasets(datasets)
-        r.on_vod_result(analysis, n_valid, n_total, dt)
-        r.on_timing(dt_pipeline, dt_vod, dt_vod_store)
+        r.on_groups(groups)  # the groups that stored the day
+        r.log(line)  # e.g. what the VOD phase did with a unit
+        r.on_timing(dt_gnss, dt_vod)  # per unit of days
         r.advance(site_name, group_name)  # called from an on_group_written callback
         r.on_done(total_days, total_vod, dt_total)
 
@@ -28,7 +28,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import xarray as xr
     from rich.live import Live
     from rich.progress import TaskID
 
@@ -88,27 +87,11 @@ class PlainReporter:
     def on_day_start(self, date_key: str) -> None:
         print(f"\n--- {self._current_site}/{date_key} ---")
 
-    def on_datasets(self, datasets: dict[str, xr.Dataset]) -> None:
-        for group, ds in datasets.items():
-            e = ds.sizes.get("epoch", 0)
-            s = ds.sizes.get("sid", 0)
-            print(f"  {group}: {e} epochs × {s} sids")
+    def on_groups(self, groups: tuple[str, ...]) -> None:
+        print(f"  stored: {', '.join(groups)}")
 
-    def on_vod_result(
-        self, analysis: str, n_valid: int, n_total: int, dt: float
-    ) -> None:
-        pct = 100 * n_valid / n_total if n_total else 0
-        print(f"  VOD {analysis}: {n_valid}/{n_total} valid ({pct:.0f}%)  {dt:.1f}s")
-
-    def on_vod_failed(self, analysis: str, error: str) -> None:
-        print(f"  VOD {analysis}: FAILED: {error}")
-
-    def on_timing(self, dt_pipeline: float, dt_vod: float, dt_vod_store: float) -> None:
-        print(
-            f"  pipeline={dt_pipeline:.1f}s"
-            f"  vod={dt_vod:.1f}s"
-            f"  vod_store={dt_vod_store:.1f}s"
-        )
+    def on_timing(self, dt_gnss: float, dt_vod: float) -> None:
+        print(f"  unit: gnss={dt_gnss:.1f}s  vod={dt_vod:.1f}s")
 
     def on_done(self, total_days: int, total_vod: int, dt_total: float) -> None:
         print()
@@ -237,30 +220,12 @@ class RichReporter:
             f"\n[bold]─── {self._current_site}/{date_key}[/bold]"
         )
 
-    def on_datasets(self, datasets: dict[str, xr.Dataset]) -> None:
-        for group, ds in datasets.items():
-            e = ds.sizes.get("epoch", 0)
-            s = ds.sizes.get("sid", 0)
-            self._live_obj.console.print(f"  [dim]{group}: {e}×{s}[/dim]")
+    def on_groups(self, groups: tuple[str, ...]) -> None:
+        self._live_obj.console.print(f"  [dim]stored: {', '.join(groups)}[/dim]")
 
-    def on_vod_result(
-        self, analysis: str, n_valid: int, n_total: int, dt: float
-    ) -> None:
-        pct = 100 * n_valid / n_total if n_total else 0
+    def on_timing(self, dt_gnss: float, dt_vod: float) -> None:
         self._live_obj.console.print(
-            f"  [dim]VOD {analysis}: {n_valid}/{n_total} valid ({pct:.0f}%)  {dt:.1f}s[/dim]"
-        )
-
-    def on_vod_failed(self, analysis: str, error: str) -> None:
-        self._live_obj.console.print(
-            f"[yellow]  VOD {analysis}: FAILED: {error}[/yellow]"
-        )
-
-    def on_timing(self, dt_pipeline: float, dt_vod: float, dt_vod_store: float) -> None:
-        self._live_obj.console.print(
-            f"  [dim]pipeline={dt_pipeline:.1f}s"
-            f"  vod={dt_vod:.1f}s"
-            f"  vod_store={dt_vod_store:.1f}s[/dim]"
+            f"  [dim]unit: gnss={dt_gnss:.1f}s  vod={dt_vod:.1f}s[/dim]"
         )
 
     def on_done(self, total_days: int, total_vod: int, dt_total: float) -> None:

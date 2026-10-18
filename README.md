@@ -74,8 +74,8 @@ from canvodpy import Site
 
 site = Site("MySite")
 with site.pipeline() as pipeline:
-    for date_key, datasets in pipeline.process_range("2025001", "2025007"):
-        site.vod.compute_day(datasets, "canopy_01_vs_reference_01")
+    for unit in pipeline.run("2025001", "2025007"):
+        print(sorted(unit.days), unit.vod.written)
 ```
 
 [Start here](https://canvodpy.eu/users/) walks through the first run step

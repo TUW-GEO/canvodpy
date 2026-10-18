@@ -32,8 +32,10 @@ Low-level (full control):
 from __future__ import annotations
 
 import sys
+import time
 import warnings
 from contextlib import ExitStack, contextmanager
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from canvod.utils.tools import deprecated, deprecated_argument
@@ -42,13 +44,14 @@ from canvodpy.orchestrator.resources import deprecate_no_effect_arguments
 # Lazy imports to avoid circular dependencies
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
+    from collections.abc import Callable, Generator, Sequence
     from pathlib import Path
     from types import TracebackType
 
     import xarray as xr
 
     from canvod.store import MyIcechunkStore
+    from canvodpy.orchestrator.vod_phase import VodUnitReport
     from canvodpy.vod_computer import VodComputer
 
 
@@ -288,6 +291,35 @@ class Site:
 
     def __str__(self) -> str:
         return f"GNSS Site: {self.name}"
+
+
+@dataclass
+class RunUnit:
+    """What :meth:`Pipeline.run` did with one unit of days.
+
+    Attributes
+    ----------
+    days
+        Each day (YYYYDOY) the GNSS phase stored, with the groups that
+        stored it. A day that failed in every group is not here; it stays
+        open for the next run.
+    vod
+        What the VOD phase did with the days: written, stored before, or
+        missing (with the reason), per analysis. ``None`` when the run
+        computes no VOD or the VOD phase failed.
+    vod_error
+        Why the VOD phase failed, if it did. The days then have their GNSS
+        data but no VOD; ``canvodpy vod-reconcile`` finds them.
+    gnss_seconds, vod_seconds
+        Wall time of the unit's GNSS phase (as the caller waited for it)
+        and of its VOD phase.
+    """
+
+    days: dict[str, tuple[str, ...]]
+    vod: VodUnitReport | None = None
+    vod_error: Exception | None = None
+    gnss_seconds: float = 0.0
+    vod_seconds: float = 0.0
 
 
 class Pipeline:
@@ -631,6 +663,86 @@ class Pipeline:
                 new_files_only=new_files_only,
             ):
                 yield date_key, datasets
+        except Exception:
+            self._fail()
+            raise
+
+    def run(
+        self,
+        start: str | None = None,
+        end: str | None = None,
+        *,
+        new_files_only: bool = False,
+        vod_analyses: Sequence[str] | None = None,
+        calculator: str = "tau_omega",
+    ) -> Generator[RunUnit]:
+        """Store the days from ``start`` to ``end``, then compute their VOD.
+
+        The run of ``canvodpy run`` (ADR 0021). The GNSS phase stores the
+        days in units of days and reads nothing back; after each unit, the
+        VOD phase computes the VOD of its days in the same worker pool,
+        from the GNSS store, and commits once (``VodComputer.compute_days``).
+        Meanwhile, the GNSS phase works on the next unit. A day that failed
+        gets no VOD and stays open for the next run.
+
+        Parameters
+        ----------
+        start, end : str, optional
+            First and last day (YYYYDOY). ``None`` runs every day with files.
+        new_files_only : bool, default False
+            As :meth:`process_range`.
+        vod_analyses : sequence of str, optional
+            The VOD analyses to compute; all the site's by default. An
+            empty sequence computes no VOD.
+        calculator : str, default "tau_omega"
+            The registered VOD calculator.
+
+        Yields
+        ------
+        RunUnit
+            Per unit, once its VOD is committed: the days stored and what
+            the VOD phase did. A failing VOD phase is logged and reported
+            in ``RunUnit.vod_error``; the run goes on.
+
+        Examples
+        --------
+        >>> with Site("ExampleSite").pipeline() as pipeline:
+        ...     for unit in pipeline.run("2025001", "2025007"):
+        ...         print(sorted(unit.days), unit.vod.written)
+        """
+        from canvod.utils.tools import YYYYDOY
+        from canvodpy.vod_computer import VodComputer
+
+        analyses = list(
+            self.site.vod_analyses if vod_analyses is None else vod_analyses
+        )
+        vod_computer = VodComputer(self.site, calculator=calculator)
+        try:
+            units = self._orchestrator.store_by_unit(
+                start_from=start, end_at=end, new_files_only=new_files_only
+            )
+            while True:
+                t_gnss = time.perf_counter()
+                days = next(units, None)
+                if days is None:
+                    return
+                unit = RunUnit(days=days, gnss_seconds=time.perf_counter() - t_gnss)
+                if analyses:
+                    t_vod = time.perf_counter()
+                    try:
+                        unit.vod = vod_computer.compute_days(
+                            [YYYYDOY.from_str(day).date for day in days],
+                            analyses,
+                            unit_days=len(days),
+                            executor=self._orchestrator.worker_pool(),
+                        )
+                    except Exception as exc:
+                        # The days keep their GNSS data; the next run says
+                        # which days have no VOD (vod-reconcile).
+                        self.log.exception("vod_failed", days=sorted(days))
+                        unit.vod_error = exc
+                    unit.vod_seconds = time.perf_counter() - t_vod
+                yield unit
         except Exception:
             self._fail()
             raise

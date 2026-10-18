@@ -141,6 +141,7 @@ compare the settings.
 | `processing.preprocessing` had no effect. | A run applies each section that is set. | See the warning in step 1. |
 | Files were found in day folders with fixed names. | Each file's day comes from its name, in any folder layout. | Nothing; files with other names need a naming recipe ([File names](../packages/naming/overview.md)). |
 | `max_memory_gb` was a memory limit a run checked while it worked. | It is the run's memory budget, applied before the work starts: it sizes the workers and the units of days a run commits at once ([Parallel processing](parallel-processing.md)). | Check its value. |
+| A run computed the VOD of each day in the main process, from the day read back from the GNSS store, and committed the VOD store every day. | A run stores a unit of days, then computes their VOD in the worker processes from the GNSS store and commits the VOD store once per unit ([ADR 0021](../adr/0021-runs-work-in-units-of-days.md)). Nothing is read back for VOD. In Python, `pipeline.run()` does what `canvodpy run` does. The Airflow task `process_day` returns the groups that stored the day, no longer their number of epochs. | Use `pipeline.run()` instead of `process_range()` with `site.vod.compute_day_all()` to process and compute VOD. |
 | A run processed `days_per_batch` days at a time and committed every day. | A run works in units of days and commits each unit once; it sizes the units from the memory budget, at most 31 days ([ADR 0021](../adr/0021-runs-work-in-units-of-days.md)). A day that fails still fails alone. | Remove `days_per_batch` (deprecated). |
 | `canvodpy[filemap]` installed canvod-filemap. | The extra is gone. | Install canvod-filemap from its tag ([Optional extensions](extensions.md)), or `uv sync --group filemap` in the repository. |
 | canvod-grids installed canvod-store and canvod-store-metadata. | It doesn't. | Code that imports `canvod.store` declares canvod-store itself. |
@@ -189,7 +190,8 @@ All of these are replaced by one entry point: `canvodpy run`, or
 | `canvod.grids.store_grid()`, `load_grid()`, `canvod.grids.analysis.AnalysisStorage` | `canvod.store.store_grid()`, `load_grid()`, `AnalysisStorage` |
 | `add_cell_ids_to_vod()`, `add_cell_ids_to_vod_fast()`, argument `data_var` of `add_cell_ids_to_ds_fast()` | `add_cell_ids_to_ds_fast(ds, grid, grid_name)` |
 | `store_dataset_with_cell_ids()` | `canvod.ops.assign_grid_cells_in_store()` |
-| `GnssResearchSite.calculate_vod()`, `store_vod()` | `Site(<site>).vod.compute_bulk(<analysis>)`, or `store_vod_analysis()` |
+| `GnssResearchSite.calculate_vod()`, `store_vod()`, `store_vod_analysis()`, `store_vod_analyses_batch()` | `Site(<site>).vod.compute_days(<days>)` (writes), `Site(<site>).vod.compute_bulk(<analysis>, write=False)` (computes only) |
+| Writing VOD with `VodComputer.compute_day()` or `compute_day_all()` (`write=True`, the default), `VodComputer.write_day()` | `pipeline.run()` or `Site(<site>).vod.compute_days(<days>)`; pass `write=False` to compute without writing |
 | `VODCalculator.from_icechunkstore()`; argument `align` of `from_datasets()` | `Site(<site>).vod.compute_bulk(<analysis>, write=False)`; `align` is ignored |
 | `IcechunkDataReader` | `canvodpy run` or `Site(<site>).pipeline().process_date(<date>)` |
 | `VodDataValidator` | `canvod.readers.validate_vod_dataset` |

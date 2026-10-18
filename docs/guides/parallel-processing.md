@@ -71,18 +71,26 @@ go to VOD, the workers read the next unit.
    the store's arrays; the [Storage](../packages/store/overview.md) page
    describes the checks for duplicate data.
 
-When the unit is written, `canvodpy run` computes the VOD of its days;
-in Python, `process_range` hands the days to your loop. Meanwhile the
-run goes on with the next unit, which was prepared while this one was
-read, so the workers don't wait for the VOD or for the preparing. The
-run goes one unit ahead at most: it waits when a whole unit waits for
-VOD or for your loop. So the data of two units can be in memory at the
-same time, the one going to VOD and the one being read.
+When the unit is committed, `canvodpy run` (and `pipeline.run()` in
+Python) computes the VOD of its days: one task per receiver pair and
+day in the same worker processes, each reading its day from the GNSS
+store, and one commit of the VOD store for the unit. Nothing is read
+back for VOD while the observations are written. A day that failed gets
+no VOD and stays open for the next run; if the VOD of a unit fails, the
+run says which days are left without VOD and goes on (`canvodpy
+vod-reconcile` computes them later). In Python, `process_range` instead
+reads each day back and hands it to your loop.
 
-If VOD or your loop stops with an error, the run stops too: the unit
-being committed is committed, the files still being read are dropped,
-and the error is raised. Days already written stay in the store; the
-next run writes the rest. A day whose preparing fails, other than a
+Meanwhile the run goes on with the next unit, which was prepared while
+this one was read, so the workers don't wait for the preparing. The run
+goes one unit ahead at most: it waits when a whole unit waits for its
+VOD or for your loop. So the data of two units can be in memory at the
+same time.
+
+If your loop stops with an error, the run stops too: the unit being
+committed is committed, the files still being read are dropped, and the
+error is raised. Days already written stay in the store; the next run
+writes the rest. A day whose preparing fails, other than a
 missing orbit or clock file, is reported as failed for each receiver.
 
 ---

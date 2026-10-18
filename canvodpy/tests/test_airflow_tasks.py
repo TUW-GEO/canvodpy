@@ -438,17 +438,17 @@ class TestValidateDataDirs:
 
 
 class TestProcessDay:
-    """``process_day`` runs the day through ``Site.pipeline().process_date``."""
+    """``process_day`` stores the day through ``Site.pipeline().run`` (#427)."""
 
     def test_runs_the_day_through_the_pipeline(self):
+        from canvodpy.api import RunUnit
         from canvodpy.workflows import tasks
 
         pipeline = MagicMock()
         pipeline.__enter__.return_value = pipeline
-        pipeline.process_date.return_value = {
-            "canopy_01": xr.Dataset(coords={"epoch": np.arange(3)}),
-            "reference_01_canopy_01": xr.Dataset(coords={"epoch": np.arange(2)}),
-        }
+        pipeline.run.return_value = iter(
+            [RunUnit(days={"2025001": ("canopy_01", "reference_01_canopy_01")})]
+        )
         pipeline.failed_receiver_days = ()
         site = MagicMock()
         site.pipeline.return_value = pipeline
@@ -456,11 +456,12 @@ class TestProcessDay:
             result = tasks.process_day("TestSite", "2025-01-01")
 
         site_cls.assert_called_once_with("TestSite")
-        pipeline.process_date.assert_called_once_with("2025001")
+        # The DAG computes VOD in its own task (calculate_vod).
+        pipeline.run.assert_called_once_with("2025001", "2025001", vod_analyses=())
         assert result == {
             "site": "TestSite",
             "yyyydoy": "2025001",
-            "groups": {"canopy_01": 3, "reference_01_canopy_01": 2},
+            "groups": ["canopy_01", "reference_01_canopy_01"],
         }
 
     def test_nothing_processed_raises(self):
@@ -468,7 +469,7 @@ class TestProcessDay:
 
         pipeline = MagicMock()
         pipeline.__enter__.return_value = pipeline
-        pipeline.process_date.return_value = {}
+        pipeline.run.return_value = iter([])
         site = MagicMock()
         site.pipeline.return_value = pipeline
         with patch("canvodpy.api.Site", return_value=site):

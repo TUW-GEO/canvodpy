@@ -313,15 +313,16 @@ example, `2025001` is January 1, 2025 and `2025032` is February 1, 2025.
 
     site = Site("ExampleSite")
     with site.pipeline() as pipeline:
-        data = pipeline.process_date("2025001")
-    vod = site.vod.compute_day_all(data)
+        for unit in pipeline.run("2025001", "2025001"):
+            print(unit.days, unit.vod.written)
     ```
 
-    `process_date` reads the files of each receiver, adds the satellite
-    positions from the ephemeris products, and writes the observations to
-    the site's Icechunk store. It returns one dataset per receiver.
-    `compute_day_all` computes VOD for every receiver pair in
-    `vod_analyses` and writes it to the site's VOD store.
+    `run` reads the files of each receiver, adds the satellite positions
+    from the ephemeris products, and writes the observations to the
+    site's Icechunk store. Then it computes VOD for every receiver pair in
+    `vod_analyses` and writes it to the site's VOD store. To work with the
+    observations in Python, `pipeline.process_date("2025001")` returns
+    one dataset per receiver, read back from the store.
 
 === "Command line"
 
@@ -356,14 +357,17 @@ Files that are already in the store are skipped.
 
 === "Python"
 
-    `process_range` processes several days and returns the datasets of
-    one day at a time:
+    `run` processes the days in units of several days and yields what
+    it stored and computed for each unit:
 
     ```python
     with site.pipeline() as pipeline:
-        for date, data in pipeline.process_range("2025001", "2025031"):
-            vod = site.vod.compute_day_all(data)
+        for unit in pipeline.run("2025001", "2025031"):
+            print(sorted(unit.days), unit.vod.missing)
     ```
+
+    `process_range("2025001", "2025031")` yields the datasets of one day
+    at a time instead, read back from the store.
 
 === "Command line"
 

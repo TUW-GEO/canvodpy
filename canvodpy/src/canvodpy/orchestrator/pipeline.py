@@ -13,6 +13,7 @@ from collections import defaultdict
 from collections.abc import Callable, Generator, Hashable, Iterable, Sequence
 from concurrent.futures import (
     FIRST_COMPLETED,
+    Executor,
     Future,
     ThreadPoolExecutor,
     as_completed,
@@ -1299,7 +1300,9 @@ class PipelineOrchestrator:
         ],
         keep_vars: list[str] | None,
         stop: threading.Event,
-    ) -> Generator[tuple[str, dict[str, xr.Dataset], dict[str, float]]]:
+        *,
+        read_back: bool = True,
+    ) -> Generator[list[tuple[str, dict[str, xr.Dataset | None], dict[str, float]]]]:
         """Process dates in units of ``unit_days`` days (ADR 0021).
 
         Each unit (a batch, in the code) runs in three phases:
@@ -1320,10 +1323,10 @@ class PipelineOrchestrator:
            ``_append_to_icechunk``.
 
         A new store's first day is a unit of its own, so it creates the
-        groups the next units fork from. Dates are yielded after the unit
-        is written. :meth:`process_by_date`
-        runs this in a thread of its own, so the next batch is read while
-        the caller computes VOD of this one (:func:`_run_ahead`).
+        groups the next units fork from. A unit is yielded once it is
+        written. :meth:`process_by_date` and :meth:`store_by_unit` run this
+        in a thread of their own, so the next unit is read while the caller
+        works on this one (:func:`_run_ahead`).
 
         Parameters
         ----------
@@ -1335,11 +1338,16 @@ class PipelineOrchestrator:
             Set when the caller stops early: no file result is taken any
             more, the receiver-days being committed finish, and nothing
             more is yielded.
+        read_back : bool, default True
+            Read each stored receiver-day back from the store. Without it
+            (a run, whose VOD phase reads the days itself), a group's
+            dataset is ``None``.
 
         Yields
         ------
-        tuple[str, dict[str, xr.Dataset], dict[str, float]]
-            ``(date_key, datasets, timings)`` per DOY.
+        list[tuple[str, dict[str, xr.Dataset | None], dict[str, float]]]
+            Per unit with a stored day, ``(date_key, datasets, timings)``
+            of each of its stored days, in date order.
 
         """
         batches = self._units(filtered_dates)
@@ -1489,25 +1497,8 @@ class PipelineOrchestrator:
                         os.environ[_var] = _thread_str
 
                 t_submit_start = _time.monotonic()
-                n_wrk = self._workers or self.n_max_workers or os.cpu_count() or 4
-                _res = self._config.processing.params.resolve_resources()
-                _pool = _loky_reusable(
-                    max_workers=n_wrk,
-                    # loky's own default idle timeout is 10s -- Phase 1 date-prep
-                    # (position computation, aux data) routinely takes 90-165s+,
-                    # so every worker idles out and gets respawned at every batch
-                    # boundary with the default. 900s comfortably outlasts a
-                    # single batch's prep gap while still letting the pool wind
-                    # down between separate cron invocations.
-                    timeout=900,
-                    initializer=_worker_init_with_run_id,
-                    initargs=(
-                        _res["nice_priority"],
-                        _res["cpu_affinity"],
-                        get_run_id(),
-                        active_log_dir(),
-                    ),
-                )
+                n_wrk = self.pool_workers
+                _pool = self.worker_pool()
 
                 def _submit_fork(job: _ForkJob, *, _pool=_pool) -> Future:
                     return _pool.submit(
@@ -1580,7 +1571,9 @@ class PipelineOrchestrator:
                 tasks_failed = 0
 
                 # Per-date accumulators for final yield
-                date_datasets: dict[str, dict[str, xr.Dataset]] = defaultdict(dict)
+                date_datasets: dict[str, dict[str, xr.Dataset | None]] = defaultdict(
+                    dict
+                )
                 date_timings: dict[str, dict[str, float]] = defaultdict(dict)
                 groups_written: set[tuple[str, str]] = set()
 
@@ -1790,7 +1783,11 @@ class PipelineOrchestrator:
                                 datetime.combine(date_obj, datetime.min.time()),
                                 datetime.combine(date_obj, datetime.max.time()),
                             )
-                            if len(augmented) == 1:
+                            daily_ds: xr.Dataset | None
+                            if not read_back:
+                                daily_ds = None
+                                assembly_source = "none"
+                            elif len(augmented) == 1:
                                 # Single-file day: use the processed dataset
                                 # directly. The hash railguard guarantees
                                 # in-memory data == store content whether the
@@ -1851,6 +1848,7 @@ class PipelineOrchestrator:
                         unit_outcome.get(date_key)
                         if isinstance(unit_outcome, dict)
                         else unit_outcome,
+                        read_back=read_back,
                     )
                     for receiver_name, (daily_ds, seconds) in groups_done.items():
                         date_datasets[date_key][receiver_name] = daily_ds
@@ -1889,19 +1887,16 @@ class PipelineOrchestrator:
                 if stop.is_set():
                     return
 
-                # Yield per date in batch order (deterministic output)
-                doys_succeeded = 0
-                doys_failed = 0
-                for date_key, _receivers in batch:
-                    if date_datasets.get(date_key):
-                        doys_succeeded += 1
-                        yield (
-                            date_key,
-                            date_datasets[date_key],
-                            date_timings[date_key],
-                        )
-                    else:
-                        doys_failed += 1
+                # The unit's stored dates, in batch order (deterministic output)
+                stored = [
+                    (date_key, date_datasets[date_key], date_timings[date_key])
+                    for date_key, _receivers in batch
+                    if date_datasets.get(date_key)
+                ]
+                doys_succeeded = len(stored)
+                doys_failed = len(batch) - doys_succeeded
+                if stored:
+                    yield stored
 
                 batch_elapsed = _time.monotonic() - batch_start_time
                 self._logger.info(
@@ -1932,6 +1927,36 @@ class PipelineOrchestrator:
                 receiver_files_lookup.clear()
                 expected_counts.clear()
                 gc.collect()
+
+    @property
+    def pool_workers(self) -> int:
+        """The number of workers of the run's pool (:meth:`worker_pool`)."""
+        return self._workers or self.n_max_workers or os.cpu_count() or 4
+
+    def worker_pool(self) -> Executor:
+        """The run's worker pool: loky's reusable executor, sized for the run.
+
+        The GNSS phase and a run's VOD phase share it; asking loky for an
+        executor with other settings would restart its workers.
+        """
+        resources = self._config.processing.params.resolve_resources()
+        return _loky_reusable(
+            max_workers=self.pool_workers,
+            # loky's own default idle timeout is 10s -- Phase 1 date-prep
+            # (position computation, aux data) routinely takes 90-165s+,
+            # so every worker idles out and gets respawned at every batch
+            # boundary with the default. 900s comfortably outlasts a
+            # single batch's prep gap while still letting the pool wind
+            # down between separate cron invocations.
+            timeout=900,
+            initializer=_worker_init_with_run_id,
+            initargs=(
+                resources["nice_priority"],
+                resources["cpu_affinity"],
+                get_run_id(),
+                active_log_dir(),
+            ),
+        )
 
     def _check_content_settings_before_run(self) -> None:
         """Refuse the run before any file is read if its settings don't fit the store.
@@ -2183,8 +2208,10 @@ class PipelineOrchestrator:
         date_key: str,
         planned: ForkedDay,
         outcome: dict[str, GroupWriteResult] | BaseException | None,
-    ) -> dict[str, tuple[xr.Dataset, float]]:
-        """Record a forked day's groups and read back the written ones.
+        *,
+        read_back: bool = True,
+    ) -> dict[str, tuple[xr.Dataset | None, float]]:
+        """Record a forked day's groups and, with ``read_back``, read them back.
 
         ``outcome`` is what the unit's commit wrote of the day, or the error
         the commit failed with. A group is failed when the commit failed,
@@ -2193,9 +2220,9 @@ class PipelineOrchestrator:
 
         Returns
         -------
-        dict[str, tuple[xarray.Dataset, float]]
-            Per group read back: its day's data and the seconds of its
-            write and read back.
+        dict[str, tuple[xarray.Dataset | None, float]]
+            Per group stored: its day's data (``None`` without
+            ``read_back``) and the seconds of its write and read back.
         """
         groups = sorted({g for task, _ in planned.tasks for g in task.groups})
         if outcome is None or isinstance(outcome, BaseException):
@@ -2207,7 +2234,7 @@ class PipelineOrchestrator:
             datetime.combine(planned.date, datetime.min.time()),
             datetime.combine(planned.date, datetime.max.time()),
         )
-        done: dict[str, tuple[xr.Dataset, float]] = {}
+        done: dict[str, tuple[xr.Dataset | None, float]] = {}
         for receiver_name in groups:
             result = outcome[receiver_name]
             if not result.metadata_records:
@@ -2225,7 +2252,11 @@ class PipelineOrchestrator:
             day_result: DayResult = "written" if bytes_added else "skipped"
             t_read = _time.monotonic()
             try:
-                daily_ds = self._read_back_day(receiver_name, date_key, time_range)
+                daily_ds = (
+                    self._read_back_day(receiver_name, date_key, time_range)
+                    if read_back
+                    else None
+                )
             except STORE_ERROR_TYPES:
                 self._logger.exception(
                     "read_back_failed", date=date_key, receiver=receiver_name
@@ -2241,7 +2272,7 @@ class PipelineOrchestrator:
                 receiver=receiver_name,
                 write_seconds=round(result.duration_seconds, 2),
                 assembly_seconds=round(read_seconds, 2),
-                assembly_source="store",
+                assembly_source="store" if read_back else "none",
                 total_seconds=round(result.duration_seconds + read_seconds, 2),
                 forked=True,
             )
@@ -2384,11 +2415,13 @@ class PipelineOrchestrator:
         end_at: str | None = None,
         new_files_only: bool = False,
     ) -> Generator[tuple[str, dict[str, xr.Dataset], dict[str, float]]]:
-        """Process all receivers grouped by date.
+        """Process all receivers grouped by date; yield each day read back.
 
         Each unique receiver is processed once per day with its actual name
-        as the Icechunk group name. Dates are processed in batches of
-        ``days_per_batch`` days (``_process_multi_day_batches``).
+        as the Icechunk group name. Dates are processed in units of days
+        (``_process_multi_day_batches``); each stored receiver-day is read
+        back from the store for the caller. A run, which needs no data back,
+        uses :meth:`store_by_unit`.
 
         Parameters
         ----------
@@ -2409,6 +2442,51 @@ class PipelineOrchestrator:
             Date string, dict of {receiver_name: dataset}, and timings
 
         """
+        for unit in self._units_stored(
+            keep_vars, start_from, end_at, new_files_only, read_back=True
+        ):
+            for date_key, datasets, timings in unit:
+                yield date_key, cast("dict[str, xr.Dataset]", datasets), timings
+
+    def store_by_unit(
+        self,
+        start_from: str | None = None,
+        end_at: str | None = None,
+        new_files_only: bool = False,
+    ) -> Generator[dict[str, tuple[str, ...]]]:
+        """Store the days in units of days and read nothing back (ADR 0021).
+
+        The GNSS phase of a run: as :meth:`process_by_date`, but no
+        receiver-day is read back. The VOD phase reads the days it needs
+        from the store.
+
+        Parameters
+        ----------
+        start_from, end_at, new_files_only
+            As :meth:`process_by_date`.
+
+        Yields
+        ------
+        dict[str, tuple[str, ...]]
+            Per unit once it is committed: each stored day (YYYYDOY) with
+            the groups that stored it, in date order. A day of which no
+            group was stored is left out.
+        """
+        for unit in self._units_stored(
+            None, start_from, end_at, new_files_only, read_back=False
+        ):
+            yield {date_key: tuple(sorted(datasets)) for date_key, datasets, _ in unit}
+
+    def _units_stored(
+        self,
+        keep_vars: list[str] | None,
+        start_from: str | None,
+        end_at: str | None,
+        new_files_only: bool,
+        *,
+        read_back: bool,
+    ) -> Generator[list[tuple[str, dict[str, xr.Dataset | None], dict[str, float]]]]:
+        """Find, plan and store the dates; yield each unit once it is written."""
         if self.dry_run:
             self._logger.info(
                 "dry_run_mode", message="Simulating processing without execution"
@@ -2456,11 +2534,17 @@ class PipelineOrchestrator:
         overall_start = _time.monotonic()
 
         # The units run in a thread of their own, one unit ahead of the
-        # caller: while the caller computes VOD of a day, the next unit is
-        # read and written. Two units' data are in memory at most.
+        # caller: while the caller works on a unit (VOD, or the days read
+        # back), the next unit is read and written. Two units' data are in
+        # memory at most.
         yield from _run_ahead(
-            partial(self._process_multi_day_batches, filtered_dates, keep_vars),
-            ahead=self.unit_days,
+            partial(
+                self._process_multi_day_batches,
+                filtered_dates,
+                keep_vars,
+                read_back=read_back,
+            ),
+            ahead=1,
             name="canvodpy-batches",
         )
 

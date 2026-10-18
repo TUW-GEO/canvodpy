@@ -306,7 +306,7 @@ def assign_grid_cells(
     "maintained and gives different results than `canvodpy run`, because it"
     " skips the configured VOD output options. Use the terminal command "
     "`canvodpy run` or canvodpy.Site(<site>).vod.compute_day(<datasets>, "
-    "<analysis>) instead."
+    "<analysis>, write=False) instead."
 )
 def calculate_vod(
     canopy_ds: xr.Dataset,
@@ -583,7 +583,8 @@ def assign_grid_cells_to_file(
     "longer maintained and gives different results than `canvodpy run`, "
     "because it skips the configured VOD output options. Use the terminal "
     "command `canvodpy run` or "
-    "canvodpy.Site(<site>).vod.compute_day(<datasets>, <analysis>) instead."
+    "canvodpy.Site(<site>).vod.compute_day(<datasets>, <analysis>, "
+    "write=False) instead."
 )
 def calculate_vod_to_file(
     canopy_path: str | Path,
