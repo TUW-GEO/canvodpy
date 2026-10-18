@@ -75,10 +75,8 @@ def _require_date(yyyydoy: str) -> datetime.date:
 def _group_into_ranges(dates: list[str]) -> list[tuple[str, str]]:
     """Collapse a sorted list of YYYYDOY strings into contiguous ranges.
 
-    ``VodComputer.compute_bulk()`` only takes a single ``start``/``end``
-    range per call -- grouping gap dates into runs of consecutive
-    calendar days lets a scattered gap set be backfilled with one
-    ``compute_bulk()`` call per contiguous run instead of one per date.
+    For the report of ``canvodpy vod-reconcile``: a scattered gap set reads
+    as a few runs of consecutive calendar days.
     """
     if not dates:
         return []
