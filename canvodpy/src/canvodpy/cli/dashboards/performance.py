@@ -136,14 +136,12 @@ def _():
         if timings:
             charts["stage"] = stage_stats(timings)
 
-        # Time per day: the seconds of the stages that name a day, summed.
+        # Time per day: the stage seconds of a data day, summed; a record
+        # of a unit of days is split evenly over the days it names.
         day_totals = {}
         for timing in timings:
-            if timing.day is None:
-                continue
-            day_totals[timing.day] = day_totals.get(timing.day, 0.0) + (
-                timing.seconds or 0.0
-            )
+            for day, seconds in split_days(timing.day, timing.seconds or 0.0):
+                day_totals[day] = day_totals.get(day, 0.0) + seconds
         if day_totals:
             charts["day"] = [
                 {"Day": day, "Seconds": seconds}
@@ -283,6 +281,7 @@ def _():
     from canvodpy.cli.dashboards.charts import (
         chart_categories,
         chart_palette,
+        split_days,
         stage_stats,
         store_rows,
         time_bars,
@@ -814,20 +813,22 @@ def _(
         if "stage" in run_charts:
             chart_items.append(
                 mo.md(
-                    "**Time per stage.** The **total** seconds of each stage, and "
-                    "beside it the **median** of the stage's per-day seconds (the "
-                    "seconds of a day added up for that stage; a stage that names "
-                    "no day takes the median of its records). Receivers run in "
-                    "parallel, so these are not wall time."
+                    "**Time per stage.** On the left, the **median** of a stage's "
+                    "per-day seconds (Median per day); on the right, the "
+                    "**total** seconds of each stage (Total). The median is over "
+                    "the stage's per-day seconds (a day's seconds added up for "
+                    "that stage; a stage that names no day takes the median of its "
+                    "records; a unit of days is split evenly over its days). "
+                    "Receivers run in parallel, so these are not wall time."
                 )
             )
             stage_rows = run_charts["stage"]
             stage_order = [row["Stage"] for row in stage_rows]
             median_rows, median_time = time_bars(
-                "x", "Median (s)", "Time (s)", stage_rows, time_axis.value
+                "x", "Median (s)", "Median per day (s)", stage_rows, time_axis.value
             )
             total_rows, total_time = time_bars(
-                "x", "Total (s)", "Time (s)", stage_rows, time_axis.value
+                "x", "Total (s)", "Total (s)", stage_rows, time_axis.value
             )
             median_chart = chart_style(
                 alt.Chart({"values": median_rows})  # type: ignore
@@ -850,8 +851,10 @@ def _(
         if "day" in run_charts:
             chart_items.append(
                 mo.md(
-                    "**Time per day.** The stage seconds of all receivers of a day, "
-                    "added up. Receivers run in parallel, so this is not wall time."
+                    "**Time per day.** The stage seconds of a data day, added up; "
+                    "a run that works in units of days splits a unit's record "
+                    "evenly over its days. Receivers run in parallel, so this is "
+                    "not wall time."
                 )
             )
             day_rows, day_time = time_line(
@@ -873,9 +876,10 @@ def _(
         if "store" in run_charts:
             chart_items.append(
                 mo.md(
-                    "**Store size on disk.** The on-disk size of each store, measured "
-                    "in the background once a day (never inside a stage or a commit). "
-                    "The **Total** line adds the stores of a day."
+                    "**Store size on disk.** The on-disk size of each store, "
+                    "measured in the background when the run finished a new data "
+                    "day (never inside a stage or a commit; how long the walk took "
+                    "is recorded too). The **Total** line adds the stores of a day."
                 )
             )
             store_data = run_charts["store"]

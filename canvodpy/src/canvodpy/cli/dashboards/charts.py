@@ -118,7 +118,10 @@ def stage_stats(timings: Iterable[StageTiming]) -> list[dict]:
     The total is the stage's seconds added up. The median is over the
     stage's per-day seconds (the seconds of a day summed, whatever the
     receiver), or over its records when the stage names no day (such as
-    ``day_block_growth``). The rows are sorted by total, high to low.
+    ``day_block_growth``). A record of a unit of days names its days
+    joined by commas (e.g. ``"2025168,2025169"``); its seconds are split
+    evenly over those days, so a unit is one median, not one long point.
+    The rows are sorted by total, high to low.
     """
     by_stage: dict[str, list[StageTiming]] = {}
     for timing in timings:
@@ -129,10 +132,10 @@ def stage_stats(timings: Iterable[StageTiming]) -> list[dict]:
         if any(record.day is not None for record in records):
             per_day: dict[str, float] = {}
             for record in records:
-                day = record.day
-                if day is None:
+                if record.day is None:
                     continue
-                per_day[day] = per_day.get(day, 0.0) + (record.seconds or 0.0)
+                for day, share in split_days(record.day, record.seconds or 0.0):
+                    per_day[day] = per_day.get(day, 0.0) + share
             values = list(per_day.values())
         else:
             values = [record.seconds or 0.0 for record in records]
@@ -145,6 +148,23 @@ def stage_stats(timings: Iterable[StageTiming]) -> list[dict]:
         )
     rows.sort(key=lambda row: -float(row["Total (s)"]))
     return rows
+
+
+def split_days(day: str | None, seconds: float) -> list[tuple[str, float]]:
+    """Split a record's seconds over the data days it names.
+
+    A record of a unit of days names its days joined by commas (e.g.
+    ``"2025168,2025169"``). Its seconds are split evenly over those days, so
+    a unit is not one long point on the time-per-day chart. A record that
+    names one day is returned as is; a record without a day yields nothing.
+    """
+    if not day:
+        return []
+    days = [part for part in day.split(",") if part]
+    if len(days) <= 1:
+        return [(day, seconds)]
+    share = seconds / len(days)
+    return [(part, share) for part in days]
 
 
 def store_rows(store_sizes: Iterable[StoreSize]) -> list[dict]:
