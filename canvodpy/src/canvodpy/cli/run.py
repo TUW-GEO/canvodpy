@@ -166,6 +166,17 @@ def _store_has_data(site) -> bool:
     return bool(site.gnss_store.list_groups())
 
 
+def _days_per_batch_given(args) -> dict[str, int]:
+    """``days_per_batch`` for ``Site.pipeline()``, only when ``--days-per-batch`` is given.
+
+    The argument is deprecated and warns whenever it is passed, even as
+    None, so a run without the option must not pass it.
+    """
+    if args.days_per_batch is None:
+        return {}
+    return {"days_per_batch": args.days_per_batch}
+
+
 def _resolve_date_range(args, site) -> tuple[str, str, bool]:
     """The run's first and last day (``YYYYDOY``), and whether only new files count.
 
@@ -412,7 +423,7 @@ def _main_impl(args: SimpleNamespace) -> int:
             on_discovery_start, on_discovery_end = _discovery_callbacks(print)
             with site.pipeline(
                 n_workers=args.workers,
-                days_per_batch=args.days_per_batch,
+                **_days_per_batch_given(args),
                 dry_run=True,
                 on_discovery_start=on_discovery_start,
                 on_discovery_end=on_discovery_end,
@@ -551,7 +562,7 @@ def _main_impl(args: SimpleNamespace) -> int:
                 stage = "pipeline_process"
                 with site.pipeline(
                     n_workers=args.workers,
-                    days_per_batch=args.days_per_batch,
+                    **_days_per_batch_given(args),
                     dry_run=False,
                     on_group_written=_on_group_written,
                     label=args.label,
@@ -767,9 +778,10 @@ def run(
         int | None,
         typer.Option(
             "--days-per-batch",
+            hidden=True,
             help=(
-                "Number of days that the workers process together. Default: "
-                "processing.params.days_per_batch in canvod-settings.yaml."
+                "Deprecated, removed in v2.0.0: the run sizes its units of "
+                "days from the memory budget. Only caps the days per unit."
             ),
         ),
     ] = None,

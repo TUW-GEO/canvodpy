@@ -141,8 +141,8 @@ flowchart TD
    setting `ephemeris_source: broadcast` uses the satellite angles that the
    receiver recorded in the files instead, and skips the download.
 4. **Read the files.** Each file becomes an `xarray.Dataset` with the
-   dimensions `epoch` and `sid`. The files of a batch of days are read in
-   parallel, one task per file.
+   dimensions `epoch` and `sid`. The files of a unit of days are read in
+   parallel, one task per group of files that share an epoch chunk.
 5. **Add the angles.** From the satellite positions and the receiver
    position, the run computes the polar angle `theta` and the azimuth
    `phi` of each observation.
@@ -152,7 +152,7 @@ flowchart TD
    mixes data that was preprocessed differently. See
    [`canvod-ops`](packages/ops/overview.md).
 7. **Write to the GNSS store.** The run checks each file against the store
-   and against the other files of the batch, and then writes what is new.
+   and against the other files of the unit, and then writes what is new.
    See [Design principles](principles.md#the-same-data-is-never-written-twice-by-default).
 8. **Compute VOD.** For each VOD analysis in the settings, `VodComputer`
    reads the canopy and the reference receiver from the GNSS store, keeps
@@ -167,27 +167,34 @@ flowchart TD
 
 ## Parallel work
 
-- **Preparing.** Each day of a batch of days (`days_per_batch`) is
-  prepared in its own thread, while the batch before is read.
+- **Units of days.** A run works in units of days: as many days as the
+  memory budget holds, at most 31, sized by the run itself. A run of one
+  new day, as in live operation, is a unit of one day.
+- **Preparing.** Each day of a unit is prepared in its own thread, while
+  the unit before is read.
 - **Reading.** The files are read in a pool of worker processes
-  ([loky](https://github.com/joblib/loky)), which stays up from one batch
+  ([loky](https://github.com/joblib/loky)), which stays up from one unit
   to the next. `--workers`, or the resource settings, set the number of
   workers.
 - **Writing.** Only one process commits. In a store made of day blocks, it
-  first adds the blocks of the batch's days in one commit, before any file
+  first adds the blocks of the unit's days in one commit, before any file
   is read. Then the worker processes write the files into their slots,
-  each worker into its own fork of the day's session, and one writer thread
-  merges the forks of all receivers of a day and commits them with the
-  day's log-book rows. Files that share a chunk go to one worker task. A
+  each worker into its own fork of the unit's session, and one writer
+  thread merges the forks of all receivers and days of the unit and
+  commits them with the log-book rows, once per unit. If another run
+  committed in between, the unit is planned and written again. A day that
+  fails (no orbit products yet, or a file that can't be read) fails
+  alone; the other days of the unit are stored. Files that share a chunk
+  go to one worker task. A
   store written by appending, by versions before day blocks, is refused
   until `canvodpy store migrate-layout` moves it. On a file system, Icechunk
   can't detect two commits at the same time, so every commit takes the
   store's commit lock. A commit from another process waits for it (see
   [How a run writes](packages/store/overview.md#how-a-run-writes)).
-- **VOD.** After a batch is written, the run computes the VOD day by day
-  and writes all analyses of a day with one commit. Meanwhile the batches
-  run on in a thread of their own, one batch ahead at most, so the
-  workers read the next batch during the VOD.
+- **VOD.** After a unit is written, the run computes the VOD day by day
+  and writes all analyses of a day with one commit. Meanwhile the units
+  run on in a thread of their own, one unit ahead at most, so the
+  workers read the next unit during the VOD.
 
 See [Parallel processing](guides/parallel-processing.md) for the settings.
 

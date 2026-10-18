@@ -12,7 +12,7 @@ other package is a library this one composes.
 | `cli/run.py` | `canvodpy run`; without `--start` it processes the receiver-days of the last `RESUME_WINDOW_DAYS` with files the store doesn't hold (#386) |
 | `api.py` | `Site`, `Pipeline` (`Site(site).pipeline()`); the deprecated flat functions |
 | `orchestrator/discovery.py` | Which files of a receiver a day processes: naming recipe or canonical names, any folder layout; compressed files never (`is_compressed`). A run lists the folders of the days it processes (`days=`), the others come from the file index (ADR 0020); with every folder listed, results must equal a full scan |
-| `orchestrator/pipeline.py` | `PipelineOrchestrator`: days, receivers, batches; warns `files_not_processed` and `compressed_files_not_processed` |
+| `orchestrator/pipeline.py` | `PipelineOrchestrator`: days, receivers, units of days; warns `files_not_processed` and `compressed_files_not_processed` |
 | `orchestrator/processor.py` | Reads, adds geometry, applies preprocessing, writes the GNSS store |
 | `orchestrator/data_check.py` | `canvodpy config validate`: same discovery as a run, but always lists every folder (no file index) |
 | `vod_computer.py` | `VodComputer`, the only VOD implementation (`site.vod`, `canvodpy run`, `canvodpy vod`, `vod-reconcile`) |

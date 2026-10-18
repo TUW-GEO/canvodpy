@@ -138,11 +138,6 @@ processing:
     # https://canvodpy.eu/guides/settings/#processing-params-ephemeris_source
     ephemeris_source: final
 
-    # Days read together in one batch, 1 to 30; lowered if they don't fit
-    # in the memory budget (max_memory_gb)
-    # https://canvodpy.eu/guides/settings/#processing-params-days_per_batch
-    days_per_batch: 1
-
     # 'auto': auto-detects available cores and memory (personal machines)
     # 'manual': hard caps below are enforced (shared servers)
     # https://canvodpy.eu/guides/settings/#processing-params-resource_mode
@@ -164,7 +159,7 @@ processing:
     #                            # negative needs root/CAP_SYS_NICE on Linux, else no-op)
 
     # Memory budget of a run in GB, in auto and manual mode. The run starts
-    # fewer workers, or lowers days_per_batch, to fit it, and stops before
+    # fewer workers, or fewer days per unit, to fit it, and stops before
     # reading if one worker doesn't fit. Unset: the memory available at start.
     # https://canvodpy.eu/guides/settings/#processing-params-max_memory_gb
     # max_memory_gb: 8

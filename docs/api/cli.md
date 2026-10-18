@@ -62,7 +62,6 @@ $ canvodpy run [OPTIONS]
 * `--label <str>`: Free-text label of the run, stored in the run history, for example to group the repetitions of a benchmark.
 * `--dry-run / --no-dry-run`: Preview processing plan without executing.  [default: no-dry-run]
 * `--workers <int>`: Number of worker processes. Default: from the resource settings in canvod-settings.yaml.
-* `--days-per-batch <int>`: Number of days that the workers process together. Default: processing.params.days_per_batch in canvod-settings.yaml.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--config <str>`: Settings file whose values replace those of canvod-settings.yaml.
 * `--ephemeris-source <final|broadcast>`: Where the satellite orbits and clocks come from: final uses the SP3 and CLK products of an analysis center, broadcast uses the SatVisibility blocks of the SBF files. Default: from canvod-settings.yaml.
