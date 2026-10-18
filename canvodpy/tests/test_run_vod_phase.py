@@ -113,6 +113,22 @@ def test_each_vod_task_logs_its_worker_memory_peak(two_days) -> None:
     assert all(p["peak_gb"] >= p["before_gb"] > 0 for p in peaks)
 
 
+def test_vod_timings_name_their_day_as_yyyydoy(two_days) -> None:
+    # The GNSS stages key a day as YYYYDOY; the VOD phase's time must join
+    # them on the time-per-day chart, not form points of its own.
+    with _site().pipeline(n_workers=2) as pipeline:
+        list(pipeline.run(*DAYS))
+
+    log_dir = Path(two_days.processing.logging.log_dir)
+    # The main process writes each event to more than one log file.
+    vod_days = {
+        t["date_key"]
+        for t in _log_events(log_dir, "stage_timing")
+        if t["stage"] == "vod_calc"
+    }
+    assert vod_days == set(DAYS)
+
+
 def test_a_day_whose_gnss_phase_fails_gets_no_vod(two_days, monkeypatch) -> None:
     prepare = PipelineOrchestrator._prepare_single_date
 

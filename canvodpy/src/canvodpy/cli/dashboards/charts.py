@@ -9,6 +9,7 @@ from __future__ import annotations
 import math
 import statistics
 from collections.abc import Iterable
+from datetime import date, datetime
 
 import altair as alt
 
@@ -155,34 +156,92 @@ def split_days(day: str | None, seconds: float) -> list[tuple[str, float]]:
 
     A record of a unit of days names its days joined by commas (e.g.
     ``"2025168,2025169"``). Its seconds are split evenly over those days, so
-    a unit is not one long point on the time-per-day chart. A record that
-    names one day is returned as is; a record without a day yields nothing.
+    a unit is not one long point on the time-per-day chart. Each day comes
+    back as ``YYYYDOY`` (:func:`day_key`); a record without a day yields
+    nothing.
     """
     if not day:
         return []
-    days = [part for part in day.split(",") if part]
-    if len(days) <= 1:
-        return [(day, seconds)]
+    days = [day_key(part) for part in day.split(",") if part]
+    if not days:
+        return []
     share = seconds / len(days)
     return [(part, share) for part in days]
+
+
+def day_key(day: str) -> str:
+    """A data day as ``YYYYDOY``, the key of every stage record.
+
+    Runs before the fix recorded the VOD phase's days as ISO dates
+    (``"2025-06-18"``); those become ``"2025169"``, so their seconds join
+    the GNSS stages' seconds of the same day. A ``YYYYDOY`` key, or
+    anything else, is returned as is.
+    """
+    if len(day) != len("2025-06-18"):
+        return day
+    try:
+        stamp = date.fromisoformat(day)
+    except ValueError:
+        return day
+    return f"{stamp.year}{stamp.timetuple().tm_yday:03d}"
+
+
+def day_date(key: str) -> str | None:
+    """The ISO date (``"2025-06-18"``) of a ``YYYYDOY`` day, for a date axis;
+    ``None`` when ``key`` is not ``YYYYDOY``."""
+    try:
+        return datetime.strptime(key, "%Y%j").date().isoformat()
+    except ValueError:
+        return None
+
+
+def day_rows(timings: Iterable[StageTiming]) -> list[dict]:
+    """The stage seconds of each data day, summed, ordered by day.
+
+    A record of a unit of days is split evenly over the days it names
+    (:func:`split_days`). Rows are ``Day`` (``YYYYDOY``), ``Date`` (ISO,
+    for the date axis) and ``Seconds``.
+    """
+    totals: dict[str, float] = {}
+    for timing in timings:
+        for day, seconds in split_days(timing.day, timing.seconds or 0.0):
+            totals[day] = totals.get(day, 0.0) + seconds
+    return [
+        {"Day": day, "Date": day_date(day), "Seconds": seconds}
+        for day, seconds in sorted(totals.items())
+    ]
 
 
 def store_rows(store_sizes: Iterable[StoreSize]) -> list[dict]:
     """The on-disk store size per day, one row per store plus their total.
 
-    Rows are ``(day, store, size in bytes)`` for every store recorded that
-    day, then a ``Total`` row (all stores added up) per day, ordered by
-    day. The unit of the chart (MB or GB) is chosen from the values.
+    Rows are ``(day, date, store, size in bytes)`` for every store
+    recorded that day, then a ``Total`` row (all stores added up) per day,
+    ordered by day. The day is ``YYYYDOY``, the date its ISO date for the
+    date axis. The unit of the chart (MB or GB) is chosen from the values.
     """
     by_day: dict[str, dict[str, int]] = {}
     for size in store_sizes:
-        by_day.setdefault(size.day, {})[size.store] = size.bytes
+        by_day.setdefault(day_key(size.day), {})[size.store] = size.bytes
     rows = []
     for day in sorted(by_day):
         stores = by_day[day]
+        when = day_date(day)
         for store in sorted(stores):
-            rows.append({"Day": day, "Store": store, "Size (bytes)": stores[store]})
+            rows.append(
+                {
+                    "Day": day,
+                    "Date": when,
+                    "Store": store,
+                    "Size (bytes)": stores[store],
+                }
+            )
         rows.append(
-            {"Day": day, "Store": "Total", "Size (bytes)": sum(stores.values())}
+            {
+                "Day": day,
+                "Date": when,
+                "Store": "Total",
+                "Size (bytes)": sum(stores.values()),
+            }
         )
     return rows

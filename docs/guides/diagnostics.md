@@ -394,12 +394,18 @@ run history queries only:
   its receivers, as a line over the days so a trend over the run is easy
   to see. A run that works in units of days splits a unit's record
   evenly over its days. Receivers run in parallel, so this is not wall
-  time; a day can show more seconds than it took.
+  time; a day can show more seconds than it took. A day's time is final
+  only after its unit's VOD phase: until then it still rises, since a
+  unit's writing record is split over its days when the unit commits,
+  and its VOD runs during the next unit. The x-axis is a date axis: its
+  labels thin out to fit the page, so a year of days stays readable.
+  The days of runs recorded with ISO dates for the VOD phase
+  (`2025-06-18`) are shown under their YYYYDOY day too.
 - **Store size on disk:** the on-disk size of each local store (GNSS,
   VOD) as a line, plus a **Total** line, measured on the background
   sampler thread when the run finished a new data day (never inside a
   stage or a commit), so the growth of the store over the run is
-  visible. The x-axis is the data day (YYYYDOY), one point per data day
+  visible. The x-axis is the data day as a date, one point per data day
   the size was measured (a unit of days has one point, on its last day);
   the y-axis is in MB or GB, chosen from the values. How long each walk
   took is recorded too (`history.store_sizes(run_id)`).
@@ -425,8 +431,9 @@ Every chart of a duration (time per stage, time per day, the
 comparison) has a **Time axis** switch between a linear axis from zero
 and a logarithmic one, which spreads short and long stages apart. The
 free-disk chart starts its axis near the lowest value, not at zero, so
-a change in free space is visible. The settings and the machine of a
-run are folded in; click to open them.
+a change in free space is visible. Hover over a point or a bar of any
+chart for its values; a day shows as YYYYDOY and as a date. The
+settings and the machine of a run are folded in; click to open them.
 
 **Compare runs by label:** a run can take a free-text label with
 `canvodpy run --label <text>`, for example to group the repetitions of a

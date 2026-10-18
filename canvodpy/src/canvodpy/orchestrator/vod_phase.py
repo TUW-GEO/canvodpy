@@ -409,7 +409,10 @@ class VodPhase:
         for analysis, missing in report.missing.items():
             for day, reason in missing:
                 self.log.warning(
-                    "vod_day_missing", analysis=analysis, day=str(day), reason=reason
+                    "vod_day_missing",
+                    analysis=analysis,
+                    date_key=_yyyydoy(day),
+                    reason=reason,
                 )
         if not plans:
             return report
@@ -478,14 +481,14 @@ class VodPhase:
                 self.log.warning(
                     "vod_day_missing",
                     analysis=analysis,
-                    day=str(plan.day),
+                    date_key=_yyyydoy(plan.day),
                     reason=result.missing,
                 )
                 continue
             record_stage_timing(
                 "vod_calc",
                 result.seconds,
-                date_key=str(plan.day),
+                date_key=_yyyydoy(plan.day),
                 calculator=self.calculator,
                 analysis=analysis,
             )
