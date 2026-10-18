@@ -115,7 +115,16 @@ before they write data:
 1. Every commit, of a run or of any other canVODpy command, writes the
    root copy and the snapshot summary in the same commit as the data,
    and records the commit metadata. The snapshot summary therefore can't
-   disagree with the data it describes. A commit that only gives days
+   disagree with the data it describes. A process rebuilds the summary
+   from the whole store at its first commit to a store's branch; from
+   then on it updates the summary from the log-book rows each commit
+   adds, including rows another run committed in between, so a commit
+   costs the same however many days the store holds (ADR 0021). It
+   rebuilds the summary from the whole store again after a failed
+   commit, when a group's log book was written anew (its columns
+   changed, it shrank, or its last known row differs), and for a store
+   with a group written by appending or a log book without row numbers.
+   `summarize_store()` always reads the whole store. A commit that only gives days
    their block and writes no data keeps the summary of the snapshot
    before, with its time updated; it refuses any other change, compared
    with the snapshot it started from.

@@ -104,7 +104,9 @@ its GNSS data.
 `read_group()` opens a group with `xarray.open_zarr()`, so every data
 variable is a Dask array. Nothing is read until a value is needed (for
 example `.compute()`, `.values`, or a plot), and then only the chunks the
-result needs.
+result needs. With `date` or `time_slice`, a group made of day blocks opens
+only the blocks of the days selected, so reading a day takes the same time
+however many days the store holds.
 
 With the default `sid: -1`, a chunk holds all signals, so one signal over a
 year at 5 s reads 35,040 chunks of either store, 96 per day. If you read

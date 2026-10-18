@@ -1433,14 +1433,15 @@ class MyIcechunkStore:
         with self.readonly_session(branch) as session:
             # The stored chunks, not chunk_strategy: a group keeps the chunks
             # it was written with, which the settings may no longer match.
-            ds = load_group(session.store, group_name, chunks=chunks)
-            day_blocked = holds_day_blocks(session.store, group_name)
-
-            if time_slice is not None:
-                ds = ds.sel(epoch=time_slice)
-                self._logger.debug(f"Applied time slice: {time_slice}")
-            if drop_empty and day_blocked:
-                ds = drop_empty_slots(ds, group_name)
+            # The selection goes into load_group: a day-block group then
+            # reads only the days selected (#418).
+            ds = load_group(
+                session.store,
+                group_name,
+                chunks=chunks,
+                time_slice=time_slice,
+                drop_empty=drop_empty,
+            )
 
             self._logger.info(
                 f"Successfully read group '{group_name}' - shape: {dict(ds.sizes)}"
