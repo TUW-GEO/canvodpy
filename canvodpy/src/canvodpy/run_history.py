@@ -166,6 +166,9 @@ CREATE TABLE IF NOT EXISTS file_index (
 
 # Version 3: the on-disk size of each store the run writes, sampled in the
 # background (not on the critical path), one row per (run, store, day).
+# day is the data day (YYYYDOY) the run had finished when the size was
+# measured; walk_seconds is how long the walk took. The schema is not
+# released, so it is changed in place.
 _SCHEMA_V3 = """
 CREATE TABLE IF NOT EXISTS store_sizes (
     run_id TEXT NOT NULL REFERENCES runs (run_id),
@@ -173,6 +176,7 @@ CREATE TABLE IF NOT EXISTS store_sizes (
     day TEXT NOT NULL,
     recorded_at TEXT NOT NULL,
     bytes INTEGER NOT NULL,
+    walk_seconds REAL,
     PRIMARY KEY (run_id, store, day)
 );
 CREATE INDEX IF NOT EXISTS store_sizes_run ON store_sizes (run_id);
@@ -270,12 +274,18 @@ class ResourceSample:
 
 @dataclass(frozen=True)
 class StoreSize:
-    """The on-disk size of one store at one day of a run."""
+    """The on-disk size of one store at one data day of a run.
+
+    ``day`` is the data day (YYYYDOY) the run had finished when the size
+    was measured. ``walk_seconds`` is how long the walk of the store
+    folder took; the benchmarks use it to account for the walk.
+    """
 
     store: str
     day: str
     recorded_at: datetime
     bytes: int
+    walk_seconds: float | None = None
 
 
 @dataclass(frozen=True)
@@ -652,27 +662,33 @@ class RunHistory:
         *,
         day: str,
         bytes: int,
+        walk_seconds: float | None = None,
         recorded_at: datetime | None = None,
     ) -> None:
         """Record the on-disk size (bytes) of *store* on *day* of a run.
 
         One row per (run, store, day): a later measure of the same store and
         day replaces the earlier one, so the row holds the last size seen
-        that day. The measure runs in the background sampler, never inside a
-        stage or a commit.
+        that day. *day* is the data day (YYYYDOY) the run had finished when
+        the size was measured, and *walk_seconds* is how long the walk took.
+        The measure runs in the background sampler, never inside a stage or a
+        commit.
         """
         with self._write() as db:
             db.execute(
-                "INSERT INTO store_sizes (run_id, store, day, recorded_at, bytes)"
-                " VALUES (?, ?, ?, ?, ?)"
+                "INSERT INTO store_sizes"
+                " (run_id, store, day, recorded_at, bytes, walk_seconds)"
+                " VALUES (?, ?, ?, ?, ?, ?)"
                 " ON CONFLICT (run_id, store, day) DO UPDATE SET"
-                " recorded_at = excluded.recorded_at, bytes = excluded.bytes",
+                " recorded_at = excluded.recorded_at, bytes = excluded.bytes,"
+                " walk_seconds = excluded.walk_seconds",
                 (
                     run_id,
                     store,
                     day,
                     _now() if recorded_at is None else recorded_at.isoformat(),
                     bytes,
+                    walk_seconds,
                 ),
             )
 
@@ -921,8 +937,8 @@ class RunHistory:
         """
         try:
             rows = self._read(
-                "SELECT store, day, recorded_at, bytes FROM store_sizes WHERE"
-                " run_id = ? ORDER BY day, store",
+                "SELECT store, day, recorded_at, bytes, walk_seconds"
+                " FROM store_sizes WHERE run_id = ? ORDER BY day, store",
                 run_id,
             )
         except sqlite3.OperationalError:
@@ -933,6 +949,7 @@ class RunHistory:
                 day=row["day"],
                 recorded_at=_time(row["recorded_at"]),
                 bytes=row["bytes"],
+                walk_seconds=row["walk_seconds"],
             )
             for row in rows
         ]
@@ -996,7 +1013,7 @@ def _status(row: sqlite3.Row) -> RunStatus:
 # -- recording a run ---------------------------------------------------
 
 
-@dataclass(frozen=True)
+@dataclass
 class ActiveRun:
     """A run being recorded: what processing code writes to while it runs.
 
@@ -1006,6 +1023,11 @@ class ActiveRun:
 
     run_id: str
     history: RunHistory
+    # The greatest data day (YYYYDOY) the run has finished so far. The
+    # background sampler reads it to know which data day's store size to
+    # measure next; it is set under the run's finish lock, and the sampler
+    # only reads it, so nothing else guards it.
+    last_finished_day: str | None = None
 
     def plan(self, receiver_days: Iterable[tuple[str, str]]) -> None:
         """Record the ``(receiver, day)`` pairs the run will process."""
@@ -1015,8 +1037,10 @@ class ActiveRun:
         """Record one resource sample (:meth:`RunHistory.record_resources`)."""
         self._try(self.history.record_resources, self.run_id, **sample)
 
-    def record_store_size(self, store: str, *, day: str, bytes: int) -> None:
-        """Record the on-disk size of a store on a day
+    def record_store_size(
+        self, store: str, *, day: str, bytes: int, walk_seconds: float | None = None
+    ) -> None:
+        """Record the on-disk size of a store on a data day
         (:meth:`RunHistory.record_store_size`)."""
         self._try(
             self.history.record_store_size,
@@ -1024,6 +1048,7 @@ class ActiveRun:
             store,
             day=day,
             bytes=bytes,
+            walk_seconds=walk_seconds,
         )
 
     def set_workers(self, workers: int) -> None:
@@ -1038,7 +1063,11 @@ class ActiveRun:
         *,
         bytes_added: int | None = None,
     ) -> None:
-        """Record a finished receiver-day."""
+        """Record a finished receiver-day and advance the run's frontier."""
+        # The greatest data day finished so far is the frontier the store
+        # size is measured against; a unit's last day is its greatest.
+        if self.last_finished_day is None or day > self.last_finished_day:
+            self.last_finished_day = day
         self._try(
             self.history.finish_receiver_day,
             self.run_id,
@@ -1106,9 +1135,11 @@ def recorded_run(
         folder is always included.
     stores : dict of str to Path, optional
         Local store folders whose on-disk size the run records, one row per
-        store and day. A store that is not on the local disk is left out.
-        The size is measured on the background sampler thread, never inside
-        a stage or a commit.
+        store and data day (the data day, YYYYDOY, the run had finished
+        when it was measured). A store that is not on the local disk is left
+        out. The size is measured on the background sampler thread, once a
+        data day, never inside a stage or a commit; how long the walk took
+        is recorded beside it.
     label : str, optional
         Free-text label (``canvodpy run --label``).
 
@@ -1158,9 +1189,12 @@ def recorded_run(
                 disks=facts["machine"]["disks"],
                 stores=stores,
                 on_sample=active.record_resources,
-                on_store_size=lambda store, day, size: active.record_store_size(
-                    store, day=day, bytes=size
+                on_store_size=lambda store, day, size, walk_seconds: (
+                    active.record_store_size(
+                        store, day=day, bytes=size, walk_seconds=walk_seconds
+                    )
                 ),
+                get_last_finished_day=lambda: active.last_finished_day,
             )
             sampler.start()
             try:

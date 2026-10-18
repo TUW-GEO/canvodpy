@@ -7,7 +7,6 @@ import threading
 import time
 import types
 from collections.abc import Callable, Iterable, Mapping
-from datetime import UTC, date, datetime
 from pathlib import Path
 
 import psutil
@@ -154,9 +153,14 @@ class ResourceSampler:
         (bytes per folder of *disks*) for every sample; the run history
         records them this way (``canvodpy.run_history.recorded_run``).
     on_store_size : callable, optional
-        Called with ``(store, day, bytes)`` for every store, once a day
-        (when the UTC day changes, and once more when the sampler stops), so
-        the last size of each day is kept.
+        Called with ``(store, day, bytes, walk_seconds)`` for every store
+        when the store size is measured, so the last size of each data day
+        is kept. ``day`` is the data day the run had finished.
+    get_last_finished_day : callable, optional
+        Called on this thread to get the data day (YYYYDOY) the run has
+        finished furthest, or ``None`` before any day finished. The size is
+        measured when this day changed since the last walk, so at most one
+        walk per sample interval and none while nothing new is stored.
     """
 
     def __init__(
@@ -167,6 +171,7 @@ class ResourceSampler:
         stores: Mapping[str, Path] | None = None,
         on_sample: Callable[..., None] | None = None,
         on_store_size: Callable[..., None] | None = None,
+        get_last_finished_day: Callable[[], str | None] | None = None,
     ) -> None:
         self.interval_seconds = interval_seconds
         self.disks = [str(Path(folder).expanduser()) for folder in disks]
@@ -175,18 +180,19 @@ class ResourceSampler:
         }
         self.on_sample = on_sample
         self.on_store_size = on_store_size
+        self.get_last_finished_day = get_last_finished_day
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._run_id = get_run_id()
         self._sample_index = 0
         self._prev_io = None
-        self._last_store_day: date | None = None
+        self._last_walked_day: str | None = None
 
     def start(self) -> None:
         """Start sampling in a daemon thread. Safe to call once per run."""
         self._run_id = get_run_id()
         self._stop.clear()
-        self._last_store_day = None
+        self._last_walked_day = None
         # The first cpu_percent call only starts the measurement.
         psutil.cpu_percent(interval=None)
         try:
@@ -199,12 +205,17 @@ class ResourceSampler:
         self._thread.start()
 
     def stop(self, timeout: float = 5.0) -> None:
-        """Stop the sampler thread, then take the last sample."""
+        """Stop the sampler, leaving the last sample to its thread.
+
+        The signal is set and the thread is joined; the thread takes the
+        last sample and any final store walk itself, so ``stop()`` never
+        walks a store on the caller's thread (that walk would add to the
+        run's wall time and could double-walk a store mid-walk).
+        """
         self._stop.set()
         if self._thread is not None:
             self._thread.join(timeout=timeout)
             self._thread = None
-            self._sample(final=True)
 
     def _run_loop(self) -> None:
         # Contextvars don't cross thread boundaries automatically -- carry
@@ -214,6 +225,9 @@ class ResourceSampler:
             set_run_id(self._run_id)
         while not self._stop.wait(self.interval_seconds):
             self._sample()
+        # The stop signal was set: the last sample (and any final store
+        # walk) runs on this thread, so stop() never waits on a walk.
+        self._sample(final=True)
 
     def _sample(self, *, final: bool = False) -> None:
         self._sample_index += 1
@@ -265,15 +279,33 @@ class ResourceSampler:
                     free_disk=free_disk,
                 )
             if self.stores and self.on_store_size is not None:
-                today = datetime.now(UTC).date()
-                if final or today != self._last_store_day:
-                    for name, path in self.stores.items():
-                        self.on_store_size(
-                            name, today.isoformat(), directory_size_bytes(path)
-                        )
-                    self._last_store_day = today
+                self._sample_store_sizes()
         except Exception:
             logger.debug("resource_sample_failed", exc_info=True)
+
+    def _sample_store_sizes(self) -> None:
+        """Measure each store, once per data day.
+
+        The measure is keyed by the data day (YYYYDOY) the run has finished
+        furthest: only when it changed since the last walk is any store
+        walked, so at most one walk per sample interval and none while
+        nothing new is stored. The final sample runs here too, so the last
+        day is measured on the sampler thread; no store is walked on the
+        caller's thread.
+        """
+        day = self.get_last_finished_day() if self.get_last_finished_day else None
+        if day is None or self.on_store_size is None:
+            return
+        if day == self._last_walked_day:
+            # A day already measured since the last walk (or on the final
+            # sample, one measured before): nothing new to walk.
+            return
+        for name, path in self.stores.items():
+            started = time.perf_counter()
+            size = directory_size_bytes(path)
+            walk_seconds = round(time.perf_counter() - started, 4)
+            self.on_store_size(name, day, size, walk_seconds)
+        self._last_walked_day = day
 
 
 def _free_disk(folders: Iterable[str]) -> dict[str, int]:
