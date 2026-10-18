@@ -20,10 +20,17 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from canvodpy.cli.dashboards.charts import chart_categories, chart_palette, time_bars
+from canvodpy.cli.dashboards.charts import (
+    chart_categories,
+    chart_palette,
+    stage_stats,
+    store_rows,
+    time_bars,
+    time_line,
+)
 from canvodpy.cli.dashboards.comparison import build_comparison
 from canvodpy.cli.dashboards.export import export_zip
-from canvodpy.run_history import RunHistory
+from canvodpy.run_history import RunHistory, StageTiming, StoreSize
 
 import canvodpy
 from canvod.utils import testing
@@ -76,6 +83,19 @@ def _seed(log_dir: Path) -> dict[str, list[float]]:
         history.record_stage(rid1, "reading", 1.5, receiver="canopy_01", day="2025001")
         history.record_stage(rid1, "reading", 1.7, receiver="canopy_01", day="2025002")
         history.record_stage(rid1, "writing", 3.2, receiver="canopy_01", day="2025001")
+        # The on-disk size of the stores, measured by the background thread.
+        history.record_store_size(
+            rid1, "GNSS store", day="2026-10-14", bytes=2_000_000_000
+        )
+        history.record_store_size(
+            rid1, "VOD store", day="2026-10-14", bytes=800_000_000
+        )
+        history.record_store_size(
+            rid1, "GNSS store", day="2026-10-15", bytes=2_400_000_000
+        )
+        history.record_store_size(
+            rid1, "VOD store", day="2026-10-15", bytes=900_000_000
+        )
         history.record_resources(
             rid1, cpu_percent=50.0, memory_percent=20.0, free_disk={"/stores": 10}
         )
@@ -381,6 +401,7 @@ def test_dashboard_download_one_run(tmp_path: Path) -> None:
         assert copy.stage_timings(rid) == original.stage_timings(rid)
         assert copy.resource_samples(rid) == original.resource_samples(rid)
         assert copy.problems(rid) == original.problems(rid)
+        assert copy.store_sizes(rid) == original.store_sizes(rid)
 
 
 def test_dashboard_download_comparison(tmp_path: Path) -> None:
@@ -536,3 +557,139 @@ def test_log_time_axis_spans_whole_decades_and_drops_zero() -> None:
     assert kept == rows[1:]
     assert encoding["x"].to_dict()["scale"] == {"type": "log", "domain": [0.1, 100]}
     assert encoding["x2"].to_dict() == {"datum": 0.1}
+
+
+def test_line_time_axis_has_no_baseline_and_keeps_zero_on_linear() -> None:
+    # A line has no x2/y2 baseline (a bar does), and a linear axis starts at
+    # zero and keeps every row.
+    rows = [{"Seconds": 0.0}, {"Seconds": 3.0}]
+    kept, encoding = time_line("y", "Seconds", "Time (s)", rows, "linear")
+    assert kept == rows
+    assert set(encoding) == {"y"}
+    assert encoding["y"].to_dict()["scale"] == {"type": "linear", "zero": True}
+
+
+def test_line_log_time_axis_drops_zero_and_spans_decades() -> None:
+    # As for the bars: a log axis leaves the zero row out and runs between
+    # the decades around the shortest and longest time.
+    rows = [{"Seconds": 0.0}, {"Seconds": 0.4}, {"Seconds": 60.0}]
+    kept, encoding = time_line("x", "Seconds", "Time (s)", rows, "log")
+    assert kept == rows[1:]
+    assert encoding["x"].to_dict()["scale"] == {"type": "log", "domain": [0.1, 100]}
+    assert "x2" not in encoding
+
+
+def test_line_time_axis_keeps_the_data_order() -> None:
+    # A line connects the points in the order they come in, so the rows must
+    # not be reordered.
+    rows = [{"Seconds": 3.0}, {"Seconds": 1.0}, {"Seconds": 2.0}]
+    kept, encoding = time_line("x", "Seconds", "Time (s)", rows, "linear")
+    assert kept == rows
+
+
+def test_stage_stats_total_and_per_day_median() -> None:
+    # The median is over the stage's per-day seconds, where the per-day
+    # totals can differ from the mean; a stage that names no day takes the
+    # median of its records.
+    timings = [
+        StageTiming(
+            datetime.now(UTC), "reading", 1.0, "ok", receiver="c1", day="2025001", pid=1
+        ),
+        StageTiming(
+            datetime.now(UTC), "reading", 2.0, "ok", receiver="c1", day="2025002", pid=1
+        ),
+        StageTiming(
+            datetime.now(UTC),
+            "reading",
+            10.0,
+            "ok",
+            receiver="c1",
+            day="2025003",
+            pid=1,
+        ),
+        StageTiming(
+            datetime.now(UTC),
+            "day_block_growth",
+            3.0,
+            "ok",
+            receiver=None,
+            day=None,
+            pid=1,
+        ),
+        StageTiming(
+            datetime.now(UTC),
+            "day_block_growth",
+            9.0,
+            "ok",
+            receiver=None,
+            day=None,
+            pid=1,
+        ),
+    ]
+    rows = {row["Stage"]: row for row in stage_stats(timings)}
+    # per-day totals are [1, 2, 10]; median 2.0, mean 4.33. Median != mean.
+    assert rows["reading"]["Total (s)"] == 13.0
+    assert rows["reading"]["Median (s)"] == 2.0
+    assert rows["reading"]["Median (s)"] != 13.0 / 3
+    # A stage that names no day takes the median of its records.
+    assert rows["day_block_growth"]["Median (s)"] == 6.0
+    # Rows are sorted by total, high to low.
+    assert [row["Stage"] for row in stage_stats(timings)] == [
+        "reading",
+        "day_block_growth",
+    ]
+
+
+def test_store_rows_one_row_per_store_per_day_plus_total() -> None:
+    # One row per (day, store) and a Total row per day, the sum of the stores
+    # recorded that day, ordered by day.
+    sizes = [
+        StoreSize("GNSS store", "2026-10-14", datetime.now(UTC), 2000),
+        StoreSize("VOD store", "2026-10-14", datetime.now(UTC), 500),
+        StoreSize("GNSS store", "2026-10-15", datetime.now(UTC), 3000),
+    ]
+    assert store_rows(sizes) == [
+        {"Day": "2026-10-14", "Store": "GNSS store", "Size (bytes)": 2000},
+        {"Day": "2026-10-14", "Store": "VOD store", "Size (bytes)": 500},
+        {"Day": "2026-10-14", "Store": "Total", "Size (bytes)": 2500},
+        {"Day": "2026-10-15", "Store": "GNSS store", "Size (bytes)": 3000},
+        {"Day": "2026-10-15", "Store": "Total", "Size (bytes)": 3000},
+    ]
+
+
+def test_store_size_record_and_older_history(tmp_path: Path) -> None:
+    # The record upserts on (run, store, day) so a later measure of the same
+    # day replaces the earlier one.
+    log_dir = tmp_path / "logs"
+    rid = "fangorn-20261014-100000"
+    with RunHistory.open(log_dir) as history:
+        history.start_run(
+            rid,
+            site="fangorn",
+            settings={},
+            canvodpy_version="1.0.0",
+            commit="abc1234",
+            machine={},
+            workers=1,
+            started_at=datetime(2026, 10, 14, 10, 0, 0, tzinfo=UTC),
+        )
+        history.record_store_size(rid, "GNSS store", day="2026-10-14", bytes=1000)
+        history.record_store_size(rid, "GNSS store", day="2026-10-14", bytes=2000)
+        history.record_store_size(rid, "VOD store", day="2026-10-14", bytes=500)
+        sizes = history.store_sizes(rid)
+        assert [(size.store, size.day, size.bytes) for size in sizes] == [
+            ("GNSS store", "2026-10-14", 2000),
+            ("VOD store", "2026-10-14", 500),
+        ]
+
+    # An older run history (no store_sizes table) still opens and reports none.
+    old = tmp_path / "old"
+    old.mkdir()
+    path = old / "run_history.sqlite"
+    db = sqlite3.connect(path)
+    db.execute("CREATE TABLE runs (run_id TEXT PRIMARY KEY)")
+    db.execute("PRAGMA user_version = 2")
+    db.commit()
+    db.close()
+    with RunHistory.open(old, read_only=True) as history:
+        assert history.store_sizes("anything") == []
