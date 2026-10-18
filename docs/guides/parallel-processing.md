@@ -82,7 +82,10 @@ vod-reconcile` computes them later). In Python, `process_range` instead
 reads each day back and hands it to your loop.
 
 Meanwhile the run goes on with the next unit, which was prepared while
-this one was read, so the workers don't wait for the preparing. The run
+this one was read, so the workers don't wait for the preparing. The
+preparing of the next unit starts once this unit's day blocks are added
+to the store (a small commit before the tasks go out): next to the
+preparing, that commit took many times as long. The run
 goes one unit ahead at most: it waits when a whole unit waits for its
 VOD or for your loop. So the data of two units can be in memory at the
 same time.

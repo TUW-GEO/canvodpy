@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pickle
 import threading
+import time
 from concurrent.futures import Future
 from pathlib import Path
 from types import SimpleNamespace
@@ -178,6 +179,41 @@ def test_a_backlog_makes_one_growth_and_one_data_commit_per_unit(
     assert sum("(7 days)" in m for m in new) == 2
     assert _stored_days(seeded) == set(DAYS)
     assert sorted(pipe._run.days) == sorted((_GROUP, day, "written") for day in DAYS)
+
+
+def test_the_next_units_phase_1_starts_after_this_units_growth_commit(
+    seeded, monkeypatch
+) -> None:
+    # Beside the next unit's Phase 1, a growth commit took 15 times as long
+    # on the server (#433).
+    events: list[tuple[str, int]] = []
+    prepare_batch = PipelineOrchestrator._prepare_batch
+    grow = PipelineOrchestrator._grow_day_blocks
+
+    def recording_prepare(self, batch, keep_vars, index):
+        events.append(("phase 1", index))
+        return prepare_batch(self, batch, keep_vars, index)
+
+    def recording_grow(self, doy_contexts, index):
+        events.append(("growth", index))
+        # Long enough for a Phase 1 submitted before the growth to start.
+        time.sleep(0.2)
+        grow(self, doy_contexts, index)
+        events.append(("grown", index))
+
+    monkeypatch.setattr(PipelineOrchestrator, "_prepare_batch", recording_prepare)
+    monkeypatch.setattr(PipelineOrchestrator, "_grow_day_blocks", recording_grow)
+
+    _run(seeded, monkeypatch, DAYS, unit_days=7, no_orbits=None)
+
+    assert events == [
+        ("phase 1", 1),
+        ("growth", 1),
+        ("grown", 1),
+        ("phase 1", 2),
+        ("growth", 2),
+        ("grown", 2),
+    ]
 
 
 def test_without_read_back_a_unit_reads_nothing_and_names_its_groups(
