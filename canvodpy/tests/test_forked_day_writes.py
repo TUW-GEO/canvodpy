@@ -28,7 +28,7 @@ from canvodpy.orchestrator import forked_writes, store_retry
 from canvodpy.orchestrator import pipeline as pipeline_module
 from canvodpy.orchestrator import processor as processor_module
 from canvodpy.orchestrator.forked_writes import ForkResult, write_files_into_fork
-from canvodpy.orchestrator.pipeline import PipelineOrchestrator, _ForkJob
+from canvodpy.orchestrator.pipeline import PipelineOrchestrator, _ForkJob, _UnitDay
 from canvodpy.orchestrator.resources import MemoryMonitor
 from test_cross_group_batch_write import (
     _SIDS,
@@ -36,7 +36,8 @@ from test_cross_group_batch_write import (
 )
 from test_day_block_write import _config, _DayBlockProcessor, _inputs
 
-from canvod.config.models import PreprocessingConfig
+from canvod.config.models import PreprocessingConfig, TemporalAggregationConfig
+from canvod.ops import preprocess_files
 from canvod.store import MyIcechunkStore
 from canvod.store.day_blocks import ChunkOwnershipError
 from canvod.store.store import StoredOverlapError
@@ -355,6 +356,12 @@ def test_a_forked_day_of_two_receivers_records_its_writing_once(
     assert writing[0]["receivers"] == f"{_GROUP},{other}"
 
 
+def _write_unit(pipe, proc, planned, results, submit) -> dict:
+    """Commit one day as a unit of its own, as the writer thread does."""
+    day = _UnitDay(proc, planned, _descriptors(range(_FILES_PER_DAY)), results)
+    return pipe._write_forked_unit([day], submit, 1)[planned.date_key]
+
+
 def _orchestrator(gnss_store: MyIcechunkStore) -> PipelineOrchestrator:
     pipe = PipelineOrchestrator.__new__(PipelineOrchestrator)
     pipe.site = SimpleNamespace(
@@ -391,9 +398,7 @@ def test_a_day_that_lost_a_conflict_is_written_again(seeded, files) -> None:
     with pytest.raises(icechunk.ConflictError):
         proc._commit_forked_day(planned, results)
 
-    out = _orchestrator(seeded)._write_forked_day(
-        proc, planned, _descriptors(range(_FILES_PER_DAY)), results, _submit, 1
-    )
+    out = _write_unit(_orchestrator(seeded), proc, planned, results, _submit)
 
     # The seed's file by its hash; the others write over the other run's
     # files of other hashes, and the log book says so (#351).
@@ -422,9 +427,7 @@ def test_a_day_whose_files_another_run_stored_first_stops_after_the_replan(
     n_commits = _commits(seeded)
 
     with pytest.raises(StoredOverlapError, match="gnss_store_strategy: overwrite"):
-        _orchestrator(seeded)._write_forked_day(
-            proc, planned, _descriptors(range(_FILES_PER_DAY)), results, _submit, 1
-        )
+        _write_unit(_orchestrator(seeded), proc, planned, results, _submit)
 
     assert _commits(seeded) == n_commits
 
@@ -444,9 +447,7 @@ def test_a_day_another_process_stored_first_stops_at_the_tip(seeded, files) -> N
         files[_name(index)] = _dataset(index)
 
     with pytest.raises(StoredOverlapError, match="gnss_store_strategy: overwrite"):
-        _orchestrator(seeded)._write_forked_day(
-            proc, planned, _descriptors(range(_FILES_PER_DAY)), results, _submit, 1
-        )
+        _write_unit(_orchestrator(seeded), proc, planned, results, _submit)
 
 
 def test_a_day_that_lost_several_conflicts_is_stored_once(
@@ -460,24 +461,22 @@ def test_a_day_that_lost_several_conflicts_is_stored_once(
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
-    commit = proc._commit_forked_day
+    commit = proc._commit_forked_unit
     lost: list[icechunk.ConflictError] = []
 
-    def commit_after_the_other_run(planned, results):
+    def commit_after_the_other_run(days):
         if len(lost) < 3:
             _write_day(_Processor(seeded, strategy="overwrite"))
             try:
-                return commit(planned, results)
+                return commit(days)
             except icechunk.ConflictError as exc:
                 lost.append(exc)
                 raise
-        return commit(planned, results)
+        return commit(days)
 
-    monkeypatch.setattr(proc, "_commit_forked_day", commit_after_the_other_run)
+    monkeypatch.setattr(proc, "_commit_forked_unit", commit_after_the_other_run)
 
-    out = _orchestrator(seeded)._write_forked_day(
-        proc, planned, _descriptors(range(_FILES_PER_DAY)), results, _submit, 1
-    )
+    out = _write_unit(_orchestrator(seeded), proc, planned, results, _submit)
 
     assert len(lost) == 3
     assert len(sleeps) == 3
@@ -498,17 +497,15 @@ def test_a_day_that_loses_every_try_fails_after_five(seeded, monkeypatch) -> Non
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
     tries: list[int] = []
 
-    def always_lost(_planned, _results):
+    def always_lost(_days):
         tries.append(1)
         msg = "another run committed first"
         raise icechunk.ConflictError(msg)
 
-    monkeypatch.setattr(proc, "_commit_forked_day", always_lost)
+    monkeypatch.setattr(proc, "_commit_forked_unit", always_lost)
 
     with pytest.raises(icechunk.ConflictError, match="another run"):
-        _orchestrator(seeded)._write_forked_day(
-            proc, planned, _descriptors(range(_FILES_PER_DAY)), results, _submit, 1
-        )
+        _write_unit(_orchestrator(seeded), proc, planned, results, _submit)
     assert len(tries) == 5
     assert len(sleeps) == 4
 
@@ -517,11 +514,11 @@ def test_a_day_whose_write_failed_is_recorded_failed(seeded) -> None:
     proc = _Processor(seeded)
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
-    write: Future = Future()
-    write.set_exception(icechunk.ConflictError("lost twice"))
     pipe = _orchestrator(seeded)
 
-    done = pipe._finish_forked_day(_DATE_KEY, planned, write)
+    done = pipe._finish_forked_day(
+        _DATE_KEY, planned, icechunk.ConflictError("lost twice")
+    )
 
     assert done == {}
     assert pipe._run.days == [(_GROUP, _DATE_KEY, "failed")]
@@ -531,7 +528,7 @@ def test_a_failed_growth_fails_the_batch_days_and_the_run_goes_on(
     seeded, monkeypatch
 ) -> None:
     pipe = _orchestrator(seeded)
-    pipe.days_per_batch = 1
+    pipe.unit_days = 1
     pipe.n_max_workers = 1
     pipe._threads_per_worker = 1
     pipe._memory_monitor = MemoryMonitor()
@@ -589,9 +586,7 @@ def test_a_group_keeps_its_chunks_when_the_settings_change(store, files) -> None
 
 def _finished(pipe, planned, out) -> list[tuple[str, str, str]]:
     """The run history's receiver-days after finishing a written day."""
-    write: Future = Future()
-    write.set_result(out)
-    pipe._finish_forked_day(_DATE_KEY, planned, write)
+    pipe._finish_forked_day(_DATE_KEY, planned, out)
     return pipe._run.days
 
 
@@ -608,9 +603,7 @@ def test_files_that_fail_in_the_retry_round_fail_the_day(seeded, files) -> None:
         return future
 
     pipe = _orchestrator(seeded)
-    out = pipe._write_forked_day(
-        proc, planned, _descriptors(range(_FILES_PER_DAY)), results, failing, 1
-    )
+    out = _write_unit(pipe, proc, planned, results, failing)
 
     assert out[_GROUP].failed_files == _FILES_PER_DAY
     assert _finished(pipe, planned, out) == [(_GROUP, _DATE_KEY, "failed")]
@@ -667,13 +660,68 @@ def test_a_forked_day_whose_write_raises_is_a_failed_receiver_day(seeded) -> Non
     proc = _Processor(seeded)
     planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
     assert planned is not None
-    write: Future = Future()
-    write.set_exception(icechunk.IcechunkError("the store went away"))
     pipe = _orchestrator(seeded)
 
-    pipe._finish_forked_day(_DATE_KEY, planned, write)
+    pipe._finish_forked_day(
+        _DATE_KEY, planned, icechunk.IcechunkError("the store went away")
+    )
 
     assert pipe.failed_receiver_days == ((_GROUP, _DATE_KEY),)
+
+
+def _aggregated_day(gnss_store: MyIcechunkStore, files, freq: str, epoch_chunk: int):
+    """The day written by forks with aggregation, and the day aggregated whole.
+
+    The day's last file is written first, in one session, so the day has
+    its block; the forks write the others.
+    """
+    gnss_store.chunk_strategy = {**gnss_store.chunk_strategy, "epoch": epoch_chunk}
+    preprocessing = PreprocessingConfig(
+        temporal_aggregation=TemporalAggregationConfig(
+            freq=freq, method="mean", integer_method="first"
+        )
+    )
+    proc = _Processor(gnss_store)
+    proc._config.processing.preprocessing = preprocessing
+    proc._config.processing.temporal_aggregation = preprocessing.temporal_aggregation
+    last = _FILES_PER_DAY - 1
+    proc._write_day_blocks(
+        _inputs(
+            _GROUP,
+            preprocess_files([(Path(_name(last)), files[_name(last)])], preprocessing),
+        )
+    )
+    planned = proc.plan_forked_day(_descriptors(range(last)))
+    assert planned is not None
+    results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
+    proc._commit_forked_day(planned, results)
+    whole = preprocess_files(
+        [(Path(_name(i)), files[_name(i)]) for i in range(_FILES_PER_DAY)],
+        preprocessing,
+    )
+    expected = xr.concat([ds for _, ds in whole], dim="epoch")
+    return planned, gnss_store.read_group(_GROUP, drop_empty=True), expected
+
+
+def test_with_aggregation_the_files_of_a_chunk_are_one_task(store, files) -> None:  # noqa: F811
+    # 1-minute bins, chunks of 180 bins: three hours, twelve files per task,
+    # not the whole day in one task (#417).
+    planned, stored, expected = _aggregated_day(store, files, "1min", 180)
+
+    assert len(planned.tasks) == 8
+    np.testing.assert_array_equal(stored.epoch.values, expected.epoch.values)
+    np.testing.assert_array_equal(stored["S1C"].values, expected["S1C"].values)
+
+
+def test_a_time_bin_two_files_share_is_aggregated_from_both(store, files) -> None:  # noqa: F811
+    # 48 s bins: the bin from 00:14:24 holds the first file's last epoch
+    # (00:14:30) and the second file's first (00:15:00). 00:15:00 is
+    # nearest to the next slot, which starts a chunk of 19 bins; the two
+    # files still go to one task, so the bin is aggregated from both.
+    _planned, stored, expected = _aggregated_day(store, files, "48s", 19)
+
+    np.testing.assert_array_equal(stored.epoch.values, expected.epoch.values)
+    np.testing.assert_array_equal(stored["S1C"].values, expected["S1C"].values)
 
 
 def test_a_day_without_a_calendar_date_is_refused_when_planned(seeded) -> None:
@@ -687,13 +735,13 @@ def test_a_day_without_a_calendar_date_is_refused_when_planned(seeded) -> None:
         proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
 
 
-def test_a_batch_that_breaks_waits_for_the_day_being_committed(
+def test_a_batch_that_breaks_waits_for_the_unit_being_committed(
     seeded, monkeypatch
 ) -> None:
-    # The day's commit is running in the writer thread when the batch
+    # The unit's commit is running in the writer thread when the batch
     # breaks: the error leaves the batch only after the commit finished.
     pipe = _orchestrator(seeded)
-    pipe.days_per_batch = 1
+    pipe.unit_days = 1
     pipe.n_max_workers = 1
     pipe._threads_per_worker = 1
     pipe._memory_monitor = MemoryMonitor()
@@ -717,14 +765,14 @@ def test_a_batch_that_breaks_waits_for_the_day_being_committed(
 
     committed: list[str] = []
 
-    def commit(_processor, planned, *_args):
+    def commit(days, *_args):
         time.sleep(0.5)
-        committed.append(planned.date_key)
+        committed.extend(day.planned.date_key for day in days)
         return {}
 
     monkeypatch.setattr(pipe, "_prepare_single_date", prepare)
     monkeypatch.setattr(pipe, "_grow_day_blocks", lambda *_: None)
-    monkeypatch.setattr(pipe, "_write_forked_day", commit)
+    monkeypatch.setattr(pipe, "_write_forked_unit", commit)
     monkeypatch.setattr(pipeline_module, "_loky_reusable", lambda **_: None)
     monkeypatch.setattr(pipeline_module, "_windowed_completions", completions)
 
@@ -755,9 +803,7 @@ def _write_day_in_process(store_path: str, barrier, outcomes) -> None:
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
     barrier.wait(timeout=120)
     try:
-        _orchestrator(gnss_store)._write_forked_day(
-            proc, planned, descriptors, results, _submit, 1
-        )
+        _write_unit(_orchestrator(gnss_store), proc, planned, results, _submit)
     except icechunk.ConflictError as exc:
         outcomes.put(f"conflict: {exc}")
     else:

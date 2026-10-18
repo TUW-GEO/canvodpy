@@ -742,7 +742,12 @@ def _show_processing(config: ProcessingConfig) -> None:
     table.add_row(
         "Keep GNSS Observables", ", ".join(config.params.keep_gnss_observables)
     )
-    table.add_row("Days per Batch", str(config.params.days_per_batch))
+    table.add_row(
+        "Days per Unit",
+        "from the memory budget"
+        if config.params.days_per_batch is None
+        else f"at most {config.params.days_per_batch} (days_per_batch, deprecated)",
+    )
     affinity_str = (
         str(config.params.cpu_affinity)
         if config.params.cpu_affinity

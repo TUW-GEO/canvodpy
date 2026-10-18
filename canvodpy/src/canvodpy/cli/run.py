@@ -399,7 +399,7 @@ def _main_impl(args: SimpleNamespace) -> int:
     if args.ephemeris_source is not None:
         config.processing.params.ephemeris_source = args.ephemeris_source
 
-    from canvodpy.api import Site
+    from canvodpy.api import Site, _passed
     from canvodpy.vod_computer import VodComputer
 
     site_names: list[str] = args.site
@@ -412,7 +412,7 @@ def _main_impl(args: SimpleNamespace) -> int:
             on_discovery_start, on_discovery_end = _discovery_callbacks(print)
             with site.pipeline(
                 n_workers=args.workers,
-                days_per_batch=args.days_per_batch,
+                **_passed(days_per_batch=args.days_per_batch),
                 dry_run=True,
                 on_discovery_start=on_discovery_start,
                 on_discovery_end=on_discovery_end,
@@ -551,7 +551,7 @@ def _main_impl(args: SimpleNamespace) -> int:
                 stage = "pipeline_process"
                 with site.pipeline(
                     n_workers=args.workers,
-                    days_per_batch=args.days_per_batch,
+                    **_passed(days_per_batch=args.days_per_batch),
                     dry_run=False,
                     on_group_written=_on_group_written,
                     label=args.label,
@@ -767,9 +767,10 @@ def run(
         int | None,
         typer.Option(
             "--days-per-batch",
+            hidden=True,
             help=(
-                "Number of days that the workers process together. Default: "
-                "processing.params.days_per_batch in canvod-settings.yaml."
+                "Deprecated, removed in v2.0.0: the run sizes its units of "
+                "days from the memory budget. Only caps the days per unit."
             ),
         ),
     ] = None,

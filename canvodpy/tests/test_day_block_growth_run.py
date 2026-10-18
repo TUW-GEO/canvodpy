@@ -62,7 +62,7 @@ def _run(store: MyIcechunkStore, monkeypatch, receivers: list[str]) -> None:
     """Run one batch of READ_FAILS and NO_ORBITS for ``receivers``."""
     pipe = PipelineOrchestrator.__new__(PipelineOrchestrator)
     pipe.site = _FakeSite(store)
-    pipe.days_per_batch = 2
+    pipe.unit_days = 2
     pipe.n_max_workers = 1
     pipe._workers = None
     pipe._threads_per_worker = 1

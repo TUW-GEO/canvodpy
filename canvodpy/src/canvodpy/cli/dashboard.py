@@ -71,8 +71,9 @@ class PlainReporter:
         print(f"  started        {datetime.now():%Y-%m-%d %H:%M:%S}")
         print(f"  ephemeris      {proc.ephemeris_source}")
         print(f"  keep_vars      {proc.keep_gnss_observables}")
-        if args is not None:
-            print(f"  days_per_batch {args.days_per_batch or proc.days_per_batch}")
+        cap = (args.days_per_batch if args is not None else None) or proc.days_per_batch
+        if cap is not None:
+            print(f"  unit_days_cap  {cap} (days_per_batch, deprecated)")
         print(f"  resource_mode  {proc.resource_mode}")
         print(f"  store_strategy {storage.gnss_store_strategy}")
         if args is not None:

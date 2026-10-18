@@ -78,8 +78,15 @@ is computed.
 _Avoid_: pair, combination
 
 **Receiver-day**:
-One receiver's files of one GPS day; the unit a run processes.
-_Avoid_: day file, batch
+One receiver's files of one GPS day; the smallest piece of a run that
+succeeds or fails on its own.
+_Avoid_: day file
+
+**Unit of days**:
+The days a run writes together and commits once to the store. The run
+sizes it from its memory budget, at most 31 days; a run of one new day is
+a unit of one day. A day in a unit still fails alone.
+_Avoid_: batch, wave
 
 ## Files
 

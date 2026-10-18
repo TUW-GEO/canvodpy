@@ -105,7 +105,9 @@ class LogBooks:
                 for col in known.rows.columns
             }
         )
-        return pl.concat([known.rows, new], how="vertical_relaxed")
+        # One chunk per column: a frame grown by a chunk per commit filters
+        # slower with every day stored.
+        return pl.concat([known.rows, new], how="vertical_relaxed", rechunk=True)
 
 
 def _starts_with(table: zarr.Group, rows: pl.DataFrame) -> bool:

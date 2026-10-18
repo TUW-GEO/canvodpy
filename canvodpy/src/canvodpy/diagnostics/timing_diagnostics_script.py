@@ -137,7 +137,6 @@ def diagnose_processing(
         site=site,
         dry_run=False,
         n_max_workers=resources["n_workers"],
-        days_per_batch=proc.days_per_batch,
         config=cfg,
     ) as orchestrator:
         for date_key, datasets, receiver_times in orchestrator.process_by_date(

@@ -140,7 +140,8 @@ compare the settings.
 | `canvodpy run` without dates resumed from the last stored day. | It processes the receiver-days with new files of the last 30 days. | Give `--start` and `--end` for older days. |
 | `processing.preprocessing` had no effect. | A run applies each section that is set. | See the warning in step 1. |
 | Files were found in day folders with fixed names. | Each file's day comes from its name, in any folder layout. | Nothing; files with other names need a naming recipe ([File names](../packages/naming/overview.md)). |
-| `max_memory_gb` was a memory limit a run checked while it worked. | It is the run's memory budget, applied before the work starts: it sizes the workers and the days per batch ([Parallel processing](parallel-processing.md)). | Check its value. |
+| `max_memory_gb` was a memory limit a run checked while it worked. | It is the run's memory budget, applied before the work starts: it sizes the workers and the units of days a run commits at once ([Parallel processing](parallel-processing.md)). | Check its value. |
+| A run processed `days_per_batch` days at a time and committed every day. | A run works in units of days and commits each unit once; it sizes the units from the memory budget, at most 31 days ([ADR 0021](../adr/0021-runs-work-in-units-of-days.md)). A day that fails still fails alone. | Remove `days_per_batch` (deprecated). |
 | `canvodpy[filemap]` installed canvod-filemap. | The extra is gone. | Install canvod-filemap from its tag ([Optional extensions](extensions.md)), or `uv sync --group filemap` in the repository. |
 | canvod-grids installed canvod-store and canvod-store-metadata. | It doesn't. | Code that imports `canvod.store` declares canvod-store itself. |
 
@@ -178,6 +179,7 @@ All of these are replaced by one entry point: `canvodpy run`, or
 | `processing.metadata.store_description` | `sites.<site>.store_description` |
 | `processing.storage.vod_store_strategy` | nothing (no effect); to recompute VOD, set another `vod_store_name` |
 | `processing.logging.log_file_name` | nothing (no effect); log files have fixed names under `log_dir` |
+| `processing.params.days_per_batch`, `canvodpy run --days-per-batch`, argument `days_per_batch` of `Site.pipeline()` and `Pipeline` | nothing; the run sizes its units of days from `max_memory_gb`. Until v2.0.0 the value only caps the days per unit |
 
 ### Python API
 
@@ -233,8 +235,9 @@ All of these are replaced by one entry point: `canvodpy run`, or
 - **Data check**: `canvodpy config validate` checks the receiver data the
   way a run finds it, and runs warn about files they don't process and
   about incomplete receiver-days.
-- **Memory budget**: `max_memory_gb` sizes the workers and days per batch,
-  and a run reads the next batch while it computes VOD
+- **Memory budget and units of days**: `max_memory_gb` sizes the workers
+  and the units of days a run commits at once, and a run reads the next
+  unit while it computes VOD
   ([Parallel processing](parallel-processing.md)).
 - **Plugins**: your own readers and VOD calculators from installed
   packages ([Your own readers and VOD calculators](plugins.md)).

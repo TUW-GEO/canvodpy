@@ -91,7 +91,7 @@ the day at the day's cadence: 17280 slots for a day at 5 s, 86400 at 1 s.
 Blocks are stored in the order the days were first processed; reading a
 group returns its epochs in time order.
 
-A run adds the blocks of a batch of days (`days_per_batch`) in one small
+A run adds the blocks of a unit of days in one small
 commit, after it has prepared the days and before it reads any file. Only
 days whose orbit and clock products are ready get a block; the cadence
 comes from the filenames, so the run reads no file for this. If the files of a
@@ -256,12 +256,12 @@ run tries it again.
 If another commit lands while a write is in progress, canVODpy rebases the
 write onto it when the two changed different groups. If both changed the
 same data, the later commit fails with `icechunk.RebaseFailedError` and
-writes nothing. The run then writes the day again on top of the other
-commit, up to five tries in all, with a
+writes nothing. The run then plans and writes the whole unit again on
+top of the other commit, up to five tries in all, with a
 growing wait in between. When the last try fails too,
 the run records the receivers and days as failed in its run history,
 with the error, and goes on with the next days. It does the same when
-it can't add the blocks of a batch.
+it can't add the blocks of a unit.
 
 ## Duplicate checks
 

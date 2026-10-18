@@ -338,10 +338,11 @@ Both share the SID space, the array allocation, the epoch-time conversion and th
     Use `keep_data_vars=["SNR"]` to load only what you need;
     pseudorange, phase and Doppler add one array each.
 
-!!! tip "Batch processing"
+!!! tip "Parallel processing"
 
-    For many files, a run reads them in a pool of worker processes, one file
-    per task, across all receivers and the days of a batch.
+    For many files, a run reads them in a pool of worker processes, one task
+    per group of files that share an epoch chunk, across all receivers and
+    the days of a unit.
     See [Parallel Processing](../../guides/parallel-processing.md)
     for configuration and resource limits.
 
