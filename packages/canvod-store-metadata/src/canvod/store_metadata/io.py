@@ -143,7 +143,10 @@ def commit_with_rebase(
     repository metadata (creation, amendment, migration) is not checked.
 
     The commit also writes the root copy and the snapshot summary of the
-    rebased session (ADR 0014) and records software, environment and
+    rebased session (ADR 0014); the summary is updated from the log-book
+    rows added since this process's last commit to the branch, and rebuilt
+    from the whole store at its first (ADR 0021,
+    :mod:`~canvod.store_metadata.summary_state`). It records software, environment and
     settings as commit metadata, next to ``metadata``. The lockfile text is
     stored once per hash: before a commit of data, in a commit of its own
     when the branch does not hold it yet (:func:`store_lockfile`), so two
@@ -237,6 +240,7 @@ def commit_with_rebase(
             )
             raise ValueError(msg)
         from .snapshot import prepare_commit
+        from .summary_state import forget_summary_state, summary_state
 
         if config is None:
             from canvod.config import load_config
@@ -262,24 +266,43 @@ def commit_with_rebase(
             session.rebase(icechunk.ConflictDetector())
         lap("rebase")
         root = zarr.open_group(session.store, mode="a")
-        metadata = {
-            **prepare_commit(
-                root,
-                repository,
-                store_path=store_path,
-                config=config,
-                write_environment=not stores_lockfile_first,
-                keep_summary=keep_summary,
-            ),
-            **(metadata or {}),
-        }
-        lap("summary")
-        if not rebase:
-            snapshot_id = session.commit(message, metadata=metadata)
-        else:
-            snapshot_id = session.commit(
-                message, metadata=metadata, rebase_with=icechunk.ConflictDetector()
-            )
+        # The summary is updated from the rows this commit adds (ADR 0021);
+        # if the commit fails, the next one reads the store again.
+        state = (
+            summary_state(store_path, branch)
+            if branch is not None and not keep_summary
+            else None
+        )
+        try:
+            metadata = {
+                **prepare_commit(
+                    root,
+                    repository,
+                    store_path=store_path,
+                    config=config,
+                    write_environment=not stores_lockfile_first,
+                    keep_summary=keep_summary,
+                    summarize=(
+                        (lambda receivers: state.summarize(session, repo, receivers))
+                        if state is not None
+                        else None
+                    ),
+                ),
+                **(metadata or {}),
+            }
+            lap("summary")
+            if not rebase:
+                snapshot_id = session.commit(message, metadata=metadata)
+            else:
+                snapshot_id = session.commit(
+                    message,
+                    metadata=metadata,
+                    rebase_with=icechunk.ConflictDetector(),
+                )
+        except BaseException:
+            if state is not None:
+                forget_summary_state(store_path, branch)
+            raise
         lap("icechunk_commit")
     lap("lock_release")
     _log_commit_parts(store_path, message, time.perf_counter() - started, parts)

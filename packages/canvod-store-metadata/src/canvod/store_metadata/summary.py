@@ -628,18 +628,61 @@ def summarize_root(
     coverage = _coverage(list(groups.values()))
     if coverage is None:
         return {}
+    file_counts = [
+        n
+        for n in (_stored_file_count(book) for book in books.values())
+        if n is not None
+    ]
+    receivers_held = {}
+    by_receiver = _groups_by_receiver(receivers, list(groups))
+    for receiver in sorted(by_receiver):
+        # A reference receiver is stored once per canopy it is paired with
+        # (e.g. ``reference_01_canopy_01``); combine all of its groups.
+        names = sorted(by_receiver[receiver])
+        r_coverage = _coverage([groups[name] for name in names]) if names else None
+        if r_coverage is None:
+            continue
+        # A file stored in several groups (a reference paired with several
+        # canopies) counts once.
+        positions = {
+            file_hash: xyz
+            for name, book in books.items()
+            if name in by_receiver[receiver]
+            for file_hash, xyz in _header_positions(book).items()
+        }
+        position = (
+            [float(v) for v in np.median(np.array(list(positions.values())), axis=0)]
+            if positions
+            else None
+        )
+        receivers_held[receiver] = (names, r_coverage, position)
+    return _summary_updates(groups, coverage, receivers_held, file_counts)
+
+
+_Coverage = tuple[int, np.datetime64, np.datetime64, dict[np.datetime64, _DaySpan]]
+
+
+def _summary_updates(
+    groups: Mapping[str, Mapping[str, Any]],
+    coverage: _Coverage,
+    receivers: Mapping[str, tuple[list[str], _Coverage, list[float] | None]],
+    file_counts: list[int],
+) -> dict[str, Any]:
+    """Dotted-key updates from what the groups hold.
+
+    ``groups`` gives each group's ``sids``, ``systems`` and ``variables``;
+    ``coverage`` that of all groups (:func:`_coverage`); ``receivers`` each
+    receiver's group names, coverage and median header position; and
+    ``file_counts`` the stored files of each GNSS group. Shared by the full
+    rebuild (:func:`summarize_root`) and the summary kept commit by commit
+    (:mod:`.summary_state`).
+    """
     total, first, last, days = coverage
     start, end = _iso(first), _iso(last)
     # The finest cadence of any day in any group.
     cadences = [cadence for cadence, _, _ in days.values()]
     resolution = min(cadences) if cadences else None
     systems = set().union(*(g["systems"] for g in groups.values()))
-    file_counts = [
-        n
-        for n in (_stored_file_count(book) for book in books.values())
-        if n is not None
-    ]
-
     updates: dict[str, Any] = {
         "temporal.collected_start": start,
         "temporal.collected_end": end,
@@ -661,14 +704,8 @@ def summarize_root(
         "summaries.temporal_resolution_s": resolution,
         "summaries.file_count": sum(file_counts) if file_counts else None,
     }
-    by_receiver = _groups_by_receiver(receivers, list(groups))
-    for receiver in sorted(by_receiver):
-        # A reference receiver is stored once per canopy it is paired with
-        # (e.g. ``reference_01_canopy_01``); combine all of its groups.
-        own = [groups[name] for name in sorted(by_receiver[receiver])]
-        r_coverage = _coverage(own) if own else None
-        if r_coverage is None:
-            continue
+    for receiver, (names, r_coverage, position) in sorted(receivers.items()):
+        own = [groups[name] for name in names]
         r_total, r_first, r_last, r_days = r_coverage
         prefix = f"instruments.receivers.{receiver}"
         updates[f"{prefix}.epochs"] = r_total
@@ -678,18 +715,8 @@ def summarize_root(
         )
         updates[f"{prefix}.temporal_range"] = [_iso(r_first), _iso(r_last)]
         updates[f"{prefix}.cadences"] = _ranges(r_days)
-        # A file stored in several groups (a reference paired with several
-        # canopies) counts once.
-        positions = {
-            file_hash: xyz
-            for name, book in books.items()
-            if name in by_receiver[receiver]
-            for file_hash, xyz in _header_positions(book).items()
-        }
-        if positions:
-            updates[f"{prefix}.position_ecef_m"] = [
-                float(v) for v in np.median(np.array(list(positions.values())), axis=0)
-            ]
+        if position is not None:
+            updates[f"{prefix}.position_ecef_m"] = position
     return updates
 
 

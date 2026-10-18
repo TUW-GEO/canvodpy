@@ -18,6 +18,7 @@ ADR 0014: each commit carries
 from __future__ import annotations
 
 import copy as copy_module
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -119,17 +120,30 @@ def _acdd_keywords(keywords: list[str]) -> str | None:
     return ", ".join(f'"{k}"' if "," in k else k for k in keywords)
 
 
+#: Computes the summary updates for the receivers (name to type), in place
+#: of :func:`summarize_root`: the summary kept commit by commit
+#: (:class:`~canvod.store_metadata.summary_state.SummaryState`).
+Summarize = Callable[[Mapping[str, str]], dict[str, Any]]
+
+
 def snapshot_summary(
-    root: zarr.Group, repository: dict[str, Any], committed_at: str
+    root: zarr.Group,
+    repository: dict[str, Any],
+    committed_at: str,
+    summarize: Summarize | None = None,
 ) -> dict[str, Any]:
-    """The snapshot summary of the data under ``root``."""
+    """The snapshot summary of the data under ``root``.
+
+    ``summarize`` computes the summary updates instead of a full rebuild
+    from ``root`` (:func:`summarize_root`); it must give the same.
+    """
     receivers = {
         name: receiver["type"]
         for name, receiver in repository.get("instruments", {})
         .get("receivers", {})
         .items()
     }
-    updates = summarize_root(root, receivers)
+    updates = summarize(receivers) if summarize else summarize_root(root, receivers)
     summary: dict[str, Any] = {
         "metadata_version": FORM_VERSION,
         "temporal": {"updated": committed_at},
@@ -362,6 +376,7 @@ def prepare_commit(
     config: Any,
     write_environment: bool = True,
     keep_summary: bool = False,
+    summarize: Summarize | None = None,
 ) -> dict[str, Any]:
     """Write the root copy, summary and lockfile text; return the commit metadata.
 
@@ -370,7 +385,8 @@ def prepare_commit(
     ``keep_summary=True`` takes the snapshot summary of the snapshot before
     instead of computing it from the data, with only its time updated; for
     a commit that writes no data (see
-    :func:`~canvod.store_metadata.io.commit_with_rebase`).
+    :func:`~canvod.store_metadata.io.commit_with_rebase`). ``summarize``
+    computes the summary in place of a full rebuild (:func:`snapshot_summary`).
 
     Raises
     ------
@@ -386,7 +402,7 @@ def prepare_commit(
     if write_environment:
         _write_environment(root, texts)
 
-    summary = kept or snapshot_summary(root, repository, committed_at)
+    summary = kept or snapshot_summary(root, repository, committed_at, summarize)
     attrs = {k: v for k, v in root.attrs.items() if k not in _ROOT_COPY_KEYS}
     root.attrs.put({**attrs, **root_copy(repository, summary)})
     return metadata
