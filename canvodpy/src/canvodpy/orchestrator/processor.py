@@ -804,23 +804,25 @@ def _second(time: Any) -> np.datetime64:
 
 
 def _stored_overlaps(
-    stored: pl.DataFrame, rinex_hash: str, start: Any, end: Any
+    stored: pl.DataFrame, rinex_hash: str | None, start: Any, end: Any
 ) -> pl.DataFrame:
     """Log-book rows of other files whose data overlap ``[start, end]``.
 
     Rows of the same file (``rinex_hash``) and of files skipped as already
-    stored are left out: nothing of theirs was written by that row.
+    stored are left out: nothing of theirs was written by that row. With
+    ``rinex_hash=None`` no file's rows are left out for being the same file.
     """
     stored = stored.with_columns(
         pl.col("start").cast(pl.Datetime("ns")), pl.col("end").cast(pl.Datetime("ns"))
     )
     if "action" in stored.columns:
         stored = stored.filter(~pl.col("action").is_in(["skip", "skipped"]))
-    return stored.filter(
-        (pl.col("rinex_hash") != rinex_hash)
-        & (pl.col("start") <= pl.lit(np.datetime64(end, "ns")))
-        & (pl.col("end") >= pl.lit(np.datetime64(start, "ns")))
+    overlap = (pl.col("start") <= pl.lit(np.datetime64(end, "ns"))) & (
+        pl.col("end") >= pl.lit(np.datetime64(start, "ns"))
     )
+    if rinex_hash is not None:
+        overlap &= pl.col("rinex_hash") != rinex_hash
+    return stored.filter(overlap)
 
 
 def _short_hash(rinex_hash: Any) -> str:
@@ -3882,14 +3884,19 @@ class RinexDataProcessor:
             stored = self.site.gnss_store.log_books.rows(session, group)
             if stored is None:
                 continue
+            written = [n for n in numbers if n.group == group and n.action == WRITTEN]
+            # Each file is checked against the rows around its unit only: a
+            # check against the whole log book costs files times rows.
+            stored = _stored_overlaps(
+                stored,
+                None,
+                min(n.start for n in written),
+                max(n.end for n in written),
+            )
             overlapping = [
                 n
-                for n in numbers
-                if n.group == group
-                and n.action == WRITTEN
-                and not _stored_overlaps(
-                    stored, n.rinex_hash, n.start, n.end
-                ).is_empty()
+                for n in written
+                if not _stored_overlaps(stored, n.rinex_hash, n.start, n.end).is_empty()
             ]
             if not overlapping:
                 continue

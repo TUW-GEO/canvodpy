@@ -110,6 +110,18 @@ def test_a_new_commit_reads_only_the_rows_it_added(store) -> None:
     assert all(k.endswith("/c/2") for k in read), read
 
 
+def test_rows_added_day_by_day_stay_one_chunk(store) -> None:
+    """A frame grown by a chunk per commit filters slower every day stored."""
+    books = LogBooks()
+    for day in range(5):
+        _commit_rows(store, _rows(3000 + 96 * day, 96))
+        rows = books.rows(_at_tip(store), GROUP)
+
+    assert rows is not None
+    assert rows.height == 3000 + 5 * 96
+    assert rows.n_chunks("all") == [1] * rows.width
+
+
 def test_the_same_snapshot_reads_nothing(store) -> None:
     books = LogBooks()
     books.rows(_at_tip(store), GROUP)
