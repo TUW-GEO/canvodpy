@@ -23,10 +23,10 @@ import icechunk
 import numpy as np
 import pytest
 import structlog
-import structlog.testing
 import xarray as xr
 from canvodpy.orchestrator import forked_writes, store_retry
 from canvodpy.orchestrator import pipeline as pipeline_module
+from canvodpy.orchestrator import processor as processor_module
 from canvodpy.orchestrator.forked_writes import ForkResult, write_files_into_fork
 from canvodpy.orchestrator.pipeline import PipelineOrchestrator, _ForkJob
 from canvodpy.orchestrator.resources import MemoryMonitor
@@ -311,7 +311,9 @@ def test_overwrite_replaces_another_stored_file_and_says_so(seeded, files) -> No
     np.testing.assert_array_equal(stored["S1C"].values, _day(files)["S1C"].values)
 
 
-def test_a_forked_day_of_two_receivers_records_its_writing_once(seeded, files) -> None:
+def test_a_forked_day_of_two_receivers_records_its_writing_once(
+    seeded, files, monkeypatch
+) -> None:
     # Both receivers' files go into one commit; its time is one "writing"
     # record, not one per receiver, so the run's stages add up (#423).
     other = "reference_01"
@@ -337,15 +339,18 @@ def test_a_forked_day_of_two_receivers_records_its_writing_once(seeded, files) -
     assert planned is not None
     results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
 
-    with structlog.testing.capture_logs() as events:
-        out = proc._commit_forked_day(planned, results)
+    # The calls, not the log: structlog may hold a logger cached by an
+    # earlier test, which capture_logs does not reach.
+    stages: list[dict] = []
+    monkeypatch.setattr(
+        processor_module,
+        "record_stage_timing",
+        lambda stage, seconds, **context: stages.append({"stage": stage, **context}),
+    )
+    out = proc._commit_forked_day(planned, results)
 
     assert set(out) == {_GROUP, other}
-    writing = [
-        e
-        for e in events
-        if e.get("event") == "stage_timing" and e.get("stage") == "writing"
-    ]
+    writing = [s for s in stages if s["stage"] == "writing"]
     assert len(writing) == 1
     assert writing[0]["receivers"] == f"{_GROUP},{other}"
 
