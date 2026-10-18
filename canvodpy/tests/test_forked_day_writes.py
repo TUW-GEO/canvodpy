@@ -23,6 +23,7 @@ import icechunk
 import numpy as np
 import pytest
 import structlog
+import structlog.testing
 import xarray as xr
 from canvodpy.orchestrator import forked_writes, store_retry
 from canvodpy.orchestrator import pipeline as pipeline_module
@@ -310,6 +311,45 @@ def test_overwrite_replaces_another_stored_file_and_says_so(seeded, files) -> No
     np.testing.assert_array_equal(stored["S1C"].values, _day(files)["S1C"].values)
 
 
+def test_a_forked_day_of_two_receivers_records_its_writing_once(seeded, files) -> None:
+    # Both receivers' files go into one commit; its time is one "writing"
+    # record, not one per receiver, so the run's stages add up (#423).
+    other = "reference_01"
+
+    def other_name(index: int) -> str:
+        return _name(index).replace("FANR35", "FANR36")
+
+    for index in range(_FILES_PER_DAY):
+        files[other_name(index)] = _dataset(index, offset=0.5).assign_attrs(
+            canonical_name=other_name(index), physical_path=other_name(index)
+        )
+    _Processor(seeded)._write_day_blocks(
+        _inputs(other, [(Path(other_name(0)), files[other_name(0)])])
+    )
+    proc = _Processor(seeded)
+    planned = proc.plan_forked_day(
+        _descriptors(range(1, _FILES_PER_DAY))
+        + [
+            (Path(other_name(i)), None, None, None, other, False)
+            for i in range(1, _FILES_PER_DAY)
+        ]
+    )
+    assert planned is not None
+    results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
+
+    with structlog.testing.capture_logs() as events:
+        out = proc._commit_forked_day(planned, results)
+
+    assert set(out) == {_GROUP, other}
+    writing = [
+        e
+        for e in events
+        if e.get("event") == "stage_timing" and e.get("stage") == "writing"
+    ]
+    assert len(writing) == 1
+    assert writing[0]["receivers"] == f"{_GROUP},{other}"
+
+
 def _orchestrator(gnss_store: MyIcechunkStore) -> PipelineOrchestrator:
     pipe = PipelineOrchestrator.__new__(PipelineOrchestrator)
     pipe.site = SimpleNamespace(
@@ -382,6 +422,26 @@ def test_a_day_whose_files_another_run_stored_first_stops_after_the_replan(
         )
 
     assert _commits(seeded) == n_commits
+
+
+def test_a_day_another_process_stored_first_stops_at_the_tip(seeded, files) -> None:
+    # As above, but the other run is another process with its own store
+    # object: this run's log book, read when it planned, must take the
+    # other run's rows at the tip (#351, #421).
+    proc = _Processor(seeded)
+    planned = proc.plan_forked_day(_descriptors(range(_FILES_PER_DAY)))
+    assert planned is not None
+    results = [_run_task(_ForkJob(task, fork)) for task, fork in planned.tasks]
+    for index in range(1, _FILES_PER_DAY):
+        files[_name(index)] = _dataset(index, offset=100.0)
+    _write_day(_Processor(MyIcechunkStore(seeded.store_path)))
+    for index in range(1, _FILES_PER_DAY):
+        files[_name(index)] = _dataset(index)
+
+    with pytest.raises(StoredOverlapError, match="gnss_store_strategy: overwrite"):
+        _orchestrator(seeded)._write_forked_day(
+            proc, planned, _descriptors(range(_FILES_PER_DAY)), results, _submit, 1
+        )
 
 
 def test_a_day_that_lost_several_conflicts_is_stored_once(

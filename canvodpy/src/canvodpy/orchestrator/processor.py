@@ -4063,12 +4063,16 @@ class RinexDataProcessor:
             )
         duration = time.perf_counter() - t_start
         log.info("Committed forked day %s (snapshot: %s...)", yyyydoy, snapshot_id[:8])
+        # One commit wrote every receiver of the day: one record, so the
+        # run's stages add up to its wall time (#423).
+        record_stage_timing(
+            "writing", duration, receivers=",".join(sorted(written)), date_key=yyyydoy
+        )
         for group, r in written.items():
             r.snapshot_id = snapshot_id
             r.duration_seconds = duration
             if self._keeper_tags_enabled:
                 store.create_keeper_tag(group, yyyydoy, snapshot_id)
-            record_stage_timing("writing", duration, receiver=group, date_key=yyyydoy)
             self._icechunk_log.info(
                 "batch_write_complete",
                 receiver=group,
