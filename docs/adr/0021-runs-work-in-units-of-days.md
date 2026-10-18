@@ -54,9 +54,10 @@ its days back.
 ## Considered options
 
 - **Fix each growing step on its own** (read-back, summary, log-book
-  reads, planning). Each fix helps, but the next step added would rescan
-  the store again; the rule above makes it a defect to review against.
-- **Vectorize the summary and keep rebuilding it.** About 2.5 times
+  reads, planning). Each fix helps, but the next step added would read
+  the whole store again; the rule in this decision makes that a defect
+  to review against.
+- **Speed up the summary's rebuild and keep rebuilding it.** About 2.5 times
   faster on a year store, but it still grows with the store. Kept as
   the fallback where a whole rebuild is needed (`summarize_store`, a
   store's first commit in a run).
@@ -73,8 +74,8 @@ its days back.
   in-memory state simpler, but ADR 0019 allows several writers, on S3
   from several machines.
 - **VOD from the data in memory instead of the store.** It saves the
-  read, but nothing checks that memory equals the store after dedup and
-  padding; with VOD in the worker pool the read is parallel and costs
+  read, but nothing checks that memory equals the store after removing
+  duplicates and padding; with VOD in the worker pool the read is parallel and costs
   the same for every day.
 - **Parallel commits to one branch.** Icechunk serializes them on the
   branch tip.
