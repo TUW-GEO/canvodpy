@@ -281,7 +281,7 @@ The stages a run records, from every `stage_timing` event of the run:
 | `reading`, `validating`, `augmenting` | worker | file: reading it, checking its signals, adding positions and geometry |
 | `day_block_growth` | main | batch: giving its days a block in the GNSS store, one commit |
 | `planning` | main | day: planning which worker writes which part of the day (reads the store's day blocks and log book) |
-| `writing` | main | receiver-day: writing to the GNSS store |
+| `writing` | main | day with workers: merging the workers' parts of all its receivers and committing them to the GNSS store, one commit; without workers: receiver-day, writing to the GNSS store |
 | `assembly` | main | receiver-day: reading the written day back from the GNSS store for VOD |
 | `icechunk.write` | main | group write of a store made before day blocks |
 | `vod_calc`, `vod_store` | main | VOD analysis and day (`canvodpy run` only) |
