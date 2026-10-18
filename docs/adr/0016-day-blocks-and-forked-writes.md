@@ -61,6 +61,10 @@ loses every try, the run records the receiver-days as failed with the
 error and goes on with the next days. Several machines write one store
 only on S3 (ADR 0019).
 
+*Amended 2026-10-18 (ADR 0021, proposed).* A run commits once per unit
+of days, not once per day, and computes VOD in a phase of its own; the
+day blocks and the forks that own whole chunks stay as described here.
+
 Memory is a budget (`max_memory_gb`, in `auto` the available memory):
 the run sizes its workers and `days_per_batch` to fit it and fails at
 the start if one file alone does not fit. There is no hard limit; no
