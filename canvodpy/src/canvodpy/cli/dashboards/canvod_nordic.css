@@ -570,6 +570,30 @@ body.dark-theme table tbody tr:hover,
 }
 
 /* =========================================================
+   Vega tooltips match the dark theme
+   ========================================================= */
+/* vega-tooltip appends #vg-tooltip-element to <body>, under the .dark
+   class marimo sets. Give it the theme surface, a subtle border, muted
+   cream keys and cream values, so a hover is readable on the dark
+   background. */
+body.dark-theme #vg-tooltip-element,
+.dark #vg-tooltip-element {
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--base-shadow) !important;
+  color: var(--foreground) !important;
+}
+body.dark-theme #vg-tooltip-element .key,
+.dark #vg-tooltip-element .key {
+  color: var(--muted-foreground) !important;
+}
+body.dark-theme #vg-tooltip-element .value,
+.dark #vg-tooltip-element .value {
+  color: var(--foreground) !important;
+}
+
+/* =========================================================
    xarray repr dark-mode fixes
    ========================================================= */
 body.dark-theme .xr-wrap,

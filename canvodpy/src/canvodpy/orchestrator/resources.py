@@ -6,14 +6,15 @@ import os
 import threading
 import time
 import types
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import psutil
 import structlog
 
 from canvod.utils.logging import get_run_id, set_run_id
-from canvod.utils.tools import deprecated_argument
+from canvod.utils.tools import deprecated_argument, directory_size_bytes
 
 logger = structlog.get_logger(__name__)
 
@@ -143,10 +144,19 @@ class ResourceSampler:
         Seconds between samples.
     disks : iterable of Path or str
         Folders whose free disk space each sample records.
+    stores : mapping of name to Path, optional
+        Local store folders whose on-disk size each sample measures. A
+        store that is not on the local disk is left out. The measure is a
+        walk of the folder, so it grows with the store; it runs on this
+        background thread, never inside a stage or a commit.
     on_sample : callable, optional
         Called with ``cpu_percent``, ``memory_percent`` and ``free_disk``
         (bytes per folder of *disks*) for every sample; the run history
         records them this way (``canvodpy.run_history.recorded_run``).
+    on_store_size : callable, optional
+        Called with ``(store, day, bytes)`` for every store, once a day
+        (when the UTC day changes, and once more when the sampler stops), so
+        the last size of each day is kept.
     """
 
     def __init__(
@@ -154,21 +164,29 @@ class ResourceSampler:
         interval_seconds: float = 30.0,
         *,
         disks: Iterable[Path | str] = (),
+        stores: Mapping[str, Path] | None = None,
         on_sample: Callable[..., None] | None = None,
+        on_store_size: Callable[..., None] | None = None,
     ) -> None:
         self.interval_seconds = interval_seconds
         self.disks = [str(Path(folder).expanduser()) for folder in disks]
+        self.stores = {
+            name: Path(path).expanduser() for name, path in (stores or {}).items()
+        }
         self.on_sample = on_sample
+        self.on_store_size = on_store_size
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._run_id = get_run_id()
         self._sample_index = 0
         self._prev_io = None
+        self._last_store_day: date | None = None
 
     def start(self) -> None:
         """Start sampling in a daemon thread. Safe to call once per run."""
         self._run_id = get_run_id()
         self._stop.clear()
+        self._last_store_day = None
         # The first cpu_percent call only starts the measurement.
         psutil.cpu_percent(interval=None)
         try:
@@ -186,7 +204,7 @@ class ResourceSampler:
         if self._thread is not None:
             self._thread.join(timeout=timeout)
             self._thread = None
-            self._sample()
+            self._sample(final=True)
 
     def _run_loop(self) -> None:
         # Contextvars don't cross thread boundaries automatically -- carry
@@ -197,7 +215,7 @@ class ResourceSampler:
         while not self._stop.wait(self.interval_seconds):
             self._sample()
 
-    def _sample(self) -> None:
+    def _sample(self, *, final: bool = False) -> None:
         self._sample_index += 1
         t0 = time.perf_counter()
         try:
@@ -246,6 +264,14 @@ class ResourceSampler:
                     memory_percent=mem.percent,
                     free_disk=free_disk,
                 )
+            if self.stores and self.on_store_size is not None:
+                today = datetime.now(UTC).date()
+                if final or today != self._last_store_day:
+                    for name, path in self.stores.items():
+                        self.on_store_size(
+                            name, today.isoformat(), directory_size_bytes(path)
+                        )
+                    self._last_store_day = today
         except Exception:
             logger.debug("resource_sample_failed", exc_info=True)
 

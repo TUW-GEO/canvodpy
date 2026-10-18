@@ -425,6 +425,15 @@ class Pipeline:
         self._run = ExitStack()
         active_run = None
         if not dry_run:
+            local_stores = {
+                name: location.local_path
+                for name, path in (
+                    ("GNSS store", site.gnss_store_path),
+                    ("VOD store", site.vod_store_path),
+                )
+                for location in [store_location(path)]
+                if location.local_path is not None
+            }
             active_run = self._run.enter_context(
                 recorded_run(
                     site.name,
@@ -432,13 +441,10 @@ class Pipeline:
                     settings=config.model_dump(mode="json"),
                     workers=n_workers,
                     # Free disk of local stores only; S3 has no disk here.
-                    disks=[
-                        location.local_path
-                        for location in map(
-                            store_location, (site.gnss_store_path, site.vod_store_path)
-                        )
-                        if location.local_path is not None
-                    ],
+                    disks=list(local_stores.values()),
+                    # The on-disk size of each local store, measured in the
+                    # background; a store on S3 has no local size to record.
+                    stores=local_stores,
                     label=label,
                 )
             )

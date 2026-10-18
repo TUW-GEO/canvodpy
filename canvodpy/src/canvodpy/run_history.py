@@ -49,7 +49,7 @@ FILE_NAME = "run_history.sqlite"
 
 # Version of the tables below. Raise it with every change to them and add
 # the step from the previous version to _MIGRATIONS.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 # Seconds between two resource samples of a run.
 SAMPLE_INTERVAL_SECONDS = 30.0
@@ -164,9 +164,23 @@ CREATE TABLE IF NOT EXISTS file_index (
 );
 """
 
+# Version 3: the on-disk size of each store the run writes, sampled in the
+# background (not on the critical path), one row per (run, store, day).
+_SCHEMA_V3 = """
+CREATE TABLE IF NOT EXISTS store_sizes (
+    run_id TEXT NOT NULL REFERENCES runs (run_id),
+    store TEXT NOT NULL,
+    day TEXT NOT NULL,
+    recorded_at TEXT NOT NULL,
+    bytes INTEGER NOT NULL,
+    PRIMARY KEY (run_id, store, day)
+);
+CREATE INDEX IF NOT EXISTS store_sizes_run ON store_sizes (run_id);
+"""
+
 # Steps from each schema version to the next: _MIGRATIONS[v] takes a run
 # history from version v to v + 1. Version 0 is an empty file.
-_MIGRATIONS: dict[int, str] = {0: _SCHEMA_V1, 1: _SCHEMA_V2}
+_MIGRATIONS: dict[int, str] = {0: _SCHEMA_V1, 1: _SCHEMA_V2, 2: _SCHEMA_V3}
 
 
 class RunHistoryError(Exception):
@@ -252,6 +266,16 @@ class ResourceSample:
     cpu_percent: float | None
     memory_percent: float | None
     free_disk: dict[str, int]
+
+
+@dataclass(frozen=True)
+class StoreSize:
+    """The on-disk size of one store at one day of a run."""
+
+    store: str
+    day: str
+    recorded_at: datetime
+    bytes: int
 
 
 @dataclass(frozen=True)
@@ -621,6 +645,37 @@ class RunHistory:
                 (run_id, _now(), level, message, receiver, day),
             )
 
+    def record_store_size(
+        self,
+        run_id: str,
+        store: str,
+        *,
+        day: str,
+        bytes: int,
+        recorded_at: datetime | None = None,
+    ) -> None:
+        """Record the on-disk size (bytes) of *store* on *day* of a run.
+
+        One row per (run, store, day): a later measure of the same store and
+        day replaces the earlier one, so the row holds the last size seen
+        that day. The measure runs in the background sampler, never inside a
+        stage or a commit.
+        """
+        with self._write() as db:
+            db.execute(
+                "INSERT INTO store_sizes (run_id, store, day, recorded_at, bytes)"
+                " VALUES (?, ?, ?, ?, ?)"
+                " ON CONFLICT (run_id, store, day) DO UPDATE SET"
+                " recorded_at = excluded.recorded_at, bytes = excluded.bytes",
+                (
+                    run_id,
+                    store,
+                    day,
+                    _now() if recorded_at is None else recorded_at.isoformat(),
+                    bytes,
+                ),
+            )
+
     def set_workers(self, run_id: str, workers: int) -> None:
         """Record the worker processes the run was sized to."""
         with self._write() as db:
@@ -707,17 +762,29 @@ class RunHistory:
             copy.execute("PRAGMA journal_mode = DELETE")
             copy.execute("CREATE TEMP TABLE keep (run_id TEXT PRIMARY KEY)")
             copy.executemany("INSERT INTO keep VALUES (?)", [(r,) for r in keep])
+            # A copy of an older run history lacks the file index and the
+            # store sizes of a newer one; only filter the tables that exist.
+            present = {
+                row[0]
+                for row in copy.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
             for table in (
                 "receiver_days",
                 "stage_timings",
                 "resource_samples",
+                "store_sizes",
                 "problems",
                 "runs",
             ):
+                if table not in present:
+                    continue
                 copy.execute(
                     f"DELETE FROM {table} WHERE run_id NOT IN (SELECT run_id FROM keep)"
                 )
-            copy.execute("DELETE FROM file_index")
+            if "file_index" in present:
+                copy.execute("DELETE FROM file_index")
             copy.execute("DROP TABLE keep")
             copy.execute("VACUUM")
         finally:
@@ -845,6 +912,31 @@ class RunHistory:
             for row in rows
         ]
 
+    def store_sizes(self, run_id: str) -> list[StoreSize]:
+        """Return the store sizes of a run, by day then store.
+
+        A run history written by an older canvodpy has no ``store_sizes``
+        table; for it this returns an empty list, so a caller can say "no
+        store sizes recorded" instead of failing.
+        """
+        try:
+            rows = self._read(
+                "SELECT store, day, recorded_at, bytes FROM store_sizes WHERE"
+                " run_id = ? ORDER BY day, store",
+                run_id,
+            )
+        except sqlite3.OperationalError:
+            return []
+        return [
+            StoreSize(
+                store=row["store"],
+                day=row["day"],
+                recorded_at=_time(row["recorded_at"]),
+                bytes=row["bytes"],
+            )
+            for row in rows
+        ]
+
     def problems(self, run_id: str) -> list[Problem]:
         """Return the warnings and errors of a run, oldest first."""
         rows = self._read(
@@ -923,6 +1015,17 @@ class ActiveRun:
         """Record one resource sample (:meth:`RunHistory.record_resources`)."""
         self._try(self.history.record_resources, self.run_id, **sample)
 
+    def record_store_size(self, store: str, *, day: str, bytes: int) -> None:
+        """Record the on-disk size of a store on a day
+        (:meth:`RunHistory.record_store_size`)."""
+        self._try(
+            self.history.record_store_size,
+            self.run_id,
+            store,
+            day=day,
+            bytes=bytes,
+        )
+
     def set_workers(self, workers: int) -> None:
         """Record the worker processes the run was sized to."""
         self._try(self.history.set_workers, self.run_id, workers)
@@ -972,6 +1075,7 @@ def recorded_run(
     workers: int | None,
     disks: Iterable[Path | str] = (),
     label: str | None = None,
+    stores: dict[str, Path] | None = None,
 ) -> Generator[ActiveRun]:
     """Record a run of *site* from start to end in the run history of *log_dir*.
 
@@ -1000,6 +1104,11 @@ def recorded_run(
     disks : iterable of Path or str
         Folders whose disk the machine facts describe (the stores); the log
         folder is always included.
+    stores : dict of str to Path, optional
+        Local store folders whose on-disk size the run records, one row per
+        store and day. A store that is not on the local disk is left out.
+        The size is measured on the background sampler thread, never inside
+        a stage or a commit.
     label : str, optional
         Free-text label (``canvodpy run --label``).
 
@@ -1011,6 +1120,8 @@ def recorded_run(
     from canvod.utils.logging import get_run_id, new_run_id, reset_run_id, set_run_id
     from canvodpy.orchestrator.resources import ResourceSampler
 
+    if stores is None:
+        stores = {}
     base_id = get_run_id() or new_run_id(site)
     token = None
     try:
@@ -1045,7 +1156,11 @@ def recorded_run(
             sampler = ResourceSampler(
                 SAMPLE_INTERVAL_SECONDS,
                 disks=facts["machine"]["disks"],
+                stores=stores,
                 on_sample=active.record_resources,
+                on_store_size=lambda store, day, size: active.record_store_size(
+                    store, day=day, bytes=size
+                ),
             )
             sampler.start()
             try:
