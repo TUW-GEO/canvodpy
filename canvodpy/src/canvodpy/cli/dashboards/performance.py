@@ -122,7 +122,7 @@ def _():
             )
         return rows
 
-    def chart_data(run, days, timings, samples):
+    def chart_data(run, days, timings, samples, store_sizes):
         """The data every chart shows, from the run history records only.
 
         Returns a dict of row lists, each a list of dicts, one per chart:
@@ -132,42 +132,26 @@ def _():
         """
         charts = {}
 
-        # Time per stage: the seconds of each stage, summed.
-        stages = {}
-        for timing in timings:
-            stages[timing.stage] = stages.get(timing.stage, 0.0) + (
-                timing.seconds or 0.0
-            )
-        if stages:
-            charts["stage"] = [
-                {"Stage": stage, "Seconds": seconds}
-                for stage, seconds in sorted(stages.items(), key=lambda item: -item[1])
-            ]
+        # Time per stage: each stage's total and per-day median, by total.
+        if timings:
+            charts["stage"] = stage_stats(timings)
 
-        # Time per day: the seconds of the stages that name a day, summed.
+        # Time per day: the stage seconds of a data day, summed; a record
+        # of a unit of days is split evenly over the days it names.
         day_totals = {}
         for timing in timings:
-            if timing.day is None:
-                continue
-            day_totals[timing.day] = day_totals.get(timing.day, 0.0) + (
-                timing.seconds or 0.0
-            )
+            for day, seconds in split_days(timing.day, timing.seconds or 0.0):
+                day_totals[day] = day_totals.get(day, 0.0) + seconds
         if day_totals:
             charts["day"] = [
                 {"Day": day, "Seconds": seconds}
                 for day, seconds in sorted(day_totals.items())
             ]
 
-        # Store growth per day: the bytes each finished receiver-day added.
-        store = {}
-        for day in days:
-            if day.bytes_added:
-                store[day.day] = store.get(day.day, 0) + day.bytes_added
-        if store:
-            charts["store"] = [
-                {"Day": day, "Store growth (MB)": bytes_added / 1e6}
-                for day, bytes_added in sorted(store.items())
-            ]
+        # Store size per day: the on-disk size of each store, measured in
+        # the background; a "Total" row adds the stores of a day.
+        if store_sizes:
+            charts["store"] = store_rows(store_sizes)
 
         # CPU and memory over time, one row per sample and metric.
         resources = []
@@ -222,7 +206,7 @@ def _():
 
         return charts
 
-    def build_run_view(run, progress, days, timings, problems, samples):
+    def build_run_view(run, progress, days, timings, problems, samples, store_sizes):
         """Everything the run page shows, computed from the run history only."""
         now = datetime.now(UTC)
         finished = [d for d in days if d.result is not None]
@@ -287,7 +271,7 @@ def _():
             "bytes_per_hour": bytes_per_hour,
             "last_step": last_step,
             "problem_rows": problem_rows,
-            "charts": chart_data(run, days, timings, samples),
+            "charts": chart_data(run, days, timings, samples, store_sizes),
         }
 
     def chart_style(chart):
@@ -297,7 +281,11 @@ def _():
     from canvodpy.cli.dashboards.charts import (
         chart_categories,
         chart_palette,
+        split_days,
+        stage_stats,
+        store_rows,
         time_bars,
+        time_line,
     )
 
     def comparison_view(log_dir, scale_type):
@@ -445,6 +433,7 @@ def _():
         chart_palette,
         chart_categories,
         time_bars,
+        time_line,
         comparison_view,
     )
 
@@ -642,7 +631,10 @@ def _(RunHistory, build_run_view, log_dir, refresh, selected):
                 timings = rh.stage_timings(chosen)
                 problems = rh.problems(chosen)
                 samples = rh.resource_samples(chosen)
-            run_view = build_run_view(run, progress, days, timings, problems, samples)
+                store_sizes = rh.store_sizes(chosen)
+            run_view = build_run_view(
+                run, progress, days, timings, problems, samples, store_sizes
+            )
         except KeyError:
             run_view = None
 
@@ -694,15 +686,15 @@ def _(log_dir, mo, run_view):
                 run_view["problem_rows"],
             ),
             "time_per_stage": (
-                "the data of the Time per stage chart",
+                "the data of the Time per stage chart (median and total)",
                 charts.get("stage", []),
             ),
             "time_per_day": (
                 "the data of the Time per day chart",
                 charts.get("day", []),
             ),
-            "store_growth_per_day": (
-                "the data of the Store growth per day chart",
+            "store_size": (
+                "the data of the Store size on disk chart",
                 charts.get("store", []),
             ),
             "cpu_and_memory": (
@@ -799,7 +791,16 @@ def _(mo, run_view):
 
 
 @app.cell
-def _(chart_categories, chart_palette, chart_style, mo, run_view, time_axis, time_bars):
+def _(
+    chart_categories,
+    chart_palette,
+    chart_style,
+    mo,
+    run_view,
+    time_axis,
+    time_bars,
+    time_line,
+):
     import altair as alt
 
     run_charts = run_view["charts"] if run_view is not None else {}
@@ -810,42 +811,60 @@ def _(chart_categories, chart_palette, chart_style, mo, run_view, time_axis, tim
         chart_series = chart_palette()
 
         if "stage" in run_charts:
-            chart_items.append(mo.md("**Time per stage.** Total time of each stage."))
-            stage_rows, stage_time = time_bars(
-                "x", "Seconds", "Time (s)", run_charts["stage"], time_axis.value
-            )
             chart_items.append(
-                mo.ui.altair_chart(
-                    chart_style(
-                        alt.Chart({"values": stage_rows})  # type: ignore
-                        .mark_bar(color=chart_series[0])
-                        .encode(
-                            y=alt.Y(
-                                "Stage:N",
-                                sort="-x",
-                                axis=alt.Axis(title="Stage"),
-                            ),
-                            **stage_time,
-                        )
-                    )
+                mo.md(
+                    "**Time per stage.** On the left, the **median** of a stage's "
+                    "per-day seconds (Median per day); on the right, the "
+                    "**total** seconds of each stage (Total). The median is over "
+                    "the stage's per-day seconds (a day's seconds added up for "
+                    "that stage; a stage that names no day takes the median of its "
+                    "records; a unit of days is split evenly over its days). "
+                    "Receivers run in parallel, so these are not wall time."
                 )
             )
+            stage_rows = run_charts["stage"]
+            stage_order = [row["Stage"] for row in stage_rows]
+            median_rows, median_time = time_bars(
+                "x", "Median (s)", "Median per day (s)", stage_rows, time_axis.value
+            )
+            total_rows, total_time = time_bars(
+                "x", "Total (s)", "Total (s)", stage_rows, time_axis.value
+            )
+            median_chart = chart_style(
+                alt.Chart({"values": median_rows})  # type: ignore
+                .mark_bar(color=chart_series[0])
+                .encode(
+                    y=alt.Y("Stage:N", sort=stage_order, axis=alt.Axis(title="Stage")),
+                    **median_time,
+                )
+            )
+            total_chart = chart_style(
+                alt.Chart({"values": total_rows})  # type: ignore
+                .mark_bar(color=chart_series[0])
+                .encode(
+                    y=alt.Y("Stage:N", sort=stage_order, axis=alt.Axis(title="Stage")),
+                    **total_time,
+                )
+            )
+            chart_items.append(mo.hstack([median_chart, total_chart]))
 
         if "day" in run_charts:
             chart_items.append(
                 mo.md(
-                    "**Time per day.** The stage seconds of all receivers of a day, "
-                    "added up. Receivers run in parallel, so this is not wall time."
+                    "**Time per day.** The stage seconds of a data day, added up; "
+                    "a run that works in units of days splits a unit's record "
+                    "evenly over its days. Receivers run in parallel, so this is "
+                    "not wall time."
                 )
             )
-            day_rows, day_time = time_bars(
+            day_rows, day_time = time_line(
                 "y", "Seconds", "Time (s)", run_charts["day"], time_axis.value
             )
             chart_items.append(
                 mo.ui.altair_chart(
                     chart_style(
                         alt.Chart({"values": day_rows})  # type: ignore
-                        .mark_bar(color=chart_series[0])
+                        .mark_line(point=True, color=chart_series[0])
                         .encode(
                             x=alt.X("Day:N", axis=alt.Axis(title="Day")),
                             **day_time,
@@ -857,24 +876,42 @@ def _(chart_categories, chart_palette, chart_style, mo, run_view, time_axis, tim
         if "store" in run_charts:
             chart_items.append(
                 mo.md(
-                    "**Store growth per day.** The bytes each day added to the store."
+                    "**Store size on disk.** The on-disk size of each store, "
+                    "measured in the background when the run finished a new data "
+                    "day (never inside a stage or a commit; how long the walk took "
+                    "is recorded too). The **Total** line adds the stores of a day."
                 )
             )
+            store_data = run_charts["store"]
+            byte_values = [row["Size (bytes)"] for row in store_data]
+            store_unit = "GB" if max(byte_values) >= 1e9 else "MB"
+            store_scale = 1e9 if store_unit == "GB" else 1e6
+            store_display = [
+                {**row, "Size": row["Size (bytes)"] / store_scale} for row in store_data
+            ]
+            store_count = len({row["Store"] for row in store_data})
             chart_items.append(
                 mo.ui.altair_chart(
                     chart_style(
-                        alt.Chart({"values": run_charts["store"]})  # type: ignore
-                        .mark_bar(color=chart_series[0])
+                        alt.Chart({"values": store_display})  # type: ignore
+                        .mark_line(point=True)
                         .encode(
                             x=alt.X("Day:N", axis=alt.Axis(title="Day")),
                             y=alt.Y(
-                                "Store growth (MB):Q",
-                                axis=alt.Axis(title="Store growth (MB)"),
+                                "Size:Q",
+                                axis=alt.Axis(title=f"Store size ({store_unit})"),
+                                scale=alt.Scale(zero=False),
                             ),
+                            color=alt.Color("Store:N").scale(
+                                range=chart_categories(store_count)
+                            ),
+                            tooltip=["Day:N", "Store:N", "Size:Q"],
                         )
                     )
                 )
             )
+        elif run_charts:
+            chart_items.append(mo.md("_This run recorded no store sizes._"))
 
         if "resources" in run_charts:
             chart_items.append(

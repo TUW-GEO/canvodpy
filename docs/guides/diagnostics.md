@@ -262,6 +262,12 @@ records:
   CPU use and memory use of the machine (percent) and the free space of
   the disks of the log folder and the stores
   (`history.resource_samples(run_id)`);
+- once a data day the run finishes, on the same background thread: the
+  on-disk size of each local store the run writes (the GNSS and VOD
+  stores), recorded against the data day (YYYYDOY) the run had finished,
+  so the run history shows how the store grew over the run; how long the
+  walk took is recorded beside it
+  (`history.store_sizes(run_id)`);
 - its warnings and errors, in words, with their receiver and day (a
   receiver-day with missing files reads, for example,
   `canopy_01 has 81 of 96 files on 2025001`);
@@ -377,13 +383,26 @@ how each is computed:
 **Charts:** the run page also shows charts of the run, built from the
 run history queries only:
 
-- **Time per stage:** the total time of each stage. A long bar is a
-  stage that takes a lot of the run.
-- **Time per day:** the stage seconds of a day, added up over all its
-  receivers. Receivers run in parallel, so this is not wall time; a day
-  can show more seconds than it took.
-- **Store growth per day:** the bytes each day added to the store. The
-  y-axis is in megabytes.
+- **Time per stage:** the median of a stage's per-day seconds (left,
+  "Median per day") and the total seconds of each stage (right,
+  "Total"), in the same order (by total). The median is over the seconds
+  of a day, added up over the day's receivers; a stage that names no day
+  (such as `day_block_growth`) takes the median of its records; a unit
+  of days is split evenly over its days. A long bar is a stage that
+  takes a lot of the run.
+- **Time per day:** the stage seconds of a data day, added up over all
+  its receivers, as a line over the days so a trend over the run is easy
+  to see. A run that works in units of days splits a unit's record
+  evenly over its days. Receivers run in parallel, so this is not wall
+  time; a day can show more seconds than it took.
+- **Store size on disk:** the on-disk size of each local store (GNSS,
+  VOD) as a line, plus a **Total** line, measured on the background
+  sampler thread when the run finished a new data day (never inside a
+  stage or a commit), so the growth of the store over the run is
+  visible. The x-axis is the data day (YYYYDOY), one point per data day
+  the size was measured (a unit of days has one point, on its last day);
+  the y-axis is in MB or GB, chosen from the values. How long each walk
+  took is recorded too (`history.store_sizes(run_id)`).
 - **CPU and memory:** the percent of the CPU and memory used, sampled
   during the run. A line near 100 % shows what limits the run.
 - **Free disk:** the free space of each folder, sampled during the run.

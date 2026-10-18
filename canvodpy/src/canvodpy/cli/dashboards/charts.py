@@ -1,4 +1,4 @@
-"""The colors and the time axes of the run dashboard's charts.
+"""The data, the colors and the axes of the run dashboard's charts.
 
 They live here, outside the marimo notebook (`performance.py`), so a
 test can check them directly. No marimo here.
@@ -7,8 +7,12 @@ test can check them directly. No marimo here.
 from __future__ import annotations
 
 import math
+import statistics
+from collections.abc import Iterable
 
 import altair as alt
+
+from canvodpy.run_history import StageTiming, StoreSize
 
 
 def chart_palette(count: int = 1) -> list[str]:
@@ -78,3 +82,107 @@ def time_bars(
         channel: channels[0](f"{field}:Q", axis=axis, scale=scale),
         f"{channel}2": channels[1](lower),
     }
+
+
+def time_line(
+    channel: str, field: str, title: str, rows: list[dict], scale_type: str
+) -> tuple[list[dict], dict]:
+    """The rows and the altair encoding of a line chart's time axis.
+
+    Like :func:`time_bars` but without the baseline: a bar draws to a
+    zero baseline (an ``x2``/``y2`` datum), a line has no such edge, so
+    its encoding is the plain ``x`` or ``y`` channel. ``"log"`` keeps the
+    positive rows and runs the axis between the powers of ten around the
+    shortest and the longest time, as :func:`time_bars` does.
+    """
+    channel_types = {"x": alt.X, "y": alt.Y}
+    axis = alt.Axis(title=title)
+    positive = [row for row in rows if (row.get(field) or 0) > 0]
+    if scale_type != "log" or not positive:
+        scale = alt.Scale(type="linear", zero=True)
+        return rows, {
+            channel: channel_types[channel](f"{field}:Q", axis=axis, scale=scale)
+        }
+    times = [row[field] for row in positive]
+    lower = 10 ** math.floor(math.log10(min(times)))
+    upper = 10 ** math.ceil(math.log10(max(times)))
+    scale = alt.Scale(type="log", domain=[lower, max(upper, 10 * lower)])
+    return positive, {
+        channel: channel_types[channel](f"{field}:Q", axis=axis, scale=scale)
+    }
+
+
+def stage_stats(timings: Iterable[StageTiming]) -> list[dict]:
+    """The total and the per-day median time of each stage.
+
+    The total is the stage's seconds added up. The median is over the
+    stage's per-day seconds (the seconds of a day summed, whatever the
+    receiver), or over its records when the stage names no day (such as
+    ``day_block_growth``). A record of a unit of days names its days
+    joined by commas (e.g. ``"2025168,2025169"``); its seconds are split
+    evenly over those days, so a unit is one median, not one long point.
+    The rows are sorted by total, high to low.
+    """
+    by_stage: dict[str, list[StageTiming]] = {}
+    for timing in timings:
+        by_stage.setdefault(timing.stage, []).append(timing)
+    rows = []
+    for stage, records in by_stage.items():
+        total = sum(record.seconds or 0.0 for record in records)
+        if any(record.day is not None for record in records):
+            per_day: dict[str, float] = {}
+            for record in records:
+                if record.day is None:
+                    continue
+                for day, share in split_days(record.day, record.seconds or 0.0):
+                    per_day[day] = per_day.get(day, 0.0) + share
+            values = list(per_day.values())
+        else:
+            values = [record.seconds or 0.0 for record in records]
+        rows.append(
+            {
+                "Stage": stage,
+                "Total (s)": total,
+                "Median (s)": statistics.median(values) if values else 0.0,
+            }
+        )
+    rows.sort(key=lambda row: -float(row["Total (s)"]))
+    return rows
+
+
+def split_days(day: str | None, seconds: float) -> list[tuple[str, float]]:
+    """Split a record's seconds over the data days it names.
+
+    A record of a unit of days names its days joined by commas (e.g.
+    ``"2025168,2025169"``). Its seconds are split evenly over those days, so
+    a unit is not one long point on the time-per-day chart. A record that
+    names one day is returned as is; a record without a day yields nothing.
+    """
+    if not day:
+        return []
+    days = [part for part in day.split(",") if part]
+    if len(days) <= 1:
+        return [(day, seconds)]
+    share = seconds / len(days)
+    return [(part, share) for part in days]
+
+
+def store_rows(store_sizes: Iterable[StoreSize]) -> list[dict]:
+    """The on-disk store size per day, one row per store plus their total.
+
+    Rows are ``(day, store, size in bytes)`` for every store recorded that
+    day, then a ``Total`` row (all stores added up) per day, ordered by
+    day. The unit of the chart (MB or GB) is chosen from the values.
+    """
+    by_day: dict[str, dict[str, int]] = {}
+    for size in store_sizes:
+        by_day.setdefault(size.day, {})[size.store] = size.bytes
+    rows = []
+    for day in sorted(by_day):
+        stores = by_day[day]
+        for store in sorted(stores):
+            rows.append({"Day": day, "Store": store, "Size (bytes)": stores[store]})
+        rows.append(
+            {"Day": day, "Store": "Total", "Size (bytes)": sum(stores.values())}
+        )
+    return rows

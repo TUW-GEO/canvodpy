@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 import numpy as np
 import zarr
 from canvod.config.models.sites import reference_store_group
+from canvod.utils.tools import directory_size_bytes
 
 from .layout import DAY_BLOCK_INDEX_ATTR, is_day_block_group
 
@@ -569,8 +570,7 @@ def _header_positions(
 
 
 def _store_size_mb(store_path: Path) -> float:
-    size = sum(f.stat().st_size for f in store_path.rglob("*") if f.is_file())
-    return round(size / 1e6, 3)
+    return round(directory_size_bytes(store_path) / 1e6, 3)
 
 
 def receiver_groups(receivers: Mapping[str, str]) -> dict[str, set[str]]:

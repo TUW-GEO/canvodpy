@@ -33,6 +33,7 @@ Examples
 
 from .date_utils import YYDOY, YYYYDOY, get_gps_week_from_filename
 from .deprecation import deprecated, deprecated_argument
+from .fs import directory_size_bytes
 from .hashing import bytes_hash, file_hash
 from .sanitize import sanitize_directory
 from .validation import isfloat
@@ -50,6 +51,7 @@ __all__ = [
     "bytes_hash",
     "deprecated",
     "deprecated_argument",
+    "directory_size_bytes",
     "file_hash",
     "get_gps_week_from_filename",
     "get_version_from_pyproject",
