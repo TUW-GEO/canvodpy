@@ -29,7 +29,6 @@ from typing import TypeVar, cast
 import icechunk
 import numpy as np
 import pandas as pd
-import pint
 import psutil
 import structlog
 import xarray as xr
@@ -38,9 +37,8 @@ from loky import get_reusable_executor as _loky_reusable
 
 from canvod.config import CanvodConfig, load_config
 from canvod.config.models import mixed_format_error, reference_store_group
-from canvod.ops import build_default_pipeline, preprocess_files
+from canvod.ops import preprocess_files
 from canvod.readers import MatchedDirs
-from canvod.readers.gnss_specs.constants import UREG
 from canvod.store import GnssResearchSite
 from canvod.store.store import _with_run_id
 from canvod.store_metadata import (
@@ -59,7 +57,12 @@ from canvod.utils.logging import (
     set_run_id,
     stage_timer,
 )
-from canvod.utils.tools import YYYYDOY, deprecated, get_version_from_pyproject
+from canvod.utils.tools import (
+    YYYYDOY,
+    deprecated,
+    deprecated_argument,
+    get_version_from_pyproject,
+)
 from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
 from canvodpy.orchestrator.discovery import (
     ReceiverDay,
@@ -86,6 +89,7 @@ from canvodpy.orchestrator.forked_writes import (
 from canvodpy.orchestrator.memory_budget import (
     GB,
     InputFile,
+    chunk_tasks,
     largest_task,
     plan_memory,
 )
@@ -120,6 +124,11 @@ from canvodpy.run_history import (
 # potentially-uninitialized local inside the nested _submit() closure below.
 # A module-level TypeVar is unambiguous to both type checkers and CodeQL.
 T = TypeVar("T")
+
+#: Days of a unit prepared at the same time. Each one may download its
+#: orbit and clock files, and a unit has up to 31 days; more connections at
+#: once than this risk being refused by the download server.
+PREPARE_THREADS = 4
 
 # A day prepared in Phase 1: its processor, file tasks and files per receiver.
 _PreparedDate = tuple[RinexDataProcessor, list[tuple], list[tuple[str, list[Path]]]]
@@ -254,6 +263,16 @@ class _ForkJob:
     fork: ForkSession
 
 
+@dataclass
+class _UnitDay:
+    """A forked day of a unit: its processor, plan, tasks and fork results."""
+
+    processor: RinexDataProcessor
+    planned: ForkedDay
+    task_descriptors: Sequence[tuple]
+    results: list[ForkResult]
+
+
 def _input_bytes(files: Iterable[Path | str]) -> int:
     """The size of a task's input files on disk (0 for a missing file)."""
     total = 0
@@ -349,13 +368,10 @@ class PipelineOrchestrator:
         memory budget (:mod:`canvodpy.orchestrator.memory_budget`).
     dry_run : bool
         If True, only simulate processing without executing
-    days_per_batch : int
-        Number of DOYs pooled per loky wave (default: 1). Lowered if the
-        days do not fit in the memory budget.
     max_memory_gb : float | None
         Memory budget of the run in GB; ``None`` means the memory available
-        when the run starts. The workers and ``days_per_batch`` are sized to
-        fit it before the first file is read.
+        when the run starts. The workers and the days per unit are sized to
+        fit it before the first file is read (ADR 0021).
     threads_per_worker : int | None
         Threads per worker process (used to cap BLAS thread env vars).
         None defaults to 1.
@@ -399,12 +415,19 @@ class PipelineOrchestrator:
     """
 
     @deprecate_no_effect_arguments
+    @deprecated_argument(
+        "days_per_batch",
+        "The 'days_per_batch' argument of PipelineOrchestrator() is left over "
+        "from development and will be removed with the next major version. A "
+        "run derives its days per unit from the memory budget; until then the "
+        "argument caps them. Remove the argument.",
+    )
     def __init__(
         self,
         site: GnssResearchSite,
         n_max_workers: int | None = None,
         dry_run: bool = False,
-        days_per_batch: int = 1,
+        days_per_batch: int | None = None,
         max_memory_gb: float | None = None,
         cpu_affinity: list[int] | None = None,
         nice_priority: int | None = None,
@@ -454,11 +477,15 @@ class PipelineOrchestrator:
         # Set by _size_to_memory when a run starts.
         self._workers: int | None = None
         self.dry_run = dry_run
-        self.days_per_batch = days_per_batch
-        # Each run sizes from the asked value, not from what an earlier run
-        # of this orchestrator lowered it to.
-        self._asked_days_per_batch = days_per_batch
-        self._batch_duration: pint.Quantity = days_per_batch * 24 * UREG.hour
+        # The deprecated cap on the days per unit, from the argument or the
+        # settings; None: the memory budget alone sets them (ADR 0021).
+        self._days_per_batch_cap = (
+            days_per_batch
+            if days_per_batch is not None
+            else config.processing.params.days_per_batch
+        )
+        # Set by _size_to_memory when a run starts.
+        self.unit_days = 1
         self._threads_per_worker = threads_per_worker
         self._memory_monitor = MemoryMonitor()
 
@@ -485,7 +512,7 @@ class PipelineOrchestrator:
             analysis_pairs=len(site.active_vod_analyses),
             n_max_workers=n_max_workers,
             dry_run=dry_run,
-            days_per_batch=days_per_batch,
+            days_per_batch_cap=self._days_per_batch_cap,
         )
 
     def close(self) -> None:
@@ -1173,7 +1200,7 @@ class PipelineOrchestrator:
         ] = {}
         task_descriptors_by_date: dict[str, list[tuple]] = {}
 
-        phase1_workers = len(batch)
+        phase1_workers = min(len(batch), PREPARE_THREADS)
         batch_receivers_by_date = dict(batch)
         with ThreadPoolExecutor(max_workers=phase1_workers) as tp:
             # Each thread runs in a copy of this context, so its log
@@ -1273,22 +1300,28 @@ class PipelineOrchestrator:
         keep_vars: list[str] | None,
         stop: threading.Event,
     ) -> Generator[tuple[str, dict[str, xr.Dataset], dict[str, float]]]:
-        """Process dates in batches of ``days_per_batch`` days (1 or more).
+        """Process dates in units of ``unit_days`` days (ADR 0021).
 
-        Each batch runs in three phases:
+        Each unit (a batch, in the code) runs in three phases:
 
-        1. Prepare (:meth:`_prepare_batch`), while the batch before is read
+        1. Prepare (:meth:`_prepare_batch`), while the unit before is read
            and written. The prepared dates then get their day blocks in one
-           growth commit (:meth:`_grow_day_blocks`), after the batch
-           before is committed.
-        2. Process the files of all dates of the batch in loky's reusable
-           process pool, at most twice the worker count in flight.
-        3. Write, in this process, as soon as all files of a receiver-day
-           are back: ``processing.preprocessing`` (if set), then
-           ``_append_to_icechunk`` (one commit for the data, one for the
-           store metadata). The pool keeps working meanwhile.
+           growth commit (:meth:`_grow_day_blocks`), after the unit before
+           is committed, and are planned on one session.
+        2. Process the files of all dates of the unit in loky's reusable
+           process pool, at most twice the worker count in flight. Each
+           task of a day with its blocks writes into a fork of the unit's
+           session.
+        3. Commit, in a thread of this process, the forks of all days of
+           the unit once all are back (:meth:`_write_forked_unit`). A day
+           written in one session instead (the first day of a group) is
+           written here as soon as all its files are back:
+           ``processing.preprocessing`` (if set), then
+           ``_append_to_icechunk``.
 
-        Dates are yielded after the batch is written. :meth:`process_by_date`
+        A new store's first day is a unit of its own, so it creates the
+        groups the next units fork from. Dates are yielded after the unit
+        is written. :meth:`process_by_date`
         runs this in a thread of its own, so the next batch is read while
         the caller computes VOD of this one (:func:`_run_ahead`).
 
@@ -1309,19 +1342,15 @@ class PipelineOrchestrator:
             ``(date_key, datasets, timings)`` per DOY.
 
         """
-        days_per_batch = self.days_per_batch
-        total_batches = (len(filtered_dates) + days_per_batch - 1) // days_per_batch
+        batches = self._units(filtered_dates)
+        total_batches = len(batches)
         self._logger.info(
-            "multi_day_batch_strategy",
-            days_per_batch=days_per_batch,
+            "run_units",
+            unit_days=self.unit_days,
             total_dates=len(filtered_dates),
-            total_batches=total_batches,
+            units=total_batches,
+            first_day_alone=len(batches[0]) < min(self.unit_days, len(filtered_dates)),
         )
-
-        batches = [
-            filtered_dates[start : start + days_per_batch]
-            for start in range(0, len(filtered_dates), days_per_batch)
-        ]
         # Phase 1 of the next batch runs in this thread while the current
         # batch is read and written; it reads no store. Leaving the block
         # waits for a Phase 1 that is still running.
@@ -1381,6 +1410,7 @@ class PipelineOrchestrator:
                     continue
 
                 forked_days: dict[str, ForkedDay] = {}
+                unit_session = self._unit_session()
                 for date_key, (processor, _receiver_file_map) in doy_contexts.items():
                     try:
                         with stage_timer("planning", date_key=date_key):
@@ -1388,6 +1418,7 @@ class PipelineOrchestrator:
                                 partial(
                                     processor.plan_forked_day,
                                     task_descriptors_by_date[date_key],
+                                    session=unit_session,
                                 ),
                                 logger=self._logger,
                                 date=date_key,
@@ -1513,11 +1544,8 @@ class PipelineOrchestrator:
                     )
 
                 fork_results: dict[str, list[ForkResult]] = defaultdict(list)
-                fork_jobs_left = {
-                    date_key: len(planned.tasks)
-                    for date_key, planned in forked_days.items()
-                }
-                day_writes: dict[str, Future] = {}
+                fork_jobs_left = sum(len(p.tasks) for p in forked_days.values())
+                unit_write: Future | None = None
 
                 # Windowed submission (~2x worker count in flight), not the whole
                 # batch upfront: submitting all ~n_days*n_receivers*n_files tasks
@@ -1563,9 +1591,9 @@ class PipelineOrchestrator:
                         f.stat().st_size / 1_048_576 for f in files if f.exists()
                     )
 
-                # One thread commits the forked days, one at a time, while the
-                # pool works on and this thread writes the other days. Leaving
-                # the block, also by an error, waits for the day it commits.
+                # One thread commits the unit's forked days once their fork
+                # jobs are back, while this thread writes the other days.
+                # Leaving the block, also by an error, waits for the commit.
                 with (
                     ThreadPoolExecutor(max_workers=1) as day_writer,
                     _processing_progress(disable=True) as _progress_inner,
@@ -1579,8 +1607,8 @@ class PipelineOrchestrator:
                     batch_t0 = _time.monotonic()
                     for task, fut in completion_iter:
                         if stop.is_set():
-                            # The caller stopped: take no more results. The
-                            # day being committed finishes when this block
+                            # The caller stopped: take no more results. A
+                            # unit being committed finishes when this block
                             # is left; the files still out are dropped.
                             break
                         date_key, task_args = task
@@ -1593,15 +1621,20 @@ class PipelineOrchestrator:
                             else:
                                 tasks_failed += 1
                             fork_results[date_key].append(fork_result)
-                            fork_jobs_left[date_key] -= 1
-                            if not fork_jobs_left[date_key]:
-                                day_writes[date_key] = day_writer.submit(
+                            fork_jobs_left -= 1
+                            if not fork_jobs_left:
+                                unit_write = day_writer.submit(
                                     contextvars.copy_context().run,
-                                    self._write_forked_day,
-                                    doy_contexts[date_key][0],
-                                    forked_days[date_key],
-                                    task_descriptors_by_date[date_key],
-                                    fork_results.pop(date_key),
+                                    self._write_forked_unit,
+                                    [
+                                        _UnitDay(
+                                            doy_contexts[dk][0],
+                                            planned,
+                                            task_descriptors_by_date[dk],
+                                            fork_results.pop(dk, []),
+                                        )
+                                        for dk, planned in forked_days.items()
+                                    ],
                                     _submit_fork,
                                     batch_idx + 1,
                                 )
@@ -1810,11 +1843,14 @@ class PipelineOrchestrator:
                             )
                             groups_written.add(group_key)
 
-                for date_key in sorted(day_writes):
+                unit_outcome = self._unit_outcome(unit_write)
+                for date_key in sorted(forked_days if unit_write else ()):
                     groups_done = self._finish_forked_day(
                         date_key,
                         forked_days[date_key],
-                        day_writes[date_key],
+                        unit_outcome.get(date_key)
+                        if isinstance(unit_outcome, dict)
+                        else unit_outcome,
                     )
                     for receiver_name, (daily_ds, seconds) in groups_done.items():
                         date_datasets[date_key][receiver_name] = daily_ds
@@ -1994,59 +2030,130 @@ class PipelineOrchestrator:
                 ],
             )
 
-    def _write_forked_day(
+    def _units(
         self,
-        processor: RinexDataProcessor,
-        planned: ForkedDay,
-        task_descriptors: Sequence[tuple],
-        results: list[ForkResult],
+        filtered_dates: list[
+            tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]
+        ],
+    ) -> list[
+        list[tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]]
+    ]:
+        """The run's dates in units of :attr:`unit_days` days.
+
+        If the GNSS store lacks a group of the first date, that date is a
+        unit of its own: it is written in one session and creates the
+        group, so the days after it can be written by forks (ADR 0016).
+        """
+        days = max(1, self.unit_days)
+        first: list = []
+        rest = filtered_dates
+        if filtered_dates and days > 1:
+            stored = (
+                set(self.site.gnss_store.list_groups() or [])
+                if store_exists(self.site.gnss_store_path)
+                else set()
+            )
+            if not set(filtered_dates[0][1]) <= stored:
+                first, rest = [filtered_dates[0]], filtered_dates[1:]
+        units = [rest[start : start + days] for start in range(0, len(rest), days)]
+        return [first, *units] if first else units
+
+    def _unit_session(self) -> icechunk.Session | None:
+        """A writable session of the GNSS store for a unit's forks, if it exists."""
+        if not store_exists(self.site.gnss_store_path):
+            return None
+        return self.site.gnss_store.repo.writable_session("main")
+
+    def _write_forked_unit(
+        self,
+        days: list[_UnitDay],
         submit_fork: Callable[[_ForkJob], Future],
         batch_index: int,
-    ) -> dict[str, GroupWriteResult]:
-        """Commit a forked day; after a lost conflict, write it again.
+    ) -> dict[str, dict[str, GroupWriteResult]]:
+        """Commit a unit's forked days once; after a lost conflict, write it again.
 
         Runs in the writer thread. A conflict means another run committed
         first: after :func:`~canvod.store_metadata.io.wait_after_conflict`
-        the day is planned again against the new tip (whose log book now
-        holds that run's files), its fork jobs run again in the pool, and
-        the day is committed; up to
-        :data:`~canvod.store_metadata.io.CONFLICT_TRIES` tries in
-        all (#339).
+        the unit's days are planned again on one session at the new tip
+        (whose log book now holds that run's files), their fork jobs run
+        again in the pool, and the unit is committed; up to
+        :data:`~canvod.store_metadata.io.CONFLICT_TRIES` tries in all
+        (#339, ADR 0021).
+
+        Returns
+        -------
+        dict[str, dict[str, GroupWriteResult]]
+            Per day, per store group, what was written.
 
         Raises
         ------
         icechunk.ConflictError
-            If the day lost the conflict on every try.
+            If the unit lost the conflict on every try.
+        RuntimeError
+            If a day could not be planned again.
         """
+        date_keys = ",".join(d.planned.date_key for d in days)
         for retry in range(1, CONFLICT_TRIES):
             try:
-                return processor._commit_forked_day(planned, results)
+                return days[0].processor._commit_forked_unit(
+                    [(d.processor, d.planned, d.results) for d in days]
+                )
             except icechunk.ConflictError as exc:
                 seconds = wait_after_conflict(retry)
                 self._logger.warning(
-                    "forked_day_conflict_retrying",
-                    date=planned.date_key,
+                    "forked_unit_conflict_retrying",
+                    date=date_keys,
                     retry=retry,
                     of=CONFLICT_TRIES - 1,
                     waited_seconds=round(seconds, 1),
                     error=str(exc),
                 )
-            with stage_timer("planning", date_key=planned.date_key):
-                replanned = processor.plan_forked_day(task_descriptors)
-            if replanned is None:
-                msg = (
-                    f"Day {planned.date_key} could not be planned again after a "
-                    "lost conflict: the store no longer has its day blocks."
+            session = self._unit_session()
+            replanned_days: list[_UnitDay] = []
+            for day in days:
+                with stage_timer("planning", date_key=day.planned.date_key):
+                    replanned = day.processor.plan_forked_day(
+                        day.task_descriptors, session=session
+                    )
+                if replanned is None:
+                    msg = (
+                        f"Day {day.planned.date_key} could not be planned again "
+                        "after a lost conflict: the store no longer has its day "
+                        "blocks."
+                    )
+                    raise RuntimeError(msg)
+                replanned_days.append(
+                    _UnitDay(day.processor, replanned, day.task_descriptors, [])
                 )
-                raise RuntimeError(msg)
-            jobs = [_ForkJob(task, fork) for task, fork in replanned.tasks]
-            futures = [(job, submit_fork(job)) for job in jobs]
-            results = [
-                self._fork_result(planned.date_key, job, fut, batch_index)
-                for job, fut in futures
+            futures = [
+                (day, job, submit_fork(job))
+                for day in replanned_days
+                for job in (_ForkJob(task, fork) for task, fork in day.planned.tasks)
             ]
-            planned = replanned
-        return processor._commit_forked_day(planned, results)
+            for day, job, fut in futures:
+                day.results.append(
+                    self._fork_result(day.planned.date_key, job, fut, batch_index)
+                )
+            days = replanned_days
+        return days[0].processor._commit_forked_unit(
+            [(d.processor, d.planned, d.results) for d in days]
+        )
+
+    def _unit_outcome(
+        self, write: Future | None
+    ) -> dict[str, dict[str, GroupWriteResult]] | BaseException:
+        """What the unit's commit wrote per day, or the store error it failed with.
+
+        Other errors (a file over another stored file's epochs, data
+        preprocessed differently) stop the run.
+        """
+        if write is None:
+            return {}
+        try:
+            return cast("dict[str, dict[str, GroupWriteResult]]", write.result())
+        except STORE_ERROR_TYPES as exc:
+            self._logger.exception("icechunk_write_failed")
+            return exc
 
     def _read_back_day(
         self,
@@ -2075,13 +2182,14 @@ class PipelineOrchestrator:
         self,
         date_key: str,
         planned: ForkedDay,
-        write: Future,
+        outcome: dict[str, GroupWriteResult] | BaseException | None,
     ) -> dict[str, tuple[xr.Dataset, float]]:
         """Record a forked day's groups and read back the written ones.
 
-        A group is failed when the day's commit failed, or when none of its
-        files has a log-book row and some failed; otherwise written, or
-        skipped when every file was already stored.
+        ``outcome`` is what the unit's commit wrote of the day, or the error
+        the commit failed with. A group is failed when the commit failed,
+        or when none of its files has a log-book row and some failed;
+        otherwise written, or skipped when every file was already stored.
 
         Returns
         -------
@@ -2090,11 +2198,9 @@ class PipelineOrchestrator:
             write and read back.
         """
         groups = sorted({g for task, _ in planned.tasks for g in task.groups})
-        try:
-            outcome = cast("dict[str, GroupWriteResult]", write.result())
-        except STORE_ERROR_TYPES as exc:
-            self._logger.exception("icechunk_write_failed", date=date_key)
-            self._fail_receiver_days(date_key, groups, exc)
+        if outcome is None or isinstance(outcome, BaseException):
+            error = outcome or RuntimeError("The unit's commit did not run.")
+            self._fail_receiver_days(date_key, groups, error)
             return {}
 
         time_range = (
@@ -2191,7 +2297,7 @@ class PipelineOrchestrator:
             tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]
         ],
     ) -> None:
-        """Size the workers and ``days_per_batch`` to the memory budget.
+        """Size the workers and the days per unit to the memory budget.
 
         See :mod:`canvodpy.orchestrator.memory_budget`. A reference receiver
         paired with several canopies is counted once per pairing: one task
@@ -2200,7 +2306,7 @@ class PipelineOrchestrator:
         Raises
         ------
         MemoryBudgetError
-            If not even one worker fits with one day per batch.
+            If not even one worker fits with one day per unit.
         """
         preprocessing = self._config.processing.preprocessing
         aggregation = (
@@ -2211,10 +2317,8 @@ class PipelineOrchestrator:
             if aggregation is not None and aggregation.enabled
             else None
         )
-        whole_day = (
-            preprocessing is not None and len(build_default_pipeline(preprocessing)) > 0
-        )
-        lanes: list[list[InputFile]] = []
+        epoch_chunk = self._config.processing.icechunk.chunk_strategies.gnss_store.epoch
+        tasks: list[list[InputFile]] = []
         day_input = 0
         for _date_key, groups in filtered_dates:
             pairings: dict[tuple[str, str], int] = defaultdict(int)
@@ -2237,7 +2341,9 @@ class PipelineOrchestrator:
                     for found in discover_files(day, fmt)
                 ]
                 this_day += sum(f.size for f in files)
-                lanes.append(files)
+                tasks.extend(
+                    chunk_tasks(files, epoch_chunk=epoch_chunk, cadence_s=cadence_s)
+                )
             day_input = max(day_input, this_day)
 
         main_now = psutil.Process().memory_info().rss
@@ -2252,30 +2358,22 @@ class PipelineOrchestrator:
             budget_bytes=budget,
             main_now_bytes=main_now,
             day_input_bytes=day_input,
-            task=largest_task(
-                lanes,
-                epoch_chunk=self._config.processing.icechunk.chunk_strategies.gnss_store.epoch,
-                cadence_s=cadence_s,
-                whole_day=whole_day,
-            ),
+            task=largest_task(tasks),
+            tasks_per_day=len(tasks) / max(1, len(filtered_dates)),
             max_workers=max_workers,
-            days_per_batch=self._asked_days_per_batch,
+            days_to_run=len(filtered_dates),
+            days_per_batch=self._days_per_batch_cap,
             budget_source=source,
         )
-        limited = (
-            plan.workers < max_workers
-            or plan.days_per_batch < self._asked_days_per_batch
-        )
+        limited = plan.workers < max_workers or plan.unit_limit == "memory"
         (self._logger.warning if limited else self._logger.info)(
             "memory_budget",
             budget_source=source,
             max_workers=max_workers,
-            asked_days_per_batch=self._asked_days_per_batch,
             **plan.log_fields(),
         )
         self._workers = plan.workers
-        self.days_per_batch = plan.days_per_batch
-        self._batch_duration = plan.days_per_batch * 24 * UREG.hour
+        self.unit_days = plan.unit_days
         if self._run is not None:
             self._run.set_workers(plan.workers)
 
@@ -2351,18 +2449,18 @@ class PipelineOrchestrator:
             total_dates=len(filtered_dates),
             date_range_start=filtered_dates[0][0],
             date_range_end=filtered_dates[-1][0],
-            days_per_batch=self.days_per_batch,
+            unit_days=self.unit_days,
             n_max_workers=self.n_max_workers,
         )
 
         overall_start = _time.monotonic()
 
-        # The batches run in a thread of their own, one batch ahead of the
-        # caller: while the caller computes VOD of a day, the next batch is
-        # read and written. Two batches' data are in memory at most.
+        # The units run in a thread of their own, one unit ahead of the
+        # caller: while the caller computes VOD of a day, the next unit is
+        # read and written. Two units' data are in memory at most.
         yield from _run_ahead(
             partial(self._process_multi_day_batches, filtered_dates, keep_vars),
-            ahead=self.days_per_batch,
+            ahead=self.unit_days,
             name="canvodpy-batches",
         )
 
@@ -2478,7 +2576,6 @@ if __name__ == "__main__":
         site=site,
         dry_run=False,
         n_max_workers=resources["n_workers"],
-        days_per_batch=proc.days_per_batch,
         config=cfg,
     ) as orchestrator:
         for date_key, datasets, _timings in orchestrator.process_by_date(

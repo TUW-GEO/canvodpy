@@ -234,10 +234,11 @@ processing:
 ```
 
 The temporal aggregation runs first, then the grid cell assignment. Both run on
-all files of one receiver and day together (`preprocess_files`), after azimuth
-and elevation are computed and before the data goes to the GNSS store.
-A time bin that spans two files is therefore aggregated from the observations of
-both; it is stored with the file that holds its first observation. Each
+the files of one worker task together (`preprocess_files`), after azimuth
+and elevation are computed and before the data goes to the GNSS store. A task
+holds the files of one receiver whose epochs share a chunk of the aggregated
+epochs, so a time bin that spans two files is in one task and is aggregated
+from the observations of both; it is stored with the file that holds its first observation. Each
 stored file keeps its own attributes (for example the file hash) and all `sid`
 coordinates. VOD is then
 computed from the aggregated data and carries the `cell_id_*` variables along.

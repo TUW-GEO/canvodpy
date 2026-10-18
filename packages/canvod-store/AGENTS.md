@@ -22,8 +22,8 @@ Background: `docs/packages/store/overview.md`,
 ## Invariants
 
 - **Dedup before writing**, in three layers: file hash already in the
-  metadata table; time range overlapping stored files; overlap inside the
-  batch. A rejected file is reported, never written silently. A file of
+  metadata table; time range overlapping stored files; overlap among the
+  files of the run. A rejected file is reported, never written silently. A file of
   another hash over stored epochs stops the run (`StoredOverlapError`)
   unless the strategy writes over stored data; runs check it again at the
   tip before each commit (#351).

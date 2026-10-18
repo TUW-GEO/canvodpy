@@ -62,3 +62,57 @@ class TestRunStopsOnPreprocessingMismatch:
         assert result.exit_code == 1
         assert "The run needs at least 2.1 GB of memory" in result.output
         assert "Traceback" not in result.output
+
+
+class TestDeprecatedDaysPerBatch:
+    """``--days-per-batch`` is deprecated: a run without it passes nothing on."""
+
+    @staticmethod
+    def _pipeline_kwargs(monkeypatch, extra: list[str]) -> dict:
+        import canvodpy.api
+
+        seen: dict = {}
+
+        class _Stop(Exception):
+            pass
+
+        class _Site:
+            def __init__(self, _name):
+                pass
+
+            def pipeline(self, **kwargs):
+                seen.update(kwargs)
+                raise _Stop
+
+        monkeypatch.setattr(canvodpy.api, "Site", _Site)
+        runner.invoke(
+            main_app,
+            [
+                "run",
+                "--site",
+                "fangorn",
+                "--start",
+                "2025001",
+                "--end",
+                "2025002",
+                "--dry-run",
+                *extra,
+            ],
+        )
+        return seen
+
+    def test_without_the_option_nothing_is_passed(self, monkeypatch):
+        kwargs = self._pipeline_kwargs(monkeypatch, [])
+
+        assert "n_workers" in kwargs
+        assert "days_per_batch" not in kwargs
+
+    def test_the_option_is_passed_on_when_given(self, monkeypatch):
+        kwargs = self._pipeline_kwargs(monkeypatch, ["--days-per-batch", "3"])
+
+        assert kwargs["days_per_batch"] == 3
+
+    def test_the_option_is_hidden_from_the_help(self):
+        result = runner.invoke(main_app, ["run", "--help"])
+
+        assert "--days-per-batch" not in result.output

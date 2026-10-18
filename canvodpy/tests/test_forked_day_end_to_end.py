@@ -54,13 +54,13 @@ def test_a_forked_day_stores_what_one_session_stores(
     site = config.sites.sites[testing.SITE_KEY]
     site.receivers = dict(test_site._site_config.receivers)
     forked: list[str] = []
-    commit = RinexDataProcessor._commit_forked_day
+    commit = RinexDataProcessor._commit_forked_unit
 
-    def counting(self, day, results):
-        forked.append(day.date_key)
-        return commit(self, day, results)
+    def counting(self, days):
+        forked.extend(day.date_key for _, day, _ in days)
+        return commit(self, days)
 
-    monkeypatch.setattr(RinexDataProcessor, "_commit_forked_day", counting)
+    monkeypatch.setattr(RinexDataProcessor, "_commit_forked_unit", counting)
 
     def run(stores: Path, data: Path, n_workers: int) -> Path:
         config.processing.storage.stores_root_dir = stores

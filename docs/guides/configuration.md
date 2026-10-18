@@ -207,7 +207,7 @@ parameter with both values; use a new analysis name
 (`canvodpy store amend --add-vod-analysis`) or a new VOD store.
 
 Every other setting may differ from run to run: the resources
-(`resource_mode`, `n_max_threads`, `days_per_batch`, memory), the
+(`resource_mode`, `n_max_threads`, memory), the
 Icechunk cache and concurrency settings, `aux_data.ftp_timeout_s`,
 logging, folders, credentials, the store strategies, `keeper_tags`,
 `netcdf_compression`, and a receiver's `directory`, `naming` and
@@ -315,7 +315,6 @@ processing:
     receiver_position_mode: shared # or per_receiver
     file_pairing: complete         # or paired
     ephemeris_source: final        # or broadcast (SBF only)
-    days_per_batch: 1              # calendar days per processing wave (1–30)
 
     # --- Resource management ---
     resource_mode: auto            # auto or manual
@@ -367,7 +366,7 @@ processing:
 | `params.file_pairing`           | `complete`, `paired`     | `complete` ingests all files per receiver independently. `paired` only processes dates where both receivers have data.                                                                   |
 | `params.ephemeris_source`       | `final`, `broadcast`     | `final` computes satellite positions from agency SP3/CLK products. `broadcast` uses the satellite angles the receiver computed from the broadcast ephemeris (SBF SatVisibility blocks; almanac-based angles are not used; SBF only, no SP3/CLK download, faster but less accurate). |
 | `aux_data.fetch_clock`          | `true`, `false`          | Whether to download and interpolate CLK clock-correction files alongside SP3 (only applies to `ephemeris_source: final`). Default `true`. VOD does not use clock data; `false` saves the download, reading, and interpolation. |
-| `params.days_per_batch`         | 1–30                     | Calendar days pooled per parallel processing wave.                                                                                                                                       |
+| `params.days_per_batch`         | 1–30                     | Deprecated, removed in v2.0.0; prints a `FutureWarning`. Only caps the days per unit, which the run sizes from the memory budget ([Parallel processing](parallel-processing.md)). Leave it out. |
 | `params.resource_mode`          | `auto`, `manual`         | `auto` starts one worker per physical CPU core and leaves at least two CPU threads free for the operating system. `manual` uses the limits you set (`n_max_threads` is then required); use it on shared servers.      |
 | `params.store_radial_distance`  | `true`, `false`          | Whether to store satellite radial distance in the output.                                                                                                                                |
 | `params.store_sbf_raw_observables` | `true`, `false`       | SBF only: add the pre-correction observables (`SNR_raw`, `Pseudorange_unsmoothed`, `Pseudorange_raw`, `Phase_raw`) to the observations. Default `true`. |
@@ -377,7 +376,7 @@ processing:
 | `logging.log_dir`               | folder                   | Folder of the log files. Required: a run stops if it is not set. [Diagnostics](diagnostics.md) describes the files. |
 
 [Parallel processing](parallel-processing.md) explains `resource_mode`,
-`days_per_batch`, `n_max_threads` and the other resource settings.
+`n_max_threads`, `max_memory_gb` and the other resource settings.
 
 !!! warning "`gnss_store_strategy: unsafe_append` writes duplicate epochs"
 

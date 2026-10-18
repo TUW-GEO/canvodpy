@@ -1,10 +1,11 @@
-"""The memory budget sizes the workers and days per batch (#278).
+"""The memory budget sizes the workers and the days per unit (#278, #425).
 
 ``processing.params.max_memory_gb`` (or the memory available) holds the
-main process, with two batches of days in flight, and the workers, each
-with its largest task. A run in which one worker does not fit stops before
-reading a file, saying how much memory it needs; the workers log their
-peaks.
+main process, with two units of days in flight, and the workers, each
+with its largest task. The workers come first; a unit gets the days the
+rest of the budget holds, at most 31 (ADR 0021). A run in which one worker
+does not fit stops before reading a file, saying how much memory it needs;
+the workers log their peaks.
 """
 
 from __future__ import annotations
@@ -14,9 +15,11 @@ from pathlib import Path
 
 import pytest
 from canvodpy.orchestrator.memory_budget import (
-    BATCHES_IN_MEMORY,
     GB,
+    MAX_UNIT_DAYS,
     TASK_BYTES_PER_INPUT_BYTE,
+    TASK_HELD_BYTES_PER_INPUT_BYTE,
+    UNITS_IN_MEMORY,
     WORKER_BASE_BYTES,
     InputFile,
     MemoryBudgetError,
@@ -43,7 +46,8 @@ def _plan(budget_gb: float, task: list[InputFile], **kwargs) -> object:
         "main_now_bytes": int(0.5 * GB),
         "day_input_bytes": 0,
         "max_workers": 16,
-        "days_per_batch": 1,
+        "days_to_run": 1,
+        "tasks_per_day": 1.0,
         "budget_source": "processing.params.max_memory_gb",
     }
     return plan_memory(budget_bytes=int(budget_gb * GB), task=task, **defaults | kwargs)
@@ -52,7 +56,9 @@ def _plan(budget_gb: float, task: list[InputFile], **kwargs) -> object:
 def test_the_workers_follow_the_budget():
     task = [_file("0000", 20 * MB)]
     peak = task_peak_bytes(task)
-    assert peak == WORKER_BASE_BYTES + 20 * MB * TASK_BYTES_PER_INPUT_BYTE["rinex3"]
+    assert peak == WORKER_BASE_BYTES + 20 * MB * (
+        TASK_BYTES_PER_INPUT_BYTE["rinex3"] + TASK_HELD_BYTES_PER_INPUT_BYTE
+    )
     for workers in (1, 3, 7):
         budget = (int(0.5 * GB) + workers * peak) / GB
         assert _plan(budget, task).workers == workers
@@ -62,16 +68,54 @@ def test_the_workers_stay_within_the_cap():
     assert _plan(64, [_file("0000", MB)], max_workers=4).workers == 4
 
 
-def test_days_per_batch_is_lowered_until_a_worker_fits():
+def test_a_unit_gets_the_days_the_memory_left_by_the_workers_holds():
     task = [_file("0000", MB)]
     peak = task_peak_bytes(task)
     day = int(0.25 * GB)
-    # Room for the main process with three days per batch and one worker.
-    budget = int(0.5 * GB) + BATCHES_IN_MEMORY * 3 * day + peak
-    plan = _plan(budget / GB, task, day_input_bytes=day, days_per_batch=5)
-    assert plan.days_per_batch == 3
-    assert plan.workers == 1
-    assert _plan(64, task, day_input_bytes=day, days_per_batch=5).days_per_batch == 5
+    # Room for the main process with three days per unit and one worker.
+    budget = int(0.5 * GB) + UNITS_IN_MEMORY * 3 * day + peak
+    plan = _plan(budget / GB, task, day_input_bytes=day, days_to_run=10, max_workers=1)
+    assert (plan.unit_days, plan.unit_limit, plan.workers) == (3, "memory", 1)
+
+
+def test_the_workers_come_before_the_days_of_a_unit():
+    task = [_file("0000", MB)]
+    peak = task_peak_bytes(task)
+    day = int(0.25 * GB)
+    # Room for four workers with one day, or one worker with more days.
+    budget = int(0.5 * GB) + UNITS_IN_MEMORY * day + 4 * peak
+    plan = _plan(budget / GB, task, day_input_bytes=day, days_to_run=10)
+    assert (plan.workers, plan.unit_days) == (4, 1)
+
+
+@pytest.mark.parametrize(
+    ("days_to_run", "days_per_batch", "unit_days", "unit_limit"),
+    [
+        (400, None, MAX_UNIT_DAYS, "max_unit_days"),
+        (5, None, 5, "days_to_run"),
+        (400, 7, 7, "days_per_batch"),
+    ],
+)
+def test_without_a_memory_limit_a_unit_has_at_most_31_days(
+    days_to_run, days_per_batch, unit_days, unit_limit
+):
+    plan = _plan(
+        64,
+        [_file("0000", MB)],
+        day_input_bytes=MB,
+        days_to_run=days_to_run,
+        days_per_batch=days_per_batch,
+    )
+    assert (plan.unit_days, plan.unit_limit) == (unit_days, unit_limit)
+
+
+def test_the_log_says_what_set_the_unit():
+    plan = _plan(64, [_file("0000", MB)], days_to_run=5, tasks_per_day=192.0)
+    fields = plan.log_fields()
+    assert fields["unit_days"] == 5
+    assert fields["unit_limit"] == "days_to_run"
+    assert fields["tasks_per_day"] == 192.0
+    assert fields["tasks_per_worker"] == 5 * 192 / plan.workers
 
 
 def test_a_budget_smaller_than_one_file_stops_naming_the_memory_needed():
@@ -92,20 +136,42 @@ def test_files_sharing_an_epoch_chunk_are_one_task():
         for h in (0, 1)
         for m in (0, 15, 30, 45)
     ]
-    tasks = chunk_tasks(files, epoch_chunk=180, cadence_s=None, whole_day=False)
+    tasks = chunk_tasks(files, epoch_chunk=180, cadence_s=None)
     assert [len(t) for t in tasks] == [6, 2]
 
 
 def test_a_file_filling_its_chunks_is_a_task_of_its_own():
     files = [_file(f"00{m:02d}", MB) for m in (0, 15, 30, 45)]
-    tasks = chunk_tasks(files, epoch_chunk=180, cadence_s=None, whole_day=False)
+    tasks = chunk_tasks(files, epoch_chunk=180, cadence_s=None)
     assert [len(t) for t in tasks] == [1, 1, 1, 1]
 
 
-def test_with_preprocessing_the_whole_day_is_one_task():
-    files = [_file(f"00{m:02d}", MB) for m in (0, 15, 30, 45)]
-    tasks = chunk_tasks(files, epoch_chunk=180, cadence_s=None, whole_day=True)
-    assert [len(t) for t in tasks] == [4]
+def test_with_preprocessing_the_files_of_a_time_bin_are_one_task():
+    # 1-minute bins: a chunk of 180 bins holds three hours, twelve
+    # 15-minute files, not the whole day (#417).
+    files = [
+        _file(f"{h:02d}{m:02d}", 2 * MB) for h in range(24) for m in range(0, 60, 15)
+    ]
+    tasks = chunk_tasks(files, epoch_chunk=180, cadence_s=60.0)
+    assert [len(t) for t in tasks] == [12] * 8
+
+
+def test_a_task_reads_its_files_one_after_the_other():
+    # The peak of reading the largest file, plus the data of all of them;
+    # the 96 files of a day at 2 MB each give under 0.8 GB, not 9 GB (#417).
+    files = [_file(f"00{m:02d}", 2 * MB) for m in (0, 15, 30, 45)]
+    reading = 2 * MB * TASK_BYTES_PER_INPUT_BYTE["rinex3"]
+    held = 4 * 2 * MB * TASK_HELD_BYTES_PER_INPUT_BYTE
+    assert task_peak_bytes(files) == pytest.approx(
+        WORKER_BASE_BYTES + reading + held, abs=1
+    )
+
+
+def test_a_daily_file_is_one_task():
+    daily = _file("0000", 217 * MB, period="01D")
+    tasks = chunk_tasks([daily], epoch_chunk=180, cadence_s=60.0)
+    assert tasks == [[daily]]
+    assert task_peak_bytes(tasks[0]) > 217 * MB * TASK_BYTES_PER_INPUT_BYTE["rinex3"]
 
 
 def test_a_file_without_a_canonical_name_is_a_task_of_its_own():
@@ -113,7 +179,7 @@ def test_a_file_without_a_canonical_name_is_a_task_of_its_own():
         InputFile(path=Path(f"odd{i}.rnx"), size=MB, reader="rinex3", canonical_name="")
         for i in range(3)
     ]
-    tasks = chunk_tasks(files, epoch_chunk=180, cadence_s=None, whole_day=False)
+    tasks = chunk_tasks(files, epoch_chunk=180, cadence_s=None)
     assert [len(t) for t in tasks] == [1, 1, 1]
 
 
@@ -123,10 +189,8 @@ def test_the_largest_task_is_taken():
         _file("0000", 3 * MB, sampling="30S"),
         _file("0015", 3 * MB, sampling="30S"),
     ]
-    assert (
-        largest_task([small, large], epoch_chunk=180, cadence_s=None, whole_day=False)
-        == large
-    )
+    assert largest_task([small, large]) == large
+    assert largest_task([]) == []
 
 
 # ── A run on the test data ───────────────────────────────────────────────
@@ -183,7 +247,7 @@ def test_a_run_logs_its_sizes_and_the_worker_peaks(rosalia_site):
 
 
 @pytest.mark.integration
-def test_each_run_sizes_from_the_asked_days_and_records_the_sized_workers(
+def test_each_run_sizes_from_the_deprecated_cap_and_records_the_sized_workers(
     rosalia_site, monkeypatch
 ):
     import canvodpy.orchestrator.pipeline as pipeline_module
@@ -202,7 +266,9 @@ def test_each_run_sizes_from_the_asked_days_and_records_the_sized_workers(
             task_peak_bytes=0,
             largest_task=(),
             workers=1,
-            days_per_batch=1,
+            unit_days=1,
+            unit_limit="memory",
+            tasks_per_day=1.0,
         )
 
     monkeypatch.setattr(pipeline_module, "plan_memory", one_worker_one_day)
@@ -210,6 +276,7 @@ def test_each_run_sizes_from_the_asked_days_and_records_the_sized_workers(
     log_dir = Path(config.processing.logging.log_dir)
     with (
         recorded_run(site.site_name, log_dir=log_dir, settings={}, workers=4) as run,
+        pytest.warns(FutureWarning, match="days_per_batch"),
         PipelineOrchestrator(
             site=site, n_max_workers=4, days_per_batch=3, config=config, run=run
         ) as orchestrator,
@@ -217,8 +284,8 @@ def test_each_run_sizes_from_the_asked_days_and_records_the_sized_workers(
         for _ in range(2):
             assert list(orchestrator.process_by_date(keep_vars=None))
 
-    # The second run of the orchestrator asks for 3 days again, not the 1
-    # the first one was lowered to.
+    # The second run of the orchestrator is capped at 3 days again, not at
+    # the 1 the first one was lowered to.
     assert asked == [3, 3]
     with RunHistory.open(log_dir, read_only=True) as history:
         assert history.run(run.run_id).workers == 1

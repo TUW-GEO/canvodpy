@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from typing import Literal
 
 import psutil
@@ -110,14 +111,13 @@ class ProcessingParams(_StrictModel):
             "'paired': only process dates where both receivers in an analysis pair have data."
         ),
     )
-    days_per_batch: int = Field(
-        1,
+    days_per_batch: int | None = Field(
+        None,
         ge=1,
         le=30,
         description=(
-            "Days processed together in one batch (1 = one day at a time). A "
-            "high value may cause connection problems with the server the orbit "
-            "and clock files come from."
+            "Deprecated: a run derives its days per unit from the memory "
+            "budget (ADR 0021). If set, a unit has at most this many days."
         ),
     )
     max_memory_gb: float | None = Field(
@@ -125,9 +125,9 @@ class ProcessingParams(_StrictModel):
         gt=0,
         description=(
             "Memory budget of a run in GB (null = the memory available when "
-            "the run starts). The run sizes the workers and days_per_batch to "
-            "fit it, and stops before reading a file if not even one worker "
-            "fits with one day per batch."
+            "the run starts). The run sizes the workers and its days per unit "
+            "to fit it, and stops before reading a file if not even one worker "
+            "fits with one day."
         ),
     )
     cpu_affinity: list[int] | None = Field(
@@ -188,6 +188,21 @@ class ProcessingParams(_StrictModel):
             "'broadcast') still works, since it uses these data in memory."
         ),
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_days_per_batch(cls, data: object) -> object:
+        if isinstance(data, dict) and data.get("days_per_batch") is not None:
+            warnings.warn(
+                "The processing setting 'days_per_batch' is left over from "
+                "development and will be removed with the next major version. "
+                "A run derives its days per unit from the memory budget "
+                "(max_memory_gb); until then the setting caps them. Remove it "
+                "from your settings.",
+                FutureWarning,
+                stacklevel=2,
+            )
+        return data
 
     @model_validator(mode="after")
     def validate_resource_mode(self) -> ProcessingParams:
