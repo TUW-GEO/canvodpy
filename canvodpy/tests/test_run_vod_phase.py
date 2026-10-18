@@ -8,6 +8,7 @@ back. On the Rosalia test data with a synthetic second day
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -82,6 +83,34 @@ def test_a_run_stores_its_days_then_their_vod(two_days) -> None:
         expected["VOD"].values,
         equal_nan=True,
     )
+
+
+def _log_events(log_dir: Path, event: str) -> list[dict]:
+    events = []
+    for path in log_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith("{") and f'"{event}"' in line:
+                record = json.loads(line)
+                if record.get("event") == event:
+                    events.append(record)
+    return events
+
+
+def test_each_vod_task_logs_its_worker_memory_peak(two_days) -> None:
+    with _site().pipeline(n_workers=2) as pipeline:
+        list(pipeline.run(*DAYS))
+
+    log_dir = Path(two_days.processing.logging.log_dir)
+    peaks = [
+        p
+        for p in _log_events(log_dir, "worker_memory_peak")
+        if p["task"] == "compute_vod_into_fork"
+    ]
+    # One task per analysis pair and day.
+    assert len(peaks) == len(DAYS)
+    assert all(p["peak_gb"] >= p["before_gb"] > 0 for p in peaks)
 
 
 def test_a_day_whose_gnss_phase_fails_gets_no_vod(two_days, monkeypatch) -> None:

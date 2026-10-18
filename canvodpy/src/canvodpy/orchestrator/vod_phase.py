@@ -58,6 +58,7 @@ from canvod.store.store import (
 )
 from canvod.store_metadata.layout import LayoutError
 from canvod.utils.tools import get_version_from_pyproject
+from canvodpy.orchestrator.resources import run_measured
 
 _DAY = np.timedelta64(1, "D")
 _NS = np.timedelta64(1, "ns")
@@ -458,7 +459,11 @@ class VodPhase:
                 chunks=chunks,
             )
             fork = None if block is None else session.fork()
-            futures.append((plan, self.submit(compute_vod_into_fork, fork, task)))
+            # The input is read from the store, not from files: its size is
+            # not known before the task runs, so it is logged as 0.
+            futures.append(
+                (plan, self.submit(run_measured, 0, compute_vod_into_fork, fork, task))
+            )
 
         writes: list[VodDayWrite] = []
         forks: list[ForkSession] = []

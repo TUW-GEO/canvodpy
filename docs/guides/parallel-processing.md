@@ -220,7 +220,9 @@ the tasks per day and per worker, as a warning when the budget lowered
 the workers or the days per unit. After
 each task, the worker writes its memory before the task and its peak
 during the task (`worker_memory_peak`), so you can check the estimates
-on your data and set the budget.
+on your data and set the budget. The VOD phase's tasks log the same
+event, with `task` set to `compute_vod_into_fork` and `input_mb` 0,
+since they read from the GNSS store, not from files.
 
 The run also writes the memory use of the machine to the log before each
 unit (`memory_stats`). Every run also writes memory, CPU, and disk use
