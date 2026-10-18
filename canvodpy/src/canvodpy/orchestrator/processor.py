@@ -3852,7 +3852,8 @@ class RinexDataProcessor:
         of runs that committed since the day was planned (#351). With a
         ``gnss_store_strategy`` other than ``skip`` the run writes over the
         stored data on purpose; such a file's log-book row says
-        ``overwritten``.
+        ``overwritten``. The log book comes from the run's copy, which
+        reads only the rows committed since it last looked (ADR 0021).
 
         Raises
         ------
@@ -3860,11 +3861,10 @@ class RinexDataProcessor:
             With ``gnss_store_strategy: skip``, naming each such file and the
             stored files it overlaps.
         """
-        root = zarr.open_group(session.store, mode="r")
         for group in sorted({n.group for n in numbers if n.action == WRITTEN}):
-            if f"{group}/metadata/table" not in root:
+            stored = self.site.gnss_store.log_books.rows(session, group)
+            if stored is None:
                 continue
-            stored = self.site.gnss_store.load_metadata(session.store, group)
             overlapping = [
                 n
                 for n in numbers
@@ -4063,12 +4063,16 @@ class RinexDataProcessor:
             )
         duration = time.perf_counter() - t_start
         log.info("Committed forked day %s (snapshot: %s...)", yyyydoy, snapshot_id[:8])
+        # One commit wrote every receiver of the day: one record, so the
+        # run's stages add up to its wall time (#423).
+        record_stage_timing(
+            "writing", duration, receivers=",".join(sorted(written)), date_key=yyyydoy
+        )
         for group, r in written.items():
             r.snapshot_id = snapshot_id
             r.duration_seconds = duration
             if self._keeper_tags_enabled:
                 store.create_keeper_tag(group, yyyydoy, snapshot_id)
-            record_stage_timing("writing", duration, receiver=group, date_key=yyyydoy)
             self._icechunk_log.info(
                 "batch_write_complete",
                 receiver=group,

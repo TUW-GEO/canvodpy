@@ -46,6 +46,7 @@ from canvod.store_metadata.location import (
     repository_config,
     store_location,
 )
+from canvod.store_metadata.log_book import LogBooks, read_log_book
 from canvod.store_metadata.summary import cadence_ranges
 from canvod.utils.logging import get_run_id, stage_timer
 from canvod.utils.tools import (
@@ -683,6 +684,8 @@ class MyIcechunkStore:
             )
 
         self._repo = None
+        #: Each group's log book, read whole once (ADR 0021).
+        self.log_books = LogBooks()
 
         # Remove .DS_Store files that corrupt icechunk ref listing on macOS
         self._clean_ds_store()
@@ -3643,23 +3646,7 @@ class MyIcechunkStore:
         pl.DataFrame
             Metadata table.
         """
-        zroot = zarr.open_group(store, mode="r")
-        zmeta = zroot[f"{group_name}/metadata/table"]
-
-        # Read all columns into a dict of numpy arrays
-        data = {col: zmeta[col][...] for col in zmeta.array_keys()}
-
-        # Build Polars DataFrame
-        df = pl.DataFrame(data)
-
-        # Convert numeric datetime64 columns back to proper Polars datetimes
-        if "start" in df.columns and df["start"].dtype in (pl.Int64, pl.Float64):
-            df = df.with_columns(pl.col("start").cast(pl.Datetime("ns")))
-        if "end" in df.columns and df["end"].dtype in (pl.Int64, pl.Float64):
-            df = df.with_columns(pl.col("end").cast(pl.Datetime("ns")))
-        if "written_at" in df.columns and df["written_at"].dtype == pl.Utf8:
-            df = df.with_columns(pl.col("written_at").str.to_datetime("%+"))
-        return df
+        return read_log_book(store, group_name)
 
     def read_metadata_table(self, session: Any, group_name: str) -> pl.DataFrame:
         """Read the metadata table from a session.
@@ -3907,7 +3894,11 @@ class MyIcechunkStore:
     def load_metadata_for_dedup(
         self, group_name: str, branch: str = "main"
     ) -> pl.DataFrame | None:
-        """Load ``{group_name}``'s metadata table once, for reuse across dedup checks.
+        """``{group_name}``'s metadata table at the tip of ``branch``.
+
+        Read whole the first time, afterwards only the rows committed since
+        (:class:`~canvod.store_metadata.log_book.LogBooks`): a run asks for it every
+        day, and a whole read grows with the store (ADR 0021).
 
         ``batch_check_existing``/``check_temporal_overlaps`` each used to call
         ``load_metadata()`` independently -- two full-table reads per batch,
@@ -3923,12 +3914,12 @@ class MyIcechunkStore:
         try:
             with self.readonly_session(branch) as session:
                 t0 = time.perf_counter()
-                df = self.load_metadata(session.store, group_name)
+                df = self.log_books.rows(session, group_name)
                 self._logger.info(
                     "metadata_table_loaded",
                     duration_seconds=round(time.perf_counter() - t0, 4),
                     group=group_name,
-                    rows=df.height,
+                    rows=None if df is None else df.height,
                     caller="load_metadata_for_dedup",
                 )
                 return df

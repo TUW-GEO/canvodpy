@@ -77,6 +77,11 @@ end, filename, the dataset attributes, and the preprocessing record (see
 In a group made of day blocks, it also records how many epochs of the file
 were stored (`epochs`). Every other value in it is text, JSON, or a time.
 
+The log book only grows: rows are appended, never changed. A run reads
+each group's log book whole the first time it needs it and afterwards only
+the rows committed since, by itself or by another run, so checking a day
+against it takes the same time however many days the store holds.
+
 ## Day blocks
 
 A new GNSS store is written as day blocks
