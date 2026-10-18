@@ -1003,11 +1003,12 @@ def process_sbf(
 def process_day(site: str, yyyydoy: str) -> dict:
     """Process one day of all receivers of a site and write the GNSS store.
 
-    Runs ``Site(site).pipeline().process_date()``, the same code as
+    Runs ``Site(site).pipeline().run()`` without VOD, the same code as
     ``canvodpy run``: file discovery, auxiliary data, reader, receiver
     position, satellite geometry, ``processing.preprocessing`` and the
-    store write with its log book. Each receiver is read with the
-    ``reader_format`` of its site configuration. The run is recorded in
+    store write with its log book. Nothing is read back; the DAG computes
+    VOD in its own task (:func:`calculate_vod`). Each receiver is read with
+    the ``reader_format`` of its site configuration. The run is recorded in
     the run history like one of ``canvodpy run``.
 
     Parameters
@@ -1020,7 +1021,8 @@ def process_day(site: str, yyyydoy: str) -> dict:
     Returns
     -------
     dict
-        ``{"site", "yyyydoy", "groups": {group: n_epochs}}``.
+        ``{"site", "yyyydoy", "groups": [group, ...]}``, the groups that
+        stored the day.
 
     Raises
     ------
@@ -1033,24 +1035,23 @@ def process_day(site: str, yyyydoy: str) -> dict:
     from canvodpy.api import Site
 
     date_obj = _resolve_date(yyyydoy)
+    day = date_obj.to_str()
     # Inside the block, so the run history records the run as failed.
     with Site(site).pipeline() as pipeline:
-        datasets = pipeline.process_date(date_obj.to_str())
-        if not datasets:
-            msg = f"Nothing processed for {site} {date_obj.to_str()}; see the log"
+        groups = [
+            group
+            for unit in pipeline.run(day, day, vod_analyses=())
+            for group in unit.days.get(day, ())
+        ]
+        if not groups:
+            msg = f"Nothing processed for {site} {day}; see the log"
             raise RuntimeError(msg)
     if pipeline.failed_receiver_days:
         failed = ", ".join(f"{r} {d}" for r, d in pipeline.failed_receiver_days)
         msg = f"Failed receiver-days of {site}: {failed}; see the log"
         raise RuntimeError(msg)
 
-    return {
-        "site": site,
-        "yyyydoy": date_obj.to_str(),
-        "groups": {
-            name: int(ds.sizes.get("epoch", 0)) for name, ds in datasets.items()
-        },
-    }
+    return {"site": site, "yyyydoy": day, "groups": groups}
 
 
 # ---------------------------------------------------------------------------

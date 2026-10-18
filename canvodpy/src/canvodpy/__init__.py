@@ -13,8 +13,7 @@ Quick Start
     >>> from canvodpy import Site
     >>> site = Site("ExampleSite")
     >>> with site.pipeline() as pipeline:
-    ...     data = pipeline.process_date("2025001")
-    >>> vod = site.vod.compute_day_all(data)  # every configured analysis
+    ...     units = list(pipeline.run("2025001", "2025001"))  # GNSS, then VOD
 
 The single-step functions of ``canvodpy.functional`` (``read_rinex`` and
 the others) are deprecated: they are no longer maintained and give different
@@ -46,12 +45,12 @@ Default variables and settings are in `globals.py`.
 
 Examples
 --------
-Process a week, computing VOD for every configured analysis per day:
+Process a week, then compute VOD for every configured analysis:
     >>> from canvodpy import Site
     >>> site = Site("ExampleSite")
     >>> with site.pipeline() as pipeline:
-    ...     for date, datasets in pipeline.process_range("2025001", "2025007"):
-    ...         site.vod.compute_day_all(datasets)
+    ...     for unit in pipeline.run("2025001", "2025007"):
+    ...         print(sorted(unit.days), unit.vod.written)
 
 """
 

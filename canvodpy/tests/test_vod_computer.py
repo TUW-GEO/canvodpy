@@ -368,51 +368,86 @@ class TestVodComputerCompute:
         assert VodComputer._date_label(two_days) == "2025001-2025002"
 
 
-class TestCliVodForDay:
-    """``canvodpy run`` computes through VodComputer, skipping failures."""
+class TestDayWriteDeprecated:
+    """Writing VOD from per-day datasets is deprecated (#427), still works."""
 
-    def test_skips_missing_groups_and_failures(self):
-        from canvodpy.cli.run import _compute_vod_for_day
+    def test_compute_day_warns_when_it_writes(self):
+        site = _make_site({"a": _make_analysis_cfg()})
+        vc = VodComputer(site)
 
-        analyses = {
-            "ok": _make_analysis_cfg(),
-            "missing": _make_analysis_cfg(canopy="canopy_02"),
-            "broken": _make_analysis_cfg(),
-        }
-        vc = VodComputer(_make_site(analyses))
-        datasets = _day_datasets()
-        real_compute_day = vc.compute_day
+        with (
+            unittest.mock.patch("canvodpy.vod_computer.ensure_vod_store_metadata"),
+            pytest.warns(FutureWarning, match="compute_days") as warned,
+        ):
+            vc.compute_day(_day_datasets(), "a")
 
-        def compute_day(ds, name, *, write):
-            if name == "broken":
-                raise ValueError("boom")
-            return real_compute_day(ds, name, write=write)
+        assert len(warned) == 1
+        site._site.store_vod_analyses_batch.assert_called_once()
 
-        reporter = unittest.mock.MagicMock()
-        with unittest.mock.patch.object(vc, "compute_day", side_effect=compute_day):
-            results = _compute_vod_for_day(vc, datasets, analyses, "2025001", reporter)
+    def test_compute_day_all_and_write_day_warn(self):
+        site = _make_site({"a": _make_analysis_cfg()})
+        vc = VodComputer(site)
 
-        assert set(results) == {"ok"}
-        xr.testing.assert_identical(
-            results["ok"], vc.compute_day(datasets, "ok", write=False)
+        with (
+            unittest.mock.patch("canvodpy.vod_computer.ensure_vod_store_metadata"),
+            pytest.warns(FutureWarning, match="compute_day_all"),
+        ):
+            results = vc.compute_day_all(_day_datasets())
+        with (
+            unittest.mock.patch("canvodpy.vod_computer.ensure_vod_store_metadata"),
+            pytest.warns(FutureWarning, match="write_day"),
+        ):
+            vc.write_day(_day_datasets(), results)
+
+        assert site._site.store_vod_analyses_batch.call_count == 2
+
+    def test_computing_without_writing_does_not_warn(self, recwarn):
+        vc = VodComputer(_make_site({"a": _make_analysis_cfg()}))
+
+        vc.compute_day(_day_datasets(), "a", write=False)
+
+        assert not [w for w in recwarn if issubclass(w.category, FutureWarning)]
+
+
+class TestCliVodUnitReport:
+    """``canvodpy run`` says what the VOD phase did with a unit (#427)."""
+
+    def test_written_and_missing_days_are_named(self):
+        import numpy as np
+        from canvodpy.api import RunUnit
+        from canvodpy.cli.run import _report_vod_unit
+        from canvodpy.orchestrator.vod_phase import VodUnitReport
+
+        day = np.datetime64("2025-01-01", "D")
+        report = VodUnitReport(
+            written={"ok": [day]},
+            missing={"missing": [(day, "no data in canopy_02")]},
         )
-        reporter.on_vod_failed.assert_called_once_with("broken", "boom")
-
-    def test_a_skipped_analysis_says_which_group_has_no_data(self):
-        # A receiver-day that failed leaves its group out of the day's
-        # datasets; the run says so instead of skipping silently (#387).
-        from canvodpy.cli.run import _compute_vod_for_day
-
-        analyses = {"missing": _make_analysis_cfg(canopy="canopy_02")}
-        vc = VodComputer(_make_site(analyses))
         reporter = unittest.mock.MagicMock()
 
-        _compute_vod_for_day(vc, _day_datasets(), analyses, "2025001", reporter)
+        written = _report_vod_unit(RunUnit(days={"2025001": ()}, vod=report), reporter)
 
-        reporter.log.assert_called_once_with(
-            "  VOD missing: skipped, no data of canopy_02, "
-            "reference_01_canopy_02 on 2025001 (the log says why)"
+        assert written == 1
+        # A day without VOD says which group has no data (#387).
+        assert reporter.log.call_args_list == [
+            unittest.mock.call("  VOD ok: 1 days written"),
+            unittest.mock.call(
+                "  VOD missing: no VOD on 2025-01-01: no data in canopy_02"
+            ),
+        ]
+
+    def test_a_failed_vod_phase_names_its_days(self):
+        from canvodpy.api import RunUnit
+        from canvodpy.cli.run import _report_vod_unit
+
+        unit = RunUnit(
+            days={"2025001": (), "2025002": ()}, vod_error=ValueError("boom")
         )
+        reporter = unittest.mock.MagicMock()
+
+        assert _report_vod_unit(unit, reporter) == 0
+        (line,), _ = reporter.log.call_args
+        assert line.startswith("  VOD 2025001..2025002: FAILED: boom")
 
 
 class TestVodOutputOptions:

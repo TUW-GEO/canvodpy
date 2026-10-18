@@ -1,16 +1,18 @@
 """VOD computation and storage for a site: the single VOD implementation.
 
 Every entry point computes and stores VOD through this class: the Python
-``site.vod`` object, ``canvodpy run`` (per day, during processing),
-``canvodpy vod`` and ``canvodpy vod-reconcile`` (from the GNSS store).
+``site.vod`` object, ``canvodpy run`` and ``Pipeline.run()`` (after each
+unit of days), ``canvodpy vod`` and ``canvodpy vod-reconcile`` (from the
+GNSS store).
 
 - ``compute_day()`` / ``compute_day_all()`` — from the per-day datasets
   yielded by ``Pipeline.process_range()``. Loads them into memory, then
-  computes.
+  computes. Writing with them (``write=True``) is deprecated.
 - ``compute_days()``: from the site's GNSS Icechunk store, the VOD phase
   (ADR 0021): one task per analysis pair and day in the worker pool, one
   commit per unit of days (:mod:`canvodpy.orchestrator.vod_phase`).
-  ``canvodpy vod`` and ``canvodpy vod-reconcile`` use it.
+  ``Pipeline.run()``, ``canvodpy run``, ``canvodpy vod`` and
+  ``canvodpy vod-reconcile`` use it.
 - ``compute_bulk()`` / ``compute_bulk_all()``: from the site's GNSS
   Icechunk store, returning the VOD. They write with ``compute_days()`` and
   read the VOD back; without writing, they read the full (or filtered) time
@@ -18,21 +20,18 @@ Every entry point computes and stores VOD through this class: the Python
 
 All of them compute with :func:`compute_vod` (the calculator, which aligns
 canopy and reference on their shared epochs and signals). ``compute_day()``
-and ``compute_day_all()`` write with ``_write()`` (one commit per day for all
-analyses written together, after the VOD store metadata).
-``canvodpy run`` adds only terminal conveniences: it skips a failing
-analysis instead of raising, and retries the store write on transient
-errors.
+and ``compute_day_all()`` write (deprecated) with ``_write()`` (one commit per
+day for all analyses written together, after the VOD store metadata).
 
 Examples
 --------
-Per day (inside a processing loop)::
+Per day, in memory (inside a processing loop)::
 
     vod = VodComputer(site)
 
     with site.pipeline() as pipeline:
         for date_key, datasets in pipeline.process_range(...):
-            vod.compute_day_all(datasets)
+            vod.compute_day_all(datasets, write=False)
 
 Days from the GNSS store, in the worker pool::
 
@@ -42,11 +41,12 @@ Days from the GNSS store, in the worker pool::
 Custom calculator::
 
     vod = VodComputer(site, calculator="dual_freq_vod")
-    vod.compute_day(datasets, "canopy_01_vs_reference_01")
+    vod.compute_day(datasets, "canopy_01_vs_reference_01", write=False)
 """
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping, Sequence
 from concurrent.futures import Executor
 from datetime import datetime
@@ -59,6 +59,14 @@ from canvod.config.models import (
     vod_preprocessing_record,
 )
 from canvod.utils.tools import deprecated
+
+#: Why writing VOD from per-day datasets is deprecated (#427).
+_DAY_WRITE_DEPRECATED = (
+    "Writing VOD with VodComputer.{method}() is left over from development "
+    "and will be removed with the next major version. Pass write=False to "
+    "compute only, and write VOD with VodComputer.compute_days(<days>) or "
+    "`canvodpy run`, which compute it from the GNSS store."
+)
 
 if TYPE_CHECKING:
     import xarray as xr
@@ -358,7 +366,12 @@ class VodComputer:
         """
         vod_ds = self._compute_from_datasets(datasets, analysis_name)
         if write:
-            self.write_day(datasets, {analysis_name: vod_ds})
+            warnings.warn(
+                _DAY_WRITE_DEPRECATED.format(method="compute_day"),
+                FutureWarning,
+                stacklevel=2,
+            )
+            self._write_day(datasets, {analysis_name: vod_ds})
         return vod_ds
 
     def compute_day_all(
@@ -393,10 +406,22 @@ class VodComputer:
             name: self._compute_from_datasets(datasets, name)
             for name in self._site.vod_analyses
         }
-        if write and results:
-            self.write_day(datasets, results)
+        if write:
+            warnings.warn(
+                _DAY_WRITE_DEPRECATED.format(method="compute_day_all"),
+                FutureWarning,
+                stacklevel=2,
+            )
+            if results:
+                self._write_day(datasets, results)
         return results
 
+    @deprecated(
+        "VodComputer.write_day() is left over from development and will be "
+        "removed with the next major version. Use "
+        "VodComputer.compute_days(<days>) or `canvodpy run`, which compute "
+        "and write VOD from the GNSS store."
+    )
     def write_day(
         self,
         datasets: dict[str, xr.Dataset],
@@ -418,6 +443,14 @@ class VodComputer:
         dict[str, VodWriteResult]
             Store write result per ``{calculator}/{analysis}`` group.
         """
+        return self._write_day(datasets, results)
+
+    def _write_day(
+        self,
+        datasets: dict[str, xr.Dataset],
+        results: dict[str, xr.Dataset],
+    ) -> dict[str, Any]:
+        """Write VOD results computed from ``datasets`` in one commit."""
         entries = []
         for name, vod_ds in results.items():
             canopy_ds, sky_ds = self._aligned_pair(datasets, name)
@@ -821,8 +854,11 @@ class VodComputer:
             self._site, self._calculator_name, [name for name, *_ in entries]
         )
         results: dict[str, Any] = {}
-        for items in day_items:
-            results.update(self._site._site.store_vod_analyses_batch(items=items))
+        with warnings.catch_warnings():
+            # The deprecated paths warn their caller once, not here again.
+            warnings.simplefilter("ignore", FutureWarning)
+            for items in day_items:
+                results.update(self._site._site.store_vod_analyses_batch(items=items))
         for analysis_name, *_ in entries:
             self.log.info(
                 "vod_written_to_store",

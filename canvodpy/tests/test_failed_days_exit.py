@@ -34,13 +34,13 @@ def _one_failed_day(self, **_kwargs):
     """The run of DAY: canopy_01 fails, reference_01 is written."""
     self._finish_receiver_day("canopy_01", DAY, "failed")
     self._finish_receiver_day("reference_01", DAY, "written", bytes_added=1)
-    yield DAY, {}, {}
+    yield {DAY: ("reference_01",)}
 
 
 def _all_written(self, **_kwargs):
     self._finish_receiver_day("canopy_01", DAY, "written", bytes_added=1)
     self._finish_receiver_day("reference_01", DAY, "skipped")
-    yield DAY, {}, {}
+    yield {DAY: ("canopy_01", "reference_01")}
 
 
 def _cli_run():
@@ -53,7 +53,7 @@ def _cli_run():
 
 
 def test_a_failed_receiver_day_makes_the_exit_code_3(site, monkeypatch) -> None:
-    monkeypatch.setattr(PipelineOrchestrator, "process_by_date", _one_failed_day)
+    monkeypatch.setattr(PipelineOrchestrator, "store_by_unit", _one_failed_day)
 
     result = _cli_run()
 
@@ -64,7 +64,7 @@ def test_a_failed_receiver_day_makes_the_exit_code_3(site, monkeypatch) -> None:
 
 
 def test_written_and_skipped_days_exit_0(site, monkeypatch) -> None:
-    monkeypatch.setattr(PipelineOrchestrator, "process_by_date", _all_written)
+    monkeypatch.setattr(PipelineOrchestrator, "store_by_unit", _all_written)
 
     result = _cli_run()
 
@@ -75,11 +75,11 @@ def test_written_and_skipped_days_exit_0(site, monkeypatch) -> None:
 def test_site_pipeline_lists_the_failed_receiver_days(site, monkeypatch) -> None:
     from canvodpy import Site
 
-    monkeypatch.setattr(PipelineOrchestrator, "process_by_date", _one_failed_day)
+    monkeypatch.setattr(PipelineOrchestrator, "store_by_unit", _one_failed_day)
 
     with Site(testing.SITE_KEY).pipeline() as pipeline:
         assert pipeline.failed_receiver_days == ()
-        list(pipeline.process_range(DAY, DAY))
+        list(pipeline.run(DAY, DAY, vod_analyses=()))
 
     assert pipeline.failed_receiver_days == (("canopy_01", DAY),)
 
@@ -87,11 +87,7 @@ def test_site_pipeline_lists_the_failed_receiver_days(site, monkeypatch) -> None
 def test_process_day_raises_when_a_receiver_day_failed(site, monkeypatch) -> None:
     from canvodpy.workflows.tasks import process_day
 
-    def one_failed(self, **_kwargs):
-        self._finish_receiver_day("canopy_01", DAY, "failed")
-        yield DAY, {"reference_01": None}, {}
-
-    monkeypatch.setattr(PipelineOrchestrator, "process_by_date", one_failed)
+    monkeypatch.setattr(PipelineOrchestrator, "store_by_unit", _one_failed_day)
 
     with pytest.raises(RuntimeError, match=f"canopy_01 {DAY}"):
         process_day(testing.SITE_KEY, DAY)

@@ -8,6 +8,7 @@ for a research site and provides high-level operations across them.
 from __future__ import annotations
 
 import functools
+import warnings
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
@@ -572,6 +573,12 @@ class GnssResearchSite:
             ds = ds.drop_duplicates("epoch", keep="last")
         return ds
 
+    @deprecated(
+        "GnssResearchSite.store_vod_analysis() is left over from development "
+        "and will be removed with the next major version. Use "
+        "canvodpy.Site(<site>).vod.compute_days(<days>) or `canvodpy vod`, "
+        "which compute and write VOD from the GNSS store."
+    )
     def store_vod_analysis(
         self,
         vod_dataset: xr.Dataset,
@@ -631,22 +638,31 @@ class GnssResearchSite:
         LayoutError
             If the group is made of day blocks and ``cadences`` is ``None``.
         """
-        results = self.store_vod_analyses_batch(
-            [
-                {
-                    "vod_dataset": vod_dataset,
-                    "analysis_name": analysis_name,
-                    "calculator_name": calculator_name,
-                    "source_file_hashes": source_file_hashes,
-                    "source_gnss_stores": source_gnss_stores,
-                    "commit_message": commit_message,
-                    "cadences": cadences,
-                }
-            ],
-            dedup=dedup,
-        )
+        with warnings.catch_warnings():
+            # This method warned its caller already.
+            warnings.simplefilter("ignore", FutureWarning)
+            results = self.store_vod_analyses_batch(
+                [
+                    {
+                        "vod_dataset": vod_dataset,
+                        "analysis_name": analysis_name,
+                        "calculator_name": calculator_name,
+                        "source_file_hashes": source_file_hashes,
+                        "source_gnss_stores": source_gnss_stores,
+                        "commit_message": commit_message,
+                        "cadences": cadences,
+                    }
+                ],
+                dedup=dedup,
+            )
         return results[f"{calculator_name}/{analysis_name}"].written
 
+    @deprecated(
+        "GnssResearchSite.store_vod_analyses_batch() is left over from "
+        "development and will be removed with the next major version. Use "
+        "canvodpy.Site(<site>).vod.compute_days(<days>) or `canvodpy vod`, "
+        "which compute and write VOD from the GNSS store."
+    )
     def store_vod_analyses_batch(
         self,
         items: Sequence[dict[str, Any]],
@@ -937,9 +953,8 @@ class GnssResearchSite:
     @deprecated(
         "GnssResearchSite.store_vod() is left over from development and will "
         "be removed with the next major version. Use "
-        "canvodpy.Site(<site>).vod.compute_bulk(<analysis>) or "
-        "GnssResearchSite.store_vod_analysis() instead, which deduplicate and "
-        "record the source files in the VOD log book."
+        "canvodpy.Site(<site>).vod.compute_days(<days>) instead, which "
+        "deduplicates and records the source files in the VOD log book."
     )
     def store_vod(
         self,
