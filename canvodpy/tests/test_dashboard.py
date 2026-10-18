@@ -23,6 +23,7 @@ import pytest
 from canvodpy.cli.dashboards.charts import (
     chart_categories,
     chart_palette,
+    split_days,
     stage_stats,
     store_rows,
     time_bars,
@@ -83,18 +84,19 @@ def _seed(log_dir: Path) -> dict[str, list[float]]:
         history.record_stage(rid1, "reading", 1.5, receiver="canopy_01", day="2025001")
         history.record_stage(rid1, "reading", 1.7, receiver="canopy_01", day="2025002")
         history.record_stage(rid1, "writing", 3.2, receiver="canopy_01", day="2025001")
-        # The on-disk size of the stores, measured by the background thread.
+        # The on-disk size of the stores, measured by the background thread
+        # against the data days the run had finished.
         history.record_store_size(
-            rid1, "GNSS store", day="2026-10-14", bytes=2_000_000_000
+            rid1, "GNSS store", day="2025001", bytes=2_000_000_000, walk_seconds=0.01
         )
         history.record_store_size(
-            rid1, "VOD store", day="2026-10-14", bytes=800_000_000
+            rid1, "VOD store", day="2025001", bytes=800_000_000, walk_seconds=0.02
         )
         history.record_store_size(
-            rid1, "GNSS store", day="2026-10-15", bytes=2_400_000_000
+            rid1, "GNSS store", day="2025002", bytes=2_400_000_000, walk_seconds=0.01
         )
         history.record_store_size(
-            rid1, "VOD store", day="2026-10-15", bytes=900_000_000
+            rid1, "VOD store", day="2025002", bytes=900_000_000, walk_seconds=0.03
         )
         history.record_resources(
             rid1, cpu_percent=50.0, memory_percent=20.0, free_disk={"/stores": 10}
@@ -590,7 +592,8 @@ def test_line_time_axis_keeps_the_data_order() -> None:
 def test_stage_stats_total_and_per_day_median() -> None:
     # The median is over the stage's per-day seconds, where the per-day
     # totals can differ from the mean; a stage that names no day takes the
-    # median of its records.
+    # median of its records. A unit of days (a record whose day names
+    # several days joined by commas) is split evenly over its days.
     timings = [
         StageTiming(
             datetime.now(UTC), "reading", 1.0, "ok", receiver="c1", day="2025001", pid=1
@@ -604,7 +607,7 @@ def test_stage_stats_total_and_per_day_median() -> None:
             10.0,
             "ok",
             receiver="c1",
-            day="2025003",
+            day="2025003,2025004,2025005,2025006,2025007",
             pid=1,
         ),
         StageTiming(
@@ -627,10 +630,11 @@ def test_stage_stats_total_and_per_day_median() -> None:
         ),
     ]
     rows = {row["Stage"]: row for row in stage_stats(timings)}
-    # per-day totals are [1, 2, 10]; median 2.0, mean 4.33. Median != mean.
+    # per-day totals are [1, 2, 2, 2, 2, 2, 2]; median 2.0, mean 13/7.
+    # The 10 s of the unit are 2 s per day, so the median is 2.0, equal to
+    # the mean here but per day, not per unit.
     assert rows["reading"]["Total (s)"] == 13.0
     assert rows["reading"]["Median (s)"] == 2.0
-    assert rows["reading"]["Median (s)"] != 13.0 / 3
     # A stage that names no day takes the median of its records.
     assert rows["day_block_growth"]["Median (s)"] == 6.0
     # Rows are sorted by total, high to low.
@@ -640,26 +644,39 @@ def test_stage_stats_total_and_per_day_median() -> None:
     ]
 
 
+def test_split_days_splits_a_unit_evenly_over_its_days() -> None:
+    # A record of a unit of days names its days joined by commas; its
+    # seconds are split evenly, so a unit is not one long point.
+    assert split_days("2025168,2025169", 4.0) == [
+        ("2025168", 2.0),
+        ("2025169", 2.0),
+    ]
+    assert split_days("2025168", 3.0) == [("2025168", 3.0)]
+    # A record without a day yields nothing (time per day groups by day).
+    assert split_days(None, 3.0) == []
+    assert split_days("", 3.0) == []
+
+
 def test_store_rows_one_row_per_store_per_day_plus_total() -> None:
     # One row per (day, store) and a Total row per day, the sum of the stores
     # recorded that day, ordered by day.
     sizes = [
-        StoreSize("GNSS store", "2026-10-14", datetime.now(UTC), 2000),
-        StoreSize("VOD store", "2026-10-14", datetime.now(UTC), 500),
-        StoreSize("GNSS store", "2026-10-15", datetime.now(UTC), 3000),
+        StoreSize("GNSS store", "2025001", datetime.now(UTC), 2000),
+        StoreSize("VOD store", "2025001", datetime.now(UTC), 500),
+        StoreSize("GNSS store", "2025002", datetime.now(UTC), 3000),
     ]
     assert store_rows(sizes) == [
-        {"Day": "2026-10-14", "Store": "GNSS store", "Size (bytes)": 2000},
-        {"Day": "2026-10-14", "Store": "VOD store", "Size (bytes)": 500},
-        {"Day": "2026-10-14", "Store": "Total", "Size (bytes)": 2500},
-        {"Day": "2026-10-15", "Store": "GNSS store", "Size (bytes)": 3000},
-        {"Day": "2026-10-15", "Store": "Total", "Size (bytes)": 3000},
+        {"Day": "2025001", "Store": "GNSS store", "Size (bytes)": 2000},
+        {"Day": "2025001", "Store": "VOD store", "Size (bytes)": 500},
+        {"Day": "2025001", "Store": "Total", "Size (bytes)": 2500},
+        {"Day": "2025002", "Store": "GNSS store", "Size (bytes)": 3000},
+        {"Day": "2025002", "Store": "Total", "Size (bytes)": 3000},
     ]
 
 
 def test_store_size_record_and_older_history(tmp_path: Path) -> None:
     # The record upserts on (run, store, day) so a later measure of the same
-    # day replaces the earlier one.
+    # day replaces the earlier one, and keeps how long the walk took.
     log_dir = tmp_path / "logs"
     rid = "fangorn-20261014-100000"
     with RunHistory.open(log_dir) as history:
@@ -673,13 +690,21 @@ def test_store_size_record_and_older_history(tmp_path: Path) -> None:
             workers=1,
             started_at=datetime(2026, 10, 14, 10, 0, 0, tzinfo=UTC),
         )
-        history.record_store_size(rid, "GNSS store", day="2026-10-14", bytes=1000)
-        history.record_store_size(rid, "GNSS store", day="2026-10-14", bytes=2000)
-        history.record_store_size(rid, "VOD store", day="2026-10-14", bytes=500)
+        history.record_store_size(
+            rid, "GNSS store", day="2025001", bytes=1000, walk_seconds=0.5
+        )
+        history.record_store_size(
+            rid, "GNSS store", day="2025001", bytes=2000, walk_seconds=0.7
+        )
+        history.record_store_size(
+            rid, "VOD store", day="2025001", bytes=500, walk_seconds=0.3
+        )
         sizes = history.store_sizes(rid)
-        assert [(size.store, size.day, size.bytes) for size in sizes] == [
-            ("GNSS store", "2026-10-14", 2000),
-            ("VOD store", "2026-10-14", 500),
+        assert [
+            (size.store, size.day, size.bytes, size.walk_seconds) for size in sizes
+        ] == [
+            ("GNSS store", "2025001", 2000, 0.7),
+            ("VOD store", "2025001", 500, 0.3),
         ]
 
     # An older run history (no store_sizes table) still opens and reports none.
