@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import json
 import warnings
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Iterable, Mapping
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
 import zarr
@@ -79,6 +80,18 @@ def _array(group: zarr.Group, path: str) -> zarr.Array:
         msg = f"{path} in {group.path or '/'} is a group, not an array"
         raise TypeError(msg)
     return member
+
+
+class _Book(Protocol):
+    """Log-book columns: a whole log book (:class:`_LogBook`) or new rows."""
+
+    columns: set[str]
+
+    def __contains__(self, column: str) -> bool: ...
+
+    def __getitem__(self, column: str) -> np.ndarray: ...
+
+    def read(self, column: str) -> np.ndarray: ...
 
 
 class _LogBook:
@@ -220,8 +233,13 @@ def logged_keys(group: zarr.Group) -> list[str | None]:
     return _logged_keys(_log_book(group), group.path)
 
 
-def _logged_keys(book: _LogBook | None, path: str) -> list[str | None]:
+def _logged_keys(book: _Book | None, path: str) -> list[str | None]:
     """:func:`logged_keys` of the group at ``path``, from its log book."""
+    return _key_array(book, path).tolist()
+
+
+def _key_array(book: _Book | None, path: str) -> np.ndarray:
+    """:func:`logged_keys` as an object array, from the log book."""
     if book is None:
         msg = (
             f"Day-block group {path} has no log book; its epoch count "
@@ -256,34 +274,83 @@ def _logged_keys(book: _LogBook | None, path: str) -> list[str | None]:
             ["skipped" if str(e) == "True" else "written" for e in exists],
             dtype=object,
         )
-    names = (
-        book["canonical_name"]
-        if key_column == "rinex_hash" and "canonical_name" in keys
-        else np.full(hashes.shape, "", dtype=object)
-    )
-    out: list[str | None] = []
-    for file_hash, name, action, start in zip(
-        hashes, names, actions, starts, strict=True
-    ):
-        if action not in stored_actions:
-            out.append(None)
-        elif key_column == "rinex_hash":
-            out.append(str(name or file_hash))
+    stored = _is_stored(actions, stored_actions)
+    if key_column == "rinex_hash":
+        if "canonical_name" in keys:
+            names = book["canonical_name"]
+            key_values = np.where(names != "", names, hashes)
         else:
-            day = np.datetime64(start, "ns").astype("M8[D]")
-            out.append(f"{path}@{day}")
+            key_values = hashes
+    else:
+        days = np.datetime_as_string(
+            np.asarray(starts).astype("M8[ns]").astype("M8[D]")
+        )
+        key_values = np.array([f"{path}@{day}" for day in days], dtype=object)
+    out = np.full(len(actions), None, dtype=object)
+    out[stored] = [str(k) for k in key_values[stored]]
     return out
 
 
-def _logged_files(
-    group: zarr.Group, book: _LogBook | None
-) -> dict[str, tuple[int, np.datetime64, np.datetime64]]:
+def _is_stored(actions: np.ndarray, stored_actions: Collection[str]) -> np.ndarray:
+    """Whether each row's action stores data."""
+    return np.isin(np.asarray(actions, dtype=object), list(stored_actions))
+
+
+@dataclass(frozen=True)
+class _Files:
+    """Stored writes, one per key: epochs with data, first and last epoch."""
+
+    keys: np.ndarray
+    counts: np.ndarray
+    starts: np.ndarray
+    ends: np.ndarray
+
+    def __len__(self) -> int:
+        return int(self.keys.size)
+
+    def take(self, rows: np.ndarray) -> _Files:
+        return _Files(
+            self.keys[rows], self.counts[rows], self.starts[rows], self.ends[rows]
+        )
+
+
+_NO_FILES = _Files(
+    np.array([], dtype=object),
+    np.array([], dtype=np.int64),
+    np.array([], dtype="M8[ns]"),
+    np.array([], dtype="M8[ns]"),
+)
+
+
+def _latest_rows(keys: np.ndarray) -> np.ndarray:
+    """The row of each key's last occurrence in ``keys``, in row order."""
+    if not keys.size:
+        return np.array([], dtype=np.intp)
+    _, first_reversed = np.unique(keys[::-1], return_index=True)
+    return np.sort(keys.size - 1 - first_reversed)
+
+
+def _merged(files: Iterable[_Files]) -> _Files:
+    """Writes of several groups, a key's last write counting (as in a dict)."""
+    parts = [f for f in files if len(f)]
+    if not parts:
+        return _NO_FILES
+    joined = _Files(
+        *(np.concatenate([getattr(f, a) for f in parts]) for a in _FILE_FIELDS)
+    )
+    return joined.take(_latest_rows(joined.keys))
+
+
+_FILE_FIELDS = ("keys", "counts", "starts", "ends")
+
+
+def _logged_files(group: zarr.Group, book: _Book | None) -> _Files:
     """Stored writes of a day-block group: epochs with data, first and last.
 
     From the group's log book; the latest stored row of a key counts
     (:func:`logged_keys`). A file stored in several groups counts once.
     """
-    keys = _logged_keys(book, group.path)
+    keys = _key_array(book, group.path)
     assert book is not None
     if not {"end", "epochs"} <= book.columns:
         msg = (
@@ -291,19 +358,21 @@ def _logged_files(
             "end, epochs; its epoch count cannot be summarized"
         )
         raise ValueError(msg)
-    starts, ends, counts = book["start"], book["end"], book["epochs"]
-    files = {}
-    for key, start, end, count in zip(keys, starts, ends, counts, strict=True):
-        if key is None:
-            continue
-        if count < 0:
-            msg = (
-                f"Log book of day-block group {group.path} has a stored row "
-                f"without an epoch count ({key})"
-            )
-            raise ValueError(msg)
-        files[key] = (int(count), np.datetime64(start, "ns"), np.datetime64(end, "ns"))
-    return files
+    stored = keys != None  # noqa: E711 (element-wise)
+    files = _Files(
+        keys[stored],
+        np.asarray(book["epochs"])[stored].astype(np.int64),
+        np.asarray(book["start"])[stored].astype("M8[ns]"),
+        np.asarray(book["end"])[stored].astype("M8[ns]"),
+    )
+    negative = np.flatnonzero(files.counts < 0)
+    if negative.size:
+        msg = (
+            f"Log book of day-block group {group.path} has a stored row "
+            f"without an epoch count ({files.keys[negative[0]]})"
+        )
+        raise ValueError(msg)
+    return files.take(_latest_rows(files.keys))
 
 
 def _block_index(group: zarr.Group) -> dict[np.datetime64, tuple[int, int]]:
@@ -329,8 +398,7 @@ def _block_index(group: zarr.Group) -> dict[np.datetime64, tuple[int, int]]:
 
 
 def _block_days(
-    index: Mapping[np.datetime64, tuple[int, int]],
-    files: Mapping[str, tuple[int, np.datetime64, np.datetime64]],
+    index: Mapping[np.datetime64, tuple[int, int]], files: _Files
 ) -> dict[np.datetime64, _DaySpan]:
     """Each day's cadence and first and last epoch, in a day-block group.
 
@@ -339,28 +407,55 @@ def _block_days(
     last slot. Days without files (a block whose files failed) are left out,
     and so are files without epochs (a row whose epochs a later row of
     another file holds).
+
+    Raises
+    ------
+    KeyError
+        If a file covers a day without a block.
     """
-    spans: dict[np.datetime64, _DaySpan] = {}
-    for count, start, end in files.values():
-        if not count:
-            continue
-        day = start.astype("M8[D]")
-        while day <= end.astype("M8[D]"):
-            cadence_ns, slots = index[day]
-            last_slot = day.astype("M8[ns]") + np.timedelta64(
-                (slots - 1) * cadence_ns, "ns"
-            )
-            first = max(start, day.astype("M8[ns]"))
-            last = min(end, last_slot)
-            if day in spans:
-                _, f, la = spans[day]
-                first, last = min(first, f), max(last, la)
-            spans[day] = (cadence_ns / 1e9, first, last)
-            day = day + _DAY
-    return spans
+    files = files.take(np.flatnonzero(files.counts != 0))
+    if not len(files):
+        return {}
+    first_day = files.starts.astype("M8[D]")
+    n_days = np.maximum(
+        (files.ends.astype("M8[D]") - first_day).astype(np.int64) + 1, 0
+    )
+    # One entry per file and day it covers.
+    row = np.repeat(np.arange(len(files)), n_days)
+    nth = np.arange(row.size) - np.repeat(np.cumsum(n_days) - n_days, n_days)
+    day = first_day[row] + nth.astype("m8[D]")
+
+    block_days = np.array(sorted(index), dtype="M8[D]")
+    at = np.searchsorted(block_days, day)
+    found = at < block_days.size
+    found[found] = block_days[at[found]] == day[found]
+    if not found.all():
+        raise KeyError(day[~found][0])
+    cadence_ns = np.array([index[d][0] for d in block_days], dtype=np.int64)[at]
+    slots = np.array([index[d][1] for d in block_days], dtype=np.int64)[at]
+    day_ns = day.astype("M8[ns]")
+    last_slot = day_ns + ((slots - 1) * cadence_ns).astype("m8[ns]")
+    first = np.maximum(files.starts[row], day_ns).view(np.int64)
+    last = np.minimum(files.ends[row], last_slot).view(np.int64)
+
+    days, of_day = np.unique(day, return_inverse=True)
+    day_first = np.full(days.size, np.iinfo(np.int64).max)
+    day_last = np.full(days.size, np.iinfo(np.int64).min)
+    np.minimum.at(day_first, of_day, first)
+    np.maximum.at(day_last, of_day, last)
+    day_cadence = np.zeros(days.size, dtype=np.int64)
+    day_cadence[of_day] = cadence_ns
+    return {
+        d: (
+            int(c) / 1e9,
+            np.datetime64(int(f), "ns"),
+            np.datetime64(int(la), "ns"),
+        )
+        for d, c, f, la in zip(days, day_cadence, day_first, day_last, strict=True)
+    }
 
 
-def _group_summary(group: zarr.Group, book: _LogBook | None) -> dict[str, Any]:
+def _group_summary(group: zarr.Group, book: _Book | None) -> dict[str, Any]:
     """What a data group holds.
 
     ``epochs`` are the epochs of a group written by appending; a day-block
@@ -374,7 +469,7 @@ def _group_summary(group: zarr.Group, book: _LogBook | None) -> dict[str, Any]:
         epochs = np.array([], dtype="M8[ns]")
         days = _block_days(_block_index(group), files)
     else:
-        files = {}
+        files = _NO_FILES
         epochs = np.unique(_decode_epochs(_array(group, "epoch")))
         days = _epoch_days(epochs)
     variables = sorted(name for name, arr in group.arrays() if len(arr.shape) >= 2)
@@ -407,9 +502,9 @@ def _coverage(
     counts once.
     """
     epochs = np.unique(np.concatenate([g["epochs"] for g in groups]))
-    files = {h: f for g in groups for h, f in g["files"].items()}
-    times = [*epochs[:1], *epochs[-1:]] + [t for _, *ts in files.values() for t in ts]
-    if not times:
+    files = _merged(g["files"] for g in groups)
+    times = np.concatenate([epochs[:1], epochs[-1:], files.starts, files.ends])
+    if not times.size:
         return None
     days: dict[np.datetime64, _DaySpan] = {}
     for g in groups:
@@ -418,30 +513,25 @@ def _coverage(
                 c, f, la = days[day]
                 cadence, first, last = min(cadence, c), min(first, f), max(last, la)
             days[day] = (cadence, first, last)
-    count = int(epochs.size) + sum(n for n, _, _ in files.values())
-    return count, min(times), max(times), days
+    count = int(epochs.size) + int(files.counts.sum())
+    return count, times.min(), times.max(), days
 
 
-def _stored_file_count(book: _LogBook | None) -> int | None:
+def _stored_file_count(book: _Book | None) -> int | None:
     """Distinct stored files in a GNSS group's log book, if it has one.
 
     Keyed as in :func:`_logged_files`: by canonical name, else by hash.
     """
     if book is None or not {"rinex_hash", "action"} <= book.columns:
         return None
-    hashes, actions = book["rinex_hash"], book["action"]
-    names = (
-        book["canonical_name"]
+    hashes = book["rinex_hash"]
+    keys = (
+        np.where(book["canonical_name"] != "", book["canonical_name"], hashes)
         if "canonical_name" in book
-        else np.full(hashes.shape, "", dtype=object)
+        else hashes
     )
-    return len(
-        {
-            str(n or h)
-            for h, n, a in zip(hashes, names, actions, strict=True)
-            if a in _STORED_ACTIONS
-        }
-    )
+    stored = _is_stored(book["action"], _STORED_ACTIONS)
+    return len({str(k) for k in keys[stored]})
 
 
 def _header_position(attrs: dict[str, Any]) -> tuple[float, float, float] | None:
@@ -463,16 +553,15 @@ def _header_position(attrs: dict[str, Any]) -> tuple[float, float, float] | None
 
 
 def _header_positions(
-    book: _LogBook | None,
+    book: _Book | None,
 ) -> dict[str, tuple[float, float, float]]:
     """Header positions of the stored files in a group's log book, by hash."""
     if book is None or not {"rinex_hash", "action", "attrs"} <= book.columns:
         return {}
-    rows = zip(book["rinex_hash"], book["action"], book.read("attrs"), strict=True)
+    stored = _is_stored(book["action"], _STORED_ACTIONS)
+    rows = zip(book["rinex_hash"][stored], book.read("attrs")[stored], strict=True)
     positions = {}
-    for file_hash, action, attrs in rows:
-        if action not in _STORED_ACTIONS:
-            continue
+    for file_hash, attrs in rows:
         position = _header_position(json.loads(str(attrs) or "{}"))
         if position is not None:
             positions[str(file_hash)] = position
@@ -551,18 +640,61 @@ def summarize_root(
     coverage = _coverage(list(groups.values()))
     if coverage is None:
         return {}
+    file_counts = [
+        n
+        for n in (_stored_file_count(book) for book in books.values())
+        if n is not None
+    ]
+    receivers_held = {}
+    by_receiver = _groups_by_receiver(receivers, list(groups))
+    for receiver in sorted(by_receiver):
+        # A reference receiver is stored once per canopy it is paired with
+        # (e.g. ``reference_01_canopy_01``); combine all of its groups.
+        names = sorted(by_receiver[receiver])
+        r_coverage = _coverage([groups[name] for name in names]) if names else None
+        if r_coverage is None:
+            continue
+        # A file stored in several groups (a reference paired with several
+        # canopies) counts once.
+        positions = {
+            file_hash: xyz
+            for name, book in books.items()
+            if name in by_receiver[receiver]
+            for file_hash, xyz in _header_positions(book).items()
+        }
+        position = (
+            [float(v) for v in np.median(np.array(list(positions.values())), axis=0)]
+            if positions
+            else None
+        )
+        receivers_held[receiver] = (names, r_coverage, position)
+    return _summary_updates(groups, coverage, receivers_held, file_counts)
+
+
+_Coverage = tuple[int, np.datetime64, np.datetime64, dict[np.datetime64, _DaySpan]]
+
+
+def _summary_updates(
+    groups: Mapping[str, Mapping[str, Any]],
+    coverage: _Coverage,
+    receivers: Mapping[str, tuple[list[str], _Coverage, list[float] | None]],
+    file_counts: list[int],
+) -> dict[str, Any]:
+    """Dotted-key updates from what the groups hold.
+
+    ``groups`` gives each group's ``sids``, ``systems`` and ``variables``;
+    ``coverage`` that of all groups (:func:`_coverage`); ``receivers`` each
+    receiver's group names, coverage and median header position; and
+    ``file_counts`` the stored files of each GNSS group. Shared by the full
+    rebuild (:func:`summarize_root`) and the summary kept commit by commit
+    (:mod:`.summary_state`).
+    """
     total, first, last, days = coverage
     start, end = _iso(first), _iso(last)
     # The finest cadence of any day in any group.
     cadences = [cadence for cadence, _, _ in days.values()]
     resolution = min(cadences) if cadences else None
     systems = set().union(*(g["systems"] for g in groups.values()))
-    file_counts = [
-        n
-        for n in (_stored_file_count(book) for book in books.values())
-        if n is not None
-    ]
-
     updates: dict[str, Any] = {
         "temporal.collected_start": start,
         "temporal.collected_end": end,
@@ -584,14 +716,8 @@ def summarize_root(
         "summaries.temporal_resolution_s": resolution,
         "summaries.file_count": sum(file_counts) if file_counts else None,
     }
-    by_receiver = _groups_by_receiver(receivers, list(groups))
-    for receiver in sorted(by_receiver):
-        # A reference receiver is stored once per canopy it is paired with
-        # (e.g. ``reference_01_canopy_01``); combine all of its groups.
-        own = [groups[name] for name in sorted(by_receiver[receiver])]
-        r_coverage = _coverage(own) if own else None
-        if r_coverage is None:
-            continue
+    for receiver, (names, r_coverage, position) in sorted(receivers.items()):
+        own = [groups[name] for name in names]
         r_total, r_first, r_last, r_days = r_coverage
         prefix = f"instruments.receivers.{receiver}"
         updates[f"{prefix}.epochs"] = r_total
@@ -601,18 +727,8 @@ def summarize_root(
         )
         updates[f"{prefix}.temporal_range"] = [_iso(r_first), _iso(r_last)]
         updates[f"{prefix}.cadences"] = _ranges(r_days)
-        # A file stored in several groups (a reference paired with several
-        # canopies) counts once.
-        positions = {
-            file_hash: xyz
-            for name, book in books.items()
-            if name in by_receiver[receiver]
-            for file_hash, xyz in _header_positions(book).items()
-        }
-        if positions:
-            updates[f"{prefix}.position_ecef_m"] = [
-                float(v) for v in np.median(np.array(list(positions.values())), axis=0)
-            ]
+        if position is not None:
+            updates[f"{prefix}.position_ecef_m"] = position
     return updates
 
 
