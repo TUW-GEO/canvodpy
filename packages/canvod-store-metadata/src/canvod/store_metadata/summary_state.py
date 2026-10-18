@@ -142,7 +142,7 @@ class _Group:
         book = _Rows(frame.slice(self.rows))
         keys, days = self._apply(book)
         positions = (
-            _header_positions(book)  # type: ignore[arg-type]
+            _header_positions(book)
             if {"rinex_hash", "action", "attrs"} <= columns
             else {}
         )
@@ -165,18 +165,21 @@ class _Group:
         for day, entry in index.items():
             number = int(np.datetime64(str(day), "D").astype(np.int64))
             if number not in self.index:
-                self.index[number] = (int(entry["cadence_ns"]), int(entry["slots"]))
+                assert isinstance(entry, Mapping)
+                cadence_ns, slots = entry["cadence_ns"], entry["slots"]
+                assert isinstance(cadence_ns, int) and isinstance(slots, int)
+                self.index[number] = (cadence_ns, slots)
 
     def _apply(self, book: _Rows) -> tuple[set[str], set[int]]:
         """Take the stored rows of ``book``; return the keys and days changed."""
-        keys = _key_array(book, self.path)  # type: ignore[arg-type]
+        keys = _key_array(book, self.path)
         if not {"end", "epochs"} <= book.columns:
             msg = (
                 f"Day-block group {self.path} has no log book with the columns "
                 "end, epochs; its epoch count cannot be summarized"
             )
             raise ValueError(msg)
-        stored = np.flatnonzero(np.not_equal(keys, None))
+        stored = np.flatnonzero(keys != None)  # noqa: E711 (element-wise)
         counts = np.asarray(book["epochs"])[stored].astype(np.int64)
         starts = np.asarray(book["start"])[stored].astype("M8[ns]").view(np.int64)
         ends = np.asarray(book["end"])[stored].astype("M8[ns]").view(np.int64)

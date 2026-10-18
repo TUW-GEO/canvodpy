@@ -300,7 +300,7 @@ def commit_with_rebase(
                     rebase_with=icechunk.ConflictDetector(),
                 )
         except BaseException:
-            if state is not None:
+            if state is not None and branch is not None:
                 forget_summary_state(store_path, branch)
             raise
         lap("icechunk_commit")

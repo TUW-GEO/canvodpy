@@ -12,7 +12,7 @@ import warnings
 from collections.abc import Collection, Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
 import zarr
@@ -80,6 +80,18 @@ def _array(group: zarr.Group, path: str) -> zarr.Array:
         msg = f"{path} in {group.path or '/'} is a group, not an array"
         raise TypeError(msg)
     return member
+
+
+class _Book(Protocol):
+    """Log-book columns: a whole log book (:class:`_LogBook`) or new rows."""
+
+    columns: set[str]
+
+    def __contains__(self, column: str) -> bool: ...
+
+    def __getitem__(self, column: str) -> np.ndarray: ...
+
+    def read(self, column: str) -> np.ndarray: ...
 
 
 class _LogBook:
@@ -221,12 +233,12 @@ def logged_keys(group: zarr.Group) -> list[str | None]:
     return _logged_keys(_log_book(group), group.path)
 
 
-def _logged_keys(book: _LogBook | None, path: str) -> list[str | None]:
+def _logged_keys(book: _Book | None, path: str) -> list[str | None]:
     """:func:`logged_keys` of the group at ``path``, from its log book."""
     return _key_array(book, path).tolist()
 
 
-def _key_array(book: _LogBook | None, path: str) -> np.ndarray:
+def _key_array(book: _Book | None, path: str) -> np.ndarray:
     """:func:`logged_keys` as an object array, from the log book."""
     if book is None:
         msg = (
@@ -332,7 +344,7 @@ def _merged(files: Iterable[_Files]) -> _Files:
 _FILE_FIELDS = ("keys", "counts", "starts", "ends")
 
 
-def _logged_files(group: zarr.Group, book: _LogBook | None) -> _Files:
+def _logged_files(group: zarr.Group, book: _Book | None) -> _Files:
     """Stored writes of a day-block group: epochs with data, first and last.
 
     From the group's log book; the latest stored row of a key counts
@@ -346,7 +358,7 @@ def _logged_files(group: zarr.Group, book: _LogBook | None) -> _Files:
             "end, epochs; its epoch count cannot be summarized"
         )
         raise ValueError(msg)
-    stored = np.not_equal(keys, None)
+    stored = keys != None  # noqa: E711 (element-wise)
     files = _Files(
         keys[stored],
         np.asarray(book["epochs"])[stored].astype(np.int64),
@@ -443,7 +455,7 @@ def _block_days(
     }
 
 
-def _group_summary(group: zarr.Group, book: _LogBook | None) -> dict[str, Any]:
+def _group_summary(group: zarr.Group, book: _Book | None) -> dict[str, Any]:
     """What a data group holds.
 
     ``epochs`` are the epochs of a group written by appending; a day-block
@@ -505,7 +517,7 @@ def _coverage(
     return count, times.min(), times.max(), days
 
 
-def _stored_file_count(book: _LogBook | None) -> int | None:
+def _stored_file_count(book: _Book | None) -> int | None:
     """Distinct stored files in a GNSS group's log book, if it has one.
 
     Keyed as in :func:`_logged_files`: by canonical name, else by hash.
@@ -541,7 +553,7 @@ def _header_position(attrs: dict[str, Any]) -> tuple[float, float, float] | None
 
 
 def _header_positions(
-    book: _LogBook | None,
+    book: _Book | None,
 ) -> dict[str, tuple[float, float, float]]:
     """Header positions of the stored files in a group's log book, by hash."""
     if book is None or not {"rinex_hash", "action", "attrs"} <= book.columns:
