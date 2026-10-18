@@ -25,8 +25,8 @@ This page lists the options of both. For a first run, start with
 
     site = Site("ExampleSite")
     with site.pipeline() as pipeline:
-        for date, data in pipeline.process_range("2025001", "2025007"):
-            vod = site.vod.compute_day_all(data)
+        for unit in pipeline.run("2025001", "2025007"):
+            print(sorted(unit.days), unit.vod.written)
     ```
 
 === "Command line"
@@ -41,8 +41,9 @@ Dates are `YYYYDDD`: the year and the day of year, for example
 | Command line | Python | Meaning |
 |---|---|---|
 | `--site ExampleSite` | `Site("ExampleSite")` | Site name under `sites:` in `canvod-settings.yaml`. Repeat `--site` to process several sites, one after the other. |
-| `--start`, `--end` | `process_range(start, end)`, `process_date(date)` | First and last day, both included; see [Which days a run processes](#which-days-a-run-processes). |
-| `--no-vod` | Leave out `site.vod` | Write the observations to the GNSS store and compute no VOD. |
+| `--start`, `--end` | `run(start, end)` | First and last day, both included; see [Which days a run processes](#which-days-a-run-processes). |
+| `--no-vod` | `run(start, end, vod_analyses=())` | Write the observations to the GNSS store and compute no VOD. |
+| `--vod-calculator` | `run(start, end, calculator=...)` | The VOD calculator, `tau_omega` by default. |
 | `--dry-run` | `pipeline.preview(start, end)` | List the days, receivers and files a run would process, without processing them. |
 | `--write-catalog` | `write_catalog(stores_root_dir)` after the run | After a successful run, write the [STAC catalog](../packages/store-metadata/overview.md#write-the-stac-catalog) of every store under the data root. Without it, a run writes no catalog. |
 | `--label` | `site.pipeline(label=...)` | Free-text label stored with the run in the [run history](diagnostics.md#the-run-history), for example to group the repetitions of a benchmark. |
@@ -142,8 +143,9 @@ GNSS store. Use it in a `with` block, which closes it at the end.
 
 | Method | What it does |
 |---|---|
-| `process_date(date)` | Processes one day. Returns one dataset per receiver. |
-| `process_range(start, end, new_files_only=False)` | Processes the days from `start` to `end`. Yields `(date, datasets)` for one day at a time. With `new_files_only=True`, only the days on which a receiver has a file the GNSS store doesn't hold. |
+| `run(start, end, new_files_only=False, vod_analyses=None, calculator="tau_omega")` | What `canvodpy run` does: stores the days from `start` to `end` in [units of days](parallel-processing.md), then computes the VOD of each unit's days from the GNSS store. Yields one `RunUnit` per unit: `days` (each day stored, with the groups that stored it), `vod` (the days with VOD written, already stored, or missing and why, per analysis) and `vod_error` (why the VOD of the unit failed, if it did). `vod_analyses=()` computes no VOD. |
+| `process_date(date)` | Processes one day and reads it back from the GNSS store. Returns one dataset per receiver. |
+| `process_range(start, end, new_files_only=False)` | Processes the days from `start` to `end` and reads each one back. Yields `(date, datasets)` for one day at a time. With `new_files_only=True`, only the days on which a receiver has a file the GNSS store doesn't hold. Use it to work with the data in Python; `run` reads nothing back and is faster. |
 | `preview(start=None, end=None, new_files_only=False)` | Returns the days, receivers and files a run would process. Without dates, it covers every day it finds data for. |
 | `failed_receiver_days` | The receiver-days of this pipeline that failed, as `(receiver, date)` pairs. Empty when every one is written or skipped. |
 | `close()` | Ends the pipeline. The `with` block calls it for you. The worker processes stay for reuse; see [Parallel processing](parallel-processing.md#the-worker-processes). |
@@ -170,22 +172,24 @@ The workers' CPU cores and priority come from the settings file;
 
 ## Compute VOD
 
-`site.vod` computes VOD for the receiver pairs under `vod_analyses` and
-writes it to the site's VOD store. Pass `write=False` to get the result
-without writing it.
+`pipeline.run()` computes the VOD of the days it stores. `site.vod`
+computes VOD for the receiver pairs under `vod_analyses` on its own.
 
-From the datasets of one day, right after processing them:
+From the datasets of one day, without writing:
 
 ```python
 with site.pipeline() as pipeline:
     for date, data in pipeline.process_range("2025001", "2025007"):
-        vod = site.vod.compute_day_all(data)  # every pair
+        vod = site.vod.compute_day_all(data, write=False)  # every pair
         # or one pair:
-        # vod = site.vod.compute_day(data, "canopy_01_vs_reference_01")
+        # vod = site.vod.compute_day(data, "canopy_01_vs_reference_01", write=False)
 ```
 
+Writing VOD this way (`write=True`, `write_day`) is deprecated; see
+[Upgrading](upgrading.md).
+
 From observations already in the GNSS store, for example after you
-change the VOD settings:
+change the VOD settings, computed and written in the worker pool:
 
 === "Python"
 
@@ -268,8 +272,9 @@ model and its output.
   In Python, `site.vod` makes the same check when it writes.
 - It warns about days that are in the GNSS store but not in the VOD
   store.
-- If the VOD of one receiver pair fails, it logs the error and continues
-  with the other pairs. In Python, `compute_day_all` raises the error.
+- If the VOD of a unit of days fails, it says which days are left
+  without VOD and continues. `pipeline.run()` does the same and reports
+  the error in `RunUnit.vod_error`.
 - It shows the progress per site and receiver.
 
 ---

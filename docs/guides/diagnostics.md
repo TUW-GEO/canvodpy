@@ -132,7 +132,7 @@ After each site, also after a crash, `canvodpy run` logs a `run_summary`
 event with the number of days processed (`days`), the VOD results
 written (`vod_results`), and per step the number of times it ran, its
 total time, and its errors (`stages`). `stages` covers the steps of the
-main process, such as `planning`, `writing` (the GNSS store), `assembly`,
+main process, such as `planning`, `writing` (the GNSS store),
 `vod_calc`, and `vod_store`.
 The reading steps run in the worker processes; their times are in the
 log files and in the [dashboard](#see-where-a-run-spends-its-time).
@@ -282,9 +282,11 @@ The stages a run records, from every `stage_timing` event of the run:
 | `day_block_growth` | main | batch: giving its days a block in the GNSS store, one commit |
 | `planning` | main | day: planning which worker writes which part of the day (reads the store's day blocks and log book) |
 | `writing` | main | unit of days with workers: merging the workers' parts of all its receivers and days and committing them to the GNSS store, one commit; one record per unit, with `days` and the comma-joined dates; without workers: receiver-day, writing to the GNSS store |
-| `assembly` | main | receiver-day: reading the written day back from the GNSS store for VOD |
+| `assembly` | main | receiver-day: reading the written day back from the GNSS store, in `process_range` and `process_date` only (a run reads nothing back) |
 | `icechunk.write` | main | group write of a store made before day blocks |
-| `vod_calc`, `vod_store` | main | VOD analysis and day (`canvodpy run` only) |
+| `vod_day_block_growth` | main | unit of days: giving its days a block in the VOD store, one commit |
+| `vod_calc` | worker | VOD analysis and day: reading the day from the GNSS store and computing its VOD (recorded by the main process) |
+| `vod_store` | main | unit of days: merging the VOD of all its days and analyses and committing it to the VOD store, one commit; one record per unit, with `days` |
 
 A run that has no end and whose process is gone shows as `interrupted`.
 A run whose run ID the run history already holds (set by the caller and

@@ -106,8 +106,12 @@ uv add canvodpy         # everything
 
 ## What a run does
 
-`canvodpy run`, `Site.pipeline()`, and the Airflow task `process_day` all
-run the same code. A run goes through these steps.
+`canvodpy run`, `Site.pipeline().run()`, and the Airflow task
+`process_day` all run the same code. A run has two phases: the GNSS
+phase (steps 2 to 7) stores the observations of a unit of days, then the
+VOD phase (step 8) computes the VOD of those days. A phase is a stage of
+the run, not the GNSS carrier phase. `process_day` runs the GNSS phase
+only; the Airflow DAG computes VOD in its own task.
 
 ```mermaid
 flowchart TD
@@ -154,13 +158,15 @@ flowchart TD
 7. **Write to the GNSS store.** The run checks each file against the store
    and against the other files of the unit, and then writes what is new.
    See [Design principles](principles.md#the-same-data-is-never-written-twice-by-default).
-8. **Compute VOD.** For each VOD analysis in the settings, `VodComputer`
-   reads the canopy and the reference receiver from the GNSS store, keeps
-   the epochs and signals both have, and computes VOD with the selected
-   calculator. The zeroth-order tau-omega calculator computes the
+8. **Compute VOD.** After a unit of days is committed, one task per VOD
+   analysis and day reads that day of the canopy and the reference
+   receiver from the GNSS store, keeps the epochs and signals both have,
+   and computes VOD with the selected calculator. The GNSS phase reads
+   nothing back for it. The zeroth-order tau-omega calculator computes the
    transmissivity `T` from the difference of the two SNR values in
-   decibels, and `VOD = -ln(T) cos(theta)`. The result goes to the VOD
-   store, which checks it before it writes. See
+   decibels, and `VOD = -ln(T) cos(theta)`. The results of the unit go
+   to the VOD store in one commit, which checks them before it writes.
+   A day that failed in the GNSS phase gets no VOD. See
    [`canvod-vod`](packages/vod/overview.md).
 
 ---
@@ -191,10 +197,11 @@ flowchart TD
   can't detect two commits at the same time, so every commit takes the
   store's commit lock. A commit from another process waits for it (see
   [How a run writes](packages/store/overview.md#how-a-run-writes)).
-- **VOD.** After a unit is written, the run computes the VOD day by day
-  and writes all analyses of a day with one commit. Meanwhile the units
-  run on in a thread of their own, one unit ahead at most, so the
-  workers read the next unit during the VOD.
+- **VOD.** After a unit is written, its VOD is computed in the same
+  worker processes, one task per analysis and day, each writing into
+  its own fork of the VOD store; the main process commits the unit's VOD
+  once. Meanwhile the units run on in a thread of their own, one unit
+  ahead at most, so the workers read the next unit during the VOD.
 
 See [Parallel processing](guides/parallel-processing.md) for the settings.
 
