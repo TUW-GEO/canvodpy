@@ -65,8 +65,9 @@ analyses.
 
     from canvodpy import Site
 
-    # Reads the pair from the site's GNSS store and writes the VOD store
-    # (pass write=False to skip the write)
+    # Computes the days of the range in the worker pool, writes them to
+    # the VOD store and returns the VOD from start to end (write=False
+    # computes in memory and writes nothing)
     vod_result = Site("ExampleSite").vod.compute_bulk(
         "canopy_01_vs_reference_01",
         start=datetime(2025, 1, 1),

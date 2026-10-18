@@ -33,7 +33,11 @@ main_app.add_typer(stac_app, name="stac")
 main_app.command("run")(run_command)
 main_app.command(
     "vod",
-    help="Compute VOD for a range of dates from the GNSS store of a site.",
+    help=(
+        "Compute VOD for a range of days from the GNSS store of a site, one day "
+        "per worker. Days stored from the same GNSS files are skipped; days "
+        "without data are listed."
+    ),
 )(vod_command)
 main_app.command(
     "vod-reconcile",

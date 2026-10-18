@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import unittest.mock
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -441,17 +442,56 @@ class TestVodOutputOptions:
 
 
 class TestComputeBulkAll:
-    def test_one_commit_per_day(self):
-        """Results spanning two days are written as two batches, a day each."""
-        site = _make_site({"a": _make_analysis_cfg(), "b": _make_analysis_cfg()})
-        vc = VodComputer(site)
+    """Writes go through compute_days; the VOD is read back from the store."""
+
+    @staticmethod
+    def _run(vc, days, **kwargs):
+        read = {}
+
+        def load_group(store, group, **kw):
+            read[group] = kw["time_slice"]
+            return xr.Dataset(attrs={"group": group})
+
+        with (
+            unittest.mock.patch.object(
+                vc, "gnss_days", side_effect=lambda name, *_: days[name]
+            ),
+            unittest.mock.patch.object(vc, "compute_days") as compute_days,
+            unittest.mock.patch(
+                "canvod.store.day_blocks.load_group", side_effect=load_group
+            ),
+        ):
+            results = vc.compute_bulk_all(**kwargs)
+        return results, compute_days, read
+
+    def test_one_compute_days_call_for_all_analyses(self):
+        vc = VodComputer(
+            _make_site({"a": _make_analysis_cfg(), "b": _make_analysis_cfg()})
+        )
+        d1, d2, d3 = np.datetime64("2025-01-01") + np.arange(3)
+        start = datetime(2025, 1, 1, 6)
+        results, compute_days, read = self._run(
+            vc, {"a": [d1, d2], "b": [d2, d3]}, start=start
+        )
+
+        compute_days.assert_called_once_with([d1, d2, d3], ["a", "b"])
+        assert {name: ds.attrs["group"] for name, ds in results.items()} == {
+            "a": "tau_omega/a",
+            "b": "tau_omega/b",
+        }
+        assert read["tau_omega/a"] == slice(np.datetime64(start, "ns"), None)
+
+    def test_an_analysis_without_days_raises_before_computing(self):
+        vc = VodComputer(
+            _make_site({"a": _make_analysis_cfg(), "c": _make_analysis_cfg()})
+        )
+        days = {"a": [np.datetime64("2025-01-01")], "c": []}
+        with pytest.raises(ValueError, match="no day of analysis 'c'"):
+            self._run(vc, days)
+
+    def test_without_write_nothing_is_written(self):
+        vc = VodComputer(_make_site({"a": _make_analysis_cfg()}))
         datasets = _day_datasets()
-        cut = datasets["reference_01_canopy_01"].epoch.values[2]
-        for name, ds in datasets.items():
-            # The epochs from ``cut`` on move to the next day.
-            shifted = ds.epoch.values.copy()
-            shifted[shifted >= cut] += np.timedelta64(1, "D")
-            datasets[name] = ds.assign_coords(epoch=shifted)
 
         def entry(name, start, end):
             c, r = vc._aligned_pair(datasets, name)
@@ -459,42 +499,13 @@ class TestComputeBulkAll:
 
         with (
             unittest.mock.patch.object(vc, "_compute_bulk_entry", side_effect=entry),
-            unittest.mock.patch("canvodpy.vod_computer.ensure_vod_store_metadata"),
+            unittest.mock.patch.object(vc, "compute_days") as compute_days,
         ):
-            vc.compute_bulk_all()
+            results = vc.compute_bulk_all(write=False)
 
-        batches = [
-            c.kwargs["items"]
-            for c in site._site.store_vod_analyses_batch.call_args_list
-        ]
-        assert [[i["analysis_name"] for i in b] for b in batches] == [
-            ["a", "b"],
-            ["a", "b"],
-        ]
-        for batch in batches:
-            for item in batch:
-                days = np.unique(item["vod_dataset"].epoch.values.astype("M8[D]"))
-                assert days.size == 1
-
-    def test_one_commit_for_all_analyses(self):
-        site = _make_site({"a": _make_analysis_cfg(), "b": _make_analysis_cfg()})
-        vc = VodComputer(site)
-        datasets = _day_datasets()
-
-        def entry(name, start, end):
-            c, r = vc._aligned_pair(datasets, name)
-            return vc._compute(c, r, name), c, r
-
-        with (
-            unittest.mock.patch.object(vc, "_compute_bulk_entry", side_effect=entry),
-            unittest.mock.patch("canvodpy.vod_computer.ensure_vod_store_metadata"),
-        ):
-            results = vc.compute_bulk_all()
-
-        assert set(results) == {"a", "b"}
-        site._site.store_vod_analyses_batch.assert_called_once()
-        items = site._site.store_vod_analyses_batch.call_args.kwargs["items"]
-        assert [i["analysis_name"] for i in items] == ["a", "b"]
+        assert "VOD" in results["a"]
+        compute_days.assert_not_called()
+        vc._site._site.store_vod_analyses_batch.assert_not_called()
 
 
 class TestAirflowVodTask:

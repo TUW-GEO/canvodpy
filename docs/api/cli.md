@@ -31,7 +31,7 @@ $ canvodpy [OPTIONS] COMMAND [ARGS]...
 **Commands**:
 
 * `run`: Process GNSS observations into Icechunk...
-* `vod`: Compute VOD for a range of dates from the...
+* `vod`: Compute VOD for a range of days from the...
 * `vod-reconcile`: List the dates that have observations but...
 * `doctor`: Report canvodpy's version, its...
 * `dashboard`: Launch the marimo performance dashboard...
@@ -75,7 +75,7 @@ $ canvodpy run [OPTIONS]
 
 ## `canvodpy vod`
 
-Compute VOD for a range of dates from the GNSS store of a site.
+Compute VOD for a range of days from the GNSS store of a site, one day per worker. Days stored from the same GNSS files are skipped; days without data are listed.
 
 **Usage**:
 
@@ -87,8 +87,8 @@ $ canvodpy vod [OPTIONS]
 
 * `--site <str>`: Site name, as defined under sites: in canvod-settings.yaml  [required]
 * `--analysis <str>`: VOD analysis name, as defined in site.vod_analyses  [required]
-* `--start <str>`: Start date in YYYYDOY format, for example 2025001.
-* `--end <str>`: End date in YYYYDOY format, for example 2025007.
+* `--start <str>`: First day in YYYYDOY format, for example 2025001. Default: the first day of the GNSS store.
+* `--end <str>`: Last day in YYYYDOY format, for example 2025007. Default: the last day of the GNSS store.
 * `--calculator <tau_omega>`: VOD calculator to use.  [default: tau_omega]
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
