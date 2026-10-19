@@ -1,5 +1,6 @@
 """Store retries: only errors that can be transient are retried."""
 
+import errno
 import itertools
 
 import icechunk
@@ -36,7 +37,16 @@ def test_transient_errors_are_retried(exc):
     assert fn.calls == 3
 
 
-@pytest.mark.parametrize("exc", [ValueError("validation failed"), RuntimeError("x")])
+@pytest.mark.parametrize(
+    "exc",
+    [
+        ValueError("validation failed"),
+        RuntimeError("x"),
+        PermissionError("no permission"),
+        FileNotFoundError("no such file"),
+        OSError(errno.ENOSPC, "No space left on device"),
+    ],
+)
 def test_other_errors_propagate_at_once(exc):
     fn = _Failing(exc, 1)
     with pytest.raises(type(exc)):

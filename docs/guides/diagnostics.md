@@ -111,7 +111,9 @@ Error") is retried the same way. If the error comes while a unit of days
 is committed, the run plans the unit's days again and writes them again
 (`op` is `write_unit`); in the VOD phase it computes the unit again
 (`op` is `vod_unit`, with the unit's `first` and `last` day). So one
-such error does not lose the days of a unit.
+such error does not lose the days of a unit. Errors that would fail the
+same way again are not retried: no permission, a missing file or folder,
+a full disk or quota, and a read-only file system.
 
 A conflict, when another commit changed the store first, is not a lost
 connection: the run tries again on the new state of the store, up to

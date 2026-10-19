@@ -2112,7 +2112,12 @@ class PipelineOrchestrator:
         (#339, ADR 0021). A transient store error (a dropped connection, an
         object store's server error) is handled the same way after the
         waits of :func:`~canvodpy.orchestrator.store_retry.wait_after_store_error`,
-        so one such error does not lose the unit's days.
+        so one such error does not lose the unit's days. Each retry redoes
+        the unit's fork jobs, so it costs about as much as the first try.
+        If the commit landed but its reply was lost, the files are stored
+        when the days are planned again: they are skipped, and the next
+        commit adds a ``skipped`` row for each, as any run over stored
+        files does.
 
         Returns
         -------
