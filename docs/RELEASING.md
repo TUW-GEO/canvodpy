@@ -40,6 +40,12 @@ To test a release first, publish it as a pre-release (`1.0.0a1`,
 `1.0.0b1`, `1.0.0rc1`); [Versioning](VERSIONING.md#pre-releases) explains
 the stages and when to choose which. The steps below are the same.
 
+The `Development Status` classifier in every `pyproject.toml` follows the
+release: `4 - Beta` for a pre-release, `5 - Production/Stable` for a
+stable release. The first stable release (`1.0.0`) changes it from
+`4 - Beta` to `5 - Production/Stable` in all packages, in a pull request
+before step 1; PyPI shows the classifier of each release.
+
 ---
 
 ## Step-by-step
