@@ -49,7 +49,7 @@ jobs:
 
             - name: Coverage comment
               id: coverage_comment
-              uses: py-cov-action/python-coverage-comment-action@745a5e59778fd7ca158c9b7d4979c998b08983ea # v3
+              uses: py-cov-action/python-coverage-comment-action@5e8345d0e1e50beb87cb2678a534e28619cbd784 # v3
               with:
                   GITHUB_TOKEN: ${{ github.token }}
                   VERBOSE: false
