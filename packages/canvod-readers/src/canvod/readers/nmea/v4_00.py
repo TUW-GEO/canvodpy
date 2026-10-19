@@ -23,7 +23,7 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Any, ClassVar, Final
+from typing import Any, ClassVar, Final, cast
 
 import numpy as np
 import xarray as xr
@@ -565,13 +565,23 @@ class NmeaObs(GNSSDataReader, BaseModel):
         ----------
         keep_data_vars : list[str] | None
             Data variables to keep. For NMEA only ``["SNR"]`` is available.
+        pad_global_sid : bool, default True
+            If True, pads to the global signal ID space with
+            :func:`canvod.readers.preprocessing.pad_to_global_sid`, so every
+            file of a receiver has the same ``sid`` coordinate, as with the
+            RINEX and SBF readers.
+        keep_sids : list of str or None, default None
+            If provided, filters/pads the dataset to these SIDs.
         **kwargs
-            Ignored.
+            Others are ignored.
 
         Returns
         -------
         xr.Dataset
         """
+        pad_global_sid = bool(kwargs.pop("pad_global_sid", True))
+        keep_sids = cast(list[str] | None, kwargs.pop("keep_sids", None))
+
         epochs = self._parsed_epochs
         if not epochs:
             msg = "No epochs parsed from file"
@@ -667,6 +677,15 @@ class NmeaObs(GNSSDataReader, BaseModel):
             coords=coords,
             attrs={},
         )
+
+        if pad_global_sid:
+            from canvod.readers.preprocessing import pad_to_global_sid
+
+            ds = pad_to_global_sid(
+                ds,
+                keep_sids=keep_sids,
+                aggregate_glonass_fdma=self.aggregate_glonass_fdma,
+            )
 
         # Standard attributes (includes "File Hash")
         ds.attrs.update(self._build_attrs())
