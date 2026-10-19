@@ -346,8 +346,8 @@ downloads auxiliary data or reads a file. The log event
 the seconds it took; the run history counts their receiver-days as
 skipped. The run then writes a log-book row with `action` set to
 `skipped` for each of their files, all in one commit. Since no file is
-read, the row takes its epochs and attributes from the row that holds
-the file. `skipped_files_logged` names the days and the commit;
+read, the row takes its time span, attributes and preprocessing record
+from the row that holds the file. `skipped_files_logged` names the days and the commit;
 `skipped_files_not_logged` says why the commit failed. A failed commit
 leaves the days stored and skipped.
 

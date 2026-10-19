@@ -1153,6 +1153,8 @@ class PipelineOrchestrator:
                     strategy,
                 )
                 row["preprocessing"] = str(held.get("preprocessing") or "")
+                # The file on disk in this run, not where it was first written.
+                row["physical_path"] = str(path)
                 row["commit_msg"] = commit_msg
                 rows.append(row)
             return rows
