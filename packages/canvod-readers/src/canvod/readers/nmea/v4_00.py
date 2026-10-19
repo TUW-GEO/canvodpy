@@ -276,8 +276,8 @@ def _parse_gga_time(fields: list[str]) -> tuple[int, int, float] | None:
 #: 1 autonomous GNSS fix, 2 differential GNSS fix, 4 RTK fixed, 5 RTK float
 #: (u-blox F9 HPG 1.51 Interface description, UBXDOC-963802114-13124 R01,
 #: section 2.5.5 "NMEA position fix flags", pp. 25-26; SiRF NMEA Reference
-#: Manual Rev. 2.1, December 2007, Table 1-4, p. 1-2, bundled next to this
-#: module, defines 0, 1, 2 and 6 only). Not 0 (no fix) and not 6
+#: Manual Rev. 2.1, December 2007, Table 1-4, p. 1-2, defines 0, 1, 2 and 6
+#: only; both are bundled next to this module). Not 0 (no fix) and not 6
 #: (estimated/dead reckoning fix: a position carried on without satellites,
 #: although SiRF calls it valid), nor any value these sources don't define.
 #: u-blox reports dead reckoning as 1 in NMEA 2.1 and earlier; the Hainich
