@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import polars as pl
 import pytest
 from canvodpy.orchestrator import store_retry
 from canvodpy.orchestrator.pipeline import PipelineOrchestrator
@@ -169,6 +170,66 @@ def test_a_day_whose_gnss_phase_fails_gets_no_vod(two_days, monkeypatch) -> None
     # The day without orbit products stays open for the next run.
     assert [day for unit in units for day in unit.days] == [DAYS[0]]
     assert _vod_days(site) == {"2025-01-01"}
+
+
+def _prepared_days(monkeypatch) -> list[str]:
+    """The days whose auxiliary data and files a run prepares."""
+    prepared: list[str] = []
+    prepare = PipelineOrchestrator._prepare_single_date
+
+    def spy(self, date_key, *args, **kwargs):
+        prepared.append(date_key)
+        return prepare(self, date_key, *args, **kwargs)
+
+    monkeypatch.setattr(PipelineOrchestrator, "_prepare_single_date", spy)
+    return prepared
+
+
+def test_a_rerun_skips_stored_days_before_reading_them(two_days, monkeypatch) -> None:
+    site = _site()
+    with site.pipeline(n_workers=2) as pipeline:
+        list(pipeline.run(*DAYS))
+    gnss_tip = site.gnss_store.repo.lookup_branch("main")
+    vod_tip = site.vod_store.repo.lookup_branch("main")
+
+    prepared = _prepared_days(monkeypatch)
+    with site.pipeline(n_workers=2) as pipeline:
+        units = list(pipeline.run(*DAYS))
+
+    # Every file of both days is in the log book: nothing is read, and the
+    # days still reach the VOD phase.
+    assert prepared == []
+    assert site.vod_store.repo.lookup_branch("main") == vod_tip
+    assert sorted(day for unit in units for day in unit.days) == list(DAYS)
+    assert {unit.days[day] for unit in units for day in unit.days} == {GROUPS}
+    # One commit records the run's skipped files, a row per file seen.
+    store = MyIcechunkStore(site.gnss_store_path)
+    commits = list(store.repo.ancestry(branch="main"))
+    assert commits[1].id == gnss_tip
+    for group in GROUPS:
+        rows = store.load_metadata_for_dedup(group)
+        written = rows.filter(pl.col("action") != "skipped")
+        skipped = rows.filter(pl.col("action") == "skipped")
+        columns = ["rinex_hash", "start", "end", "canonical_name"]
+        assert sorted(skipped.select(columns).rows()) == sorted(
+            written.select(columns).rows()
+        )
+        assert skipped["run_id"].n_unique() == 1
+        assert set(skipped["run_id"]).isdisjoint(written["run_id"])
+
+
+def test_a_rerun_reads_only_the_days_with_new_files(two_days, monkeypatch) -> None:
+    site = _site()
+    with site.pipeline(n_workers=2) as pipeline:
+        list(pipeline.run(DAYS[0], DAYS[0]))
+
+    prepared = _prepared_days(monkeypatch)
+    with site.pipeline(n_workers=2) as pipeline:
+        units = list(pipeline.run(*DAYS))
+
+    assert prepared == [DAYS[1]]
+    assert sorted(day for unit in units for day in unit.days) == list(DAYS)
+    assert _vod_days(site) == {"2025-01-01", "2025-01-02"}
 
 
 def _fail_once(monkeypatch, owner, name):

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextvars
 import gc
+import json
 import os
 import queue
 import threading
@@ -25,7 +26,7 @@ from datetime import datetime
 from functools import partial
 from itertools import zip_longest
 from pathlib import Path
-from typing import TypeVar, cast
+from typing import Any, TypeVar, cast
 
 import icechunk
 import numpy as np
@@ -50,6 +51,7 @@ from canvod.store_metadata import (
     store_command,
     store_exists,
 )
+from canvod.store_metadata.io import commit_with_rebase
 from canvod.utils.logging import (
     get_run_id,
     new_run_id,
@@ -62,6 +64,7 @@ from canvod.utils.tools import (
     YYYYDOY,
     deprecated,
     deprecated_argument,
+    file_hash,
     get_version_from_pyproject,
 )
 from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
@@ -84,8 +87,10 @@ from canvodpy.orchestrator.forked_writes import (
     ForkedDay,
     ForkResult,
     ForkTask,
+    rows_around,
     stored_spans,
     write_files_into_fork,
+    written_rows,
 )
 from canvodpy.orchestrator.memory_budget import (
     GB,
@@ -100,6 +105,7 @@ from canvodpy.orchestrator.processor import (
     _processing_progress,
     _warn_if_epoch_count_differs_from_name,
     _worker_init_with_run_id,
+    logbook_row_of,
     preprocess_reference_with_hermite_aux_fanout,
     preprocess_with_hermite_aux,
 )
@@ -1014,6 +1020,195 @@ class PipelineOrchestrator:
             )
             if self._on_days_without_vod is not None:
                 self._on_days_without_vod(receiver, in_range)
+
+    def _split_stored_dates(
+        self,
+        dates: list[
+            tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]
+        ],
+    ) -> tuple[
+        list[tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]],
+        list[tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]],
+        dict[str, list[tuple[Path, dict[str, Any]]]],
+    ]:
+        """Split off the dates whose files every group of theirs holds.
+
+        A file is held when its hash is in a log-book row of the group that
+        wrote data, from the day before the date to the day after: the test
+        a task applies before writing it (``gnss_store_strategy: skip``).
+        Hashing a file reads its bytes but does not parse it, so a stored
+        date costs neither auxiliary data nor reading. A date with a new
+        file is read twice, once to hash it here and once to parse it; on
+        a slow network share this costs time. With
+        ``gnss_store_strategy: overwrite`` no date is split off.
+
+        Returns
+        -------
+        tuple
+            The stored dates and the dates to process, each in date order,
+            and per group the files of the stored dates with the log-book
+            row that holds each.
+        """
+        storage = self._config.processing.storage
+        if storage.gnss_store_strategy != "skip" or not store_exists(
+            self.site.gnss_store_path
+        ):
+            return [], dates, {}
+        t_start = _time.monotonic()
+        store = self.site.gnss_store
+        log_books = {
+            group: written_rows(store.load_metadata_for_dedup(group))
+            for group in {group for _, groups in dates for group in groups}
+        }
+
+        def held(date_key: str, group: str) -> dict[str, dict[str, Any]]:
+            day = np.datetime64(YYYYDOY.from_str(date_key).date, "D")
+            rows = rows_around(log_books[group], day)
+            if rows is None:
+                return {}
+            # The last row of a hash is its latest write.
+            return {str(row["rinex_hash"]): row for row in rows.iter_rows(named=True)}
+
+        files = {
+            (date_key, group): [f.path for f in discover_files(day, fmt)]
+            for date_key, groups in dates
+            for group, (day, _type, _position, fmt) in groups.items()
+        }
+        paths = sorted({path for group_files in files.values() for path in group_files})
+        with ThreadPoolExecutor(
+            max_workers=min(8, os.cpu_count() or 1),
+            thread_name_prefix="canvodpy-hash",
+        ) as pool:
+            hashes = dict(zip(paths, pool.map(file_hash, paths), strict=True))
+        stored, rest = [], []
+        holders: dict[str, list[tuple[Path, dict[str, Any]]]] = defaultdict(list)
+        for date_key, groups in dates:
+            group_rows = {g: held(date_key, g) for g in groups}
+            # A group without files on the date is not held: its day is
+            # processed, so the run reports it as it does today.
+            if all(files[date_key, g] for g in groups) and all(
+                hashes[path] in group_rows[g]
+                for g in groups
+                for path in files[date_key, g]
+            ):
+                stored.append((date_key, groups))
+                for g in groups:
+                    holders[g].extend(
+                        (path, group_rows[g][hashes[path]])
+                        for path in files[date_key, g]
+                    )
+            else:
+                rest.append((date_key, groups))
+        self._logger.info(
+            "stored_days_skipped",
+            days=[date_key for date_key, _ in stored],
+            files_hashed=len(paths),
+            seconds=round(_time.monotonic() - t_start, 2),
+        )
+        return stored, rest, dict(holders)
+
+    def _commit_skipped_files(
+        self,
+        date_keys: list[str],
+        holders: dict[str, list[tuple[Path, dict[str, Any]]]],
+    ) -> None:
+        """Write a log-book row for each file of the stored dates, in one commit.
+
+        The row is that of a file skipped as already stored, as a task
+        writes it (``action`` "skipped"), with this run's ``run_id``. Its
+        epochs, attributes and preprocessing record come from the row that
+        holds the file, since the file is not read. One commit per run, so
+        the log book records every run that saw a file. A commit that fails
+        is logged; the stored dates stay stored.
+        """
+        if not holders:
+            return
+        store = self.site.gnss_store
+        strategy = self._config.processing.storage.gnss_store_strategy
+        span = (
+            date_keys[0]
+            if len(date_keys) == 1
+            else f"{date_keys[0]}..{date_keys[-1]} ({len(date_keys)} days)"
+        )
+        commit_msg = _with_run_id(
+            f"[v{get_version_from_pyproject()}] {span}: {len(holders)} groups: "
+            + ", ".join(f"{g}(skipped={len(holders[g])})" for g in sorted(holders))
+        )
+
+        def rows_of(group: str) -> list[dict[str, Any]]:
+            rows = []
+            for path, held in holders[group]:
+                attrs = json.loads(str(held.get("attrs") or "{}"))
+                row = logbook_row_of(
+                    path,
+                    str(held["rinex_hash"]),
+                    np.datetime64(held["start"], "ns"),
+                    np.datetime64(held["end"], "ns"),
+                    attrs,
+                    str(held.get("canonical_name") or ""),
+                    True,
+                    store.rel_path_for_commit(path),
+                    "skipped",
+                    -1,
+                    strategy,
+                )
+                row["preprocessing"] = str(held.get("preprocessing") or "")
+                # The file on disk in this run, not where it was first written.
+                row["physical_path"] = str(path)
+                row["commit_msg"] = commit_msg
+                rows.append(row)
+            return rows
+
+        rows = {group: rows_of(group) for group in sorted(holders)}
+        metadata: dict[str, str] = {
+            "date": ",".join(date_keys),
+            "receivers": ",".join(rows),
+            "total_files": str(sum(map(len, rows.values()))),
+        }
+        for group, group_rows in rows.items():
+            metadata[f"group__{group}"] = json.dumps(
+                {
+                    "receiver": group,
+                    "start": str(min(r["start"] for r in group_rows)),
+                    "end": str(max(r["end"] for r in group_rows)),
+                    "rinex_hashes": ",".join(str(r["rinex_hash"]) for r in group_rows),
+                    "canonical_names": ",".join(
+                        str(r["canonical_name"])
+                        for r in group_rows
+                        if r["canonical_name"]
+                    ),
+                }
+            )
+
+        def commit() -> str:
+            session = store.repo.writable_session("main")
+            for group, group_rows in rows.items():
+                store.append_metadata_bulk(
+                    group_name=group, rows=group_rows, session=session
+                )
+            return commit_with_rebase(
+                session,
+                commit_msg,
+                metadata=metadata,
+                store_path=store.store_path,
+                config=self._config,
+            )
+
+        try:
+            snapshot_id = call_with_store_retries(
+                commit, logger=self._logger, date=span, op="commit_skipped_files"
+            )
+        except (icechunk.ConflictError, *STORE_ERROR_TYPES) as exc:
+            self._logger.error(
+                "skipped_files_not_logged", days=date_keys, error=repr(exc)
+            )
+            return
+        self._logger.info(
+            "skipped_files_logged",
+            days=date_keys,
+            files=int(metadata["total_files"]),
+            snapshot_id=snapshot_id[:12],
+        )
 
     def _held_file_names(self, groups: set[str]) -> dict[str, set[str]]:
         """The canonical names in each group's log book; none without a store."""
@@ -2558,14 +2753,33 @@ class PipelineOrchestrator:
             )
             return
 
-        self._size_to_memory(filtered_dates)
-
         if self._run is not None:
             self._run.plan(
                 (group, date_key)
                 for date_key, groups in filtered_dates
                 for group in groups
             )
+
+        # A run without read-back passes stored days on without reading
+        # them; with read-back the caller needs their data.
+        if not read_back:
+            stored_dates, filtered_dates, holders = self._split_stored_dates(
+                filtered_dates
+            )
+            self._commit_skipped_files([d for d, _ in stored_dates], holders)
+            for date_key, groups in stored_dates:
+                for group in groups:
+                    self._finish_receiver_day(group, date_key, "skipped")
+            days = max(1, self.unit_days)
+            for start in range(0, len(stored_dates), days):
+                yield [
+                    (date_key, dict.fromkeys(groups), {})
+                    for date_key, groups in stored_dates[start : start + days]
+                ]
+            if not filtered_dates:
+                return
+
+        self._size_to_memory(filtered_dates)
 
         self._logger.info(
             "process_by_date_started",

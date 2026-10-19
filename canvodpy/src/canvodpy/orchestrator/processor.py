@@ -111,6 +111,7 @@ from canvodpy.orchestrator.forked_writes import (
     chunk_groups,
     rewrite_spans,
     stored_spans,
+    stored_spans_around,
 )
 
 # ============================================================================
@@ -1149,6 +1150,42 @@ class GroupWriteResult:
     failed_files: int = 0
 
 
+def logbook_row_of(
+    fname: Path,
+    rinex_hash: str,
+    start: np.datetime64,
+    end: np.datetime64,
+    attrs: dict[str, Any],
+    canonical_name: str,
+    exists: bool,
+    rel_path: str,
+    action: str,
+    epochs: int,
+    write_strategy: str,
+) -> dict[str, Any]:
+    """One log-book row from a file's numbers.
+
+    See :meth:`RinexDataProcessor._logbook_row` for the columns.
+    """
+    return {
+        "fname": fname,
+        "rinex_hash": rinex_hash,
+        "start": start,
+        "end": end,
+        "dataset_attrs": attrs,
+        "exists": exists,
+        "rel_path": rel_path,
+        "canonical_name": canonical_name,
+        "physical_path": attrs.get("physical_path") or str(fname),
+        "action": action,
+        "epochs": epochs,
+        "write_strategy": write_strategy,
+        "run_id": get_run_id() or "",
+        "commit_msg": "",
+        "snapshot_id": "",
+    }
+
+
 # ============================================================================
 # MAIN (HALF-PARALLEL) PROCESSOR CLASS
 # ============================================================================
@@ -1628,23 +1665,19 @@ class RinexDataProcessor:
         epochs: int,
     ) -> dict[str, Any]:
         """One log-book row from a file's numbers (see :meth:`_logbook_row`)."""
-        return {
-            "fname": fname,
-            "rinex_hash": rinex_hash,
-            "start": start,
-            "end": end,
-            "dataset_attrs": attrs,
-            "exists": exists,
-            "rel_path": rel_path,
-            "canonical_name": canonical_name,
-            "physical_path": attrs.get("physical_path") or str(fname),
-            "action": action,
-            "epochs": epochs,
-            "write_strategy": self._gnss_store_strategy,
-            "run_id": get_run_id() or "",
-            "commit_msg": "",
-            "snapshot_id": "",
-        }
+        return logbook_row_of(
+            fname,
+            rinex_hash,
+            start,
+            end,
+            attrs,
+            canonical_name,
+            exists,
+            rel_path,
+            action,
+            epochs,
+            self._gnss_store_strategy,
+        )
 
     def _get_site_config(self):
         """Get the SiteConfig for the current site."""
@@ -3853,13 +3886,8 @@ class RinexDataProcessor:
         only with a row near it; the rest of the log book is not sent to
         the workers (:func:`~canvodpy.orchestrator.forked_writes.stored_spans`).
         """
-        df = self.site.gnss_store.load_metadata_for_dedup(group)
-        if df is None or df.is_empty():
-            return ()
-        low = datetime.fromisoformat(str(day - np.timedelta64(1, "D")))
-        high = datetime.fromisoformat(str(day + np.timedelta64(2, "D")))
-        return stored_spans(
-            df.filter((pl.col("end") >= low) & (pl.col("start") < high))
+        return stored_spans_around(
+            self.site.gnss_store.load_metadata_for_dedup(group), day
         )
 
     def _check_stored_overlaps(
