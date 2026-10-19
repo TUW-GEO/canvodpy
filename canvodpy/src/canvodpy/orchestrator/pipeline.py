@@ -116,9 +116,11 @@ from canvodpy.orchestrator.resources import (
 )
 from canvodpy.orchestrator.store_retry import (
     CONFLICT_TRIES,
+    RETRYABLE_STORE_ERRORS,
     STORE_ERROR_TYPES,
     call_with_store_retries,
     wait_after_conflict,
+    wait_after_store_error,
 )
 from canvodpy.run_history import (
     ActiveRun,
@@ -2300,7 +2302,15 @@ class PipelineOrchestrator:
         (whose log book now holds that run's files), their fork jobs run
         again in the pool, and the unit is committed; up to
         :data:`~canvod.store_metadata.io.CONFLICT_TRIES` tries in all
-        (#339, ADR 0021).
+        (#339, ADR 0021). A transient store error (a dropped connection, an
+        object store's server error) is handled the same way after the
+        waits of :func:`~canvodpy.orchestrator.store_retry.wait_after_store_error`,
+        so one such error does not lose the unit's days. Each retry redoes
+        the unit's fork jobs, so it costs about as much as the first try.
+        If the commit landed but its reply was lost, the files are stored
+        when the days are planned again: they are skipped, and the next
+        commit adds a ``skipped`` row for each, as any run over stored
+        files does.
 
         Returns
         -------
@@ -2311,55 +2321,86 @@ class PipelineOrchestrator:
         ------
         icechunk.ConflictError
             If the unit lost the conflict on every try.
+        OSError, icechunk.IcechunkError
+            If the store failed on every try.
         RuntimeError
             If a day could not be planned again.
         """
         date_keys = ",".join(d.planned.date_key for d in days)
-        for retry in range(1, CONFLICT_TRIES):
+        conflicts = store_errors = 0
+        replan = False
+        while True:
             try:
+                if replan:
+                    days = self._replan_unit(days, submit_fork, batch_index)
                 return days[0].processor._commit_forked_unit(
                     [(d.processor, d.planned, d.results) for d in days]
                 )
             except icechunk.ConflictError as exc:
-                seconds = wait_after_conflict(retry)
+                conflicts += 1
+                if conflicts >= CONFLICT_TRIES:
+                    raise
+                seconds = wait_after_conflict(conflicts)
                 self._logger.warning(
                     "forked_unit_conflict_retrying",
                     date=date_keys,
-                    retry=retry,
+                    retry=conflicts,
                     of=CONFLICT_TRIES - 1,
                     waited_seconds=round(seconds, 1),
                     error=str(exc),
                 )
-            session = self._unit_session()
-            replanned_days: list[_UnitDay] = []
-            for day in days:
-                with stage_timer("planning", date_key=day.planned.date_key):
-                    replanned = day.processor.plan_forked_day(
-                        day.task_descriptors, session=session
-                    )
-                if replanned is None:
-                    msg = (
-                        f"Day {day.planned.date_key} could not be planned again "
-                        "after a lost conflict: the store no longer has its day "
-                        "blocks."
-                    )
-                    raise RuntimeError(msg)
-                replanned_days.append(
-                    _UnitDay(day.processor, replanned, day.task_descriptors, [])
+            except RETRYABLE_STORE_ERRORS as exc:
+                store_errors += 1
+                if not wait_after_store_error(
+                    store_errors,
+                    exc,
+                    logger=self._logger,
+                    date=date_keys,
+                    op="write_unit",
+                ):
+                    raise
+            replan = True
+
+    def _replan_unit(
+        self,
+        days: list[_UnitDay],
+        submit_fork: Callable[[_ForkJob], Future],
+        batch_index: int,
+    ) -> list[_UnitDay]:
+        """Plan a unit's days again at the tip and run their fork jobs again.
+
+        Raises
+        ------
+        RuntimeError
+            If a day could not be planned again.
+        """
+        session = self._unit_session()
+        replanned_days: list[_UnitDay] = []
+        for day in days:
+            with stage_timer("planning", date_key=day.planned.date_key):
+                replanned = day.processor.plan_forked_day(
+                    day.task_descriptors, session=session
                 )
-            futures = [
-                (day, job, submit_fork(job))
-                for day in replanned_days
-                for job in (_ForkJob(task, fork) for task, fork in day.planned.tasks)
-            ]
-            for day, job, fut in futures:
-                day.results.append(
-                    self._fork_result(day.planned.date_key, job, fut, batch_index)
+            if replanned is None:
+                msg = (
+                    f"Day {day.planned.date_key} could not be planned again "
+                    "after a failed try: the store no longer has its day "
+                    "blocks."
                 )
-            days = replanned_days
-        return days[0].processor._commit_forked_unit(
-            [(d.processor, d.planned, d.results) for d in days]
-        )
+                raise RuntimeError(msg)
+            replanned_days.append(
+                _UnitDay(day.processor, replanned, day.task_descriptors, [])
+            )
+        futures = [
+            (day, job, submit_fork(job))
+            for day in replanned_days
+            for job in (_ForkJob(task, fork) for task, fork in day.planned.tasks)
+        ]
+        for day, job, fut in futures:
+            day.results.append(
+                self._fork_result(day.planned.date_key, job, fut, batch_index)
+            )
+        return replanned_days
 
     def _unit_outcome(
         self, write: Future | None

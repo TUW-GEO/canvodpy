@@ -14,7 +14,9 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 import pytest
+from canvodpy.orchestrator import store_retry
 from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+from canvodpy.orchestrator.processor import RinexDataProcessor
 from synthetic_days import RECEIVERS, site_data
 
 from canvod.store import MyIcechunkStore
@@ -114,6 +116,41 @@ def test_each_vod_task_logs_its_worker_memory_peak(two_days) -> None:
     assert all(p["peak_gb"] >= p["before_gb"] > 0 for p in peaks)
 
 
+def test_vod_timings_name_their_day_as_yyyydoy(two_days) -> None:
+    # The GNSS stages key a day as YYYYDOY; the VOD phase's time must join
+    # them on the time-per-day chart, not form points of its own.
+    with _site().pipeline(n_workers=2) as pipeline:
+        list(pipeline.run(*DAYS))
+
+    log_dir = Path(two_days.processing.logging.log_dir)
+    # A timing event is in both agent.json and performance.json.
+    vod_days = {
+        t["date_key"]
+        for t in _log_events(log_dir, "stage_timing")
+        if t["stage"] == "vod_calc"
+    }
+    assert vod_days == set(DAYS)
+    unit_days = {
+        day
+        for e in _log_events(log_dir, "vod_unit_committed")
+        for day in (e["first"], e["last"])
+    }
+    assert unit_days <= set(DAYS)
+
+
+def test_the_vod_growth_commit_names_its_days_as_yyyydoy(two_days) -> None:
+    # The second run grows the VOD day blocks the first run created.
+    site = _site()
+    for day in DAYS:
+        with site.pipeline(n_workers=2) as pipeline:
+            list(pipeline.run(day, day))
+
+    messages = [s.message for s in site.vod_store.repo.ancestry(branch="main")]
+    growth = [m for m in messages if "VOD day blocks for" in m]
+    assert growth == [growth[0]]
+    assert growth[0].endswith(f"VOD day blocks for {DAYS[1]}..{DAYS[1]}")
+
+
 def test_a_day_whose_gnss_phase_fails_gets_no_vod(two_days, monkeypatch) -> None:
     prepare = PipelineOrchestrator._prepare_single_date
 
@@ -193,6 +230,53 @@ def test_a_rerun_reads_only_the_days_with_new_files(two_days, monkeypatch) -> No
     assert prepared == [DAYS[1]]
     assert sorted(day for unit in units for day in unit.days) == list(DAYS)
     assert _vod_days(site) == {"2025-01-01", "2025-01-02"}
+
+
+def _fail_once(monkeypatch, owner, name):
+    """Let ``owner.name`` fail with a dropped connection on its first call."""
+    calls = []
+    original = getattr(owner, name)
+
+    def flaky(*args, **kwargs):
+        calls.append(name)
+        if len(calls) == 1:
+            msg = "end of file before message length reached"
+            raise OSError(msg)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(owner, name, flaky)
+    monkeypatch.setattr(store_retry, "STORE_RETRY_BACKOFF_SECONDS", (0.0,) * 4)
+    return calls
+
+
+def test_a_unit_commit_survives_a_dropped_connection(two_days, monkeypatch) -> None:
+    # A transient store error (S3 500, a dropped connection) once the
+    # unit's forks are back: the unit is written again, not lost.
+    calls = _fail_once(monkeypatch, RinexDataProcessor, "_commit_forked_unit")
+    site = _site()
+    with site.pipeline(n_workers=2) as pipeline:
+        units = list(pipeline.run(*DAYS))
+
+    assert len(calls) >= 2
+    assert sorted(day for unit in units for day in unit.days) == list(DAYS)
+    assert _vod_days(site) == {"2025-01-01", "2025-01-02"}
+    log_dir = Path(two_days.processing.logging.log_dir)
+    retries = _log_events(log_dir, "store_op_retry")
+    assert {e["op"] for e in retries} == {"write_unit"}
+
+
+def test_a_vod_unit_survives_a_dropped_connection(two_days, monkeypatch) -> None:
+    calls = _fail_once(monkeypatch, MyIcechunkStore, "commit_vod_days")
+    site = _site()
+    with site.pipeline(n_workers=2) as pipeline:
+        units = list(pipeline.run(*DAYS))
+
+    assert len(calls) >= 2
+    assert [unit.vod_error for unit in units] == [None] * len(units)
+    assert _vod_days(site) == {"2025-01-01", "2025-01-02"}
+    log_dir = Path(two_days.processing.logging.log_dir)
+    retries = _log_events(log_dir, "store_op_retry")
+    assert {(e["op"], e["first"]) for e in retries} == {("vod_unit", DAYS[0])}
 
 
 def test_a_run_without_vod_writes_no_vod_store(two_days) -> None:

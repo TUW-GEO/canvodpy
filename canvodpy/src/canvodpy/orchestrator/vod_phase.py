@@ -409,7 +409,10 @@ class VodPhase:
         for analysis, missing in report.missing.items():
             for day, reason in missing:
                 self.log.warning(
-                    "vod_day_missing", analysis=analysis, day=str(day), reason=reason
+                    "vod_day_missing",
+                    analysis=analysis,
+                    date_key=_yyyydoy(day),
+                    reason=reason,
                 )
         if not plans:
             return report
@@ -427,7 +430,7 @@ class VodPhase:
                 growth,
                 message=(
                     f"[v{get_version_from_pyproject()}] VOD day blocks for "
-                    f"{days[0]}..{days[-1]}"
+                    f"{_yyyydoy(days[0])}..{_yyyydoy(days[-1])}"
                 ),
             )
             record_stage_timing("vod_day_block_growth", time.perf_counter() - t_growth)
@@ -478,14 +481,14 @@ class VodPhase:
                 self.log.warning(
                     "vod_day_missing",
                     analysis=analysis,
-                    day=str(plan.day),
+                    date_key=_yyyydoy(plan.day),
                     reason=result.missing,
                 )
                 continue
             record_stage_timing(
                 "vod_calc",
                 result.seconds,
-                date_key=str(plan.day),
+                date_key=_yyyydoy(plan.day),
                 calculator=self.calculator,
                 analysis=analysis,
             )
@@ -531,8 +534,8 @@ class VodPhase:
         )
         self.log.info(
             "vod_unit_committed",
-            first=str(days[0]),
-            last=str(days[-1]),
+            first=_yyyydoy(days[0]),
+            last=_yyyydoy(days[-1]),
             written=sum(len(d) for d in report.written.values()),
             stored=sum(len(d) for d in report.stored.values()),
             missing=sum(len(d) for d in report.missing.values()),

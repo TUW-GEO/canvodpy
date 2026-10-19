@@ -11,6 +11,7 @@ same network mount, so both need the same retry treatment.
 
 from __future__ import annotations
 
+import errno
 import time as _time
 from collections.abc import Callable
 
@@ -23,6 +24,26 @@ STORE_ERROR_TYPES = (OSError, RuntimeError, ValueError, icechunk.IcechunkError)
 # RuntimeError (e.g. a dataset that fails validation) fails the same way on
 # every attempt, so it propagates at once instead of after the backoff.
 RETRYABLE_STORE_ERRORS = (OSError, icechunk.IcechunkError)
+# OS errors among those that fail the same way on every attempt: a retry
+# would only add the waits (and for a unit, its whole work again).
+_LASTING_OS_ERRORS = (
+    PermissionError,
+    FileNotFoundError,
+    IsADirectoryError,
+    NotADirectoryError,
+)
+_LASTING_ERRNOS = frozenset(
+    code
+    for code in (
+        errno.ENOSPC,
+        errno.EROFS,
+        getattr(errno, "EDQUOT", None),
+    )
+    if code is not None
+)
+# Windows: a file held briefly by another process (a virus scanner) gives
+# a PermissionError with ERROR_SHARING_VIOLATION or ERROR_LOCK_VIOLATION.
+_WINDOWS_SHARING_ERRORS = frozenset({32, 33})
 # CIFS's default dead-connection-detection interval (echo_interval) is 60s --
 # a (2, 8, 30) schedule (40s total) can exhaust every retry before the OS-level
 # driver has even noticed the connection dropped, so every attempt would hit
@@ -35,11 +56,57 @@ RETRYABLE_STORE_ERRORS = (OSError, icechunk.IcechunkError)
 STORE_RETRY_BACKOFF_SECONDS = (5.0, 15.0, 45.0, 90.0)
 
 
+def is_transient(exc: BaseException) -> bool:
+    """Whether a store error can be transient, so trying again may succeed.
+
+    An error in :data:`RETRYABLE_STORE_ERRORS` is, unless it is an OS error
+    that lasts: no permission, a missing file or folder, a full disk or
+    quota, a read-only file system. A Windows sharing or lock violation is
+    a ``PermissionError`` but passes: the other process lets the file go.
+    """
+    if not isinstance(exc, RETRYABLE_STORE_ERRORS):
+        return False
+    if getattr(exc, "winerror", None) in _WINDOWS_SHARING_ERRORS:
+        return True
+    if isinstance(exc, _LASTING_OS_ERRORS):
+        return False
+    return not (isinstance(exc, OSError) and exc.errno in _LASTING_ERRNOS)
+
+
+def wait_after_store_error(
+    errors: int, exc: BaseException, *, logger, **log_ctx: object
+) -> bool:
+    """Wait before trying again after the ``errors``-th transient store error.
+
+    For a caller that redoes more than one call after an error, such as a
+    unit of days written again. Logs ``store_op_retry`` and waits as
+    :func:`call_with_store_retries` does.
+
+    Returns
+    -------
+    bool
+        ``False`` if ``exc`` is not transient (:func:`is_transient`) or the
+        retries are used up: the caller raises ``exc``.
+    """
+    if not is_transient(exc) or errors > len(STORE_RETRY_BACKOFF_SECONDS):
+        return False
+    backoff = STORE_RETRY_BACKOFF_SECONDS[errors - 1]
+    logger.warning(
+        "store_op_retry",
+        attempt=errors,
+        backoff_seconds=backoff,
+        error=str(exc),
+        **log_ctx,
+    )
+    _time.sleep(backoff)
+    return True
+
+
 def call_with_store_retries[T](fn: Callable[[], T], *, logger, **log_ctx: object) -> T:
     """Retry a store read/write with backoff before giving up.
 
-    Only errors in ``RETRYABLE_STORE_ERRORS`` are retried; any other error
-    propagates at once. The final attempt is unguarded -- its exception propagates to the
+    Only transient errors are retried (:func:`is_transient`); any other
+    error propagates at once. The final attempt is unguarded -- its exception propagates to the
     caller's own ``except``/``log.exception`` so existing log event names
     and give-up behavior are unchanged; this only adds retries in front of
     that.
@@ -71,6 +138,8 @@ def call_with_store_retries[T](fn: Callable[[], T], *, logger, **log_ctx: object
             )
             continue
         except RETRYABLE_STORE_ERRORS as exc:
+            if not is_transient(exc):
+                raise
             logger.warning(
                 "store_op_retry",
                 attempt=attempt + 1,
