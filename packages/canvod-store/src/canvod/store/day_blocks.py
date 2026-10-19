@@ -339,6 +339,19 @@ def fill_value(var: xr.Variable | xr.DataArray, name: str) -> Any:
     raise ValueError(msg)
 
 
+def fill_encoding(var: xr.Variable | xr.DataArray, name: str) -> dict[str, Any]:
+    """Take the missing value of a variable out of its attributes, for its encoding.
+
+    Returns the CF ``_FillValue`` and the Zarr ``fill_value``, both
+    :func:`fill_value`, and removes ``_FillValue`` from ``var.attrs``.
+    xarray refuses a ``_FillValue`` in both the attributes and the encoding,
+    which an append to a stored array would otherwise give.
+    """
+    fill = fill_value(var, name)
+    var.attrs.pop("_FillValue", None)
+    return {"_FillValue": fill, "fill_value": fill}
+
+
 def _create_group(
     session: Any,
     group: str,
@@ -375,9 +388,7 @@ def _create_group(
         )
         encoding[str(name)] = {"chunks": chunks}
         if "epoch" in var.dims and name != "epoch":
-            fill = fill_value(var, str(name))
-            var.attrs.pop("_FillValue", None)
-            encoding[str(name)].update({"_FillValue": fill, "fill_value": fill})
+            encoding[str(name)].update(fill_encoding(var, str(name)))
     empty = prepare_write(empty, session.store, group, append_dim=None)
     to_icechunk(
         empty,
