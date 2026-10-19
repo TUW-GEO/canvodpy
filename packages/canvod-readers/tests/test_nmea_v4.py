@@ -931,11 +931,15 @@ class TestNmeaPosition:
         ds = NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds()
         assert "APPROX POSITION X" not in ds.attrs
 
-    def test_fixes_without_a_geoid_separation_give_no_position(self, tmp_path):
-        fixes = [_gga(s, separation="") for s in range(2)]
+    @pytest.mark.parametrize("missing", ["altitude", "separation"])
+    def test_fixes_without_a_height_give_no_position(self, tmp_path, missing):
+        fixes = [_gga(s, **{missing: ""}) for s in range(2)]
         ds = NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds()
         assert "APPROX POSITION X" not in ds.attrs
-        assert "geoid separation" in ds.attrs["Position Source"]
+        assert (
+            "2 valid fixes lack the MSL altitude or the geoid separation"
+            in (ds.attrs["Position Source"])
+        )
 
     def test_hainich_position_lies_at_the_site(self, hainich_canopy_file):
         import pymap3d as pm

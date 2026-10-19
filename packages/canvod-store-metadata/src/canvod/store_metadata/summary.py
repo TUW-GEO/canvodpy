@@ -538,7 +538,8 @@ def _stored_file_count(book: _Book | None) -> int | None:
 def _header_position(attrs: dict[str, Any]) -> tuple[float, float, float] | None:
     """A file's header position (ECEF, m) from its log-book ``attrs``.
 
-    RINEX headers give ``APPROX POSITION X/Y/Z``; SBF files give
+    RINEX headers give ``APPROX POSITION X/Y/Z``, and so does the NMEA
+    reader (the median of a file's GGA fixes); SBF files give
     ``Approximate Position`` as ``"X=..., Y=..., Z=..."`` (the same two forms
     ``canvod.auxiliary.position.ECEFPosition.from_ds_metadata`` reads). A
     missing or all-zero position counts as not given.
