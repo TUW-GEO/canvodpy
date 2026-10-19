@@ -520,3 +520,24 @@ def test_int8_largest_difference_does_not_wrap(tmp_path) -> None:
     assert len(diffs) == 1
     assert diffs[0].n_values == 1
     assert diffs[0].largest_diff == 200
+
+
+# --- A VOD store's groups sit below the calculator --------------------------
+
+_VOD_GROUP = "tau_omega/canopy_01_vs_reference_01"
+
+
+def test_vod_groups_below_the_calculator_are_compared(tmp_path) -> None:
+    ds = _vod_ds(seed=3)
+    cells = _first_non_nan_cells(ds, "VOD")
+    ref = _vod_store(tmp_path / "ref", ds, group=_VOD_GROUP)
+    same = _vod_store(tmp_path / "same", ds, group=_VOD_GROUP)
+    changed = _vod_store(
+        tmp_path / "changed", _perturb(ds, "VOD", cells, 1e-3), group=_VOD_GROUP
+    )
+
+    assert compare_stores(ref, same) == StoreComparison(
+        groups_in_reference=1, groups_in_new=1
+    )
+    diffs = _value_diff(compare_stores(ref, changed), "VOD")
+    assert [(d.group, d.n_values) for d in diffs] == [(_VOD_GROUP, 3)]

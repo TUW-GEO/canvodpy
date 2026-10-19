@@ -36,7 +36,6 @@ import numpy as np
 import xarray as xr
 import zarr
 import zarr.errors
-from canvod.store_metadata import RESERVED_GROUP
 from canvod.store_metadata.collectors import collect_config_snapshot
 from canvod.store_metadata.io import commit_lock, commit_with_rebase
 from canvod.store_metadata.layout import (
@@ -57,6 +56,7 @@ from canvod.store.day_blocks import (
     CadenceError,
     _create_group,
     add_day_block,
+    data_groups,
     day_blocks,
     day_slots,
     restore_integers,
@@ -145,7 +145,7 @@ def plan_layout_migration(
     repo = open_repository(location)
     _require_repository_metadata(repo, location)
     store = repo.readonly_session(branch=branch).store
-    return [_plan_group(store, group) for group in _data_groups(store)]
+    return [_plan_group(store, group) for group in data_groups(store)]
 
 
 def migrate_layout(
@@ -199,7 +199,7 @@ def migrate_layout(
         session = repo.writable_session(branch)
         old = repo.readonly_session(snapshot_id=session.snapshot_id).store
         done = []
-        for group in _data_groups(old):
+        for group in data_groups(old):
             plan = _plan_group(old, group)
             if plan.action == REWRITE:
                 _rewrite_group(session, old, plan, epoch_chunk, dim_chunks)
@@ -229,27 +229,6 @@ def _require_repository_metadata(repo: Any, location: StoreLocation) -> None:
             f"  {MIGRATE_COMMAND} SITE --store gnss|vod"
         )
         raise ValueError(msg)
-
-
-def _data_groups(store: Any) -> list[str]:
-    """The groups of the store that hold epochs, at any depth.
-
-    A VOD group sits below its calculator (``tau_omega/...``). The groups
-    inside a data group (its ``metadata/``) are not data groups.
-    """
-    try:
-        root = zarr.open_group(store, mode="r")
-    except FileNotFoundError, zarr.errors.GroupNotFoundError:
-        return []
-    found: list[str] = []
-    below = [(name, group) for name, group in root.groups() if name != RESERVED_GROUP]
-    while below:
-        path, group = below.pop()
-        if "epoch" in set(group.array_keys()):
-            found.append(path)
-        else:
-            below.extend((f"{path}/{name}", sub) for name, sub in group.groups())
-    return sorted(found)
 
 
 def _epochs_ns(store: Any, group: str) -> np.ndarray:

@@ -61,6 +61,7 @@ from zarr.dtype import VariableLengthUTF8
 from canvod.store.day_blocks import (
     add_day_block,
     clear_day_block,
+    data_groups,
     day_blocks,
     drop_empty_slots,
     fill_value,
@@ -985,6 +986,26 @@ class MyIcechunkStore:
         if branch in group_dict:
             return group_dict[branch]
         return []
+
+    def list_data_groups(self, branch: str = "main") -> list[str]:
+        """List the groups that hold data, at any depth.
+
+        In a GNSS store these are the receiver groups, as
+        :meth:`list_groups` gives them; in a VOD store each analysis sits
+        below its calculator (``tau_omega/canopy_01_vs_reference_01``).
+
+        Parameters
+        ----------
+        branch : str
+            Branch name (default: "main")
+
+        Returns
+        -------
+        list[str]
+            The paths of the groups, sorted.
+        """
+        with self.readonly_session(branch) as session:
+            return data_groups(session.store)
 
     @property
     def tree(self) -> None:

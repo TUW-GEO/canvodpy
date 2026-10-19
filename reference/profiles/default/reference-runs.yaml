@@ -1,0 +1,6 @@
+# The sites and days `just reference-stores` and `just reference-check` run
+# with this profile (scripts/reference_stores.py).
+sites:
+  rosalia_rinex_v3_04:
+    start: 2025001
+    end: 2025001

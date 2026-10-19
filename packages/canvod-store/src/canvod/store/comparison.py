@@ -3,8 +3,8 @@
 A public comparison for the reference-store check (spec #318, seam B) and
 for comparing any two stores: a production store before and after an
 upgrade, two runs, a rebuilt store against the reference. It only reads,
-through :class:`~canvod.store.store.MyIcechunkStore` (``list_groups`` and
-``read_group``); it never changes how a store is written or read.
+through :class:`~canvod.store.store.MyIcechunkStore` (``list_data_groups``
+and ``read_group``); it never changes how a store is written or read.
 
 The comparison reports, per group and variable, the kind of difference,
 the number of differing values and the largest absolute difference. It
@@ -187,11 +187,12 @@ def compare_stores(reference: MyIcechunkStore, new: MyIcechunkStore) -> StoreCom
     """Compare two stores and return a report.
 
     Reads both stores through ``MyIcechunkStore`` only
-    (``list_groups`` and ``read_group``). The report says whether it
+    (``list_data_groups`` and ``read_group``), so a VOD store's analyses
+    below their calculator are compared too. The report says whether it
     matches and lists every difference per group and variable.
     """
-    ref_groups = sorted(reference.list_groups())
-    new_groups = sorted(new.list_groups())
+    ref_groups = reference.list_data_groups()
+    new_groups = new.list_data_groups()
 
     result = StoreComparison(
         groups_in_reference=len(ref_groups),
