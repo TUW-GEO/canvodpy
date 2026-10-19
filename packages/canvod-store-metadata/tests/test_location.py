@@ -218,7 +218,7 @@ class TestExpectedStore:
         store = tmp_path / "store"
         open_repository(store, create=True)
 
-        with pytest.raises(ValueError, match="migrate-metadata"):
+        with pytest.raises(ValueError, match="canvodpy store migrate SITE"):
             open_repository(store, expected_uuid="00000000-0000-4000-8000-000000000001")
 
     def test_reads_the_uuid_from_the_repository_metadata(self, tmp_path: Path) -> None:
@@ -235,7 +235,7 @@ class TestExpectedStore:
         store = tmp_path / "store"
         open_repository(store, create=True)
 
-        with pytest.raises(ValueError, match="migrate-metadata"):
+        with pytest.raises(ValueError, match="canvodpy store migrate SITE"):
             read_store_uuid(store)
 
 

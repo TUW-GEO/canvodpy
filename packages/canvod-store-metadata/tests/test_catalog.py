@@ -361,7 +361,7 @@ class TestStoresTheCatalogCannotDescribe:
     def test_a_store_needing_migration_is_named_with_the_migrate_command(
         self, root_with_bad_stores
     ):
-        with pytest.raises(ValueError, match="canvodpy store migrate-metadata"):
+        with pytest.raises(ValueError, match="canvodpy store migrate "):
             write_catalog(root_with_bad_stores)
 
     def test_nothing_is_written(self, root_with_bad_stores):

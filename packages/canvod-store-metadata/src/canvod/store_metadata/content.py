@@ -94,6 +94,9 @@ SETTINGS_ROOTS = ("sids", "processing", "sites")
 #: hash for a VOD store (a single hash replaces a SID list: a VOD store has no
 #: SIDs of its own).
 GNSS_CONTENT_HASH = "gnss_content_hash"
+#: The content-settings field that lists the values a migration changed
+#: (:func:`changed_content_settings`).
+CHANGES_FIELD = "changes"
 #: The settings of each receiver that count, below
 #: ``sites.<site>.receivers.<receiver>``.
 RECEIVER_KEYS = ("type", "reader_format", "paired_canopies")
@@ -285,6 +288,83 @@ def stored_form(
     if gnss_content_hash is not None:
         data[GNSS_CONTENT_HASH] = gnss_content_hash
     return data
+
+
+def changed_content_settings(
+    stored: Mapping[str, Any], *, key: str, new: Any, who: str, reason: str
+) -> dict[str, Any]:
+    """The content settings with one value changed by a migration.
+
+    Content settings are never amended: a run with other settings writes to
+    a new store. A migration that changes the store's data to fit a new
+    value (``canvodpy store migrate`` removes the ``clock`` variable and
+    sets ``fetch_clock`` off) records the value here. The hash is computed
+    again, and :data:`CHANGES_FIELD` keeps the old value and the old hash,
+    so a VOD store that recorded the old hash can follow
+    (:func:`~.migration.follow_gnss_content_hash`).
+
+    Parameters
+    ----------
+    key
+        A dotted key of the settings, or :data:`GNSS_CONTENT_HASH`.
+    """
+    content = json.loads(json.dumps(dict(stored), default=str))
+    if key == GNSS_CONTENT_HASH:
+        old = content.get(GNSS_CONTENT_HASH)
+        content[GNSS_CONTENT_HASH] = new
+    else:
+        old = _get(content["settings"], key)
+        _put(content["settings"], key, new)
+    content["hash"] = settings_hash(
+        content["settings"],
+        content.get("resolved_sids"),
+        content.get(GNSS_CONTENT_HASH),
+    )
+    content.setdefault(CHANGES_FIELD, []).append(
+        {
+            "key": key,
+            "old": old,
+            "new": new,
+            "old_hash": stored["hash"],
+            "who": who,
+            "when": datetime.now(UTC).isoformat(),
+            "reason": reason,
+            "canvodpy_version": _canvodpy_version(),
+        }
+    )
+    return content
+
+
+def replay_content_changes(
+    before: Mapping[str, Any], after: Mapping[str, Any]
+) -> dict[str, Any]:
+    """``before`` with the changes ``after`` records since, applied again.
+
+    For the check of a root copy against the repository metadata: equal to
+    ``after`` if ``after`` differs from ``before`` only by the changes it
+    records (:func:`changed_content_settings`), otherwise not. ``before``
+    is returned unchanged when the change lists don't share their start.
+    """
+    done = list(before.get(CHANGES_FIELD, []))
+    changes = list(after.get(CHANGES_FIELD, []))
+    if changes[: len(done)] != done:
+        return dict(before)
+    content = json.loads(json.dumps(dict(before), default=str))
+    for change in changes[len(done) :]:
+        if change.get("old_hash") != content.get("hash"):
+            return dict(before)
+        if change["key"] == GNSS_CONTENT_HASH:
+            content[GNSS_CONTENT_HASH] = change["new"]
+        else:
+            _put(content["settings"], change["key"], change["new"])
+        content["hash"] = settings_hash(
+            content["settings"],
+            content.get("resolved_sids"),
+            content.get(GNSS_CONTENT_HASH),
+        )
+    if changes:
+        content[CHANGES_FIELD] = changes
+    return content
 
 
 def gnss_content_hash_from(repository: Mapping[str, Any] | None) -> str:

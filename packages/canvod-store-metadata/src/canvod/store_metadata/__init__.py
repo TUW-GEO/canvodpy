@@ -31,7 +31,6 @@ from .inventory import (
 )
 from .io import (
     COMMIT_LOCK_NAME,
-    MIGRATE_COMMAND,
     amendments_since,
     apply_updates,
     check_receivers,
@@ -49,6 +48,8 @@ from .io import (
     write_metadata,
 )
 from .location import (
+    MIGRATE_COMMAND,
+    SITE_MIGRATE_COMMAND,
     LocalStoreLocation,
     S3StoreLocation,
     StorageUnreachableError,
@@ -72,6 +73,7 @@ __all__ = [
     "ContentSettingsError",
     "LocalStoreLocation",
     "MIGRATE_COMMAND",
+    "SITE_MIGRATE_COMMAND",
     "MetadataRuleWarning",
     "MissingContentSettingsError",
     "PLACEHOLDER",

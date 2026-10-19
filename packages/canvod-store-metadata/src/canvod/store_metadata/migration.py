@@ -929,3 +929,204 @@ def _replace_variable_attrs(
             node.attrs.put({**kept, **variable_attrs[name]})
             changed.append(path)
     return sorted(changed)
+
+
+#: The variable a GNSS store holds when its runs read CLK files.
+CLOCK_VARIABLE = "clock"
+#: The content setting that turns the CLK files on.
+FETCH_CLOCK_KEY = "processing.aux_data.fetch_clock"
+
+
+def _fetch_clock(repository: Mapping[str, Any]) -> Any:
+    settings = repository.get(CONTENT_SETTINGS_FIELD, {}).get("settings", {})
+    return settings.get("processing", {}).get("aux_data", {}).get("fetch_clock")
+
+
+def _clock_groups(root: zarr.Group) -> list[str]:
+    return sorted(
+        name
+        for name, group in root.groups()
+        if name != RESERVED_GROUP and CLOCK_VARIABLE in set(group.array_keys())
+    )
+
+
+def clock_to_drop(
+    store_path: StoreLocation | Path | str, branch: str = "main"
+) -> list[str] | None:
+    """The groups whose ``clock`` variable :func:`drop_clock` removes.
+
+    ``None``: nothing to do, no group holds the variable and the store
+    doesn't record ``fetch_clock: true``. An empty list: no group holds the
+    variable, but the content settings record ``fetch_clock: true``.
+    """
+    store_path = store_location(store_path)
+    groups = _clock_groups(_root_group(store_path, branch))
+    repository = open_repository(store_path).get_metadata() or {}
+    if not groups and _fetch_clock(repository) is not True:
+        return None
+    return groups
+
+
+def drop_clock(
+    store_path: StoreLocation | Path | str,
+    *,
+    who: str,
+    config: Any = None,
+    branch: str = "main",
+) -> str | None:
+    """Remove the ``clock`` variable of a GNSS store; record ``fetch_clock: false``.
+
+    Since v1.0.0 runs read no CLK files by default, and VOD doesn't use the
+    clock. A store made with ``fetch_clock: true`` holds a ``clock``
+    variable, and a run without it is refused twice: its content settings
+    differ, and its data lack a variable of the groups. This removes the
+    variable from every group and records ``fetch_clock: false`` in the
+    content settings, with the old value and hash
+    (:func:`~.content.changed_content_settings`). Snapshots from before
+    keep the variable.
+
+    Parameters
+    ----------
+    who
+        Who migrates the store, e.g. ``"NFB"``.
+    config
+        The settings recorded in the commit metadata; ``None`` loads them.
+
+    Returns
+    -------
+    str or None
+        Snapshot ID of the commit, or ``None`` if there was nothing to do
+        (:func:`clock_to_drop`).
+
+    Raises
+    ------
+    ValueError
+        If ``who`` is blank, or the store is not a GNSS store with content
+        settings (migrate them first).
+    """
+    from .content import changed_content_settings
+
+    who = check_who(who)
+    store_path = store_location(store_path)
+    with commit_lock(store_path):
+        repo = open_repository(store_path)
+        repository = repo.get_metadata() or {}
+        if repository.get("identity", {}).get("store_type") != "gnss_store":
+            msg = f"The store at {store_path} is not a GNSS store with metadata."
+            raise ValueError(msg)
+        content = repository.get(CONTENT_SETTINGS_FIELD)
+        if not content:
+            msg = (
+                f"The store at {store_path} has no content settings; migrate "
+                "them first (migrate_content_settings)."
+            )
+            raise ValueError(msg)
+        session = repo.writable_session(branch)
+        root = zarr.open_group(session.store, mode="r+")
+        groups = _clock_groups(root)
+        fetch_clock = _fetch_clock(repository)
+        if not groups and fetch_clock is not True:
+            return None
+        for name in groups:
+            del root[name][CLOCK_VARIABLE]
+        updated = dict(repository)
+        if fetch_clock is not False:
+            updated[CONTENT_SETTINGS_FIELD] = changed_content_settings(
+                content,
+                key=FETCH_CLOCK_KEY,
+                new=False,
+                who=who,
+                reason=(
+                    "canvodpy v1.0.0 reads no CLK files by default; the "
+                    f"'{CLOCK_VARIABLE}' variable was removed"
+                ),
+            )
+        commit_id = commit_with_rebase(
+            session,
+            f"Remove the '{CLOCK_VARIABLE}' variable; record fetch_clock: false",
+            store_path=store_path,
+            config=config,
+            repository=updated,
+        )
+        repo.set_metadata(updated)
+        return commit_id
+
+
+def follow_gnss_content_hash(
+    store_path: StoreLocation | Path | str,
+    gnss_store: StoreLocation | Path | str,
+    *,
+    who: str,
+    config: Any = None,
+    branch: str = "main",
+) -> str | None:
+    """Record a GNSS store's new content-settings hash in its VOD store.
+
+    A VOD store records the content-settings hash of its GNSS store
+    (``gnss_content_hash``, ADR 0019 D1). When a migration changed the GNSS
+    store's content settings (:func:`drop_clock`), the VOD store follows,
+    but only if the hash it records is one the GNSS store had before such
+    a change: a VOD store computed from other GNSS data is refused.
+
+    Returns
+    -------
+    str or None
+        Snapshot ID of the commit, or ``None`` if the VOD store records the
+        GNSS store's hash already.
+
+    Raises
+    ------
+    ValueError
+        If ``who`` is blank, either store has no content settings, or the
+        VOD store records a hash the GNSS store never had.
+    """
+    from .content import CHANGES_FIELD, changed_content_settings
+
+    who = check_who(who)
+    store_path = store_location(store_path)
+    gnss = open_repository(store_location(gnss_store)).get_metadata() or {}
+    gnss_content = gnss.get(CONTENT_SETTINGS_FIELD)
+    if not gnss_content:
+        msg = f"The GNSS store at {gnss_store} has no content settings."
+        raise ValueError(msg)
+    with commit_lock(store_path):
+        repo = open_repository(store_path)
+        repository = repo.get_metadata() or {}
+        content = repository.get(CONTENT_SETTINGS_FIELD)
+        if not content or not content.get(GNSS_CONTENT_HASH):
+            msg = (
+                f"The VOD store at {store_path} records no gnss_content_hash; "
+                "migrate its content settings first (migrate_content_settings)."
+            )
+            raise ValueError(msg)
+        recorded = content[GNSS_CONTENT_HASH]
+        if recorded == gnss_content["hash"]:
+            return None
+        earlier = {change["old_hash"] for change in gnss_content.get(CHANGES_FIELD, [])}
+        if recorded not in earlier:
+            msg = (
+                f"The VOD store at {store_path} records gnss_content_hash "
+                f"{recorded}, a hash the GNSS store at {gnss_store} never had: "
+                "the VOD was computed from a GNSS store with other content "
+                "settings. Compute it again, in a new VOD store."
+            )
+            raise ValueError(msg)
+        updated = {
+            **repository,
+            CONTENT_SETTINGS_FIELD: changed_content_settings(
+                content,
+                key=GNSS_CONTENT_HASH,
+                new=gnss_content["hash"],
+                who=who,
+                reason="the GNSS store's content settings were migrated",
+            ),
+        }
+        commit_id = commit_with_rebase(
+            repo.writable_session(branch),
+            "Record the GNSS store's migrated content-settings hash",
+            store_path=store_path,
+            config=config,
+            repository=updated,
+        )
+        repo.set_metadata(updated)
+        return commit_id

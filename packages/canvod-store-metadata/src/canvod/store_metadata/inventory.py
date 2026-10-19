@@ -10,10 +10,9 @@ import polars as pl
 from canvod.utils.tools import deprecated
 
 from .io import (
-    MIGRATE_COMMAND,
+    SITE_MIGRATE_COMMAND,
     _written_before_metadata,
     read_metadata,
-    store_command,
 )
 from .location import StoreLocation, open_repository, store_exists
 from .schema import StoreMetadata
@@ -141,12 +140,10 @@ def _row(store_path: StoreLocation | Path | str) -> dict[str, Any]:
     try:
         meta = read_metadata(store_path)
     except KeyError:  # data, but not even old-form metadata
-        row, command = _empty_row(store_path), MIGRATE_COMMAND
+        row, command = _empty_row(store_path), f"{SITE_MIGRATE_COMMAND} SITE"
     else:
         row = _metadata_to_row(store_path, meta)
-        command = store_command(
-            "migrate-metadata", meta.spatial.site.name, meta.identity.store_type
-        )
+        command = f"{SITE_MIGRATE_COMMAND} {meta.spatial.site.name}"
     return {**row, "needs_migration": True, "migrate_command": command}
 
 
@@ -164,7 +161,7 @@ def _check_catalog_stores(store_paths: list[Path]) -> None:
         if state == "needs_migration":
             problems.append(
                 f"  {sp}: written before stores kept repository metadata; "
-                f"migrate it with {MIGRATE_COMMAND}"
+                f"migrate it with {SITE_MIGRATE_COMMAND} SITE"
             )
         elif state == "empty":
             problems.append(f"  {sp}: has no metadata and no data")

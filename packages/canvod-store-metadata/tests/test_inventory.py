@@ -91,7 +91,7 @@ class TestStoresNeedingMigration:
         assert df["needs_migration"].to_list() == [False, True]
         assert df["migrate_command"].to_list() == [
             None,
-            "canvodpy store migrate-metadata Test --store gnss",
+            "canvodpy store migrate Test",
         ]
 
     def test_scan_marks_a_store_with_data_but_no_metadata(self, tmp_path):
@@ -100,7 +100,7 @@ class TestStoresNeedingMigration:
         (row,) = scan_stores(tmp_path).to_dicts()
 
         assert row["needs_migration"] is True
-        assert row["migrate_command"] == "canvodpy store migrate-metadata"
+        assert row["migrate_command"] == "canvodpy store migrate SITE"
         assert row["path"] == str(tmp_path / "old")
 
     def test_an_empty_store_needs_no_migration(self, tmp_path):
@@ -116,7 +116,7 @@ class TestStoresNeedingMigration:
         _create_store_with_metadata(tmp_path / "new", "fangorn/new")
         _create_old_store(tmp_path / "old", "fangorn/old")
 
-        with pytest.raises(ValueError, match="canvodpy store migrate-metadata") as e:
+        with pytest.raises(ValueError, match="canvodpy store migrate ") as e:
             build(tmp_path)
 
         assert str(tmp_path / "old") in str(e.value)

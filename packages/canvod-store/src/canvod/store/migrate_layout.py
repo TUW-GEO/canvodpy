@@ -44,7 +44,7 @@ from canvod.store_metadata.layout import (
     is_day_block_group,
 )
 from canvod.store_metadata.location import (
-    MIGRATE_COMMAND,
+    SITE_MIGRATE_COMMAND,
     StoreLocation,
     open_repository,
     store_location,
@@ -225,8 +225,8 @@ def _require_repository_metadata(repo: Any, location: StoreLocation) -> None:
     if not repo.get_metadata():
         msg = (
             f"The store at {location} has no repository metadata; move it to "
-            "the current form first, then to day blocks:\n"
-            f"  {MIGRATE_COMMAND} SITE --store gnss|vod"
+            "the current form and to day blocks with:\n"
+            f"  {SITE_MIGRATE_COMMAND} SITE"
         )
         raise ValueError(msg)
 

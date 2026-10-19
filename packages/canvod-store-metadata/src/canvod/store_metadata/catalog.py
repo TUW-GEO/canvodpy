@@ -46,7 +46,12 @@ from pystac.extensions.xarray_assets import XarrayAssetsExtension
 from .identity import _product
 from .inventory import _store_candidates
 from .io import _written_before_metadata, read_metadata, store_command
-from .location import MIGRATE_COMMAND, open_repository, store_exists, store_location
+from .location import (
+    SITE_MIGRATE_COMMAND,
+    open_repository,
+    store_exists,
+    store_location,
+)
 from .schema import (
     SPDX_LIST_URL,
     MetadataRuleWarning,
@@ -359,9 +364,11 @@ def _without_metadata(store_path: Path, repo: icechunk.Repository) -> str:
     if not _written_before_metadata(repo):
         return "has no metadata; a store gets it from the run that creates it"
     try:
-        command = _command("migrate-metadata", _read_quietly(store_path))
+        command = (
+            f"{SITE_MIGRATE_COMMAND} {_read_quietly(store_path).spatial.site.name}"
+        )
     except KeyError, ValidationError:  # data without old-form metadata
-        command = f"{MIGRATE_COMMAND} SITE --store gnss|vod"
+        command = f"{SITE_MIGRATE_COMMAND} SITE"
     return f"needs migration to the current metadata form (ADR 0014): {command}"
 
 

@@ -14,7 +14,7 @@ from typing import Any
 import icechunk
 import structlog
 import zarr
-from canvod.config.store_names import STORE_TYPE_KINDS
+from canvod.config.store_names import OLD_GNSS_STORE_NAME, STORE_TYPE_KINDS
 from canvod.utils.tools import deprecated
 from filelock import FileLock, Timeout
 from pydantic import ValidationError
@@ -24,10 +24,11 @@ from .icechunk_logs import apply_icechunk_log_filter
 from .identity import check_store_folder
 from .layout import DAY_BLOCK_INDEX_ATTR, is_day_block_group
 from .location import (
-    MIGRATE_COMMAND,
+    SITE_MIGRATE_COMMAND,
     StoreLocation,
     open_repository,
     repository_config,
+    store_exists,
     store_location,
 )
 from .schema import (
@@ -238,7 +239,7 @@ def commit_with_rebase(
                 "its metadata before it writes data (canvodpy run, Site(...)"
                 ".pipeline(), VodComputer). A store written before stores kept "
                 "repository metadata is moved to the current form with:\n"
-                f"  {MIGRATE_COMMAND} SITE --store gnss|vod"
+                f"  {SITE_MIGRATE_COMMAND} SITE"
             )
             raise ValueError(msg)
         from .snapshot import prepare_commit
@@ -947,7 +948,7 @@ def ensure_metadata(
             msg = (
                 f"The store at {store_path} was written before stores kept "
                 "repository metadata; move it to the current form first:\n"
-                f"  {store_command('migrate-metadata', site_name, store_type)}"
+                f"  {SITE_MIGRATE_COMMAND} {site_name}"
             )
             raise ValueError(msg)
         try:
@@ -983,6 +984,40 @@ def _wait_for_repository_metadata(
             )
             raise ValueError(msg)
         time.sleep(0.5)
+
+
+def refuse_old_gnss_folder(
+    store_path: StoreLocation | Path | str, site_name: str
+) -> None:
+    """Refuse a GNSS store write while the site's old GNSS folder holds a store.
+
+    Before v1.0.0 the GNSS store's folder was ``rinex``. A run writing to
+    the GNSS store next to it would start a second GNSS store, or write to
+    one while the old one waits for its migration (#456).
+
+    Raises
+    ------
+    ValueError
+        If ``rinex`` next to the GNSS store holds a store; names
+        ``canvodpy store migrate SITE``.
+    """
+    where = store_location(store_path)
+    # A local path resolves '..' only through folders that exist, and the
+    # GNSS store's folder may not exist yet.
+    old = (
+        store_location(where.local_path.parent / OLD_GNSS_STORE_NAME)
+        if where.local_path is not None
+        else where / f"../{OLD_GNSS_STORE_NAME}"
+    )
+    if not store_exists(old):
+        return
+    msg = (
+        f"The site {site_name!r} still has its GNSS store in {old}, the GNSS "
+        "store's folder before v1.0.0; this run wrote nothing, so that no "
+        f"second GNSS store starts next to it at {where}. Move the store "
+        f"with:\n  {SITE_MIGRATE_COMMAND} {site_name}"
+    )
+    raise ValueError(msg)
 
 
 def ensure_store_metadata(
@@ -1064,6 +1099,8 @@ def ensure_store_metadata(
             gnss_repository=gnss_repository,
         )
 
+    if store_type == "gnss_store":
+        refuse_old_gnss_folder(store_path, site_name)
     repository = ensure_metadata(
         store_path,
         collect,
