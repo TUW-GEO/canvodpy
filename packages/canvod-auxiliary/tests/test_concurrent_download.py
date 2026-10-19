@@ -6,6 +6,9 @@ once.
 """
 
 import gzip
+import os
+import stat
+import sys
 import threading
 from pathlib import Path
 
@@ -17,6 +20,18 @@ CONTENT = b"".join(
     for i in range(20000)
 )
 THREADS = 8
+
+
+def _assert_readable_like_a_new_file(path: Path) -> None:
+    """The file has the mode ``open()`` gives a new file, not mkstemp's 0600.
+
+    Other users of a shared aux folder must be able to read it.
+    """
+    if sys.platform == "win32":
+        return  # Windows has no group or other permission bits
+    umask = os.umask(0)
+    os.umask(umask)
+    assert stat.S_IMODE(path.stat().st_mode) == 0o666 & ~umask
 
 
 def _slow_server(monkeypatch, payload: bytes) -> None:
@@ -62,6 +77,7 @@ def test_compressed_file_downloaded_by_several_threads_is_whole(monkeypatch, tmp
     assert errors == []
     assert destination.read_bytes() == CONTENT
     assert list(destination.parent.iterdir()) == [destination]
+    _assert_readable_like_a_new_file(destination)
 
 
 def test_plain_file_downloaded_by_several_threads_is_whole(monkeypatch, tmp_path):
@@ -75,3 +91,4 @@ def test_plain_file_downloaded_by_several_threads_is_whole(monkeypatch, tmp_path
     assert errors == []
     assert destination.read_bytes() == CONTENT
     assert list(destination.parent.iterdir()) == [destination]
+    _assert_readable_like_a_new_file(destination)
