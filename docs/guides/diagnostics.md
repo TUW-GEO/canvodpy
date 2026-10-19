@@ -59,7 +59,9 @@ Older files get a number or a date at the end of the name, for example
 
 `machine/agent.json` always records every event, debug messages
 included. A failure on a remote server can't be run again with more
-logging, so the detail has to be there already.
+logging, so the detail has to be there already. A timing event is
+therefore in both `machine/agent.json` and `machine/performance.json`:
+to count or sum timings, read only `machine/performance*.json`.
 
 Each worker process writes its own set of files, with its process ID in
 the name, for example `machine/agent.12345.json`. Files can't be shared

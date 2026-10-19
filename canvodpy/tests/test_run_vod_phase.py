@@ -120,13 +120,19 @@ def test_vod_timings_name_their_day_as_yyyydoy(two_days) -> None:
         list(pipeline.run(*DAYS))
 
     log_dir = Path(two_days.processing.logging.log_dir)
-    # The main process writes each event to more than one log file.
+    # A timing event is in both agent.json and performance.json.
     vod_days = {
         t["date_key"]
         for t in _log_events(log_dir, "stage_timing")
         if t["stage"] == "vod_calc"
     }
     assert vod_days == set(DAYS)
+    unit_days = {
+        day
+        for e in _log_events(log_dir, "vod_unit_committed")
+        for day in (e["first"], e["last"])
+    }
+    assert unit_days <= set(DAYS)
 
 
 def test_a_day_whose_gnss_phase_fails_gets_no_vod(two_days, monkeypatch) -> None:

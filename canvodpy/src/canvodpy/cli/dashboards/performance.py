@@ -993,7 +993,15 @@ def _(
                                 axis=alt.Axis(title="Free disk (GB)"),
                                 scale=alt.Scale(zero=False),
                             ),
-                            tooltip=["Folder:N", "Time:T", "Free disk (GB):Q"],
+                            tooltip=[
+                                "Folder:N",
+                                alt.Tooltip(
+                                    "Time:T",
+                                    title="Time (UTC)",
+                                    format="%Y-%m-%d %H:%M:%S",
+                                ),
+                                alt.Tooltip("Free disk (GB):Q", format=".1f"),
+                            ],
                             color=alt.Color("Folder:N").scale(
                                 range=chart_categories(
                                     len({row["Folder"] for row in run_charts["disk"]})

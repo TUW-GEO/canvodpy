@@ -534,8 +534,8 @@ class VodPhase:
         )
         self.log.info(
             "vod_unit_committed",
-            first=str(days[0]),
-            last=str(days[-1]),
+            first=_yyyydoy(days[0]),
+            last=_yyyydoy(days[-1]),
             written=sum(len(d) for d in report.written.values()),
             stored=sum(len(d) for d in report.stored.values()),
             missing=sum(len(d) for d in report.missing.values()),
