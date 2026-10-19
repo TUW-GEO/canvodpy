@@ -229,7 +229,8 @@ target epoch, not simply the first record found.
 
     NMEA GSV sentences carry satellite elevation and azimuth in whole
     degrees. `NmeaObs` reads the signal strengths only; the geometry of
-    NMEA data comes from SP3 files.
+    NMEA data comes from SP3 files and the receiver position of the GGA
+    fixes ([readers overview](overview.md)).
 
 ---
 

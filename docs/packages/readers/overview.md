@@ -52,7 +52,11 @@ The `canvod-readers` package provides validated parsers for [GNSS](https://gssc.
     Signal strengths from GSV sentences (GPS, GLONASS, Galileo, BeiDou), epochs
     from RMC/GGA (UTC), checksums validated. Band and tracking code come from the
     GSV signal ID where the sentence has one, else the system's main band with
-    code `X`. NMEA carries SNR only: no pseudorange and no phase.
+    code `X`. NMEA carries SNR only: no pseudorange and no phase. The
+    receiver position is the median of the file's GGA fixes (fix indicator
+    1, 2, 4 or 5; ellipsoidal height = altitude + geoid separation);
+    a run takes it from the first file of a receiver-day that has one. A
+    day none of whose files has such a fix can't be processed.
 
 </div>
 
