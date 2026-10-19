@@ -135,6 +135,19 @@ def test_vod_timings_name_their_day_as_yyyydoy(two_days) -> None:
     assert unit_days <= set(DAYS)
 
 
+def test_the_vod_growth_commit_names_its_days_as_yyyydoy(two_days) -> None:
+    # The second run grows the VOD day blocks the first run created.
+    site = _site()
+    for day in DAYS:
+        with site.pipeline(n_workers=2) as pipeline:
+            list(pipeline.run(day, day))
+
+    messages = [s.message for s in site.vod_store.repo.ancestry(branch="main")]
+    growth = [m for m in messages if "VOD day blocks for" in m]
+    assert growth == [growth[0]]
+    assert growth[0].endswith(f"VOD day blocks for {DAYS[1]}..{DAYS[1]}")
+
+
 def test_a_day_whose_gnss_phase_fails_gets_no_vod(two_days, monkeypatch) -> None:
     prepare = PipelineOrchestrator._prepare_single_date
 

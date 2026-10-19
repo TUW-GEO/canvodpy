@@ -430,7 +430,7 @@ class VodPhase:
                 growth,
                 message=(
                     f"[v{get_version_from_pyproject()}] VOD day blocks for "
-                    f"{days[0]}..{days[-1]}"
+                    f"{_yyyydoy(days[0])}..{_yyyydoy(days[-1])}"
                 ),
             )
             record_stage_timing("vod_day_block_growth", time.perf_counter() - t_growth)
