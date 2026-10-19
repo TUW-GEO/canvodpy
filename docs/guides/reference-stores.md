@@ -18,7 +18,7 @@ is patched. Each profile has two files:
 
 | Profile | Data | Days | Settings |
 |---|---|---|---|
-| `default` | Rosalia, RINEX v3.04, canopy and reference receiver | 2025-001 | final SP3/CLK from the test data, no preprocessing, SNR only, 15 SIDs per system (GPS, GLONASS, Galileo, BeiDou), VOD of the receiver pair |
+| `default` | Rosalia, RINEX v3.04: the canopy receiver and the reference receiver | 2025-001 | final SP3/CLK from the test data, no preprocessing, SNR only, 15 SIDs per system (GPS, GLONASS, Galileo, BeiDou), VOD of the receiver pair |
 
 A run with a profile downloads nothing: the orbit and clock files come
 from the test data. The metadata names the made-up identity the tests
@@ -40,13 +40,13 @@ It writes the report to `reference-check.txt` (empty when the stores
 match; a second argument sets another path) and exits with 1 on a
 difference.
 
-For the `default` profile, a build takes about 20 s on a laptop and a
-check about 40 s. Two builds of the same code compare with an empty
+For the `default` profile, a build and a check each take under a
+minute on a laptop. Two builds of the same code compare with an empty
 report: the run is deterministic.
 
 ## Tolerances
 
-Integer and flag variables, coordinates, groups and the compared
+Integer and flag variables, coordinates, groups, and the compared
 attributes must match exactly. Float variables are compared within one
 absolute tolerance per variable, derived from the finest resolution any
 format records. The table, with the derivation and its sources, is in
