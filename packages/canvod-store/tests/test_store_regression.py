@@ -478,8 +478,46 @@ class TestMetadataDatasets:
                 assert zgroup[name].attrs["_FillValue"] == -1, name
                 expected = np.concatenate([p[name].values for p in parts])
                 np.testing.assert_array_equal(zgroup[name][:], expected)
-        # The caller's datasets keep their declaration.
-        assert all(p["rise_set"].attrs["_FillValue"] == -1 for p in parts)
+        # The caller's datasets keep their declaration, and no encoding.
+        for p in parts:
+            for name in ("rise_set", "pvt_mode"):
+                assert p[name].attrs["_FillValue"] == -1, name
+                assert "_FillValue" not in p[name].encoding, name
+
+    def test_append_to_sbf_obs_stored_with_fill_zero(self, tmp_store, monkeypatch):
+        """An sbf_obs written before #450 (Zarr fill_value 0) still appends.
+
+        The stored arrays keep their fill_value 0; the values append unchanged.
+        """
+        import canvod.store.store as store_module
+
+        ds = make_synthetic_dataset(slot=0)
+        tmp_store.write_initial_group(ds, group_name=GROUP)
+        parts = [self._make_flagged_meta_ds(slot=i) for i in range(3)]
+
+        # The first write as before #450: the declaration stays in the attributes.
+        with monkeypatch.context() as m:
+            m.setattr(store_module, "fill_encoding", lambda var, name: {})
+            tmp_store.append_metadata_datasets(
+                parts[:1], group_name=GROUP, name="sbf_obs"
+            )
+        with tmp_store.readonly_session("main") as session:
+            zgroup = zarr.open_group(
+                session.store, mode="r", path=f"{GROUP}/metadata/sbf_obs"
+            )
+            assert zgroup["rise_set"].fill_value == 0
+
+        tmp_store.append_metadata_datasets(parts[1:], group_name=GROUP, name="sbf_obs")
+
+        with tmp_store.readonly_session("main") as session:
+            zgroup = zarr.open_group(
+                session.store, mode="r", path=f"{GROUP}/metadata/sbf_obs"
+            )
+            for name in ("rise_set", "pvt_mode"):
+                assert zgroup[name].dtype == np.int8, name
+                assert zgroup[name].fill_value == 0, name
+                expected = np.concatenate([p[name].values for p in parts])
+                np.testing.assert_array_equal(zgroup[name][:], expected)
 
     @pytest.mark.skipif(
         not SBF_CANOPY_DIR.exists(), reason="SBF test data not available"
