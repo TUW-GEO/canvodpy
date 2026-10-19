@@ -127,8 +127,10 @@ that collided don't try again at the same moment. When the last try
 loses too, the run logs a `store_conflict_lost` error: another writer
 committed to the store first every time, so what this step would have
 written isn't in the store. It names the step (`op`, for example
-`write_unit` for a unit of days), the days (`date`) and the number of
-tries, with a hint to run those days again. After a lost unit of days,
+`write_unit` for a unit of days), the days (`date`, or `first` and `last`
+for `vod_unit`) and the number of tries, with a hint to run those days
+again. For `commit_skipped_files` only the log-book rows of the skipped
+files are missing; the days' data is in the store. After a lost unit of days,
 the run goes on with its other days and records the unit's days as
 failed.
 

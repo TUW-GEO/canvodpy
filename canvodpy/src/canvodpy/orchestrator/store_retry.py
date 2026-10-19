@@ -107,15 +107,18 @@ def log_lost_conflict(logger, exc: Exception, **log_ctx: object) -> None:
 
     Another writer committed to the store first on all
     :data:`CONFLICT_TRIES` tries, so what this step would have written is
-    not in the store. ``log_ctx`` names the step (``op``) and its days.
+    not in the store (for ``commit_skipped_files`` only the log-book rows;
+    the days' data is stored). ``log_ctx`` names the step (``op``) and its
+    days.
     """
     logger.error(
         "store_conflict_lost",
         tries=CONFLICT_TRIES,
         error=str(exc),
         hint=(
-            "Another writer committed to this store first on every try; "
-            "this step's data is not in the store. Run these days again."
+            "Another writer committed to this store first on every try, so "
+            "what this step would have written is not in the store. Running "
+            "these days again writes it."
         ),
         **log_ctx,
     )

@@ -125,7 +125,7 @@ def test_a_conflict_lost_on_every_try_is_logged_with_its_days():
     assert kw["date"] == "2025001"
     assert kw["op"] == "vod_commit"
     assert kw["tries"] == 5
-    assert "Run these days again" in kw["hint"]
+    assert "Running these days again" in kw["hint"]
 
 
 def test_a_conflict_won_on_a_later_try_logs_no_loss():
