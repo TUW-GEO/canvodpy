@@ -119,6 +119,7 @@ from canvodpy.orchestrator.store_retry import (
     RETRYABLE_STORE_ERRORS,
     STORE_ERROR_TYPES,
     call_with_store_retries,
+    log_lost_conflict,
     wait_after_conflict,
     wait_after_store_error,
 )
@@ -2341,6 +2342,9 @@ class PipelineOrchestrator:
             except icechunk.ConflictError as exc:
                 conflicts += 1
                 if conflicts >= CONFLICT_TRIES:
+                    log_lost_conflict(
+                        self._logger, exc, date=date_keys, op="write_unit"
+                    )
                     raise
                 seconds = wait_after_conflict(conflicts)
                 self._logger.warning(
@@ -2416,6 +2420,8 @@ class PipelineOrchestrator:
             return {}
         try:
             return cast("dict[str, dict[str, GroupWriteResult]]", write.result())
+        except icechunk.ConflictError as exc:
+            return exc  # logged as store_conflict_lost
         except STORE_ERROR_TYPES as exc:
             self._logger.exception("icechunk_write_failed")
             return exc
