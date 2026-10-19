@@ -10,6 +10,7 @@ from pydantic import Field, field_validator, model_validator
 
 from canvod.utils.tools import deprecated
 
+from ..store_names import check_store_name
 from .base import _StrictModel
 
 #: ``scheme://rest`` of a URL in ``stores_root_dir``.
@@ -108,12 +109,20 @@ class StorageConfig(_StrictModel):
         ),
     )
     gnss_store_name: str = Field(
-        "rinex",
-        description="Name of the GNSS observation Icechunk store directory",
+        "gnss",
+        description=(
+            "Folder of the site's GNSS store: 'gnss', or 'gnss-' and a suffix "
+            "for a second GNSS store, for example 'gnss-test'. Lowercase letters "
+            "and digits, with single '_' or '-' between them."
+        ),
     )
     vod_store_name: str = Field(
         "vod",
-        description="Name of the VOD Icechunk store directory",
+        description=(
+            "Folder of the site's VOD store: 'vod', or 'vod-' and a suffix "
+            "for a second VOD store, for example 'vod-recompute'. Lowercase letters "
+            "and digits, with single '_' or '-' between them."
+        ),
     )
     statistics_store_name: str = Field(
         "statistics",
@@ -158,8 +167,8 @@ class StorageConfig(_StrictModel):
             "Deprecated, has no effect. A VOD write skips a result from the "
             "same GNSS files as a stored one. Another result replaces the "
             "stored VOD of its day. To recompute VOD from the "
-            "same GNSS files, write to a new VOD store (set another "
-            "vod_store_name)."
+            "same GNSS files, write to a new VOD store: set vod_store_name "
+            "to the kind plus a suffix, for example 'vod-recompute'."
         ),
     )
     keeper_tags: bool = Field(
@@ -185,11 +194,21 @@ class StorageConfig(_StrictModel):
             warnings.warn(
                 "The storage setting 'vod_store_strategy' is left over from development and will be removed with the next major version. "
                 "It has no effect: VOD writes skip results from GNSS files already in the store. "
-                "Remove it from your settings; to recompute VOD, set another 'vod_store_name'.",
+                "Remove it from your settings; to recompute VOD, write to a new VOD store (set 'vod_store_name' to e.g. 'vod-recompute').",
                 FutureWarning,
                 stacklevel=2,
             )
         return data
+
+    @field_validator("gnss_store_name")
+    @classmethod
+    def _check_gnss_store_name(cls, v: str) -> str:
+        return check_store_name(v, "gnss")
+
+    @field_validator("vod_store_name")
+    @classmethod
+    def _check_vod_store_name(cls, v: str) -> str:
+        return check_store_name(v, "vod")
 
     @field_validator("stores_root_dir", mode="before")
     @classmethod

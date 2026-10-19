@@ -124,7 +124,7 @@ def _log_book(store: MyIcechunkStore, group: str):
 
 
 def _gnss_store(stores: str) -> MyIcechunkStore:
-    return MyIcechunkStore(f"{stores}/{testing.SITE_KEY}/rinex")
+    return MyIcechunkStore(f"{stores}/{testing.SITE_KEY}/gnss")
 
 
 def test_two_runs_write_one_s3_store_at_the_same_time(tmp_path, monkeypatch) -> None:

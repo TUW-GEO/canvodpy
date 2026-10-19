@@ -128,7 +128,7 @@ def _collect(
             site_config=_site_config(),
             store_type=store_type,
             source_format="rinex3",
-            store_path=Path("/tmp/test"),
+            store_path=Path("/tmp/fangorn") / store_type.removesuffix("_store"),
         )
 
 
@@ -153,6 +153,41 @@ class TestIdentity:
 
     def test_vod_store_id_ends_in_vod(self):
         assert _collect("Fangorn", store_type="vod_store").identity.id == "fangorn-vod"
+
+    def test_a_suffixed_store_has_its_own_id_in_the_types_collection(self):
+        from canvod.store_metadata.identity import stac_link, store_id
+
+        sid = store_id("Fangorn", "vod_store", "vod-recompute")
+        assert sid == "fangorn-vod-recompute"
+        assert stac_link("org.middle-earth", sid, "vod_store").startswith(
+            "../../vod/org.middle-earth.fangorn-vod-recompute/"
+        )
+
+    @pytest.mark.parametrize(
+        ("store_type", "folder"), [("vod_store", "gnss"), ("gnss_store", "store")]
+    )
+    def test_a_folder_name_breaking_the_rule_gives_no_id(self, store_type, folder):
+        from canvod.config.store_names import StoreNameError
+
+        from canvod.store_metadata.identity import store_id
+
+        with pytest.raises(StoreNameError):
+            store_id("Fangorn", store_type, folder)
+
+    def test_a_new_store_takes_its_id_from_its_folder(self):
+        with patch(
+            "canvod.store_metadata.collectors.collect_config_snapshot",
+            return_value=ConfigSnapshot(config_hash="abc123"),
+        ):
+            meta = collect_metadata(
+                config=_config("org.middle-earth"),
+                site_name="Fangorn",
+                site_config=_site_config(),
+                store_type="gnss_store",
+                source_format="rinex3",
+                store_path="s3://bucket/stores/fangorn/gnss-test",
+            )
+        assert meta.identity.id == "fangorn-gnss-test"
 
     def test_underscores_and_digits_are_kept(self):
         assert _collect("fangorn").identity.id == "fangorn-gnss"
@@ -224,7 +259,7 @@ class TestReceiverSpecs:
         assert receiver.antenna.polarization == "RHCP"
 
     def test_the_details_reach_the_repository_metadata(self, tmp_path):
-        store_path = _empty_store(tmp_path / "store")
+        store_path = _empty_store(tmp_path / "gnss")
         write_metadata(store_path, _collect())
 
         receiver = _repository_metadata(store_path)["instruments"]["receivers"][
@@ -242,7 +277,7 @@ class TestReceiverSpecs:
 
 class TestRepositoryMetadata:
     def test_write_metadata_writes_the_repository_metadata(self, tmp_path):
-        store_path = _empty_store(tmp_path / "store")
+        store_path = _empty_store(tmp_path / "gnss")
         meta = _collect()
 
         write_metadata(store_path, meta)
@@ -255,7 +290,7 @@ class TestRepositoryMetadata:
         assert stored["temporal"]["created"] == meta.temporal.created
 
     def test_repository_metadata_holds_no_per_write_fields(self, tmp_path):
-        store_path = _empty_store(tmp_path / "store")
+        store_path = _empty_store(tmp_path / "gnss")
         write_metadata(store_path, _collect())
 
         stored = _repository_metadata(store_path)
@@ -264,13 +299,13 @@ class TestRepositoryMetadata:
         assert "updated" not in stored["temporal"]
 
     def test_metadata_exists_once_the_repository_metadata_is_written(self, tmp_path):
-        store_path = _empty_store(tmp_path / "store")
+        store_path = _empty_store(tmp_path / "gnss")
         assert not metadata_exists(store_path)
         write_metadata(store_path, _collect())
         assert metadata_exists(store_path)
 
     def test_a_second_write_is_refused(self, tmp_path):
-        store_path = _empty_store(tmp_path / "store")
+        store_path = _empty_store(tmp_path / "gnss")
         first = _collect()
         write_metadata(store_path, first)
 

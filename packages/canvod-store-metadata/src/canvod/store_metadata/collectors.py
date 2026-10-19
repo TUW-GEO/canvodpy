@@ -15,6 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from canvod.config.store_names import store_folder_name
+
 from .content import CONTENT_STORE_TYPES, new_content_settings
 from .identity import (
     NAMING_AUTHORITY_SETTING,
@@ -520,7 +522,11 @@ def collect_metadata(
         description, the publisher or the license is missing.
     """
     meta_cfg = config.processing.metadata
-    sid = store_id(site_name, store_type)
+    sid = store_id(
+        site_name,
+        store_type,
+        None if store_path is None else store_folder_name(store_path),
+    )
     missing = missing_store_settings(site_name, site_config, config)
     if missing:
         raise ValueError(missing_store_settings_message(missing))

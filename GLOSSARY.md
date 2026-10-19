@@ -174,6 +174,12 @@ An Icechunk repository holding one kind of a site's data: a GNSS store, a
 VOD store, or a store of an extension (geodesy, rollup, statistics).
 _Avoid_: repo, database
 
+**Store name**:
+The name of a store's folder: its kind (`gnss`, `vod`, `geodesy`), or the
+kind, `-` and a suffix for a second store of that kind (`vod-recompute`).
+The store id is the site name and the store name.
+_Avoid_: store directory name, `rinex` (the GNSS store's name before v1.0.0)
+
 **GNSS store**:
 A site's versioned store of the observations of all its receivers.
 _Avoid_: RINEX store, observation store

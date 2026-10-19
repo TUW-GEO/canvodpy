@@ -28,6 +28,7 @@ from typing import Any, NoReturn
 
 import numpy as np
 import zarr
+from canvod.config.store_names import store_folder_name
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
@@ -150,7 +151,9 @@ def migrate_metadata(
             raise ValueError(msg) from None
 
         store_type = old.identity.store_type
-        new_id = store_id(old.spatial.site.name, store_type)
+        new_id = store_id(
+            old.spatial.site.name, store_type, store_folder_name(store_path)
+        )
         for field in values or {}:
             check_amendable(field)
         given = _with_values(old, dict(values or {}), store_path)

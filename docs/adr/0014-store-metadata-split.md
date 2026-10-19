@@ -52,6 +52,13 @@ before the move keep the old single `canvod_metadata` attribute and are
 read as such until v2.0.0. The run history is read from the commit log;
 the stored `summaries.history` is deprecated (ADR 0005).
 
+*Amended 2026-10-19 (#456).* The id is `{site}-{store folder}`. A store's
+folder is named by its kind (`gnss`, `vod`, `geodesy`), optionally with a
+suffix for a second store of that kind (`vod-recompute`), so two stores of
+one site never share an id. A default store keeps the id it had
+(`{site}-gnss`, `{site}-vod`). Since the id is fixed, a store whose folder
+no longer matches its id is refused for writing.
+
 ## Considered options
 
 - **Root group attributes only**, as before. They are part of every

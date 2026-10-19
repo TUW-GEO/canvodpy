@@ -30,7 +30,7 @@ SITE = testing.SITE_KEY
 CONTENT_NAMES = ["canopy_01", "reference_01_canopy_01"]
 
 
-def _create_store(tmp_path: Path, *, root: str = "root", name: str = "rinex") -> Path:
+def _create_store(tmp_path: Path, *, root: str = "root", name: str = "gnss") -> Path:
     """A GNSS store at ``tmp_path/<root>/<site>/<name>`` with content settings."""
     store = tmp_path / root / SITE / name
     ensure_store_metadata(
@@ -99,7 +99,7 @@ def test_settings_hold_no_path_or_credential_of_the_creating_machine(tmp_path):
 def test_a_store_without_content_settings_names_the_migrate_command(tmp_path):
     from canvod.store_metadata.testing import give_test_metadata
 
-    store = give_test_metadata(tmp_path / "old")
+    store = give_test_metadata(tmp_path / "gnss")
 
     from canvod.store_metadata import MissingContentSettingsError
 
@@ -113,7 +113,7 @@ def test_the_store_root_and_name_come_from_the_store_argument(tmp_path):
 
     storage = settings["processing"]["storage"]
     assert storage["stores_root_dir"] == str(tmp_path / "root")
-    assert storage["gnss_store_name"] == "rinex"
+    assert storage["gnss_store_name"] == "gnss"
     # The receivers' free fields come from the repository metadata.
     receivers = settings["sites"][SITE]["receivers"]
     assert receivers["reference_01"]["directory"] == "TODO"
@@ -121,9 +121,16 @@ def test_the_store_root_and_name_come_from_the_store_argument(tmp_path):
     assert receivers["reference_01"]["paired_canopies"] == ["canopy_01"]
 
 
+def test_a_suffixed_store_gives_settings_that_point_back_to_it(tmp_path):
+    store = _create_store(tmp_path, name="gnss-test")
+    settings = settings_from_store(store)
+
+    assert settings["processing"]["storage"]["gnss_store_name"] == "gnss-test"
+
+
 def test_a_local_store_not_at_the_site_layout_is_refused(tmp_path):
     """The parent folder must be the site the store records (#356 review)."""
-    store = tmp_path / "copy" / "rinex"
+    store = tmp_path / "copy" / "gnss"
     ensure_store_metadata(
         store,
         config=_settings(tmp_path),

@@ -63,8 +63,8 @@ def _metadata(store_type: str = "gnss_store") -> StoreMetadata:
     )
 
 
-def _new_store(tmp_path: Path) -> Path:
-    path = tmp_path / "store"
+def _new_store(tmp_path: Path, name: str = "gnss") -> Path:
+    path = tmp_path / name
     icechunk.Repository.create(storage=icechunk.local_filesystem_storage(str(path)))
     return path
 
@@ -86,7 +86,7 @@ class TestEnsureMetadata:
         meta = _metadata()
 
         repository = ensure_metadata(
-            tmp_path / "store",
+            tmp_path / "gnss",
             lambda: meta,
             site_name="Fangorn",
             store_type=meta.identity.store_type,
@@ -94,7 +94,7 @@ class TestEnsureMetadata:
         )
 
         assert repository["identity"]["id"] == "fangorn-gnss"
-        reopened = open_repository(tmp_path / "store")
+        reopened = open_repository(tmp_path / "gnss")
         assert reopened.config.inline_chunk_threshold_bytes == 17
 
     def test_a_new_store_gets_its_metadata(self, tmp_path):
@@ -236,12 +236,32 @@ class TestListedReceivers:
             check_receivers(repository, [name], store_path=path)
 
     def test_an_unlisted_vod_analysis_is_refused(self, tmp_path):
-        path = _new_store(tmp_path)
+        path = _new_store(tmp_path, "vod")
         repository = _ensure(path, _metadata("vod_store"))
 
         check_vod_analyses(repository, ["canopy_01_vs_reference_01"], store_path=path)
         with pytest.raises(ValueError, match="--add-vod-analysis canopy_02_vs_ref"):
             check_vod_analyses(repository, ["canopy_02_vs_ref"], store_path=path)
+
+
+class TestStoreFolder:
+    """A store's id ends in its folder name (#456)."""
+
+    def test_a_store_whose_folder_was_renamed_is_refused(self, tmp_path):
+        path = _new_store(tmp_path)
+        _ensure(path)
+        renamed = path.rename(tmp_path / "gnss-renamed")
+
+        with pytest.raises(ValueError, match="renamed after the store was created"):
+            _ensure(renamed)
+
+    def test_a_store_in_the_old_gnss_folder_names_the_migrate_command(self, tmp_path):
+        path = _new_store(tmp_path)
+        _ensure(path)
+        renamed = path.rename(tmp_path / "rinex")
+
+        with pytest.raises(ValueError, match="canvodpy store migrate SITE"):
+            _ensure(renamed)
 
 
 class TestStoreRefusesDataWithoutMetadata:
@@ -309,7 +329,7 @@ def _gnss_repository(tmp_path: Path):
 
 def _ensure_store(tmp_path: Path, store_type: str, names: list[str]) -> dict:
     return ensure_store_metadata(
-        _new_store(tmp_path),
+        _new_store(tmp_path, store_type.removesuffix("_store")),
         config=_settings(tmp_path),
         site_name=testing.SITE_KEY,
         store_type=store_type,
@@ -334,7 +354,7 @@ class TestMetadataFirst:
             "canopy_01",
             "reference_01",
         }
-        assert metadata_exists(tmp_path / "store")
+        assert metadata_exists(tmp_path / "gnss")
 
     def test_an_unlisted_receiver_is_refused_with_the_amend_command(self, tmp_path):
         with pytest.raises(ValueError, match="--add-receiver canopy_02"):

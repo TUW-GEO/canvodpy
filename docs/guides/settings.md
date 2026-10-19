@@ -545,14 +545,14 @@ Folder of the stores: each site's GNSS store and VOD store are under it. A local
 
 #### `processing.storage.gnss_store_name` {#processing-storage-gnss_store_name}
 
-Name of the GNSS observation Icechunk store directory
+Folder of the site's GNSS store: `gnss`, or `gnss-` and a suffix for a second GNSS store, for example `gnss-test`. Lowercase letters and digits, with single `_` or `-` between them.
 
 - Type: text
-- Default: `rinex`
+- Default: `gnss`
 
 #### `processing.storage.vod_store_name` {#processing-storage-vod_store_name}
 
-Name of the VOD Icechunk store directory
+Folder of the site's VOD store: `vod`, or `vod-` and a suffix for a second VOD store, for example `vod-recompute`. Lowercase letters and digits, with single `_` or `-` between them.
 
 - Type: text
 - Default: `vod`
@@ -580,7 +580,7 @@ What a run does with a file that is already in the GNSS store; new files are alw
 
 #### `processing.storage.vod_store_strategy` {#processing-storage-vod_store_strategy}
 
-Deprecated, has no effect. A VOD write skips a result from the same GNSS files as a stored one. Another result replaces the stored VOD of its day. To recompute VOD from the same GNSS files, write to a new VOD store (set another `vod_store_name`).
+Deprecated, has no effect. A VOD write skips a result from the same GNSS files as a stored one. Another result replaces the stored VOD of its day. To recompute VOD from the same GNSS files, write to a new VOD store: set `vod_store_name` to the kind plus a suffix, for example `vod-recompute`.
 
 - Type: one of `skip`, `overwrite`, `unsafe_append`, or null
 - Default: `null`

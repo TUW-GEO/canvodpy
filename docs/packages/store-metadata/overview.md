@@ -58,7 +58,9 @@ store_root/                    # root attributes: root copy and snapshot summary
 
 The **fixed fields** say which store this is: the store id, UUID, store
 type, source format, naming authority, catalog link, and creation date.
-The store id is `{site}-{gnss|vod}`, from the site name in lowercase.
+The store id is `{site}-{store folder}`, from the site name in lowercase
+and the store's folder name (`gnss`, `vod`, or `vod-recompute` for a second
+VOD store).
 Every other field of the repository metadata is **amendable**.
 
 ## Sections
@@ -527,12 +529,13 @@ The catalog sits beside the stores, never inside one:
 │   └── at.ac.tuwien.rosalia-vod/at.ac.tuwien.rosalia-vod.json
 ├── gnss-geodesy/                only with geodesy stores
 └── Rosalia/
-    ├── rinex/                   the GNSS store
+    ├── gnss/                    the GNSS store
     └── vod/                     the VOD store
 ```
 
 There is one collection per product (`gnss-observations`, `vod`,
-`gnss-geodesy`) and one item per store. The item id is the naming
+`gnss-geodesy`) and one item per store; a site with a second store of a
+kind (`vod-recompute`) has two items in that collection. The item id is the naming
 authority and the store id, for example `at.ac.tuwien.rosalia-gnss`. The
 items of one site (its GNSS, VOD and geodesy stores, same naming authority
 and site name) link each other (`related`). A collection's extent covers
@@ -558,8 +561,8 @@ lists each such store with its reason:
 
 ```text
 ❌ No catalog was written: 2 store(s) under /data/stores cannot be described.
-  Moria/rinex: needs migration to the current metadata form (ADR 0014): canvodpy store migrate-metadata Moria --store gnss
-  Mordor/rinex: `publisher.license` 'Apache 2' is not an SPDX license identifier (see https://spdx.org/licenses/); a license outside SPDX is 'other' with license_uri; fix it with canvodpy store amend Mordor --store gnss
+  Moria/gnss: needs migration to the current metadata form (ADR 0014): canvodpy store migrate-metadata Moria --store gnss
+  Mordor/gnss: `publisher.license` 'Apache 2' is not an SPDX license identifier (see https://spdx.org/licenses/); a license outside SPDX is 'other' with license_uri; fix it with canvodpy store amend Mordor --store gnss
 ```
 
 The reasons: the store can't be opened, has no metadata, needs

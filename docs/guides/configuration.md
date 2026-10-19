@@ -169,8 +169,10 @@ and its own. You then have two options:
 
 - use the store's settings: `canvodpy config init --from-store <store>`
   writes a settings file from them, or
-- write to a new store, for example with another
-  `processing.storage.gnss_store_name` or `stores_root_dir`.
+- write to a new store: set `processing.storage.gnss_store_name` to the
+  kind plus a suffix (for example `gnss-recompute`, see
+  [Store folders](../packages/store/overview.md#store-folders)), or set
+  another `stores_root_dir`.
 
 There is no option to write anyway. A store's content settings never
 change; to process with other settings, create a new store.
@@ -247,8 +249,8 @@ how anyone reproduces the processing of a store they can open (a published
 one, or a copy):
 
 ```bash
-canvodpy config init --from-store /data/stores/fangorn/rinex
-canvodpy config init --from-store s3://my-bucket/fangorn/rinex
+canvodpy config init --from-store /data/stores/fangorn/gnss
+canvodpy config init --from-store s3://my-bucket/fangorn/gnss
 ```
 
 `<store>` is the store's directory, or its `s3://bucket/prefix` URL. The
@@ -392,7 +394,7 @@ processing:
     reader, to recompute stored data. The VOD of those days stays as it
     was: the rewritten files are the same files, so their VOD results
     are skipped. For VOD of the recomputed data, write it to a new VOD
-    store (set another `storage.vod_store_name`).
+    store (set `storage.vod_store_name` to another name, such as `vod-recompute`).
 
     `unsafe_append` writes the file again on top of the stored data,
     without checking for epochs that are already there. The store then

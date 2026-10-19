@@ -14,12 +14,14 @@ from typing import Any
 import icechunk
 import structlog
 import zarr
+from canvod.config.store_names import STORE_TYPE_KINDS
 from canvod.utils.tools import deprecated
 from filelock import FileLock, Timeout
 from pydantic import ValidationError
 from zarr import errors as zarr_errors
 
 from .icechunk_logs import apply_icechunk_log_filter
+from .identity import check_store_folder
 from .layout import DAY_BLOCK_INDEX_ATTR, is_day_block_group
 from .location import (
     MIGRATE_COMMAND,
@@ -873,12 +875,9 @@ def check_who(who: str | None) -> str:
     return who.strip()
 
 
-_STORE_KINDS = {"gnss_store": "gnss", "vod_store": "vod", "geodesy_store": "geodesy"}
-
-
 def store_command(command: str, site_name: str, store_type: str) -> str:
     """A ``canvodpy store`` command line for one site's store."""
-    kind = _STORE_KINDS.get(store_type, store_type)
+    kind = STORE_TYPE_KINDS.get(store_type, store_type)
     return f"canvodpy store {command} {site_name} --store {kind}"
 
 
@@ -940,6 +939,9 @@ def ensure_metadata(
         repo = open_repository(store_path)
         existing = repo.get_metadata()
         if existing:
+            mismatch = check_store_folder(existing, store_path)
+            if mismatch:
+                raise ValueError(mismatch)
             return existing
         if _written_before_metadata(repo):
             msg = (

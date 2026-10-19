@@ -49,7 +49,7 @@ def _clear_config_cache():
 
 
 def _write_config(config_dir, stores_root, *, dry_run_until_confirmed: bool) -> None:
-    """A config whose GNSS store lives at ``stores_root/TestSite/rinex``."""
+    """A config whose GNSS store lives at ``stores_root/TestSite/gnss``."""
     config_dir.mkdir(parents=True, exist_ok=True)
     (config_dir / "canvod-settings.yaml").write_text(
         yaml.safe_dump(
@@ -113,7 +113,7 @@ def _snapshot_ids(store_path: str) -> list[str]:
 def test_maintain_execute_on_s3_is_refused_and_changes_nothing(tmp_path) -> None:
     config_dir = tmp_path / "config"
     root = _s3_root()
-    store_path = f"{root}/TestSite/rinex"
+    store_path = f"{root}/TestSite/gnss"
     _write_config(config_dir, root, dry_run_until_confirmed=True)
     _make_s3_store(store_path)
     before = _snapshot_ids(store_path)
@@ -137,7 +137,7 @@ def test_maintain_execute_on_s3_is_refused_and_changes_nothing(tmp_path) -> None
 def test_maintain_due_on_s3_reports_a_dry_run_and_exits_0(tmp_path) -> None:
     config_dir = tmp_path / "config"
     root = _s3_root()
-    store_path = f"{root}/TestSite/rinex"
+    store_path = f"{root}/TestSite/gnss"
     _write_config(config_dir, root, dry_run_until_confirmed=False)
     _make_s3_store(store_path)
     before = _snapshot_ids(store_path)

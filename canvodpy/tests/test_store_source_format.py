@@ -33,7 +33,7 @@ class _SourceFormatProcessor(_TestProcessor):
 @pytest.fixture
 def new_store(tmp_path: Path) -> MyIcechunkStore:
     """A store without metadata, as before a site's first run."""
-    store_path = tmp_path / "store"
+    store_path = tmp_path / "gnss"
     store_path.mkdir()
     return MyIcechunkStore(create_test_store(store_path))
 

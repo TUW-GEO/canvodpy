@@ -108,7 +108,7 @@ class TestStoreList:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_synthetic_store(stores_root / "TestSite" / "rinex")
+        _write_synthetic_store(stores_root / "TestSite" / "gnss")
 
         result = runner.invoke(main_app, ["store", "list"], env=_env(config_dir))
 
@@ -124,7 +124,7 @@ class TestStoreInfo:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_synthetic_store(stores_root / "TestSite" / "rinex")
+        _write_synthetic_store(stores_root / "TestSite" / "gnss")
 
         result = runner.invoke(
             main_app, ["store", "info", "TestSite"], env=_env(config_dir)
@@ -140,7 +140,7 @@ class TestStoreInfo:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_synthetic_store(stores_root / "TestSite" / "rinex")
+        _write_synthetic_store(stores_root / "TestSite" / "gnss")
 
         result = runner.invoke(
             main_app,
@@ -197,7 +197,7 @@ class TestStoreLog:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_synthetic_store(stores_root / "TestSite" / "rinex", n_slots=2)
+        _write_synthetic_store(stores_root / "TestSite" / "gnss", n_slots=2)
 
         result = runner.invoke(
             main_app, ["store", "log", "TestSite"], env=_env(config_dir)
@@ -211,7 +211,7 @@ class TestStoreLog:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_synthetic_store(stores_root / "TestSite" / "rinex", n_slots=2)
+        _write_synthetic_store(stores_root / "TestSite" / "gnss", n_slots=2)
 
         result = runner.invoke(
             main_app, ["store", "log", "TestSite", "--ops"], env=_env(config_dir)
@@ -230,7 +230,7 @@ class TestStoreMaintain:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_synthetic_store(stores_root / "TestSite" / "rinex", n_slots=2)
+        _write_synthetic_store(stores_root / "TestSite" / "gnss", n_slots=2)
 
         result = runner.invoke(
             main_app, ["store", "maintain", "TestSite"], env=_env(config_dir)
@@ -245,7 +245,7 @@ class TestStoreMaintain:
         from canvod.store import MyIcechunkStore
 
         icestore = MyIcechunkStore(
-            stores_root / "TestSite" / "rinex", store_type="gnss_store"
+            stores_root / "TestSite" / "gnss", store_type="gnss_store"
         )
         history = icestore.get_history()
         assert len(history) >= 2
@@ -254,7 +254,7 @@ class TestStoreMaintain:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_synthetic_store(stores_root / "TestSite" / "rinex", n_slots=2)
+        _write_synthetic_store(stores_root / "TestSite" / "gnss", n_slots=2)
 
         result = runner.invoke(
             main_app,
@@ -271,7 +271,7 @@ class TestStoreMaintain:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_synthetic_store(stores_root / "TestSite" / "rinex", n_slots=2)
+        _write_synthetic_store(stores_root / "TestSite" / "gnss", n_slots=2)
 
         result = runner.invoke(
             main_app,
@@ -295,7 +295,7 @@ class TestStoreMaintainDue:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)  # no maintenance: block -> enabled=False
-        _write_synthetic_store(stores_root / "TestSite" / "rinex")
+        _write_synthetic_store(stores_root / "TestSite" / "gnss")
 
         result = runner.invoke(
             main_app,
@@ -450,7 +450,7 @@ class TestStoreMaintainDue:
                 }
             )
         )
-        _write_synthetic_store(stores_root / "TestSite" / "rinex")
+        _write_synthetic_store(stores_root / "TestSite" / "gnss")
 
         result = runner.invoke(
             main_app,
@@ -506,7 +506,7 @@ class TestStoreMaintainDue:
                 }
             )
         )
-        _write_synthetic_store(stores_root / "TestSite" / "rinex", n_slots=2)
+        _write_synthetic_store(stores_root / "TestSite" / "gnss", n_slots=2)
 
         result = runner.invoke(
             main_app,
@@ -623,7 +623,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        store_path = stores_root / "TestSite" / "rinex"
+        store_path = stores_root / "TestSite" / "gnss"
         _write_old_form_store(store_path, naming_authority)
         return config_dir, store_path
 
@@ -747,7 +747,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root, naming_authority="org.example")
-        store_path = stores_root / "TestSite" / "rinex"
+        store_path = stores_root / "TestSite" / "gnss"
         _write_old_form_store(store_path, naming_authority=None)
 
         result = runner.invoke(
@@ -765,7 +765,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root, naming_authority="org.example")
-        store_path = stores_root / "TestSite" / "rinex"
+        store_path = stores_root / "TestSite" / "gnss"
         _write_old_form_store(store_path, naming_authority="https://www.example.org")
 
         result = runner.invoke(
@@ -801,7 +801,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root, naming_authority="org.example")
-        store_path = stores_root / "TestSite" / "rinex"
+        store_path = stores_root / "TestSite" / "gnss"
         _write_old_form_store(store_path, naming_authority="org.middle-earth")
 
         result = runner.invoke(
@@ -819,7 +819,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        store_path = stores_root / "TestSite" / "rinex"
+        store_path = stores_root / "TestSite" / "gnss"
         _write_old_form_store(store_path, complete=False)
 
         result = runner.invoke(
@@ -840,7 +840,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        store_path = stores_root / "TestSite" / "rinex"
+        store_path = stores_root / "TestSite" / "gnss"
         _write_old_form_store(store_path, complete=False)
 
         result = runner.invoke(
@@ -890,7 +890,7 @@ class TestStoreMigrateMetadata:
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
         store_path = stores_root / "TestSite" / "vod"
-        _write_old_form_store(stores_root / "TestSite" / "rinex")
+        _write_old_form_store(stores_root / "TestSite" / "gnss")
         _write_old_form_store(store_path, store_type="vod_store")
 
         result = runner.invoke(
@@ -960,7 +960,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        store_path = stores_root / "TestSite" / "rinex"
+        store_path = stores_root / "TestSite" / "gnss"
         _write_old_form_store(store_path, source="sbf")
 
         result = self._migrate(config_dir)
@@ -977,7 +977,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_old_form_store(stores_root / "TestSite" / "rinex")
+        _write_old_form_store(stores_root / "TestSite" / "gnss")
         store_path = stores_root / "TestSite" / "vod"
         _write_old_form_store(store_path, store_type="vod_store")
 
@@ -994,7 +994,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_old_form_store(stores_root / "TestSite" / "rinex", source="sbf")
+        _write_old_form_store(stores_root / "TestSite" / "gnss", source="sbf")
         store_path = stores_root / "TestSite" / "vod"
         _write_old_form_store(store_path, store_type="vod_store")
 
@@ -1028,7 +1028,7 @@ class TestStoreMigrateMetadata:
             }
         )
         (config_dir / "canvod-settings.yaml").write_text(yaml.safe_dump(settings))
-        store_path = stores_root / "TestSite" / "rinex"
+        store_path = stores_root / "TestSite" / "gnss"
         _write_old_form_store(store_path, complete=False)
 
         result = self._migrate(config_dir, "gnss", "--set", "publisher.name=C")
@@ -1051,7 +1051,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         old_root = tmp_path / "stores"
         _write_config(config_dir, old_root)
-        _write_old_form_store(old_root / "TestSite" / "rinex")
+        _write_old_form_store(old_root / "TestSite" / "gnss")
         _write_old_form_store(old_root / "TestSite" / "vod", store_type="vod_store")
         new_root = tmp_path / "moved"
         old_root.rename(new_root)
@@ -1061,7 +1061,7 @@ class TestStoreMigrateMetadata:
         result = self._migrate(config_dir, "vod")
 
         assert result.exit_code == 0, result.output
-        gnss = read_repository_metadata(new_root / "TestSite" / "rinex")
+        gnss = read_repository_metadata(new_root / "TestSite" / "gnss")
         vod = read_repository_metadata(new_root / "TestSite" / "vod")
         assert (
             vod["content_settings"]["gnss_content_hash"]
@@ -1075,9 +1075,9 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_old_form_store(stores_root / "TestSite" / "rinex")
+        _write_old_form_store(stores_root / "TestSite" / "gnss")
         _write_old_form_store(stores_root / "TestSite" / "vod", store_type="vod_store")
-        migrate_metadata(stores_root / "TestSite" / "rinex", who="JD")
+        migrate_metadata(stores_root / "TestSite" / "gnss", who="JD")
 
         result = self._migrate(config_dir, "vod")
 
@@ -1103,7 +1103,7 @@ class TestStoreMigrateMetadata:
             }
         }
         path.write_text(yaml.safe_dump(settings))
-        store_path = stores_root / "TestSite" / "rinex"
+        store_path = stores_root / "TestSite" / "gnss"
         _write_old_form_store(store_path)
         path.write_text(plain)
 
@@ -1128,7 +1128,7 @@ class TestStoreMigrateMetadata:
             "paired_canopies": ["canopy_01"],
         }
         path.write_text(yaml.safe_dump(settings))
-        _write_old_form_store(stores_root / "TestSite" / "rinex")
+        _write_old_form_store(stores_root / "TestSite" / "gnss")
         store_path = stores_root / "TestSite" / "vod"
         _write_old_form_store(store_path, store_type="vod_store")
 
@@ -1154,7 +1154,7 @@ class TestStoreMigrateMetadata:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        _write_old_form_store(stores_root / "TestSite" / "rinex")
+        _write_old_form_store(stores_root / "TestSite" / "gnss")
         store_path = stores_root / "TestSite" / "vod"
         _write_old_form_store(store_path, store_type="vod_store")
         repo = icechunk.Repository.open(
@@ -1185,7 +1185,7 @@ class TestStoreMigrateMetadata:
         assert params["store_radial_diff"] is False
         # The GNSS store records the VOD switches too, as the VOD data show.
         assert self._migrate(config_dir, "gnss").exit_code == 0
-        gnss = read_repository_metadata(stores_root / "TestSite" / "rinex")
+        gnss = read_repository_metadata(stores_root / "TestSite" / "gnss")
         params = gnss["content_settings"]["settings"]["processing"]["params"]
         assert params["store_delta_snr"] is True
         assert params["store_radial_distance"] is False
@@ -1219,7 +1219,7 @@ def _write_current_store(stores_root, site="TestSite") -> None:
         TemporalExtent,
     )
 
-    path = stores_root / site / "rinex"
+    path = stores_root / site / "gnss"
     icechunk.Repository.create(storage=icechunk.local_filesystem_storage(str(path)))
     write_metadata(
         path,
@@ -1253,7 +1253,7 @@ class TestStoreAmend:
             settings["sites"]["TestSite"]["receivers"].update(receivers)
             (config_dir / "canvod-settings.yaml").write_text(yaml.safe_dump(settings))
         _write_current_store(stores_root)
-        return config_dir, stores_root / "TestSite" / "rinex"
+        return config_dir, stores_root / "TestSite" / "gnss"
 
     def _amend(self, config_dir, *args, input=None):
         return runner.invoke(
@@ -1457,7 +1457,7 @@ class TestStoreMigrateLayout:
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"
         _write_config(config_dir, stores_root)
-        store_path = stores_root / "TestSite" / "rinex"
+        store_path = stores_root / "TestSite" / "gnss"
         _write_synthetic_store(store_path)
         return config_dir, store_path
 

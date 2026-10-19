@@ -91,7 +91,7 @@ def _old_store(
     changes: dict[str, Any] | None = None,
 ) -> Path:
     """``changes``: dotted fields as written, rules unchecked."""
-    path = tmp_path / "store"
+    path = tmp_path / "gnss"
     repo = icechunk.Repository.create(
         storage=icechunk.local_filesystem_storage(str(path))
     )

@@ -415,7 +415,7 @@ def _collect(config: MagicMock, site_cfg: MagicMock):
             site_config=site_cfg,
             store_type="gnss_store",
             source_format="rinex3",
-            store_path=Path("/tmp/test"),
+            store_path=Path("/tmp/fangorn/gnss"),
         )
 
 

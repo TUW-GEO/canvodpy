@@ -65,7 +65,7 @@ def _column_lengths(store, group: str) -> dict[str, int]:
 
 @pytest.fixture
 def store(tmp_path: Path):
-    s = new_gnss_store(tmp_path / "rinex")
+    s = new_gnss_store(tmp_path / "gnss")
     s.write_initial_group(
         dataset=_make_dataset("2025-01-01T00:00:00", 12, "h_day1"),
         group_name="canopy_01",

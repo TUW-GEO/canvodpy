@@ -67,7 +67,7 @@ def _create_gnss_store(stores: Path) -> None:
     """An existing GNSS store: its metadata was written when it was created."""
     from canvod.store_metadata import open_repository
 
-    open_repository(stores / SITE_KEY / "rinex", create=True)
+    open_repository(stores / SITE_KEY / "gnss", create=True)
 
 
 def _run(*extra: str):

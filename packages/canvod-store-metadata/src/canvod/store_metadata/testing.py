@@ -18,6 +18,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from canvod.config.store_names import store_kind
 from canvod.utils import testing
 
 from .identity import stac_link
@@ -35,8 +36,6 @@ from .schema import (
     TemporalExtent,
     VodAnalysisInfo,
 )
-
-_SUFFIX = {"gnss_store": "gnss", "vod_store": "vod", "geodesy_store": "geodesy"}
 
 #: The receivers of the made-up site, by name and type.
 RECEIVERS = {"canopy_01": "canopy", "reference_01": "reference"}
@@ -62,7 +61,7 @@ def made_up_metadata(
         VOD analysis name to (canopy receiver, reference receiver); a GNSS
         store lists none.
     """
-    suffix = _SUFFIX[store_type]
+    suffix = store_kind(store_type)
     store_id = f"{testing.SITE_KEY}-{suffix}"
     return StoreMetadata(
         identity=StoreIdentity(

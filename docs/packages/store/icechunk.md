@@ -20,7 +20,7 @@ canVODpy creates stores in Icechunk format version 2 and requires
 `icechunk>=2.0.0`. A store is a directory:
 
 ```text
-rinex/
+gnss/
 ├── repo           # branches, tags, and the list of snapshots
 ├── snapshots/     # one file per snapshot
 ├── transactions/  # the changes of each commit

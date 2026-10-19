@@ -22,12 +22,25 @@ Each site has its own GNSS store and VOD store, both under
 ```text
 <stores_root_dir>/
 └── ExampleSite/
-    ├── rinex/   # GNSS store (processing.storage.gnss_store_name)
+    ├── gnss/    # GNSS store (processing.storage.gnss_store_name)
     └── vod/     # VOD store (processing.storage.vod_store_name)
 ```
 
-The GNSS store holds data from every reader format (RINEX, SBF, and NMEA),
-although its default directory name is `rinex`.
+The GNSS store holds data from every reader format (RINEX, SBF, and NMEA).
+
+### Store folders
+
+A store's folder is named by its kind: `gnss`, `vod`, or `geodesy`. For a
+second store of the same kind at a site, for example to compute VOD again
+with other settings, the name is the kind, `-` and a suffix of lowercase
+letters and digits, with single `_` or `-` between them: `vod-recompute`,
+`gnss-test`. Any other name is refused when the settings load. The store
+id is the site name and the folder, `examplesite-vod-recompute`; it is
+fixed when the store is created, so a store's folder can't be renamed
+later (a run refuses it, naming the cause).
+
+Before v1.0.0 the GNSS store's folder was `rinex`. `canvodpy store migrate
+SITE` moves it to `gnss` ([Upgrading to v1.0.0](../../guides/upgrading.md)).
 
 A store knows its site from its own metadata, not from the folder it
 sits in: `store.site_name` stays the same when the folder is moved or
@@ -317,7 +330,7 @@ To open a store by its path, use `open_gnss_store()` or
 ```python
 from canvod.store import open_gnss_store
 
-store = open_gnss_store("/data/stores/ExampleSite/rinex")
+store = open_gnss_store("/data/stores/ExampleSite/gnss")
 ```
 
 Opening a store never creates one: a path without a store raises a
@@ -343,8 +356,8 @@ Open each store by its path, then compare:
 ```python
 from canvod.store import compare_stores, open_gnss_store
 
-reference = open_gnss_store("/data/stores/ExampleSite/rinex")
-new = open_gnss_store("/data/stores/ExampleSite-new/rinex")
+reference = open_gnss_store("/data/stores/ExampleSite/gnss")
+new = open_gnss_store("/data/stores/ExampleSite-new/gnss")
 report = compare_stores(reference, new)
 
 report.matches  # True when the stores are the same
