@@ -41,9 +41,9 @@ from canvod.readers.gnss_specs.constants import FREQ_UNIT
 #: field, not a RINEX value, and lies outside every ``valid_range``.
 INTEGER_FILL_VALUE: Final[int] = -1
 
-# Ranges taken from RINEX cite the spec shipped in the source tree,
-# canvod/readers/rinex/rinex304.pdf ("RINEX 3.04", IGS/RTCM, 2018-11-23). Its
-# PDF page and printed page differ, so citations give both.
+# Ranges taken from RINEX cite the spec "RINEX 3.04" (IGS/RTCM, 2018-11-23),
+# https://files.igs.org/pub/data/format/rinex304.pdf. Its PDF page and
+# printed page differ, so citations give both.
 _RINEX304 = "RINEX 3.04 (IGS/RTCM, 2018-11-23)"
 
 # -------------------

@@ -2,21 +2,35 @@
 name = "canvod-store-metadata"
 version = "0.4.0"
 description = "Store metadata for canVODpy stores, in DataCite, ACDD, and STAC"
+readme = "README.md"
+requires-python = ">=3.14"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]
 maintainers = [
     {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
 ]
-readme = "README.md"
-requires-python = ">=3.14"
-keywords = ["GNSS", "VOD", "metadata", "icechunk", "zarr", "DataCite", "ACDD", "STAC"]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "VOD",
+    "metadata",
+    "icechunk",
+    "zarr",
+    "DataCite",
+    "ACDD",
+    "STAC",
+    "remote sensing",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
 ]
 
 dependencies = [

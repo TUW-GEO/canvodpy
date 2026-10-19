@@ -1,6 +1,6 @@
 # RINEX v2.11 parsing
 
-`Rnxv2Obs` reads [RINEX 2.11](https://files.igs.org/pub/data/format/rinex211.txt){:target="_blank"} observation files into the same `(epoch × sid)` Dataset that `Rnxv3Obs` produces. The format specification ships next to the reader as `canvod/readers/rinex/rinex211.txt`; every rule on this page cites it.
+`Rnxv2Obs` reads [RINEX 2.11](https://files.igs.org/pub/data/format/rinex211.txt){:target="_blank"} observation files into the same `(epoch × sid)` Dataset that `Rnxv3Obs` produces. Every rule on this page cites that specification.
 
 ```python
 from pathlib import Path
