@@ -102,6 +102,25 @@ def wait_after_store_error(
     return True
 
 
+def log_lost_conflict(logger, exc: Exception, **log_ctx: object) -> None:
+    """Log a conflict lost on every try, before the caller raises it.
+
+    Another writer committed to the store first on all
+    :data:`CONFLICT_TRIES` tries, so what this step would have written is
+    not in the store. ``log_ctx`` names the step (``op``) and its days.
+    """
+    logger.error(
+        "store_conflict_lost",
+        tries=CONFLICT_TRIES,
+        error=str(exc),
+        hint=(
+            "Another writer committed to this store first on every try; "
+            "this step's data is not in the store. Run these days again."
+        ),
+        **log_ctx,
+    )
+
+
 def call_with_store_retries[T](fn: Callable[[], T], *, logger, **log_ctx: object) -> T:
     """Retry a store read/write with backoff before giving up.
 
@@ -126,6 +145,7 @@ def call_with_store_retries[T](fn: Callable[[], T], *, logger, **log_ctx: object
         except icechunk.ConflictError as exc:
             conflicts += 1
             if conflicts >= CONFLICT_TRIES:
+                log_lost_conflict(logger, exc, **log_ctx)
                 raise
             seconds = wait_after_conflict(conflicts)
             logger.warning(

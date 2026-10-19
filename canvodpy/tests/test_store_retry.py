@@ -97,3 +97,40 @@ def test_the_fifth_conflict_propagates(exc):
     with pytest.raises(icechunk.ConflictError):
         store_retry.call_with_store_retries(fn, logger=structlog.get_logger())
     assert fn.calls == 5
+
+
+class _Log:
+    """Records the events logged to it."""
+
+    def __init__(self) -> None:
+        self.events: list[tuple[str, str, dict]] = []
+
+    def __getattr__(self, level: str):
+        return lambda event, **kw: self.events.append((level, event, kw))
+
+
+def test_a_conflict_lost_on_every_try_is_logged_with_its_days():
+    log = _Log()
+    with pytest.raises(icechunk.ConflictError):
+        store_retry.call_with_store_retries(
+            _Failing(icechunk.ConflictError("moved"), 5),
+            logger=log,
+            date="2025001",
+            op="vod_commit",
+        )
+    lost = [(lv, kw) for lv, ev, kw in log.events if ev == "store_conflict_lost"]
+    assert len(lost) == 1
+    level, kw = lost[0]
+    assert level == "error"
+    assert kw["date"] == "2025001"
+    assert kw["op"] == "vod_commit"
+    assert kw["tries"] == 5
+    assert "Run these days again" in kw["hint"]
+
+
+def test_a_conflict_won_on_a_later_try_logs_no_loss():
+    log = _Log()
+    store_retry.call_with_store_retries(
+        _Failing(icechunk.ConflictError("moved"), 4), logger=log
+    )
+    assert "store_conflict_lost" not in [ev for _, ev, _ in log.events]

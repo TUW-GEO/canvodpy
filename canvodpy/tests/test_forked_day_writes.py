@@ -503,11 +503,31 @@ def test_a_day_that_loses_every_try_fails_after_five(seeded, monkeypatch) -> Non
         raise icechunk.ConflictError(msg)
 
     monkeypatch.setattr(proc, "_commit_forked_unit", always_lost)
+    pipe = _orchestrator(seeded)
+    errors: list[tuple[str, dict]] = []
+    pipe._logger = SimpleNamespace(
+        warning=lambda *_a, **_k: None,
+        error=lambda event, **kw: errors.append((event, kw)),
+    )
 
     with pytest.raises(icechunk.ConflictError, match="another run"):
-        _write_unit(_orchestrator(seeded), proc, planned, results, _submit)
+        _write_unit(pipe, proc, planned, results, _submit)
     assert len(tries) == 5
     assert len(sleeps) == 4
+    assert [event for event, _ in errors] == ["store_conflict_lost"]
+    assert errors[0][1]["date"] == _DATE_KEY
+    assert errors[0][1]["op"] == "write_unit"
+
+
+def test_a_unit_that_lost_its_conflict_is_not_logged_twice(seeded) -> None:
+    pipe = _orchestrator(seeded)
+    pipe._logger = SimpleNamespace(
+        exception=lambda *_a, **_k: pytest.fail("logged a second time")
+    )
+    lost: Future = Future()
+    lost.set_exception(icechunk.ConflictError("lost five times"))
+
+    assert isinstance(pipe._unit_outcome(lost), icechunk.ConflictError)
 
 
 def test_a_day_whose_write_failed_is_recorded_failed(seeded) -> None:
