@@ -102,8 +102,9 @@ def _talker_id(msg_id: str) -> str:
 # PRN → RINEX SV mapping
 # ---------------------------------------------------------------------------
 
-# The GSV SNR unit is not established: the bundled SiRF NMEA Reference
-# Manual (Rev 2.1, GSV) gives "SNR (C/N0) ... dBHz", gpsd documents dB.
+# The GSV SNR unit is not established: the SiRF NMEA Reference Manual
+# (Rev. 2.1, December 2007, GSV) gives "SNR (C/N0) ... dBHz", gpsd
+# documents dB.
 _NMEA_SNR_METADATA: Final[dict[str, Any]] = {
     **SNR_METADATA,
     "description": (

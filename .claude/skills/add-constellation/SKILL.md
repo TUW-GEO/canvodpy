@@ -17,7 +17,9 @@ satellite).
 1. Subclass `ConstellationBase` in `packages/canvod-readers/src/canvod/readers/gnss_specs/constellations.py`: `SYSTEM_PREFIX`
    (the RINEX system letter), `BANDS`, `BAND_CODES`, `BAND_PROPERTIES`,
    the valid PRNs. Take the numbers from the interface control document
-   (`packages/canvod-readers/src/canvod/readers/gnss_specs/interface_control_documents/`), and cite it in a comment.
+   and cite it in a comment: title, version, section or table, and the
+   download link. Don't add the document to the repository: it would ship
+   with the package, and most are not ours to redistribute.
 2. Bands and signals: `packages/canvod-readers/src/canvod/readers/gnss_specs/bands.py`, `packages/canvod-readers/src/canvod/readers/gnss_specs/signals.py`,
    `packages/canvod-readers/src/canvod/readers/gnss_specs/obs_codes.py` (RINEX observation codes to SIDs).
 3. Satellite catalog: systems in the IGS SINEX metadata are found by

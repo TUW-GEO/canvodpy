@@ -66,3 +66,5 @@ canvod-config = { workspace = true }
 
 [tool.uv.build-backend]
 module-name = "canvod.readers"
+# Specifications and manuals are cited in the code, never shipped (#457).
+source-exclude = ["*.pdf"]
