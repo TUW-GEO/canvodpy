@@ -42,10 +42,10 @@ _LN10_OVER_10 = np.log(10.0) / 10.0
 #: * ``SNR`` (and its 1-minute means), ``Pseudorange``, ``Phase``,
 #:   ``Doppler``: 5e-4, in dB-Hz, m, cycles and Hz. Half the RINEX
 #:   observation resolution, format F14.3 = 0.001 (RINEX 3.04,
-#:   ``packages/canvod-readers/src/canvod/readers/rinex/rinex304.pdf``,
-#:   observation record, p. 67; RINEX 2.11,
-#:   ``packages/canvod-readers/src/canvod/readers/rinex/rinex211.txt``,
-#:   observation record). SBF (0.25 dB-Hz) and NMEA GSV (1 dB-Hz) are
+#:   https://files.igs.org/pub/data/format/rinex304.pdf, observation
+#:   record, p. 67; RINEX 2.11,
+#:   https://files.igs.org/pub/data/format/rinex211.txt, observation
+#:   record). SBF (0.25 dB-Hz) and NMEA GSV (1 dB-Hz) are
 #:   coarser, so RINEX sets the limit.
 #: * ``delta_snr`` (VOD store): 1e-3 dB. A difference of two SNR values
 #:   carries two SNR errors, 2 * 5e-4.
