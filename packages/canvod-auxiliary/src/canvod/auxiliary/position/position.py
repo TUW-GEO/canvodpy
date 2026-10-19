@@ -153,9 +153,12 @@ class ECEFPosition(BaseModel):
             y = sanitize(pos_parts[1])
             z = sanitize(pos_parts[2])
         else:
+            source = ds.attrs.get("Position Source")
             raise KeyError(
                 "Position not found in dataset attributes. "
-                "Expected 'APPROX POSITION X/Y/Z' or 'Approximate Position'"
+                "Expected 'APPROX POSITION X/Y/Z' or 'Approximate Position' "
+                "(from the RINEX header, the SBF PVT block or the NMEA GGA "
+                "fixes)" + (f"; position source: {source}" if source else "")
             )
 
         pos = cls(x=x, y=y, z=z)

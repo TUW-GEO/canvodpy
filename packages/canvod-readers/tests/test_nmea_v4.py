@@ -852,3 +852,96 @@ class TestHainichSignalId:
 
         common = ref_sids & can_sids
         assert len(common) > 0, "Hainich ref and canopy should share SIDs"
+
+
+def _sentence(payload: str) -> str:
+    """An NMEA sentence with its checksum."""
+    return f"${payload}*{compute_nmea_checksum(f'${payload}*00')}"
+
+
+def _gga(
+    second: int,
+    *,
+    quality: int = 1,
+    altitude: str = "1370.0",
+    separation: str = "25.0",
+    latitude: str = "2907.2000,S",
+) -> str:
+    """A GGA fix at the made-up test position (canvod.utils.testing).
+
+    Latitude -29.12 and longitude 26.21 as ``ddmm.mmmm``; the default
+    altitude and separation add up to its height above the ellipsoid.
+    """
+    return _sentence(
+        f"GPGGA,0000{second:02d}.00,{latitude},02612.6000,E,{quality},08,0.9,"
+        f"{altitude},M,{separation},M,,"
+    )
+
+
+def _nmea_file(tmp_path: Path, ggas: list[str]) -> Path:
+    """An NMEA file with one RMC, one GGA and one GSV sentence per epoch."""
+    lines = []
+    for second, gga in enumerate(ggas):
+        lines += [
+            _sentence(f"GPRMC,0000{second:02d}.00,A,,,,,,,010125,,,A"),
+            gga,
+            _sentence("GPGSV,1,1,01,05,45,120,40"),
+        ]
+    path = tmp_path / "TEST01TUW_R_20250010000_01M_01S_AA.nmea"
+    path.write_text("\n".join(lines) + "\n", encoding="ascii")
+    return path
+
+
+def _position(ds: xr.Dataset) -> tuple[float, float, float]:
+    return tuple(ds.attrs[f"APPROX POSITION {axis}"] for axis in "XYZ")
+
+
+class TestNmeaPosition:
+    """The receiver position from the GGA fixes of a file (#451)."""
+
+    def test_position_of_the_fixes_in_ecef(self, tmp_path):
+        from canvod.utils.testing import ECEF_X, ECEF_Y, ECEF_Z
+
+        path = _nmea_file(tmp_path, [_gga(s) for s in range(3)])
+        position = _position(NmeaObs(fpath=path).to_ds())
+        assert position == pytest.approx((ECEF_X, ECEF_Y, ECEF_Z), abs=0.01)
+
+    def test_one_outlying_fix_does_not_move_the_position(self, tmp_path):
+        from canvod.utils.testing import ECEF_X, ECEF_Y, ECEF_Z
+
+        fixes = [_gga(0), _gga(1), _gga(2, altitude="9370.0")]
+        position = _position(NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds())
+        assert position == pytest.approx((ECEF_X, ECEF_Y, ECEF_Z), abs=0.01)
+
+    def test_even_number_of_fixes_takes_the_middle_of_the_two(self, tmp_path):
+        from canvod.utils.testing import ECEF_X, ECEF_Y, ECEF_Z
+
+        fixes = [_gga(0, altitude="1369.0"), _gga(1, altitude="1371.0")]
+        position = _position(NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds())
+        assert position == pytest.approx((ECEF_X, ECEF_Y, ECEF_Z), abs=0.01)
+
+    def test_source_of_the_position_is_recorded(self, tmp_path):
+        fixes = [_gga(0), _gga(1, quality=0), _gga(2)]
+        ds = NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds()
+        assert "2 GGA fixes" in ds.attrs["Position Source"]
+
+    @pytest.mark.parametrize("quality", [0, 3, 6, 7, 8])
+    def test_fixes_of_other_qualities_give_no_position(self, tmp_path, quality):
+        fixes = [_gga(s, quality=quality) for s in range(2)]
+        ds = NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds()
+        assert "APPROX POSITION X" not in ds.attrs
+
+    def test_fixes_without_a_geoid_separation_give_no_position(self, tmp_path):
+        fixes = [_gga(s, separation="") for s in range(2)]
+        ds = NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds()
+        assert "APPROX POSITION X" not in ds.attrs
+        assert "geoid separation" in ds.attrs["Position Source"]
+
+    def test_hainich_position_lies_at_the_site(self, hainich_canopy_file):
+        import pymap3d as pm
+
+        ds = NmeaObs(fpath=hainich_canopy_file).to_ds()
+        lat, lon, _ = pm.ecef2geodetic(*_position(ds))
+        # First GGA fix of the file: 5104.73083 N, 01027.11421 E
+        assert lat == pytest.approx(51 + 4.73083 / 60, abs=1e-4)
+        assert lon == pytest.approx(10 + 27.11421 / 60, abs=1e-4)

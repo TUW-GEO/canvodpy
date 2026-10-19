@@ -7,6 +7,7 @@ Supports:
 - GPS ($GP), GLONASS ($GL), Galileo ($GA), BeiDou ($GB) GSV sentences
 - RMC and GGA sentences for epoch timestamps (UTC, converted to GPS time
   with the leap seconds of the date, see ``gnss_specs.leap_seconds``)
+- GGA fixes for the receiver position (``APPROX POSITION X/Y/Z``)
 - PRN-to-RINEX SV mapping per NMEA v4 PRN numbering scheme
 - Checksum validation
 
@@ -271,6 +272,84 @@ def _parse_gga_time(fields: list[str]) -> tuple[int, int, float] | None:
         return None
 
 
+#: GGA position fix indicators of a valid fix the position is taken from:
+#: 1 GPS fix, 2 differential GPS fix, 4 RTK fixed, 5 RTK float
+#: (``implement_nmea.md``, GGA field 6; SiRF NMEA Reference Manual Rev. 2.1,
+#: December 2007, Table 1-4, p. 1-2, bundled next to this module). Not 0
+#: (no fix), 3 (not applicable) or 6 (dead reckoning), nor any value these
+#: sources don't define.
+GGA_VALID_FIX_QUALITIES: Final = frozenset({1, 2, 4, 5})
+
+
+def _parse_gga_fix(fields: list[str]) -> tuple[float, float, float] | None:
+    """Latitude, longitude (degrees) and ellipsoidal height (m) of a GGA fix.
+
+    Fields per the SiRF NMEA Reference Manual Rev. 2.1, Table 1-3 "GGA Data
+    Format", p. 1-2: latitude ``ddmm.mmmm`` with N/S, longitude
+    ``dddmm.mmmm`` with E/W, the position fix indicator, the MSL altitude
+    and the geoid separation, both in meters; "Ellipsoid altitude = MSL
+    Altitude + Geoid Separation". ``None`` for a fix whose indicator is not
+    in :data:`GGA_VALID_FIX_QUALITIES` or which lacks one of these fields.
+    """
+    try:
+        if int(fields[5]) not in GGA_VALID_FIX_QUALITIES:
+            return None
+        lat = int(fields[1][:2]) + float(fields[1][2:]) / 60
+        lon = int(fields[3][:3]) + float(fields[3][3:]) / 60
+        height = float(fields[8]) + float(fields[10])
+    except ValueError, IndexError:
+        return None
+    if fields[2] == "S":
+        lat = -lat
+    if fields[4] == "W":
+        lon = -lon
+    return lat, lon, height
+
+
+def _gga_has_fix_without_separation(fields: list[str]) -> bool:
+    """Whether a GGA fix is valid but gives no geoid separation."""
+    try:
+        valid = int(fields[5]) in GGA_VALID_FIX_QUALITIES
+    except ValueError, IndexError:
+        return False
+    return valid and len(fields) > 10 and not fields[10].strip()
+
+
+def _position_attrs(
+    fixes: list[tuple[float, float, float]], without_separation: int
+) -> dict[str, Any]:
+    """The receiver position of a file from its GGA fixes, as dataset attrs.
+
+    The position is the median of the fixes' latitude, longitude and
+    ellipsoidal height, so single bad fixes don't move it, converted to
+    WGS84 ECEF (meters) like the SBF reader's. Without a fix, only
+    ``Position Source`` says why there is no position; fixes without a
+    geoid separation are not used, since their ellipsoidal height is
+    unknown.
+    """
+    if not fixes:
+        reason = "no valid GGA fix (position fix indicator 1, 2, 4 or 5)"
+        if without_separation:
+            reason += (
+                f"; {without_separation} valid fixes have no geoid separation,"
+                " so their height above the ellipsoid is unknown"
+            )
+        return {"Position Source": f"none: {reason}"}
+    import pymap3d as pm
+
+    lat, lon, height = np.median(np.asarray(fixes), axis=0)
+    x, y, z = pm.geodetic2ecef(lat, lon, height)
+    return {
+        "APPROX POSITION X": float(x),
+        "APPROX POSITION Y": float(y),
+        "APPROX POSITION Z": float(z),
+        "Position Source": (
+            f"median of {len(fixes)} GGA fixes (position fix indicator 1, 2, "
+            "4 or 5; height = MSL altitude + geoid separation), WGS84 ECEF"
+        ),
+    }
+
+
 # ---------------------------------------------------------------------------
 # GSV satellite entry parsing
 # ---------------------------------------------------------------------------
@@ -409,8 +488,14 @@ class NmeaObs(GNSSDataReader, BaseModel):
     # ----- lazy parsing ----- #
 
     @cached_property
-    def _parsed_epochs(self) -> list[_ParsedEpoch]:
+    def _parsed(
+        self,
+    ) -> tuple[list[_ParsedEpoch], list[tuple[float, float, float]], int]:
         return self._parse_file()
+
+    @property
+    def _parsed_epochs(self) -> list[_ParsedEpoch]:
+        return self._parsed[0]
 
     @cached_property
     def _file_hash_value(self) -> str:
@@ -578,6 +663,7 @@ class NmeaObs(GNSSDataReader, BaseModel):
 
         # Standard attributes (includes "File Hash")
         ds.attrs.update(self._build_attrs())
+        ds.attrs.update(_position_attrs(self._parsed[1], self._parsed[2]))
 
         # Normalize string dtypes for Icechunk / Zarr V3 compatibility
         for name in list(ds.coords) + list(ds.data_vars):
@@ -593,11 +679,16 @@ class NmeaObs(GNSSDataReader, BaseModel):
 
     # ---- internal parsing ---- #
 
-    def _parse_file(self) -> list[_ParsedEpoch]:
-        """Parse the NMEA file into epoch blocks.
+    def _parse_file(
+        self,
+    ) -> tuple[list[_ParsedEpoch], list[tuple[float, float, float]], int]:
+        """Parse the NMEA file into epoch blocks and GGA fixes.
 
         Grouping strategy: a new epoch starts whenever an RMC or GGA sentence
         is encountered with a different timestamp than the previous one.
+
+        Returns the epochs, the valid GGA fixes (:func:`_parse_gga_fix`) and
+        the number of valid fixes without a geoid separation.
         """
         lines = self.fpath.read_text(errors="replace").splitlines()
 
@@ -636,6 +727,8 @@ class NmeaObs(GNSSDataReader, BaseModel):
         current_dt: datetime | None = None
         last_known_date: tuple[int, int, int] | None = None
         current_sats: dict[str, float | None] = {}
+        fixes: list[tuple[float, float, float]] = []
+        without_separation = 0
 
         def _flush_epoch() -> None:
             nonlocal current_dt, current_sats
@@ -662,6 +755,11 @@ class NmeaObs(GNSSDataReader, BaseModel):
                         current_dt = dt
 
             elif sentence_type == "GGA":
+                fix = _parse_gga_fix(fields)
+                if fix is not None:
+                    fixes.append(fix)
+                elif _gga_has_fix_without_separation(fields):
+                    without_separation += 1
                 hms = _parse_gga_time(fields)
                 if hms is not None:
                     h, m, s = hms
@@ -700,4 +798,4 @@ class NmeaObs(GNSSDataReader, BaseModel):
             msg = "No GSV sentences found in file: cannot extract SNR data"
             raise NmeaMissingSentenceError(msg)
 
-        return epochs
+        return epochs, fixes, without_separation
