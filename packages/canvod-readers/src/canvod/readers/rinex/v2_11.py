@@ -652,7 +652,6 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
     Inherits from ``GNSSDataReader`` and Pydantic ``BaseModel``.
     """
 
-    fpath: Path
     file_type: ClassVar[str] = "rnx"
     per_channel_glonass: ClassVar[bool] = True
 
