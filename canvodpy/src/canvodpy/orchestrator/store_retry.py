@@ -41,6 +41,9 @@ _LASTING_ERRNOS = frozenset(
     )
     if code is not None
 )
+# Windows: a file held briefly by another process (a virus scanner) gives
+# a PermissionError with ERROR_SHARING_VIOLATION or ERROR_LOCK_VIOLATION.
+_WINDOWS_SHARING_ERRORS = frozenset({32, 33})
 # CIFS's default dead-connection-detection interval (echo_interval) is 60s --
 # a (2, 8, 30) schedule (40s total) can exhaust every retry before the OS-level
 # driver has even noticed the connection dropped, so every attempt would hit
@@ -58,10 +61,13 @@ def is_transient(exc: BaseException) -> bool:
 
     An error in :data:`RETRYABLE_STORE_ERRORS` is, unless it is an OS error
     that lasts: no permission, a missing file or folder, a full disk or
-    quota, a read-only file system.
+    quota, a read-only file system. A Windows sharing or lock violation is
+    a ``PermissionError`` but passes: the other process lets the file go.
     """
     if not isinstance(exc, RETRYABLE_STORE_ERRORS):
         return False
+    if getattr(exc, "winerror", None) in _WINDOWS_SHARING_ERRORS:
+        return True
     if isinstance(exc, _LASTING_OS_ERRORS):
         return False
     return not (isinstance(exc, OSError) and exc.errno in _LASTING_ERRNOS)
