@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The `canvod-auxiliary` package provides auxiliary data management for [GNSS Transmissometry](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"} (GNSS-T) analysis. It handles downloading, parsing, preprocessing, and interpolating [SP3 ephemerides](https://igs.org/formats-and-standards/){:target="_blank"} to augment RINEX observation data with precise satellite positions. By default it also fetches CLK [clock corrections](https://gssc.esa.int/navipedia/index.php/Precise_GNSS_Satellite_Coordinates_Computation){:target="_blank"}, though these are unused by the VOD formula and can be skipped via `aux_data.fetch_clock: false`.
+The `canvod-auxiliary` package provides auxiliary data management for [GNSS Transmissometry](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"} (GNSS-T) analysis. It handles downloading, parsing, preprocessing, and interpolating [SP3 ephemerides](https://igs.org/formats-and-standards/){:target="_blank"} to augment RINEX observation data with precise satellite positions. It can also fetch CLK [clock corrections](https://gssc.esa.int/navipedia/index.php/Precise_GNSS_Satellite_Coordinates_Computation){:target="_blank"} with `aux_data.fetch_clock: true`; the VOD formula doesn't use them, so they are off by default.
 
 ---
 
@@ -23,7 +23,7 @@ GNSS-T analysis requires combining two data sources with fundamentally different
     - Low temporal resolution: 5–15 min
     - Satellite-level indexing by SV: `"G01"`
     - Dimensions: `(epoch: 96, sv: 32)`
-    - CLK is optional (`aux_data.fetch_clock`, default `true`); SP3 is always required
+    - CLK is optional (`aux_data.fetch_clock`, default `false`); SP3 is always required
 
 </div>
 

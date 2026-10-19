@@ -65,8 +65,8 @@ signals get no VOD: choose a product that covers the systems of your
 | USN | US Naval Observatory | – | G |
 
 `canvod.auxiliary.list_products()` lists them; the registry is the truth. The
-default, COD final, covers all five systems. Products without clock files need
-`fetch_clock: false`; a run, and `canvodpy config validate`, stops before any
+default, COD final, covers all five systems. Products without clock files can't be
+used with `fetch_clock: true`; a run, and `canvodpy config validate`, stops before any
 download if the configured product does not exist or has no clocks while
 `fetch_clock` is true, and names the closest products.
 
@@ -111,7 +111,7 @@ download if the configured product does not exist or has no clocks while
       aux_data:
         agency: COD
         product_type: final
-        fetch_clock: true   # false: skip CLK, which VOD does not use
+        fetch_clock: false  # true: also CLK, which VOD does not use
     ```
 
     To add satellite geometry to a dataset in your own code, use an ephemeris

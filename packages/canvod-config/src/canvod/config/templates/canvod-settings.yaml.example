@@ -83,7 +83,7 @@ processing:
     # https://canvodpy.eu/guides/settings/#processing-aux_data-ftp_timeout_s
     # ftp_timeout_s: 30      # FTP connection timeout in seconds
     # https://canvodpy.eu/guides/settings/#processing-aux_data-fetch_clock
-    # fetch_clock: true      # Set false to skip CLK downloads/interpolation; VOD doesn't use clock corrections
+    # fetch_clock: false     # Set true to also download and interpolate CLK; VOD doesn't use clock corrections
     # https://canvodpy.eu/guides/settings/#processing-aux_data-zarr_async_concurrency
     # zarr_async_concurrency: 2   # Cap zarr's concurrent chunk write/read burst
     #                              # for the aux cache's own writes. Unset by

@@ -282,11 +282,12 @@ class TestAuxDataConfig:
         a = AuxDataConfig()
         assert a.agency == "COD"
         assert a.product_type == "final"
-        assert a.fetch_clock is True
-
-    def test_fetch_clock_can_be_disabled(self):
-        a = AuxDataConfig(fetch_clock=False)
+        # VOD doesn't use clock corrections, so CLK files are off (#462).
         assert a.fetch_clock is False
+
+    def test_fetch_clock_can_be_enabled(self):
+        a = AuxDataConfig(fetch_clock=True)
+        assert a.fetch_clock is True
 
     def test_invalid_product_type(self):
         with pytest.raises(ValidationError, match="product_type"):

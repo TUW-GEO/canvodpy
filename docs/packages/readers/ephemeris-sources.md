@@ -81,8 +81,8 @@ The default path of `canvodpy run` (`ephemeris_source: final`).
 ```
 
 CLK is not used by the VOD formula, $\text{VOD} = -\ln(T) \cdot \cos\theta$, which needs only
-transmittance and polar angle. Set `aux_data.fetch_clock: false` to skip
-step 1's clock download and step 4 entirely.
+transmittance and polar angle, so `aux_data.fetch_clock` is `false` by
+default, which skips step 1's clock download and step 4 entirely.
 
 ### Configuration
 
@@ -95,7 +95,7 @@ processing:
     agency: "COD"
     product_type: "final"
     ftp_timeout_s: 30
-    fetch_clock: true  # set false to skip CLK download/interpolation
+    fetch_clock: false  # true: also download and interpolate CLK
 ```
 
 ### Component locations

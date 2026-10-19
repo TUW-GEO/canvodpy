@@ -29,10 +29,12 @@ class AuxDataConfig(_StrictModel):
         30, ge=1, description="FTP connection timeout in seconds"
     )
     fetch_clock: bool = Field(
-        True,
+        False,
         description=(
             "Download and interpolate the CLK clock files with the SP3 orbit "
-            "files. VOD doesn't use clock corrections; set false to skip them."
+            "files. VOD doesn't use clock corrections, so they are off; set "
+            "true to add each satellite's clock correction to the GNSS store "
+            "as the variable clock."
         ),
     )
     zarr_async_concurrency: int | None = Field(
