@@ -394,7 +394,7 @@ processing:
     reader, to recompute stored data. The VOD of those days stays as it
     was: the rewritten files are the same files, so their VOD results
     are skipped. For VOD of the recomputed data, write it to a new VOD
-    store (set `storage.vod_store_name` to e.g. `vod-recompute`).
+    store (set `storage.vod_store_name` to another name, such as `vod-recompute`).
 
     `unsafe_append` writes the file again on top of the stored data,
     without checking for epochs that are already there. The store then
