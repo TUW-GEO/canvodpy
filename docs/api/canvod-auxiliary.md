@@ -31,9 +31,8 @@ transformations, and the GNSS product registry.
 
 ## Clock (CLK)
 
-Optional: only when `aux_data.fetch_clock` is `true` (the default); the VOD
-formula doesn't use them. Set it to `false` to skip downloading, reading and
-interpolating clock files.
+Optional: only when `aux_data.fetch_clock` is `true` (the default is
+`false`); the VOD formula doesn't use them.
 
 ::: canvod.auxiliary.clock
 

@@ -137,7 +137,7 @@ flowchart TD
    `reader_format` in the settings of the receiver, or is detected from the
    files.
 3. **Prepare each day.** For each day, the run gets the satellite orbits
-   (SP3) and, unless `aux_data.fetch_clock` is `false`, the satellite
+   (SP3) and, if `aux_data.fetch_clock` is `true`, the satellite
    clocks (CLK), and interpolates them onto the epochs of the day: orbits
    with cubic Hermite splines, clocks piecewise linearly. Without a NASA
    Earthdata account in the settings, the files come from ESA; with one,
