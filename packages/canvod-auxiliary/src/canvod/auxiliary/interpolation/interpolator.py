@@ -126,7 +126,7 @@ class ClockConfig(InterpolatorConfig):
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
-class Interpolator(ABC):
+class Interpolator[C: InterpolatorConfig](ABC):
     """Abstract base class for interpolation strategies.
 
     Notes
@@ -135,7 +135,7 @@ class Interpolator(ABC):
     uses `ABC` to define required interpolation hooks.
     """
 
-    config: InterpolatorConfig
+    config: C
 
     @abstractmethod
     def interpolate(self, ds: xr.Dataset, target_epochs: np.ndarray) -> xr.Dataset:
@@ -164,7 +164,7 @@ class Interpolator(ABC):
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
-class Sp3InterpolationStrategy(Interpolator):
+class Sp3InterpolationStrategy(Interpolator[Sp3Config]):
     """Hermite cubic spline interpolation for SP3 ephemeris data.
 
     Uses satellite velocities (Vx, Vy, Vz) for higher accuracy.
@@ -180,8 +180,6 @@ class Sp3InterpolationStrategy(Interpolator):
     >>> # Interpolate to RINEX epochs
     >>> sp3_interp = interpolator.interpolate(sp3_data, rinex_epochs)
     """
-
-    config: Sp3Config
 
     def interpolate(self, ds: xr.Dataset, target_epochs: np.ndarray) -> xr.Dataset:
         """Interpolate SP3 ephemeris to target epochs."""
@@ -335,7 +333,7 @@ class Sp3InterpolationStrategy(Interpolator):
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
-class ClockInterpolationStrategy(Interpolator):
+class ClockInterpolationStrategy(Interpolator[ClockConfig]):
     """Piecewise linear interpolation for clock corrections.
 
     Detects and handles discontinuities (clock jumps) properly.
@@ -352,8 +350,6 @@ class ClockInterpolationStrategy(Interpolator):
     >>> # Interpolate to RINEX epochs
     >>> clk_interp = interpolator.interpolate(clk_data, rinex_epochs)
     """
-
-    config: ClockConfig
 
     def interpolate(self, ds: xr.Dataset, target_epochs: np.ndarray) -> xr.Dataset:
         """Interpolate clock corrections with discontinuity handling."""

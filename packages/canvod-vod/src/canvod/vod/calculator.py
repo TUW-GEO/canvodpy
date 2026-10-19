@@ -3,7 +3,7 @@
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import structlog
@@ -275,7 +275,8 @@ class TauOmegaZerothOrder(VODCalculator):
             )
 
         theta = self.canopy_ds["theta"]
-        vod = -np.log(canopy_transmissivity) * np.cos(theta)
+        # numpy ufuncs on DataArrays return DataArrays; the stubs say ndarray.
+        vod = cast(xr.DataArray, -np.log(canopy_transmissivity) * np.cos(theta))
 
         # Grid cells assigned before the store write (processing.preprocessing)
         cell_ids = {
