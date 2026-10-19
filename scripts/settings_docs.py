@@ -47,7 +47,12 @@ the terminal, run `canvodpy config explain SETTING`, for example
 # A value in single quotes, 'skip', and a name with an underscore or a dot,
 # store_radial_distance or sites.<name>.store_description, are code.
 _QUOTED = re.compile(r"(?<![\w`])'([^'\s][^']*?)'(?![\w])")
-_NAME = re.compile(r"(?<![\w`.<])([A-Za-z<][\w<>]*(?:[._][\w<>{}]+)+)(?![\w`])")
+# The part after the first dot or underscore takes each dot together with
+# the character after it, so no string can be split two ways (no
+# exponential backtracking).
+_NAME = re.compile(
+    r"(?<![\w`.<])([A-Za-z<][\w<>]*[._][\w<>{}](?:\.?[\w<>{}])*)(?![\w`])"
+)
 
 
 def _prose(text: str) -> str:
