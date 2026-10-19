@@ -180,7 +180,7 @@ All of these are replaced by one entry point: `canvodpy run`, or
 | `sites.<site>.naming`, `sites.<site>.receivers.<name>.naming` | `recipe` on each receiver with non-canonical file names |
 | `sites.<site>.receivers.<name>.scs_from` | `paired_canopies` |
 | `processing.metadata.store_description` | `sites.<site>.store_description` |
-| `processing.storage.vod_store_strategy` | nothing (no effect); to recompute VOD, set `vod_store_name` to e.g. `vod-recompute` |
+| `processing.storage.vod_store_strategy` | nothing (no effect); to recompute VOD, set `vod_store_name` to another name, such as `vod-recompute` |
 | `processing.logging.log_file_name` | nothing (no effect); log files have fixed names under `log_dir` |
 | `processing.params.days_per_batch`, `canvodpy run --days-per-batch`, argument `days_per_batch` of `Site.pipeline()` and `Pipeline` | nothing; the run sizes its units of days from `max_memory_gb`. Until v2.0.0 the value only caps the days per unit |
 
