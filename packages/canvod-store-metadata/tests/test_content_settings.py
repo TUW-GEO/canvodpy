@@ -174,7 +174,7 @@ def test_a_changed_sid_preset_counts(store, settings):
 
 
 def test_a_store_without_content_settings_is_refused(tmp_path, settings):
-    path = give_test_metadata(tmp_path / "old", receivers={"canopy_01": "canopy"})
+    path = give_test_metadata(tmp_path / "gnss", receivers={"canopy_01": "canopy"})
 
     with pytest.raises(MissingContentSettingsError, match="migrate-metadata"):
         ensure_store_metadata(
@@ -220,7 +220,7 @@ class TestMigration:
     @pytest.fixture
     def old_store(self, tmp_path, settings) -> Path:
         """A store with repository metadata, data, but no content settings."""
-        path = give_test_metadata(tmp_path / "old")
+        path = give_test_metadata(tmp_path / "gnss")
         _commit(path, settings)
         return path
 

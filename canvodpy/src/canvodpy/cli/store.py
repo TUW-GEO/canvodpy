@@ -761,6 +761,7 @@ def _migrate_repository_metadata(
     yes: bool,
 ) -> None:
     """Move a store's metadata to repository metadata (ADR 0014)."""
+    from canvod.config.store_names import store_folder_name
     from canvod.store_metadata import migrate_metadata
     from canvod.store_metadata.identity import check_naming_authority, store_id
 
@@ -788,7 +789,9 @@ def _migrate_repository_metadata(
             naming_authority = load_config().processing.metadata.naming_authority
             if naming_authority:
                 source = "the settings, processing.metadata.naming_authority"
-    new_id = store_id(old.spatial.site.name, old.identity.store_type)
+    new_id = store_id(
+        old.spatial.site.name, old.identity.store_type, store_folder_name(path)
+    )
     console.print(f"\n[bold]{site}[/bold]: {store} store ({path})")
     console.print(f"  Store id:          {old.identity.id} -> {new_id}")
     console.print(f"  Who:               {who}")

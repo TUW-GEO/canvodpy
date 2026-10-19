@@ -35,6 +35,7 @@ dotted key. A settings file from 0.x typically needs:
 | `processing.metadata.publisher`, `processing.metadata.license`, `processing.metadata.naming_authority` | Required to create a store; the metadata standards (DataCite, STAC) ask for them. |
 | `sites.<site>.store_description` | Required to create a store: one sentence about the site's data. |
 | `processing.metadata.initials` | Required to migrate or amend a store: who changed its metadata. |
+| `processing.storage.gnss_store_name`, `processing.storage.vod_store_name` | A store's folder is named by its kind (`gnss`, `vod`), optionally with a suffix (`vod-recompute`); other names are refused. Remove `gnss_store_name: rinex`: the GNSS store's folder is now `gnss`, and the migration moves it. |
 | `processing.preprocessing.temporal_aggregation.integer_method` | Required when temporal aggregation is set: `first`, `last` or `middle`. |
 
 !!! warning "Preprocessing in your settings is now applied"
@@ -134,9 +135,10 @@ compare the settings.
 | Before (0.x) | Since v1.0.0 | What to do |
 |---|---|---|
 | Runs append each file to the store. | Runs write day blocks: every receiver-day has its slots, and a day processed again replaces its slots ([ADR 0016](../adr/0016-day-blocks-and-forked-writes.md)). | Migrate the stores (step 3). |
-| A store had no fixed settings. | A store records its content settings when it is created; a run with other settings is refused ([ADR 0019](../adr/0019-content-settings-and-several-writers.md)). | To process with other settings, write a new store (another `gnss_store_name`). |
+| A store had no fixed settings. | A store records its content settings when it is created; a run with other settings is refused ([ADR 0019](../adr/0019-content-settings-and-several-writers.md)). | To process with other settings, write a new store (`gnss_store_name: gnss-<suffix>`). |
 | Opening a store created it. | Only a run creates a store; `open_gnss_store()` and `open_vod_store()` only open. | Create stores with `canvodpy run`. |
 | A store's site came from its folder name. | It comes from the store's metadata. | Nothing; migrated stores have it. |
+| The GNSS store's folder was `rinex`, and store folders could have any name. | A store's folder is named by its kind: `gnss`, `vod`, or the kind with a suffix ([Store folders](../packages/store/overview.md#store-folders)); the store id ends in it. | Migrate the stores (step 3); the migration moves `rinex` to `gnss`. |
 | `canvodpy run` without dates resumed from the last stored day. | It processes the receiver-days with new files of the last 30 days. | Give `--start` and `--end` for older days. |
 | `processing.preprocessing` had no effect. | A run applies each section that is set. | See the warning in step 1. |
 | Files were found in day folders with fixed names. | Each file's day comes from its name, in any folder layout. | Nothing; files with other names need a naming recipe ([File names](../packages/naming/overview.md)). |
@@ -178,7 +180,7 @@ All of these are replaced by one entry point: `canvodpy run`, or
 | `sites.<site>.naming`, `sites.<site>.receivers.<name>.naming` | `recipe` on each receiver with non-canonical file names |
 | `sites.<site>.receivers.<name>.scs_from` | `paired_canopies` |
 | `processing.metadata.store_description` | `sites.<site>.store_description` |
-| `processing.storage.vod_store_strategy` | nothing (no effect); to recompute VOD, set another `vod_store_name` |
+| `processing.storage.vod_store_strategy` | nothing (no effect); to recompute VOD, set `vod_store_name` to e.g. `vod-recompute` |
 | `processing.logging.log_file_name` | nothing (no effect); log files have fixed names under `log_dir` |
 | `processing.params.days_per_batch`, `canvodpy run --days-per-batch`, argument `days_per_batch` of `Site.pipeline()` and `Pipeline` | nothing; the run sizes its units of days from `max_memory_gb`. Until v2.0.0 the value only caps the days per unit |
 

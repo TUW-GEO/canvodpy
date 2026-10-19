@@ -214,7 +214,7 @@ class TestConfigInitFromStore:
 
     @staticmethod
     def _make_store(tmp_path):
-        """A GNSS store with content settings at ``<tmp>/root/<site>/rinex``."""
+        """A GNSS store with content settings at ``<tmp>/root/<site>/gnss``."""
         from canvod.config import load_config
         from canvod.config.models import ReceiverConfig
         from canvod.store_metadata import ensure_store_metadata
@@ -228,7 +228,7 @@ class TestConfigInitFromStore:
         site.receivers["reference_01"] = ReceiverConfig(
             type="reference", directory="01_reference", paired_canopies=["canopy_01"]
         )
-        store = tmp_path / "root" / testing.SITE_KEY / "rinex"
+        store = tmp_path / "root" / testing.SITE_KEY / "gnss"
         ensure_store_metadata(
             store,
             config=config,
@@ -332,7 +332,7 @@ class TestValidateListsPlaceholders:
         site.receivers["reference_01"] = ReceiverConfig(
             type="reference", directory="01_reference", paired_canopies=["canopy_01"]
         )
-        store = tmp_path / "root" / testing.SITE_KEY / "rinex"
+        store = tmp_path / "root" / testing.SITE_KEY / "gnss"
         ensure_store_metadata(
             store,
             config=config,

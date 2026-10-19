@@ -76,8 +76,8 @@ class PlainReporter:
         print(f"  resource_mode  {proc.resource_mode}")
         print(f"  store_strategy {storage.gnss_store_strategy}")
         if args is not None:
-            print(f"  gnss_store     {storage.gnss_store_name or 'rinex'}")
-            print(f"  vod_store      {storage.vod_store_name or 'vod'}")
+            print(f"  gnss_store     {storage.gnss_store_name}")
+            print(f"  vod_store      {storage.vod_store_name}")
             print(f"  vod            {'skip' if args.no_vod else 'enabled'}")
         print()
 

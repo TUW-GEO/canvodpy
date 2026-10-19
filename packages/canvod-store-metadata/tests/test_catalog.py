@@ -454,6 +454,34 @@ def every_product(tmp_path: Path) -> Path:
     return root
 
 
+def test_a_second_vod_store_is_its_own_item_in_the_vod_collection(every_product):
+    """A suffixed store (#456): one collection per kind, one item per store."""
+    from canvod.store_metadata.identity import stac_link
+
+    site = every_product / testing.SITE_KEY
+    vod = _observations().rename({"SNR": "VOD"})
+    vod["theta"] = vod["VOD"] * 0 + 0.3
+    path = site / "vod-recompute"
+    meta = made_up_metadata("vod_store")
+    sid = f"{testing.SITE_KEY}-vod-recompute"
+    meta.identity.id = sid
+    meta.identity.stac_link = stac_link(testing.NAMING_AUTHORITY, sid, "vod_store")
+    open_repository(path, create=True)
+    write_metadata(path, meta)
+    session = open_repository(path).writable_session("main")
+    vod.to_zarr(session.store, group=_VOD_GROUP, mode="w", consolidated=False)
+    commit_with_rebase(session, "data", store_path=path)
+
+    _assert_valid(write_catalog(every_product))
+
+    catalog = pystac.Catalog.from_file(every_product / "catalog.json")
+    vod_items = sorted(item.id for item in catalog.get_child("vod").get_items())
+    assert vod_items == [
+        f"{testing.NAMING_AUTHORITY}.{testing.SITE_KEY}-vod",
+        f"{testing.NAMING_AUTHORITY}.{testing.SITE_KEY}-vod-recompute",
+    ]
+
+
 def _items(root: Path) -> dict[str, pystac.Item]:
     """The items of the catalog at ``root``, by collection."""
     catalog = pystac.Catalog.from_file(root / "catalog.json")

@@ -362,7 +362,8 @@ def check_gnss_hash(
         f"gnss_content_hash {stored_hash}. The VOD store was computed from a "
         "GNSS store with other content settings; writing it would mix data. "
         "Use the GNSS store the VOD store was computed from, or write to a "
-        "new VOD store (processing.storage.vod_store_name)."
+        "new VOD store (set processing.storage.vod_store_name to e.g. "
+        "'vod-recompute')."
     )
     raise ContentSettingsError(msg)
 
@@ -445,9 +446,9 @@ def mismatch_message(
     stored = repository[CONTENT_SETTINGS_FIELD]
     store_type = repository.get("identity", {}).get("store_type", "")
     new_store = (
-        "processing.storage.vod_store_name"
+        "set processing.storage.vod_store_name to e.g. 'vod-recompute'"
         if store_type == "vod_store"
-        else "processing.storage.gnss_store_name"
+        else "set processing.storage.gnss_store_name to e.g. 'gnss-recompute'"
     )
     lines = "\n".join(
         f"  {d.key}: store {_short(d.store)}, this run {_short(d.run)}" for d in found
@@ -460,7 +461,7 @@ def mismatch_message(
         "Every run that writes to a store must have its content settings. "
         "Either use the store's settings (canvodpy config init --from-store "
         f"{store_path}), or write to a new store "
-        f"({new_store} or stores_root_dir)."
+        f"({new_store}, or set another stores_root_dir)."
     )
 
 

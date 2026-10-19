@@ -601,7 +601,7 @@ class TestStorageConfig:
         gnss = sc.get_gnss_store_path("fangorn")
         vod = sc.get_vod_store_path("fangorn")
         rollup = sc.get_rollup_store_path("fangorn")
-        assert gnss == tmp_path / "fangorn" / "rinex"
+        assert gnss == tmp_path / "fangorn" / "gnss"
         assert vod == tmp_path / "fangorn" / "vod"
         assert rollup == tmp_path / "fangorn" / "rollup"
 
@@ -613,7 +613,7 @@ class TestStorageConfig:
             warnings.simplefilter("always")
             result = sc.get_rinex_store_path("fangorn")
         assert any(issubclass(x.category, FutureWarning) for x in w)
-        assert result == tmp_path / "fangorn" / "rinex"
+        assert result == tmp_path / "fangorn" / "gnss"
 
     def test_vod_store_strategy_deprecated(self, tmp_path):
         with pytest.warns(FutureWarning, match="'vod_store_strategy' is left over"):
@@ -639,7 +639,7 @@ class TestStorageConfig:
         """Runs write stores on S3 (#350)."""
         sc = StorageConfig(stores_root_dir=url)
         assert sc.stores_root_dir == root
-        assert sc.get_gnss_store_path("fangorn") == f"{root}/fangorn/rinex"
+        assert sc.get_gnss_store_path("fangorn") == f"{root}/fangorn/gnss"
         assert sc.get_vod_store_path("fangorn") == f"{root}/fangorn/vod"
 
     @pytest.mark.parametrize("url", ["gs://fangorn/stores", "s3:///stores"])

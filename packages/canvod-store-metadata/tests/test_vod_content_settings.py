@@ -128,7 +128,7 @@ def test_a_vod_store_fed_by_other_gnss_settings_stops(vod, settings, gnss):
     """D3: a VOD run from a GNSS store with other content settings stops."""
     other = settings.model_copy(deep=True)
     other.processing.aux_data.agency = "GFZ"
-    other_gnss = _gnss(Path(vod).parent / "other_gnss", other)
+    other_gnss = _gnss(Path(vod).parent / "gnss-other", other)
     assert other_gnss["content_settings"]["hash"] != gnss["content_settings"]["hash"]
 
     with pytest.raises(ContentSettingsError, match="gnss_content_hash"):

@@ -27,6 +27,10 @@ generated when the store is created. The UUID is in the item, so opening
 a store from an item can refuse a store that was replaced behind the
 same path.
 
+*Amended 2026-10-19 (#456).* The readable id is `{site}-{store folder}`
+(ADR 0014). A site may have a second store of a kind (`vod-recompute`);
+it is a second item in that kind's collection.
+
 A **release** is an Icechunk tag with the same name in every store plus
 one catalog under `releases/<tag>/` that pins each store's tag and
 snapshot id. Tags never move, so a release catalog stays valid as long

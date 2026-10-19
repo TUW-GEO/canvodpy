@@ -240,9 +240,10 @@ processing:
     # https://canvodpy.eu/guides/settings/#processing-storage-stores_root_dir
     stores_root_dir: /path/to/your/gnss/stores
 
-    # Custom store directory names (defaults: "rinex" and "vod")
+    # Store folders are named by their kind: "gnss" and "vod" (defaults).
+    # For a second store of a kind, add '-' and a suffix, e.g. vod-recompute.
     # https://canvodpy.eu/guides/settings/#processing-storage-gnss_store_name
-    # gnss_store_name: rinex
+    # gnss_store_name: gnss
     # https://canvodpy.eu/guides/settings/#processing-storage-vod_store_name
     # vod_store_name: vod
 

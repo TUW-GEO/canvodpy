@@ -48,7 +48,7 @@ def test_config_init_from_store_on_s3(tmp_path) -> None:
     )
 
     root = f"{S3_URL.rstrip('/')}/cfg-{uuid.uuid4().hex}"
-    store = f"{root}/{testing.SITE_KEY}/rinex"
+    store = f"{root}/{testing.SITE_KEY}/gnss"
     ensure_store_metadata(
         store,
         config=config,
@@ -75,4 +75,4 @@ def test_config_init_from_store_on_s3(tmp_path) -> None:
 
     settings = yaml.safe_load((config_dir / "canvod-settings.yaml").read_text())
     assert str(settings["processing"]["storage"]["stores_root_dir"]).startswith("s3://")
-    assert settings["processing"]["storage"]["gnss_store_name"] == "rinex"
+    assert settings["processing"]["storage"]["gnss_store_name"] == "gnss"

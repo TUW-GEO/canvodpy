@@ -27,8 +27,8 @@ settings. `canvodpy config show` prints the strategy in use under
     when the VOD store already holds one computed from the same GNSS
     files. A result from other files replaces the stored VOD of its day
     (see [The VOD store](overview.md#the-vod-store)). To compute VOD again
-    from the same GNSS files, write to a new VOD store: set another
-    `processing.storage.vod_store_name`.
+    from the same GNSS files, write to a new VOD store: set
+    `processing.storage.vod_store_name` to e.g. `vod-recompute`.
 
 !!! note "Stores written by appending"
     A run writes [day blocks](overview.md#day-blocks) only. A store whose
