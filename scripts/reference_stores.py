@@ -45,12 +45,15 @@ def profiles() -> list[Path]:
     return sorted(p for p in PROFILES.iterdir() if (p / RUNS_FILE).is_file())
 
 
-def link_aux(aux: Path) -> None:
-    """Link the orbit and clock files of the test data into ``aux``."""
+def copy_aux(aux: Path) -> None:
+    """Copy the orbit and clock files of the test data into ``aux``.
+
+    Copies, not links: links need extra rights on Windows.
+    """
     for folder, pattern in AUX_FOLDERS.items():
         (aux / folder).mkdir(parents=True, exist_ok=True)
         for f in sorted((TEST_DATA / "aux_data" / folder).glob(pattern)):
-            (aux / folder / f.name).symlink_to(f)
+            shutil.copy2(f, aux / folder / f.name)
 
 
 def output_settings(out: Path) -> Path:
@@ -75,7 +78,7 @@ def build_profile(profile: Path, out: Path) -> float:
         msg = f"{out} exists: build into an empty folder"
         raise SystemExit(msg)
     out.mkdir(parents=True)
-    link_aux(out / "aux")
+    copy_aux(out / "aux")
     overlay = output_settings(out)
     runs = yaml.safe_load((profile / RUNS_FILE).read_text(encoding="utf-8"))
     started = time.perf_counter()

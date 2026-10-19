@@ -41,7 +41,7 @@ match; a second argument sets another path) and exits with 1 on a
 difference.
 
 For the `default` profile, a build and a check each take under a
-minute on a laptop. Two builds of the same code compare with an empty
+minute. Two builds of the same code compare with an empty
 report: the run is deterministic.
 
 ## Tolerances
