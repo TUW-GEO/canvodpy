@@ -214,8 +214,13 @@ processing:
 The estimates come from factors measured on the test data, with a
 margin: reading a file needs about 45 times its size for RINEX v3, 100
 times for RINEX v2, 25 times for SBF and 15 times for NMEA, and a task
-holds about the size of its files once read; the main process holds
-about the size of a day's files for each day in flight. The run writes
+holds about 1.6 times the size of its files once read. For each day in
+flight, the main process holds about the size of the day's files for
+RINEX v3, 2.5 times for RINEX v2 and NMEA (small files) and a quarter
+for SBF, whose files hold much that a run doesn't keep. These were
+measured keeping only `SNR`; keeping more observables
+(`keep_gnss_observables`) makes the data in memory larger, so set
+`max_memory_gb` with that margin. The run writes
 its sizes to the log (`memory_budget`): the workers, the days per unit
 (`unit_days`) and what set them (`unit_limit`: `memory`,
 `max_unit_days`, `days_to_run`, or the deprecated `days_per_batch`),

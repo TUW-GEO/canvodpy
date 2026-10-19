@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 from canvodpy.orchestrator.memory_budget import (
     GB,
+    MAIN_BYTES_PER_INPUT_BYTE,
     MAX_UNIT_DAYS,
     TASK_BYTES_PER_INPUT_BYTE,
     TASK_HELD_BYTES_PER_INPUT_BYTE,
@@ -25,6 +26,7 @@ from canvodpy.orchestrator.memory_budget import (
     MemoryBudgetError,
     chunk_tasks,
     largest_task,
+    main_day_bytes,
     plan_memory,
     task_peak_bytes,
 )
@@ -44,7 +46,7 @@ def _file(
 def _plan(budget_gb: float, task: list[InputFile], **kwargs) -> object:
     defaults = {
         "main_now_bytes": int(0.5 * GB),
-        "day_input_bytes": 0,
+        "day_bytes": 0,
         "max_workers": 16,
         "days_to_run": 1,
         "tasks_per_day": 1.0,
@@ -74,7 +76,7 @@ def test_a_unit_gets_the_days_the_memory_left_by_the_workers_holds():
     day = int(0.25 * GB)
     # Room for the main process with three days per unit and one worker.
     budget = int(0.5 * GB) + UNITS_IN_MEMORY * 3 * day + peak
-    plan = _plan(budget / GB, task, day_input_bytes=day, days_to_run=10, max_workers=1)
+    plan = _plan(budget / GB, task, day_bytes=day, days_to_run=10, max_workers=1)
     assert (plan.unit_days, plan.unit_limit, plan.workers) == (3, "memory", 1)
 
 
@@ -84,7 +86,7 @@ def test_the_workers_come_before_the_days_of_a_unit():
     day = int(0.25 * GB)
     # Room for four workers with one day, or one worker with more days.
     budget = int(0.5 * GB) + UNITS_IN_MEMORY * day + 4 * peak
-    plan = _plan(budget / GB, task, day_input_bytes=day, days_to_run=10)
+    plan = _plan(budget / GB, task, day_bytes=day, days_to_run=10)
     assert (plan.workers, plan.unit_days) == (4, 1)
 
 
@@ -102,11 +104,50 @@ def test_without_a_memory_limit_a_unit_has_at_most_31_days(
     plan = _plan(
         64,
         [_file("0000", MB)],
-        day_input_bytes=MB,
+        day_bytes=MB,
         days_to_run=days_to_run,
         days_per_batch=days_per_batch,
     )
     assert (plan.unit_days, plan.unit_limit) == (unit_days, unit_limit)
+
+
+def test_a_rinex_v3_day_is_counted_at_its_file_size():
+    """Unchanged by #452, so RINEX v3 runs get the same workers and units."""
+    day = [_file(f"{h:02d}00", 2 * MB) for h in range(24)]
+    assert main_day_bytes(day) == 48 * MB
+
+
+def test_an_sbf_day_is_counted_at_a_quarter_of_its_file_size():
+    sbf = InputFile(path=Path("b.sbf"), size=40 * MB, reader="sbf", canonical_name="")
+    assert main_day_bytes([sbf]) == 10 * MB
+
+
+def test_a_reader_without_a_main_factor_gets_the_largest():
+    unknown = InputFile(path=Path("x.dat"), size=MB, reader="new", canonical_name="")
+    assert main_day_bytes([unknown]) == int(
+        MB * max(MAIN_BYTES_PER_INPUT_BYTE.values())
+    )
+
+
+def test_an_sbf_day_of_the_test_data_fits_in_its_free_memory():
+    """The Rosalia SBF test day (#452): 2.2 GB of input with 4.6 GB free.
+
+    The run was refused with the main process estimated at 4.8 GB; it
+    peaked at 0.75 GB.
+    """
+    files = [
+        InputFile(
+            path=Path(f"{i}.sbf"),
+            size=int(2.2 * GB / 192),
+            reader="sbf",
+            canonical_name="",
+        )
+        for i in range(192)
+    ]
+    plan = _plan(
+        4.6, [files[0]], main_now_bytes=int(0.4 * GB), day_bytes=main_day_bytes(files)
+    )
+    assert plan.workers >= 1
 
 
 def test_the_log_says_what_set_the_unit():

@@ -57,9 +57,24 @@ TASK_HELD_BYTES_PER_INPUT_BYTE = 1.6
 UNKNOWN_READER_FACTOR = max(TASK_BYTES_PER_INPUT_BYTE.values())
 
 #: Memory the main process holds per byte of a day's input files while the
-#: day is in flight (0.45 measured on the test data, with the default
-#: ``keep_gnss_observables``).
-MAIN_BYTES_PER_DAY_INPUT_BYTE = 1.0
+#: day is in flight, by reader (#452). Measured on the test data as the
+#: growth of the main process's peak from half a day to a whole day, three
+#: runs each, SNR only: 0.12 for SBF (median; at most 0.21), from 1.2 GB
+#: more input. The peak of identical runs varies by about 0.1 GB, as much
+#: as RINEX and NMEA days grow (15 to 190 MB more input), so their
+#: factors stay at 1.0 for RINEX v3 (0.45 measured before) and 2.5 for
+#: RINEX v2.11 and NMEA (medians 2.1 and 2.4, small files).
+MAIN_BYTES_PER_INPUT_BYTE: Mapping[str, float] = {
+    "rinex2": 2.5,
+    "rinex3": 1.0,
+    "rinex3_stripped": 1.0,
+    "sbf": 0.25,
+    "nmea": 2.5,
+}
+
+#: For a reader not listed in :data:`MAIN_BYTES_PER_INPUT_BYTE`: the largest
+#: factor.
+UNKNOWN_READER_MAIN_FACTOR = max(MAIN_BYTES_PER_INPUT_BYTE.values())
 
 #: Units whose data are in memory at the same time (#277).
 UNITS_IN_MEMORY = 2
@@ -119,6 +134,16 @@ class MemoryPlan:
                 self.unit_days * self.tasks_per_day / self.workers, 1
             ),
         }
+
+
+def main_day_bytes(files: Iterable[InputFile]) -> int:
+    """Estimated memory the main process holds for a day of ``files``."""
+    return int(
+        sum(
+            f.size * MAIN_BYTES_PER_INPUT_BYTE.get(f.reader, UNKNOWN_READER_MAIN_FACTOR)
+            for f in files
+        )
+    )
 
 
 def task_peak_bytes(files: Sequence[InputFile]) -> int:
@@ -189,7 +214,7 @@ def plan_memory(
     *,
     budget_bytes: int,
     main_now_bytes: int,
-    day_input_bytes: int,
+    day_bytes: int,
     task: Sequence[InputFile],
     tasks_per_day: float,
     max_workers: int,
@@ -210,8 +235,9 @@ def plan_memory(
         The memory the run may use.
     main_now_bytes
         Memory of the main process when the run starts.
-    day_input_bytes
-        Size of the input files of the largest day (all receivers).
+    day_bytes
+        Memory the main process holds for the largest day (all
+        receivers): :func:`main_day_bytes` of its input files.
     task
         The largest task (:func:`largest_task`).
     tasks_per_day
@@ -232,7 +258,6 @@ def plan_memory(
         If one worker does not fit with one day per unit.
     """
     peak = task_peak_bytes(task)
-    day_bytes = int(day_input_bytes * MAIN_BYTES_PER_DAY_INPUT_BYTE)
 
     def main_bytes(days: int) -> int:
         return main_now_bytes + UNITS_IN_MEMORY * days * day_bytes
