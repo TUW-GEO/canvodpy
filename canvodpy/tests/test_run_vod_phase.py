@@ -13,7 +13,9 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from canvodpy.orchestrator import store_retry
 from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+from canvodpy.orchestrator.processor import RinexDataProcessor
 from synthetic_days import RECEIVERS, site_data
 
 from canvod.store import MyIcechunkStore
@@ -132,6 +134,53 @@ def test_a_day_whose_gnss_phase_fails_gets_no_vod(two_days, monkeypatch) -> None
     # The day without orbit products stays open for the next run.
     assert [day for unit in units for day in unit.days] == [DAYS[0]]
     assert _vod_days(site) == {"2025-01-01"}
+
+
+def _fail_once(monkeypatch, owner, name):
+    """Let ``owner.name`` fail with a dropped connection on its first call."""
+    calls = []
+    original = getattr(owner, name)
+
+    def flaky(*args, **kwargs):
+        calls.append(name)
+        if len(calls) == 1:
+            msg = "end of file before message length reached"
+            raise OSError(msg)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(owner, name, flaky)
+    monkeypatch.setattr(store_retry, "STORE_RETRY_BACKOFF_SECONDS", (0.0,) * 4)
+    return calls
+
+
+def test_a_unit_commit_survives_a_dropped_connection(two_days, monkeypatch) -> None:
+    # A transient store error (S3 500, a dropped connection) once the
+    # unit's forks are back: the unit is written again, not lost.
+    calls = _fail_once(monkeypatch, RinexDataProcessor, "_commit_forked_unit")
+    site = _site()
+    with site.pipeline(n_workers=2) as pipeline:
+        units = list(pipeline.run(*DAYS))
+
+    assert len(calls) >= 2
+    assert sorted(day for unit in units for day in unit.days) == list(DAYS)
+    assert _vod_days(site) == {"2025-01-01", "2025-01-02"}
+    log_dir = Path(two_days.processing.logging.log_dir)
+    retries = _log_events(log_dir, "store_op_retry")
+    assert {e["op"] for e in retries} == {"write_unit"}
+
+
+def test_a_vod_unit_survives_a_dropped_connection(two_days, monkeypatch) -> None:
+    calls = _fail_once(monkeypatch, MyIcechunkStore, "commit_vod_days")
+    site = _site()
+    with site.pipeline(n_workers=2) as pipeline:
+        units = list(pipeline.run(*DAYS))
+
+    assert len(calls) >= 2
+    assert [unit.vod_error for unit in units] == [None] * len(units)
+    assert _vod_days(site) == {"2025-01-01", "2025-01-02"}
+    log_dir = Path(two_days.processing.logging.log_dir)
+    retries = _log_events(log_dir, "store_op_retry")
+    assert {(e["op"], e["first"]) for e in retries} == {("vod_unit", DAYS[0])}
 
 
 def test_a_run_without_vod_writes_no_vod_store(two_days) -> None:

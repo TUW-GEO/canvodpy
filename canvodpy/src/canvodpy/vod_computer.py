@@ -539,9 +539,13 @@ class VodComputer:
         VodUnitReport
             The days written, stored before, and missing, per analysis.
         """
+        from functools import partial
+
         import numpy as np
 
         from canvod.config import load_config
+        from canvod.utils.tools import YYYYDOY
+        from canvodpy.orchestrator.store_retry import call_with_store_retries
         from canvodpy.orchestrator.vod_phase import (
             VOD_UNIT_DAYS,
             VodPair,
@@ -583,7 +587,17 @@ class VodComputer:
         for unit in units(
             [np.datetime64(day, "D") for day in days], unit_days or VOD_UNIT_DAYS
         ):
-            report.extend(phase.run_unit(unit))
+            # A unit plans from the stores' tips each time, so a transient
+            # store error or a lost conflict redoes it, not lose its days.
+            report.extend(
+                call_with_store_retries(
+                    partial(phase.run_unit, unit),
+                    logger=self.log,
+                    first=str(YYYYDOY.from_date(unit[0].astype(object))),
+                    last=str(YYYYDOY.from_date(unit[-1].astype(object))),
+                    op="vod_unit",
+                )
+            )
         return report
 
     def gnss_days(

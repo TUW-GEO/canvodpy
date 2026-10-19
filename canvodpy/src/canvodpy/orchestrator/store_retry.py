@@ -35,6 +35,34 @@ RETRYABLE_STORE_ERRORS = (OSError, icechunk.IcechunkError)
 STORE_RETRY_BACKOFF_SECONDS = (5.0, 15.0, 45.0, 90.0)
 
 
+def wait_after_store_error(
+    errors: int, exc: BaseException, *, logger, **log_ctx: object
+) -> bool:
+    """Wait before trying again after the ``errors``-th transient store error.
+
+    For a caller that redoes more than one call after an error, such as a
+    unit of days written again. Logs ``store_op_retry`` and waits as
+    :func:`call_with_store_retries` does.
+
+    Returns
+    -------
+    bool
+        ``False`` if the retries are used up: the caller raises ``exc``.
+    """
+    if errors > len(STORE_RETRY_BACKOFF_SECONDS):
+        return False
+    backoff = STORE_RETRY_BACKOFF_SECONDS[errors - 1]
+    logger.warning(
+        "store_op_retry",
+        attempt=errors,
+        backoff_seconds=backoff,
+        error=str(exc),
+        **log_ctx,
+    )
+    _time.sleep(backoff)
+    return True
+
+
 def call_with_store_retries[T](fn: Callable[[], T], *, logger, **log_ctx: object) -> T:
     """Retry a store read/write with backoff before giving up.
 
