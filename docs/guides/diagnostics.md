@@ -335,7 +335,12 @@ are all stored, by hashing the files' bytes, and skips them before it
 downloads auxiliary data or reads a file. The log event
 `stored_days_skipped` names those days, how many files were hashed and
 the seconds it took; the run history counts their receiver-days as
-skipped.
+skipped. The run then writes a log-book row with `action` set to
+`skipped` for each of their files, all in one commit. Since no file is
+read, the row takes its epochs and attributes from the row that holds
+the file. `skipped_files_logged` names the days and the commit;
+`skipped_files_not_logged` says why the commit failed. A failed commit
+leaves the days stored and skipped.
 
 `canvodpy dashboard` opens a [marimo](https://marimo.io/) app that reads
 the run history of a log folder:

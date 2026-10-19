@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import polars as pl
 import pytest
 from canvodpy.orchestrator.pipeline import PipelineOrchestrator
 from synthetic_days import RECEIVERS, site_data
@@ -158,13 +159,26 @@ def test_a_rerun_skips_stored_days_before_reading_them(two_days, monkeypatch) ->
     with site.pipeline(n_workers=2) as pipeline:
         units = list(pipeline.run(*DAYS))
 
-    # Every file of both days is in the log book: nothing is read or
-    # committed, and the days still reach the VOD phase.
+    # Every file of both days is in the log book: nothing is read, and the
+    # days still reach the VOD phase.
     assert prepared == []
-    assert site.gnss_store.repo.lookup_branch("main") == gnss_tip
     assert site.vod_store.repo.lookup_branch("main") == vod_tip
     assert sorted(day for unit in units for day in unit.days) == list(DAYS)
     assert {unit.days[day] for unit in units for day in unit.days} == {GROUPS}
+    # One commit records the run's skipped files, a row per file seen.
+    store = MyIcechunkStore(site.gnss_store_path)
+    commits = list(store.repo.ancestry(branch="main"))
+    assert commits[1].id == gnss_tip
+    for group in GROUPS:
+        rows = store.load_metadata_for_dedup(group)
+        written = rows.filter(pl.col("action") != "skipped")
+        skipped = rows.filter(pl.col("action") == "skipped")
+        columns = ["rinex_hash", "start", "end", "canonical_name"]
+        assert sorted(skipped.select(columns).rows()) == sorted(
+            written.select(columns).rows()
+        )
+        assert skipped["run_id"].n_unique() == 1
+        assert set(skipped["run_id"]).isdisjoint(written["run_id"])
 
 
 def test_a_rerun_reads_only_the_days_with_new_files(two_days, monkeypatch) -> None:

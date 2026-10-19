@@ -273,10 +273,9 @@ def stored_spans(df: pl.DataFrame | None) -> tuple[StoredSpan, ...]:
     Rows of files skipped as already stored are left out: nothing of theirs
     was written by that row.
     """
+    df = written_rows(df)
     if df is None or df.is_empty():
         return ()
-    if "action" in df.columns:
-        df = df.filter(~pl.col("action").is_in(["skip", "skipped"]))
     names = (
         df["canonical_name"].fill_null("").cast(pl.String).to_list()
         if "canonical_name" in df.columns
@@ -294,6 +293,13 @@ def stored_spans(df: pl.DataFrame | None) -> tuple[StoredSpan, ...]:
     )
 
 
+def written_rows(df: pl.DataFrame | None) -> pl.DataFrame | None:
+    """The log-book rows of *df* that wrote data: not those of skipped files."""
+    if df is None or "action" not in df.columns:
+        return df
+    return df.filter(~pl.col("action").is_in(["skip", "skipped"]))
+
+
 def stored_spans_around(
     df: pl.DataFrame | None, day: np.datetime64
 ) -> tuple[StoredSpan, ...]:
@@ -303,11 +309,17 @@ def stored_spans_around(
     with a row near it. A run tests a file only against these rows, both
     before reading a day and before writing a file.
     """
+    return stored_spans(rows_around(df, day))
+
+
+def rows_around(df: pl.DataFrame | None, day: np.datetime64) -> pl.DataFrame | None:
+    """The rows of *df* from the day before *day* to the day after (see
+    :func:`stored_spans_around`); ``None`` without rows."""
     if df is None or df.is_empty():
-        return ()
+        return None
     low = datetime.fromisoformat(str(day - np.timedelta64(1, "D")))
     high = datetime.fromisoformat(str(day + np.timedelta64(2, "D")))
-    return stored_spans(df.filter((pl.col("end") >= low) & (pl.col("start") < high)))
+    return df.filter((pl.col("end") >= low) & (pl.col("start") < high))
 
 
 def rewrite_spans(
