@@ -4,7 +4,7 @@ All stores under one data root (the `stores_root_dir` of the settings)
 are described by one static STAC catalog, written as JSON files at that
 root: beside the stores, never inside a store. The catalog has three
 collections, `gnss-observations`, `vod` and `gnss-geodesy` (the stores of
-the canvod-gnssgeodesy extension), with one item per store. An
+a geodesy extension), with one item per store. An
 item has the site as its point geometry, the time range of the store,
 and one asset per stored dataset (a receiver's observations, its SBF
 metadata, its log book; a VOD analysis and its log book). Every asset
