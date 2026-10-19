@@ -938,7 +938,7 @@ class TestNmeaPosition:
         assert "APPROX POSITION X" not in ds.attrs
         assert (
             "2 valid fixes lack the MSL altitude or the geoid separation"
-            in (ds.attrs["Position Source"])
+            in ds.attrs["Position Source"]
         )
 
     def test_hainich_position_lies_at_the_site(self, hainich_canopy_file):
