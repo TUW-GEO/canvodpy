@@ -71,6 +71,10 @@ canopy_01/
     └── sbf_obs   # SBF receivers only: receiver metadata per file
 ```
 
+`sbf_obs` keeps the missing value each variable declares, as both the CF
+`_FillValue` and the Zarr `fill_value`: -1 for the integer flags (for
+example `rise_set` and `pvt_mode`), NaN for floating-point values.
+
 The log book (`metadata/table`) records each stored file: its hash, start,
 end, filename, the dataset attributes, and the preprocessing record (see
 [Preprocessing during a run](../ops/overview.md#the-preprocessing-record)).

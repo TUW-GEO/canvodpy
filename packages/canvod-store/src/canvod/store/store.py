@@ -64,7 +64,7 @@ from canvod.store.day_blocks import (
     data_groups,
     day_blocks,
     drop_empty_slots,
-    fill_value,
+    fill_encoding,
     holds_day_blocks,
     load_group,
     to_stored_axis,
@@ -1361,9 +1361,7 @@ class MyIcechunkStore:
             to_write[name].encoding.clear()
             if day_blocked and "epoch" in to_write[name].dims:
                 # Padding and empty slots read back as missing (load_group).
-                fill = fill_value(to_write[name], name)
-                to_write[name].attrs.pop("_FillValue", None)
-                to_write[name].encoding.update({"_FillValue": fill, "fill_value": fill})
+                to_write[name].encoding.update(fill_encoding(to_write[name], name))
             template = next(
                 (
                     existing[v]
@@ -2188,9 +2186,15 @@ class MyIcechunkStore:
 
         path = f"{group_name}/metadata/{name}"
         clean = [
-            self._cleanse_dataset_attrs(self._normalize_encodings(part))
+            self._cleanse_dataset_attrs(self._normalize_encodings(part.copy()))
             for part in parts
         ]
+        # A declared missing value goes into the encoding, as for the
+        # observations: left in the attributes, the append refuses it.
+        for part in clean:
+            for var_name, var in part.variables.items():
+                if "_FillValue" in var.attrs:
+                    var.encoding.update(fill_encoding(var, str(var_name)))
         exists = zarr.open_group(session.store, mode="r").get(path) is not None
         for i, part in enumerate(clean):
             if i == 0 and not exists:
