@@ -529,7 +529,7 @@ class TestNmeaSignalMapping:
     def test_signal_ids_format(self, nmea_file):
         """Test signal IDs have correct SV|BAND|CODE format."""
         obs = NmeaObs(fpath=nmea_file)
-        ds = obs.to_ds()
+        ds = obs.to_ds(pad_global_sid=False)
 
         for sid in ds.sid.values:
             parts = str(sid).split("|")
@@ -553,7 +553,7 @@ class TestNmeaSignalMapping:
     def test_band_names_are_valid(self, nmea_file):
         """Test band names match SignalIDMapper expectations."""
         obs = NmeaObs(fpath=nmea_file)
-        ds = obs.to_ds()
+        ds = obs.to_ds(pad_global_sid=False)
 
         valid_bands = {
             "L1",
@@ -690,7 +690,7 @@ class TestRosaliaNoSignalId:
     def test_rosalia_only_default_bands(self, nmea_file):
         """Rosalia data has no signal ID → only default bands appear."""
         obs = NmeaObs(fpath=nmea_file)
-        ds = obs.to_ds()
+        ds = obs.to_ds(pad_global_sid=False)
 
         default_bands = {"L1", "G1", "E1", "B1I"}
         for band in ds.band.values:
@@ -702,7 +702,7 @@ class TestRosaliaNoSignalId:
     def test_rosalia_no_duplicate_sv_per_epoch(self, nmea_file):
         """Without signal ID, each SV produces exactly one SID."""
         obs = NmeaObs(fpath=nmea_file)
-        ds = obs.to_ds()
+        ds = obs.to_ds(pad_global_sid=False)
 
         # Check that no SV appears under multiple bands
         sv_to_bands: dict[str, set[str]] = {}
@@ -719,7 +719,7 @@ class TestRosaliaNoSignalId:
     def test_rosalia_default_tracking_codes(self, nmea_file):
         """Default tracking codes: C for GPS/GLONASS/Galileo/SBAS, I for BeiDou."""
         obs = NmeaObs(fpath=nmea_file)
-        ds = obs.to_ds()
+        ds = obs.to_ds(pad_global_sid=False)
 
         for sid in ds.sid.values:
             sv, band, code = str(sid).split("|")
@@ -819,8 +819,8 @@ class TestHainichSignalId:
 
     def test_hainich_more_sids_than_rosalia(self, hainich_ref_file, nmea_file):
         """u-blox data with signal IDs should produce more SIDs per SV."""
-        hai = NmeaObs(fpath=hainich_ref_file).to_ds()
-        ros = NmeaObs(fpath=nmea_file).to_ds()
+        hai = NmeaObs(fpath=hainich_ref_file).to_ds(pad_global_sid=False)
+        ros = NmeaObs(fpath=nmea_file).to_ds(pad_global_sid=False)
 
         # Hainich: each GPS SV on ~2 bands → more SIDs
         hai_sids_per_sv = len(hai.sid) / max(1, hai.sizes.get("sid", 1))
@@ -852,3 +852,153 @@ class TestHainichSignalId:
 
         common = ref_sids & can_sids
         assert len(common) > 0, "Hainich ref and canopy should share SIDs"
+
+
+def _sentence(payload: str) -> str:
+    """An NMEA sentence with its checksum."""
+    return f"${payload}*{compute_nmea_checksum(f'${payload}*00')}"
+
+
+def _gga(
+    second: int,
+    *,
+    quality: int = 1,
+    altitude: str = "1370.0",
+    separation: str = "25.0",
+    latitude: str = "2907.2000,S",
+) -> str:
+    """A GGA fix at the made-up test position (canvod.utils.testing).
+
+    Latitude -29.12 and longitude 26.21 as ``ddmm.mmmm``; the default
+    altitude and separation add up to its height above the ellipsoid.
+    """
+    return _sentence(
+        f"GPGGA,0000{second:02d}.00,{latitude},02612.6000,E,{quality},08,0.9,"
+        f"{altitude},M,{separation},M,,"
+    )
+
+
+def _nmea_file(
+    tmp_path: Path,
+    ggas: list[str],
+    gsv: str = "GPGSV,1,1,01,05,45,120,40",
+    name: str = "TEST01TUW_R_20250010000_01M_01S_AA.nmea",
+) -> Path:
+    """An NMEA file with one RMC, one GGA and one GSV sentence per epoch."""
+    lines = []
+    for second, gga in enumerate(ggas):
+        lines += [
+            _sentence(f"GPRMC,0000{second:02d}.00,A,,,,,,,010125,,,A"),
+            gga,
+            _sentence(gsv),
+        ]
+    path = tmp_path / name
+    path.write_text("\n".join(lines) + "\n", encoding="ascii")
+    return path
+
+
+def _position(ds: xr.Dataset) -> tuple[float, float, float]:
+    return tuple(ds.attrs[f"APPROX POSITION {axis}"] for axis in "XYZ")
+
+
+class TestNmeaPosition:
+    """The receiver position from the GGA fixes of a file (#451)."""
+
+    def test_position_of_the_fixes_in_ecef(self, tmp_path):
+        from canvod.utils.testing import ECEF_X, ECEF_Y, ECEF_Z
+
+        path = _nmea_file(tmp_path, [_gga(s) for s in range(3)])
+        position = _position(NmeaObs(fpath=path).to_ds())
+        assert position == pytest.approx((ECEF_X, ECEF_Y, ECEF_Z), abs=0.01)
+
+    def test_one_outlying_fix_does_not_move_the_position(self, tmp_path):
+        from canvod.utils.testing import ECEF_X, ECEF_Y, ECEF_Z
+
+        fixes = [_gga(0), _gga(1), _gga(2, altitude="9370.0")]
+        position = _position(NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds())
+        assert position == pytest.approx((ECEF_X, ECEF_Y, ECEF_Z), abs=0.01)
+
+    def test_even_number_of_fixes_takes_the_middle_of_the_two(self, tmp_path):
+        from canvod.utils.testing import ECEF_X, ECEF_Y, ECEF_Z
+
+        fixes = [_gga(0, altitude="1369.0"), _gga(1, altitude="1371.0")]
+        position = _position(NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds())
+        assert position == pytest.approx((ECEF_X, ECEF_Y, ECEF_Z), abs=0.01)
+
+    def test_source_of_the_position_is_recorded(self, tmp_path):
+        fixes = [_gga(0), _gga(1, quality=0), _gga(2)]
+        ds = NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds()
+        assert "2 GGA fixes" in ds.attrs["Position Source"]
+
+    @pytest.mark.parametrize("quality", [0, 3, 6, 7, 8])
+    def test_fixes_of_other_qualities_give_no_position(self, tmp_path, quality):
+        fixes = [_gga(s, quality=quality) for s in range(2)]
+        ds = NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds()
+        assert "APPROX POSITION X" not in ds.attrs
+
+    @pytest.mark.parametrize("missing", ["altitude", "separation"])
+    def test_fixes_without_a_height_give_no_position(self, tmp_path, missing):
+        fixes = [_gga(s, **{missing: ""}) for s in range(2)]
+        ds = NmeaObs(fpath=_nmea_file(tmp_path, fixes)).to_ds()
+        assert "APPROX POSITION X" not in ds.attrs
+        assert (
+            "2 valid fixes lack the MSL altitude or the geoid separation"
+            in ds.attrs["Position Source"]
+        )
+
+    def test_hainich_position_lies_at_the_site(self, hainich_canopy_file):
+        import pymap3d as pm
+
+        ds = NmeaObs(fpath=hainich_canopy_file).to_ds()
+        lat, lon, _ = pm.ecef2geodetic(*_position(ds))
+        # First GGA fix of the file: 5104.73083 N, 01027.11421 E
+        assert lat == pytest.approx(51 + 4.73083 / 60, abs=1e-4)
+        assert lon == pytest.approx(10 + 27.11421 / 60, abs=1e-4)
+
+
+class TestNmeaGlobalSid:
+    """Every file of a receiver gets the same SID list (#459).
+
+    Without it, the second file with other satellites can't be written to the
+    same store group.
+    """
+
+    @staticmethod
+    def _two_files(tmp_path: Path) -> tuple[NmeaObs, NmeaObs]:
+        fixes = [_gga(s) for s in range(2)]
+        first = _nmea_file(
+            tmp_path,
+            fixes,
+            "GPGSV,1,1,02,05,45,120,40,07,30,200,35",
+            "TEST01TUW_R_20250010000_01M_01S_AA.nmea",
+        )
+        second = _nmea_file(
+            tmp_path,
+            fixes,
+            "GPGSV,1,1,01,12,60,010,44",
+            "TEST01TUW_R_20250010001_01M_01S_AA.nmea",
+        )
+        return NmeaObs(fpath=first), NmeaObs(fpath=second)
+
+    def test_files_with_other_satellites_get_the_same_sids(self, tmp_path):
+        first, second = (r.to_ds() for r in self._two_files(tmp_path))
+
+        assert list(first.sid.values) == list(second.sid.values)
+        assert first.SNR.sel(sid="G05|L1|C").values.tolist() == [40.0, 40.0]
+        assert np.isnan(first.SNR.sel(sid="G12|L1|C").values).all()
+        assert second.SNR.sel(sid="G12|L1|C").values.tolist() == [44.0, 44.0]
+
+    def test_keep_sids_gives_every_file_exactly_those_sids(self, tmp_path):
+        keep = ["G05|L1|C", "G12|L1|C", "E11|E1|C"]
+        first, second = (r.to_ds(keep_sids=keep) for r in self._two_files(tmp_path))
+
+        assert list(first.sid.values) == sorted(keep)
+        assert list(second.sid.values) == sorted(keep)
+        assert second.band.sel(sid="E11|E1|C").item() == "E1"
+
+    def test_without_padding_only_the_observed_sids(self, tmp_path):
+        first, _ = self._two_files(tmp_path)
+
+        ds = first.to_ds(pad_global_sid=False)
+
+        assert list(ds.sid.values) == ["G05|L1|C", "G07|L1|C"]

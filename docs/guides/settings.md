@@ -170,10 +170,10 @@ FTP connection timeout in seconds
 
 #### `processing.aux_data.fetch_clock` {#processing-aux_data-fetch_clock}
 
-Download and interpolate the CLK clock files with the SP3 orbit files. VOD doesn't use clock corrections; set false to skip them.
+Download and interpolate the CLK clock files with the SP3 orbit files. VOD doesn't use clock corrections, so they are off; set true to add each satellite's clock correction to the GNSS store as the variable clock.
 
 - Type: true or false
-- Default: `true`
+- Default: `false`
 
 #### `processing.aux_data.zarr_async_concurrency` {#processing-aux_data-zarr_async_concurrency}
 

@@ -97,6 +97,7 @@ from canvodpy.orchestrator.memory_budget import (
     InputFile,
     chunk_tasks,
     largest_task,
+    main_day_bytes,
     plan_memory,
 )
 from canvodpy.orchestrator.processor import (
@@ -2596,7 +2597,7 @@ class PipelineOrchestrator:
         )
         epoch_chunk = self._config.processing.icechunk.chunk_strategies.gnss_store.epoch
         tasks: list[list[InputFile]] = []
-        day_input = 0
+        day_bytes = 0
         for _date_key, groups in filtered_dates:
             pairings: dict[tuple[str, str], int] = defaultdict(int)
             days: dict[tuple[str, str], tuple[ReceiverDay, str]] = {}
@@ -2617,11 +2618,11 @@ class PipelineOrchestrator:
                     )
                     for found in discover_files(day, fmt)
                 ]
-                this_day += sum(f.size for f in files)
+                this_day += main_day_bytes(files)
                 tasks.extend(
                     chunk_tasks(files, epoch_chunk=epoch_chunk, cadence_s=cadence_s)
                 )
-            day_input = max(day_input, this_day)
+            day_bytes = max(day_bytes, this_day)
 
         main_now = psutil.Process().memory_info().rss
         if self.max_memory_gb is not None:
@@ -2634,7 +2635,7 @@ class PipelineOrchestrator:
         plan = plan_memory(
             budget_bytes=budget,
             main_now_bytes=main_now,
-            day_input_bytes=day_input,
+            day_bytes=day_bytes,
             task=largest_task(tasks),
             tasks_per_day=len(tasks) / max(1, len(filtered_dates)),
             max_workers=max_workers,

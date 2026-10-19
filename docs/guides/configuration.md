@@ -308,7 +308,7 @@ processing:
   aux_data:
     agency: COD          # SP3/CLK analysis center code
     product_type: final  # final or rapid; the agency must publish it
-    # fetch_clock: true  # false skips the CLK files; VOD does not use them
+    # fetch_clock: false # true adds the CLK files; VOD does not use them
 
   params:
     keep_gnss_observables: [SNR]   # observables to keep (SNR, Pseudorange, Phase, Doppler)
@@ -367,7 +367,7 @@ processing:
 | `params.receiver_position_mode` | `shared`, `per_receiver` | `shared` uses canopy receiver position for all receivers (enables 1:1 SNR comparison). `per_receiver` uses each receiver's own position.                                                 |
 | `params.file_pairing`           | `complete`, `paired`     | `complete` ingests all files per receiver independently. `paired` only processes dates where both receivers have data.                                                                   |
 | `params.ephemeris_source`       | `final`, `broadcast`     | `final` computes satellite positions from agency SP3/CLK products. `broadcast` uses the satellite angles the receiver computed from the broadcast ephemeris (SBF SatVisibility blocks; almanac-based angles are not used; SBF only, no SP3/CLK download, faster but less accurate). |
-| `aux_data.fetch_clock`          | `true`, `false`          | Whether to download and interpolate CLK clock-correction files alongside SP3 (only applies to `ephemeris_source: final`). Default `true`. VOD does not use clock data; `false` saves the download, reading, and interpolation. |
+| `aux_data.fetch_clock`          | `true`, `false`          | Whether to download and interpolate CLK clock-correction files alongside SP3 (only applies to `ephemeris_source: final`). Default `false`: VOD does not use clock data. `true` adds each satellite's clock correction to the GNSS store as the variable `clock`. |
 | `params.days_per_batch`         | 1–30                     | Deprecated, removed in v2.0.0; prints a `FutureWarning`. Only caps the days per unit, which the run sizes from the memory budget ([Parallel processing](parallel-processing.md)). Leave it out. |
 | `params.resource_mode`          | `auto`, `manual`         | `auto` starts one worker per physical CPU core and leaves at least two CPU threads free for the operating system. `manual` uses the limits you set (`n_max_threads` is then required); use it on shared servers.      |
 | `params.store_radial_distance`  | `true`, `false`          | Whether to store satellite radial distance in the output.                                                                                                                                |

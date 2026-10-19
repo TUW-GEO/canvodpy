@@ -2,7 +2,9 @@
 
 import functools
 import gzip
+import os
 import shutil
+import tempfile
 import time
 from abc import ABC, abstractmethod
 from ftplib import FTP_TLS, error_perm
@@ -52,6 +54,60 @@ def _download_progress() -> Progress:
         TransferSpeedColumn(),
         TimeRemainingColumn(),
     )
+
+
+def _current_umask() -> int:
+    umask = os.umask(0)
+    os.umask(umask)
+    return umask
+
+
+# Read once at import: os.umask sets the mask to read it, so calling it while
+# download threads create files could give one of them the wrong mode.
+_NEW_FILE_MODE = 0o666 & ~_current_umask()
+
+
+def _temp_path(destination: Path) -> Path:
+    """A new, empty temporary file next to *destination*, for one writer only.
+
+    mkstemp creates it with mode 0600 and os.replace keeps that mode, so it
+    gets the mode ``open()`` gives a new file: other users of a shared aux
+    folder must be able to read the downloaded files.
+    """
+    fd, name = tempfile.mkstemp(
+        prefix=f".{destination.name}.", suffix=".tmp", dir=destination.parent
+    )
+    try:
+        os.chmod(name, _NEW_FILE_MODE)
+    finally:
+        os.close(fd)
+    return Path(name)
+
+
+def _move_into_place(downloaded: Path, destination: Path, compressed: bool) -> None:
+    """Unpack *downloaded* if needed and move it to *destination* in one step.
+
+    Several threads of a run can download the same file at once (adjacent
+    days load each other's files, #462). Each writes its own temporary file,
+    and the rename makes *destination* appear only once it is complete, so
+    no reader sees a partly written file. If another writer's copy is
+    already in place and can't be replaced (Windows, while it is open), it
+    is the same product, and this copy is dropped.
+    """
+    finished = downloaded
+    try:
+        if compressed:
+            finished = _temp_path(destination)
+            with gzip.open(downloaded, "rb") as f_in, finished.open("wb") as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        try:
+            os.replace(finished, destination)
+        except PermissionError:
+            if not destination.exists():
+                raise
+    finally:
+        downloaded.unlink(missing_ok=True)
+        finished.unlink(missing_ok=True)
 
 
 class FileDownloader(ABC):
@@ -257,11 +313,11 @@ class FtpDownloader(FileDownloader):
 
     def _try_download_url(self, url: str, destination: Path) -> Path:
         """Attempt to download from a specific URL."""
-        temp_path = destination.with_suffix(destination.suffix + ".tmp")
-
         if urlparse(url).hostname == urlparse(self.NASA_FTP).hostname:
             return self._download_from_nasa_cddis(url, destination)
-        else:
+
+        temp_path = _temp_path(destination)
+        try:
             with _download_progress() as progress:
                 task = progress.add_task(destination.name, total=None)
 
@@ -271,15 +327,10 @@ class FtpDownloader(FileDownloader):
                     progress.advance(task, block_size)
 
                 request.urlretrieve(url, temp_path, reporthook=update_progress)
-
-        if url.endswith(".gz"):
-            with gzip.open(temp_path, "rb") as f_in:
-                with open(destination, "wb") as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-            temp_path.unlink()
-        else:
-            temp_path.rename(destination)
-
+        except BaseException:
+            temp_path.unlink(missing_ok=True)
+            raise
+        _move_into_place(temp_path, destination, compressed=url.endswith(".gz"))
         return destination
 
     def _download_from_nasa_cddis(self, url: str, destination: Path) -> Path:
@@ -314,9 +365,9 @@ class FtpDownloader(FileDownloader):
         if filename not in ftps.nlst():
             raise RuntimeError(f"File {filename} not found in directory {directory}")
 
-        temp_path = destination.with_suffix(destination.suffix + ".tmp")
-        with temp_path.open("wb") as f:
-            with _download_progress() as progress:
+        temp_path = _temp_path(destination)
+        try:
+            with temp_path.open("wb") as f, _download_progress() as progress:
                 total = None
                 try:
                     size = ftps.size(filename)
@@ -332,17 +383,12 @@ class FtpDownloader(FileDownloader):
                     progress.advance(task, len(data))
 
                 ftps.retrbinary(f"RETR {filename}", write_callback)
+        except BaseException:
+            temp_path.unlink(missing_ok=True)
+            raise
 
         ftps.quit()
-
-        if filename.endswith(".gz"):
-            with gzip.open(temp_path, "rb") as f_in:
-                with destination.open("wb") as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-            temp_path.unlink()
-        else:
-            temp_path.rename(destination)
-
+        _move_into_place(temp_path, destination, compressed=filename.endswith(".gz"))
         return destination
 
     def _is_network_error(self, exception: Exception) -> bool:
