@@ -330,6 +330,13 @@ days the run processes come from the [file index](../packages/naming/overview.md
 and the listing is much shorter; the log event `files_found` says per
 receiver how many folders were listed and how many came from the index.
 
+Next, a run over days already in the store finds the days whose files
+are all stored, by hashing the files' bytes, and skips them before it
+downloads auxiliary data or reads a file. The log event
+`stored_days_skipped` names those days, how many files were hashed and
+the seconds it took; the run history counts their receiver-days as
+skipped.
+
 `canvodpy dashboard` opens a [marimo](https://marimo.io/) app that reads
 the run history of a log folder:
 

@@ -381,7 +381,10 @@ processing:
 !!! warning "`gnss_store_strategy: unsafe_append` writes duplicate epochs"
 
     `skip`, the default, leaves a file that is already in the store
-    alone, so a second run over the same files changes nothing.
+    alone, so a second run over the same files changes nothing. A run
+    finds the days whose files are all stored by the files' hashes,
+    before it downloads auxiliary data or reads a file, and passes them
+    on to the VOD phase, which computes only VOD that is missing.
     `overwrite` deletes the stored epochs of the file's time span and
     writes the file again. Use it after a fix in canVODpy, such as in a
     reader, to recompute stored data. The VOD of those days stays as it

@@ -62,6 +62,7 @@ from canvod.utils.tools import (
     YYYYDOY,
     deprecated,
     deprecated_argument,
+    file_hash,
     get_version_from_pyproject,
 )
 from canvodpy.logging.logging_config import active_log_dir, ensure_file_logging
@@ -1012,6 +1013,76 @@ class PipelineOrchestrator:
             )
             if self._on_days_without_vod is not None:
                 self._on_days_without_vod(receiver, in_range)
+
+    def _split_stored_dates(
+        self,
+        dates: list[
+            tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]
+        ],
+    ) -> tuple[
+        list[tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]],
+        list[tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]],
+    ]:
+        """Split off the dates whose files every group of theirs holds.
+
+        A file is held when its hash is in a log-book row of the group that
+        wrote data, the test a task applies before writing it
+        (``gnss_store_strategy: skip``). Hashing a file reads its bytes but
+        does not parse it, so a stored date costs neither auxiliary data
+        nor reading. With ``gnss_store_strategy: overwrite`` no date is
+        split off.
+
+        Returns
+        -------
+        tuple
+            The stored dates and the dates to process, each in date order.
+        """
+        storage = self._config.processing.storage
+        if storage.gnss_store_strategy != "skip" or not store_exists(
+            self.site.gnss_store_path
+        ):
+            return [], dates
+        t_start = _time.monotonic()
+        store = self.site.gnss_store
+        held = {
+            group: frozenset(
+                h
+                for _, h, _, _ in stored_spans(store.load_metadata_for_dedup(group))
+                if h
+            )
+            for group in {group for _, groups in dates for group in groups}
+        }
+        files = {
+            (date_key, group): [f.path for f in discover_files(day, fmt)]
+            for date_key, groups in dates
+            for group, (day, _type, _position, fmt) in groups.items()
+        }
+        paths = sorted({path for group_files in files.values() for path in group_files})
+        with ThreadPoolExecutor(
+            max_workers=min(8, os.cpu_count() or 1),
+            thread_name_prefix="canvodpy-hash",
+        ) as pool:
+            hashes = dict(zip(paths, pool.map(file_hash, paths), strict=True))
+        stored, rest = [], []
+        for date_key, groups in dates:
+            group_files = [(g, files[date_key, g]) for g in groups]
+            # A group without files on the date is not held: its day is
+            # processed, so the run reports it as it does today.
+            if all(paths_of for _, paths_of in group_files) and all(
+                hashes[path] in held[group]
+                for group, paths_of in group_files
+                for path in paths_of
+            ):
+                stored.append((date_key, groups))
+            else:
+                rest.append((date_key, groups))
+        self._logger.info(
+            "stored_days_skipped",
+            days=[date_key for date_key, _ in stored],
+            files_hashed=len(paths),
+            seconds=round(_time.monotonic() - t_start, 2),
+        )
+        return stored, rest
 
     def _held_file_names(self, groups: set[str]) -> dict[str, set[str]]:
         """The canonical names in each group's log book; none without a store."""
@@ -2517,14 +2588,30 @@ class PipelineOrchestrator:
             )
             return
 
-        self._size_to_memory(filtered_dates)
-
         if self._run is not None:
             self._run.plan(
                 (group, date_key)
                 for date_key, groups in filtered_dates
                 for group in groups
             )
+
+        # A run without read-back passes stored days on without reading
+        # them; with read-back the caller needs their data.
+        if not read_back:
+            stored_dates, filtered_dates = self._split_stored_dates(filtered_dates)
+            for date_key, groups in stored_dates:
+                for group in groups:
+                    self._finish_receiver_day(group, date_key, "skipped")
+            days = max(1, self.unit_days)
+            for start in range(0, len(stored_dates), days):
+                yield [
+                    (date_key, dict.fromkeys(groups), {})
+                    for date_key, groups in stored_dates[start : start + days]
+                ]
+            if not filtered_dates:
+                return
+
+        self._size_to_memory(filtered_dates)
 
         self._logger.info(
             "process_by_date_started",

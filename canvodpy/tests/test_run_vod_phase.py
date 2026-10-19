@@ -134,6 +134,53 @@ def test_a_day_whose_gnss_phase_fails_gets_no_vod(two_days, monkeypatch) -> None
     assert _vod_days(site) == {"2025-01-01"}
 
 
+def _prepared_days(monkeypatch) -> list[str]:
+    """The days whose auxiliary data and files a run prepares."""
+    prepared: list[str] = []
+    prepare = PipelineOrchestrator._prepare_single_date
+
+    def spy(self, date_key, *args, **kwargs):
+        prepared.append(date_key)
+        return prepare(self, date_key, *args, **kwargs)
+
+    monkeypatch.setattr(PipelineOrchestrator, "_prepare_single_date", spy)
+    return prepared
+
+
+def test_a_rerun_skips_stored_days_before_reading_them(two_days, monkeypatch) -> None:
+    site = _site()
+    with site.pipeline(n_workers=2) as pipeline:
+        list(pipeline.run(*DAYS))
+    gnss_tip = site.gnss_store.repo.lookup_branch("main")
+    vod_tip = site.vod_store.repo.lookup_branch("main")
+
+    prepared = _prepared_days(monkeypatch)
+    with site.pipeline(n_workers=2) as pipeline:
+        units = list(pipeline.run(*DAYS))
+
+    # Every file of both days is in the log book: nothing is read or
+    # committed, and the days still reach the VOD phase.
+    assert prepared == []
+    assert site.gnss_store.repo.lookup_branch("main") == gnss_tip
+    assert site.vod_store.repo.lookup_branch("main") == vod_tip
+    assert sorted(day for unit in units for day in unit.days) == list(DAYS)
+    assert {unit.days[day] for unit in units for day in unit.days} == {GROUPS}
+
+
+def test_a_rerun_reads_only_the_days_with_new_files(two_days, monkeypatch) -> None:
+    site = _site()
+    with site.pipeline(n_workers=2) as pipeline:
+        list(pipeline.run(DAYS[0], DAYS[0]))
+
+    prepared = _prepared_days(monkeypatch)
+    with site.pipeline(n_workers=2) as pipeline:
+        units = list(pipeline.run(*DAYS))
+
+    assert prepared == [DAYS[1]]
+    assert sorted(day for unit in units for day in unit.days) == list(DAYS)
+    assert _vod_days(site) == {"2025-01-01", "2025-01-02"}
+
+
 def test_a_run_without_vod_writes_no_vod_store(two_days) -> None:
     site = _site()
     with site.pipeline(n_workers=2) as pipeline:
