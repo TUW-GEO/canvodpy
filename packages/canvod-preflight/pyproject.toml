@@ -4,6 +4,32 @@ version = "0.4.0"
 description = "The canVOD file name convention for GNSS-T receiver files"
 readme = "README.md"
 requires-python = ">=3.14"
+authors = [
+    {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
+]
+maintainers = [
+    {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
+]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "file names",
+    "naming convention",
+    "RINEX",
+    "SBF",
+    "NMEA",
+    "remote sensing",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+]
 
 dependencies = [
     "pydantic>=2.5.0",

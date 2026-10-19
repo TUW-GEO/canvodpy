@@ -5,9 +5,31 @@ description = "The canVODpy settings file: models, loading, and checks"
 readme = "README.md"
 requires-python = ">=3.14"
 authors = [
-    {name = "Nicolas François Bader", email = "support@canvodpy.eu"}
+    {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]
-license = {text = "Apache-2.0"}
+maintainers = [
+    {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
+]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "VOD",
+    "configuration",
+    "settings",
+    "YAML",
+    "pydantic",
+    "remote sensing",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+]
 
 dependencies = [
     "pydantic>=2.0",
