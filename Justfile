@@ -191,6 +191,14 @@ config-check-data SITE:
 run SITE START END:
     uv run canvodpy run --site {{ SITE }} --start {{ START }} --end {{ END }} {{ config_flag }}
 
+# build the reference stores of every setting profile (reference/profiles) into OUT, a new folder
+reference-stores OUT:
+    uv run python scripts/reference_stores.py build {{ OUT }}
+
+# run every setting profile again and compare with the reference stores in REF; exits 1 and writes REPORT on a difference
+reference-check REF REPORT="reference-check.txt":
+    uv run python scripts/reference_stores.py check {{ REF }} --report {{ REPORT }}
+
 # create naming recipe NAME of SITE in <config dir>/recipes/SITE/ (non-canonical filenames)
 naming-init SITE NAME:
     #!/usr/bin/env -S uv run python

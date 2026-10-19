@@ -366,7 +366,7 @@ float variable not in the table is compared exactly and is reported as
 | `SNR` (also 1-minute means), `Pseudorange`, `Phase`, `Doppler` | 5e-4 | half the RINEX observation resolution, format F14.3 = 0.001 (RINEX 3.04, observation record, p. 67; RINEX 2.11, observation record). SBF (0.25 dB-Hz) and NMEA GSV (1 dB-Hz) are coarser. |
 | `delta_snr` | 1e-3 | a difference of two SNR values, 2 × 5e-4 |
 | `VOD` | 2e-4 | `VOD = -(ln 10 / 10) · delta_snr · cos(theta)`; `(ln 10 / 10) × 1e-3 = 2.3e-4`, rounded down |
-| `theta`, `phi` | 1e-6 rad | `dVOD/dtheta = (ln 10 / 10) · delta_snr · sin(theta)`, at most 4.6 for `delta_snr` up to 20 dB, so 1e-6 rad moves VOD by at most 4.6e-6; above the float32 spacing at pi/2 (1.2e-7 rad) |
+| `theta`, `phi` | 1e-6 rad | above the float32 spacing at pi/2 (1.2e-7 rad), the precision the angles are stored with; a larger difference is a changed satellite geometry |
 
 The tolerances, with their derivation and sources, are one constant in
 the code: `FLOAT_TOLERANCES` in
