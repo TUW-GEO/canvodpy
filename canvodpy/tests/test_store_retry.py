@@ -1,5 +1,6 @@
 """Store retries: only errors that can be transient are retried."""
 
+import errno
 import itertools
 
 import icechunk
@@ -30,13 +31,32 @@ def _no_sleep(monkeypatch):
     "exc", [OSError("os error 103"), icechunk.IcechunkError("connection dropped")]
 )
 def test_transient_errors_are_retried(exc):
+    _assert_retried(exc)
+
+
+def test_a_windows_sharing_violation_is_retried():
+    exc = PermissionError(13, "The process cannot access the file")
+    exc.winerror = 32  # set by Windows only  # ty: ignore[unresolved-attribute]
+    _assert_retried(exc)
+
+
+def _assert_retried(exc):
     fn = _Failing(exc, 2)
     log = structlog.get_logger()
     assert store_retry.call_with_store_retries(fn, logger=log) == "ok"
     assert fn.calls == 3
 
 
-@pytest.mark.parametrize("exc", [ValueError("validation failed"), RuntimeError("x")])
+@pytest.mark.parametrize(
+    "exc",
+    [
+        ValueError("validation failed"),
+        RuntimeError("x"),
+        PermissionError("no permission"),
+        FileNotFoundError("no such file"),
+        OSError(errno.ENOSPC, "No space left on device"),
+    ],
+)
 def test_other_errors_propagate_at_once(exc):
     fn = _Failing(exc, 1)
     with pytest.raises(type(exc)):

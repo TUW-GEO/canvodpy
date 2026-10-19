@@ -108,12 +108,19 @@ When a store write or read fails with a file system or Icechunk error,
 for example because a network drive lost its connection, the run tries
 again up to four times, after 5, 15, 45, and 90 seconds. Each retry logs
 a `store_op_retry` warning. Only when the last try fails does the run
-log the error.
+log the error. An object store's server error (an S3 "500 Internal
+Error") is retried the same way. If the error comes while a unit of days
+is committed, the run plans the unit's days again and writes them again
+(`op` is `write_unit`); in the VOD phase it computes the unit again
+(`op` is `vod_unit`, with the unit's `first` and `last` day). So one
+such error does not lose the days of a unit. Errors that would fail the
+same way again are not retried: no permission, a missing file or folder,
+a full disk or quota, and a read-only file system.
 
 A conflict, when another commit changed the store first, is not a lost
 connection: the run tries again on the new state of the store, up to
 five tries in all, and logs a `store_conflict_retry` warning (for a day
-of a store made of day blocks, `forked_day_conflict_retrying`) with the
+of a store made of day blocks, `forked_unit_conflict_retrying`) with the
 number of the retry and the seconds it waited. The wait doubles with
 every retry, from about 1 second, and has a random part, so two runs
 that collided don't try again at the same moment. A conflict on the last
