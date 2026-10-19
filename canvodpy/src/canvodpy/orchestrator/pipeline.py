@@ -86,6 +86,7 @@ from canvodpy.orchestrator.forked_writes import (
     ForkResult,
     ForkTask,
     stored_spans,
+    stored_spans_around,
     write_files_into_fork,
 )
 from canvodpy.orchestrator.memory_budget import (
@@ -1026,11 +1027,13 @@ class PipelineOrchestrator:
         """Split off the dates whose files every group of theirs holds.
 
         A file is held when its hash is in a log-book row of the group that
-        wrote data, the test a task applies before writing it
-        (``gnss_store_strategy: skip``). Hashing a file reads its bytes but
-        does not parse it, so a stored date costs neither auxiliary data
-        nor reading. With ``gnss_store_strategy: overwrite`` no date is
-        split off.
+        wrote data, from the day before the date to the day after: the test
+        a task applies before writing it (``gnss_store_strategy: skip``).
+        Hashing a file reads its bytes but does not parse it, so a stored
+        date costs neither auxiliary data nor reading. A date with a new
+        file is read twice, once to hash it here and once to parse it; on
+        a slow network share this costs time. With
+        ``gnss_store_strategy: overwrite`` no date is split off.
 
         Returns
         -------
@@ -1044,14 +1047,17 @@ class PipelineOrchestrator:
             return [], dates
         t_start = _time.monotonic()
         store = self.site.gnss_store
-        held = {
-            group: frozenset(
-                h
-                for _, h, _, _ in stored_spans(store.load_metadata_for_dedup(group))
-                if h
-            )
+        log_books = {
+            group: store.load_metadata_for_dedup(group)
             for group in {group for _, groups in dates for group in groups}
         }
+
+        def held(date_key: str, group: str) -> frozenset[str]:
+            day = np.datetime64(YYYYDOY.from_str(date_key).date, "D")
+            return frozenset(
+                h for _, h, _, _ in stored_spans_around(log_books[group], day) if h
+            )
+
         files = {
             (date_key, group): [f.path for f in discover_files(day, fmt)]
             for date_key, groups in dates
@@ -1069,9 +1075,8 @@ class PipelineOrchestrator:
             # A group without files on the date is not held: its day is
             # processed, so the run reports it as it does today.
             if all(paths_of for _, paths_of in group_files) and all(
-                hashes[path] in held[group]
+                set(map(hashes.get, paths_of)) <= held(date_key, group)
                 for group, paths_of in group_files
-                for path in paths_of
             ):
                 stored.append((date_key, groups))
             else:

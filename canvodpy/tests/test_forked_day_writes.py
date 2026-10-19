@@ -839,3 +839,25 @@ def test_two_processes_writing_one_day_both_finish(seeded, files) -> None:
     np.testing.assert_array_equal(stored["S1C"].values, _day(files)["S1C"].values)
     log_book = _log_book(seeded)
     assert log_book["rinex_hash"].n_unique() == _FILES_PER_DAY
+
+
+def test_only_log_book_rows_around_a_day_hold_its_files() -> None:
+    import polars as pl
+
+    def times(*stamps: str) -> np.ndarray:
+        return np.array(stamps, dtype="datetime64[ns]")
+
+    log_book = pl.DataFrame(
+        {
+            "canonical_name": ["near", "far", "skipped"],
+            "rinex_hash": ["a", "b", "c"],
+            "start": times("2025-01-02T23:45", "2025-01-10T00:00", "2025-01-02T00:00"),
+            "end": times("2025-01-03T00:00", "2025-01-10T00:15", "2025-01-02T00:15"),
+            "action": ["written", "written", "skipped"],
+        }
+    )
+
+    # A file copied into the folder of another day is not held there, so
+    # the run reads that day instead of skipping it.
+    spans = forked_writes.stored_spans_around(log_book, np.datetime64("2025-01-02"))
+    assert [name for name, _, _, _ in spans] == ["near"]

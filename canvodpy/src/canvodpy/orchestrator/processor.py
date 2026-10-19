@@ -111,6 +111,7 @@ from canvodpy.orchestrator.forked_writes import (
     chunk_groups,
     rewrite_spans,
     stored_spans,
+    stored_spans_around,
 )
 
 # ============================================================================
@@ -3853,13 +3854,8 @@ class RinexDataProcessor:
         only with a row near it; the rest of the log book is not sent to
         the workers (:func:`~canvodpy.orchestrator.forked_writes.stored_spans`).
         """
-        df = self.site.gnss_store.load_metadata_for_dedup(group)
-        if df is None or df.is_empty():
-            return ()
-        low = datetime.fromisoformat(str(day - np.timedelta64(1, "D")))
-        high = datetime.fromisoformat(str(day + np.timedelta64(2, "D")))
-        return stored_spans(
-            df.filter((pl.col("end") >= low) & (pl.col("start") < high))
+        return stored_spans_around(
+            self.site.gnss_store.load_metadata_for_dedup(group), day
         )
 
     def _check_stored_overlaps(

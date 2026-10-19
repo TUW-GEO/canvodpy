@@ -21,7 +21,7 @@ from __future__ import annotations
 import time
 from collections.abc import Hashable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -292,6 +292,22 @@ def stored_spans(df: pl.DataFrame | None) -> tuple[StoredSpan, ...]:
             strict=True,
         )
     )
+
+
+def stored_spans_around(
+    df: pl.DataFrame | None, day: np.datetime64
+) -> tuple[StoredSpan, ...]:
+    """The log-book rows of *df* from the day before *day* to the day after.
+
+    A file has one time span, so a file of *day* is in the log book only
+    with a row near it. A run tests a file only against these rows, both
+    before reading a day and before writing a file.
+    """
+    if df is None or df.is_empty():
+        return ()
+    low = datetime.fromisoformat(str(day - np.timedelta64(1, "D")))
+    high = datetime.fromisoformat(str(day + np.timedelta64(2, "D")))
+    return stored_spans(df.filter((pl.col("end") >= low) & (pl.col("start") < high)))
 
 
 def rewrite_spans(
