@@ -3,8 +3,8 @@
 A public comparison for the reference-store check (spec #318, seam B) and
 for comparing any two stores: a production store before and after an
 upgrade, two runs, a rebuilt store against the reference. It only reads,
-through :class:`~canvod.store.store.MyIcechunkStore` (``list_groups`` and
-``read_group``); it never changes how a store is written or read.
+through :class:`~canvod.store.store.MyIcechunkStore` (``list_data_groups``
+and ``read_group``); it never changes how a store is written or read.
 
 The comparison reports, per group and variable, the kind of difference,
 the number of differing values and the largest absolute difference. It
@@ -52,12 +52,10 @@ _LN10_OVER_10 = np.log(10.0) / 10.0
 #: * ``VOD``: 2e-4. dVOD =
 #:   (ln 10 / 10) * 1e-3 = 2.3e-4, rounded down; see the formula in
 #:   ``packages/canvod-vod/src/canvod/vod/calculator.py``.
-#: * ``theta``, ``phi``: 1e-6 rad. dVOD/dtheta =
-#:   (ln 10 / 10) * delta_snr * sin(theta), at most 4.6 for
-#:   delta_snr up to 20 dB (an assumption ticket #320 checks), so 1e-6 rad
-#:   moves VOD by at most 4.6e-6. It is above the float32 spacing at
-#:   pi/2 (1.2e-7 rad), the precision theta and phi are stored with, so
-#:   storage rounding never fails it.
+#: * ``theta``, ``phi``: 1e-6 rad. Above the float32 spacing at pi/2
+#:   (1.2e-7 rad), the precision theta and phi are stored with, so
+#:   storage rounding never fails it; a larger difference is a changed
+#:   satellite geometry.
 FLOAT_TOLERANCES: dict[str, float] = {
     "SNR": 5e-4,
     "Pseudorange": 5e-4,
@@ -187,11 +185,12 @@ def compare_stores(reference: MyIcechunkStore, new: MyIcechunkStore) -> StoreCom
     """Compare two stores and return a report.
 
     Reads both stores through ``MyIcechunkStore`` only
-    (``list_groups`` and ``read_group``). The report says whether it
+    (``list_data_groups`` and ``read_group``), so a VOD store's analyses
+    below their calculator are compared too. The report says whether it
     matches and lists every difference per group and variable.
     """
-    ref_groups = sorted(reference.list_groups())
-    new_groups = sorted(new.list_groups())
+    ref_groups = reference.list_data_groups()
+    new_groups = new.list_data_groups()
 
     result = StoreComparison(
         groups_in_reference=len(ref_groups),

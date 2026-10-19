@@ -137,6 +137,15 @@ _Avoid_: file format (for the setting)
 The full set of receiver and auxiliary files the tests run on.
 _Avoid_: demo data
 
+**Setting profile**:
+A named settings folder that a reference run uses on the test data.
+_Avoid_: test config, fixture settings
+
+**Reference store**:
+A GNSS or VOD store built from the test data with a setting profile, which
+new code must reproduce within the comparison tolerances.
+_Avoid_: golden store, baseline store
+
 **Demo data**:
 The small, published set of files the demo notebooks work with: part of
 one day of the test data, plus reference stores built from it.

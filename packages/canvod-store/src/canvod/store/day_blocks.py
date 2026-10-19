@@ -31,6 +31,7 @@ import xarray as xr
 import zarr
 import zarr.errors
 from canvod.readers.gnss_specs.metadata import INTEGER_FILL_VALUE
+from canvod.store_metadata import RESERVED_GROUP
 from canvod.store_metadata.layout import (
     DAY_BLOCK_INDEX_ATTR,
     DAY_BLOCKS,
@@ -161,6 +162,27 @@ def _open_group(store: Any, group: str) -> zarr.Group | None:
         return zarr.open_group(store, mode="r", path=group)
     except FileNotFoundError, zarr.errors.GroupNotFoundError:
         return None
+
+
+def data_groups(store: Any) -> list[str]:
+    """The groups of the store that hold epochs, at any depth.
+
+    A VOD group sits below its calculator (``tau_omega/...``). The groups
+    inside a data group (its ``metadata/``) are not data groups.
+    """
+    try:
+        root = zarr.open_group(store, mode="r")
+    except FileNotFoundError, zarr.errors.GroupNotFoundError:
+        return []
+    found: list[str] = []
+    below = [(name, group) for name, group in root.groups() if name != RESERVED_GROUP]
+    while below:
+        path, group = below.pop()
+        if "epoch" in set(group.array_keys()):
+            found.append(path)
+        else:
+            below.extend((f"{path}/{name}", sub) for name, sub in group.groups())
+    return sorted(found)
 
 
 def holds_day_blocks(store: Any, group: str) -> bool:

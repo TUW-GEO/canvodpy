@@ -85,6 +85,7 @@ nav = [
     { "Contributing" = "CONTRIBUTING.md" },
     { "Contributor setup" = "guides/contributor-setup.md" },
     { "Development guide" = "guides/DEVELOPMENT.md" },
+    { "Reference stores" = "guides/reference-stores.md" },
     { "Coding agents" = [
       { "Developing with coding agents" = "guides/ai-development.md" },
       { "Issue tracker" = "agents/issue-tracker.md" },

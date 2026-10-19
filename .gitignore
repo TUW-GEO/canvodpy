@@ -379,3 +379,6 @@ packages/*/config/
 !.vale/styles/config/
 # lychee cache
 .lycheecache
+
+# Report of just reference-check
+reference-check.txt
