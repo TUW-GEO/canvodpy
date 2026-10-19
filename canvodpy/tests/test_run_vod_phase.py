@@ -113,6 +113,41 @@ def test_each_vod_task_logs_its_worker_memory_peak(two_days) -> None:
     assert all(p["peak_gb"] >= p["before_gb"] > 0 for p in peaks)
 
 
+def test_vod_timings_name_their_day_as_yyyydoy(two_days) -> None:
+    # The GNSS stages key a day as YYYYDOY; the VOD phase's time must join
+    # them on the time-per-day chart, not form points of its own.
+    with _site().pipeline(n_workers=2) as pipeline:
+        list(pipeline.run(*DAYS))
+
+    log_dir = Path(two_days.processing.logging.log_dir)
+    # A timing event is in both agent.json and performance.json.
+    vod_days = {
+        t["date_key"]
+        for t in _log_events(log_dir, "stage_timing")
+        if t["stage"] == "vod_calc"
+    }
+    assert vod_days == set(DAYS)
+    unit_days = {
+        day
+        for e in _log_events(log_dir, "vod_unit_committed")
+        for day in (e["first"], e["last"])
+    }
+    assert unit_days <= set(DAYS)
+
+
+def test_the_vod_growth_commit_names_its_days_as_yyyydoy(two_days) -> None:
+    # The second run grows the VOD day blocks the first run created.
+    site = _site()
+    for day in DAYS:
+        with site.pipeline(n_workers=2) as pipeline:
+            list(pipeline.run(day, day))
+
+    messages = [s.message for s in site.vod_store.repo.ancestry(branch="main")]
+    growth = [m for m in messages if "VOD day blocks for" in m]
+    assert growth == [growth[0]]
+    assert growth[0].endswith(f"VOD day blocks for {DAYS[1]}..{DAYS[1]}")
+
+
 def test_a_day_whose_gnss_phase_fails_gets_no_vod(two_days, monkeypatch) -> None:
     prepare = PipelineOrchestrator._prepare_single_date
 

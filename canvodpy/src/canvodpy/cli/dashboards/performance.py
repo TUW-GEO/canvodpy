@@ -138,15 +138,8 @@ def _():
 
         # Time per day: the stage seconds of a data day, summed; a record
         # of a unit of days is split evenly over the days it names.
-        day_totals = {}
-        for timing in timings:
-            for day, seconds in split_days(timing.day, timing.seconds or 0.0):
-                day_totals[day] = day_totals.get(day, 0.0) + seconds
-        if day_totals:
-            charts["day"] = [
-                {"Day": day, "Seconds": seconds}
-                for day, seconds in sorted(day_totals.items())
-            ]
+        if day_seconds := day_rows(timings):
+            charts["day"] = day_seconds
 
         # Store size per day: the on-disk size of each store, measured in
         # the background; a "Total" row adds the stores of a day.
@@ -281,7 +274,7 @@ def _():
     from canvodpy.cli.dashboards.charts import (
         chart_categories,
         chart_palette,
-        split_days,
+        day_rows,
         stage_stats,
         store_rows,
         time_bars,
@@ -805,6 +798,15 @@ def _(
 
     run_charts = run_view["charts"] if run_view is not None else {}
     chart_items = [mo.md("### Charts"), time_axis]
+    # A data day on a date axis: the labels thin out to fit the width, so a
+    # year of days stays readable. UTC, so a date never shifts by a day.
+    date_axis = alt.X(
+        "utcyearmonthdate(Date):T",
+        axis=alt.Axis(title="Day", format="%Y-%m-%d", labelOverlap=True),
+    )
+    date_tooltip = alt.Tooltip(
+        "utcyearmonthdate(Date):T", title="Date", format="%Y-%m-%d"
+    )
     if not run_charts:
         chart_items.append(mo.md("_No chart data for this run yet._"))
     else:
@@ -836,6 +838,12 @@ def _(
                 .encode(
                     y=alt.Y("Stage:N", sort=stage_order, axis=alt.Axis(title="Stage")),
                     **median_time,
+                    tooltip=[
+                        "Stage:N",
+                        alt.Tooltip(
+                            "Median (s):Q", title="Median per day (s)", format=".2f"
+                        ),
+                    ],
                 )
             )
             total_chart = chart_style(
@@ -844,6 +852,10 @@ def _(
                 .encode(
                     y=alt.Y("Stage:N", sort=stage_order, axis=alt.Axis(title="Stage")),
                     **total_time,
+                    tooltip=[
+                        "Stage:N",
+                        alt.Tooltip("Total (s):Q", title="Total (s)", format=".1f"),
+                    ],
                 )
             )
             chart_items.append(mo.hstack([median_chart, total_chart]))
@@ -854,21 +866,30 @@ def _(
                     "**Time per day.** The stage seconds of a data day, added up; "
                     "a run that works in units of days splits a unit's record "
                     "evenly over its days. Receivers run in parallel, so this is "
-                    "not wall time."
+                    "not wall time. A day's time is final only after its unit's "
+                    "VOD phase: until then it still rises, since a unit's "
+                    "writing record is split over its days when the unit "
+                    "commits, and its VOD runs during the next unit."
                 )
             )
-            day_rows, day_time = time_line(
+            day_points, day_time = time_line(
                 "y", "Seconds", "Time (s)", run_charts["day"], time_axis.value
             )
             chart_items.append(
                 mo.ui.altair_chart(
                     chart_style(
-                        alt.Chart({"values": day_rows})  # type: ignore
+                        alt.Chart({"values": day_points})  # type: ignore
                         .mark_line(point=True, color=chart_series[0])
                         .encode(
-                            x=alt.X("Day:N", axis=alt.Axis(title="Day")),
+                            x=date_axis,
                             **day_time,
+                            tooltip=[
+                                alt.Tooltip("Day:N", title="Day (YYYYDOY)"),
+                                date_tooltip,
+                                alt.Tooltip("Seconds:Q", format=".1f"),
+                            ],
                         )
+                        .properties(width="container")
                     )
                 )
             )
@@ -896,7 +917,7 @@ def _(
                         alt.Chart({"values": store_display})  # type: ignore
                         .mark_line(point=True)
                         .encode(
-                            x=alt.X("Day:N", axis=alt.Axis(title="Day")),
+                            x=date_axis,
                             y=alt.Y(
                                 "Size:Q",
                                 axis=alt.Axis(title=f"Store size ({store_unit})"),
@@ -905,8 +926,16 @@ def _(
                             color=alt.Color("Store:N").scale(
                                 range=chart_categories(store_count)
                             ),
-                            tooltip=["Day:N", "Store:N", "Size:Q"],
+                            tooltip=[
+                                alt.Tooltip("Day:N", title="Day (YYYYDOY)"),
+                                date_tooltip,
+                                "Store:N",
+                                alt.Tooltip(
+                                    "Size:Q", title=f"Size ({store_unit})", format=".2f"
+                                ),
+                            ],
                         )
+                        .properties(width="container")
                     )
                 )
             )
@@ -930,6 +959,15 @@ def _(
                             color=alt.Color("Metric:N").scale(
                                 range=chart_categories(2)
                             ),
+                            tooltip=[
+                                alt.Tooltip(
+                                    "Time:T",
+                                    title="Time (UTC)",
+                                    format="%Y-%m-%d %H:%M:%S",
+                                ),
+                                "Metric:N",
+                                alt.Tooltip("Percent:Q", format=".1f"),
+                            ],
                         )
                     )
                 )
@@ -955,7 +993,15 @@ def _(
                                 axis=alt.Axis(title="Free disk (GB)"),
                                 scale=alt.Scale(zero=False),
                             ),
-                            tooltip=["Folder:N", "Time:T", "Free disk (GB):Q"],
+                            tooltip=[
+                                "Folder:N",
+                                alt.Tooltip(
+                                    "Time:T",
+                                    title="Time (UTC)",
+                                    format="%Y-%m-%d %H:%M:%S",
+                                ),
+                                alt.Tooltip("Free disk (GB):Q", format=".1f"),
+                            ],
                             color=alt.Color("Folder:N").scale(
                                 range=chart_categories(
                                     len({row["Folder"] for row in run_charts["disk"]})
@@ -987,6 +1033,10 @@ def _(
                                 "Receiver-days finished:Q",
                                 axis=alt.Axis(title="Receiver-days finished"),
                             ),
+                            tooltip=[
+                                alt.Tooltip("Elapsed (h):Q", format=".2f"),
+                                "Receiver-days finished:Q",
+                            ],
                         )
                     )
                 )

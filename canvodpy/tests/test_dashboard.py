@@ -23,6 +23,8 @@ import pytest
 from canvodpy.cli.dashboards.charts import (
     chart_categories,
     chart_palette,
+    day_key,
+    day_rows,
     split_days,
     stage_stats,
     store_rows,
@@ -665,12 +667,40 @@ def test_store_rows_one_row_per_store_per_day_plus_total() -> None:
         StoreSize("VOD store", "2025001", datetime.now(UTC), 500),
         StoreSize("GNSS store", "2025002", datetime.now(UTC), 3000),
     ]
+    first, second = "2025-01-01", "2025-01-02"
     assert store_rows(sizes) == [
-        {"Day": "2025001", "Store": "GNSS store", "Size (bytes)": 2000},
-        {"Day": "2025001", "Store": "VOD store", "Size (bytes)": 500},
-        {"Day": "2025001", "Store": "Total", "Size (bytes)": 2500},
-        {"Day": "2025002", "Store": "GNSS store", "Size (bytes)": 3000},
-        {"Day": "2025002", "Store": "Total", "Size (bytes)": 3000},
+        {"Day": "2025001", "Date": first, "Store": "GNSS store", "Size (bytes)": 2000},
+        {"Day": "2025001", "Date": first, "Store": "VOD store", "Size (bytes)": 500},
+        {"Day": "2025001", "Date": first, "Store": "Total", "Size (bytes)": 2500},
+        {"Day": "2025002", "Date": second, "Store": "GNSS store", "Size (bytes)": 3000},
+        {"Day": "2025002", "Date": second, "Store": "Total", "Size (bytes)": 3000},
+    ]
+
+
+def test_an_iso_day_counts_as_its_yyyydoy_day() -> None:
+    # Runs before the fix recorded the VOD phase's days as ISO dates.
+    assert day_key("2025-06-18") == "2025169"
+    assert day_key("2024-12-31") == "2024366"
+    assert day_key("2025169") == "2025169"
+    assert day_key("not a day") == "not a day"
+    assert split_days("2025-06-17,2025-06-18", 4.0) == [
+        ("2025168", 2.0),
+        ("2025169", 2.0),
+    ]
+
+
+def test_day_rows_join_iso_and_yyyydoy_records_of_a_day() -> None:
+    def timing(stage: str, day: str, seconds: float) -> StageTiming:
+        return StageTiming(datetime.now(UTC), stage, seconds, "ok", None, day, None)
+
+    timings = [
+        timing("writing", "2025169,2025170", 4.0),
+        timing("vod_calc", "2025-06-18", 1.0),
+        timing("vod_calc", "2025170", 1.5),
+    ]
+    assert day_rows(timings) == [
+        {"Day": "2025169", "Date": "2025-06-18", "Seconds": 3.0},
+        {"Day": "2025170", "Date": "2025-06-19", "Seconds": 3.5},
     ]
 
 
