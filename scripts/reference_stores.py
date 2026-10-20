@@ -66,20 +66,21 @@ def read_runs(profile: Path) -> tuple[Path, dict, dict]:
 
     For a profile with a ``base``, the settings folder is the base's, each
     site's entry is the base's entry updated with the profile's, and the
-    extra settings are the profile's ``settings``.
+    extra settings are the base's extra settings with the profile's
+    ``settings`` merged in, so a chain of bases keeps every change.
     """
     runs = yaml.safe_load((profile / RUNS_FILE).read_text(encoding="utf-8"))
     base = runs.get("base")
     if base is None:
         return profile, runs["sites"], {}
-    base_dir, base_sites, _ = read_runs(PROFILES / base)
+    base_dir, base_sites, base_extra = read_runs(PROFILES / base)
     sites = {}
     for site, entry in runs["sites"].items():
         if site not in base_sites:
             msg = f"{profile.name}: site {site} is not in the base profile {base}"
             raise SystemExit(msg)
         sites[site] = {**base_sites[site], **(entry or {})}
-    return base_dir, sites, runs.get("settings") or {}
+    return base_dir, sites, merge(base_extra, runs.get("settings") or {})
 
 
 def merge(into: dict, extra: dict) -> dict:
