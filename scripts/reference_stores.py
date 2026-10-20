@@ -67,7 +67,8 @@ def copy_with_position(source: Path, target: Path) -> Path:
     """Copy a site's RINEX files to ``target`` with the test position.
 
     Only the ``APPROX POSITION XYZ`` line changes: it gets the made-up
-    position of ``canvod.utils.testing``. Returns ``target``.
+    position of ``canvod.utils.testing``. Returns ``target``. Stops with
+    the file's name when a header has no such line.
     """
     from canvod.utils.testing import ECEF_X, ECEF_Y, ECEF_Z
 
@@ -82,7 +83,9 @@ def copy_with_position(source: Path, target: Path) -> Path:
                 lines[i] = line + "\n"
                 break
             if old.rstrip("\r\n").endswith("END OF HEADER"):
-                break
+                raise SystemExit(f"{f}: the header has no APPROX POSITION XYZ line.")
+        else:
+            raise SystemExit(f"{f}: no APPROX POSITION XYZ line, no END OF HEADER.")
         copy.write_text("".join(lines), encoding="ascii", newline="")
     return target
 
