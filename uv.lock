@@ -238,7 +238,7 @@ dev = [
 
 [[package]]
 name = "canvod-config"
-version = "0.4.0"
+version = "1.0.0b1"
 source = { editable = "packages/canvod-config" }
 dependencies = [
     { name = "canvod-utils" },
@@ -358,7 +358,7 @@ dev = [
 
 [[package]]
 name = "canvod-preflight"
-version = "0.4.0"
+version = "1.0.0b1"
 source = { editable = "packages/canvod-preflight" }
 dependencies = [
     { name = "canvod-utils" },
@@ -542,7 +542,7 @@ dev = [
 
 [[package]]
 name = "canvod-utils"
-version = "0.4.0"
+version = "1.0.0b1"
 source = { editable = "packages/canvod-utils" }
 dependencies = [
     { name = "pydantic" },
