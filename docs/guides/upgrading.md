@@ -35,7 +35,7 @@ dotted key. A settings file from 0.x typically needs:
 | `processing.metadata.publisher`, `processing.metadata.license`, `processing.metadata.naming_authority` | Required to create a store; the metadata standards (DataCite, STAC) ask for them. |
 | `sites.<site>.store_description` | Required to create a store: one sentence about the site's data. |
 | `processing.metadata.initials` | Required to migrate or amend a store: who changed its metadata. |
-| `processing.storage.gnss_store_name`, `processing.storage.vod_store_name` | A store's folder is named by its kind (`gnss`, `vod`), optionally with a suffix (`vod-recompute`); other names are refused. Remove `gnss_store_name: rinex`: the GNSS store's folder is now `gnss`, and the migration moves it. |
+| `processing.storage.gnss_store_name`, `processing.storage.vod_store_name` | A store's folder is named by its kind (`gnss`, `vod`), optionally with a suffix (`vod-recompute`); other names are refused. Remove `gnss_store_name: rinex`: the GNSS store's folder is now `gnss`, and the migration moves it. Remove any other old name too, such as `vod_store_name: Site_VOD_store`, and move that store with `canvodpy store migrate SITE --rename Site_VOD_store=vod`; the settings check names the command. |
 | `processing.preprocessing.temporal_aggregation.integer_method` | Required when temporal aggregation is set: `first`, `last` or `middle`. |
 
 !!! warning "Preprocessing in your settings is now applied"

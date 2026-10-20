@@ -10,7 +10,7 @@ from pydantic import Field, field_validator, model_validator
 
 from canvod.utils.tools import deprecated
 
-from ..store_names import check_store_name
+from ..store_names import check_settings_store_name
 from .base import _StrictModel
 
 #: ``scheme://rest`` of a URL in ``stores_root_dir``.
@@ -203,12 +203,12 @@ class StorageConfig(_StrictModel):
     @field_validator("gnss_store_name")
     @classmethod
     def _check_gnss_store_name(cls, v: str) -> str:
-        return check_store_name(v, "gnss")
+        return check_settings_store_name(v, "gnss")
 
     @field_validator("vod_store_name")
     @classmethod
     def _check_vod_store_name(cls, v: str) -> str:
-        return check_store_name(v, "vod")
+        return check_settings_store_name(v, "vod")
 
     @field_validator("stores_root_dir", mode="before")
     @classmethod
