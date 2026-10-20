@@ -115,7 +115,7 @@ def _float_kinds(result: StoreComparison) -> dict[str, list]:
     """Map variable name to the list of value/no-tolerance diffs for it."""
     by_name: dict[str, list] = {}
     for d in result.differences:
-        if d.kind in (DiffKind.VALUE, DiffKind.NO_TOLERANCE, DiffKind.MISSING_VALUE):
+        if d.kind in (DiffKind.VALUE, DiffKind.NO_TOLERANCE):
             by_name.setdefault(d.variable or "", []).append(d)
     return by_name
 
@@ -134,6 +134,8 @@ def _value_diff(result: StoreComparison, var: str) -> list:
 def test_identical_stores_match(tmp_path) -> None:
     ds = _gnss_ds(seed=0)
     ref = _gnss_store(tmp_path / "ref", ds)
+    # Created one after the other, the two stores differ in their creation
+    # times and ids, which the comparison leaves out.
     new = _gnss_store(tmp_path / "new", ds)
 
     result = compare_stores(ref, new)
@@ -230,7 +232,7 @@ def test_no_tolerance_float_differs_is_reported(tmp_path) -> None:
     assert diffs[0].kind == DiffKind.NO_TOLERANCE
     assert diffs[0].n_values == 2
     assert diffs[0].largest_diff == pytest.approx(1e-12, abs=1e-12)
-    assert diffs[0].detail == "no tolerance set"
+    assert "not identical" in (diffs[0].detail or "")
     assert not result.matches
 
 
@@ -306,7 +308,10 @@ def test_value_missing_in_one_store_only_is_reported(tmp_path) -> None:
 
     result = compare_stores(ref, new)
 
-    assert DiffKind.MISSING_VALUE in {d.kind for d in result.differences}
+    diffs = _value_diff(result, "SNR")
+    assert len(diffs) == 1
+    assert diffs[0].kind == DiffKind.VALUE
+    assert diffs[0].n_values == 1
     assert not result.matches
 
 
@@ -353,21 +358,56 @@ def test_changed_units_is_reported(tmp_path) -> None:
     result = compare_stores(ref, new)
 
     attr_diffs = [d for d in result.differences if d.kind == DiffKind.ATTRIBUTE]
-    assert any(d.variable == "SNR" and "units" in (d.detail or "") for d in attr_diffs)
+    assert [d.variable for d in attr_diffs] == ["SNR.units"]
     assert not result.matches
 
 
-def test_changed_provenance_attribute_is_ignored(tmp_path) -> None:
+def test_changed_software_version_is_ignored(tmp_path) -> None:
     ds = _gnss_ds(seed=0)
-    ds2 = _gnss_ds(seed=0).copy(deep=True)
-    ds2.attrs["Software"] = "a different version"
-    ds2.attrs["File Hash"] = "another hash"
+    ds.attrs["Software"] = "canVODpy, Version: 1.0.0"
+    ds2 = ds.copy(deep=True)
+    ds2.attrs["Software"] = "canVODpy, Version: 1.1.0"
     ref = _gnss_store(tmp_path / "ref", ds)
     new = _gnss_store(tmp_path / "new", ds2)
 
     result = compare_stores(ref, new)
 
     assert result.matches
+
+
+def test_changed_file_hash_is_reported(tmp_path) -> None:
+    # A different input file is a different store, unlike a new version.
+    ds = _gnss_ds(seed=0)
+    ds.attrs["File Hash"] = "a4d029a0c1d7925b"
+    ds2 = ds.copy(deep=True)
+    ds2.attrs["File Hash"] = "0000000000000000"
+    ref = _gnss_store(tmp_path / "ref", ds)
+    new = _gnss_store(tmp_path / "new", ds2)
+
+    result = compare_stores(ref, new)
+
+    attr_diffs = [d for d in result.differences if d.kind == DiffKind.ATTRIBUTE]
+    assert [d.variable for d in attr_diffs] == ["File Hash"]
+    assert not result.matches
+
+
+def test_nested_store_attribute_names_the_inner_key(tmp_path) -> None:
+    ds = _gnss_ds(seed=0)
+    ref = _gnss_store(tmp_path / "ref", ds)
+    new = _gnss_store(tmp_path / "new", ds)
+    ref.set_root_attrs(
+        {"site": {"position": {"lat": 48.2, "lon": 16.4}}}, branch="main"
+    )
+    new.set_root_attrs(
+        {"site": {"position": {"lat": 48.2, "lon": 16.5}}}, branch="main"
+    )
+
+    result = compare_stores(ref, new)
+
+    attr_diffs = [
+        d.variable for d in result.differences if d.kind == DiffKind.ATTRIBUTE
+    ]
+    assert attr_diffs == ["site.position.lon"]
 
 
 def test_changed_store_source_format_is_reported(tmp_path) -> None:
@@ -441,8 +481,11 @@ def test_to_text_value_difference_line(tmp_path) -> None:
 
     result = compare_stores(ref, new)
 
-    # The line carries group/variable, kind, count and largest difference.
-    assert result.to_text() == "canopy_01/LLI: value: 1 value(s), largest |diff| 7"
+    # The first line carries group/variable, kind, count and largest
+    # difference; xarray's message follows, indented.
+    lines = result.to_text().splitlines()
+    assert lines[0] == "canopy_01/LLI: value: 1 value(s), largest |diff| 7"
+    assert lines[1] == "    Left and right Variable objects are not identical"
 
 
 # --- Datetime values use NaT -------------------------------------------------
@@ -474,7 +517,8 @@ def test_datetime_nat_in_one_store_only_is_reported(tmp_path) -> None:
 
     result = compare_stores(ref, new)
 
-    assert DiffKind.MISSING_VALUE in {d.kind for d in result.differences}
+    diffs = [d for d in result.differences if d.variable == "obs_time"]
+    assert [(d.kind, d.n_values) for d in diffs] == [(DiffKind.VALUE, 1)]
     assert not result.matches
 
 
