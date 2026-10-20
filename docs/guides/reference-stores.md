@@ -73,3 +73,9 @@ as `FLOAT_TOLERANCES` in
 A difference means the new code stores something else. Either the
 change is a bug, or it is intended: then say so in the pull request,
 with the report, and build new reference stores.
+
+A new setting with a default, or a changed default, fails the check
+too: the report names it under `content_settings`. The remedy is the
+same: new reference stores and a CHANGELOG entry, never an entry in
+`VOLATILE_ATTRIBUTES`. That list holds only what changes with every run
+or release.

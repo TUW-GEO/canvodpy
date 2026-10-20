@@ -95,8 +95,9 @@ VOLATILE_ATTRIBUTES: frozenset[str] = frozenset(
 )
 """Attributes left out of the comparison, as dotted paths into nested
 attributes. Two builds from the same code differ only in the times and
-identifiers listed here; the version and the content hash change with
-every release."""
+identifiers listed here, also on two machines: the stores record no host,
+path or environment. The version and the content hash change with every
+release. A changed setting is a real difference and never belongs here."""
 
 # Lines of an xarray message kept in a report entry.
 _MESSAGE_LINES = 12

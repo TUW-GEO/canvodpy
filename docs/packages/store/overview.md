@@ -382,6 +382,15 @@ modification times, the store ids, the canvodpy version and the
 store was computed from (its values are compared themselves). The list
 is `VOLATILE_ATTRIBUTES` in the same module. A changed input file
 therefore shows as a changed `File Hash`.
+A new or changed setting shows under
+`canvod:repository_metadata.content_settings`, by name and in its hash:
+it changes what the store records about how it was built, so it counts
+as a difference.
+
+The log books (`metadata/table`) are not compared. They record how a
+run wrote each file (write times, snapshot ids, run ids, paths); what
+the files hold is compared through the groups, and which files were
+read through `File Hash`.
 
 Float variables are compared within one absolute tolerance per
 variable, derived from the finest resolution any format records. A
