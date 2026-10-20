@@ -76,8 +76,9 @@ difference.
 
 For the `default` profile, a build and a check each take three to four
 minutes; the SBF day takes the longest. The `sbf-broadcast` profile
-takes one and a half minutes, the `gridded` profile three to four minutes. Two builds of the same code compare with an empty
-report: the run is deterministic.
+takes one and a half minutes, the `gridded` profile three to four
+minutes. Two builds of the same code compare with an empty report: the
+run is deterministic.
 
 ## Tolerances
 
