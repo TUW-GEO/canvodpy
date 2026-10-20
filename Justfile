@@ -195,8 +195,12 @@ run SITE START END:
 reference-stores OUT *PROFILES:
     uv run python scripts/reference_stores.py build {{ OUT }} {{ PROFILES }}
 
-# run every setting profile again and compare with the reference stores in REF; exits 1 and writes REPORT on a difference
-reference-check REF REPORT="reference-check.txt":
+# zip each store of BUILD, a build of every setting profile, into OUT and write OUT/SHA256SUMS: the files to upload
+reference-pack BUILD OUT:
+    uv run python scripts/reference_stores.py pack {{ BUILD }} {{ OUT }}
+
+# run every setting profile again and compare with the reference stores: REF is a build or packed zips, default the published zips; exits 1 and writes REPORT on a difference
+reference-check REF="" REPORT="reference-check.txt":
     uv run python scripts/reference_stores.py check {{ REF }} --report {{ REPORT }}
 
 # create naming recipe NAME of SITE in <config dir>/recipes/SITE/ (non-canonical filenames)

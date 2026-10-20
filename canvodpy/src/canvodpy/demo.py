@@ -240,35 +240,66 @@ def _total_size(response: http.client.HTTPResponse, start: int) -> int | None:
 
 def _ensure(archive: DemoArchive, root: Path) -> None:
     """Download, check and unpack one archive, unless it is in the cache."""
-    marker = root / f".{archive.name}.sha256"
-    if marker.exists() and marker.read_text().strip() == archive.sha256:
-        return
     if archive.url is None:
+        marker = root / f".{archive.name}.sha256"
+        if marker.exists() and marker.read_text().strip() == archive.sha256:
+            return
         msg = f"Demo archive {archive.name} is not published yet"
         raise RuntimeError(msg)
+    fetch_archive(archive.name, archive.url, archive.sha256, root)
 
-    zip_path = root / ".downloads" / archive.name
+
+def fetch_archive(name: str, url: str, sha256: str, root: Path) -> None:
+    """Download a zip, check its sha256 and unpack it into ``root``.
+
+    A marker file in ``root`` records the sha256 of the unpacked zip; a
+    second call with the same sha256 downloads nothing. The download
+    continues after a broken connection (``_download``). Used for the
+    demo data and the reference stores (``scripts/reference_stores.py``).
+
+    Parameters
+    ----------
+    name : str
+        File name of the zip; names the marker file.
+    url : str
+        Where to download it; a ``file://`` URL reads a local zip.
+    sha256 : str
+        The expected sha256 of the zip.
+    root : Path
+        The folder to unpack into.
+
+    Raises
+    ------
+    RuntimeError
+        If the zip can't be downloaded or its sha256 doesn't match; it is
+        then not unpacked.
+    """
+    marker = root / f".{name}.sha256"
+    if marker.exists() and marker.read_text().strip() == sha256:
+        return
+
+    zip_path = root / ".downloads" / name
     try:
-        _download(archive.url, zip_path)
+        _download(url, zip_path)
     except OSError as e:
         msg = (
-            f"Could not download demo archive {archive.name} from "
-            f"{archive.url}: {e}. Check the connection and try again; a new "
-            "attempt continues where this one stopped."
+            f"Could not download archive {name} from {url}: {e}. Check the "
+            "connection and try again; a new attempt continues where this "
+            "one stopped."
         )
         raise RuntimeError(msg) from e
 
     try:
         with zip_path.open("rb") as f:
-            sha256 = hashlib.file_digest(f, "sha256").hexdigest()
-        if sha256 != archive.sha256:
+            found = hashlib.file_digest(f, "sha256").hexdigest()
+        if found != sha256:
             msg = (
-                f"Demo archive {archive.name} has sha256 {sha256}, expected "
-                f"{archive.sha256}; it was not unpacked"
+                f"Archive {name} has sha256 {found}, expected {sha256}; it "
+                "was not unpacked"
             )
             raise RuntimeError(msg)
         with zipfile.ZipFile(zip_path) as zf:
             zf.extractall(root)
     finally:
         zip_path.unlink(missing_ok=True)
-    marker.write_text(archive.sha256)
+    marker.write_text(sha256)

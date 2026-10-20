@@ -62,9 +62,10 @@ use, so the stores name no real person.
 The test data must be checked out (`git submodule update --init`).
 
 ```bash
+just reference-check                        # run the profiles again and compare with the published stores
 just reference-stores ~/reference-stores    # build the stores of every profile into a new folder
 just reference-stores ~/broadcast sbf-broadcast   # only the named profiles
-just reference-check ~/reference-stores     # run the profiles again and compare
+just reference-check ~/reference-stores     # compare with a build of your own
 ```
 
 `just reference-check` builds the stores again in a temporary folder and
@@ -72,7 +73,16 @@ compares each GNSS store and VOD store with the reference stores, using
 `compare_stores` (see the [store overview](../packages/store/overview.md)).
 It writes the report to `reference-check.txt` (empty when the stores
 match; a second argument sets another path) and exits with 1 on a
-difference.
+difference. The reference stores it compares with:
+
+- without a folder, the published stores: the zips of one commit of the
+  Hugging Face dataset named in `reference/published.yaml`. They are
+  downloaded once into the user cache folder, and each zip's sha256 is
+  checked against `reference/SHA256SUMS` before it is unpacked;
+- a build folder (`just reference-stores`);
+- a folder of zips (`just reference-pack`, below).
+
+The folder must hold every profile: the check runs them all.
 
 For the `default` profile, a build and a check each take three to four
 minutes; the SBF day takes the longest. The `sbf-broadcast` profile
@@ -95,10 +105,39 @@ as `FLOAT_TOLERANCES` in
 
 A difference means the new code stores something else. Either the
 change is a bug, or it is intended: then say so in the pull request,
-with the report, and build new reference stores.
+with the report, and change the reference stores (below).
 
 A new setting with a default, or a changed default, fails the check
 too: the report names it under `content_settings`. The remedy is the
 same: new reference stores and a CHANGELOG entry, never an entry in
 `VOLATILE_ATTRIBUTES`. That list holds only what changes with every run
 or release.
+
+## Changing the reference stores
+
+1. The pull request says why the stores change and holds the report of
+   `just reference-check`.
+2. Build every profile from one commit, then pack the build:
+
+   ```bash
+   just reference-stores ~/reference-stores
+   just reference-pack ~/reference-stores ~/reference-zips
+   just reference-check ~/reference-zips    # the zips give an empty report
+   ```
+
+   `just reference-pack` writes one zip per store,
+   `<profile>/<site>-<gnss|vod>.zip`, and their sha256 into `SHA256SUMS`.
+   The zips hold only the stores: no settings files, no logs. It refuses
+   a store that holds a local path (the build folder, the repository,
+   the home folder). The zips are deterministic: packing the same build
+   again gives the same sha256.
+3. A maintainer uploads the folder of zips to the Hugging Face dataset
+   (agents have no Hugging Face token):
+
+   ```bash
+   hf upload nfb2021/canvodpy-reference-stores ~/reference-zips . --repo-type dataset
+   ```
+
+4. The pull request moves `revision` in `reference/published.yaml` to the
+   new commit of the dataset and replaces `reference/SHA256SUMS` with
+   the new one.
