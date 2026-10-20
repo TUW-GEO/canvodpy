@@ -271,6 +271,10 @@ def build(out: Path, names: list[str]) -> None:
 
 def check(reference: Path, report: Path | None) -> int:
     reference = reference.resolve()
+    missing = [p.name for p in profiles() if not (reference / p.name).is_dir()]
+    if missing:
+        msg = f"{reference} holds no stores of the profiles: {', '.join(missing)}"
+        raise SystemExit(msg)
     work = Path(tempfile.mkdtemp(prefix="canvodpy-reference-check-"))
     reports = []
     try:
