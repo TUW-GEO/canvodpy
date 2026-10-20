@@ -66,6 +66,8 @@ command: `canvodpy config --config cluster-overlay.yaml validate` works
 too.
 
 Only the fields present in the overlay are changed; everything else is read from the main file.
+A list in the overlay, such as `sids.custom_sids`, replaces the list of the main file as a
+whole; its entries are not added to the main file's.
 
 ### An overlay can add and change settings, not remove them
 

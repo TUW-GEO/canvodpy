@@ -4,9 +4,16 @@ Every setting profile is a settings folder under ``reference/profiles/``.
 Its ``reference-runs.yaml`` names the sites to run and their days. A run is
 ``canvodpy run --config-dir <profile>`` from the root of the repository, the
 same entry point users run (seam A); this script only adds the output
-folders (stores, auxiliary files, logs) as a settings file passed with
-``--config``, and links the orbit and clock files of the test data into the
-auxiliary folder, so no run downloads anything.
+folders (stores, auxiliary files, logs) and the site's SIDs (``sids`` in
+``reference-runs.yaml``) as a settings file passed with ``--config``, one
+per site, and copies the orbit and clock files of the test data into the
+auxiliary folder, so no run downloads anything. A list in that file
+replaces the profile's list. A site whose test files
+carry no receiver position (MOFLUX) sets ``fill_header_position: true``
+in ``reference-runs.yaml``: the build copies its files into the output
+folder with the made-up test position (``canvod.utils.testing``) in the
+header and runs on the copies. canvodpy itself needs the position in the
+files.
 
     build OUT     build the stores of every profile into OUT/<profile>/
     check REF     run every profile again into a temporary folder and
@@ -56,9 +63,42 @@ def copy_aux(aux: Path) -> None:
             shutil.copy2(f, aux / folder / f.name)
 
 
-def output_settings(out: Path) -> Path:
-    """Write the settings file that points a run's output into ``out``."""
-    settings = {
+def copy_with_position(source: Path, target: Path) -> Path:
+    """Copy a site's RINEX files to ``target`` with the test position.
+
+    Only the ``APPROX POSITION XYZ`` line changes: it gets the made-up
+    position of ``canvod.utils.testing``. Returns ``target``. Stops with
+    the file's name when a header has no such line.
+    """
+    from canvod.utils.testing import ECEF_X, ECEF_Y, ECEF_Z
+
+    xyz = (ECEF_X, ECEF_Y, ECEF_Z)
+    line = "".join(f"{v:14.4f}" for v in xyz).ljust(60) + "APPROX POSITION XYZ"
+    for f in sorted(p for p in source.rglob("*") if p.is_file()):
+        copy = target / f.relative_to(source)
+        copy.parent.mkdir(parents=True, exist_ok=True)
+        lines = f.read_text(encoding="ascii", newline="").splitlines(keepends=True)
+        for i, old in enumerate(lines):
+            if old.rstrip("\r\n").endswith("APPROX POSITION XYZ"):
+                lines[i] = line + "\n"
+                break
+            if old.rstrip("\r\n").endswith("END OF HEADER"):
+                raise SystemExit(f"{f}: the header has no APPROX POSITION XYZ line.")
+        else:
+            raise SystemExit(f"{f}: no APPROX POSITION XYZ line, no END OF HEADER.")
+        copy.write_text("".join(lines), encoding="ascii", newline="")
+    return target
+
+
+def output_settings(
+    out: Path, site: str, sids: list[str] | None, data_root: Path | None
+) -> Path:
+    """Write the settings file of one site's run into ``out``.
+
+    It points the output into ``out``; ``sids`` replaces the profile's SID
+    list and ``data_root`` the site's data folder.
+    """
+    settings: dict = {
         "processing": {
             "storage": {
                 "stores_root_dir": str(out / "stores"),
@@ -67,7 +107,11 @@ def output_settings(out: Path) -> Path:
             "logging": {"log_dir": str(out / "logs")},
         }
     }
-    path = out / "output-settings.yaml"
+    if sids:
+        settings["sids"] = {"mode": "custom", "custom_sids": sids}
+    if data_root is not None:
+        settings["sites"] = {site: {"gnss_site_data_root": str(data_root)}}
+    path = out / f"settings-{site}.yaml"
     path.write_text(yaml.safe_dump(settings), encoding="utf-8")
     return path
 
@@ -79,8 +123,17 @@ def build_profile(profile: Path, out: Path) -> float:
         raise SystemExit(msg)
     out.mkdir(parents=True)
     copy_aux(out / "aux")
-    overlay = output_settings(out)
     runs = yaml.safe_load((profile / RUNS_FILE).read_text(encoding="utf-8"))
+    settings = yaml.safe_load(
+        (profile / "canvod-settings.yaml").read_text(encoding="utf-8")
+    )
+    overlays = {}
+    for site, days in runs["sites"].items():
+        data_root = None
+        if days.get("fill_header_position"):
+            root = ROOT / settings["sites"][site]["gnss_site_data_root"]
+            data_root = copy_with_position(root, out / "data" / site)
+        overlays[site] = output_settings(out, site, days.get("sids"), data_root)
     started = time.perf_counter()
     for site, days in runs["sites"].items():
         command = [
@@ -89,7 +142,7 @@ def build_profile(profile: Path, out: Path) -> float:
             "--config-dir",
             str(profile),
             "--config",
-            str(overlay),
+            str(overlays[site]),
             "--site",
             site,
             "--start",
@@ -101,6 +154,7 @@ def build_profile(profile: Path, out: Path) -> float:
         ]
         print(f"{profile.name}/{site}: {' '.join(command[2:])}", flush=True)
         log = out / f"run-{site}.txt"
+        site_started = time.perf_counter()
         with log.open("w", encoding="utf-8") as stream:
             done = subprocess.run(
                 command, cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT, check=False
@@ -108,6 +162,8 @@ def build_profile(profile: Path, out: Path) -> float:
         if done.returncode != 0:
             msg = f"{profile.name}/{site} failed (exit {done.returncode}); see {log}"
             raise SystemExit(msg)
+        seconds = time.perf_counter() - site_started
+        print(f"{profile.name}/{site}: ran in {seconds:.0f} s", flush=True)
     return time.perf_counter() - started
 
 
@@ -116,11 +172,13 @@ def stores_of(profile: Path, out: Path) -> dict[str, MyIcechunkStore | None]:
     from canvod.config import load_config
     from canvod.store import MyIcechunkStore
 
-    config = load_config(config_dir=profile, config_file=out / "output-settings.yaml")
-    storage = config.processing.storage
     runs = yaml.safe_load((profile / RUNS_FILE).read_text(encoding="utf-8"))
     found = {}
     for site in runs["sites"]:
+        config = load_config(
+            config_dir=profile, config_file=out / f"settings-{site}.yaml"
+        )
+        storage = config.processing.storage
         for kind, path in (
             ("gnss", storage.get_gnss_store_path(site)),
             ("vod", storage.get_vod_store_path(site)),
