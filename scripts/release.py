@@ -436,8 +436,12 @@ def prepare(packages: dict[str, Package], args: list[str]) -> int:
     print("  4. GitHub Actions drafts the GitHub release of the canvodpy tag")
     print("  5. PyPI is separate and manual:")
     print(
-        f"       gh workflow run publish_pypi.yml --ref {packages[UMBRELLA].tag(chosen[UMBRELLA])} "
-        f"-f packages='{' '.join(chosen)}'"
+        "       gh workflow run publish_pypi.yml "
+        f"--ref {packages[UMBRELLA].tag(chosen[UMBRELLA])}"
+    )
+    print(
+        "     It publishes the packages whose release tag points at that commit "
+        f"(release.py tagged): {' '.join(chosen)}"
     )
     return 0
 
