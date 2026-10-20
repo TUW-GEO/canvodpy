@@ -133,7 +133,7 @@ class TestSettings:
         [
             ("gnss_store_name", "Site_Rinex_store", "gnss"),
             ("vod_store_name", "Site_VOD_store", "vod"),
-            ("vod_store_name", "VOD_RINEX_both_receivers", "vod"),
+            ("vod_store_name", "VOD_both_receivers", "vod"),
         ],
     )
     def test_a_custom_name_from_before_v1_names_the_rename(
