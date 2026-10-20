@@ -48,6 +48,26 @@ def test_unknown_id_refused(store) -> None:
         store.create_branch("nowhere", "ZZZZZZZZ")
 
 
-def test_ambiguous_prefix_refused(store) -> None:
-    with pytest.raises(ValueError, match="Ambiguous prefix"):
+def test_empty_id_refused(store) -> None:
+    with pytest.raises(ValueError, match="Give a snapshot ID"):
         store.create_branch("any", "")
+
+
+def test_ambiguous_prefix_refused(store) -> None:
+    # Commit until two snapshot IDs share their first character; IDs are
+    # base32, so at most 33 snapshots are needed.
+    i = 0
+    while True:
+        ids = {
+            a.id
+            for b in store.repo.list_branches()
+            for a in store.repo.ancestry(branch=b)
+        }
+        firsts = [x[0] for x in ids]
+        shared = next((c for c in firsts if firsts.count(c) > 1), None)
+        if shared:
+            break
+        store.set_root_attrs({"n": str(i)}, branch="side")
+        i += 1
+    with pytest.raises(ValueError, match="Ambiguous prefix"):
+        store.create_branch("any", shared)

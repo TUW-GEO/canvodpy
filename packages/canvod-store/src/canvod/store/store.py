@@ -5037,8 +5037,8 @@ class MyIcechunkStore:
         Raises
         ------
         ValueError
-            If no snapshot on a branch or tag has this ID or prefix, or the
-            prefix fits several.
+            If the ID is empty, no snapshot on a branch or tag has this ID or
+            prefix, or the prefix fits several.
         """
         snapshot_id = self._resolve_snapshot_id(snapshot_id)
         self.repo.create_branch(branch_name, snapshot_id)
@@ -5051,6 +5051,8 @@ class MyIcechunkStore:
 
         Looks at the history of every branch and tag.
         """
+        if not snapshot_id:
+            raise ValueError("Give a snapshot ID or a prefix of one.")
         prefix = snapshot_id.upper()
         known: set[str] = set()
         refs = [{"branch": b} for b in self.repo.list_branches()]
