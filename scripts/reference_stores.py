@@ -15,7 +15,16 @@ folder with the made-up test position (``canvod.utils.testing``) in the
 header and runs on the copies. canvodpy itself needs the position in the
 files.
 
-    build OUT     build the stores of every profile into OUT/<profile>/
+A profile that changes one setting of another profile names it as
+``base`` in its ``reference-runs.yaml`` and holds no settings file of its
+own: its runs use the base's settings folder, with the profile's
+``settings`` merged in through the per-site settings file. Its ``sites``
+pick sites of the base; an entry's keys replace the base entry's keys,
+so ``rosalia_sbf: {}`` runs that site with the base's days and SIDs.
+
+    build OUT [PROFILE ...]
+                  build the stores of every profile, or of the named
+                  ones, into OUT/<profile>/
     check REF     run every profile again into a temporary folder and
                   compare each store with REF/<profile>/ using
                   canvod.store.compare_stores; writes the report and exits
@@ -50,6 +59,39 @@ RUNS_FILE = "reference-runs.yaml"
 def profiles() -> list[Path]:
     """The profile folders, by name."""
     return sorted(p for p in PROFILES.iterdir() if (p / RUNS_FILE).is_file())
+
+
+def read_runs(profile: Path) -> tuple[Path, dict, dict]:
+    """The settings folder, the site runs and the extra settings of ``profile``.
+
+    For a profile with a ``base``, the settings folder is the base's, each
+    site's entry is the base's entry updated with the profile's, and the
+    extra settings are the base's extra settings with the profile's
+    ``settings`` merged in, so a chain of bases keeps every change.
+    """
+    runs = yaml.safe_load((profile / RUNS_FILE).read_text(encoding="utf-8"))
+    base = runs.get("base")
+    if base is None:
+        return profile, runs["sites"], {}
+    base_dir, base_sites, base_extra = read_runs(PROFILES / base)
+    sites = {}
+    for site, entry in runs["sites"].items():
+        if site not in base_sites:
+            msg = f"{profile.name}: site {site} is not in the base profile {base}"
+            raise SystemExit(msg)
+        sites[site] = {**base_sites[site], **(entry or {})}
+    return base_dir, sites, merge(base_extra, runs.get("settings") or {})
+
+
+def merge(into: dict, extra: dict) -> dict:
+    """``into`` with the keys of ``extra`` merged in, nested mappings too."""
+    merged = dict(into)
+    for key, value in extra.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
 
 
 def copy_aux(aux: Path) -> None:
@@ -91,12 +133,17 @@ def copy_with_position(source: Path, target: Path) -> Path:
 
 
 def output_settings(
-    out: Path, site: str, sids: list[str] | None, data_root: Path | None
+    out: Path,
+    site: str,
+    sids: list[str] | None,
+    data_root: Path | None,
+    extra: dict,
 ) -> Path:
     """Write the settings file of one site's run into ``out``.
 
-    It points the output into ``out``; ``sids`` replaces the profile's SID
-    list and ``data_root`` the site's data folder.
+    It holds the profile's ``extra`` settings and points the output into
+    ``out``; ``sids`` replaces the profile's SID list and ``data_root`` the
+    site's data folder.
     """
     settings: dict = {
         "processing": {
@@ -112,7 +159,7 @@ def output_settings(
     if data_root is not None:
         settings["sites"] = {site: {"gnss_site_data_root": str(data_root)}}
     path = out / f"settings-{site}.yaml"
-    path.write_text(yaml.safe_dump(settings), encoding="utf-8")
+    path.write_text(yaml.safe_dump(merge(extra, settings)), encoding="utf-8")
     return path
 
 
@@ -123,24 +170,24 @@ def build_profile(profile: Path, out: Path) -> float:
         raise SystemExit(msg)
     out.mkdir(parents=True)
     copy_aux(out / "aux")
-    runs = yaml.safe_load((profile / RUNS_FILE).read_text(encoding="utf-8"))
+    settings_dir, sites, extra = read_runs(profile)
     settings = yaml.safe_load(
-        (profile / "canvod-settings.yaml").read_text(encoding="utf-8")
+        (settings_dir / "canvod-settings.yaml").read_text(encoding="utf-8")
     )
     overlays = {}
-    for site, days in runs["sites"].items():
+    for site, days in sites.items():
         data_root = None
         if days.get("fill_header_position"):
             root = ROOT / settings["sites"][site]["gnss_site_data_root"]
             data_root = copy_with_position(root, out / "data" / site)
-        overlays[site] = output_settings(out, site, days.get("sids"), data_root)
+        overlays[site] = output_settings(out, site, days.get("sids"), data_root, extra)
     started = time.perf_counter()
-    for site, days in runs["sites"].items():
+    for site, days in sites.items():
         command = [
             "canvodpy",
             "run",
             "--config-dir",
-            str(profile),
+            str(settings_dir),
             "--config",
             str(overlays[site]),
             "--site",
@@ -172,11 +219,11 @@ def stores_of(profile: Path, out: Path) -> dict[str, MyIcechunkStore | None]:
     from canvod.config import load_config
     from canvod.store import MyIcechunkStore
 
-    runs = yaml.safe_load((profile / RUNS_FILE).read_text(encoding="utf-8"))
+    settings_dir, sites, _ = read_runs(profile)
     found = {}
-    for site in runs["sites"]:
+    for site in sites:
         config = load_config(
-            config_dir=profile, config_file=out / f"settings-{site}.yaml"
+            config_dir=settings_dir, config_file=out / f"settings-{site}.yaml"
         )
         storage = config.processing.storage
         for kind, path in (
@@ -209,9 +256,15 @@ def compare_profile(profile: Path, reference: Path, new: Path) -> str:
     return "\n\n".join(lines)
 
 
-def build(out: Path) -> None:
+def build(out: Path, names: list[str]) -> None:
     out = out.resolve()
-    for profile in profiles():
+    chosen = profiles()
+    if names:
+        unknown = sorted(set(names) - {p.name for p in chosen})
+        if unknown:
+            raise SystemExit(f"No such profile: {', '.join(unknown)}")
+        chosen = [p for p in chosen if p.name in names]
+    for profile in chosen:
         seconds = build_profile(profile, out / profile.name)
         print(f"{profile.name}: built in {seconds:.0f} s into {out / profile.name}")
 
@@ -248,6 +301,9 @@ def main() -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     build_parser = sub.add_parser("build", help="build the reference stores")
     build_parser.add_argument("out", type=Path, help="empty folder for the stores")
+    build_parser.add_argument(
+        "profile", nargs="*", help="build only these profiles (default: all)"
+    )
     check_parser = sub.add_parser("check", help="compare a new build with them")
     check_parser.add_argument("reference", type=Path, help="folder of a build")
     check_parser.add_argument(
@@ -255,7 +311,7 @@ def main() -> int:
     )
     args = parser.parse_args()
     if args.command == "build":
-        build(args.out)
+        build(args.out, args.profile)
         return 0
     return check(args.reference, args.report)
 

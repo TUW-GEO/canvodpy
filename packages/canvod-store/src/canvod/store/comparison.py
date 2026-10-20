@@ -3,13 +3,22 @@
 A public comparison for the reference-store check (spec #318, seam B) and
 for comparing any two stores: a production store before and after an
 upgrade, two runs, a rebuilt store against the reference. It only reads,
-through :class:`~canvod.store.store.MyIcechunkStore` (``list_data_groups``
-and ``read_group``); it never changes how a store is written or read.
+through :class:`~canvod.store.store.MyIcechunkStore` (``list_data_groups``,
+``read_group`` and ``get_root_attrs``); it never changes how a store is
+written or read.
 
-The comparison reports, per group and variable, the kind of difference,
-the number of differing values and the largest absolute difference. It
-also reports groups, variables and coordinates present in one store and
-not the other, and a fixed list of attributes.
+The checks are xarray's own (:mod:`xarray.testing`): every variable and
+coordinate of a group with ``assert_identical`` (values, dimensions and
+attributes), the float variables of :data:`FLOAT_TOLERANCES` with
+``assert_allclose`` within their tolerance. Before comparing, the
+attributes that change with every run (:data:`VOLATILE_ATTRIBUTES`:
+times, identifiers and the software version) are dropped from the store,
+the groups and the variables; every other attribute must match.
+
+The report lists, per group and variable, the kind of difference, the
+number of differing values, the largest absolute difference and xarray's
+message. It also lists groups, variables and coordinates present in one
+store and not the other.
 
 Tolerances are absolute and derive from the finest resolution any format
 records. Every float tolerance follows from half the RINEX F14.3
@@ -20,18 +29,13 @@ derivation, with the sources cited there (spec #318).
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Any
 
 import numpy as np
 import xarray as xr
 from pydantic import BaseModel, Field, computed_field
 
 from canvod.store.store import MyIcechunkStore
-
-# The value of the VOD formula below (spec #318, "Tolerances"):
-#   VOD = -(ln 10 / 10) * delta_snr * cos(theta).
-# The factor (ln 10 / 10) turns a dB difference into a natural-log
-# transmissivity difference; delta_snr carries two SNR errors.
-_LN10_OVER_10 = np.log(10.0) / 10.0
 
 #: Absolute tolerances per variable, in the variable's unit. A float
 #: variable not in this table is compared exactly and is reported as
@@ -67,11 +71,38 @@ FLOAT_TOLERANCES: dict[str, float] = {
     "phi": 1e-6,
 }
 
-#: The variable attributes every comparison checks. A changed value of
-#: one of these is a difference; everything else (software versions,
-#: timestamps, run ids, paths, hashes, the log book) is ignored.
-#: Ticket #320 extends this list after looking at real stores.
-COMPARED_VARIABLE_ATTRIBUTES: tuple[str, ...] = ("units", "time_system")
+#: The attributes dropped before comparing, because they change with every
+#: run of the same code on the same data. A key is dropped wherever it
+#: appears: in the store's root attributes, a group's attributes and a
+#: variable's attributes, also inside a nested mapping.
+VOLATILE_ATTRIBUTES: frozenset[str] = frozenset(
+    {
+        # Store attributes: times and identifiers of this run.
+        "date_created",
+        "date_modified",
+        "canvod:uuid",
+        "canvod:repository_metadata.identity.uuid",
+        "canvod:repository_metadata.temporal.created",
+        "canvod:repository_metadata.content_settings.set_at",
+        "canvod:snapshot_summary.temporal.updated",
+        # The software version that wrote the store.
+        "canvod:repository_metadata.content_settings.canvodpy_version",
+        "Software",
+        # A hash of the GNSS store's values: values within the tolerances
+        # change it, and the values themselves are compared.
+        "canvod:repository_metadata.content_settings.gnss_content_hash",
+    }
+)
+"""Attributes left out of the comparison, as dotted paths into nested
+attributes. Two builds from the same code differ only in the times and
+identifiers listed here, also on two machines: the stores record no host,
+path or environment. The version and the content hash change with every
+release. A changed setting is a real difference and never belongs here."""
+
+# Lines of an xarray message kept in a report entry.
+_MESSAGE_LINES = 12
+
+_IDENTITY_COORDINATES = ("epoch", "sid")
 
 
 class DiffKind(StrEnum):
@@ -87,7 +118,6 @@ class DiffKind(StrEnum):
     COORDINATE_CHANGE = "coordinate_change"
     VALUE = "value"
     NO_TOLERANCE = "no_tolerance"
-    MISSING_VALUE = "missing_value"
     ATTRIBUTE = "attribute"
 
 
@@ -95,10 +125,11 @@ class ComparisonDifference(BaseModel):
     """One difference between the two stores.
 
     ``group`` is the group name, or ``""`` for a store-level difference
-    (a compared attribute of the store itself). ``variable`` is the
-    variable, coordinate or dimension name. ``n_values`` is the number of
-    differing values, ``largest_diff`` the largest absolute difference
-    (a number, or ``None`` when the difference is not numeric).
+    (a root attribute of the store). ``variable`` is the variable,
+    coordinate, dimension or attribute name. ``n_values`` is the number
+    of differing values (a value missing in one store only counts),
+    ``largest_diff`` the largest absolute difference of the values present
+    in both. ``detail`` is xarray's message or a short description.
     """
 
     group: str = ""
@@ -116,7 +147,6 @@ class StoreComparison(BaseModel):
     ``matches`` is ``True`` when the two stores have the same groups and
     no difference was found. ``differences`` holds every difference;
     groups present in one store and not the other are listed separately.
-    An empty result means the stores match.
 
     The JSON form (``model_dump_json``) is for CI; the text form
     (``to_text``) is for a person.
@@ -152,22 +182,19 @@ class StoreComparison(BaseModel):
             self.differences,
             key=lambda x: (x.group, x.variable or "", x.kind.value),
         ):
-            where = _x_where(d)
+            summary = _difference_summary(d)
+            lines.append(
+                f"{_where(d)}: {d.kind.value}" + (f": {summary}" if summary else "")
+            )
             if d.detail:
-                lines.append(f"{where}: {d.kind.value}: {d.detail}")
-            else:
-                what = _difference_summary(d)
-                lines.append(f"{where}: {d.kind.value}: {what}")
+                lines.extend(f"    {line}" for line in d.detail.splitlines())
         return "\n".join(lines)
 
 
-def _x_where(d: ComparisonDifference) -> str:
+def _where(d: ComparisonDifference) -> str:
     if d.variable:
-        label = d.variable if not d.group else f"{d.group}/{d.variable}"
-        return label
-    if d.group:
-        return d.group
-    return "<store>"
+        return d.variable if not d.group else f"{d.group}/{d.variable}"
+    return d.group or "<store>"
 
 
 def _difference_summary(d: ComparisonDifference) -> str:
@@ -178,16 +205,15 @@ def _difference_summary(d: ComparisonDifference) -> str:
         parts.append(f"largest |diff| {d.largest_diff}")
     if d.tolerance is not None:
         parts.append(f"tolerance {d.tolerance}")
-    return ", ".join(parts) if parts else "(no detail)"
+    return ", ".join(parts)
 
 
 def compare_stores(reference: MyIcechunkStore, new: MyIcechunkStore) -> StoreComparison:
     """Compare two stores and return a report.
 
-    Reads both stores through ``MyIcechunkStore`` only
-    (``list_data_groups`` and ``read_group``), so a VOD store's analyses
-    below their calculator are compared too. The report says whether it
-    matches and lists every difference per group and variable.
+    Reads both stores through ``MyIcechunkStore`` only, so a VOD store's
+    analyses below their calculator are compared too. The report says
+    whether they match and lists every difference per group and variable.
     """
     ref_groups = reference.list_data_groups()
     new_groups = new.list_data_groups()
@@ -198,76 +224,95 @@ def compare_stores(reference: MyIcechunkStore, new: MyIcechunkStore) -> StoreCom
         groups_only_in_reference=[g for g in ref_groups if g not in new_groups],
         groups_only_in_new=[g for g in new_groups if g not in ref_groups],
     )
-
-    _compare_store_attributes(reference, new, result)
-
+    _compare_attributes(
+        "", None, reference.get_root_attrs(), new.get_root_attrs(), result
+    )
     for group in ref_groups:
-        if group not in new_groups:
-            continue
-        ref_ds = reference.read_group(group)
-        new_ds = new.read_group(group)
-        _compare_datasets(group, ref_ds, new_ds, result)
-
+        if group in new_groups:
+            _compare_datasets(
+                group, reference.read_group(group), new.read_group(group), result
+            )
     return result
 
 
-def _compare_store_attributes(
-    reference: MyIcechunkStore, new: MyIcechunkStore, result: StoreComparison
-) -> None:
-    ref_sf = reference.source_format
-    new_sf = new.source_format
-    if ref_sf != new_sf:
-        result.differences.append(
-            ComparisonDifference(
-                group="",
-                kind=DiffKind.ATTRIBUTE,
-                variable="source_format",
-                detail=f"reference {ref_sf!r} != new {new_sf!r}",
-            )
+def without_volatile(attrs: dict[str, Any], prefix: str = "") -> dict[str, Any]:
+    """Return ``attrs`` without :data:`VOLATILE_ATTRIBUTES`, also nested ones."""
+    kept = {}
+    for key, value in attrs.items():
+        path = f"{prefix}{key}"
+        if path in VOLATILE_ATTRIBUTES:
+            continue
+        kept[key] = (
+            without_volatile(value, f"{path}.") if isinstance(value, dict) else value
         )
+    return kept
+
+
+def _compare_attributes(
+    group: str,
+    name: str | None,
+    ref_attrs: dict[str, Any],
+    new_attrs: dict[str, Any],
+    result: StoreComparison,
+) -> None:
+    ref_attrs = _flatten(without_volatile(ref_attrs))
+    new_attrs = _flatten(without_volatile(new_attrs))
+    for key in sorted(set(ref_attrs) | set(new_attrs)):
+        ref_val = ref_attrs.get(key)
+        new_val = new_attrs.get(key)
+        if not _same(ref_val, new_val):
+            label = key if name is None else f"{name}.{key}"
+            result.differences.append(
+                ComparisonDifference(
+                    group=group,
+                    kind=DiffKind.ATTRIBUTE,
+                    variable=label,
+                    detail=f"reference {ref_val!r} != new {new_val!r}",
+                )
+            )
+
+
+def _flatten(attrs: dict[str, Any], prefix: str = "") -> dict[str, Any]:
+    """Nested attributes as dotted paths, so a report names the inner key."""
+    flat: dict[str, Any] = {}
+    for key, value in attrs.items():
+        if isinstance(value, dict) and value:
+            flat.update(_flatten(value, f"{prefix}{key}."))
+        else:
+            flat[f"{prefix}{key}"] = value
+    return flat
+
+
+def _same(a: object, b: object) -> bool:
+    """Attribute equality that also works for numpy arrays."""
+    try:
+        return bool(np.array_equal(np.asarray(a), np.asarray(b)))
+    except TypeError, ValueError:
+        return a == b
 
 
 def _compare_datasets(
     group: str, ref_ds: xr.Dataset, new_ds: xr.Dataset, result: StoreComparison
 ) -> None:
-    _compare_dimensions(group, ref_ds, new_ds, result)
-    _compare_names(group, ref_ds, new_ds, result)
+    _compare_attributes(group, None, dict(ref_ds.attrs), dict(new_ds.attrs), result)
 
-    for name in sorted(set(ref_ds.variables) & set(new_ds.variables), key=str):
-        _compare_variable(group, str(name), ref_ds, new_ds, result)
-
-
-def _compare_dimensions(
-    group: str, ref_ds: xr.Dataset, new_ds: xr.Dataset, result: StoreComparison
-) -> None:
-    ref_sizes = dict(ref_ds.sizes)
-    new_sizes = dict(new_ds.sizes)
+    ref_sizes, new_sizes = dict(ref_ds.sizes), dict(new_ds.sizes)
     for dim in sorted(set(ref_sizes) | set(new_sizes), key=str):
-        r = ref_sizes.get(dim)
-        n = new_sizes.get(dim)
-        if r != n:
+        if ref_sizes.get(dim) != new_sizes.get(dim):
             result.differences.append(
                 ComparisonDifference(
                     group=group,
                     kind=DiffKind.DIMENSION,
                     variable=str(dim),
-                    detail=f"size {r} != {n}",
+                    detail=f"size {ref_sizes.get(dim)} != {new_sizes.get(dim)}",
                 )
             )
 
-
-def _compare_names(
-    group: str, ref_ds: xr.Dataset, new_ds: xr.Dataset, result: StoreComparison
-) -> None:
-    ref_names = set(ref_ds.variables)
-    new_names = set(new_ds.variables)
-    ref_coords = set(ref_ds.coords)
-    new_coords = set(new_ds.coords)
-
+    ref_names, new_names = set(ref_ds.variables), set(new_ds.variables)
     for name in sorted(ref_names - new_names, key=str):
         kind = (
             DiffKind.COORDINATE_MISSING
-            if name in ref_coords
+            if name in ref_ds.coords
             else DiffKind.VARIABLE_MISSING
         )
         result.differences.append(
@@ -275,229 +320,130 @@ def _compare_names(
         )
     for name in sorted(new_names - ref_names, key=str):
         kind = (
-            DiffKind.COORDINATE_EXTRA if name in new_coords else DiffKind.VARIABLE_EXTRA
+            DiffKind.COORDINATE_EXTRA
+            if name in new_ds.coords
+            else DiffKind.VARIABLE_EXTRA
         )
         result.differences.append(
             ComparisonDifference(group=group, kind=kind, variable=str(name))
         )
 
-
-def _compare_variable(
-    group: str,
-    name: str,
-    ref_ds: xr.Dataset,
-    new_ds: xr.Dataset,
-    result: StoreComparison,
-) -> None:
-    ref_var = ref_ds[name]
-    new_var = new_ds[name]
-
-    _compare_variable_attributes(group, name, ref_var, new_var, result)
-
-    ref_vals = ref_var.values
-    new_vals = new_var.values
-
-    # A different shape is a dimension difference (already reported at the
-    # dataset level) or a coordinate whose labels changed; for the identity
-    # coordinates it is a coordinate change.
-    if ref_vals.shape != new_vals.shape:
-        if name in ("epoch", "sid"):
-            result.differences.append(
-                ComparisonDifference(
-                    group=group,
-                    kind=DiffKind.COORDINATE_CHANGE,
-                    variable=name,
-                    detail=f"length {ref_vals.shape[0]} != {new_vals.shape[0]}",
-                )
-            )
-        return
-
-    if name in ("epoch", "sid"):
-        _compare_identity_coordinate(group, name, ref_vals, new_vals, result)
-    else:
-        _compare_values(group, name, ref_vals, new_vals, result)
-
-    # The "File Hash", "Created", "Software" and other provenance attrs are
-    # intentionally not compared; COMPARED_VARIABLE_ATTRIBUTES is the whole list.
-
-
-def _compare_variable_attributes(
-    group: str,
-    name: str,
-    ref_var: xr.DataArray,
-    new_var: xr.DataArray,
-    result: StoreComparison,
-) -> None:
-    for key in COMPARED_VARIABLE_ATTRIBUTES:
-        ref_val = ref_var.attrs.get(key)
-        new_val = new_var.attrs.get(key)
-        if ref_val != new_val:
-            result.differences.append(
-                ComparisonDifference(
-                    group=group,
-                    kind=DiffKind.ATTRIBUTE,
-                    variable=name,
-                    detail=f"{key} {ref_val!r} != {new_val!r}",
-                )
-            )
-
-
-def _compare_identity_coordinate(
-    group: str,
-    name: str,
-    ref_vals: np.ndarray,
-    new_vals: np.ndarray,
-    result: StoreComparison,
-) -> None:
-    mismatches = ref_vals != new_vals
-    if not mismatches.any():
-        return
-    n = int(mismatches.sum())
-    # A datetime difference has a meaningful magnitude; a string difference
-    # is reported by its labels.
-    largest: float | int | str | None = None
-    if np.issubdtype(ref_vals.dtype, np.number):
-        largest = float(
-            np.max(
-                np.abs(
-                    ref_vals[mismatches].astype(float)
-                    - new_vals[mismatches].astype(float)
-                )
-            )
+    for name in sorted(ref_names & new_names, key=str):
+        ref_var = ref_ds.variables[name]
+        new_var = new_ds.variables[name]
+        _compare_attributes(
+            group, str(name), dict(ref_var.attrs), dict(new_var.attrs), result
         )
-    elif ref_vals.dtype.kind in "US" or ref_vals.dtype == object:
-        largest = str(new_vals[mismatches][0])
-    result.differences.append(
-        ComparisonDifference(
-            group=group,
-            kind=DiffKind.COORDINATE_CHANGE,
-            variable=name,
-            n_values=n,
-            largest_diff=largest,
-            detail="labels differ (lost, extra or renamed value, or different order)",
-        )
-    )
+        _compare_values(group, str(name), ref_var, new_var, result)
 
 
 def _compare_values(
     group: str,
     name: str,
-    ref_vals: np.ndarray,
-    new_vals: np.ndarray,
+    ref_var: xr.Variable,
+    new_var: xr.Variable,
     result: StoreComparison,
 ) -> None:
-    ref_missing = _missing_mask(ref_vals)
-    new_missing = _missing_mask(new_vals)
+    """Compare the values of one variable with xarray.testing.
 
-    one_missing = ref_missing ^ new_missing
-    if one_missing.any():
-        result.differences.append(
-            ComparisonDifference(
-                group=group,
-                kind=DiffKind.MISSING_VALUE,
-                variable=name,
-                n_values=int(one_missing.sum()),
-                detail="value present in one store only (missing in the other)",
-            )
-        )
-
-    both_present = ~(ref_missing | new_missing)
-    if not both_present.any():
-        return
-
-    ref_p = ref_vals[both_present]
-    new_p = new_vals[both_present]
-
-    if _is_float(ref_vals):
-        _compare_float_values(group, name, ref_p, new_p, result)
-    else:
-        _compare_exact_values(group, name, ref_p, new_p, result)
-
-
-def _compare_float_values(
-    group: str, name: str, ref_p: np.ndarray, new_p: np.ndarray, result: StoreComparison
-) -> None:
-    diff = np.abs(ref_p.astype(float) - new_p.astype(float))
+    The attributes are compared apart (:func:`_compare_attributes`), so
+    both sides go to xarray without them.
+    """
+    ref_var = ref_var.copy(deep=False)
+    new_var = new_var.copy(deep=False)
+    ref_var.attrs, new_var.attrs = {}, {}
     tolerance = FLOAT_TOLERANCES.get(name)
-    if tolerance is not None:
-        beyond = diff > tolerance
-        if beyond.any():
-            result.differences.append(
-                ComparisonDifference(
-                    group=group,
-                    kind=DiffKind.VALUE,
-                    variable=name,
-                    n_values=int(beyond.sum()),
-                    largest_diff=float(diff[beyond].max()),
-                    tolerance=tolerance,
-                )
-            )
+    try:
+        if tolerance is not None and ref_var.shape == new_var.shape:
+            xr.testing.assert_allclose(ref_var, new_var, rtol=0, atol=tolerance)
+        else:
+            xr.testing.assert_identical(ref_var, new_var)
+    except AssertionError as error:
+        message = "\n".join(str(error).strip().splitlines()[:_MESSAGE_LINES])
     else:
-        differing = diff > 0
-        if differing.any():
-            result.differences.append(
-                ComparisonDifference(
-                    group=group,
-                    kind=DiffKind.NO_TOLERANCE,
-                    variable=name,
-                    n_values=int(differing.sum()),
-                    largest_diff=float(diff[differing].max()),
-                    detail="no tolerance set",
-                )
-            )
-
-
-def _compare_exact_values(
-    group: str, name: str, ref_p: np.ndarray, new_p: np.ndarray, result: StoreComparison
-) -> None:
-    mismatches = ref_p != new_p
-    if not mismatches.any():
         return
-    largest: float | int | str | None
-    if _is_float(ref_p):
-        largest = float(
-            np.max(
-                np.abs(
-                    ref_p[mismatches].astype(float) - new_p[mismatches].astype(float)
+
+    if ref_var.shape != new_var.shape:
+        # Reported as a dimension difference; an identity coordinate whose
+        # length changed is a coordinate change as well.
+        if name in _IDENTITY_COORDINATES:
+            result.differences.append(
+                ComparisonDifference(
+                    group=group,
+                    kind=DiffKind.COORDINATE_CHANGE,
+                    variable=name,
+                    detail=f"length {ref_var.shape[0]} != {new_var.shape[0]}",
                 )
             )
-        )
-    elif np.issubdtype(ref_p.dtype, np.number):
-        # Compute in Python integers so no dtype wraps: int8 -100 vs 100 is
-        # 200 (int8 arithmetic would wrap to 56) and uint8 0 vs 7 is 7 (not
-        # 249). Booleans differ by 1.
-        largest = max(
-            abs(int(a) - int(b)) for a, b in zip(ref_p[mismatches], new_p[mismatches])
-        )
+        return
+
+    ref_vals, new_vals = ref_var.values, new_var.values
+    n_values, largest = _count_differences(ref_vals, new_vals, tolerance or 0.0)
+    if name in _IDENTITY_COORDINATES:
+        kind = DiffKind.COORDINATE_CHANGE
+    elif tolerance is None and ref_vals.dtype.kind in "fc":
+        kind = DiffKind.NO_TOLERANCE
     else:
-        largest = str(new_p[mismatches][0])
+        kind = DiffKind.VALUE
     result.differences.append(
         ComparisonDifference(
             group=group,
-            kind=DiffKind.VALUE,
+            kind=kind,
             variable=name,
-            n_values=int(mismatches.sum()),
+            n_values=n_values,
             largest_diff=largest,
+            tolerance=tolerance,
+            detail=message,
         )
     )
 
 
-def _is_float(values: np.ndarray) -> bool:
-    return values.dtype.kind in "fc"
+def _count_differences(
+    ref_vals: np.ndarray, new_vals: np.ndarray, tolerance: float
+) -> tuple[int, float | int | str | None]:
+    """The number of differing values and the largest difference.
+
+    A value missing in one array only counts as differing; values missing
+    in both are equal, as in xarray.testing.
+    """
+    ref_missing = _missing_mask(ref_vals)
+    new_missing = _missing_mask(new_vals)
+    both = ~(ref_missing | new_missing)
+    if ref_vals.dtype.kind in "fc":
+        diff = np.zeros(ref_vals.shape)
+        diff[both] = np.abs(ref_vals[both].astype(float) - new_vals[both].astype(float))
+        differing = (ref_missing ^ new_missing) | (diff > tolerance)
+        beyond = diff[both & differing]
+        largest: float | int | str | None = float(beyond.max()) if beyond.size else None
+        return int(differing.sum()), largest
+    differing = (ref_missing ^ new_missing) | (both & (ref_vals != new_vals))
+    pairs = differing & both
+    if not pairs.any():
+        return int(differing.sum()), None
+    if ref_vals.dtype.kind in "iub":
+        # Python integers, so no dtype wraps: int8 -100 vs 100 is 200.
+        largest = max(
+            abs(int(a) - int(b)) for a, b in zip(ref_vals[pairs], new_vals[pairs])
+        )
+    elif ref_vals.dtype.kind in "mM":
+        largest = str(np.max(np.abs(ref_vals[pairs] - new_vals[pairs])))
+    else:
+        largest = str(new_vals[pairs][0])
+    return int(differing.sum()), largest
 
 
 def _missing_mask(values: np.ndarray) -> np.ndarray:
-    """A boolean mask of the missing values of an xarray array."""
+    """A boolean mask of the missing values of an array."""
     if values.dtype.kind in "fc":
         return np.isnan(values)
     if values.dtype.kind in "mM":
-        # datetime64 and timedelta64 use NaT, not NaN.
         return np.isnat(values)
     if values.dtype == object:
         return np.array(
             [
                 v is None or (isinstance(v, float) and np.isnan(v))
                 for v in values.ravel()
-            ]
+            ],
+            dtype=bool,
         ).reshape(values.shape)
     return np.zeros(values.shape, dtype=bool)

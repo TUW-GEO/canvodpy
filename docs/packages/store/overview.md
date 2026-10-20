@@ -348,7 +348,7 @@ the next major version.
 difference, per group and variable. It works on any two stores, for
 example the reference stores of the test data and the stores a change
 produces (spec #318), or a production store before and after an
-upgrade. It only reads, through `MyIcechunkStore` (`list_groups` and
+upgrade. It only reads, through `MyIcechunkStore` (`list_data_groups` and
 `read_group`), and never changes how a store is written or read.
 
 Open each store by its path, then compare:
@@ -365,18 +365,37 @@ print(report.to_text())  # a report for a person
 report.model_dump_json()  # a report for CI
 ```
 
-The report lists a group present in one store and not the other, a lost
-epoch or a renamed SID, a changed integer or flag variable, a value
-present in one store and missing in the other, and a changed attribute
-from the compared list: the `units` of every variable and coordinate,
-the `time_system` of `epoch`, and the store's `source_format`. It
-ignores what changes every run: software versions, timestamps, run ids,
-paths, hashes, and the log book.
+The comparison uses `xarray.testing`: `assert_allclose` within the
+tolerance below for the float variables of the table, and
+`assert_identical` for everything else (integer and flag variables,
+coordinates, other floats). The report lists a group present in one
+store and not the other, a lost epoch or a renamed SID, a changed value
+(also a value present in one store and missing in the other), with the
+count of differing values, the largest difference and xarray's message.
+
+Attributes are compared too, those of the store, the groups and every
+variable, also nested ones (the report names the inner key, for example
+`canvod:repository_metadata.identity.title`). Left out are only the
+attributes that change with every run or release: the creation and
+modification times, the store ids, the canvodpy version and the
+`Software` attribute, and the content hash of the GNSS store a VOD
+store was computed from (its values are compared themselves). The list
+is `VOLATILE_ATTRIBUTES` in the same module. A changed input file
+therefore shows as a changed `File Hash`.
+A new or changed setting shows under
+`canvod:repository_metadata.content_settings`, by name and in its hash:
+it changes what the store records about how it was built, so it counts
+as a difference.
+
+The log books (`metadata/table`) are not compared. They record how a
+run wrote each file (write times, snapshot ids, run ids, paths); what
+the files hold is compared through the groups, and which files were
+read through `File Hash`.
 
 Float variables are compared within one absolute tolerance per
 variable, derived from the finest resolution any format records. A
 float variable not in the table is compared exactly and is reported as
-`no tolerance set`, so a new variable is noticed.
+`no_tolerance`, so a new variable is noticed.
 
 | Variable | Tolerance | Derivation |
 |---|---|---|

@@ -16,9 +16,28 @@ is patched. Each profile has two files:
   repository root and point into the test data.
 - `reference-runs.yaml`: the sites and days the profile runs.
 
+A profile that changes one thing of another profile has only
+`reference-runs.yaml`. It names the other profile as `base`, lists its
+change under `settings` and picks sites of the base under `sites`:
+
+```yaml
+base: default
+settings:
+  processing:
+    params:
+      ephemeris_source: broadcast
+sites:
+  rosalia_sbf: {}    # the base's days and SIDs
+```
+
+Its runs use the base's settings folder; the build merges `settings`
+into the settings file it passes with `--config`. So `settings` is
+exactly what differs from the base.
+
 | Profile | Data | Days | Settings |
 |---|---|---|---|
 | `default` | both receivers of every site of the test data: Rosalia (RINEX v3.04, SBF, NMEA), MOFLUX (RINEX v2.11), ExampleSite (stripped RINEX v3.05), Hainich (NMEA) | 2025-001; Hainich 2026-001 | final SP3/CLK from the test data, no preprocessing, SNR only, VOD of each receiver pair, the SIDs of each site (below) |
+| `sbf-broadcast` | both receivers of Rosalia (SBF) | 2025-001 | as `default`, but the satellite geometry from the broadcast ephemerides the SBF files carry |
 
 Each site's stores hold that site's own SIDs: per system (GPS, GLONASS,
 Galileo and BeiDou, the systems the final orbits cover), up to 15 SIDs
@@ -43,6 +62,7 @@ The test data must be checked out (`git submodule update --init`).
 
 ```bash
 just reference-stores ~/reference-stores    # build the stores of every profile into a new folder
+just reference-stores ~/broadcast sbf-broadcast   # only the named profiles
 just reference-check ~/reference-stores     # run the profiles again and compare
 ```
 
@@ -53,14 +73,16 @@ It writes the report to `reference-check.txt` (empty when the stores
 match; a second argument sets another path) and exits with 1 on a
 difference.
 
-For the `default` profile, a build and a check each take about two
-minutes; the SBF day takes the longest. Two builds of the same code compare with an empty
+For the `default` profile, a build and a check each take three to four
+minutes; the SBF day takes the longest. The `sbf-broadcast` profile
+takes one and a half minutes. Two builds of the same code compare with an empty
 report: the run is deterministic.
 
 ## Tolerances
 
-Integer and flag variables, coordinates, groups, and the compared
-attributes must match exactly. Float variables are compared within one
+Integer and flag variables, coordinates, groups, and every attribute
+except the ones that change with every run (times, ids, the software
+version; `VOLATILE_ATTRIBUTES`) must match exactly. Float variables are compared within one
 absolute tolerance per variable, derived from the finest resolution any
 format records. The table, with the derivation and its sources, is in
 the [store overview](../packages/store/overview.md); the code holds it
@@ -72,3 +94,9 @@ as `FLOAT_TOLERANCES` in
 A difference means the new code stores something else. Either the
 change is a bug, or it is intended: then say so in the pull request,
 with the report, and build new reference stores.
+
+A new setting with a default, or a changed default, fails the check
+too: the report names it under `content_settings`. The remedy is the
+same: new reference stores and a CHANGELOG entry, never an entry in
+`VOLATILE_ATTRIBUTES`. That list holds only what changes with every run
+or release.
