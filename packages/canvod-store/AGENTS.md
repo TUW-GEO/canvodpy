@@ -12,7 +12,7 @@ guide).
 | `manager.py` | `GnssResearchSite`: a site's observation and VOD stores |
 | `viewer.py` | `IcechunkStoreViewer`: inspection and summaries |
 | `reader.py` | `IcechunkDataReader`: deprecated second ingestion path, not used by any run |
-| `comparison.py` | `compare_stores`, `StoreComparison`: compare two stores within fixed, science-based tolerances (spec #318) |
+| `comparison.py` | `compare_stores`, `StoreComparison`: compare two stores with `xarray.testing` within fixed, science-based tolerances; every attribute except `VOLATILE_ATTRIBUTES` must match (spec #318) |
 | `zarr_concurrency.py` | Zarr async concurrency cap (shared or network mounts) |
 
 Background: `docs/packages/store/overview.md`,

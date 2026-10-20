@@ -53,14 +53,15 @@ It writes the report to `reference-check.txt` (empty when the stores
 match; a second argument sets another path) and exits with 1 on a
 difference.
 
-For the `default` profile, a build and a check each take about two
+For the `default` profile, a build and a check each take three to four
 minutes; the SBF day takes the longest. Two builds of the same code compare with an empty
 report: the run is deterministic.
 
 ## Tolerances
 
-Integer and flag variables, coordinates, groups, and the compared
-attributes must match exactly. Float variables are compared within one
+Integer and flag variables, coordinates, groups, and every attribute
+except the ones that change with every run (times, ids, the software
+version; `VOLATILE_ATTRIBUTES`) must match exactly. Float variables are compared within one
 absolute tolerance per variable, derived from the finest resolution any
 format records. The table, with the derivation and its sources, is in
 the [store overview](../packages/store/overview.md); the code holds it
@@ -72,3 +73,9 @@ as `FLOAT_TOLERANCES` in
 A difference means the new code stores something else. Either the
 change is a bug, or it is intended: then say so in the pull request,
 with the report, and build new reference stores.
+
+A new setting with a default, or a changed default, fails the check
+too: the report names it under `content_settings`. The remedy is the
+same: new reference stores and a CHANGELOG entry, never an entry in
+`VOLATILE_ATTRIBUTES`. That list holds only what changes with every run
+or release.

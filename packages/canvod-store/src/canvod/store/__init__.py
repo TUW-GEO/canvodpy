@@ -9,8 +9,8 @@ from importlib.metadata import version as _version
 
 from canvod.store.analysis_storage import AnalysisStorage
 from canvod.store.comparison import (
-    COMPARED_VARIABLE_ATTRIBUTES,
     FLOAT_TOLERANCES,
+    VOLATILE_ATTRIBUTES,
     DiffKind,
     StoreComparison,
     compare_stores,
@@ -32,7 +32,7 @@ __version__ = _version("canvod-store")
 
 __all__ = [
     "AnalysisStorage",
-    "COMPARED_VARIABLE_ATTRIBUTES",
+    "VOLATILE_ATTRIBUTES",
     "DiffKind",
     "FLOAT_TOLERANCES",
     "GnssResearchSite",
