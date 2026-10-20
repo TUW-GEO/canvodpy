@@ -131,8 +131,7 @@ or release.
    a store that holds a local path (the build folder, the repository,
    the home folder). The zips are deterministic: packing the same build
    again gives the same sha256.
-3. A maintainer uploads the folder of zips to the Hugging Face dataset
-   (agents have no Hugging Face token):
+3. A maintainer uploads the folder of zips to the Hugging Face dataset:
 
    ```bash
    hf upload nfb2021/canvodpy-reference-stores ~/reference-zips . --repo-type dataset

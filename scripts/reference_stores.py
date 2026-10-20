@@ -318,15 +318,17 @@ def holds_local_path(path: Path, needles: tuple[bytes, ...]) -> bool:
     """Whether the file ``path`` holds one of ``needles``.
 
     Most store files (Icechunk's metadata, the chunks) are zstd frames;
-    those are searched after decompressing.
+    those are searched after decompressing. A file whose frame does not
+    decompress stops the pack: it could not be searched.
     """
     data = path.read_bytes()
     start = data.find(ZSTD_MAGIC)
     if start >= 0:
         try:
             data += zstd.decompress(data[start:])
-        except zstd.ZstdError:
-            pass
+        except zstd.ZstdError as exc:
+            msg = f"{path} could not be decompressed to be searched: {exc}"
+            raise SystemExit(msg) from exc
     return any(needle in data for needle in needles)
 
 
@@ -361,6 +363,7 @@ def pack(build: Path, out: Path) -> None:
                 for f in files:
                     info = zipfile.ZipInfo(f.relative_to(folder).as_posix(), FIXED_TIME)
                     info.external_attr = 0o644 << 16
+                    info.create_system = 3  # Unix, whatever system packs
                     zf.writestr(info, f.read_bytes())
             with target.open("rb") as stream:
                 sums[name] = hashlib.file_digest(stream, "sha256").hexdigest()
