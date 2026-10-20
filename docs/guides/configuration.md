@@ -52,14 +52,18 @@ use an overlay file instead of editing `canvod-settings.yaml`.
 Pass `--config` to any command that accepts it:
 
 ```bash
-# Inspect or validate with an overlay applied
-canvodpy config --config cluster-overlay.yaml validate
+# Validate or inspect with an overlay applied
+canvodpy config validate --config cluster-overlay.yaml
 canvodpy config --config cluster-overlay.yaml show
 
 # Run the pipeline with an overlay
 uv run canvodpy run --site mysite --start 2025001 --end 2025028 \
     --config cluster-overlay.yaml
 ```
+
+`canvodpy config` also takes `--config` before its command, for every
+command: `canvodpy config --config cluster-overlay.yaml validate` works
+too.
 
 Only the fields present in the overlay are changed; everything else is read from the main file.
 

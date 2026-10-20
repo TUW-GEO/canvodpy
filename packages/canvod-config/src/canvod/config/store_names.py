@@ -101,6 +101,28 @@ def check_store_name(name: str, kind: str) -> str:
     raise StoreNameError(msg)
 
 
+def check_settings_store_name(name: str, kind: str) -> str:
+    """:func:`check_store_name` for ``processing.storage.{kind}_store_name``.
+
+    A refused name may be the folder of a store written before v1.0.0,
+    which had no naming rule (``FAIR_Rinex_store``), so the message also
+    says how to move such a store. It does not look for one.
+    """
+    try:
+        return check_store_name(name, kind)
+    except StoreNameError as error:
+        if kind == "gnss" and _OLD_GNSS.fullmatch(name):
+            raise
+        msg = (
+            f"{error} If {name!r} is the folder of a store from before v1.0.0, "
+            f"remove processing.storage.{kind}_store_name from your settings "
+            "(or set a name that follows the rule), then move each site's "
+            f"store with 'canvodpy store migrate SITE --rename {name}={kind}' "
+            "(or the name you set)."
+        )
+        raise StoreNameError(msg) from None
+
+
 def kind_of_store_name(name: str) -> str | None:
     """The kind of a valid store folder name, or ``None`` if it has none."""
     for kind, pattern in _STORE_NAMES.items():

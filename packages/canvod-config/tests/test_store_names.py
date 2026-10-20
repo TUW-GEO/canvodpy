@@ -127,3 +127,27 @@ class TestSettings:
     ):
         with pytest.raises(ValidationError, match=message):
             StorageConfig(stores_root_dir=tmp_path, **{field: value})
+
+    @pytest.mark.parametrize(
+        ("field", "value", "kind"),
+        [
+            ("gnss_store_name", "Site_Rinex_store", "gnss"),
+            ("vod_store_name", "Site_VOD_store", "vod"),
+            ("vod_store_name", "VOD_both_receivers", "vod"),
+        ],
+    )
+    def test_a_custom_name_from_before_v1_names_the_rename(
+        self, tmp_path, field, value, kind
+    ):
+        with pytest.raises(ValidationError) as error:
+            StorageConfig(stores_root_dir=tmp_path, **{field: value})
+
+        text = " ".join(str(error.value).split())
+        assert f"remove processing.storage.{field}" in text
+        assert f"canvodpy store migrate SITE --rename {value}={kind}" in text
+
+    def test_the_old_gnss_name_keeps_its_own_message(self, tmp_path):
+        with pytest.raises(ValidationError) as error:
+            StorageConfig(stores_root_dir=tmp_path, gnss_store_name="rinex")
+
+        assert "--rename" not in str(error.value)
