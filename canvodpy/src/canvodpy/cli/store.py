@@ -1070,6 +1070,15 @@ def _amend_changes(
             )
             raise typer.Exit(1)
         receiver = collect_receiver(site_cfg.receivers[name], site)
+        if receiver.recipe and receiver.recipe_sha256 is None:
+            console.print(
+                f"[red]❌ Found no naming recipe {receiver.recipe!r} of receiver "
+                f"{name!r}, so its sha256 can't be recorded. Install "
+                "canvod-filemap (uv sync --group filemap) and check that "
+                f"`canvodpy config validate --site {site}` finds the "
+                "recipe.[/red]"
+            )
+            raise typer.Exit(1)
         if store_type == "vod_store":
             # A VOD store reads the hardware from the GNSS store's entries.
             receiver = receiver.model_copy(

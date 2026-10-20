@@ -116,6 +116,22 @@ def test_the_store_records_the_sha256_of_a_local_recipe(tmp_path, monkeypatch):
     assert receiver["recipe_sha256"] == hashlib.sha256(_RECIPE.encode()).hexdigest()
 
 
+def test_show_prints_the_sha256_of_the_recipe(tmp_path, monkeypatch):
+    pytest.importorskip("canvod.filemap.recipe_files")
+    import hashlib
+
+    from canvod.store_metadata import format_metadata, read_metadata
+
+    path = tmp_path / "config" / "recipes" / SITE / "rx.yaml"
+    path.parent.mkdir(parents=True)
+    path.write_text(_RECIPE)
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path / "config"))
+    store = _store_with_recipe(tmp_path, "rx")
+
+    text = format_metadata(read_metadata(store), section="instruments")
+    assert f"recipe_sha256: {hashlib.sha256(_RECIPE.encode()).hexdigest()}" in text
+
+
 def test_a_recipe_url_goes_back_into_the_settings(tmp_path, monkeypatch):
     remote = pytest.importorskip("canvod.filemap.remote")
     import tempfile

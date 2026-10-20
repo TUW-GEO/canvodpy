@@ -142,6 +142,7 @@ def format_instruments(meta: StoreMetadata) -> str:
         lines.append(_kv("format", rcv.reader_format, indent=6))
         lines.append(_kv("description", rcv.description, indent=6))
         lines.append(_kv("recipe", rcv.recipe, indent=6))
+        lines.append(_kv("recipe_sha256", rcv.recipe_sha256, indent=6))
         if rcv.epochs is not None:
             lines.append(_kv("epochs", rcv.epochs, indent=6))
         if rcv.sids is not None:

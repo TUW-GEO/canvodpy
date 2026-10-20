@@ -1415,6 +1415,56 @@ class TestStoreAmend:
         assert receiver.directory == "03_canopy"
         assert receiver.antenna.model == "SEPCHOKE_B3E6"
 
+    def test_an_added_receiver_records_the_sha256_of_its_recipe(self, tmp_path):
+        pytest.importorskip("canvod.filemap.recipe_files")
+        import hashlib
+
+        config_dir, path = self._setup(
+            tmp_path,
+            receivers={
+                "canopy_02": {
+                    "type": "canopy",
+                    "directory": "03_canopy",
+                    "recipe": "rx",
+                }
+            },
+        )
+        recipe = config_dir / "recipes" / "TestSite" / "rx.yaml"
+        recipe.parent.mkdir(parents=True)
+        recipe.write_text("name: rx\n")
+
+        result = self._amend(
+            config_dir, "--add-receiver", "canopy_02", "--reason", "r", "--yes"
+        )
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata
+
+        receiver = read_metadata(path).instruments.receivers["canopy_02"]
+        assert receiver.recipe_sha256 == hashlib.sha256(b"name: rx\n").hexdigest()
+
+    def test_a_receiver_whose_recipe_is_missing_is_refused(self, tmp_path):
+        config_dir, path = self._setup(
+            tmp_path,
+            receivers={
+                "canopy_02": {
+                    "type": "canopy",
+                    "directory": "03_canopy",
+                    "recipe": "rx",
+                }
+            },
+        )
+
+        result = self._amend(
+            config_dir, "--add-receiver", "canopy_02", "--reason", "r", "--yes"
+        )
+
+        assert result.exit_code == 1
+        assert "'rx'" in result.output
+        from canvod.store_metadata import read_metadata
+
+        assert "canopy_02" not in read_metadata(path).instruments.receivers
+
     def test_an_unknown_receiver_is_refused(self, tmp_path):
         config_dir, _ = self._setup(tmp_path)
 
