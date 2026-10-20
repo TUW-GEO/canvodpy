@@ -35,7 +35,7 @@ def store_without_metadata(tmp_path):
 def test_a_store_without_metadata_names_the_command_that_fixes_it(
     store_without_metadata,
 ):
-    with pytest.raises(ValueError, match="migrate-metadata") as error:
+    with pytest.raises(ValueError, match="canvodpy store migrate SITE") as error:
         _ = store_without_metadata.site_name
 
     assert str(store_without_metadata.store_path) in str(error.value)
@@ -46,4 +46,4 @@ def test_the_display_of_a_store_without_metadata_shows_the_hint(
 ):
     html = store_without_metadata._repr_html_()
 
-    assert "migrate-metadata" in html
+    assert "canvodpy store migrate SITE" in html

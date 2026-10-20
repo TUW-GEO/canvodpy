@@ -295,6 +295,7 @@ $ canvodpy store [OPTIONS] COMMAND [ARGS]...
 * `migrate-metadata`: Move a store written before repository...
 * `migrate-layout`: Move a store written by appending files to...
 * `amend`: Change the description of a site's store,...
+* `migrate`: Move a site's stores from canVODpy 0.x to...
 
 ### `canvodpy store list`
 
@@ -558,6 +559,48 @@ $ canvodpy store amend [OPTIONS] {site}
 * `--from <path>`: YAML file with the keys reason, set (field paths and values), and the lists add_receivers and add_vod_analyses.
 * `--reason <str>`: Why the fields change; recorded with each one.
 * `--yes`: Amend without asking.
+* `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--help`: Show this message and exit.
+
+### `canvodpy store migrate`
+
+Move a site's stores from canVODpy 0.x to the current form, in one go.
+
+1. Folders: a store's folder is named by its kind (gnss, vod), with an
+   optional suffix (vod-recompute). The GNSS store's old folder rinex is
+   moved to gnss; any other folder whose name is not a kind is moved to
+   the name given with --rename. The store id is taken from the new
+   folder name.
+2. The GNSS store, then the VOD store: their metadata
+   (migrate-metadata), and their groups to day blocks (migrate-layout).
+3. A GNSS store made with CLK files loses its clock variable and records
+   fetch_clock: false; since v1.0.0 runs read no CLK files by default,
+   and VOD doesn't use the clock. The VOD store records the GNSS store's
+   new content-settings hash.
+
+Shows the plan and asks once. Each step that is done already is
+skipped, so the command can run again after a step failed;
+migrate-metadata and migrate-layout rerun single steps. Snapshots from
+before stay readable in the store's history. Stores on S3 need no
+migration: canVODpy writes stores to S3 since v1.0.0 only.
+
+**Usage**:
+
+```console
+$ canvodpy store migrate [OPTIONS] {site}
+```
+
+**Arguments**:
+
+* `site`: Site name, as defined under sites: in canvod-settings.yaml  [required]
+
+**Options**:
+
+* `--rename OLD=NEW`: The new name of a store folder whose name is not its kind, for example vod_2024=vod-2024. rinex is moved to gnss without it. Repeat for more.
+* `--naming-authority <str>`: As for migrate-metadata: your institution's domain in reverse order.
+* `--gnss-set field.path=value`: A field or content setting the GNSS store lacks (migrate-metadata --set). Repeat for more.
+* `--vod-set field.path=value`: A field or content setting the VOD store lacks (migrate-metadata --set). Repeat for more.
+* `--yes`: Migrate without asking.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 

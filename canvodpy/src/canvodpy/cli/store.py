@@ -1296,3 +1296,345 @@ def amend(
         console.print(f"[red]❌ {exc}[/red]")
         raise typer.Exit(1) from None
     console.print(f"[green]✓ Amended[/green] (snapshot {snapshot_id[:12]})")
+
+
+@store_app.command("migrate")
+def migrate_command(
+    site: Annotated[
+        str,
+        typer.Argument(
+            help="Site name, as defined under sites: in canvod-settings.yaml"
+        ),
+    ],
+    rename: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--rename",
+            metavar="OLD=NEW",
+            help=(
+                "The new name of a store folder whose name is not its kind, "
+                "for example vod_2024=vod-2024. rinex is moved to gnss "
+                "without it. Repeat for more."
+            ),
+        ),
+    ] = None,
+    naming_authority: Annotated[
+        str | None,
+        typer.Option(
+            "--naming-authority",
+            help="As for migrate-metadata: your institution's domain in reverse order.",
+        ),
+    ] = None,
+    gnss_set: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--gnss-set",
+            metavar="field.path=value",
+            help="A field or content setting the GNSS store lacks (migrate-metadata --set). Repeat for more.",
+        ),
+    ] = None,
+    vod_set: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--vod-set",
+            metavar="field.path=value",
+            help="A field or content setting the VOD store lacks (migrate-metadata --set). Repeat for more.",
+        ),
+    ] = None,
+    yes: Annotated[bool, typer.Option("--yes", help="Migrate without asking.")] = False,
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+) -> None:
+    """Move a site's stores from canVODpy 0.x to the current form, in one go.
+
+    1. Folders: a store's folder is named by its kind (gnss, vod), with an
+       optional suffix (vod-recompute). The GNSS store's old folder rinex is
+       moved to gnss; any other folder whose name is not a kind is moved to
+       the name given with --rename. The store id is taken from the new
+       folder name.
+    2. The GNSS store, then the VOD store: their metadata
+       (migrate-metadata), and their groups to day blocks (migrate-layout).
+    3. A GNSS store made with CLK files loses its clock variable and records
+       fetch_clock: false; since v1.0.0 runs read no CLK files by default,
+       and VOD doesn't use the clock. The VOD store records the GNSS store's
+       new content-settings hash.
+
+    Shows the plan and asks once. Each step that is done already is
+    skipped, so the command can run again after a step failed;
+    migrate-metadata and migrate-layout rerun single steps. Snapshots from
+    before stay readable in the store's history. Stores on S3 need no
+    migration: canVODpy writes stores to S3 since v1.0.0 only.
+    """
+    from canvod.config import load_config
+
+    config = load_config()
+    if site not in config.sites.sites:
+        console.print(f"[red]❌ Unknown site:[/red] {site}")
+        raise typer.Exit(1)
+    storage = config.processing.storage
+    if isinstance(storage.stores_root_dir, str):
+        console.print(
+            "[red]❌ The stores are on S3, which canVODpy writes stores to "
+            "since v1.0.0 only: they need no migration.[/red]"
+        )
+        raise typer.Exit(1)
+    site_dir = Path(storage.stores_root_dir) / site
+    stores = {
+        "gnss": Path(storage.get_gnss_store_path(site)),
+        "vod": Path(storage.get_vod_store_path(site)),
+    }
+    renames, problems = _plan_renames(site_dir, _parse_renames(rename or []))
+    moved_to = {new: old for old, new in renames}
+    now = {kind: moved_to.get(path, path) for kind, path in stores.items()}
+    problems += _refused_ids(stores, now)
+    if problems:
+        console.print(f"[red]❌ The stores of '{site}' cannot be migrated:[/red]")
+        for problem in problems:
+            console.print(f"  - {problem}")
+        raise typer.Exit(1)
+
+    steps = {kind: _migration_steps(kind, path) for kind, path in now.items()}
+    if any("fetch_clock" in step for step in steps["gnss"]) and _has_content_settings(
+        now["vod"]
+    ):
+        steps["vod"].append("record the GNSS store's new content-settings hash")
+    if not renames and not any(steps.values()):
+        console.print(f"[green]✓ The stores of '{site}' are migrated.[/green]")
+        return
+    console.print(f"\n[bold]{site}[/bold]: stores in {site_dir}")
+    for old, new in renames:
+        console.print(f"  Move folder:  {old.name}/ -> {new.name}/")
+    for kind, kind_steps in steps.items():
+        if not kind_steps:
+            continue
+        console.print(f"  {kind.upper()} store ({stores[kind]}):")
+        for step in kind_steps:
+            console.print(f"    - {step}")
+    console.print(
+        "  Each step adds a commit; snapshots from before stay readable in "
+        "the store's history."
+    )
+    if not yes and not typer.confirm("Migrate the stores?"):
+        raise typer.Exit(1)
+
+    for old, new in renames:
+        _move_store_folder(old, new)
+        console.print(f"[green]✓ Moved {old.name}/ to {new.name}/[/green]")
+    if steps["gnss"]:
+        _migrate_store(site, "gnss", naming_authority, gnss_set, config)
+    if steps["vod"]:
+        _migrate_store(site, "vod", naming_authority, vod_set, config)
+        _follow_gnss_hash(site, stores, config)
+
+
+def _parse_renames(pairs: list[str]) -> dict[str, str]:
+    renames = {}
+    for pair in pairs:
+        old, sep, new = pair.partition("=")
+        if not sep or not old.strip() or not new.strip():
+            console.print(f"[red]❌ --rename {pair!r}: write OLD=NEW.[/red]")
+            raise typer.Exit(1)
+        renames[old.strip()] = new.strip()
+    return renames
+
+
+def _folder_store_type(path: Path) -> str | None:
+    """A store's type, from its repository metadata or its old-form metadata."""
+    from canvod.store_metadata import open_repository, read_metadata
+
+    repository = open_repository(path).get_metadata()
+    if repository:
+        return repository.get("identity", {}).get("store_type")
+    try:
+        return read_metadata(path).identity.store_type
+    except KeyError, ValueError:
+        return None
+
+
+def _plan_renames(
+    site_dir: Path, given: dict[str, str]
+) -> tuple[list[tuple[Path, Path]], list[str]]:
+    """The folders to move, and why the plan can't go on (if it can't)."""
+    from canvod.config.store_names import (
+        OLD_GNSS_STORE_NAME,
+        StoreNameError,
+        check_store_name,
+        kind_of_store_name,
+        store_kind,
+    )
+    from canvod.store_metadata import open_repository, store_exists
+    from canvod.store_metadata.identity import check_store_folder
+
+    given = dict(given)
+    renames: list[tuple[Path, Path]] = []
+    problems: list[str] = []
+    folders = (
+        sorted(p for p in site_dir.iterdir() if p.is_dir() and store_exists(p))
+        if site_dir.is_dir()
+        else []
+    )
+    for folder in folders:
+        name = folder.name
+        if kind_of_store_name(name) is not None:
+            if name in given:
+                problems.append(f"{name}/ is named by its kind already.")
+                given.pop(name)
+            continue
+        store_type = _folder_store_type(folder)
+        try:
+            kind = store_kind(store_type or "")
+        except ValueError:
+            problems.append(f"{name}/: the store records no known store type.")
+            continue
+        new = given.pop(name, None)
+        if new is None and kind == "gnss" and name == OLD_GNSS_STORE_NAME:
+            new = kind
+        if new is None:
+            problems.append(
+                f"{name}/ is not named by its kind; give its new name with "
+                f"--rename {name}={kind}-SUFFIX (or {kind})."
+            )
+            continue
+        try:
+            check_store_name(new, kind)
+        except StoreNameError as exc:
+            problems.append(f"--rename {name}={new}: {exc}")
+            continue
+        target = site_dir / new
+        if store_exists(target) or target.exists() or target in {n for _, n in renames}:
+            problems.append(
+                f"{name}/ would move to {new}/, which exists already. Decide "
+                "which store to keep and move or remove the other by hand."
+            )
+            continue
+        repository = open_repository(folder).get_metadata()
+        if repository and check_store_folder(repository, target):
+            problems.append(
+                f"{name}/ records the store id "
+                f"{repository['identity']['id']!r}, which a folder {new}/ "
+                "would not fit."
+            )
+            continue
+        renames.append((folder, target))
+    problems += [f"--rename {old}=...: there is no store {old}/." for old in given]
+    return renames, problems
+
+
+def _refused_ids(stores: dict[str, Path], now: dict[str, Path]) -> list[str]:
+    """Stores that already record an id their folder doesn't fit."""
+    from canvod.store_metadata import open_repository, store_exists
+    from canvod.store_metadata.identity import check_store_folder
+
+    problems = []
+    for kind, path in now.items():
+        if path != stores[kind] or not store_exists(path):
+            continue  # moved first; checked when its move is planned
+        repository = open_repository(path).get_metadata()
+        mismatch = check_store_folder(repository, path) if repository else None
+        if mismatch:
+            problems.append(mismatch)
+    return problems
+
+
+def _has_content_settings(path: Path) -> bool:
+    from canvod.store_metadata import open_repository, store_exists
+
+    if not store_exists(path):
+        return False
+    return bool((open_repository(path).get_metadata() or {}).get("content_settings"))
+
+
+def _migration_steps(kind: str, path: Path) -> list[str]:
+    """What the migration does to the store now at ``path``."""
+    from canvod.store.migrate_layout import NOTHING, plan_layout_migration
+    from canvod.store_metadata import open_repository, store_exists
+    from canvod.store_metadata.migration import clock_to_drop
+
+    if not store_exists(path):
+        return []
+    steps = []
+    repository = open_repository(path).get_metadata()
+    if not repository:
+        steps.append(
+            "move its metadata to repository metadata: a store id from the "
+            "site and folder name, a UUID, the content settings from its "
+            "first commit (migrate-metadata)"
+        )
+    elif not repository.get("content_settings"):
+        steps.append("write its content settings from its first commit")
+    if kind == "gnss":
+        groups = clock_to_drop(path)
+        if groups:
+            steps.append(
+                f"delete the variable 'clock' of the groups {', '.join(groups)}; "
+                "record fetch_clock: false"
+            )
+        elif groups is not None:
+            steps.append("record fetch_clock: false (no group holds 'clock')")
+    if not repository:
+        steps.append("write groups not made of day blocks again (checked then)")
+    else:
+        try:
+            plans = plan_layout_migration(path)
+        except Exception as exc:  # shown, and raised again when the step runs
+            steps.append(f"move the groups to day blocks: {exc}")
+        else:
+            rewrite = [p.group for p in plans if p.action != NOTHING]
+            if rewrite:
+                steps.append(
+                    f"write the groups {', '.join(rewrite)} again as day blocks"
+                )
+    return steps
+
+
+def _move_store_folder(old: Path, new: Path) -> None:
+    """Rename a store's folder while no run commits to it."""
+    from canvod.store_metadata import commit_lock
+
+    with commit_lock(old):
+        pass  # waits for a commit in progress
+    old.rename(new)
+
+
+def _migrate_store(
+    site: str,
+    kind: str,
+    naming_authority: str | None,
+    set_values: list[str] | None,
+    config: object,
+) -> None:
+    from canvod.store_metadata.migration import drop_clock
+
+    migrate_metadata_command(
+        site,
+        store=kind,
+        naming_authority=naming_authority,
+        set_values=set_values,
+        yes=True,
+    )
+    if kind == "gnss":
+        path, _ = _store_path(site, kind)
+        if drop_clock(path, who=_who(), config=config):
+            console.print(
+                "[green]✓ Removed the clock variable; fetch_clock: false[/green]"
+            )
+    migrate_layout_command(site, store=kind, yes=True)
+
+
+def _follow_gnss_hash(site: str, stores: dict[str, Path], config: object) -> None:
+    from canvod.store_metadata import store_exists
+    from canvod.store_metadata.migration import follow_gnss_content_hash
+
+    if not store_exists(stores["gnss"]):
+        return
+    try:
+        followed = follow_gnss_content_hash(
+            stores["vod"], stores["gnss"], who=_who(), config=config
+        )
+    except ValueError as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(1) from None
+    if followed:
+        console.print(
+            "[green]✓ The VOD store records the GNSS store's new "
+            "content-settings hash[/green]"
+        )

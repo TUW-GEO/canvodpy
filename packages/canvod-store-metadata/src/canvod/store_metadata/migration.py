@@ -1028,7 +1028,9 @@ def drop_clock(
         if not groups and fetch_clock is not True:
             return None
         for name in groups:
-            del root[name][CLOCK_VARIABLE]
+            group = root[name]
+            assert isinstance(group, zarr.Group)  # _clock_groups lists groups
+            del group[CLOCK_VARIABLE]
         updated = dict(repository)
         if fetch_clock is not False:
             updated[CONTENT_SETTINGS_FIELD] = changed_content_settings(

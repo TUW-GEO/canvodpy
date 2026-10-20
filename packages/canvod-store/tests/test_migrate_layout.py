@@ -219,7 +219,7 @@ def test_store_without_repository_metadata_is_refused(tmp_path: Path) -> None:
     path = tmp_path / "bare_store"
     icechunk.Repository.create(icechunk.local_filesystem_storage(str(path)))
 
-    with pytest.raises(ValueError, match="migrate-metadata"):
+    with pytest.raises(ValueError, match="canvodpy store migrate SITE"):
         migrate_layout(path, config={})
 
 
