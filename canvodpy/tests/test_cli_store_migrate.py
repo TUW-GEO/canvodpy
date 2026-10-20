@@ -247,3 +247,61 @@ def test_a_vod_store_left_behind_by_a_stopped_run_follows_on_a_rerun(
     gnss = read_repository_metadata(site / "gnss")["content_settings"]
     vod = read_repository_metadata(site / "vod")["content_settings"]
     assert vod["gnss_content_hash"] == gnss["hash"]
+
+
+def test_a_rerun_after_missing_content_settings_passes_the_written_fields(
+    tmp_path, monkeypatch
+):
+    """Stopped at the content settings, the same line plus the setting ends it."""
+    import copy
+
+    from canvod.store_metadata import migration, read_repository_metadata
+
+    real = migration.first_recorded_settings
+
+    def without_parser(*args, **kwargs):
+        """As a store whose first commit does not record rinex_v3_parser."""
+        snapshot_id, recorded = real(*args, **kwargs)
+        recorded = copy.deepcopy(recorded)
+        del recorded["processing"]["params"]["rinex_v3_parser"]
+        return snapshot_id, recorded
+
+    monkeypatch.setattr(migration, "first_recorded_settings", without_parser)
+    config_dir, site = _setup(tmp_path)
+    description = ["--gnss-set", "identity.description=Beech forest observations"]
+
+    first = _migrate(config_dir, *description)
+    assert first.exit_code == 1, first.output
+    assert "processing.params.rinex_v3_parser" in _text(first)
+    again = _migrate(
+        config_dir,
+        *description,
+        "--gnss-set",
+        "processing.params.rinex_v3_parser=validated",
+    )
+
+    assert again.exit_code == 0, again.output
+    repository = read_repository_metadata(site / "gnss")
+    assert repository["identity"]["description"] == "Beech forest observations"
+    parser = repository["content_settings"]["settings"]["processing"]["params"]
+    assert parser["rinex_v3_parser"] == "validated"
+
+
+def test_a_store_the_settings_dont_name_is_only_moved_and_named(tmp_path):
+    """vod_2024/ moves to vod-2024/; the settings point to vod/."""
+    from canvod.store_metadata import read_repository_metadata
+
+    config_dir, site = _setup(tmp_path)
+    _write_old_form_store(site / "vod_2024", store_type="vod_store")
+
+    result = _migrate(config_dir, "--rename", "vod_2024=vod-2024")
+    again = _migrate(config_dir)
+
+    assert result.exit_code == 0, result.output
+    assert (site / "vod-2024").exists()
+    assert not read_repository_metadata(site / "vod-2024")
+    hint = "set processing.storage.vod_store_name: vod-2024 and run the command again"
+    assert "vod-2024/ is not one of the stores your settings name" in _text(result)
+    assert hint in _text(result)
+    assert "are migrated" in _text(again)
+    assert hint in _text(again)

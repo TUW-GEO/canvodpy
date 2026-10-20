@@ -75,7 +75,11 @@ then takes these steps, skipping each one that is done already:
    GNSS store's old folder `rinex` moves to `gnss`. Any other folder whose
    name isn't its kind needs its new name: `--rename vod_2024=vod-2024`.
    The store id is taken from the new name. A site that has both `rinex`
-   and `gnss` is refused: decide which store to keep.
+   and `gnss` is refused: decide which store to keep. The next steps
+   migrate the stores your settings name (`gnss_store_name`,
+   `vod_store_name`). Another store, such as `vod-2024`, is only moved,
+   and the command says so: to migrate it, set
+   `vod_store_name: vod-2024` and run the command again.
 2. **The GNSS store, then the VOD store**, each with the steps of
    `migrate-metadata` and `migrate-layout` (described below).
 3. **The clock.** A GNSS store written with CLK files holds a `clock`

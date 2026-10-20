@@ -1402,14 +1402,16 @@ def migrate_command(
     )
     if follow:
         steps["vod"].append(FOLLOW_STEP)
-    # --gnss-set and --vod-set fill a store's metadata only while it has
-    # none: a rerun with the same flags passes a store migrated already.
+    # --gnss-set and --vod-set fill only what a store still lacks: a rerun
+    # with the same flags passes the steps done already.
     set_values = {
-        "gnss": gnss_set if _metadata_due(now["gnss"]) else None,
-        "vod": vod_set if _metadata_due(now["vod"]) else None,
+        "gnss": _values_due(now["gnss"], gnss_set),
+        "vod": _values_due(now["vod"], vod_set),
     }
+    others = _stores_left_out(site_dir, renames, now)
     if not renames and not any(steps.values()):
         console.print(f"[green]✓ The stores of '{site}' are migrated.[/green]")
+        _print_left_out(others)
         return
     console.print(f"\n[bold]{site}[/bold]: stores in {site_dir}")
     for old, new in renames:
@@ -1420,6 +1422,7 @@ def migrate_command(
         console.print(f"  {kind.upper()} store ({stores[kind]}):")
         for step in kind_steps:
             console.print(f"    - {step}")
+    _print_left_out(others)
     console.print(
         "  Each step adds a commit; snapshots from before stay readable in "
         "the store's history."
@@ -1435,6 +1438,7 @@ def migrate_command(
             _migrate_store(site, kind, naming_authority, set_values[kind], config)
     if steps["vod"]:
         _follow_gnss_hash(site, stores, config)
+    _print_left_out(others)
 
 
 def _parse_renames(pairs: list[str]) -> dict[str, str]:
@@ -1530,6 +1534,44 @@ def _plan_renames(
     return renames, problems
 
 
+def _stores_left_out(
+    site_dir: Path, renames: list[tuple[Path, Path]], now: dict[str, Path]
+) -> list[Path]:
+    """Stores of the site the settings don't point to, not migrated yet.
+
+    The migration steps find a store by the settings (gnss_store_name,
+    vod_store_name), so such a store is only moved.
+    """
+    from canvod.store_metadata import store_exists
+
+    if not site_dir.is_dir():
+        return []
+    moved = dict(renames)
+    return [
+        moved.get(folder, folder)
+        for folder in sorted(site_dir.iterdir())
+        if folder.is_dir()
+        and store_exists(folder)
+        and folder not in now.values()
+        and moved.get(folder, folder) not in now.values()
+        and folder.name != "rinex"
+        and not _has_content_settings(folder)
+    ]
+
+
+def _print_left_out(folders: list[Path]) -> None:
+    from canvod.config.store_names import kind_of_store_name
+
+    for folder in folders:
+        kind = kind_of_store_name(folder.name) or "gnss"
+        console.print(
+            f"  [yellow]{folder.name}/ is not one of the stores your settings "
+            f"name, so it is only moved, not migrated. To migrate it, set "
+            f"processing.storage.{kind}_store_name: {folder.name} and run the "
+            "command again.[/yellow]"
+        )
+
+
 def _refused_ids(stores: dict[str, Path], now: dict[str, Path]) -> list[str]:
     """Stores that already record an id their folder doesn't fit."""
     from canvod.store_metadata import open_repository, store_exists
@@ -1549,11 +1591,27 @@ def _refused_ids(stores: dict[str, Path], now: dict[str, Path]) -> list[str]:
 FOLLOW_STEP = "record the GNSS store's new content-settings hash"
 
 
-def _metadata_due(path: Path) -> bool:
-    """Whether the store at ``path`` still lacks its metadata step."""
-    from canvod.store_metadata import store_exists
+def _values_due(path: Path, set_values: list[str] | None) -> list[str] | None:
+    """The --set values for steps the store at ``path`` still lacks.
 
-    return store_exists(path) and not _has_content_settings(path)
+    Fields go with the move to repository metadata, content settings with
+    the content-settings step; each is left out once its step is done.
+    """
+    from canvod.store_metadata import open_repository, store_exists
+
+    if not set_values or not store_exists(path):
+        return None
+    repository = open_repository(path).get_metadata()
+    due = [
+        value
+        for value in set_values
+        if (
+            not (repository or {}).get("content_settings")
+            if _is_content_key(value.partition("=")[0].strip())
+            else not repository
+        )
+    ]
+    return due or None
 
 
 def _has_content_settings(path: Path) -> bool:

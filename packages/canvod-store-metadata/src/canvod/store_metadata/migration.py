@@ -938,7 +938,8 @@ FETCH_CLOCK_KEY = "processing.aux_data.fetch_clock"
 
 
 def _fetch_clock(repository: Mapping[str, Any]) -> Any:
-    settings = repository.get(CONTENT_SETTINGS_FIELD, {}).get("settings", {})
+    # The field is None while the content settings are not written yet.
+    settings = (repository.get(CONTENT_SETTINGS_FIELD) or {}).get("settings") or {}
     return settings.get("processing", {}).get("aux_data", {}).get("fetch_clock")
 
 
