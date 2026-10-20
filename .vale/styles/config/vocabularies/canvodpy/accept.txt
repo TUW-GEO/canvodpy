@@ -66,6 +66,7 @@ sr
 (?i)subpackages?
 unaggregated
 Rosalia
+Hainich
 [Rr]esampl(e|es|ed|ing)
 [Tt]ransmissometry
 lookups
