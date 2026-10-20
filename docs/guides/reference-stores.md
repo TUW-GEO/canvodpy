@@ -38,6 +38,7 @@ exactly what differs from the base.
 |---|---|---|---|
 | `default` | both receivers of every site of the test data: Rosalia (RINEX v3.04, SBF, NMEA), MOFLUX (RINEX v2.11), ExampleSite (stripped RINEX v3.05), Hainich (NMEA) | 2025-001; Hainich 2026-001 | final SP3/CLK from the test data, no preprocessing, SNR only, VOD of each receiver pair, the SIDs of each site (below) |
 | `sbf-broadcast` | both receivers of Rosalia (SBF) | 2025-001 | as `default`, but the satellite geometry from the broadcast ephemerides the SBF files carry |
+| `gridded` | as `default` | as `default` | as `default`, plus the preprocessing: observations aggregated to 1-minute means (integer flags take the first value of each minute) and assigned to the cells of a 2° equal-area grid |
 
 Each site's stores hold that site's own SIDs: per system (GPS, GLONASS,
 Galileo and BeiDou, the systems the final orbits cover), up to 15 SIDs
@@ -75,8 +76,9 @@ difference.
 
 For the `default` profile, a build and a check each take three to four
 minutes; the SBF day takes the longest. The `sbf-broadcast` profile
-takes one and a half minutes. Two builds of the same code compare with an empty
-report: the run is deterministic.
+takes one and a half minutes, the `gridded` profile three to four
+minutes. Two builds of the same code compare with an empty report: the
+run is deterministic.
 
 ## Tolerances
 
