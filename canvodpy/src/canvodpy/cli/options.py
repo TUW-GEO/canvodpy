@@ -35,6 +35,30 @@ CONFIG_DIR_OPTION = typer.Option(
 )
 
 
+def _use_config_file(config_file: Path | None) -> Path | None:
+    """Make ``config_file`` the overlay file of this process.
+
+    Sets ``CANVOD_CONFIG_FILE``, which the settings loader
+    (:func:`canvod.config.loader.load_config`) reads, as ``canvodpy run
+    --config`` does.
+    """
+    if config_file is not None:
+        if not config_file.exists():
+            typer.echo(f"Error: overlay config file not found: {config_file}", err=True)
+            raise typer.Exit(1)
+        os.environ["CANVOD_CONFIG_FILE"] = str(config_file.expanduser().resolve())
+    return config_file
+
+
+CONFIG_FILE_OPTION = typer.Option(
+    "--config",
+    help="Settings file whose values replace those of canvod-settings.yaml.",
+    callback=_use_config_file,
+    is_eager=True,
+    show_default=False,
+)
+
+
 def _build_vod_calculator_choice() -> type[enum.StrEnum]:
     """Build the VOD-calculator choice enum from the live factory registry.
 

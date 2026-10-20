@@ -34,7 +34,7 @@ from canvod.config.models import (
     SitesConfig,
     reference_store_group,
 )
-from canvodpy.cli.options import CONFIG_DIR_OPTION
+from canvodpy.cli.options import CONFIG_DIR_OPTION, CONFIG_FILE_OPTION
 
 # Config subcommand
 config_app = typer.Typer(
@@ -48,20 +48,9 @@ console = Console()
 
 @config_app.callback()
 def config_callback(
-    config: Annotated[
-        Path | None,
-        typer.Option(
-            "--config",
-            help="Settings file whose values replace those of canvod-settings.yaml.",
-            show_default=False,
-        ),
-    ] = None,
+    config_file: Annotated[Path | None, CONFIG_FILE_OPTION] = None,
 ) -> None:
-    if config is not None:
-        if not config.exists():
-            typer.echo(f"Error: overlay config file not found: {config}", err=True)
-            raise typer.Exit(1)
-        os.environ["CANVOD_CONFIG_FILE"] = str(config.expanduser().resolve())
+    """The overlay file, set by the option's callback."""
 
 
 def _yaml_scalar(value: str) -> str:
@@ -495,6 +484,7 @@ def _todo_placeholders(config_dir: Path) -> list[str]:
 @config_app.command()
 def validate(
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+    config_file: Annotated[Path | None, CONFIG_FILE_OPTION] = None,
     site: Annotated[
         list[str] | None,
         typer.Option(
@@ -526,6 +516,8 @@ def validate(
     ----------
     config_dir : Path | None
         Directory containing config files (see ``--config-dir``).
+    config_file : Path | None
+        Overlay file (see ``--config``), also accepted before ``validate``.
     site : list[str] | None
         Sites whose data to check; ``None`` checks all sites.
     check_sampling : bool
@@ -693,7 +685,6 @@ def edit(
     -------
     None
     """
-    import os
 
     config_dir = get_default_config_dir()
     file_path = config_dir / "canvod-settings.yaml"

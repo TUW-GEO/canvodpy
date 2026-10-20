@@ -209,6 +209,65 @@ class TestValidateRecipeWithoutFilemap:
         assert "uv sync --group filemap" not in result.output
 
 
+class TestValidateOverlay:
+    """``config validate`` takes the overlay file after the command too, as
+    ``canvodpy run --config`` does, and still before it."""
+
+    @staticmethod
+    def _write(tmp_path):
+        config_dir = tmp_path / "config"
+        TestValidateRecipeWithoutFilemap()._write_config(
+            config_dir, tmp_path, with_recipe=False
+        )
+        overlay = tmp_path / "overlay.yaml"
+        overlay.write_text(
+            yaml.safe_dump({"processing": {"storage": {"gnss_store_name": "Gnss"}}})
+        )
+        return config_dir, overlay
+
+    @pytest.mark.parametrize("before", [False, True])
+    def test_the_overlay_is_validated(self, tmp_path, before):
+        config_dir, overlay = self._write(tmp_path)
+        overlay_args = ["--config", str(overlay)]
+        args = (
+            ["config", *overlay_args, "validate"]
+            if before
+            else ["config", "validate", *overlay_args]
+        )
+
+        result = runner.invoke(_app(), [*args, "--config-dir", str(config_dir)])
+
+        assert result.exit_code == 1
+        assert "'Gnss' is not allowed" in " ".join(result.output.split())
+
+    def test_without_the_overlay_its_value_is_not_read(self, tmp_path):
+        config_dir, _ = self._write(tmp_path)
+
+        result = runner.invoke(
+            _app(), ["config", "validate", "--config-dir", str(config_dir)]
+        )
+
+        assert "'Gnss'" not in result.output
+
+    def test_a_missing_overlay_file_is_named(self, tmp_path):
+        config_dir, _ = self._write(tmp_path)
+
+        result = runner.invoke(
+            _app(),
+            [
+                "config",
+                "validate",
+                "--config",
+                str(tmp_path / "missing.yaml"),
+                "--config-dir",
+                str(config_dir),
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert "overlay config file not found" in result.output
+
+
 class TestConfigInitFromStore:
     """``canvodpy config init --from-store`` writes a store's settings."""
 

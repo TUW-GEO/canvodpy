@@ -213,6 +213,7 @@ $ canvodpy config validate [OPTIONS]
 **Options**:
 
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
+* `--config <path>`: Settings file whose values replace those of canvod-settings.yaml.
 * `--site <str>`: Check the data of this site only. Repeat for several sites. Default: all sites.
 * `--check-sampling / --no-check-sampling`: Read the first file of the first and the last day of each receiver and compare the sampling interval of its data with the one in its canonical name.  [default: check-sampling]
 * `--help`: Show this message and exit.
