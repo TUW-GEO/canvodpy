@@ -200,7 +200,7 @@ tag existing is not a promise that PyPI has it.
     and that `CHANGELOG.md` has a section `## v1.1.0 (...)`.
     (PyPI publishing never triggers from a tag push at all; see step 8.)
 
-??? failure "Tag is not allowed to deploy to pypi due to environment protection rules"
+??? failure "Tag is not allowed to deploy due to environment protection rules"
     The `pypi` environment accepts only tags of the form `v*.*.*`, the
     canvodpy tags. Run `publish_pypi.yml` on the canvodpy tag, never on a
     package tag such as `canvod-store-v1.1.0`: it publishes every package
