@@ -1087,7 +1087,7 @@ def migrate_layout_command(
 
     Shows what it will do and asks first. Everything goes into one commit;
     snapshots from before stay readable. A store written before repository
-    metadata needs canvodpy store migrate-metadata first.
+    metadata is moved with canvodpy store migrate SITE.
     """
     from canvod.config import load_config
     from canvod.store.day_blocks import CadenceError
@@ -1365,6 +1365,7 @@ def migrate_command(
     migration: canVODpy writes stores to S3 since v1.0.0 only.
     """
     from canvod.config import load_config
+    from canvod.store_metadata.migration import gnss_content_hash_behind
 
     config = load_config()
     if site not in config.sites.sites:
@@ -1393,10 +1394,20 @@ def migrate_command(
         raise typer.Exit(1)
 
     steps = {kind: _migration_steps(kind, path) for kind, path in now.items()}
-    if any("fetch_clock" in step for step in steps["gnss"]) and _has_content_settings(
-        now["vod"]
-    ):
-        steps["vod"].append("record the GNSS store's new content-settings hash")
+    # The VOD store follows a GNSS hash that the clock step changes now, or
+    # that a run stopped before the VOD store followed changed already.
+    clock_changes = any("fetch_clock" in step for step in steps["gnss"])
+    follow = (clock_changes and _has_content_settings(now["vod"])) or (
+        gnss_content_hash_behind(now["vod"], now["gnss"])
+    )
+    if follow:
+        steps["vod"].append(FOLLOW_STEP)
+    # --gnss-set and --vod-set fill a store's metadata only while it has
+    # none: a rerun with the same flags passes a store migrated already.
+    set_values = {
+        "gnss": gnss_set if _metadata_due(now["gnss"]) else None,
+        "vod": vod_set if _metadata_due(now["vod"]) else None,
+    }
     if not renames and not any(steps.values()):
         console.print(f"[green]✓ The stores of '{site}' are migrated.[/green]")
         return
@@ -1419,10 +1430,10 @@ def migrate_command(
     for old, new in renames:
         _move_store_folder(old, new)
         console.print(f"[green]✓ Moved {old.name}/ to {new.name}/[/green]")
-    if steps["gnss"]:
-        _migrate_store(site, "gnss", naming_authority, gnss_set, config)
+    for kind in ("gnss", "vod"):
+        if [step for step in steps[kind] if step != FOLLOW_STEP]:
+            _migrate_store(site, kind, naming_authority, set_values[kind], config)
     if steps["vod"]:
-        _migrate_store(site, "vod", naming_authority, vod_set, config)
         _follow_gnss_hash(site, stores, config)
 
 
@@ -1533,6 +1544,16 @@ def _refused_ids(stores: dict[str, Path], now: dict[str, Path]) -> list[str]:
         if mismatch:
             problems.append(mismatch)
     return problems
+
+
+FOLLOW_STEP = "record the GNSS store's new content-settings hash"
+
+
+def _metadata_due(path: Path) -> bool:
+    """Whether the store at ``path`` still lacks its metadata step."""
+    from canvod.store_metadata import store_exists
+
+    return store_exists(path) and not _has_content_settings(path)
 
 
 def _has_content_settings(path: Path) -> bool:

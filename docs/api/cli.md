@@ -511,7 +511,7 @@ metadata, and get the chunks of the settings
 
 Shows what it will do and asks first. Everything goes into one commit;
 snapshots from before stay readable. A store written before repository
-metadata needs canvodpy store migrate-metadata first.
+metadata is moved with canvodpy store migrate SITE.
 
 **Usage**:
 

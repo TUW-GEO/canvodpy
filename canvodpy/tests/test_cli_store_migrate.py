@@ -43,7 +43,7 @@ def _setup(tmp_path, folder="rinex", **settings):
     return config_dir, stores_root / "TestSite"
 
 
-def _add_log_book(store_path) -> None:
+def _add_log_book(store_path, group="canopy_01") -> None:
     """The log book of the old store's one file, as canVODpy 0.x kept it."""
     import numpy as np
     import zarr
@@ -52,7 +52,7 @@ def _add_log_book(store_path) -> None:
 
     session = open_repository(store_path).writable_session("main")
     table = zarr.open_group(session.store, mode="a").require_group(
-        "canopy_01/metadata/table"
+        f"{group}/metadata/table"
     )
     start, end = np.array(
         ["2025-01-01T00:00:00", "2025-01-01T00:00:30"], dtype="datetime64[ns]"
@@ -188,3 +188,62 @@ def test_stores_on_s3_need_no_migration(tmp_path):
 
     assert result.exit_code == 1
     assert "need no migration" in _text(result)
+
+
+def test_a_rerun_with_the_same_values_passes_the_migrated_stores(tmp_path):
+    """A run stopped by the VOD store ends with the same line run again."""
+    from canvod.store_metadata import read_repository_metadata
+
+    config_dir, site = _setup(tmp_path)
+    _write_old_form_store(site / "vod", store_type="vod_store")
+    values = [
+        "--gnss-set",
+        "identity.description=Beech forest observations",
+        "--vod-set",
+        "identity.description=Beech forest VOD",
+    ]
+
+    first = _migrate(config_dir, *values)
+    assert first.exit_code == 1, first.output
+    assert "no log book" in _text(first)
+    _add_log_book(site / "vod", "tau_omega/canopy_01_vs_reference_01")
+    again = _migrate(config_dir, *values)
+
+    assert again.exit_code == 0, again.output
+    description = read_repository_metadata(site / "vod")["identity"]["description"]
+    assert description == "Beech forest VOD"
+
+
+def test_a_vod_store_left_behind_by_a_stopped_run_follows_on_a_rerun(
+    tmp_path, monkeypatch
+):
+    """Stopped after the clock step, a rerun still moves the VOD store on."""
+    from canvod.store_metadata import migration, read_repository_metadata
+
+    config_dir, site = _setup(tmp_path, folder="gnss", aux_data={"fetch_clock": True})
+    _add_clock(site / "gnss")
+    _write_old_form_store(site / "vod", store_type="vod_store")
+    _add_log_book(site / "vod", "tau_omega/canopy_01_vs_reference_01")
+    for store in ("gnss", "vod"):
+        loader_module.load_config.cache_clear()
+        runner.invoke(
+            main_app,
+            ["store", "migrate-metadata", "TestSite", "--store", store, "--yes"],
+            env=_env(config_dir),
+        )
+    _change_settings(config_dir, {"aux_data": {"fetch_clock": False}})
+
+    def stopped(*args, **kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(migration, "follow_gnss_content_hash", stopped)
+    assert _migrate(config_dir).exit_code != 0
+    monkeypatch.undo()
+    plan = _migrate(config_dir, input="n\n")
+    again = _migrate(config_dir)
+
+    assert "new content-settings hash" in _text(plan)
+    assert again.exit_code == 0, again.output
+    gnss = read_repository_metadata(site / "gnss")["content_settings"]
+    vod = read_repository_metadata(site / "vod")["content_settings"]
+    assert vod["gnss_content_hash"] == gnss["hash"]

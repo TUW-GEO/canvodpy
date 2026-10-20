@@ -48,7 +48,7 @@ from .io import (
     commit_lock,
     commit_with_rebase,
 )
-from .location import StoreLocation, open_repository, store_location
+from .location import StoreLocation, open_repository, store_exists, store_location
 from .schema import (
     _METADATA_KEY,
     COMPUTED_FIELDS,
@@ -1052,6 +1052,32 @@ def drop_clock(
         )
         repo.set_metadata(updated)
         return commit_id
+
+
+def gnss_content_hash_behind(
+    store_path: StoreLocation | Path | str,
+    gnss_store: StoreLocation | Path | str,
+) -> bool:
+    """Whether a VOD store records a hash its GNSS store had before a change.
+
+    True if :func:`follow_gnss_content_hash` would commit: the VOD store's
+    ``gnss_content_hash`` is not the GNSS store's hash but one the GNSS
+    store had before a migration changed its content settings.
+    """
+    from .content import CHANGES_FIELD
+
+    if not store_exists(store_location(store_path)) or not store_exists(
+        store_location(gnss_store)
+    ):
+        return False
+    gnss = open_repository(store_location(gnss_store)).get_metadata() or {}
+    gnss_content = gnss.get(CONTENT_SETTINGS_FIELD) or {}
+    repository = open_repository(store_location(store_path)).get_metadata() or {}
+    recorded = (repository.get(CONTENT_SETTINGS_FIELD) or {}).get(GNSS_CONTENT_HASH)
+    if not recorded or not gnss_content or recorded == gnss_content["hash"]:
+        return False
+    earlier = {change["old_hash"] for change in gnss_content.get(CHANGES_FIELD, [])}
+    return recorded in earlier
 
 
 def follow_gnss_content_hash(
