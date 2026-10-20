@@ -642,6 +642,23 @@ def migrate_metadata_command(
     store_delta_snr, store_radial_diff, store_radial_distance) is read
     from the data: canVODpy 0.x recorded settings its runs didn't follow.
     """
+    _migrate_metadata(site, store, naming_authority, set_values, yes=yes)
+
+
+def _migrate_metadata(
+    site: str,
+    store: str,
+    naming_authority: str | None,
+    set_values: list[str] | None,
+    *,
+    yes: bool,
+    command: str | None = None,
+    set_option: str = "--set",
+) -> None:
+    """migrate-metadata; ``command`` and ``set_option`` are what an error
+    names for giving a missing value (``canvodpy store migrate`` passes its
+    own).
+    """
     from canvod.config import load_config
     from canvod.store_metadata import read_metadata
     from canvod.store_metadata.migration import epochs_to_label
@@ -677,7 +694,14 @@ def migrate_metadata_command(
     asked = False
     if old.written_before_migration:
         _migrate_repository_metadata(
-            site, store, path, old, naming_authority, values, yes=yes
+            site,
+            store,
+            path,
+            old,
+            naming_authority,
+            values,
+            yes=yes,
+            set_option=set_option,
         )
         asked = True
     elif values:
@@ -701,6 +725,8 @@ def migrate_metadata_command(
             gnss_store,
             vod_store,
             yes=yes or asked,
+            command=command,
+            set_option=set_option,
         )
         and not asked
     ):
@@ -759,6 +785,7 @@ def _migrate_repository_metadata(
     values: dict[str, object],
     *,
     yes: bool,
+    set_option: str = "--set",
 ) -> None:
     """Move a store's metadata to repository metadata (ADR 0014)."""
     from canvod.config.store_names import store_folder_name
@@ -826,6 +853,7 @@ def _migrate_repository_metadata(
             naming_authority=naming_authority,
             values=values,
             variable_attrs=variable_attrs,
+            set_option=set_option,
         )
     except ValueError as exc:
         console.print(f"[red]❌ {exc}[/red]")
@@ -928,6 +956,8 @@ def _migrate_content_settings(
     vod_store: Path | str | None = None,
     *,
     yes: bool,
+    command: str | None = None,
+    set_option: str = "--set",
 ) -> bool:
     """Give a store its content settings from its first commit (ADR 0019).
 
@@ -975,6 +1005,8 @@ def _migrate_content_settings(
             values=values,
             gnss_store=gnss_store,
             vod_store=vod_store,
+            command=command,
+            set_option=set_option,
         )
     except ValueError as exc:
         console.print(f"[red]❌ {exc}[/red]")
@@ -1542,6 +1574,7 @@ def _stores_left_out(
     The migration steps find a store by the settings (gnss_store_name,
     vod_store_name), so such a store is only moved.
     """
+    from canvod.config.store_names import OLD_GNSS_STORE_NAME
     from canvod.store_metadata import store_exists
 
     if not site_dir.is_dir():
@@ -1554,7 +1587,7 @@ def _stores_left_out(
         and store_exists(folder)
         and folder not in now.values()
         and moved.get(folder, folder) not in now.values()
-        and folder.name != "rinex"
+        and folder.name != OLD_GNSS_STORE_NAME
         and not _has_content_settings(folder)
     ]
 
@@ -1683,12 +1716,14 @@ def _migrate_store(
 ) -> None:
     from canvod.store_metadata.migration import drop_clock
 
-    migrate_metadata_command(
+    _migrate_metadata(
         site,
-        store=kind,
-        naming_authority=naming_authority,
-        set_values=set_values,
+        kind,
+        naming_authority,
+        set_values,
         yes=True,
+        command=f"canvodpy store migrate {site}",
+        set_option=f"--{kind}-set",
     )
     if kind == "gnss":
         path, _ = _store_path(site, kind)

@@ -249,6 +249,18 @@ def test_a_vod_store_left_behind_by_a_stopped_run_follows_on_a_rerun(
     assert vod["gnss_content_hash"] == gnss["hash"]
 
 
+def test_a_missing_field_is_named_with_the_store_migrate_option(tmp_path):
+    """The message names --gnss-set, the option of canvodpy store migrate."""
+    config_dir = tmp_path / "config"
+    _write_config(config_dir, tmp_path / "stores")
+    _write_old_form_store(tmp_path / "stores" / "TestSite" / "rinex", complete=False)
+
+    result = _migrate(config_dir)
+
+    assert result.exit_code == 1, result.output
+    assert "Give the missing fields with --gnss-set FIELD=VALUE" in _text(result)
+
+
 def test_a_rerun_after_missing_content_settings_passes_the_written_fields(
     tmp_path, monkeypatch
 ):
@@ -272,7 +284,10 @@ def test_a_rerun_after_missing_content_settings_passes_the_written_fields(
 
     first = _migrate(config_dir, *description)
     assert first.exit_code == 1, first.output
-    assert "processing.params.rinex_v3_parser" in _text(first)
+    assert (
+        "canvodpy store migrate TestSite --gnss-set "
+        "processing.params.rinex_v3_parser=VALUE"
+    ) in _text(first)
     again = _migrate(
         config_dir,
         *description,

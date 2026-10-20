@@ -75,6 +75,7 @@ def migrate_metadata(
     values: Mapping[str, Any] | None = None,
     variable_attrs: Mapping[str, Mapping[str, Any]] | None = None,
     branch: str = "main",
+    set_option: str = "--set",
 ) -> str:
     """Move a store's metadata to repository metadata (ADR 0014).
 
@@ -97,6 +98,9 @@ def migrate_metadata(
         arrays are listed in the migration record.
     branch
         The branch whose metadata is migrated.
+    set_option
+        The command-line option an error names for giving a missing field:
+        ``--gnss-set`` or ``--vod-set`` under ``canvodpy store migrate``.
 
     Returns
     -------
@@ -156,7 +160,7 @@ def migrate_metadata(
         )
         for field in values or {}:
             check_amendable(field)
-        given = _with_values(old, dict(values or {}), store_path)
+        given = _with_values(old, dict(values or {}), store_path, set_option)
         identity = given.identity.model_copy(
             update={
                 "id": new_id,
@@ -174,6 +178,7 @@ def migrate_metadata(
                 ),
             ),
             store_path,
+            set_option,
         )
 
         session = repo.writable_session(branch)
@@ -666,6 +671,8 @@ def migrate_content_settings(
     gnss_store: StoreLocation | Path | str | None = None,
     vod_store: StoreLocation | Path | str | None = None,
     branch: str = "main",
+    command: str | None = None,
+    set_option: str = "--set",
 ) -> str:
     """Give a store its content settings, from the settings of its first commit.
 
@@ -698,6 +705,10 @@ def migrate_content_settings(
         ``store_radial_diff``, which the GNSS store records too.
     branch
         The branch whose first commit is read.
+    command, set_option
+        The command line and option an error names for giving a missing
+        setting; by default ``canvodpy store migrate-metadata`` and
+        ``--set``.
 
     Returns
     -------
@@ -759,14 +770,15 @@ def migrate_content_settings(
             msg = f"{', '.join(unknown)}: not a content setting of this store."
             raise ValueError(msg)
         if missing:
-            given = " ".join(f"--set {key}=VALUE" for key in missing)
+            given = " ".join(f"{set_option} {key}=VALUE" for key in missing)
+            command = command or store_command("migrate-metadata", site, store_type)
             msg = (
                 f"The first commit of the store at {store_path} (snapshot "
                 f"{snapshot_id[:12]}) does not record these content settings, "
                 f"and they are not guessed:\n"
                 + "\n".join(f"  - {key}" for key in missing)
                 + f"\nGive each with the value the store's data was written "
-                f"with:\n  {store_command('migrate-metadata', site, store_type)} "
+                f"with:\n  {command} "
                 f"{given}"
             )
             raise ValueError(msg)
@@ -862,6 +874,7 @@ def _with_values(
     old: StoreMetadata,
     values: dict[str, Any],
     store_path: StoreLocation | Path | str,
+    set_option: str,
 ) -> StoreMetadata:
     """``old`` with ``values`` set; refused if it breaks a rule of a standard.
 
@@ -884,7 +897,7 @@ def _with_values(
         msg = (
             f"The store at {store_path} cannot be migrated: "
             f"{describe_rule_breaks(refused)}. Give the value with "
-            f"{' '.join(f'--set {f}=VALUE' for f in fields)} (in Python: "
+            f"{' '.join(f'{set_option} {f}=VALUE' for f in fields)} (in Python: "
             "values=)."
         )
         raise ValueError(msg)
@@ -892,7 +905,7 @@ def _with_values(
 
 
 def _refuse_failures(
-    preview: StoreMetadata, store_path: StoreLocation | Path | str
+    preview: StoreMetadata, store_path: StoreLocation | Path | str, set_option: str
 ) -> None:
     """Refuse a migration whose result would fail the standards checks."""
     failures = [
@@ -905,7 +918,7 @@ def _refuse_failures(
         msg = (
             f"The store at {store_path} would fail the standards checks after "
             f"migration:\n{listed}\n"
-            "Give the missing fields with --set FIELD=VALUE (in Python: "
+            f"Give the missing fields with {set_option} FIELD=VALUE (in Python: "
             "values=). ACDD `summary` comes from identity.description, "
             "spatial.bbox from spatial.geospatial_lat and spatial.geospatial_lon."
         )
