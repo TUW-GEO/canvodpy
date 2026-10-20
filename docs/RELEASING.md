@@ -198,4 +198,19 @@ tag existing is not a promise that PyPI has it.
     Verify the canvodpy tag matches the pattern `v*.*.*` at
     [github.com/nfb2021/canvodpy/actions](https://github.com/nfb2021/canvodpy/actions),
     and that `CHANGELOG.md` has a section `## v1.1.0 (...)`.
-    (PyPI publishing never triggers from a tag push at all; see step 7.)
+    (PyPI publishing never triggers from a tag push at all; see step 8.)
+
+??? failure "Tag is not allowed to deploy to pypi due to environment protection rules"
+    The `pypi` environment accepts only tags of the form `v*.*.*`, the
+    canvodpy tags. Run `publish_pypi.yml` on the canvodpy tag, never on a
+    package tag such as `canvod-store-v1.1.0`: it publishes every package
+    tagged on that commit.
+
+??? failure "A new package fails its first upload"
+    A package that is not on PyPI yet needs a pending publisher on PyPI
+    (the repository, `publish_pypi.yml` and the `pypi` environment). PyPI
+    allows only one pending publisher per repository, workflow and
+    environment, so two new packages need two runs: add the first
+    package's pending publisher and run the workflow, then the second's
+    and run it again. Versions already on PyPI are skipped
+    (`skip-existing`).
