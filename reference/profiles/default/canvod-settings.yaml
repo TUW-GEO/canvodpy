@@ -47,8 +47,95 @@ sites:
       canopy_01_vs_reference_01:
         canopy_receiver: canopy_01
         reference_receiver: reference_01
-# 15 SIDs per system: per system, the SIDs both Rosalia receivers recorded
-# SNR for the longest on 2025-01-01 (RINEX v3.04 test data).
+  moflux_rinex_v2_11:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/rinex_v2_11/02_Moflux
+    store_description: Reference store of the RINEX v2.11 test data of MOFLUX, 2025-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference
+        reader_format: rinex2
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 02_canopy
+        reader_format: rinex2
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+  examplesite_rinex_v3_05_stripped:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/rinex_v3_05_stripped/01_ExampleSite
+    store_description: Reference store of the stripped RINEX v3.05 test data of ExampleSite, 2025-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference
+        reader_format: rinex3_stripped
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 01_canopy
+        reader_format: rinex3_stripped
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+  rosalia_sbf:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/sbf/01_Rosalia
+    store_description: Reference store of the SBF test data of Rosalia, 2025-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference
+        reader_format: sbf
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 02_canopy
+        reader_format: sbf
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+  rosalia_nmea:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/nmea/01_Rosalia
+    store_description: Reference store of the NMEA test data of Rosalia, 2025-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference
+        reader_format: nmea
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 02_canopy
+        reader_format: nmea
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+  hainich_nmea:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/nmea/02_Hainich
+    store_description: Reference store of the NMEA test data of Hainich, 2026-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference
+        reader_format: nmea
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 02_canopy
+        reader_format: nmea
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+# The SIDs of a run without an overlay: 15 SIDs per system, per system the
+# SIDs both Rosalia receivers recorded SNR for the longest on 2025-01-01
+# (RINEX v3.04 test data). The build replaces this list for each site with
+# the site's own list in reference-runs.yaml.
 sids:
   mode: custom
   custom_sids:

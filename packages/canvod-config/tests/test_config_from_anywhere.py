@@ -303,6 +303,35 @@ class TestLoadConfigEnvCaching:
         assert info.currsize == 0
 
 
+class TestOverlayLists:
+    """A list in the overlay replaces the main file's list as a whole."""
+
+    def test_overlay_sid_list_replaces_the_main_list(self, tmp_path):
+        import yaml
+
+        config_dir = tmp_path / "config"
+        _write_minimal_config(config_dir, tmp_path / "stores")
+        settings_file = config_dir / "canvod-settings.yaml"
+        settings = yaml.safe_load(settings_file.read_text())
+        settings["sids"] = {
+            "mode": "custom",
+            "custom_sids": ["G01|L1|C", "G02|L1|C", "E01|E1|C"],
+        }
+        settings_file.write_text(yaml.safe_dump(settings))
+        overlay = tmp_path / "overlay.yaml"
+        overlay.write_text(
+            yaml.safe_dump({"sids": {"mode": "custom", "custom_sids": ["R01|G1|C"]}})
+        )
+        loader_module.load_config.cache_clear()
+        try:
+            config = loader_module.load_config(
+                config_dir=config_dir, config_file=overlay
+            )
+        finally:
+            loader_module.load_config.cache_clear()
+        assert config.sids.get_sids() == ["R01|G1|C"]
+
+
 class TestFormatValidationError:
     """format_validation_error() turns a ConfigValidationError into
     actionable, human-readable text — no Pydantic internals, no traceback."""
