@@ -172,8 +172,11 @@ a commit or a tag:
 
 A tag is written `refs/tags/<tag>` in the URL; a branch is refused. A
 commit is the only pin that never changes: a tag can be moved. The
-store records the URL and the sha256 of the file it was made with. A
-fetched recipe is cached in the system's temporary folder, so a run
+GNSS store records each receiver's recipe and the sha256 of its file.
+Every run compares them with the settings and stops if the recipe or its
+content changed; the message names the
+`canvodpy store amend --update-recipe` command that records a new recipe
+on purpose. A fetched recipe is cached in the system's temporary folder, so a run
 without network access works once the recipe was fetched. A recipe in a
 private repository needs a GitHub token with read access in `GH_TOKEN`
 or `GITHUB_TOKEN`; canvodpy never stores it

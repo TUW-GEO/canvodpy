@@ -1064,8 +1064,9 @@ def ensure_store_metadata(
     ValueError
         If the site is not in the settings, the store is new and
         ``source_format`` is ``None``, the store predates repository
-        metadata (names the migrate command), or a name is not listed in
-        the metadata (names the amend command).
+        metadata (names the migrate command), a name is not listed in
+        the metadata, or a GNSS store's naming recipe differs from the
+        settings' (both name the amend command).
     ContentSettingsError
         If the settings differ from the store's content settings, or the
         store has none (names the migrate command).
@@ -1101,6 +1102,8 @@ def ensure_store_metadata(
 
     if store_type == "gnss_store":
         refuse_old_gnss_folder(store_path, site_name)
+        # Before a new store is created: it must record each recipe's sha256.
+        current_recipes(site_config, site_name)
     repository = ensure_metadata(
         store_path,
         collect,
@@ -1112,6 +1115,7 @@ def ensure_store_metadata(
         check_vod_analyses(repository, names, store_path=store_path)
     else:
         check_receivers(repository, names, store_path=store_path)
+        check_recipes(repository, site_config, site_name, store_path=store_path)
     check_content_settings(
         repository,
         config,
@@ -1172,6 +1176,84 @@ def check_receivers(
             '--reason "..."'
         )
         raise ValueError(msg)
+
+
+def check_recipes(
+    repository: dict[str, Any],
+    site_config: Any,
+    site_name: str,
+    *,
+    store_path: StoreLocation | Path | str,
+) -> None:
+    """Refuse naming recipes that differ from the ones the store was made with.
+
+    A store records, per receiver, its naming recipe and the sha256 of the
+    recipe file. A run finds files with the recipe of the settings; a
+    different recipe, or the same one with other content, would find other
+    files than the days already stored. Receivers without a recipe in the
+    settings and in the store are not checked.
+
+    Raises
+    ------
+    ValueError
+        Naming the receiver, both sha256s and the amend command that
+        records the new recipe.
+    """
+    listed = repository.get("instruments", {}).get("receivers", {})
+    for name, (recipe, sha256) in current_recipes(site_config, site_name).items():
+        entry = listed.get(name)
+        if entry is None or (recipe is None and entry.get("recipe") is None):
+            continue
+        stored = (entry.get("recipe"), entry.get("recipe_sha256"))
+        if stored == (recipe, sha256):
+            continue
+        msg = (
+            f"Receiver {name!r} of the store at {store_path} was made with "
+            f"naming recipe {_recipe_label(*stored)}; the settings give "
+            f"{_recipe_label(recipe, sha256)}. A run finds files with the "
+            "recipe of the settings, so it would find other files than the "
+            "days the store holds. If the new recipe is meant, record it, "
+            "with a reason:\n"
+            f"  {_amend_command(repository)} --update-recipe {name} "
+            '--reason "..."'
+        )
+        raise ValueError(msg)
+
+
+def current_recipes(
+    site_config: Any, site_name: str
+) -> dict[str, tuple[str | None, str | None]]:
+    """Each receiver's naming recipe in the settings and the sha256 of its file.
+
+    Raises
+    ------
+    ValueError
+        If a recipe is not found, so its sha256 is unknown.
+    """
+    from .collectors import recipe_sha256_of
+
+    recipes: dict[str, tuple[str | None, str | None]] = {}
+    for name, receiver_config in site_config.receivers.items():
+        recipe = getattr(receiver_config, "recipe", None)
+        sha256 = recipe_sha256_of(site_name, recipe) if recipe else None
+        if recipe and sha256 is None:
+            msg = (
+                f"Found no naming recipe {recipe!r} of receiver {name!r}. "
+                "Install canvod-filemap (uv sync --group filemap) and check "
+                f"that `canvodpy config validate --site {site_name}` finds it."
+            )
+            raise ValueError(msg)
+        recipes[name] = (recipe, sha256)
+    return recipes
+
+
+def _recipe_label(recipe: str | None, sha256: str | None) -> str:
+    """A recipe and its short sha256, for a message."""
+    if recipe is None:
+        return "none"
+    if sha256 is None:
+        return f"{recipe!r} (no sha256 recorded)"
+    return f"{recipe!r} (sha256 {sha256[:12]})"
 
 
 def check_vod_analyses(

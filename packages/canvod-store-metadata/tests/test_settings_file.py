@@ -133,20 +133,24 @@ def test_show_prints_the_sha256_of_the_recipe(tmp_path, monkeypatch):
 
 
 def test_a_recipe_url_goes_back_into_the_settings(tmp_path, monkeypatch):
-    remote = pytest.importorskip("canvod.filemap.remote")
-    import tempfile
+    from canvod.store_metadata import collectors
 
-    # Nothing listens there: the recipe cannot be fetched, so no sha256.
-    monkeypatch.setattr(remote, "_DOWNLOAD_ORIGIN", "http://127.0.0.1:9")
-    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    # No download: the recipe's sha256 is made up.
+    monkeypatch.setattr(collectors, "recipe_sha256_of", lambda site, recipe: "0" * 64)
     url = f"https://raw.githubusercontent.com/acc/recipes/{'a' * 40}/{SITE}/rx.yaml"
     store = _store_with_recipe(tmp_path, url)
 
     receiver = read_repository_metadata(store)["instruments"]["receivers"]["canopy_01"]
     assert receiver["recipe"] == url
-    assert receiver["recipe_sha256"] is None
     settings = settings_from_store(store)
     assert settings["sites"][SITE]["receivers"]["canopy_01"]["recipe"] == url
+
+
+def test_a_store_is_not_created_without_the_sha256_of_its_recipe(tmp_path):
+    with pytest.raises(ValueError, match="Found no naming recipe 'rx'"):
+        _store_with_recipe(tmp_path, "rx")
+
+    assert not (tmp_path / "root" / SITE / "gnss").exists()
 
 
 def test_settings_hold_no_path_or_credential_of_the_creating_machine(tmp_path):

@@ -672,7 +672,7 @@ def _migrate_metadata(
         )
         raise typer.Exit(1) from None
     store_type = old.identity.store_type
-    values = _amend_changes(site, store_type, set_values or [], [], [])
+    values = _amend_changes(site, store_type, set_values or [], [], [], [])
     content_values = {k: v for k, v in values.items() if _is_content_key(k)}
     values = {k: v for k, v in values.items() if k not in content_values}
     # Each store's migration reads the other store of the site: a VOD
@@ -1038,13 +1038,14 @@ def _amend_changes(
     set_values: list[str],
     add_receivers: list[str],
     add_vod_analyses: list[str],
+    update_recipes: list[str],
 ) -> dict[str, object]:
     """The changes of an amendment, with receiver and VOD analysis entries
-    taken from the settings."""
+    and naming recipes taken from the settings."""
     import yaml
 
     from canvod.config import load_config
-    from canvod.store_metadata.collectors import collect_receiver
+    from canvod.store_metadata.collectors import collect_receiver, recipe_sha256_of
     from canvod.store_metadata.schema import RepositoryReceiver
 
     changes: dict[str, object] = {}
@@ -1071,14 +1072,7 @@ def _amend_changes(
             raise typer.Exit(1)
         receiver = collect_receiver(site_cfg.receivers[name], site)
         if receiver.recipe and receiver.recipe_sha256 is None:
-            console.print(
-                f"[red]❌ Found no naming recipe {receiver.recipe!r} of receiver "
-                f"{name!r}, so its sha256 can't be recorded. Install "
-                "canvod-filemap (uv sync --group filemap) and check that "
-                f"`canvodpy config validate --site {site}` finds the "
-                "recipe.[/red]"
-            )
-            raise typer.Exit(1)
+            _refuse_missing_recipe(site, name, receiver.recipe)
         if store_type == "vod_store":
             # A VOD store reads the hardware from the GNSS store's entries.
             receiver = receiver.model_copy(
@@ -1087,6 +1081,19 @@ def _amend_changes(
         changes[f"instruments.receivers.{name}"] = receiver.model_dump(
             mode="json", include=set(RepositoryReceiver.model_fields)
         )
+    for name in update_recipes:
+        if name not in site_cfg.receivers:
+            console.print(
+                f"[red]❌ {name!r} is not a receiver of '{site}' in the settings "
+                f"(sites.{site}.receivers).[/red]"
+            )
+            raise typer.Exit(1)
+        recipe = site_cfg.receivers[name].recipe
+        sha256 = recipe_sha256_of(site, recipe) if recipe else None
+        if recipe and sha256 is None:
+            _refuse_missing_recipe(site, name, recipe)
+        changes[f"instruments.receivers.{name}.recipe"] = recipe
+        changes[f"instruments.receivers.{name}.recipe_sha256"] = sha256
     analyses = site_cfg.vod_analyses or {}
     for name in add_vod_analyses:
         if name not in analyses:
@@ -1100,6 +1107,16 @@ def _amend_changes(
             "reference_receiver": analyses[name].reference_receiver,
         }
     return changes
+
+
+def _refuse_missing_recipe(site: str, receiver: str, recipe: str) -> None:
+    console.print(
+        f"[red]❌ Found no naming recipe {recipe!r} of receiver {receiver!r}, "
+        "so its sha256 can't be recorded. Install canvod-filemap (uv sync "
+        f"--group filemap) and check that `canvodpy config validate --site "
+        f"{site}` finds the recipe.[/red]"
+    )
+    raise typer.Exit(1)
 
 
 @store_app.command("migrate-layout")
@@ -1236,6 +1253,14 @@ def amend(
             help="Add a VOD analysis of the site's settings to the VOD store.",
         ),
     ] = None,
+    update_recipe: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--update-recipe",
+            metavar="name",
+            help="Record a receiver's naming recipe of the settings and its sha256, after the recipe changed on purpose.",
+        ),
+    ] = None,
     from_file: Annotated[
         Path | None,
         typer.Option(
@@ -1243,7 +1268,7 @@ def amend(
             metavar="<path>",
             help=(
                 "YAML file with the keys reason, set (field paths and values), "
-                "and the lists add_receivers and add_vod_analyses."
+                "and the lists add_receivers, add_vod_analyses and update_recipes."
             ),
         ),
     ] = None,
@@ -1273,6 +1298,7 @@ def amend(
     set_values = list(set_values or [])
     receivers = list(add_receiver or [])
     vod_analyses = list(add_vod_analysis or [])
+    recipes = list(update_recipe or [])
     if from_file is not None:
         spec = yaml.safe_load(from_file.read_text()) or {}
         set_values += [
@@ -1281,6 +1307,7 @@ def amend(
         ]
         receivers += list(spec.get("add_receivers") or [])
         vod_analyses += list(spec.get("add_vod_analyses") or [])
+        recipes += list(spec.get("update_recipes") or [])
         reason = reason or spec.get("reason")
     if not reason:
         console.print(
@@ -1289,10 +1316,12 @@ def amend(
         raise typer.Exit(1)
     who = _who()
 
-    changes = _amend_changes(site, store_type, set_values, receivers, vod_analyses)
+    changes = _amend_changes(
+        site, store_type, set_values, receivers, vod_analyses, recipes
+    )
     if not changes:
         console.print(
-            "[red]❌ Nothing to change: use --set, --add-receiver, --add-vod-analysis or --from.[/red]"
+            "[red]❌ Nothing to change: use --set, --add-receiver, --add-vod-analysis, --update-recipe or --from.[/red]"
         )
         raise typer.Exit(1)
 
