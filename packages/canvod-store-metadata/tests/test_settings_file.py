@@ -79,6 +79,60 @@ def test_settings_reproduce_the_stores_content_settings(tmp_path):
     assert differences(stored, run_content_settings(config, SITE), SITE) == []
 
 
+_RECIPE = (
+    "name: rx\nsite: FAN\nagency: INK\nreceiver_number: 1\n"
+    "glob: '*.rnx'\nfields:\n  - skip: 3\n"
+)
+
+
+def _store_with_recipe(tmp_path: Path, recipe: str) -> Path:
+    """A GNSS store whose canopy receiver has the naming recipe ``recipe``."""
+    config = _settings(tmp_path)
+    config.sites.sites[SITE].receivers["canopy_01"].recipe = recipe
+    store = tmp_path / "root" / SITE / "gnss"
+    ensure_store_metadata(
+        store,
+        config=config,
+        site_name=SITE,
+        store_type="gnss_store",
+        source_format="rinex3",
+        names=CONTENT_NAMES,
+    )
+    return store
+
+
+def test_the_store_records_the_sha256_of_a_local_recipe(tmp_path, monkeypatch):
+    pytest.importorskip("canvod.filemap.recipe_files")
+    import hashlib
+
+    path = tmp_path / "config" / "recipes" / SITE / "rx.yaml"
+    path.parent.mkdir(parents=True)
+    path.write_text(_RECIPE)
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path / "config"))
+    store = _store_with_recipe(tmp_path, "rx")
+
+    receiver = read_repository_metadata(store)["instruments"]["receivers"]["canopy_01"]
+    assert receiver["recipe"] == "rx"
+    assert receiver["recipe_sha256"] == hashlib.sha256(_RECIPE.encode()).hexdigest()
+
+
+def test_a_recipe_url_goes_back_into_the_settings(tmp_path, monkeypatch):
+    remote = pytest.importorskip("canvod.filemap.remote")
+    import tempfile
+
+    # Nothing listens there: the recipe cannot be fetched, so no sha256.
+    monkeypatch.setattr(remote, "_DOWNLOAD_ORIGIN", "http://127.0.0.1:9")
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    url = f"https://raw.githubusercontent.com/acc/recipes/{'a' * 40}/{SITE}/rx.yaml"
+    store = _store_with_recipe(tmp_path, url)
+
+    receiver = read_repository_metadata(store)["instruments"]["receivers"]["canopy_01"]
+    assert receiver["recipe"] == url
+    assert receiver["recipe_sha256"] is None
+    settings = settings_from_store(store)
+    assert settings["sites"][SITE]["receivers"]["canopy_01"]["recipe"] == url
+
+
 def test_settings_hold_no_path_or_credential_of_the_creating_machine(tmp_path):
     store = _create_store(tmp_path)
     settings = settings_from_store(store)

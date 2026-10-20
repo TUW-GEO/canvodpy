@@ -1069,7 +1069,7 @@ def _amend_changes(
                 f"(sites.{site}.receivers).[/red]"
             )
             raise typer.Exit(1)
-        receiver = collect_receiver(site_cfg.receivers[name])
+        receiver = collect_receiver(site_cfg.receivers[name], site)
         if store_type == "vod_store":
             # A VOD store reads the hardware from the GNSS store's entries.
             receiver = receiver.model_copy(

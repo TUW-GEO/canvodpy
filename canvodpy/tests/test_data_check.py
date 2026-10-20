@@ -177,3 +177,22 @@ def test_unprocessed_files_are_grouped_by_type() -> None:
         (".##p", 1, Path("c.24p")),
         (".txt", 1, Path("d.txt")),
     ]
+
+
+def test_unrecognized_recipe_fields_are_reported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pytest.importorskip("canvod.filemap.recipe_files")
+    recipe = tmp_path / "recipes" / "fangorn" / "rx.yaml"
+    recipe.parent.mkdir(parents=True)
+    recipe.write_text(
+        "name: rx\nsite: FAN\nagency: INK\nreceiver_number: 1\n"
+        "glob: '*.rnx'\nfields:\n  - skip: 3\nlayout: flat\n"
+    )
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
+    _touch(tmp_path / "rx")
+    report, _ = _check(tmp_path, recipe="rx")
+    assert (
+        f"Recipe {recipe}: field 'layout' is unrecognized and ignored."
+        in report.warnings
+    )

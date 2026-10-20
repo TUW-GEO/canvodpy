@@ -30,6 +30,7 @@ from canvodpy.orchestrator.discovery import (
     discover_files,
     is_compressed,
     receiver_days,
+    recipe_fields_note,
     recipe_file,
     scan_directory,
     unprocessed_files,
@@ -224,6 +225,10 @@ def check_receiver_data(
         return report
     try:
         recipe_path = recipe_file(site, recipe)
+        if recipe and recipe_path is not None:
+            note = recipe_fields_note(recipe, recipe_path)
+            if note:
+                report.warnings.append(note)
         scan = scan_directory(directory, recipe_path)
         reader_format = None if configured_format == "auto" else configured_format
         days = receiver_days(name, directory, reader_format, recipe_path)
