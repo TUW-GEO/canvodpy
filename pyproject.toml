@@ -14,9 +14,9 @@ exclude = ["packages/canvod-filemap"]
 # to a release tag (<package>-v<version>); a local sibling-path source would
 # break `uv sync` on any machine without that repo cloned alongside canvodpy.
 [tool.uv.sources]
-# Extensions main after PR #74 (with the RINEX 2 daily-session fix, #47)
+# Extensions main after PR #81 (naming recipes from a pinned URL, #78)
 # until the canvod-filemap-v1.0.0 tag exists.
-canvod-filemap = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", rev = "ecec4aedc1e2d6b8c608dec787c5ae19bd166fbe" }
+canvod-filemap = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", rev = "306d30de2d1fbd5c715df133de6288e214915faa" }
 canvod-adapters = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-adapters", tag = "v0.1.0" }
 # The extensions repo takes canvod-preflight from this repo on GitHub until
 # canvodpy 1.0.0 is on PyPI. The override makes canvod-filemap use the local
