@@ -115,6 +115,8 @@ only; the Airflow DAG computes VOD in its own task.
 
 ```mermaid
 flowchart TD
+    OVERLAY["Overlay file<br/>--config, optional"] -.-> SETTINGS
+    RECIPE["Naming recipe<br/>canvod-filemap, optional"] -.-> FIND
     SETTINGS["Settings<br/>canvod-settings.yaml"] --> FIND
     FIND["Find and check the files<br/>of every receiver"] --> PREP
     PREP["Prepare each day<br/>orbits, clocks, receiver positions"] --> READ
@@ -125,13 +127,17 @@ flowchart TD
     VODSTEP["Compute VOD<br/>and write it to the VOD store"]
 ```
 
+Dashed arrows are optional inputs.
+
 1. **Read the settings.** `canvod-settings.yaml` is checked against the
    settings models of `canvod-config`. An unknown key or a wrong value
-   stops the run with a message that names it. See
-   [Configuration](guides/configuration.md).
+   stops the run with a message that names it. An overlay file
+   (`--config`) adds or changes settings for one run without editing the
+   file. See [Configuration](guides/configuration.md).
 2. **Find and check the files.** The run finds the files of every
    receiver in any folder layout. It recognizes them by their canVOD
-   file names or through a naming recipe. It stops before it reads anything if two files have the
+   file names or through a
+   [naming recipe](packages/naming/overview.md). It stops before it reads anything if two files have the
    same canVOD file name, if files overlap in time, or if one folder holds
    the files of more than one receiver. The reader comes from
    `reader_format` in the settings of the receiver, or is detected from the

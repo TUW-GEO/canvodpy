@@ -114,6 +114,9 @@ with an unobstructed view of the sky.
 ```mermaid
 flowchart LR
     FILES["RINEX, SBF or NMEA files"] --> READ["Read"]
+    SETTINGS["Settings"] --> READ
+    OVERLAY["Overlay file<br/>optional"] -.-> SETTINGS
+    RECIPE["Naming recipe<br/>optional"] -.-> READ
     READ --> ANGLES["Satellite angles"]
     ORBITS["SP3 orbits"] --> ANGLES
     ANGLES --> GSTORE["GNSS store"]
@@ -121,6 +124,11 @@ flowchart LR
     VOD --> VSTORE["VOD store"]
     VSTORE --> PLOT["Hemispheric grids and plots"]
 ```
+
+Dashed arrows are optional inputs: an overlay file changes settings for
+one run ([Configuration](guides/configuration.md#overlay-file)), and a
+naming recipe recognizes files with other names
+([Naming](packages/naming/overview.md)).
 
 For SBF files, the satellite angles can also come from the files
 themselves (`processing.params.ephemeris_source: broadcast`). For every
