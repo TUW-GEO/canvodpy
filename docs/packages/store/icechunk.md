@@ -122,6 +122,9 @@ store.create_branch("before_reprocessing", snapshot_id)
 ds = store.read_group("canopy_01", branch="before_reprocessing")
 ```
 
+The snapshot can be on any branch or tag; its full ID or a prefix of it,
+such as the 8 characters `store.plot_commit_graph()` shows, will do.
+
 A snapshot stays readable until it's expired. `canvodpy store maintain`
 expires old snapshots and collects garbage; without `--execute`, it only
 reports what it would delete.

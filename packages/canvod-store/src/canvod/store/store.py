@@ -5023,41 +5023,54 @@ class MyIcechunkStore:
         """
         Create a branch pointing at a specific snapshot.
 
-        Accepts either the full snapshot ID or an 8-character prefix as shown
-        in ``plot_commit_graph()``.  Raises ``ValueError`` if the prefix is
-        ambiguous or not found.
+        Accepts the full snapshot ID or a prefix of it, such as the
+        8 characters ``plot_commit_graph()`` shows (case-insensitive). The
+        snapshot can be on any branch or tag.
 
         Parameters
         ----------
         branch_name : str
             Name of the new branch (e.g. ``"explore/my-analysis"``).
         snapshot_id : str
-            Full snapshot ID or 8-char prefix (case-insensitive).
+            Full snapshot ID or a prefix of it.
+
+        Raises
+        ------
+        ValueError
+            If no snapshot on a branch or tag has this ID or prefix, or the
+            prefix fits several.
         """
-        if len(snapshot_id) < 32:
-            prefix = snapshot_id.upper()
-            history = self.get_history(limit=None)
-            matches = [
-                h
-                for h in history
-                if h.get("snapshot_id", "").upper().startswith(prefix)
-            ]
-            if not matches:
-                raise ValueError(
-                    f"No snapshot found with prefix '{snapshot_id}'. "
-                    "Use get_history() to list available snapshots."
-                )
-            if len(matches) > 1:
-                ids = [m["snapshot_id"] for m in matches]
-                raise ValueError(
-                    f"Ambiguous prefix '{snapshot_id}' "
-                    f"matches {len(ids)} snapshots: {ids}"
-                )
-            snapshot_id = matches[0]["snapshot_id"]
+        snapshot_id = self._resolve_snapshot_id(snapshot_id)
         self.repo.create_branch(branch_name, snapshot_id)
         self._logger.info(
             f"Created branch '{branch_name}' at snapshot {snapshot_id[:8]}"
         )
+
+    def _resolve_snapshot_id(self, snapshot_id: str) -> str:
+        """The full ID of the snapshot ``snapshot_id`` is the ID or a prefix of.
+
+        Looks at the history of every branch and tag.
+        """
+        prefix = snapshot_id.upper()
+        known: set[str] = set()
+        refs = [{"branch": b} for b in self.repo.list_branches()]
+        refs += [{"tag": t} for t in self.repo.list_tags()]
+        for ref in refs:
+            known.update(a.id for a in self.repo.ancestry(**ref))
+        if prefix in known:
+            return prefix
+        matches = sorted(i for i in known if i.startswith(prefix))
+        if not matches:
+            raise ValueError(
+                f"No snapshot found with ID or prefix '{snapshot_id}' on any "
+                "branch or tag. Use get_history(branch=...) to list snapshots."
+            )
+        if len(matches) > 1:
+            raise ValueError(
+                f"Ambiguous prefix '{snapshot_id}' "
+                f"matches {len(matches)} snapshots: {matches}"
+            )
+        return matches[0]
 
     def create_release_tag(self, tag_name: str, snapshot_id: str | None = None) -> None:
         """
