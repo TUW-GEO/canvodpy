@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import time
+import warnings
 from collections.abc import Generator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -30,16 +31,17 @@ from canvod.config.models import (
 from canvod.readers.base import validate_vod_dataset
 from canvod.store_metadata import RESERVED_GROUP
 from canvod.store_metadata.icechunk_logs import apply_icechunk_log_filter
+from canvod.store_metadata.identity import check_store_folder
 from canvod.store_metadata.io import (
     CONFLICT_TRIES,
     commit_lock,
     commit_with_rebase,
     rewrite_manifests,
-    store_command,
     wait_after_conflict,
 )
 from canvod.store_metadata.layout import LayoutError
 from canvod.store_metadata.location import (
+    SITE_MIGRATE_COMMAND,
     S3StoreLocation,
     StoreLocation,
     open_repository,
@@ -833,6 +835,12 @@ class MyIcechunkStore:
         """
         self._logger.info(f"Opening Icechunk store at {self.store_path}")
         self._repo = open_repository(self.store_path, config=self.config)
+        # Writes refuse such a store (ensure_store_metadata); reads go on,
+        # with the cause named (#456).
+        mismatch = check_store_folder(self._repo.get_metadata(), self.location)
+        if mismatch:
+            self._logger.warning("store_folder_mismatch", reason=mismatch)
+            warnings.warn(mismatch, UserWarning, stacklevel=3)
 
     @property
     def repo(self) -> icechunk.Repository:
@@ -860,7 +868,7 @@ class MyIcechunkStore:
                 f"The store at {self.store_path} has no repository metadata, "
                 "so it doesn't say which site it holds. Move it to the "
                 "current form with:\n"
-                f"  {store_command('migrate-metadata', 'SITE', self.store_type)}"
+                f"  {SITE_MIGRATE_COMMAND} SITE"
             )
             raise ValueError(msg)
         return name

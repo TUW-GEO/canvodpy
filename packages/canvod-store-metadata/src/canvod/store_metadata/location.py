@@ -21,6 +21,9 @@ if TYPE_CHECKING:
 
 #: The command that moves a store to the metadata form of ADR 0014.
 MIGRATE_COMMAND = "canvodpy store migrate-metadata"
+#: The command that moves all stores of a site to the current form: the
+#: folder, the metadata and the layout (#456).
+SITE_MIGRATE_COMMAND = "canvodpy store migrate"
 
 #: The environment variable that puts the bucket in the path of S3
 #: requests (``endpoint/bucket/key``) instead of the host name
@@ -458,7 +461,7 @@ def _uuid(repo: icechunk.Repository, where: StoreLocation) -> str:
         msg = (
             f"The store at {where} has no repository metadata, so it has no "
             "UUID. Move it to the current form with:\n"
-            f"  {MIGRATE_COMMAND} SITE --store gnss|vod"
+            f"  {SITE_MIGRATE_COMMAND} SITE"
         )
         raise ValueError(msg)
     return uuid

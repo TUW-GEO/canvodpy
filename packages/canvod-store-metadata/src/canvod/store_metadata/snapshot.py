@@ -30,8 +30,9 @@ from zarr_cm import license as zarr_license
 from zarr_cm import proj as zarr_proj
 from zarr_cm import stac as zarr_stac
 
+from .content import replay_content_changes
 from .io import _set_field
-from .location import MIGRATE_COMMAND, StoreLocation, store_location
+from .location import SITE_MIGRATE_COMMAND, StoreLocation, store_location
 from .schema import (
     _METADATA_KEY,
     ACDD_TYPES,
@@ -251,6 +252,12 @@ def _replay_amendments(copy: dict[str, Any], repository: dict[str, Any]) -> bool
     # (canvodpy store migrate-metadata, ADR 0019); never changed after.
     if not copy.get("content_settings"):
         replayed["content_settings"] = repository.get("content_settings")
+    elif repository.get("content_settings"):
+        # ... except by a migration that changed the data to fit a new value
+        # (canvodpy store migrate, #456), which records each change.
+        replayed["content_settings"] = replay_content_changes(
+            copy["content_settings"], repository["content_settings"]
+        )
     for amendment in amendments[len(done) :]:
         _set_field(replayed, amendment["field"], amendment["new"])
     # An amendment under an unset section (e.g. a receiver's antenna) creates
@@ -426,7 +433,7 @@ def _kept_summary(
             f"The store at {store_path} has no snapshot summary in its root "
             "group to keep. A store written before snapshot summaries is "
             "moved to the current form with:\n"
-            f"  {MIGRATE_COMMAND} SITE --store gnss|vod"
+            f"  {SITE_MIGRATE_COMMAND} SITE"
         )
         raise ValueError(msg)
     return {**summary, "temporal": {**temporal, "updated": committed_at}}

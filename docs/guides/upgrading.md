@@ -13,7 +13,7 @@ the rest of the page lists what changed, what is deprecated and what is new.
 
     A v1.0.0 run refuses a store written by canVODpy 0.x and names the
     command that migrates it. A nightly run stops there until you migrate.
-    Migrating takes two commands per store and keeps every earlier snapshot
+    Migrating takes one command per site and keeps every earlier snapshot
     readable.
 
 ---
@@ -54,21 +54,43 @@ to do; they are listed [below](#deprecated-settings).
 
 ### 2. Back up your stores
 
-The migrations commit to the store; earlier snapshots stay readable, but
+The migration commits to the stores; earlier snapshots stay readable, but
 keep a copy until you've checked the result. A store is a folder: copy it
-(`cp -a`, `rsync -a`), or for a store on S3 copy its prefix.
+(`cp -a`, `rsync -a`).
 
-### 3. Migrate each store
+### 3. Migrate each site's stores
 
-For each site, the GNSS store first, then the VOD store; the VOD store
-takes the GNSS store's content settings:
+One command per site:
 
 ```bash
-canvodpy store migrate-metadata SITE --store gnss
-canvodpy store migrate-layout   SITE --store gnss
-canvodpy store migrate-metadata SITE --store vod
-canvodpy store migrate-layout   SITE --store vod
+canvodpy store migrate SITE
 ```
+
+It shows what it will do, asks once (`--yes` skips the question), and
+then takes these steps, skipping each one that is done already:
+
+1. **The folders.** A store's folder is named by its kind, `gnss` or
+   `vod`, optionally with a suffix (`vod-recompute`,
+   [Store folders](../packages/store/overview.md#store-folders)). The
+   GNSS store's old folder `rinex` moves to `gnss`. Any other folder whose
+   name isn't its kind needs its new name: `--rename vod_2024=vod-2024`.
+   The store id is taken from the new name. A site that has both `rinex`
+   and `gnss` is refused: decide which store to keep. The next steps
+   migrate the stores your settings name (`gnss_store_name`,
+   `vod_store_name`). Another store, such as `vod-2024`, is only moved,
+   and the command says so: to migrate it, set
+   `vod_store_name: vod-2024` and run the command again.
+2. **The GNSS store, then the VOD store**, each with the steps of
+   `migrate-metadata` and `migrate-layout` (described below).
+3. **The clock.** A GNSS store written with CLK files holds a `clock`
+   variable. v1.0.0 reads no CLK files by default, and VOD doesn't use
+   the clock: the variable is removed and the store records
+   `fetch_clock: false`. The VOD store records the GNSS store's new
+   content-settings hash, so VOD runs go on.
+
+If a step stops, fix the cause and run the command again.
+`migrate-metadata` and `migrate-layout` run single steps of one store
+(`--store gnss` or `--store vod`):
 
 - **`migrate-metadata`** moves the store to repository metadata: its
   description, a store id and UUID, the time scale of its epochs, and
@@ -82,22 +104,21 @@ canvodpy store migrate-layout   SITE --store vod
   v1.0.0 runs write ([Moving a store to day blocks](../packages/store/overview.md#moving-a-store-to-day-blocks)).
   An epoch stored twice keeps the entry written last.
 
-Both commands show what they change and ask first (`--yes` skips the
-question). Each one is a single commit. The details are in
+Both show what they change and ask first. Each one is a single commit. The details are in
 [Move an older store to the current form](../packages/store-metadata/overview.md#move-an-older-store-to-the-current-form).
 
 **Settings the store doesn't record.** `migrate-metadata` takes the
 content settings from the settings recorded in the store's first commit.
 A value that commit doesn't record isn't guessed: the command stops,
-lists it, and you give it with `--set`, as your settings file had it when
-the store was written. For a GNSS store from canVODpy 0.4.0 these are
-typically:
+lists it, and you give it with `--gnss-set` (or `--vod-set` for the VOD
+store), as your settings file had it when the store was written. For a
+GNSS store from canVODpy 0.4.0 these are typically:
 
 ```bash
-canvodpy store migrate-metadata SITE --store gnss \
-  --set processing.params.store_sbf_metadata=true \
-  --set processing.params.rinex_v3_parser=validated \
-  --set "sites.SITE.receivers.reference_01.paired_canopies=[canopy_01]"
+canvodpy store migrate SITE \
+  --gnss-set processing.params.store_sbf_metadata=true \
+  --gnss-set processing.params.rinex_v3_parser=validated \
+  --gnss-set "sites.SITE.receivers.reference_01.paired_canopies=[canopy_01]"
 ```
 
 Some settings are read from the data instead, because canVODpy 0.x

@@ -44,3 +44,12 @@ def test_create_gnss_store_is_deprecated_and_only_opens(tmp_path):
         create_gnss_store(path)
 
     assert not path.exists()
+
+
+def test_a_store_whose_id_does_not_fit_its_folder_opens_with_a_warning(tmp_path):
+    # Created as the GNSS store, then its folder renamed by hand (#456).
+    path = give_test_metadata(tmp_path / "fangorn" / "gnss")
+    renamed = path.rename(path.parent / "gnss-renamed")
+
+    with pytest.warns(UserWarning, match="renamed after the store was created"):
+        open_gnss_store(renamed)

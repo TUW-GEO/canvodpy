@@ -383,13 +383,16 @@ are never amended.
 
 A store written before the repository metadata keeps its metadata in one
 root attribute. Runs refuse such a store, and the error names the
-command that moves it:
+command that moves all stores of its site, their folders, metadata and
+layout ([Upgrading to v1.0.0](../../guides/upgrading.md#3-migrate-each-sites-stores)):
 
 ```bash
-canvodpy store migrate-metadata ExampleSite --store gnss \
-  --set identity.description="GNSS-T observations below a beech canopy"
+canvodpy store migrate ExampleSite \
+  --gnss-set identity.description="GNSS-T observations below a beech canopy"
 ```
 
+`canvodpy store migrate-metadata ExampleSite --store gnss` runs the
+metadata step of one store alone, with `--set` for what it lacks.
 The migration writes the repository metadata, gives the store its new id
 and a UUID, and keeps the old id in the migration record, with who
 migrated it and when. A migrated store must pass the standards checks
@@ -472,6 +475,16 @@ migrate the GNSS store first; otherwise the command lists
 `--set gnss_content_hash=...`. The
 calculator and its parameters of each group are recorded in the group's
 attributes (ADR 0019 D2), not in the content settings.
+
+Content settings are never amended, with one exception. A GNSS store
+written with CLK files holds a `clock` variable, and v1.0.0 runs read no
+CLK files by default. `canvodpy store migrate` removes the variable and
+records `fetch_clock: false`; the content settings keep the change under
+`changes`, with the old value, the old hash, who made it and why. The
+site's VOD store then records the GNSS store's new hash, which it accepts
+only if the hash it held is one the GNSS store had before such a change.
+In Python: `drop_clock()` and `follow_gnss_content_hash()` from
+`canvod.store_metadata.migration`.
 
 ## List the stores of a directory
 
@@ -561,7 +574,7 @@ lists each such store with its reason:
 
 ```text
 ❌ No catalog was written: 2 store(s) under /data/stores cannot be described.
-  Moria/gnss: needs migration to the current metadata form (ADR 0014): canvodpy store migrate-metadata Moria --store gnss
+  Moria/gnss: needs migration to the current metadata form (ADR 0014): canvodpy store migrate Moria
   Mordor/gnss: `publisher.license` 'Apache 2' is not an SPDX license identifier (see https://spdx.org/licenses/); a license outside SPDX is 'other' with license_uri; fix it with canvodpy store amend Mordor --store gnss
 ```
 

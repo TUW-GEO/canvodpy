@@ -191,9 +191,7 @@ class TestEnsureMetadata:
         zarr.open_group(session.store, mode="w").attrs["canvod_metadata"] = {"x": 1}
         session.commit("old form")
 
-        with pytest.raises(
-            ValueError, match="canvodpy store migrate-metadata Fangorn --store gnss"
-        ):
+        with pytest.raises(ValueError, match="canvodpy store migrate Fangorn"):
             _ensure(path)
         assert not metadata_exists(path)
 
@@ -204,7 +202,7 @@ class TestEnsureMetadata:
         zarr.open_group(session.store, mode="w").require_group("canopy_01")
         session.commit("data without metadata")
 
-        with pytest.raises(ValueError, match="canvodpy store migrate-metadata"):
+        with pytest.raises(ValueError, match="canvodpy store migrate "):
             _ensure(path)
 
 
@@ -275,7 +273,7 @@ class TestStoreRefusesDataWithoutMetadata:
         with pytest.raises(ValueError, match="no repository metadata") as excinfo:
             commit_with_rebase(session, "data", store_path=path)
 
-        assert "canvodpy store migrate-metadata" in str(excinfo.value)
+        assert "canvodpy store migrate " in str(excinfo.value)
         assert repo.lookup_branch("main") == before
 
     def test_a_commit_to_a_store_with_metadata_is_written(self, tmp_path):
