@@ -822,11 +822,7 @@ class TestHainichSignalId:
         hai = NmeaObs(fpath=hainich_ref_file).to_ds(pad_global_sid=False)
         ros = NmeaObs(fpath=nmea_file).to_ds(pad_global_sid=False)
 
-        # Hainich: each GPS SV on ~2 bands → more SIDs
-        hai_sids_per_sv = len(hai.sid) / max(1, hai.sizes.get("sid", 1))
-        ros_sids_per_sv = len(ros.sid) / max(1, ros.sizes.get("sid", 1))
-
-        # Simpler: just check that Hainich has more unique bands
+        # Hainich has more unique bands
         hai_bands = set(str(b) for b in hai.band.values)
         ros_bands = set(str(b) for b in ros.band.values)
 

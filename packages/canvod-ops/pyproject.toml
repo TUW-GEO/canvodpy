@@ -3,20 +3,33 @@ name = "canvod-ops"
 version = "0.4.0"
 description = "Preprocessing of GNSS observations: temporal aggregation and grid cell assignment"
 readme = "README.md"
+requires-python = ">=3.14"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]
 maintainers = [
     {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
 ]
-requires-python = ">=3.14"
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.14",
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "VOD",
+    "preprocessing",
+    "temporal aggregation",
+    "hemispheric grid",
+    "remote sensing",
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+]
+
 dependencies = [
     "xarray>=2024.1.0",
     "numpy>=1.26.0",
