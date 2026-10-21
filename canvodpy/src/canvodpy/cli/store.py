@@ -1258,7 +1258,7 @@ def amend(
         typer.Option(
             "--update-recipe",
             metavar="name",
-            help="Record a receiver's naming recipe of the settings and its sha256, after the recipe changed on purpose.",
+            help="Record a receiver's naming recipe of the settings and its sha256 in the GNSS store, after the recipe changed on purpose.",
         ),
     ] = None,
     from_file: Annotated[
@@ -1314,6 +1314,21 @@ def amend(
             "[red]❌ An amendment needs --reason (or reason: in the --from file).[/red]"
         )
         raise typer.Exit(1)
+    if recipes and store_type != "gnss_store":
+        console.print(
+            "[red]❌ --update-recipe records the recipe in the GNSS store, the "
+            "store whose runs read the files: use --store gnss.[/red]"
+        )
+        raise typer.Exit(1)
+    current = read_repository_metadata(path)
+    listed = (current.get("instruments") or {}).get("receivers") or {}
+    for name in recipes:
+        if name not in listed and name not in receivers:
+            console.print(
+                f"[red]❌ {name!r} is not in the store; add it with "
+                f"--add-receiver {name}.[/red]"
+            )
+            raise typer.Exit(1)
     who = _who()
 
     changes = _amend_changes(
@@ -1332,7 +1347,6 @@ def amend(
         console.print(f"[red]❌ {exc}[/red]")
         raise typer.Exit(1) from None
 
-    current = read_repository_metadata(path)
     table = Table(title=f"{site}: {store} store", show_lines=False)
     table.add_column("Field")
     table.add_column("Old")

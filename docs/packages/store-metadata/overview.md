@@ -374,9 +374,11 @@ different store.
 `--add-receiver NAME` adds a receiver of the site's settings to a GNSS
 store, and `--add-vod-analysis NAME` adds a VOD analysis to a VOD store,
 so runs may write them. `--update-recipe NAME` records a receiver's
-naming recipe of the settings and the sha256 of its file, after the
-recipe changed on purpose: every run compares each recipe with the one the
-GNSS store records and stops on a difference. `--from FILE` reads the
+naming recipe of the settings and the sha256 of its file in the GNSS
+store, after the recipe changed on purpose: every run compares each
+recipe with the one the GNSS store records and stops on a difference.
+The receiver must be in the store already, or be added with
+`--add-receiver NAME` in the same amendment. `--from FILE` reads the
 changes from a YAML file. In Python, `amend_metadata()` does the same.
 
 Runs set the snapshot summary and the commit metadata themselves; they

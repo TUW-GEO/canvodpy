@@ -1505,6 +1505,51 @@ class TestStoreAmend:
         assert receiver["recipe_sha256"] == hashlib.sha256(b"name: rx\n").hexdigest()
         check()
 
+    def test_a_recipe_of_a_receiver_the_store_lacks_is_refused(self, tmp_path):
+        config_dir, path = self._setup(
+            tmp_path,
+            receivers={
+                "canopy_02": {"type": "canopy", "directory": "c2", "recipe": "rx"}
+            },
+        )
+
+        result = self._amend(
+            config_dir, "--update-recipe", "canopy_02", "--reason", "rx", "--yes"
+        )
+
+        assert result.exit_code == 1
+        assert "--add-receiver canopy_02" in result.output
+        from canvod.store_metadata import read_metadata
+
+        assert "canopy_02" not in read_metadata(path).instruments.receivers
+
+    def test_a_recipe_is_not_recorded_in_the_vod_store(self, tmp_path):
+        import icechunk
+
+        config_dir, path = self._setup(tmp_path)
+        vod = path.parent / "vod"
+        icechunk.Repository.create(storage=icechunk.local_filesystem_storage(str(vod)))
+
+        result = runner.invoke(
+            main_app,
+            [
+                "store",
+                "amend",
+                "TestSite",
+                "--store",
+                "vod",
+                "--update-recipe",
+                "canopy_01",
+                "--reason",
+                "rx",
+                "--yes",
+            ],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 1
+        assert "--store gnss" in result.output
+
     def test_an_unknown_receiver_is_refused(self, tmp_path):
         config_dir, _ = self._setup(tmp_path)
 
