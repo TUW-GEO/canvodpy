@@ -18,8 +18,10 @@ import polars as pl
 import structlog
 import xarray as xr
 import zarr
+from canvod.config.loader import get_default_config_dir
 from canvod.config.models import (
     PREPROCESSING_ATTR,
+    ChunkStrategies,
     PreprocessingMismatchError,
     describe_settings,
     preprocessing_record,
@@ -571,6 +573,23 @@ class VodDayWrite:
     in_fork: bool
 
 
+def settings_file() -> Path:
+    """The settings file a store loads when it is given no settings."""
+    return get_default_config_dir() / "canvod-settings.yaml"
+
+
+def _settings_if_present() -> CanvodConfig | None:
+    """The settings, or None when there is no settings file.
+
+    A settings file that is there but fails to load raises.
+    """
+    from canvod.config import load_config
+
+    if not settings_file().exists():
+        return None
+    return load_config()
+
+
 @add_rich_display_to_store
 class MyIcechunkStore:
     """
@@ -649,20 +668,17 @@ class MyIcechunkStore:
         compression_algorithm : str | None, optional
             Override default compression algorithm.
         config : CanvodConfig | None, optional
-            The settings the store works with; every commit records them.
-            ``None`` loads the settings.
+            The settings the store writes with; every commit records them.
+            ``None`` loads the settings file if there is one. Without one
+            the store can be read but not written.
         """
         self._logger = structlog.get_logger(__name__)
 
-        from canvod.config import load_config
-
-        # No fallback: settings that fail to load raise here, so a store is
-        # never opened with defaults the user didn't choose.
-        cfg = config if config is not None else load_config()
-        self.settings = cfg
-        ic_cfg = cfg.processing.icechunk
-        _gnss_store_strategy = cfg.processing.storage.gnss_store_strategy
-        _log_path_depth = cfg.processing.logging.log_path_depth
+        # No fallback: a settings file that fails to load raises here, and
+        # a store opened without settings refuses every commit, expiry and
+        # garbage collection (``_require_settings``), so nothing is ever
+        # written or deleted with defaults the user didn't choose.
+        self._settings = config if config is not None else _settings_if_present()
 
         #: Where the store lives; ``store_path`` is its local directory, or
         #: its ``s3://`` URL for a store on S3 (#350).
@@ -670,36 +686,50 @@ class MyIcechunkStore:
         self.store_path: Path | str = self.location.local_path or str(self.location)
         self.store_type = store_type
 
-        # Compression — icechunk v2 only supports zstd
-        self.compression_level = compression_level or ic_cfg.compression_level
-        self.compression_algorithm = icechunk.CompressionAlgorithm.Zstd
-
         # Chunk strategy: one per store type, no silent fallback to no chunking
-        if store_type not in type(ic_cfg.chunk_strategies).model_fields:
+        if store_type not in ChunkStrategies.model_fields:
             msg = (
                 f"Unknown store_type {store_type!r}; expected one of "
-                f"{list(type(ic_cfg.chunk_strategies).model_fields)}"
+                f"{list(ChunkStrategies.model_fields)}"
             )
             raise ValueError(msg)
-        strategy = getattr(ic_cfg.chunk_strategies, store_type)
-        self.chunk_strategy = {"epoch": strategy.epoch, "sid": strategy.sid}
 
-        # Storage config cached for metadata rows
-        self._gnss_store_strategy = _gnss_store_strategy
-        self._log_path_depth = _log_path_depth
-        self._zarr_async_concurrency = ic_cfg.zarr_async_concurrency
-
-        # The same repository configuration a run creates a new store with
-        self.config = repository_config(
-            ic_cfg, compression_level=self.compression_level
+        # Compression — icechunk v2 only supports zstd. Without settings
+        # the level and the rest of the write settings are None; reads
+        # don't need them, and writes are refused (``_writable``).
+        cfg = self._settings
+        ic_cfg = None if cfg is None else cfg.processing.icechunk
+        self.compression_level = compression_level or (
+            None if ic_cfg is None else ic_cfg.compression_level
         )
-        if ic_cfg.manifest_preload_enabled:
+        self.compression_algorithm = icechunk.CompressionAlgorithm.Zstd
+
+        self.chunk_strategy: dict[str, int] | None = None
+        self._gnss_store_strategy = None
+        self._log_path_depth = None
+        self._zarr_async_concurrency = None
+        if cfg is not None and ic_cfg is not None:
+            strategy = getattr(ic_cfg.chunk_strategies, store_type)
+            self.chunk_strategy = {"epoch": strategy.epoch, "sid": strategy.sid}
+            # Storage config cached for metadata rows
+            self._gnss_store_strategy = cfg.processing.storage.gnss_store_strategy
+            self._log_path_depth = cfg.processing.logging.log_path_depth
+            self._zarr_async_concurrency = ic_cfg.zarr_async_concurrency
+
+        # The same repository configuration a run creates a new store with.
+        # None opens the store with the configuration Icechunk kept with it.
+        self.config = (
+            None
+            if ic_cfg is None
+            else repository_config(ic_cfg, compression_level=self.compression_level)
+        )
+        if ic_cfg is not None and ic_cfg.manifest_preload_enabled:
             self._logger.info(
                 "Manifest preload enabled: "
                 f"pattern={ic_cfg.manifest_preload_pattern!r}, "
                 f"max_refs={ic_cfg.manifest_preload_max_refs}"
             )
-        if ic_cfg.manifest_splitting_enabled:
+        if ic_cfg is not None and ic_cfg.manifest_splitting_enabled:
             self._logger.info(
                 "Manifest splitting enabled: "
                 f"epoch_range={ic_cfg.manifest_splitting_epoch_range}"
@@ -712,6 +742,39 @@ class MyIcechunkStore:
         # Remove .DS_Store files that corrupt icechunk ref listing on macOS
         self._clean_ds_store()
         self._open()
+
+    @property
+    def settings(self) -> CanvodConfig:
+        """The settings the store writes with.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the store was opened without settings. Reading needs none;
+            every write does.
+        """
+        if self._settings is None:
+            msg = (
+                f"Settings file not found: {settings_file()}\n"
+                f"The store at {self.store_path} was opened without settings, "
+                "so it can be read but not written. Run 'canvodpy config init' "
+                "to create the settings, then open the store again."
+            )
+            raise FileNotFoundError(msg)
+        return self._settings
+
+    def _require_settings(self) -> None:
+        """Raise ``FileNotFoundError`` when the store was opened without settings.
+
+        Commits, expiring snapshots and garbage collection need the
+        settings; reads, branches and tags don't.
+        """
+        self.settings  # noqa: B018 (raises when the store has no settings)
+
+    def _writable(self, branch: str) -> icechunk.Session:
+        """A writable session on ``branch``; refused without settings."""
+        self._require_settings()
+        return self.repo.writable_session(branch)
 
     def _to_icechunk_throttled(
         self, dataset: xr.Dataset, session, *, throttle: bool | None = None, **kwargs
@@ -886,8 +949,14 @@ class MyIcechunkStore:
         self,
         branch: str = "main",
     ) -> Generator[icechunk.Session]:
-        """Thin wrapper over ``repo.writable_session()`` for this CM."""
-        yield self.repo.writable_session(branch)
+        """Thin wrapper over ``repo.writable_session()`` for this CM.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the store was opened without settings.
+        """
+        yield self._writable(branch)
 
     # ── Root-level store attributes ────────────────────────────────────────────
 
@@ -907,7 +976,7 @@ class MyIcechunkStore:
             Snapshot ID from the commit.
         """
         message = f"Set root attrs: {list(attrs.keys())}"
-        session = self.repo.writable_session(branch)
+        session = self._writable(branch)
         try:
             root = zarr.open_group(session.store, mode="r+")
         except zarr.errors.GroupNotFoundError:
@@ -1394,12 +1463,13 @@ class MyIcechunkStore:
                 "earlier call that could not be promoted). Inspect it, then "
                 "delete it with delete_branch()."
             )
+        self._require_settings()  # before the branch, so none is left behind
         self.repo.create_branch(temp_branch, tip)
 
         commit_message = _with_run_id(
             f"Added {', '.join(new_names)} to {group_name} ({step['op']})"
         )
-        session = self.repo.writable_session(temp_branch)
+        session = self._writable(temp_branch)
         self._to_icechunk_throttled(to_write, session, group=group_name, mode="a")
         self._append_metadata_row(
             zroot=zarr.open_group(session.store, mode="a"),
@@ -2753,7 +2823,7 @@ class MyIcechunkStore:
         an extra commit per file.
         """
         message = f"Appended metadata row for {group_name}, hash={rinex_hash}"
-        session = self.repo.writable_session(branch)
+        session = self._writable(branch)
         zroot = zarr.open_group(session.store, mode="a")
         self._append_metadata_row(
             zroot=zroot,
@@ -4318,7 +4388,13 @@ class MyIcechunkStore:
         -------
         set[str]
             Expired snapshot IDs.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the store was opened without settings.
         """
+        self._require_settings()
         self._refuse_maintenance_on_s3("Expiring old snapshots")
         if days is None:
             days = 90
@@ -4377,7 +4453,14 @@ class MyIcechunkStore:
         -------
         dict
             Summary of (would-be-)deleted objects.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the store was opened without settings, also for a dry run,
+            so maintenance behaves one way.
         """
+        self._require_settings()
         if not dry_run:
             self._refuse_maintenance_on_s3("Garbage collection")
         cutoff = datetime.now(UTC) - timedelta(days=days)
@@ -5328,6 +5411,7 @@ class MyIcechunkStore:
         dict
             Summary of maintenance actions.
         """
+        self._require_settings()
         self._refuse_maintenance_on_s3("Maintenance")
         self._logger.info(f"Starting maintenance on {self.store_type}")
 
@@ -5376,7 +5460,10 @@ def _cadence_info(epochs: np.ndarray) -> dict[str, Any]:
 def open_gnss_store(store_path: StoreLocation | Path | str) -> MyIcechunkStore:
     """Open the GNSS store at ``store_path``; never create it.
 
-    A run creates a site's stores when it first writes to them.
+    A run creates a site's stores when it first writes to them. Reading,
+    branches and tags need no settings file; commits, expiring snapshots
+    and garbage collection do. A store opened without one refuses them
+    with a ``FileNotFoundError`` that names ``canvodpy config init``.
 
     Raises
     ------
@@ -5389,7 +5476,10 @@ def open_gnss_store(store_path: StoreLocation | Path | str) -> MyIcechunkStore:
 def open_vod_store(store_path: StoreLocation | Path | str) -> MyIcechunkStore:
     """Open the VOD store at ``store_path``; never create it.
 
-    A run creates a site's stores when it first writes to them.
+    A run creates a site's stores when it first writes to them. Reading,
+    branches and tags need no settings file; commits, expiring snapshots
+    and garbage collection do. A store opened without one refuses them
+    with a ``FileNotFoundError`` that names ``canvodpy config init``.
 
     Raises
     ------
