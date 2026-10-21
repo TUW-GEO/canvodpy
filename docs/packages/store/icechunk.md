@@ -74,7 +74,7 @@ lists the same settings with their types and limits.
 | `inline_chunk_threshold_bytes` | `512` | Chunks up to this size are stored in the manifest instead of in `chunks/`. |
 | `get_partial_values_concurrency` | `1` | Concurrent requests when reading part of a chunk. |
 | `max_concurrent_requests` | `null` | Limit on concurrent storage requests. |
-| `zarr_async_concurrency` | `null` | Limit on the concurrent chunk reads and writes of Zarr per array; `null` keeps Zarr's default of 10. On a network-mounted store (CIFS or NFS) that drops connections during writes, set a lower value; writes get slower. |
+| `zarr_async_concurrency` | `null` | Limit on the concurrent chunk writes of Zarr per array, for the writes made through the store's own write methods; `null` keeps Zarr's default of 10. The GNSS store writes of `canvodpy run` and the day-block writes don't use it. A lower value makes the writes it covers slower. |
 | `chunk_strategies` | see [Chunks](chunks.md) | Chunk shape per store. |
 | `manifest_splitting_enabled` | `true` | Splits manifests along `epoch` every `manifest_splitting_epoch_range` epoch chunks. |
 | `manifest_splitting_epoch_range` | `17280` | Epoch chunks per manifest. The value counts chunks, not epochs: with the default chunks, a GNSS store manifest covers $17280 \times 180$ epochs (180 days at 5 s). |
