@@ -344,9 +344,10 @@ the next major version.
 
 Reading a store needs no settings file, so a store you downloaded or got
 from a colleague opens as it is. Without a settings file the store opens
-with the configuration Icechunk keeps with it. Reads work, and so does
-creating or deleting a branch. Every write needs the settings, because a
-commit records them: a write to a store opened without settings raises a
+with the configuration Icechunk keeps with it. Reads work, and so do
+branches and tags. Commits need the settings, because a commit records
+them, and so do expiring snapshots and garbage collection, a dry run
+included. On a store opened without settings they raise a
 `FileNotFoundError` that names `canvodpy config init`. Create the settings
 with it, then open the store again. A settings file that is there but
 can't be loaded fails the opening, as before.

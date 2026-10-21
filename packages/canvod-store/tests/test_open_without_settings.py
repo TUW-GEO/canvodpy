@@ -1,4 +1,4 @@
-"""A store can be read without a settings file; writing needs one.
+"""A store can be read without a settings file; commits and cleanup need one.
 
 Seam: ``open_gnss_store``/``open_vod_store`` with ``CANVOD_CONFIG_DIR``
 pointing at a folder without a settings file, as for a scientist who
@@ -73,6 +73,39 @@ def test_writing_without_settings_is_refused_and_names_config_init(
         store.write_initial_group(make_synthetic_dataset(slot=0), "canopy_02")
 
     assert store.repo.lookup_branch("main") == before
+
+
+def test_tags_are_created_and_deleted_without_settings(written_store, no_settings_file):
+    store = open_gnss_store(written_store)
+
+    store.create_release_tag("before_reprocess")
+    assert "before_reprocess" in store.list_tags()
+    store.delete_tag("before_reprocess")
+
+    assert "before_reprocess" not in store.list_tags()
+
+
+@pytest.mark.parametrize(
+    "cleanup",
+    [
+        pytest.param(lambda s: s.expire_old_snapshots(days=0), id="expire"),
+        pytest.param(lambda s: s.garbage_collect(days=0), id="gc"),
+        pytest.param(lambda s: s.garbage_collect(days=0, dry_run=True), id="gc-dry"),
+        pytest.param(lambda s: s.maintenance(expire_days=0), id="maintenance"),
+    ],
+)
+def test_expiry_and_garbage_collection_are_refused_without_settings(
+    written_store, no_settings_file, cleanup
+):
+    store = open_gnss_store(written_store)
+    history = store.get_history()
+    ops = store.get_ops_log()
+
+    with pytest.raises(FileNotFoundError, match="canvodpy config init"):
+        cleanup(store)
+
+    assert store.get_history() == history
+    assert store.get_ops_log() == ops
 
 
 def test_a_broken_settings_file_still_fails_the_open(written_store, no_settings_file):

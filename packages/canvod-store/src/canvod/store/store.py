@@ -675,8 +675,9 @@ class MyIcechunkStore:
         self._logger = structlog.get_logger(__name__)
 
         # No fallback: a settings file that fails to load raises here, and
-        # a store opened without settings refuses every write (``settings``),
-        # so nothing is ever written with defaults the user didn't choose.
+        # a store opened without settings refuses every commit, expiry and
+        # garbage collection (``_require_settings``), so nothing is ever
+        # written or deleted with defaults the user didn't choose.
         self._settings = config if config is not None else _settings_if_present()
 
         #: Where the store lives; ``store_path`` is its local directory, or
@@ -762,9 +763,17 @@ class MyIcechunkStore:
             raise FileNotFoundError(msg)
         return self._settings
 
+    def _require_settings(self) -> None:
+        """Raise ``FileNotFoundError`` when the store was opened without settings.
+
+        Commits, expiring snapshots and garbage collection need the
+        settings; reads, branches and tags don't.
+        """
+        self.settings  # noqa: B018 (raises when the store has no settings)
+
     def _writable(self, branch: str) -> icechunk.Session:
         """A writable session on ``branch``; refused without settings."""
-        self.settings  # noqa: B018 (raises when the store has no settings)
+        self._require_settings()
         return self.repo.writable_session(branch)
 
     def _to_icechunk_throttled(
@@ -1454,7 +1463,7 @@ class MyIcechunkStore:
                 "earlier call that could not be promoted). Inspect it, then "
                 "delete it with delete_branch()."
             )
-        self.settings  # noqa: B018 (raises before the branch when there are none)
+        self._require_settings()  # before the branch, so none is left behind
         self.repo.create_branch(temp_branch, tip)
 
         commit_message = _with_run_id(
@@ -4379,7 +4388,13 @@ class MyIcechunkStore:
         -------
         set[str]
             Expired snapshot IDs.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the store was opened without settings.
         """
+        self._require_settings()
         self._refuse_maintenance_on_s3("Expiring old snapshots")
         if days is None:
             days = 90
@@ -4438,7 +4453,14 @@ class MyIcechunkStore:
         -------
         dict
             Summary of (would-be-)deleted objects.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the store was opened without settings, also for a dry run,
+            so maintenance behaves one way.
         """
+        self._require_settings()
         if not dry_run:
             self._refuse_maintenance_on_s3("Garbage collection")
         cutoff = datetime.now(UTC) - timedelta(days=days)
@@ -5389,6 +5411,7 @@ class MyIcechunkStore:
         dict
             Summary of maintenance actions.
         """
+        self._require_settings()
         self._refuse_maintenance_on_s3("Maintenance")
         self._logger.info(f"Starting maintenance on {self.store_type}")
 
@@ -5437,10 +5460,10 @@ def _cadence_info(epochs: np.ndarray) -> dict[str, Any]:
 def open_gnss_store(store_path: StoreLocation | Path | str) -> MyIcechunkStore:
     """Open the GNSS store at ``store_path``; never create it.
 
-    A run creates a site's stores when it first writes to them. Reading
-    needs no settings file; writing does. A store opened without one
-    refuses every write with a ``FileNotFoundError`` that names
-    ``canvodpy config init``.
+    A run creates a site's stores when it first writes to them. Reading,
+    branches and tags need no settings file; commits, expiring snapshots
+    and garbage collection do. A store opened without one refuses them
+    with a ``FileNotFoundError`` that names ``canvodpy config init``.
 
     Raises
     ------
@@ -5453,10 +5476,10 @@ def open_gnss_store(store_path: StoreLocation | Path | str) -> MyIcechunkStore:
 def open_vod_store(store_path: StoreLocation | Path | str) -> MyIcechunkStore:
     """Open the VOD store at ``store_path``; never create it.
 
-    A run creates a site's stores when it first writes to them. Reading
-    needs no settings file; writing does. A store opened without one
-    refuses every write with a ``FileNotFoundError`` that names
-    ``canvodpy config init``.
+    A run creates a site's stores when it first writes to them. Reading,
+    branches and tags need no settings file; commits, expiring snapshots
+    and garbage collection do. A store opened without one refuses them
+    with a ``FileNotFoundError`` that names ``canvodpy config init``.
 
     Raises
     ------
