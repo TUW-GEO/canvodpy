@@ -45,12 +45,6 @@ uv add canvodpy  # Gets all packages automatically
 # Build all packages locally
 just build-all
 
-# Manual publish to TestPyPI (requires credentials)
-just publish-testpypi
-
-# Manual publish to PyPI (requires credentials)
-just publish-pypi
-
 # Publish - started by hand on the canvodpy tag, never by a tag push;
 # a pre-release (v1.1.0rc1) goes the same way, to PyPI
 gh workflow run publish_pypi.yml --ref v1.1.0
