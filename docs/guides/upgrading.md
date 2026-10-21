@@ -135,6 +135,22 @@ the VOD store computed from them: rebuild them from the raw files with
 `canvodpy run`. Stores from RINEX files hold GPS time and migrate as
 they are.
 
+**Receivers with a naming recipe.** A GNSS store records each
+receiver's naming recipe and the sha256 of the recipe file, and every
+run compares them with the settings. Stores of canVODpy 0.x record the
+recipe without its sha256, and the migration doesn't add it: it can't
+tell whether today's recipe file is the one the store was built with.
+For each receiver with a naming recipe, check that its recipe file is
+the one the store was built with, then record it:
+
+```bash
+canvodpy store amend SITE --store gnss --update-recipe RECEIVER \
+    --reason "recipe of the stored days, recorded after the migration"
+```
+
+Without this, the first run stops and prints the command. Sites whose
+files have canonical canVOD names have no recipes and skip this.
+
 ### 4. Check the result
 
 ```bash
@@ -166,6 +182,7 @@ compare the settings.
 | `max_memory_gb` was a memory limit a run checked while it worked. | It is the run's memory budget, applied before the work starts: it sizes the workers and the units of days a run commits at once ([Parallel processing](parallel-processing.md)). | Check its value. |
 | A run computed the VOD of each day in the main process, from the day read back from the GNSS store, and committed the VOD store every day. | A run stores a unit of days, then computes their VOD in the worker processes from the GNSS store and commits the VOD store once per unit ([ADR 0021](../adr/0021-runs-work-in-units-of-days.md)). Nothing is read back for VOD. In Python, `pipeline.run()` does what `canvodpy run` does. The Airflow task `process_day` returns the groups that stored the day, no longer their number of epochs. | Use `pipeline.run()` instead of `process_range()` with `site.vod.compute_day_all()` to process and compute VOD. |
 | A run processed `days_per_batch` days at a time and committed every day. | A run works in units of days and commits each unit once; it sizes the units from the memory budget, at most 31 days ([ADR 0021](../adr/0021-runs-work-in-units-of-days.md)). A day that fails still fails alone. | Remove `days_per_batch` (deprecated). |
+| A store recorded the name of each receiver's naming recipe. | A GNSS store records each receiver's naming recipe and the sha256 of its file; a run stops if the settings give another recipe, or the recipe file changed ([File names](../packages/naming/overview.md)). | Record the recipes after migrating (step 3). After changing a recipe on purpose, `canvodpy store amend SITE --store gnss --update-recipe RECEIVER --reason "..."`. |
 | `canvodpy[filemap]` installed canvod-filemap. | The extra is gone. | Install canvod-filemap from its tag ([Optional extensions](extensions.md)), or `uv sync --group filemap` in the repository. |
 | canvod-grids installed canvod-store and canvod-store-metadata. | It doesn't. | Code that imports `canvod.store` declares canvod-store itself. |
 
