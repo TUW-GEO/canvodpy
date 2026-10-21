@@ -46,7 +46,9 @@ jobs:
           mkdir -p dist/
           for pkg in $packages; do
             echo "Building $pkg..."
-            uv build --package "$pkg" --out-dir dist/
+            # --no-sources: build as PyPI users get the package, without the
+            # workspace links of [tool.uv.sources]
+            uv build --package "$pkg" --no-sources --out-dir dist/
           done
 
           echo "Built packages:"

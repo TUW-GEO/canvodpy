@@ -338,7 +338,7 @@ All quality checks run automatically:
 |----------|---------|---------|
 | `test_platforms.yml` | Push, PR | Multi-platform tests (Linux/macOS on Apple silicon/Windows) |
 | `test_coverage.yml` | Push, PR | Coverage tracking $\rightarrow$ Coveralls |
-| `code_quality.yml` | Push | Linting, formatting, type checking |
+| `code_quality.yml` | Push | Linting, formatting, type checking, building every package without the workspace sources (`just check-build`) |
 | `codeql.yml` | Push, PR, Weekly | CodeQL security analysis |
 | `fair-software.yml` | Push, PR | FAIR compliance checks |
 | `scorecard.yml` | Weekly, Push to main | Security best practices |
