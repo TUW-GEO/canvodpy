@@ -50,8 +50,13 @@ Called by ``just reference-stores``, ``just reference-pack`` and
 from __future__ import annotations
 
 import argparse
+import getpass
 import hashlib
+import json
+import platform
+import re
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -78,6 +83,8 @@ FIXED_TIME = (2025, 1, 1, 0, 0, 0)
 # canvodpy's commit lock of a store: an empty file, not part of the data.
 SKIPPED_FILES = frozenset({".canvodpy-commit.lock"})
 ZSTD_MAGIC = b"\x28\xb5\x2f\xfd"
+#: Environment fields a commit fills only with processing.metadata.record_machine.
+MACHINE_FIELDS = ("hostname", "os", "arch", "cpu_count", "memory_gb", "disk_free_gb")
 
 
 def profiles() -> list[Path]:
@@ -332,6 +339,59 @@ def holds_local_path(path: Path, needles: tuple[bytes, ...]) -> bool:
     return any(needle in data for needle in needles)
 
 
+def this_machine() -> tuple[str, ...]:
+    """This computer's host name, user name and platform string."""
+    names = (socket.gethostname(), getpass.getuser(), platform.platform())
+    return tuple(name for name in names if name)
+
+
+def records_machine(store: Path, names: tuple[str, ...]) -> str | None:
+    """What in ``store`` records a computer, or ``None``.
+
+    Walks every snapshot of every branch: a commit's environment must
+    leave the computer out (``processing.metadata.record_machine:
+    false``), and neither its metadata, the root attributes nor the
+    repository metadata may name ``names``.
+    """
+    import icechunk
+    import zarr
+    from zarr.errors import GroupNotFoundError
+
+    repo = icechunk.Repository.open(icechunk.local_filesystem_storage(str(store)))
+    words = [re.compile(rf"(?<![\w.-]){re.escape(name)}(?![\w.-])") for name in names]
+
+    def named(text: str) -> str | None:
+        return next(
+            (n for n, w in zip(names, words, strict=True) if w.search(text)), None
+        )
+
+    if name := named(json.dumps(repo.get_metadata(), default=str)):
+        return f"its repository metadata names {name!r}"
+    seen = set()
+    for branch in sorted(repo.list_branches()):
+        for snapshot in repo.ancestry(branch=branch):
+            if snapshot.id in seen:
+                continue
+            seen.add(snapshot.id)
+            environment = (snapshot.metadata or {}).get("environment") or {}
+            recorded = [f for f in MACHINE_FIELDS if environment.get(f) is not None]
+            if recorded:
+                return (
+                    f"commit {snapshot.id} records the computer "
+                    f"({', '.join(recorded)}); build it with "
+                    "processing.metadata.record_machine: false"
+                )
+            session = repo.readonly_session(snapshot_id=snapshot.id)
+            try:
+                attrs = dict(zarr.open_group(session.store, mode="r").attrs)
+            except GroupNotFoundError:  # the first snapshot
+                attrs = {}
+            text = json.dumps([snapshot.metadata, attrs], default=str)
+            if name := named(text):
+                return f"commit {snapshot.id} names {name!r}"
+    return None
+
+
 def pack(build: Path, out: Path) -> None:
     build, out = build.resolve(), out.resolve()
     require_profiles(build)
@@ -341,7 +401,10 @@ def pack(build: Path, out: Path) -> None:
     for profile in profiles():
         folder = build / profile.name
         local = {build, folder.resolve(), ROOT, Path.home()}
-        needles = tuple(str(p).encode() for p in local)
+        # The user name is too short to look for in the chunks' bytes;
+        # records_machine looks for it in the metadata.
+        machine = (socket.gethostname(), platform.platform())
+        needles = tuple(str(p).encode() for p in (*local, *machine) if p)
         stores = sorted(p for p in (folder / "stores").glob("*/*") if p.is_dir())
         for store in stores:
             files = sorted(
@@ -352,7 +415,13 @@ def pack(build: Path, out: Path) -> None:
             leaks = [f for f in files if holds_local_path(f, needles)]
             if leaks:
                 where = leaks[0].relative_to(build)
-                msg = f"{where} holds a local path; nothing more was packed"
+                msg = (
+                    f"{where} holds a local path or names this computer; "
+                    "nothing more was packed"
+                )
+                raise SystemExit(msg)
+            if found := records_machine(store, this_machine()):
+                msg = f"{store.relative_to(build)}: {found}; nothing more was packed"
                 raise SystemExit(msg)
             name = f"{profile.name}/{store.parent.name}-{store.name}.zip"
             target = out / name

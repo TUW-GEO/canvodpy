@@ -115,6 +115,14 @@ class MetadataConfig(_StrictModel):
             "Required to amend or migrate a store's metadata."
         ),
     )
+    record_machine: bool = Field(
+        True,
+        description=(
+            "Whether each commit records the computer that writes it: its "
+            "platform, architecture, CPU count, memory and free disk. With "
+            "false they are recorded as null, for stores that are published."
+        ),
+    )
 
     @model_validator(mode="before")
     @classmethod

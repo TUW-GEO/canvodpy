@@ -13,7 +13,10 @@ A setting profile is an ordinary settings folder under
 is patched. Each profile has two files:
 
 - `canvod-settings.yaml`: the settings. Data paths are relative to the
-  repository root and point into the test data.
+  repository root and point into the test data. The stores name no real
+  person or computer: the identity is the made-up one of the tests, and
+  `processing.metadata.record_machine: false` leaves the computer out of
+  every commit.
 - `reference-runs.yaml`: the sites and days the profile runs.
 
 A profile that changes one thing of another profile has only
@@ -129,8 +132,11 @@ or release.
    `<profile>/<site>-<gnss|vod>.zip`, and their sha256 into `SHA256SUMS`.
    The zips hold only the stores: no settings files, no logs. It refuses
    a store that holds a local path (the build folder, the repository,
-   the home folder). The zips are deterministic: packing the same build
-   again gives the same sha256.
+   the home folder) or names the computer that packs: its host name,
+   user name or platform. It reads every commit of every branch and
+   refuses one that records the computer (operating system,
+   architecture, CPUs, memory, free disk). The zips are deterministic:
+   packing the same build again gives the same sha256.
 3. A maintainer uploads the folder of zips to the Hugging Face dataset:
 
    ```bash

@@ -325,6 +325,7 @@ def commit_metadata(
         collect_config_snapshot,
         collect_environment,
         collect_processing_provenance,
+        records_machine,
     )
 
     identity = repository["identity"]
@@ -334,7 +335,9 @@ def commit_metadata(
         repository.get("creator", {}).get("institution"),
     )
     processing.datetime = committed_at
-    environment = collect_environment(store_location(store_path).local_path)
+    environment = collect_environment(
+        store_location(store_path).local_path, record_machine=records_machine(config)
+    )
     snapshot = (
         config
         if isinstance(config, ConfigSnapshot)
