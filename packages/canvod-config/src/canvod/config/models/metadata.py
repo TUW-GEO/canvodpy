@@ -96,7 +96,7 @@ class MetadataConfig(_StrictModel):
         None,
         description=(
             "Your institution's domain in reverse order, lowercase "
-            "(for example 'at.ac.tuwien'). Required when a store is created: with "
+            "(for example 'org.middle-earth'). Required when a store is created: with "
             "the store id it gives the store's id in the STAC catalog."
         ),
     )
@@ -113,6 +113,14 @@ class MetadataConfig(_StrictModel):
             "How a store's metadata records who set its content settings or "
             "changed it (for example 'NFB'); the author when not set. "
             "Required to amend or migrate a store's metadata."
+        ),
+    )
+    record_machine: bool = Field(
+        True,
+        description=(
+            "Whether each commit records the computer that writes it: its "
+            "operating system, architecture, CPU count, memory and free disk. With "
+            "false they are recorded as null, for stores that are published."
         ),
     )
 

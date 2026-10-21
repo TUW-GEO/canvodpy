@@ -150,7 +150,7 @@ def migrate_metadata(
                 f"The store at {store_path} has no valid naming authority "
                 f"({authority!r}). Give one with --naming-authority (in Python: "
                 "naming_authority=), your institution's domain in reverse order, "
-                "e.g. 'at.ac.tuwien'."
+                "e.g. 'org.middle-earth'."
             )
             raise ValueError(msg) from None
 

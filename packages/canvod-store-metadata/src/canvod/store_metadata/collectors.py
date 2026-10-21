@@ -154,8 +154,28 @@ def collect_environment(
     store_path: Path | None = None,
     dask_workers: int | None = None,
     dask_threads_per_worker: int | None = None,
+    record_machine: bool = True,
 ) -> Environment:
-    """Collect runtime environment information."""
+    """Collect runtime environment information.
+
+    With ``record_machine=False`` the computer (operating system, architecture,
+    CPU count, memory, free disk) is not recorded: those fields are
+    ``None`` (``processing.metadata.record_machine``).
+    """
+    # Raw pyproject.toml + uv.lock of the project the process runs from
+    pyproject_text = uv_lock_text = uv_lock_hash = None
+    root = _find_project_root()
+    if root is not None:
+        pyproject_text, uv_lock_text, uv_lock_hash = _project_files(root)
+    if not record_machine:
+        return Environment(
+            dask_workers=dask_workers,
+            dask_threads_per_worker=dask_threads_per_worker,
+            uv_lock_hash=uv_lock_hash,
+            pyproject_toml_text=pyproject_text,
+            uv_lock_text=uv_lock_text,
+        )
+
     memory_gb = None
     try:
         import psutil
@@ -171,12 +191,6 @@ def collect_environment(
             usage = shutil.disk_usage(check_path)
             disk_free_gb = round(usage.free / (1024**3), 1)
 
-    # Raw pyproject.toml + uv.lock of the project the process runs from
-    pyproject_text = uv_lock_text = uv_lock_hash = None
-    root = _find_project_root()
-    if root is not None:
-        pyproject_text, uv_lock_text, uv_lock_hash = _project_files(root)
-
     return Environment(
         os=platform.platform(),
         arch=platform.machine(),
@@ -189,6 +203,27 @@ def collect_environment(
         pyproject_toml_text=pyproject_text,
         uv_lock_text=uv_lock_text,
     )
+
+
+def records_machine(config: Any) -> bool:
+    """``processing.metadata.record_machine`` of ``config``: settings, a
+    plain dict of them or a :class:`ConfigSnapshot`; true when not set."""
+    processing = (
+        config.get("processing")
+        if isinstance(config, dict)
+        else getattr(config, "processing", None)
+    )
+    metadata = (
+        processing.get("metadata")
+        if isinstance(processing, dict)
+        else getattr(processing, "metadata", None)
+    )
+    value = (
+        metadata.get("record_machine")
+        if isinstance(metadata, dict)
+        else getattr(metadata, "record_machine", None)
+    )
+    return value is not False
 
 
 #: Settings never written into a store: account details for data servers.
@@ -492,7 +527,7 @@ def missing_store_settings(site_name: str, site_config: Any, config: Any) -> lis
     except ValueError:
         missing.append(
             f"{NAMING_AUTHORITY_SETTING} is missing or not a reverse DNS "
-            "name (e.g. 'at.ac.tuwien')"
+            "name (e.g. 'org.middle-earth')"
         )
     return missing
 
@@ -607,6 +642,7 @@ def collect_metadata(
             None if store_path is None else store_location(store_path).local_path,
             dask_workers,
             dask_threads_per_worker,
+            record_machine=records_machine(config),
         ),
         config=collect_config_snapshot(config),
         references=collect_references(config),

@@ -590,7 +590,7 @@ def migrate_metadata_command(
             "--naming-authority",
             help=(
                 "Your institution's domain in reverse order, for example "
-                "at.ac.tuwien. Default: the store's own, if it is a reverse "
+                "org.middle-earth. Default: the store's own, if it is a reverse "
                 "DNS name; otherwise processing.metadata.naming_authority in "
                 "the settings."
             ),

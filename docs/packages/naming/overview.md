@@ -47,15 +47,15 @@ Every canVOD-compatible GNSS file follows this naming format:
 ### Example
 
 ```
-ROSR01TUW_R_20250010000_01D_05S_AA.rnx
+FANR01INK_R_20250010000_01D_05S_AA.rnx
 ```
 
 | Part | Field | Meaning |
 |------|-------|---------|
-| `ROS` | Site | Site ID `ROS` |
+| `FAN` | Site | Site ID `FAN` |
 | `R` | Type | Reference receiver |
 | `01` | Number | Receiver 01 |
-| `TUW` | Agency | TU Wien |
+| `INK` | Agency | The Inklings |
 | `2025001` | Date | 2025, day of year 001 |
 | `0000` | Start | 00:00 GPS time |
 | `01D` | Period | 1-day file |

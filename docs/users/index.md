@@ -254,12 +254,12 @@ canVODpy takes the receiver and the day of each file from its name, so
 the files must follow the canVOD file naming convention, for example:
 
 ```
-ROSR01TUW_R_20250010000_01D_05S_AA.rnx
+FANR01INK_R_20250010000_01D_05S_AA.rnx
 ```
 
-This name says: site `ROS`, reference receiver `01`, data from TU Wien,
-starting on day 001 of 2025 at 00:00, one day of data, sampled every
-5 seconds, in RINEX. The [file naming convention](../packages/naming/overview.md)
+This name says: site `FAN`, reference receiver `01`, data from The
+Inklings, starting on day 001 of 2025 at 00:00, one day of data, sampled
+every 5 seconds, in RINEX. The [file naming convention](../packages/naming/overview.md)
 explains each field.
 
 !!! example "Try it in a notebook"
