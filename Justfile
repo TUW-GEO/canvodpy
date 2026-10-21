@@ -91,6 +91,14 @@ agent-skills:
 check-lock:
     uv lock --check
 
+# check that every package builds without the workspace sources, as the release workflow builds them for PyPI
+check-build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    out="$(mktemp -d)"
+    trap 'rm -rf "$out"' EXIT
+    uv build --all-packages --no-sources --out-dir "$out"
+
 # lint python code using ruff
 [group('code quality')]
 [private]
