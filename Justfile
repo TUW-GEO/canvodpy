@@ -460,28 +460,6 @@ build-all:
     @echo "✅ Built $(ls dist/*.whl | wc -l | tr -d ' ') wheels to dist/"
     @ls -lh dist/*.whl
 
-# Publish all packages to TestPyPI (requires credentials)
-[group('build and release')]
-publish-testpypi:
-    @echo "📦 Publishing to TestPyPI..."
-    @if [ ! -d "dist" ] || [ -z "$(ls -A dist)" ]; then \
-        echo "❌ No dist/ found. Run 'just build-all' first"; \
-        exit 1; \
-    fi
-    uv tool run twine upload --repository testpypi dist/*
-    @echo "✅ Published to https://test.pypi.org"
-
-# Publish all packages to PyPI (requires credentials or OIDC)
-[group('build and release')]
-publish-pypi:
-    @echo "📦 Publishing to PyPI..."
-    @if [ ! -d "dist" ] || [ -z "$(ls -A dist)" ]; then \
-        echo "❌ No dist/ found. Run 'just build-all' first"; \
-        exit 1; \
-    fi
-    uv tool run twine upload dist/*
-    @echo "✅ Published to https://pypi.org"
-
 # print the current status of the project
 [group('setup')]
 status:
