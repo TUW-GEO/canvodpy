@@ -523,7 +523,12 @@ class ReceiverInfo(BaseModel):
     directory: str = Field(..., description="Data subdirectory")
     reader_format: str = Field("auto", description="Reader format")
     description: str | None = Field(None)
-    recipe: str | None = Field(None, description="Naming recipe name")
+    recipe: str | None = Field(
+        None, description="Naming recipe: its name or its pinned URL"
+    )
+    recipe_sha256: str | None = Field(
+        None, description="sha256 of the naming recipe file the store was made with"
+    )
     epochs: int | None = Field(None, description="Number of epochs ingested")
     sids: int | None = Field(None, description="Number of SIDs observed")
     variables: list[str] | None = Field(None, description="Variable names")
@@ -804,6 +809,7 @@ class RepositoryReceiver(BaseModel):
     reader_format: str = "auto"
     description: str | None = None
     recipe: str | None = None
+    recipe_sha256: str | None = None
     metadata: dict[str, Any] | None = None
     receiver_hardware: ReceiverHardware | None = None
     antenna: Antenna | None = None

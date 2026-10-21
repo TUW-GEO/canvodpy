@@ -19,6 +19,7 @@ from canvodpy.orchestrator.discovery import (
     discover_files,
     is_compressed,
     receiver_days,
+    recipe_fields_note,
     recipe_file,
     scan_directory,
     unprocessed_files,
@@ -207,6 +208,28 @@ def test_index_is_rescanned_after_clearing(tmp_path: Path) -> None:
     assert len(receiver_days("rx", tmp_path)) == 2
 
 
+#: A recipe for RINEX 2 names such as ``rref001a15.25o``.
+_FANGORN_RECIPE = (
+    "name: ros_ref\n"
+    "site: FAN\n"
+    "agency: INK\n"
+    "receiver_number: 1\n"
+    "receiver_type: reference\n"
+    "sampling: '05S'\n"
+    "period: '15M'\n"
+    "file_type: rnx\n"
+    "glob: '*.??o'\n"
+    "fields:\n"
+    "  - skip: 4\n"
+    "  - doy: 3\n"
+    "  - hour_letter: 1\n"
+    "  - minute: 2\n"
+    "  - skip: 1\n"
+    "  - yy: 2\n"
+    "  - skip: 1\n"
+)
+
+
 def test_recipes_are_read_from_the_site_folder_of_the_config_dir(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -238,25 +261,7 @@ def test_recipe_drives_discovery(
     """A receiver recipe selects non-canonical files and maps their names."""
     pytest.importorskip("canvod.filemap.recipe_files")
     (tmp_path / "recipes" / "fangorn").mkdir(parents=True)
-    (tmp_path / "recipes" / "fangorn" / "ros_ref.yaml").write_text(
-        "name: ros_ref\n"
-        "site: FAN\n"
-        "agency: INK\n"
-        "receiver_number: 1\n"
-        "receiver_type: reference\n"
-        "sampling: '05S'\n"
-        "period: '15M'\n"
-        "file_type: rnx\n"
-        "glob: '*.??o'\n"
-        "fields:\n"
-        "  - skip: 4\n"
-        "  - doy: 3\n"
-        "  - hour_letter: 1\n"
-        "  - minute: 2\n"
-        "  - skip: 1\n"
-        "  - yy: 2\n"
-        "  - skip: 1\n"
-    )
+    (tmp_path / "recipes" / "fangorn" / "ros_ref.yaml").write_text(_FANGORN_RECIPE)
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
     data_dir = tmp_path / "01_reference"
     _touch(data_dir / "25001", "rref001a15.25o", CANONICAL)
@@ -269,6 +274,77 @@ def test_recipe_drives_discovery(
 
     assert [f.path.name for f in found] == ["rref001a15.25o"]
     assert found[0].canonical_name == "FANR01INK_R_20250010015_15M_05S_AA.rnx"
+
+
+def test_recipe_url_must_be_pinned(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pytest.importorskip("canvod.filemap.remote")
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
+    url = "https://raw.githubusercontent.com/acc/recipes/main/fangorn/ref.yaml"
+    with pytest.raises(DiscoveryError, match="pinned to a full commit hash or a tag"):
+        recipe_file("fangorn", url)
+
+
+def test_recipe_url_is_fetched_and_drives_discovery(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A pinned URL gives the cached recipe file, which discovery reads."""
+    remote = pytest.importorskip("canvod.filemap.remote")
+    import http.server
+    import tempfile
+    import threading
+
+    body = _FANGORN_RECIPE.encode()
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args: object) -> None:
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    monkeypatch.setattr(
+        remote, "_DOWNLOAD_ORIGIN", f"http://127.0.0.1:{server.server_port}"
+    )
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
+    url = (
+        f"https://raw.githubusercontent.com/acc/recipes/{'a' * 40}/fangorn/ros_ref.yaml"
+    )
+    try:
+        recipe = recipe_file("fangorn", url)
+    finally:
+        server.shutdown()
+        server.server_close()
+    assert recipe is not None
+    assert recipe.read_bytes() == body
+
+    data_dir = tmp_path / "01_reference"
+    _touch(data_dir / "25001", "rref001a15.25o")
+    days = receiver_days("reference_01", data_dir, recipe=recipe)
+    assert [f.canonical_name for f in discover_files(days[0], "rinex3")] == [
+        "FANR01INK_R_20250010015_15M_05S_AA.rnx"
+    ]
+
+
+def test_unrecognized_recipe_fields_are_named(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pytest.importorskip("canvod.filemap.recipe_files")
+    path = tmp_path / "recipes" / "fangorn" / "ros_ref.yaml"
+    path.parent.mkdir(parents=True)
+    path.write_text(_FANGORN_RECIPE + "layout: flat\ncolour: green\n")
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
+    found = recipe_file("fangorn", "ros_ref")
+    assert found == path
+    assert recipe_fields_note("ros_ref", path) == (
+        f"Recipe {path}: fields 'layout', 'colour' are unrecognized and ignored."
+    )
 
 
 def _recipes(**recipes: SimpleNamespace):

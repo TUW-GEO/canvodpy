@@ -1415,6 +1415,141 @@ class TestStoreAmend:
         assert receiver.directory == "03_canopy"
         assert receiver.antenna.model == "SEPCHOKE_B3E6"
 
+    def test_an_added_receiver_records_the_sha256_of_its_recipe(self, tmp_path):
+        pytest.importorskip("canvod.filemap.recipe_files")
+        import hashlib
+
+        config_dir, path = self._setup(
+            tmp_path,
+            receivers={
+                "canopy_02": {
+                    "type": "canopy",
+                    "directory": "03_canopy",
+                    "recipe": "rx",
+                }
+            },
+        )
+        recipe = config_dir / "recipes" / "TestSite" / "rx.yaml"
+        recipe.parent.mkdir(parents=True)
+        recipe.write_text("name: rx\n")
+
+        result = self._amend(
+            config_dir, "--add-receiver", "canopy_02", "--reason", "r", "--yes"
+        )
+
+        assert result.exit_code == 0, result.output
+        from canvod.store_metadata import read_metadata
+
+        receiver = read_metadata(path).instruments.receivers["canopy_02"]
+        assert receiver.recipe_sha256 == hashlib.sha256(b"name: rx\n").hexdigest()
+
+    def test_a_receiver_whose_recipe_is_missing_is_refused(self, tmp_path):
+        config_dir, path = self._setup(
+            tmp_path,
+            receivers={
+                "canopy_02": {
+                    "type": "canopy",
+                    "directory": "03_canopy",
+                    "recipe": "rx",
+                }
+            },
+        )
+
+        result = self._amend(
+            config_dir, "--add-receiver", "canopy_02", "--reason", "r", "--yes"
+        )
+
+        assert result.exit_code == 1
+        assert "'rx'" in result.output
+        from canvod.store_metadata import read_metadata
+
+        assert "canopy_02" not in read_metadata(path).instruments.receivers
+
+    def test_an_updated_recipe_is_recorded_and_lets_runs_through(self, tmp_path):
+        pytest.importorskip("canvod.filemap.recipe_files")
+        import hashlib
+
+        from canvod.config import load_config
+        from canvod.store_metadata import check_recipes, read_repository_metadata
+
+        config_dir, path = self._setup(
+            tmp_path,
+            receivers={
+                "canopy_01": {"type": "canopy", "directory": "c", "recipe": "rx"}
+            },
+        )
+        recipe = config_dir / "recipes" / "TestSite" / "rx.yaml"
+        recipe.parent.mkdir(parents=True)
+        recipe.write_text("name: rx\n")
+
+        def check() -> None:
+            with pytest.MonkeyPatch.context() as mp:
+                mp.setenv("CANVOD_CONFIG_DIR", str(config_dir))
+                site = load_config().sites.sites["TestSite"]
+                check_recipes(
+                    read_repository_metadata(path), site, "TestSite", store_path=path
+                )
+
+        with pytest.raises(ValueError, match="--update-recipe canopy_01"):
+            check()
+
+        result = self._amend(
+            config_dir, "--update-recipe", "canopy_01", "--reason", "rx", "--yes"
+        )
+
+        assert result.exit_code == 0, result.output
+        receiver = read_repository_metadata(path)["instruments"]["receivers"][
+            "canopy_01"
+        ]
+        assert receiver["recipe"] == "rx"
+        assert receiver["recipe_sha256"] == hashlib.sha256(b"name: rx\n").hexdigest()
+        check()
+
+    def test_a_recipe_of_a_receiver_the_store_lacks_is_refused(self, tmp_path):
+        config_dir, path = self._setup(
+            tmp_path,
+            receivers={
+                "canopy_02": {"type": "canopy", "directory": "c2", "recipe": "rx"}
+            },
+        )
+
+        result = self._amend(
+            config_dir, "--update-recipe", "canopy_02", "--reason", "rx", "--yes"
+        )
+
+        assert result.exit_code == 1
+        assert "--add-receiver canopy_02" in result.output
+        from canvod.store_metadata import read_metadata
+
+        assert "canopy_02" not in read_metadata(path).instruments.receivers
+
+    def test_a_recipe_is_not_recorded_in_the_vod_store(self, tmp_path):
+        import icechunk
+
+        config_dir, path = self._setup(tmp_path)
+        vod = path.parent / "vod"
+        icechunk.Repository.create(storage=icechunk.local_filesystem_storage(str(vod)))
+
+        result = runner.invoke(
+            main_app,
+            [
+                "store",
+                "amend",
+                "TestSite",
+                "--store",
+                "vod",
+                "--update-recipe",
+                "canopy_01",
+                "--reason",
+                "rx",
+                "--yes",
+            ],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 1
+        assert "--store gnss" in result.output
+
     def test_an_unknown_receiver_is_refused(self, tmp_path):
         config_dir, _ = self._setup(tmp_path)
 

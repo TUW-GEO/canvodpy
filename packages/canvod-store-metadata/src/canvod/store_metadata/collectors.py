@@ -306,18 +306,59 @@ def collect_spatial(site_config: Any, site_name: str) -> SpatialExtent:
     )
 
 
-def collect_receiver(receiver_config: Any) -> ReceiverInfo:
-    """A receiver's entry in the store metadata, from its settings."""
+def collect_receiver(
+    receiver_config: Any, site_name: str | None = None
+) -> ReceiverInfo:
+    """A receiver's entry in the store metadata, from its settings.
+
+    With ``site_name``, a receiver with a naming recipe also gets the
+    sha256 of its recipe file (:func:`recipe_sha256_of`).
+    """
+    recipe = getattr(receiver_config, "recipe", None)
     return ReceiverInfo(
         type=receiver_config.type,
         directory=receiver_config.directory,
         reader_format=getattr(receiver_config, "reader_format", "auto"),
         description=getattr(receiver_config, "description", None),
-        recipe=getattr(receiver_config, "recipe", None),
+        recipe=recipe,
+        recipe_sha256=(
+            recipe_sha256_of(site_name, recipe) if site_name and recipe else None
+        ),
         metadata=getattr(receiver_config, "metadata", None),
         receiver_hardware=_dump(getattr(receiver_config, "receiver_hardware", None)),
         antenna=_dump(getattr(receiver_config, "antenna", None)),
     )
+
+
+def recipe_sha256_of(site_name: str, recipe: str) -> str | None:
+    """sha256 of the naming recipe file ``recipe`` of ``site_name``.
+
+    The file is found the way a run finds it (canvod-filemap's
+    ``find_recipe``: a local recipe in the configuration directory, or a
+    URL recipe in the cache, fetched if it is not there).
+
+    Returns
+    -------
+    str | None
+        The hexadecimal sha256, ``None`` if canvod-filemap is not installed
+        or the recipe cannot be found (a run stops there before any store
+        is written).
+    """
+    try:
+        from canvod.filemap import (
+            RecipeNotFoundError,
+            RemoteRecipeError,
+            find_recipe,
+            recipe_sha256,
+        )
+    except ImportError:
+        return None
+    from canvod.config.loader import get_default_config_dir
+
+    try:
+        return recipe_sha256(find_recipe(get_default_config_dir(), site_name, recipe))
+    except RecipeNotFoundError, RemoteRecipeError:
+        return None
 
 
 def _dump(settings: Any) -> dict[str, Any] | None:
@@ -325,14 +366,17 @@ def _dump(settings: Any) -> dict[str, Any] | None:
     return None if settings is None else settings.model_dump()
 
 
-def collect_instruments(site_config: Any, *, hardware: bool = True) -> Instruments:
+def collect_instruments(
+    site_config: Any, *, hardware: bool = True, site_name: str | None = None
+) -> Instruments:
     """Build Instruments from SiteConfig receivers.
 
     ``hardware=False`` leaves out the receiver and antenna details: a VOD
     store reads them from the GNSS store's entries instead of copying them.
     """
     receivers = {
-        name: collect_receiver(rcv) for name, rcv in site_config.receivers.items()
+        name: collect_receiver(rcv, site_name)
+        for name, rcv in site_config.receivers.items()
     }
     if not hardware:
         receivers = {
@@ -553,7 +597,7 @@ def collect_metadata(
         temporal=TemporalExtent(created=now, updated=now),
         spatial=collect_spatial(site_config, site_name),
         instruments=collect_instruments(
-            site_config, hardware=store_type != "vod_store"
+            site_config, hardware=store_type != "vod_store", site_name=site_name
         ),
         processing=collect_processing_provenance(
             store_type, source_format, getattr(meta_cfg, "institution", None)

@@ -557,7 +557,8 @@ $ canvodpy store amend [OPTIONS] {site}
 * `--set field.path=value`: New value of a field, for example identity.title=Rosalia GNSS observations. Repeat for more fields.
 * `--add-receiver name`: Add a receiver of the site's settings to the store, so runs may write it.
 * `--add-vod-analysis name`: Add a VOD analysis of the site's settings to the VOD store.
-* `--from <path>`: YAML file with the keys reason, set (field paths and values), and the lists add_receivers and add_vod_analyses.
+* `--update-recipe name`: Record a receiver's naming recipe of the settings and its sha256 in the GNSS store, after the recipe changed on purpose.
+* `--from <path>`: YAML file with the keys reason, set (field paths and values), and the lists add_receivers, add_vod_analyses and update_recipes.
 * `--reason <str>`: Why the fields change; recorded with each one.
 * `--yes`: Amend without asking.
 * `-c, --config-dir <path>`: Configuration directory, holding canvod-settings.yaml and recipes/. Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.

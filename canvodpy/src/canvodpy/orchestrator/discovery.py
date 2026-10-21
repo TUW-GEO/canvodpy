@@ -183,8 +183,11 @@ def recipe_file(site: str, recipe: str | None) -> Path | None:
 
     Recipes are read from ``<config dir>/recipes/<site>/<recipe>.yaml``, in
     the configuration directory the settings file is read from
-    (:func:`canvod.config.loader.get_default_config_dir`). The lookup itself
-    is :func:`canvod.filemap.find_recipe`.
+    (:func:`canvod.config.loader.get_default_config_dir`), or, if
+    ``recipe`` is a URL, fetched into canvod-filemap's cache. The lookup
+    itself is :func:`canvod.filemap.find_recipe`. Fields of the recipe
+    that canvod-filemap does not know are logged once as a warning
+    (:func:`recipe_fields_note`).
 
     Parameters
     ----------
@@ -201,14 +204,19 @@ def recipe_file(site: str, recipe: str | None) -> Path | None:
     Raises
     ------
     DiscoveryError
-        If canvod-filemap is not installed or the recipe file does not exist.
+        If canvod-filemap is not installed, the recipe file does not exist,
+        or a recipe URL is not pinned or cannot be fetched.
     """
     if not recipe:
         return None
     from canvod.config.loader import get_default_config_dir
 
     try:
-        from canvod.filemap import RecipeNotFoundError, find_recipe
+        from canvod.filemap import (
+            RecipeNotFoundError,
+            RemoteRecipeError,
+            find_recipe,
+        )
     except ImportError as exc:
         msg = (
             f"Recipe '{recipe}' requires canvod-filemap, but it is not "
@@ -216,10 +224,53 @@ def recipe_file(site: str, recipe: str | None) -> Path | None:
         )
         raise DiscoveryError(msg) from exc
     try:
-        return find_recipe(get_default_config_dir(), site, recipe)
+        path = find_recipe(get_default_config_dir(), site, recipe)
+    except RemoteRecipeError as exc:
+        raise DiscoveryError(str(exc)) from exc
     except RecipeNotFoundError as exc:
         msg = f"{exc}\nCreate it with: just naming-init {site} {recipe}"
         raise DiscoveryError(msg) from exc
+    recipe_fields_note(recipe, path)
+    return path
+
+
+@lru_cache(maxsize=32)
+def recipe_fields_note(recipe: str, path: Path) -> str | None:
+    """Name the fields of a recipe file that canvod-filemap does not know.
+
+    They are ignored when the recipe is loaded. The note is logged as a
+    warning the first time a recipe is looked up; ``config-check-data``
+    prints it.
+
+    Parameters
+    ----------
+    recipe : str
+        The receiver's ``recipe:`` setting (a name or a URL).
+    path : Path
+        The recipe file :func:`recipe_file` found.
+
+    Returns
+    -------
+    str | None
+        ``"Recipe <URL or file>: fields 'a', 'b' are unrecognized and
+        ignored."`` (``field 'a' is`` for one), ``None`` if every field is
+        known.
+    """
+    from canvod.filemap import NamingRecipe, is_recipe_url
+
+    fields = NamingRecipe.unrecognized_fields(path)
+    if not fields:
+        return None
+    source = recipe if is_recipe_url(recipe) else str(path)
+    names = ", ".join(f"'{f}'" for f in fields)
+    which = f"fields {names} are" if len(fields) > 1 else f"field {names} is"
+    note = f"Recipe {source}: {which} unrecognized and ignored."
+    import structlog
+
+    structlog.get_logger(__name__).warning(
+        "recipe_fields_unrecognized", recipe=source, fields=fields
+    )
+    return note
 
 
 @lru_cache(maxsize=32)
@@ -729,8 +780,13 @@ def saved_file_index(
 
 
 def clear_discovery_cache() -> None:
-    """Forget the scanned directories, so the next lookup rescans them."""
+    """Forget the scanned directories, so the next lookup rescans them.
+
+    Recipe notes (:func:`recipe_fields_note`) are forgotten too, so a
+    changed recipe is checked again.
+    """
     _SCANS.clear()
+    recipe_fields_note.cache_clear()
 
 
 def _of_format(

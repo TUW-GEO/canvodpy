@@ -79,6 +79,80 @@ def test_settings_reproduce_the_stores_content_settings(tmp_path):
     assert differences(stored, run_content_settings(config, SITE), SITE) == []
 
 
+_RECIPE = (
+    "name: rx\nsite: FAN\nagency: INK\nreceiver_number: 1\n"
+    "glob: '*.rnx'\nfields:\n  - skip: 3\n"
+)
+
+
+def _store_with_recipe(tmp_path: Path, recipe: str) -> Path:
+    """A GNSS store whose canopy receiver has the naming recipe ``recipe``."""
+    config = _settings(tmp_path)
+    config.sites.sites[SITE].receivers["canopy_01"].recipe = recipe
+    store = tmp_path / "root" / SITE / "gnss"
+    ensure_store_metadata(
+        store,
+        config=config,
+        site_name=SITE,
+        store_type="gnss_store",
+        source_format="rinex3",
+        names=CONTENT_NAMES,
+    )
+    return store
+
+
+def test_the_store_records_the_sha256_of_a_local_recipe(tmp_path, monkeypatch):
+    pytest.importorskip("canvod.filemap.recipe_files")
+    import hashlib
+
+    path = tmp_path / "config" / "recipes" / SITE / "rx.yaml"
+    path.parent.mkdir(parents=True)
+    path.write_text(_RECIPE)
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path / "config"))
+    store = _store_with_recipe(tmp_path, "rx")
+
+    receiver = read_repository_metadata(store)["instruments"]["receivers"]["canopy_01"]
+    assert receiver["recipe"] == "rx"
+    assert receiver["recipe_sha256"] == hashlib.sha256(_RECIPE.encode()).hexdigest()
+
+
+def test_show_prints_the_sha256_of_the_recipe(tmp_path, monkeypatch):
+    pytest.importorskip("canvod.filemap.recipe_files")
+    import hashlib
+
+    from canvod.store_metadata import format_metadata, read_metadata
+
+    path = tmp_path / "config" / "recipes" / SITE / "rx.yaml"
+    path.parent.mkdir(parents=True)
+    path.write_text(_RECIPE)
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path / "config"))
+    store = _store_with_recipe(tmp_path, "rx")
+
+    text = format_metadata(read_metadata(store), section="instruments")
+    assert f"recipe_sha256: {hashlib.sha256(_RECIPE.encode()).hexdigest()}" in text
+
+
+def test_a_recipe_url_goes_back_into_the_settings(tmp_path, monkeypatch):
+    from canvod.store_metadata import collectors
+
+    # No download: the recipe's sha256 is made up.
+    monkeypatch.setattr(collectors, "recipe_sha256_of", lambda site, recipe: "0" * 64)
+    url = f"https://raw.githubusercontent.com/acc/recipes/{'a' * 40}/{SITE}/rx.yaml"
+    store = _store_with_recipe(tmp_path, url)
+
+    receiver = read_repository_metadata(store)["instruments"]["receivers"]["canopy_01"]
+    assert receiver["recipe"] == url
+    settings = settings_from_store(store)
+    assert settings["sites"][SITE]["receivers"]["canopy_01"]["recipe"] == url
+
+
+def test_a_store_is_not_created_without_the_sha256_of_its_recipe(tmp_path):
+    with pytest.raises(ValueError, match="Found no naming recipe 'rx'"):
+        _store_with_recipe(tmp_path, "rx")
+
+    assert not (tmp_path / "root" / SITE / "gnss").exists()
+
+
 def test_settings_hold_no_path_or_credential_of_the_creating_machine(tmp_path):
     store = _create_store(tmp_path)
     settings = settings_from_store(store)
