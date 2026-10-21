@@ -342,6 +342,15 @@ run writes to it. `create_gnss_store()` and `create_vod_store()` are left
 over from development: they open a store as well, and are removed with
 the next major version.
 
+Reading a store needs no settings file, so a store you downloaded or got
+from a colleague opens as it is. Without a settings file the store opens
+with the configuration Icechunk keeps with it. Reads work, and so does
+creating or deleting a branch. Every write needs the settings, because a
+commit records them: a write to a store opened without settings raises a
+`FileNotFoundError` that names `canvodpy config init`. Create the settings
+with it, then open the store again. A settings file that is there but
+can't be loaded fails the opening, as before.
+
 ## Compare two stores
 
 `compare_stores()` compares two stores and returns a report of every
