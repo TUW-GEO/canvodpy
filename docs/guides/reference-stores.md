@@ -90,8 +90,8 @@ difference. The reference stores it compares with:
 The folder must hold every profile: the check runs them all.
 
 The published stores were built by canVODpy at commit `a5a5f694` from
-the test data at commit `dc2aea1`; the dataset's card lists the profiles
-and the zips.
+the test data at commit `dc2aea1`; the card of the dataset lists the
+profiles and the zips.
 
 For the `default` profile, a build and a check each take three to four
 minutes; the SBF day takes the longest. The `sbf-broadcast` profile
