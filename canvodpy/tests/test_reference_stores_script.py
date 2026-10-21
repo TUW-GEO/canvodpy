@@ -145,3 +145,49 @@ def test_a_commit_on_another_branch_is_searched_too(tmp_path):
 
     with pytest.raises(SystemExit, match=r"records the computer \(memory_gb\)"):
         script.pack(build, tmp_path / "zips")
+
+
+def test_a_site_settings_file_gives_position_publisher_and_references(tmp_path):
+    from canvod.config import load_config
+
+    settings_dir, sites, extra = script.read_runs(script.PROFILES / "default")
+    site = next(iter(sites))
+    position = {"latitude": 47.7, "longitude": 16.3, "altitude_m": 666.7}
+
+    path = script.output_settings(tmp_path, site, None, None, extra, position)
+    config = load_config(config_dir=settings_dir, config_file=path)
+
+    site_config = config.sites.sites[site]
+    assert (site_config.latitude, site_config.longitude, site_config.altitude_m) == (
+        47.7,
+        16.3,
+        666.7,
+    )
+    assert config.processing.metadata.website == testing.WEBSITE
+    assert config.processing.metadata.publisher_url == testing.WEBSITE
+    references = config.processing.references
+    assert references.access_url == (
+        "https://huggingface.co/datasets/nfb2021/canvodpy-reference-stores"
+    )
+    assert references.related_stores == [f"{site}-gnss", f"{site}-vod"]
+
+
+@pytest.mark.skipif(
+    not (script.TEST_DATA / "rinex_v2_11").is_dir(), reason="needs the test data"
+)
+def test_a_site_without_a_position_in_its_files_gets_the_test_position(tmp_path):
+    settings_dir, sites, _ = script.read_runs(script.PROFILES / "default")
+    import yaml
+
+    settings = yaml.safe_load((settings_dir / "canvod-settings.yaml").read_text())
+    site = "moflux_rinex_v2_11"
+    root = script.ROOT / settings["sites"][site]["gnss_site_data_root"]
+    copy = script.copy_with_position(root, tmp_path / site)
+
+    position = script.site_position(settings["sites"][site], copy, sites[site]["start"])
+
+    assert position == {
+        "latitude": testing.LATITUDE,
+        "longitude": testing.LONGITUDE,
+        "altitude_m": testing.ALTITUDE_M,
+    }
