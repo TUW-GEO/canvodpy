@@ -6,6 +6,7 @@ raises, marimo still writes the HTML but exits 1 and prints
 asserting the exporter exits 0.
 """
 
+import importlib.util
 import io
 import json
 import os
@@ -460,6 +461,12 @@ def test_example_history_names_no_person_machine_or_place() -> None:
     # Every text value of every table: no home folder, no e-mail but the
     # persona's; the runs carry the persona, its site and the example machine.
     path = EXAMPLE / "run_history.sqlite"
+    spec = importlib.util.spec_from_file_location(
+        "anonymize_run_history",
+        Path(__file__).resolve().parents[2] / "scripts/anonymize_run_history.py",
+    )
+    anonymizer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(anonymizer)
     with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as db:
         tables = [
             row[0]
@@ -489,7 +496,12 @@ def test_example_history_names_no_person_machine_or_place() -> None:
         assert json.loads(settings)["processing"]["references"]["funding"] == []
         site_settings = json.loads(settings)["sites"]["sites"][testing.SITE_KEY]
         assert site_settings["latitude"] == testing.LATITUDE
-        assert json.loads(machine)["cpu_model"] == "Example CPU"
+        machine = json.loads(machine)
+        for key, value in anonymizer.EXAMPLE_MACHINE.items():
+            assert machine[key] == value, key
+        for disk in machine["disks"].values():
+            assert disk["total"] == anonymizer.EXAMPLE_DISK_TOTAL
+            assert disk["filesystem"] == anonymizer.EXAMPLE_FILESYSTEM
 
 
 @needs_example

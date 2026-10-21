@@ -9,8 +9,8 @@ names a person, a machine or a place:
 - the machine becomes an example machine: no real CPU model, core
   counts, memory, operating system, host name or process ids;
 - every path under ``--path-prefix`` moves under ``/data/example``, and
-  the disk sizes are example values (the changes of free space during a
-  run are kept);
+  the disk sizes and file systems are example values (the changes of
+  free space during a run are kept);
 - the file index (the receiver file names) is emptied: the dashboard
   doesn't show it.
 
@@ -37,13 +37,15 @@ from canvod.utils import testing
 
 EXAMPLE_ROOT = "/data/example"
 EXAMPLE_HOST = "example-host"
-EXAMPLE_DISK_TOTAL = 2_000_000_000_000
-EXAMPLE_DISK_FREE = 1_500_000_000_000
+# Made-up values, none of them the real machine's.
+EXAMPLE_DISK_TOTAL = 4_000_000_000_000
+EXAMPLE_DISK_FREE = 3_500_000_000_000
+EXAMPLE_FILESYSTEM = "xfs"
 EXAMPLE_MACHINE = {
     "cpu_model": "Example CPU",
-    "cpu_physical": 72,
-    "cpu_logical": 144,
-    "memory_total": 512 * 1024**3,
+    "cpu_physical": 64,
+    "cpu_logical": 128,
+    "memory_total": 256 * 1024**3,
     "os": "Linux-example-x86_64",
 }
 FIRST_PID = 10_000
@@ -163,7 +165,7 @@ class Anonymizer:
             self.path(folder): {
                 "total": EXAMPLE_DISK_TOTAL,
                 "free": self.free(folder, disk["free"]),
-                "filesystem": disk.get("filesystem"),
+                "filesystem": EXAMPLE_FILESYSTEM,
             }
             for folder, disk in machine.get("disks", {}).items()
         }
