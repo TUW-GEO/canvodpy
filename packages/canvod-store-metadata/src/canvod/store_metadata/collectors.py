@@ -158,7 +158,7 @@ def collect_environment(
 ) -> Environment:
     """Collect runtime environment information.
 
-    With ``record_machine=False`` the computer (platform, architecture,
+    With ``record_machine=False`` the computer (operating system, architecture,
     CPU count, memory, free disk) is not recorded: those fields are
     ``None`` (``processing.metadata.record_machine``).
     """

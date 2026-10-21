@@ -119,7 +119,7 @@ class MetadataConfig(_StrictModel):
         True,
         description=(
             "Whether each commit records the computer that writes it: its "
-            "platform, architecture, CPU count, memory and free disk. With "
+            "operating system, architecture, CPU count, memory and free disk. With "
             "false they are recorded as null, for stores that are published."
         ),
     )

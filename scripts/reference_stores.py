@@ -345,7 +345,7 @@ def this_machine() -> tuple[str, ...]:
     return tuple(name for name in names if name)
 
 
-def records_machine(store: Path, names: tuple[str, ...]) -> str | None:
+def machine_trace(store: Path, names: tuple[str, ...]) -> str | None:
     """What in ``store`` records a computer, or ``None``.
 
     Walks every snapshot of every branch: a commit's environment must
@@ -402,7 +402,9 @@ def pack(build: Path, out: Path) -> None:
         folder = build / profile.name
         local = {build, folder.resolve(), ROOT, Path.home()}
         # The user name is too short to look for in the chunks' bytes;
-        # records_machine looks for it in the metadata.
+        # machine_trace looks for it in the metadata. A short host name
+        # can match chunk bytes by chance too; the pack then stops and
+        # names the file, so a false match is seen, never missed.
         machine = (socket.gethostname(), platform.platform())
         needles = tuple(str(p).encode() for p in (*local, *machine) if p)
         stores = sorted(p for p in (folder / "stores").glob("*/*") if p.is_dir())
@@ -420,7 +422,7 @@ def pack(build: Path, out: Path) -> None:
                     "nothing more was packed"
                 )
                 raise SystemExit(msg)
-            if found := records_machine(store, this_machine()):
+            if found := machine_trace(store, this_machine()):
                 msg = f"{store.relative_to(build)}: {found}; nothing more was packed"
                 raise SystemExit(msg)
             name = f"{profile.name}/{store.parent.name}-{store.name}.zip"
