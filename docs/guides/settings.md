@@ -131,6 +131,13 @@ How a store's metadata records who set its content settings or changed it (for e
 - Type: text, or null
 - Default: `null`
 
+#### `processing.metadata.record_machine` {#processing-metadata-record_machine}
+
+Whether each commit records the computer that writes it: its operating system, architecture, CPU count, memory and free disk. With false they are recorded as null, for stores that are published.
+
+- Type: true or false
+- Default: `true`
+
 ### `processing.credentials` {#processing-credentials}
 
 Credentials for external data services

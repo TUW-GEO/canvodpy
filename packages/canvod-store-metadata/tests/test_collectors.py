@@ -197,6 +197,28 @@ class TestCollectors:
         assert meta.processing.facility == testing.INSTITUTION
         assert meta.environment.hostname is None
 
+    def test_settings_that_record_no_machine_leave_it_out_of_every_commit(
+        self, tmp_path
+    ):
+        from canvod.config import load_config
+
+        testing.write_settings(tmp_path)
+        config = load_config(config_dir=tmp_path).model_copy(deep=True)
+        assert collectors.records_machine(config)
+        config.processing.metadata.record_machine = False
+
+        # Commits after the first take the settings from the snapshot.
+        snapshot = collect_config_snapshot(config)
+        assert not collectors.records_machine(config)
+        assert not collectors.records_machine(snapshot)
+        environment = collect_environment(tmp_path, record_machine=False)
+        assert (environment.os, environment.arch, environment.cpu_count) == (
+            None,
+            None,
+            None,
+        )
+        assert (environment.memory_gb, environment.disk_free_gb) == (None, None)
+
     def test_collect_references_none_config(self):
         config = MagicMock(spec=["processing"])
         config.processing = MagicMock(spec=[])  # no `references` attribute
