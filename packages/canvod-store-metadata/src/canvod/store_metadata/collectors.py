@@ -527,7 +527,7 @@ def missing_store_settings(site_name: str, site_config: Any, config: Any) -> lis
     except ValueError:
         missing.append(
             f"{NAMING_AUTHORITY_SETTING} is missing or not a reverse DNS "
-            "name (e.g. 'at.ac.tuwien')"
+            "name (e.g. 'org.middle-earth')"
         )
     return missing
 

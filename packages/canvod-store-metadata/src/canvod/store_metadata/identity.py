@@ -91,20 +91,20 @@ def check_naming_authority(naming_authority: str | None) -> str:
     ------
     ValueError
         If it is missing or not a lowercase reverse DNS name such as
-        ``at.ac.tuwien``.
+        ``org.middle-earth``.
     """
     if not naming_authority:
         msg = (
             "A store needs a naming authority when it is created: set "
             f"{NAMING_AUTHORITY_SETTING} in the settings to your institution's "
-            "domain in reverse order (e.g. 'at.ac.tuwien')."
+            "domain in reverse order (e.g. 'org.middle-earth')."
         )
         raise ValueError(msg)
     if not _REVERSE_DNS.fullmatch(naming_authority):
         msg = (
             f"The naming authority {naming_authority!r} is not a reverse DNS "
             "name: write your institution's domain in reverse order, lowercase "
-            f"(e.g. 'at.ac.tuwien'), in {NAMING_AUTHORITY_SETTING}."
+            f"(e.g. 'org.middle-earth'), in {NAMING_AUTHORITY_SETTING}."
         )
         raise ValueError(msg)
     return naming_authority

@@ -55,7 +55,7 @@ processing:
     # https://canvodpy.eu/guides/settings/#processing-metadata-publisher_url
     publisher_url: null                  # Optional
     # https://canvodpy.eu/guides/settings/#processing-metadata-naming_authority
-    naming_authority: null               # Required to create a store, e.g. "at.ac.tuwien"
+    naming_authority: null               # Required to create a store, e.g. "org.middle-earth"
     # https://canvodpy.eu/guides/settings/#processing-metadata-initials
     initials: null                       # Required to amend or migrate store metadata, e.g. "NFB"
 

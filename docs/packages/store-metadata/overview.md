@@ -545,12 +545,12 @@ The catalog sits beside the stores, never inside one:
 ├── catalog.json
 ├── gnss-observations/
 │   ├── collection.json
-│   └── at.ac.tuwien.rosalia-gnss/at.ac.tuwien.rosalia-gnss.json
+│   └── org.middle-earth.fangorn-gnss/org.middle-earth.fangorn-gnss.json
 ├── vod/
 │   ├── collection.json
-│   └── at.ac.tuwien.rosalia-vod/at.ac.tuwien.rosalia-vod.json
+│   └── org.middle-earth.fangorn-vod/org.middle-earth.fangorn-vod.json
 ├── gnss-geodesy/                only with geodesy stores
-└── Rosalia/
+└── Fangorn/
     ├── gnss/                    the GNSS store
     └── vod/                     the VOD store
 ```
@@ -558,7 +558,7 @@ The catalog sits beside the stores, never inside one:
 There is one collection per product (`gnss-observations`, `vod`,
 `gnss-geodesy`) and one item per store; a site with a second store of a
 kind (`vod-recompute`) has two items in that collection. The item id is the naming
-authority and the store id, for example `at.ac.tuwien.rosalia-gnss`. The
+authority and the store id, for example `org.middle-earth.fangorn-gnss`. The
 items of one site (its GNSS, VOD and geodesy stores, same naming authority
 and site name) link each other (`related`). A collection's extent covers
 all its items: their points and their time ranges. If its items have
@@ -629,7 +629,7 @@ import pystac
 import xarray as xr
 
 item = pystac.Item.from_file(
-    "/data/stores/gnss-observations/at.ac.tuwien.rosalia-gnss/at.ac.tuwien.rosalia-gnss.json"
+    "/data/stores/gnss-observations/org.middle-earth.fangorn-gnss/org.middle-earth.fangorn-gnss.json"
 )
 asset = item.assets["canopy_01"]
 repo = icechunk.Repository.open(

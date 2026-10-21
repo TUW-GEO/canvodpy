@@ -32,9 +32,9 @@ def _write_site(tmp_path: Path) -> Path:
     metadata = {
         "author": "Test Person",
         "email": "t@example.com",
-        "institution": "TU Wien",
-        "publisher": "TU Wien",
-        "naming_authority": "at.tuwien",
+        "institution": "University of Oxford",
+        "publisher": "The Inklings",
+        "naming_authority": "org.middle-earth",
         "initials": "TP",
         "license": "CC-BY-4.0",
     }

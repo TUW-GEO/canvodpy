@@ -371,7 +371,7 @@ class StoreIdentity(BaseModel):
     keywords: list[str] = Field(default_factory=list, description="Discovery keywords")
     conventions: str = Field("ACDD-1.3", description="Metadata conventions")
     naming_authority: str | None = Field(
-        None, description="Naming authority, reverse DNS (e.g. at.ac.tuwien)"
+        None, description="Naming authority, reverse DNS (e.g. org.middle-earth)"
     )
     stac_link: str | None = Field(
         None, description="Link to the store's item in the catalog, relative"
