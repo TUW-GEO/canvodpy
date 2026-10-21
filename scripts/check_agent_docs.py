@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
 """Check that the agent instructions name only paths and recipes that exist.
 
 Reads ``AGENTS.md``, ``canvodpy/AGENTS.md``, ``packages/*/AGENTS.md``,

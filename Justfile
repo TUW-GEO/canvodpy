@@ -144,12 +144,12 @@ check-reuse:
 # check that AGENTS.md files and skills name only existing paths and recipes
 [group('code quality')]
 check-agent-docs:
-    uv run --no-sync python scripts/check_agent_docs.py
+    uv run --script scripts/check_agent_docs.py
 
 # check that each package imports with only its own declared dependencies
 [group('code quality')]
 check-package-imports *PACKAGES:
-    uv run --no-sync python scripts/check_package_imports.py {{PACKAGES}}
+    uv run --script scripts/check_package_imports.py {{PACKAGES}}
 
 # lint, format and type-check (all packages), check the agent docs
 [group('code quality')]
@@ -437,7 +437,7 @@ venv-upgrade:
 # show each package's version, last tag and commits since
 [group('build and release')]
 release-status:
-    uv run --no-sync python scripts/release.py status
+    uv run --script scripts/release.py status
 
 # Runs the tests, checks the choice (canvodpy always included, its
 # increment at least the largest, ranges admit the new versions), writes the
@@ -446,13 +446,13 @@ release-status:
 # prepare a release: just release canvod-store=1.1.0 canvodpy=1.1.0
 [group('build and release')]
 release +VERSIONS: test
-    uv run --no-sync python scripts/release.py prepare {{VERSIONS}}
+    uv run --script scripts/release.py prepare {{VERSIONS}}
 
 # Run on the merged release commit on main; does not push.
 # tag every package version without a tag (canvod-store-v1.1.0, v1.1.0)
 [group('build and release')]
 tag-release:
-    uv run --no-sync python scripts/release.py tag
+    uv run --script scripts/release.py tag
 
 # ============================================================================
 # Build & Publish Recipes
@@ -687,12 +687,12 @@ docs-deploy:
 # dependencies between the packages, coupling per package (Markdown; fails on a dependency on a higher layer)
 [group('dependencies')]
 deps-report:
-    @uv run --no-sync python scripts/analyze_dependencies.py --format report
+    @uv run --script scripts/analyze_dependencies.py --format report
 
 # dependency graph of the packages, grouped by layer (Mermaid)
 [group('dependencies')]
 deps-mermaid:
-    @uv run --no-sync python scripts/analyze_dependencies.py --format mermaid
+    @uv run --script scripts/analyze_dependencies.py --format mermaid
 
 # ============================================================================
 # Initialization

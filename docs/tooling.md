@@ -66,6 +66,14 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     `uv sync` resolves `uv.lock` and creates or updates the shared workspace
     `.venv` at the repo root; all 12 packages share a single environment.
 
+    The scripts under `scripts/` that need no canvodpy package
+    (`release.py`, `analyze_dependencies.py`, `check_agent_docs.py`,
+    `check_package_imports.py`) declare their Python version and
+    dependencies in a `# /// script` block at the top (inline script
+    metadata, PEP 723). `uv run --script scripts/release.py` runs such a
+    script in its own small environment, without the workspace; the `just`
+    recipes call them that way.
+
     Configuration in `pyproject.toml`:
 
     ```toml
