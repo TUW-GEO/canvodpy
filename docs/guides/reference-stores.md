@@ -79,13 +79,19 @@ match; a second argument sets another path) and exits with 1 on a
 difference. The reference stores it compares with:
 
 - without a folder, the published stores: the zips of one commit of the
-  Hugging Face dataset named in `reference/published.yaml`. They are
+  Hugging Face dataset
+  [`nfb2021/canvodpy-reference-stores`](https://huggingface.co/datasets/nfb2021/canvodpy-reference-stores)
+  named in `reference/published.yaml`. They are
   downloaded once into the user cache folder, and each zip's sha256 is
   checked against `reference/SHA256SUMS` before it is unpacked;
 - a build folder (`just reference-stores`);
 - a folder of zips (`just reference-pack`, below).
 
 The folder must hold every profile: the check runs them all.
+
+The published stores were built by canVODpy at commit `a5a5f694` from
+the test data at commit `dc2aea1`; the card of the dataset lists the
+profiles and the zips.
 
 For the `default` profile, a build and a check each take three to four
 minutes; the SBF day takes the longest. The `sbf-broadcast` profile
