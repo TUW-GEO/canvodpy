@@ -138,10 +138,12 @@ they are.
 **Receivers with a naming recipe.** A GNSS store records each
 receiver's naming recipe and the sha256 of the recipe file, and every
 run compares them with the settings. Stores of canVODpy 0.x record the
-recipe without its sha256, and the migration doesn't add it: it can't
-tell whether today's recipe file is the one the store was built with.
-For each receiver with a naming recipe, check that its recipe file is
-the one the store was built with, then record it:
+recipe, if the receiver had one, without its sha256; a receiver that
+used the `naming` block and now has a recipe records none. The
+migration doesn't add them: it can't tell whether today's recipe file
+is the one the store was built with. For each receiver with a naming
+recipe, check that its recipe file is the one the store was built with,
+then record it:
 
 ```bash
 canvodpy store amend SITE --store gnss --update-recipe RECEIVER \
