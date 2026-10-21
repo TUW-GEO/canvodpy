@@ -286,6 +286,12 @@ All of these are replaced by one entry point: `canvodpy run`, or
 - **Plugins**: your own readers and VOD calculators from installed
   packages ([Your own readers and VOD calculators](plugins.md)).
 - **Comparing stores** within fixed tolerances, and `canvodpy config explain`.
+- **Stores that don't record the computer**:
+  `processing.metadata.record_machine: false` leaves the operating
+  system, architecture, CPU count, memory and free disk out of every
+  commit, for stores that are published
+  ([Settings](settings.md#processing-metadata-record_machine)). It is
+  true by default, so nothing changes for you.
 - **Demo data**: `canvodpy.demo_data()` downloads the demo day; the
   [notebooks](https://canvodpy.eu/notebooks/) use it.
 
