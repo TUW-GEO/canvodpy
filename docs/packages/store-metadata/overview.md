@@ -92,7 +92,11 @@ computer that ran: `gnss_site_data_root`, `aux_data_dir`,
 local folder (an `s3://` URL is kept). The same settings on two computers
 therefore give the same hash. The content settings record who set them by
 `processing.metadata.initials` (the author when no initials are set),
-and no host name is recorded. Credentials are never recorded. Stores
+and no host name is recorded. Credentials are never recorded. With
+`processing.metadata.record_machine: false` the `environment` of a commit
+leaves the computer out too: its operating system, architecture, CPUs,
+memory and free disk are null. Stores that are published, such as the
+[reference stores](../../guides/reference-stores.md), set it. Stores
 written by canVODpy before 1.0.0 keep the folders, host name and
 `user@host` they recorded: their snapshots can't be changed.
 

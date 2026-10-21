@@ -16,6 +16,8 @@ processing:
     license: CC-BY-4.0
     publisher: The Inklings
     naming_authority: org.middle-earth
+    # The stores are published: their commits don't record this computer.
+    record_machine: false
   aux_data:
     agency: COD
     product_type: final

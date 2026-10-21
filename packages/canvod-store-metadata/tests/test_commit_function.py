@@ -283,6 +283,26 @@ class TestCommitMetadata:
         assert meta["config"]["processing"] == {"batch_hours": 24}
         assert len(meta["config"]["config_hash"]) == 64
 
+    def test_a_store_that_records_no_machine_has_none_in_its_commits(self, tmp_path):
+        path = _store(tmp_path)
+        before = {snapshot.id for snapshot in _repo(path).ancestry(branch="main")}
+        config = {"processing": {"metadata": {"record_machine": False}}}
+        session = _repo(path).writable_session("main")
+        _write_receiver(session, "canopy_01", "2025-01-01", 4)
+        commit_with_rebase(session, "write", store_path=path, config=config)
+
+        new = [
+            snapshot.metadata
+            for snapshot in _repo(path).ancestry(branch="main")
+            if snapshot.id not in before
+        ]
+        assert new
+        for metadata in new:
+            environment = metadata["environment"]
+            for field in ("os", "arch", "cpu_count", "memory_gb", "disk_free_gb"):
+                assert environment[field] is None, field
+            assert "uv_lock_hash" in environment
+
     def test_callers_commit_metadata_is_kept(self, tmp_path):
         path = _store(tmp_path)
         session = _repo(path).writable_session("main")
