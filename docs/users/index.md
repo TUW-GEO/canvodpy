@@ -69,7 +69,7 @@ You need:
     root = demo_data("aux")  # SP3 orbits, CLK clocks, auxiliary store
     ```
 
-    All three return the same folder. In it, the RINEX files of the two
+    These three return the same folder. In it, the RINEX files of the two
     receivers are in `rinex_v3_04/01_Rosalia/01_reference` and
     `rinex_v3_04/01_Rosalia/02_canopy`, the SBF files in
     `sbf/01_Rosalia/01_reference` and `sbf/01_Rosalia/02_canopy`. Use
@@ -77,6 +77,12 @@ You need:
     `directory` in [step 3](#3-point-canvodpy-to-your-data). The
     pipeline still downloads the orbits and clocks from the agencies; the
     `"aux"` files are a copy for when that fails.
+
+    `demo_data("stores")` downloads the GNSS store and the VOD store that
+    canVODpy writes from the RINEX day, to look at a store without a run
+    first. They are in `stores/rosalia_rinex_v3_04/gnss` and
+    `stores/rosalia_rinex_v3_04/vod` of the folder it returns. Copy them
+    before you write to them: the next call returns the same folder.
 
 ---
 

@@ -1,6 +1,6 @@
 # The published reference stores (spec #318, #325): the Hugging Face
 # dataset and its commit that `just reference-check` downloads when it is
-# given no folder. The sha256 of every zip is in SHA256SUMS next to this
+# given no folder, and `canvodpy.demo_data("stores")` too. The sha256 of every zip is in SHA256SUMS next to this
 # file. A new reference moves `revision` and replaces SHA256SUMS
 # (docs/guides/reference-stores.md, "Changing the reference stores").
 dataset: nfb2021/canvodpy-reference-stores

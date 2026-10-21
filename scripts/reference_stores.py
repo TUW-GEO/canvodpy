@@ -34,7 +34,8 @@ so ``rosalia_sbf: {}`` runs that site with the base's days and SIDs.
                   canvod.store.compare_stores; writes the report and exits
                   1 on a difference. REF is a build folder or a folder of
                   packed zips; without REF the check downloads the
-                  published zips (``reference/published.yaml``)
+                  published zips (``published.yaml`` in
+                  ``canvodpy/src/canvodpy/reference-stores/``)
 
 The zips are deterministic: the same build gives the same sha256. They
 hold only the stores; ``pack`` refuses a store that holds a local path
@@ -76,7 +77,6 @@ PROFILES = ROOT / "reference" / "profiles"
 TEST_DATA = ROOT / "packages" / "canvod-readers" / "tests" / "test_data" / "valid"
 AUX_FOLDERS = {"01_SP3": "*_ORB.SP3", "02_CLK": "*_CLK.CLK"}
 RUNS_FILE = "reference-runs.yaml"
-PUBLISHED = ROOT / "reference" / "published.yaml"
 SUMS_FILE = "SHA256SUMS"
 # Fixed time of every zip member, so a zip depends on the files only.
 FIXED_TIME = (2025, 1, 1, 0, 0, 0)
@@ -445,16 +445,6 @@ def pack(build: Path, out: Path) -> None:
     print(f"{len(sums)} zips and {SUMS_FILE} in {out}")
 
 
-def read_sums(path: Path) -> dict[str, str]:
-    """The sha256 of every zip in a ``SHA256SUMS`` file, by its path."""
-    sums = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            sha256, name = line.split(maxsplit=1)
-            sums[name.strip()] = sha256
-    return sums
-
-
 def reference_folder(reference: Path | None, work: Path) -> Path:
     """The folder with a build of every profile to compare with.
 
@@ -463,26 +453,22 @@ def reference_folder(reference: Path | None, work: Path) -> Path:
     published zips, downloaded and unpacked into the user cache folder.
     Every zip's sha256 is checked before it is unpacked.
     """
-    from canvodpy.demo import fetch_archive
+    from canvodpy.demo import fetch_archive, published_reference, read_sums
 
     if reference is None:
-        published = yaml.safe_load(PUBLISHED.read_text(encoding="utf-8"))
-        revision = published.get("revision")
-        if not revision:
-            msg = (
-                "No reference stores are published yet: compare with a "
-                "folder, `just reference-check REF`."
-            )
-            raise SystemExit(msg)
+        try:
+            published = published_reference()
+        except RuntimeError as exc:
+            msg = f"{exc}: compare with a folder, `just reference-check REF`."
+            raise SystemExit(msg) from exc
         from platformdirs import user_cache_dir
 
-        sums = read_sums(PUBLISHED.parent / SUMS_FILE)
-        base = (
-            f"https://huggingface.co/datasets/{published['dataset']}"
-            f"/resolve/{revision}/"
+        sums = published.sums
+        urls = {name: published.url(name) for name in sums}
+        # Not the folder of demo_data("stores"), which users may write to.
+        root = (
+            Path(user_cache_dir("canvodpy")) / "reference-stores" / published.revision
         )
-        urls = {name: base + name for name in sums}
-        root = Path(user_cache_dir("canvodpy")) / "reference-stores" / revision
     elif (reference / SUMS_FILE).is_file():
         sums = read_sums(reference / SUMS_FILE)
         urls = {name: (reference / name).resolve().as_uri() for name in sums}

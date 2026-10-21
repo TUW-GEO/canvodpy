@@ -13,6 +13,14 @@ The archives (ADR 0017):
 - auxiliary files: SP3 orbits and CLK clocks of 2024-12-31 to 2025-01-02
   and the auxiliary store of 2025-01-01.
 
+The kind ``"stores"`` downloads the GNSS store and the VOD store of the
+RINEX v3.04 day from the published reference stores (spec #318): the
+Hugging Face dataset and commit named in ``reference-stores/published.yaml``
+of this package, checked against ``reference-stores/SHA256SUMS`` next to
+it. ``just reference-check`` reads the same two files
+(:func:`published_reference`) but unpacks into a folder of its own, so a
+demo store that is written to never changes what the check compares with.
+
 ``ARCHIVES`` is the single list of what each archive holds;
 ``just demo-archives`` builds the zips from it. The sha256 values are
 those of zips built from the test data at commit 2024c42 of
@@ -36,7 +44,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-DemoKind = Literal["rinex", "sbf", "aux", "run_history"]
+DemoKind = Literal["rinex", "sbf", "aux", "run_history", "stores"]
 
 DEMO_DATA_VERSION = "2"
 """Folder name under the cache; raise it when the archives change."""
@@ -130,6 +138,75 @@ ARCHIVES: tuple[DemoArchive, ...] = (
 )
 
 
+#: The published reference stores: dataset, commit and the sha256 of each zip.
+_PUBLISHED = Path(__file__).parent / "reference-stores"
+
+#: The zips of ``demo_data("stores")``, in the profile ``default``.
+_STORE_ZIPS = ("rosalia_rinex_v3_04-gnss.zip", "rosalia_rinex_v3_04-vod.zip")
+
+
+@dataclass(frozen=True)
+class PublishedReference:
+    """The published reference stores (spec #318).
+
+    Attributes
+    ----------
+    dataset : str
+        The Hugging Face dataset.
+    revision : str
+        Its commit that canVODpy compares with.
+    sums : dict[str, str]
+        The sha256 of every zip, by its path in the dataset
+        (``<profile>/<site>-<gnss|vod>.zip``).
+    """
+
+    dataset: str
+    revision: str
+    sums: dict[str, str]
+
+    def url(self, name: str) -> str:
+        """The download URL of the zip ``name`` at :attr:`revision`."""
+        return (
+            f"https://huggingface.co/datasets/{self.dataset}"
+            f"/resolve/{self.revision}/{name}"
+        )
+
+
+def read_sums(path: Path) -> dict[str, str]:
+    """The sha256 of every file in a ``SHA256SUMS`` file, by its path."""
+    sums = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            sha256, name = line.split(maxsplit=1)
+            sums[name.strip()] = sha256
+    return sums
+
+
+def published_reference() -> PublishedReference:
+    """The published reference stores this canVODpy compares with.
+
+    Read from ``reference-stores/published.yaml`` and
+    ``reference-stores/SHA256SUMS`` of this package; the one place the
+    pin is kept.
+
+    Raises
+    ------
+    RuntimeError
+        If no revision is published yet.
+    """
+    import yaml
+
+    published = yaml.safe_load((_PUBLISHED / "published.yaml").read_text("utf-8"))
+    if not published.get("revision"):
+        msg = "No reference stores are published yet (published.yaml has no revision)"
+        raise RuntimeError(msg)
+    return PublishedReference(
+        dataset=published["dataset"],
+        revision=published["revision"],
+        sums=read_sums(_PUBLISHED / "SHA256SUMS"),
+    )
+
+
 def default_cache_dir() -> Path:
     """Return the user cache folder of canvodpy (platform specific)."""
     from platformdirs import user_cache_dir
@@ -142,12 +219,15 @@ def demo_data(kind: DemoKind, *, cache_dir: Path | None = None) -> Path:
 
     Parameters
     ----------
-    kind : {"rinex", "sbf", "aux", "run_history"}
+    kind : {"rinex", "sbf", "aux", "run_history", "stores"}
         ``"rinex"``: RINEX v3.04 of both receivers, the whole day.
         ``"sbf"``: SBF of both receivers, 00:00 to 02:00.
         ``"aux"``: SP3 and CLK files and the auxiliary store.
         ``"run_history"``: an anonymized run history of nine runs, a log
         folder for the run dashboard (``<folder>/run_history``).
+        ``"stores"``: the GNSS store and the VOD store of the Rosalia
+        RINEX v3.04 day, 2025-01-01, as canVODpy writes them: the
+        published reference stores of the profile ``default``.
     cache_dir : Path, optional
         Where to keep the data. Default: the user cache folder of
         canvodpy (``default_cache_dir()``).
@@ -155,9 +235,15 @@ def demo_data(kind: DemoKind, *, cache_dir: Path | None = None) -> Path:
     Returns
     -------
     Path
-        The folder that holds the files, in the layout of the test data,
-        for example ``<folder>/rinex_v3_04/01_Rosalia/02_canopy/...``.
-        The same folder for every kind.
+        The folder that holds the files. For the raw data, the auxiliary
+        files and the run history it is one folder, in the layout of the
+        test data, for example
+        ``<folder>/rinex_v3_04/01_Rosalia/02_canopy/...``. For
+        ``"stores"`` it is a folder of the published revision of the
+        reference stores, with the stores in
+        ``<folder>/stores/rosalia_rinex_v3_04/gnss`` and ``.../vod``.
+        They are unpacked once and not checked again: copy them before
+        writing to them, so the next call returns them unchanged.
 
     Raises
     ------
@@ -171,16 +257,30 @@ def demo_data(kind: DemoKind, *, cache_dir: Path | None = None) -> Path:
     --------
     >>> from canvodpy import demo_data
     >>> root = demo_data("rinex")  # doctest: +SKIP
+    >>> gnss = demo_data("stores") / "stores/rosalia_rinex_v3_04/gnss"  # doctest: +SKIP
     """
+    if kind == "stores":
+        return _reference_stores(cache_dir)
     archives = [a for a in ARCHIVES if a.kind == kind]
     if not archives:
-        known = ", ".join(repr(t) for t in sorted({a.kind for a in ARCHIVES}))
+        kinds = {a.kind for a in ARCHIVES} | {"stores"}
+        known = ", ".join(repr(t) for t in sorted(kinds))
         msg = f"Unknown kind of demo data {kind!r}; known: {known}"
         raise ValueError(msg)
 
     root = Path(cache_dir or default_cache_dir()) / DEMO_DATA_VERSION
     for archive in archives:
         _ensure(archive, root)
+    return root
+
+
+def _reference_stores(cache_dir: Path | None) -> Path:
+    """Download and unpack the GNSS and VOD store of the RINEX v3.04 day."""
+    published = published_reference()
+    root = Path(cache_dir or default_cache_dir()) / "stores" / published.revision
+    for file in _STORE_ZIPS:
+        name = f"default/{file}"
+        fetch_archive(file, published.url(name), published.sums[name], root)
     return root
 
 

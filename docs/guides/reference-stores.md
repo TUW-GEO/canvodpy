@@ -81,9 +81,13 @@ difference. The reference stores it compares with:
 - without a folder, the published stores: the zips of one commit of the
   Hugging Face dataset
   [`nfb2021/canvodpy-reference-stores`](https://huggingface.co/datasets/nfb2021/canvodpy-reference-stores)
-  named in `reference/published.yaml`. They are
-  downloaded once into the user cache folder, and each zip's sha256 is
-  checked against `reference/SHA256SUMS` before it is unpacked;
+  named in `published.yaml` of the folder
+  `canvodpy/src/canvodpy/reference-stores/`. They are downloaded once
+  into the user cache folder, and each zip's sha256 is checked against
+  `SHA256SUMS` in the same folder before it is unpacked. The pin is part
+  of the canvodpy package: `canvodpy.demo_data("stores")` downloads the
+  GNSS and VOD store of the RINEX v3.04 day from it, into a folder of
+  its own, so a demo store written to never changes the reference;
 - a build folder (`just reference-stores`);
 - a folder of zips (`just reference-pack`, below).
 
@@ -91,7 +95,9 @@ The folder must hold every profile: the check runs them all.
 
 The published stores were built by canVODpy at commit `a5a5f694` from
 the test data at commit `dc2aea1`; the card of the dataset lists the
-profiles and the zips.
+profiles and the zips. Cite them as
+[doi:10.57967/hf/11189](https://doi.org/10.57967/hf/11189), the DOI of
+the pinned commit `ef448847`.
 
 For the `default` profile, a build and a check each take three to four
 minutes; the SBF day takes the longest. The `sbf-broadcast` profile
@@ -149,6 +155,7 @@ or release.
    hf upload nfb2021/canvodpy-reference-stores ~/reference-zips . --repo-type dataset
    ```
 
-4. The pull request moves `revision` in `reference/published.yaml` to the
-   new commit of the dataset and replaces `reference/SHA256SUMS` with
-   the new one.
+4. The pull request moves `revision` in
+   `canvodpy/src/canvodpy/reference-stores/published.yaml` to the new
+   commit of the dataset and replaces `SHA256SUMS` next to it with the
+   new one.
