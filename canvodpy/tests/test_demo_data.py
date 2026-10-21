@@ -227,7 +227,7 @@ def test_stores_unpacks_the_gnss_and_vod_store(reference, tmp_path):
 
     assert (root / GNSS_STORE).read_bytes() == b"gnss"
     assert (root / VOD_STORE).read_bytes() == b"vod"
-    assert root == tmp_path / "cache" / "reference-stores" / "r1" / "default"
+    assert root == tmp_path / "cache" / "stores" / "r1"
 
 
 def test_cached_stores_need_no_download(reference, tmp_path):
@@ -261,3 +261,14 @@ def test_the_package_pins_the_published_stores_of_the_rinex_day():
     assert {f"default/{name}" for name in demo_module._STORE_ZIPS} <= set(
         published.sums
     )
+
+
+def test_stores_say_when_nothing_is_published(tmp_path, monkeypatch):
+    pin = tmp_path / "pin"
+    pin.mkdir()
+    (pin / "published.yaml").write_text("dataset: d\nrevision: null\n")
+    (pin / "SHA256SUMS").write_text("")
+    monkeypatch.setattr(demo_module, "_PUBLISHED", pin)
+
+    with pytest.raises(RuntimeError, match="No reference stores are published"):
+        demo_data("stores", cache_dir=tmp_path / "cache")

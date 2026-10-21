@@ -18,7 +18,8 @@ RINEX v3.04 day from the published reference stores (spec #318): the
 Hugging Face dataset and commit named in ``reference-stores/published.yaml``
 of this package, checked against ``reference-stores/SHA256SUMS`` next to
 it. ``just reference-check`` reads the same two files
-(:func:`published_reference`).
+(:func:`published_reference`) but unpacks into a folder of its own, so a
+demo store that is written to never changes what the check compares with.
 
 ``ARCHIVES`` is the single list of what each archive holds;
 ``just demo-archives`` builds the zips from it. The sha256 values are
@@ -186,28 +187,23 @@ def published_reference() -> PublishedReference:
     Read from ``reference-stores/published.yaml`` and
     ``reference-stores/SHA256SUMS`` of this package; the one place the
     pin is kept.
+
+    Raises
+    ------
+    RuntimeError
+        If no revision is published yet.
     """
     import yaml
 
     published = yaml.safe_load((_PUBLISHED / "published.yaml").read_text("utf-8"))
+    if not published.get("revision"):
+        msg = "No reference stores are published yet (published.yaml has no revision)"
+        raise RuntimeError(msg)
     return PublishedReference(
         dataset=published["dataset"],
         revision=published["revision"],
         sums=read_sums(_PUBLISHED / "SHA256SUMS"),
     )
-
-
-def reference_cache_dir(revision: str, cache_dir: Path | None = None) -> Path:
-    """The folder the reference stores of ``revision`` are unpacked into.
-
-    One folder per revision, so the stores of a new revision are never
-    unpacked over those of an older one. Under ``cache_dir`` if given,
-    else under the user cache folder of canvodpy.
-    """
-    from platformdirs import user_cache_dir
-
-    base = Path(cache_dir) if cache_dir else Path(user_cache_dir("canvodpy"))
-    return base / "reference-stores" / revision
 
 
 def default_cache_dir() -> Path:
@@ -245,6 +241,8 @@ def demo_data(kind: DemoKind, *, cache_dir: Path | None = None) -> Path:
         ``"stores"`` it is a folder of the published revision of the
         reference stores, with the stores in
         ``<folder>/stores/rosalia_rinex_v3_04/gnss`` and ``.../vod``.
+        They are unpacked once and not checked again: copy them before
+        writing to them, so the next call returns them unchanged.
 
     Raises
     ------
@@ -278,7 +276,7 @@ def demo_data(kind: DemoKind, *, cache_dir: Path | None = None) -> Path:
 def _reference_stores(cache_dir: Path | None) -> Path:
     """Download and unpack the GNSS and VOD store of the RINEX v3.04 day."""
     published = published_reference()
-    root = reference_cache_dir(published.revision, cache_dir) / "default"
+    root = Path(cache_dir or default_cache_dir()) / "stores" / published.revision
     for file in _STORE_ZIPS:
         name = f"default/{file}"
         fetch_archive(file, published.url(name), published.sums[name], root)

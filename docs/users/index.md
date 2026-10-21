@@ -81,7 +81,8 @@ You need:
     `demo_data("stores")` downloads the GNSS store and the VOD store that
     canVODpy writes from the RINEX day, to look at a store without a run
     first. They are in `stores/rosalia_rinex_v3_04/gnss` and
-    `stores/rosalia_rinex_v3_04/vod` of the folder it returns.
+    `stores/rosalia_rinex_v3_04/vod` of the folder it returns. Copy them
+    before you write to them: the next call returns the same folder.
 
 ---
 

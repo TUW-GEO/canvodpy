@@ -453,18 +453,22 @@ def reference_folder(reference: Path | None, work: Path) -> Path:
     published zips, downloaded and unpacked into the user cache folder.
     Every zip's sha256 is checked before it is unpacked.
     """
-    from canvodpy.demo import (
-        fetch_archive,
-        published_reference,
-        read_sums,
-        reference_cache_dir,
-    )
+    from canvodpy.demo import fetch_archive, published_reference, read_sums
 
     if reference is None:
-        published = published_reference()
+        try:
+            published = published_reference()
+        except RuntimeError as exc:
+            msg = f"{exc}: compare with a folder, `just reference-check REF`."
+            raise SystemExit(msg) from exc
+        from platformdirs import user_cache_dir
+
         sums = published.sums
         urls = {name: published.url(name) for name in sums}
-        root = reference_cache_dir(published.revision)
+        # Not the folder of demo_data("stores"), which users may write to.
+        root = (
+            Path(user_cache_dir("canvodpy")) / "reference-stores" / published.revision
+        )
     elif (reference / SUMS_FILE).is_file():
         sums = read_sums(reference / SUMS_FILE)
         urls = {name: (reference / name).resolve().as_uri() for name in sums}

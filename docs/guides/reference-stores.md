@@ -86,8 +86,8 @@ difference. The reference stores it compares with:
   into the user cache folder, and each zip's sha256 is checked against
   `SHA256SUMS` in the same folder before it is unpacked. The pin is part
   of the canvodpy package: `canvodpy.demo_data("stores")` downloads the
-  GNSS and VOD store of the RINEX v3.04 day from it, into the same cache
-  folder;
+  GNSS and VOD store of the RINEX v3.04 day from it, into a folder of
+  its own, so a demo store written to never changes the reference;
 - a build folder (`just reference-stores`);
 - a folder of zips (`just reference-pack`, below).
 
