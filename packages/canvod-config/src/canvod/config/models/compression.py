@@ -126,10 +126,11 @@ class IcechunkConfig(_StrictModel):
         None,
         ge=1,
         description=(
-            "Limit on Zarr's concurrent chunk reads and writes per array; null "
-            "keeps Zarr's default of 10. On a network-mounted store (CIFS or "
-            "NFS) that drops connections during writes, set a lower value, for example "
-            "2 to 4; writes get slower."
+            "Limit on Zarr's concurrent chunk writes per array, for the writes "
+            "made through the store's own write methods; null keeps Zarr's "
+            "default of 10. The GNSS store writes of 'canvodpy run' and the "
+            "day-block writes don't use it. A lower value, for example 2 to 4, "
+            "makes the writes it covers slower."
         ),
     )
     cache_num_chunk_refs: int | None = Field(
