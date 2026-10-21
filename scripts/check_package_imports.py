@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
 """Check that every package imports with only its own declared dependencies.
 
 For each package in ``packages/``, this installs the package with its

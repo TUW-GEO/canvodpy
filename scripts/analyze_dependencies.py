@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = []
+# ///
 """Print the dependencies between the packages of this repository.
 
 The dependencies come from the ``[project] dependencies`` of each
