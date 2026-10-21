@@ -12,7 +12,7 @@ the range. The data check (`canvodpy config validate`) lists every folder.
 ## Considered options
 
 - **No file index.** Every run lists every folder. Always right, but a
-  cold listing on an SMB share costs about 50 ms per day folder: about
+  cold listing on a network share costs about 50 ms per day folder: about
   42 s per receiver for a few years of day folders, on every run, also
   for a daily run of one day.
 - **The index, with folders of the last 30 days listed again** (the first
@@ -25,7 +25,7 @@ the range. The data check (`canvodpy config validate`) lists every folder.
   reprocessing an old range always hit it.
 - **The index, plus each folder's modification time.** A folder whose
   modification time changed is listed again. That needs one call per
-  folder, which on SMB costs about as much as listing it, and a file
+  folder, which on a network share costs about as much as listing it, and a file
   replaced in place does not change the folder's time on every file
   system.
 - **The index, with the folders of the run's range listed** (chosen). The
@@ -45,6 +45,6 @@ the range. The data check (`canvodpy config validate`) lists every folder.
 - A file replaced in place (same name, new content) is the user's
   responsibility: the run finds it by name and does not compare contents.
 - Reprocessing an old range lists that range's folders cold, about 18 s
-  per receiver per year of day folders on SMB. A daily run lists only the
+  per receiver per year of day folders on a network share. A daily run lists only the
   folders of its days, and the in-process cache serves every lookup after
   the first.

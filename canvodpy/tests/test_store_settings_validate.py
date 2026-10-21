@@ -17,7 +17,7 @@ def _validate_config() -> SimpleNamespace:
             metadata=SimpleNamespace(
                 publisher="Test Institute",
                 license="CC-BY-4.0",
-                naming_authority="at.ac.tuwien",
+                naming_authority="org.middle-earth",
                 store_description=None,
             ),
         )

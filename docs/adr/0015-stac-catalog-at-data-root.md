@@ -22,7 +22,7 @@ own item is.
 
 A store has two identifiers, both fixed fields (ADR 0014): a readable id
 `{site}-{gnss|vod|geodesy}`, which with the required naming authority gives a
-network-unique item id such as `at.ac.tuwien.rosalia-vod`, and a UUID
+network-unique item id such as `org.middle-earth.fangorn-vod`, and a UUID
 generated when the store is created. The UUID is in the item, so opening
 a store from an item can refuse a store that was replaced behind the
 same path.

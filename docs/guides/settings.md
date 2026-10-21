@@ -112,7 +112,7 @@ Publisher URL
 
 #### `processing.metadata.naming_authority` {#processing-metadata-naming_authority}
 
-Your institution's domain in reverse order, lowercase (for example `at.ac.tuwien`). Required when a store is created: with the store id it gives the store's id in the STAC catalog.
+Your institution's domain in reverse order, lowercase (for example `org.middle-earth`). Required when a store is created: with the store id it gives the store's id in the STAC catalog.
 
 - Type: text, or null
 - Default: `null`

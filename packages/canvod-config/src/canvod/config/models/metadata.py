@@ -96,7 +96,7 @@ class MetadataConfig(_StrictModel):
         None,
         description=(
             "Your institution's domain in reverse order, lowercase "
-            "(for example 'at.ac.tuwien'). Required when a store is created: with "
+            "(for example 'org.middle-earth'). Required when a store is created: with "
             "the store id it gives the store's id in the STAC catalog."
         ),
     )
