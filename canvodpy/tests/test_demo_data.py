@@ -191,3 +191,73 @@ def test_a_failed_download_names_the_url_and_not_ftp(tmp_path, monkeypatch):
     assert "gone.zip" in message
     assert "FTP" not in message
     assert "NASA" not in message
+
+
+GNSS_STORE = "stores/rosalia_rinex_v3_04/gnss/repo"
+VOD_STORE = "stores/rosalia_rinex_v3_04/vod/repo"
+
+
+class _ServedReference(demo_module.PublishedReference):
+    """Published reference stores served from a local folder."""
+
+    def url(self, name: str) -> str:
+        return (Path(self.dataset) / name).as_uri()
+
+
+@pytest.fixture
+def reference(tmp_path, monkeypatch) -> Path:
+    """Replace the published reference stores with local zips; return their folder."""
+    served = tmp_path / "served-reference"
+    (served / "default").mkdir(parents=True)
+    sums = {
+        "default/rosalia_rinex_v3_04-gnss.zip": _zip(
+            served / "default/rosalia_rinex_v3_04-gnss.zip", {GNSS_STORE: b"gnss"}
+        ),
+        "default/rosalia_rinex_v3_04-vod.zip": _zip(
+            served / "default/rosalia_rinex_v3_04-vod.zip", {VOD_STORE: b"vod"}
+        ),
+    }
+    published = _ServedReference(dataset=str(served), revision="r1", sums=sums)
+    monkeypatch.setattr(demo_module, "published_reference", lambda: published)
+    return served
+
+
+def test_stores_unpacks_the_gnss_and_vod_store(reference, tmp_path):
+    root = demo_data("stores", cache_dir=tmp_path / "cache")
+
+    assert (root / GNSS_STORE).read_bytes() == b"gnss"
+    assert (root / VOD_STORE).read_bytes() == b"vod"
+    assert root == tmp_path / "cache" / "reference-stores" / "r1" / "default"
+
+
+def test_cached_stores_need_no_download(reference, tmp_path):
+    first = demo_data("stores", cache_dir=tmp_path / "cache")
+    for zip_path in reference.rglob("*.zip"):
+        zip_path.unlink()
+
+    assert demo_data("stores", cache_dir=tmp_path / "cache") == first
+
+
+def test_stores_with_a_wrong_sha256_are_refused(reference, tmp_path, monkeypatch):
+    published = demo_module.published_reference()
+    wrong = _ServedReference(
+        dataset=published.dataset,
+        revision=published.revision,
+        sums={name: "0" * 64 for name in published.sums},
+    )
+    monkeypatch.setattr(demo_module, "published_reference", lambda: wrong)
+
+    with pytest.raises(RuntimeError, match=r"rosalia_rinex_v3_04-gnss\.zip.*sha256"):
+        demo_data("stores", cache_dir=tmp_path / "cache")
+
+    assert not list((tmp_path / "cache").rglob("repo"))
+
+
+def test_the_package_pins_the_published_stores_of_the_rinex_day():
+    published = demo_module.published_reference()
+
+    assert published.dataset == "nfb2021/canvodpy-reference-stores"
+    assert len(published.revision) == 40
+    assert {f"default/{name}" for name in demo_module._STORE_ZIPS} <= set(
+        published.sums
+    )
