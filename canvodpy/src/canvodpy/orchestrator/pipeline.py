@@ -1567,12 +1567,14 @@ class PipelineOrchestrator:
         ) as phase1_ahead:
 
             def prepare(index: int) -> Future:
+                # ty 0.0.90 can't check a submitted function that takes another
+                # function and its arguments; the call is correct (#490).
                 return phase1_ahead.submit(
                     contextvars.copy_context().run,
-                    self._prepare_batch,
-                    batches[index],
-                    keep_vars,
-                    index + 1,
+                    self._prepare_batch,  # ty: ignore[invalid-argument-type]
+                    batches[index],  # ty: ignore[invalid-argument-type]
+                    keep_vars,  # ty: ignore[invalid-argument-type]
+                    index + 1,  # ty: ignore[invalid-argument-type]
                 )
 
             prepared = prepare(0)
@@ -1704,12 +1706,14 @@ class PipelineOrchestrator:
                 _pool = self.worker_pool()
 
                 def _submit_fork(job: _ForkJob, *, _pool=_pool) -> Future:
+                    # ty 0.0.90 can't check a submitted function that takes another
+                    # function and its arguments; the call is correct (#490).
                     return _pool.submit(
                         run_measured,
-                        _input_bytes(ft[0] for ft in job.task.file_tasks),
-                        write_files_into_fork,
-                        job.fork,
-                        job.task,
+                        _input_bytes(ft[0] for ft in job.task.file_tasks),  # ty: ignore[invalid-argument-type]
+                        write_files_into_fork,  # ty: ignore[invalid-argument-type]
+                        job.fork,  # ty: ignore[invalid-argument-type]
+                        job.task,  # ty: ignore[invalid-argument-type]
                     )
 
                 def _submit_task(
@@ -1730,10 +1734,12 @@ class PipelineOrchestrator:
                         if task_args[-1]
                         else preprocess_with_hermite_aux
                     )
+                    # ty 0.0.90 can't check a submitted function that takes another
+                    # function and its arguments; the call is correct (#490).
                     return _pool.submit(
                         run_measured,
-                        _input_bytes([task_args[0]]),
-                        func,
+                        _input_bytes([task_args[0]]),  # ty: ignore[invalid-argument-type]
+                        func,  # ty: ignore[invalid-argument-type]
                         *task_args[:-1],
                     )
 
@@ -1819,10 +1825,12 @@ class PipelineOrchestrator:
                             fork_results[date_key].append(fork_result)
                             fork_jobs_left -= 1
                             if not fork_jobs_left:
+                                # ty 0.0.90 can't check a submitted function that takes another
+                                # function and its arguments; the call is correct (#490).
                                 unit_write = day_writer.submit(
                                     contextvars.copy_context().run,
-                                    self._write_forked_unit,
-                                    [
+                                    self._write_forked_unit,  # ty: ignore[invalid-argument-type]
+                                    [  # ty: ignore[invalid-argument-type]
                                         _UnitDay(
                                             doy_contexts[dk][0],
                                             planned,
@@ -1831,8 +1839,8 @@ class PipelineOrchestrator:
                                         )
                                         for dk, planned in forked_days.items()
                                     ],
-                                    _submit_fork,
-                                    batch_idx + 1,
+                                    _submit_fork,  # ty: ignore[invalid-argument-type]
+                                    batch_idx + 1,  # ty: ignore[invalid-argument-type]
                                 )
                             continue
                         is_fanout = bool(task_args[-1])
