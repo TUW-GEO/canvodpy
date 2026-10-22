@@ -92,6 +92,7 @@ check-lock:
     uv lock --check
 
 # check that every package builds without the workspace sources, as the release workflow builds them for PyPI
+[group('build and release')]
 check-build:
     #!/usr/bin/env bash
     set -euo pipefail
