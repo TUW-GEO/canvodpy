@@ -502,7 +502,22 @@ class TestOncePerProcess:
             collectors.collect_uv_version.cache_clear()
 
         assert len(calls) == 1
-        assert first.uv_version == second.uv_version == "uv 0.9.0"
+        assert first.uv_version == second.uv_version == "0.9.0"
+
+    def test_uv_version_is_the_number_only(self, monkeypatch):
+        def run(*args, **kwargs):
+            return subprocess.CompletedProcess(
+                args,
+                0,
+                stdout="uv 0.13.1 (Homebrew 2026-10-14 aarch64-apple-darwin)\n",
+            )
+
+        monkeypatch.setattr(subprocess, "run", run)
+        collectors.collect_uv_version.cache_clear()
+        try:
+            assert collectors.collect_uv_version() == "0.13.1"
+        finally:
+            collectors.collect_uv_version.cache_clear()
 
     def test_the_lockfile_is_read_once_until_it_changes(self, tmp_path, monkeypatch):
         project = _project(tmp_path / "fangorn")

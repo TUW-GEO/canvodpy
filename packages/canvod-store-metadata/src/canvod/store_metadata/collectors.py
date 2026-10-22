@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -96,7 +97,13 @@ def collect_python_info() -> str:
 
 @functools.cache
 def collect_uv_version() -> str | None:
-    """Return uv version or None if not installed (asked once per process)."""
+    """Return the uv version number, or None if uv is not installed.
+
+    Only the number is kept (``"0.13.1"``): ``uv --version`` may add how
+    uv was built and the platform, for example
+    ``"uv 0.13.1 (Homebrew 2026-10-14 aarch64-apple-darwin)"``, and the
+    store records no machine information. Asked once per process.
+    """
     try:
         result = subprocess.run(
             ["uv", "--version"],
@@ -105,7 +112,8 @@ def collect_uv_version() -> str | None:
             timeout=5,
         )
         if result.returncode == 0:
-            return result.stdout.strip()
+            match = re.match(r"uv\s+(\S+)", result.stdout.strip())
+            return match.group(1) if match else None
     except FileNotFoundError, subprocess.TimeoutExpired:
         pass
     return None
