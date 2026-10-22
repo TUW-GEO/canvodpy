@@ -1,6 +1,7 @@
 """Test runtime collectors."""
 
 import hashlib
+import platform
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -57,8 +58,8 @@ class TestCollectors:
 
     def test_collect_python_info(self):
         info = collect_python_info()
-        assert "3." in info
-        assert "CPython" in info
+        assert info == f"{platform.python_version()} CPython"
+        assert "[" not in info  # no compiler or build date
 
     def test_collect_environment(self):
         env = collect_environment()

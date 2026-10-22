@@ -10,7 +10,6 @@ import platform
 import re
 import shutil
 import subprocess
-import sys
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
@@ -91,8 +90,12 @@ def _software_versions() -> dict[str, str]:
 
 @functools.cache
 def collect_python_info() -> str:
-    """Return Python version + implementation."""
-    return f"{sys.version} ({platform.python_implementation()})"
+    """Return the Python version number and implementation (``"3.14.8 CPython"``).
+
+    Not ``sys.version``: it adds the build date and the compiler, and the
+    store records no machine information.
+    """
+    return f"{platform.python_version()} {platform.python_implementation()}"
 
 
 @functools.cache
