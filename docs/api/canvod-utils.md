@@ -16,6 +16,20 @@ management lives in [canvod.config](canvod-config.md) instead.
         - isfloat
         - get_version_from_pyproject
 
+## Files from a pinned URL
+
+::: canvod.utils.pinned
+    options:
+      members:
+        - fetch_pinned
+        - parse_pinned_url
+        - PinnedURL
+        - is_url
+        - cache_dir
+        - PinnedFileError
+        - PinnedURLError
+        - PinnedFetchError
+
 ## Logging
 
 The run identifier and the stage timing; the log output is configured by
