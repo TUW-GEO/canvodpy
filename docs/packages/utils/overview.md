@@ -10,6 +10,8 @@ packages share:
 - decorators that mark code left over from development;
 - the plugin loader, which finds readers and VOD calculators in installed
   packages;
+- files read from a GitHub repository at a fixed commit or tag, such as
+  naming recipes;
 - the run identifier and the timing of the processing stages, which go
   into the logs.
 
@@ -53,6 +55,29 @@ group without importing them, `load_plugins` imports them, and
 `plugin_package` names the package that declares a plugin. A plugin that
 can't be used raises `PluginError`, which names that package. To write a
 plugin, see [Your own readers and VOD calculators](../../guides/plugins.md).
+
+---
+
+## Files from a pinned URL
+
+`canvod.utils.pinned` reads a file from a GitHub repository by its raw
+file link, pinned to a commit or a tag:
+
+```text
+https://raw.githubusercontent.com/<account>/<repo>/<commit>/<path>
+https://raw.githubusercontent.com/<account>/<repo>/refs/tags/<tag>/<path>
+```
+
+A link to a branch is refused, because a branch moves; a full commit hash
+is the only pin that never changes. `fetch_pinned` downloads the file
+once and keeps it in a cache folder that only you can read, so a run works
+without network access once the file is there. `parse_pinned_url` checks a
+link and splits it into account, repository, pin and path; `sibling`
+names another file of the same repository at the same pin. A file in a
+private repository needs a GitHub token in `GH_TOKEN` or `GITHUB_TOKEN`;
+the token goes only to `raw.githubusercontent.com` and never into a
+message or a log. canvod-filemap reads naming recipes given as a URL with
+this module.
 
 ---
 

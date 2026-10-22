@@ -113,3 +113,70 @@ def write_settings(folder: Path) -> Path:
     path = folder / "canvod-settings.yaml"
     path.write_text(json.dumps(settings, indent=2))
     return path
+
+
+#: A made-up commit of :data:`REPOSITORY`, for pinned URLs.
+COMMIT = "0123456789abcdef0123456789abcdef01234567"
+
+
+class PinnedFileServer:
+    """A local HTTP server that stands in for ``raw.githubusercontent.com``.
+
+    It answers per URL path and records each request's path and headers.
+    Tests point :mod:`canvod.utils.pinned` at it, so no test reaches the
+    network::
+
+        server = testing.PinnedFileServer()
+        monkeypatch.setattr(pinned, "_DOWNLOAD_ORIGIN", server.origin)
+        server.serve(url, b"...")
+        ...
+        server.close()
+    """
+
+    def __init__(self) -> None:
+        import threading
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+        self.routes: dict[str, tuple[int, bytes, dict[str, str]]] = {}
+        self.requests: list[tuple[str, dict[str, str]]] = []
+        server = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self) -> None:
+                server.requests.append((self.path, dict(self.headers)))
+                status, body, headers = server.routes.get(
+                    self.path, (404, b"404: Not Found", {})
+                )
+                self.send_response(status)
+                for key, value in headers.items():
+                    self.send_header(key, value)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, format: str, *args: object) -> None:
+                pass
+
+        # A larger backlog than the default 5: parallel fetches connect at once.
+        server_class = type(
+            "Server", (ThreadingHTTPServer,), {"request_queue_size": 64}
+        )
+        self.httpd = server_class(("127.0.0.1", 0), Handler)
+        self.origin = f"http://127.0.0.1:{self.httpd.server_address[1]}"
+        self.thread = threading.Thread(
+            target=self.httpd.serve_forever, args=(0.05,), daemon=True
+        )
+        self.thread.start()
+
+    def serve(self, url: str, body: bytes, status: int = 200, **headers: str) -> None:
+        """Answer requests for ``url`` with ``status``, ``body`` and ``headers``."""
+        self.routes[url.removeprefix("https://raw.githubusercontent.com")] = (
+            status,
+            body,
+            headers,
+        )
+
+    def close(self) -> None:
+        """Stop the server."""
+        self.httpd.shutdown()
+        self.httpd.server_close()
