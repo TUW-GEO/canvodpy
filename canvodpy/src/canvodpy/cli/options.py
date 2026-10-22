@@ -73,6 +73,7 @@ CONFIG_DIR_OPTION = typer.Option(
         "Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, "
         "else ~/.config/canvodpy."
     ),
+    metavar="<path|url>",
     parser=_config_dir,
     callback=_use_config_dir,
     is_eager=True,
@@ -87,6 +88,7 @@ LOCAL_CONFIG_DIR_OPTION = typer.Option(
         "Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, "
         "else ~/.config/canvodpy."
     ),
+    metavar="<path>",
     parser=_local_config_dir,
     callback=_use_config_dir,
     is_eager=True,
