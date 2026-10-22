@@ -574,8 +574,15 @@ class ProcessingProvenance(BaseModel):
     software: dict[str, str] = Field(
         default_factory=dict, description="Package versions"
     )
-    python: str | None = Field(None, description="Python version")
-    uv_version: str | None = Field(None, description="uv version")
+    python: str | None = Field(
+        None,
+        description=(
+            "Python version number and implementation, for example '3.14.8 CPython'"
+        ),
+    )
+    uv_version: str | None = Field(
+        None, description="uv version number, for example '0.13.1'"
+    )
     level: str = Field("L1", description="Processing level")
     lineage: str | None = Field(None, description="Processing lineage description")
     facility: str | None = Field(
