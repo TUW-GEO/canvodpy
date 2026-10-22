@@ -56,9 +56,17 @@ The MOFLUX files carry no receiver position. The build copies them into
 its output folder with the made-up test position in the header and runs
 on the copies.
 
+Each store records its site's position in its metadata: the position its
+data carries, read from the first file of the site's canopy receiver as
+`canvodpy run` reads it (for MOFLUX, the made-up test position). The
+build writes it into the site's settings file, with the address of the
+published stores (`access_url`) and the ids of the site's GNSS store and
+VOD store (`related_stores`).
+
 A run with a profile downloads nothing: the orbit and clock files come
 from the test data. The metadata names the made-up identity the tests
-use, so the stores name no real person.
+use, so the stores name no real person. The stores are licensed under
+Apache 2.0, as the test data.
 
 ## Build and check
 
@@ -93,11 +101,11 @@ difference. The reference stores it compares with:
 
 The folder must hold every profile: the check runs them all.
 
-The published stores were built by canVODpy at commit `a5a5f694` from
-the test data at commit `dc2aea1`; the card of the dataset lists the
-profiles and the zips. Cite them as
-[doi:10.57967/hf/11189](https://doi.org/10.57967/hf/11189), the DOI of
-the pinned commit `ef448847`.
+The published stores were built by canVODpy at commit `bd2e6c7b` from
+the test data at commit `f0764c4`; the card of the dataset lists the
+profiles and the zips. The DOI of the dataset,
+[doi:10.57967/hf/11189](https://doi.org/10.57967/hf/11189), names its
+earlier commit `ef448847`; the pinned commit is `1dea9a15`.
 
 For the `default` profile, a build and a check each take three to four
 minutes; the SBF day takes the longest. The `sbf-broadcast` profile

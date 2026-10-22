@@ -13,7 +13,9 @@ carry no receiver position (MOFLUX) sets ``fill_header_position: true``
 in ``reference-runs.yaml``: the build copies its files into the output
 folder with the made-up test position (``canvod.utils.testing``) in the
 header and runs on the copies. canvodpy itself needs the position in the
-files.
+files. The settings file also gives the site's position as its data
+carries it, the address of the published stores and the ids of the
+site's two stores, for the store metadata.
 
 A profile that changes one setting of another profile names it as
 ``base`` in its ``reference-runs.yaml`` and holds no settings file of its
@@ -163,19 +165,80 @@ def copy_with_position(source: Path, target: Path) -> Path:
     return target
 
 
+def site_position(site_settings: dict, data_root: Path, day: int) -> dict:
+    """The position the site's data carries, for the site's settings.
+
+    Read as ``canvodpy run`` reads it: from the header of the first file of
+    the site's first canopy receiver on ``day``, converted to WGS84
+    latitude, longitude (degrees, rounded to 1e-7, about 1 cm) and height
+    above the ellipsoid (meters, rounded to 1 mm).
+    """
+    from canvodpy.factories import ReaderFactory
+    from canvodpy.orchestrator.discovery import ReceiverDay, discover_files
+    from canvodpy.orchestrator.processor import run_reader_options
+
+    from canvod.auxiliary.position import ECEFPosition
+
+    name, receiver = next(
+        (n, r) for n, r in site_settings["receivers"].items() if r["type"] == "canopy"
+    )
+    fmt = receiver["reader_format"]
+    files = discover_files(
+        ReceiverDay(name, data_root / receiver["directory"], str(day)), fmt
+    )
+    if not files:
+        msg = f"{data_root}: no {fmt} files of {name} on {day}"
+        raise SystemExit(msg)
+    reader = ReaderFactory.create(
+        fmt,
+        fpath=files[0].path,
+        aggregate_glonass_fdma=True,
+        **run_reader_options(fmt),
+    )
+    ds = reader.to_ds(keep_data_vars=[], write_global_attrs=True)
+    lat, lon, alt = ECEFPosition.from_ds_metadata(ds).to_geodetic()
+    return {
+        "latitude": round(float(lat), 7),
+        "longitude": round(float(lon), 7),
+        "altitude_m": round(float(alt), 3),
+    }
+
+
+def store_references(site: str) -> dict:
+    """The references of a site's stores: where they are, and each other."""
+    import canvodpy
+    from canvod.store_metadata.identity import store_id
+
+    published = Path(canvodpy.__file__).parent / "reference-stores" / "published.yaml"
+    dataset = yaml.safe_load(published.read_text(encoding="utf-8"))["dataset"]
+    return {
+        "access_url": f"https://huggingface.co/datasets/{dataset}",
+        "related_stores": [
+            store_id(site, "gnss_store"),
+            store_id(site, "vod_store"),
+        ],
+    }
+
+
 def output_settings(
     out: Path,
     site: str,
     sids: list[str] | None,
     data_root: Path | None,
     extra: dict,
+    position: dict,
 ) -> Path:
     """Write the settings file of one site's run into ``out``.
 
     It holds the profile's ``extra`` settings and points the output into
     ``out``; ``sids`` replaces the profile's SID list and ``data_root`` the
-    site's data folder.
+    site's data folder. ``position`` is the site's position
+    (:func:`site_position`). The publisher's website is the test persona's
+    (``canvod.utils.testing``), and the references point to the published
+    stores (:func:`store_references`).
     """
+    from canvod.utils import testing
+
     settings: dict = {
         "processing": {
             "storage": {
@@ -183,12 +246,18 @@ def output_settings(
                 "aux_data_dir": str(out / "aux"),
             },
             "logging": {"log_dir": str(out / "logs")},
-        }
+            "metadata": {
+                "website": testing.WEBSITE,
+                "publisher_url": testing.WEBSITE,
+            },
+            "references": store_references(site),
+        },
+        "sites": {site: dict(position)},
     }
     if sids:
         settings["sids"] = {"mode": "custom", "custom_sids": sids}
     if data_root is not None:
-        settings["sites"] = {site: {"gnss_site_data_root": str(data_root)}}
+        settings["sites"][site]["gnss_site_data_root"] = str(data_root)
     path = out / f"settings-{site}.yaml"
     path.write_text(yaml.safe_dump(merge(extra, settings)), encoding="utf-8")
     return path
@@ -208,10 +277,15 @@ def build_profile(profile: Path, out: Path) -> float:
     overlays = {}
     for site, days in sites.items():
         data_root = None
+        root = ROOT / settings["sites"][site]["gnss_site_data_root"]
         if days.get("fill_header_position"):
-            root = ROOT / settings["sites"][site]["gnss_site_data_root"]
             data_root = copy_with_position(root, out / "data" / site)
-        overlays[site] = output_settings(out, site, days.get("sids"), data_root, extra)
+        position = site_position(
+            settings["sites"][site], data_root or root, days["start"]
+        )
+        overlays[site] = output_settings(
+            out, site, days.get("sids"), data_root, extra, position
+        )
     started = time.perf_counter()
     for site, days in sites.items():
         command = [

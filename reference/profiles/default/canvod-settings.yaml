@@ -13,7 +13,7 @@ processing:
     author: John Ronald Reuel Tolkien
     email: j.r.r.tolkien@the.inklings.org
     institution: University of Oxford
-    license: CC-BY-4.0
+    license: Apache-2.0
     publisher: The Inklings
     naming_authority: org.middle-earth
     # The stores are published: their commits don't record this computer.
