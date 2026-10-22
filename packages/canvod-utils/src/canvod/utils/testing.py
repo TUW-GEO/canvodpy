@@ -115,19 +115,19 @@ def write_settings(folder: Path) -> Path:
     return path
 
 
-#: A made-up commit of :data:`REPOSITORY`, for pinned URLs.
+#: A made-up commit of :data:`REPOSITORY`, for raw file links.
 COMMIT = "0123456789abcdef0123456789abcdef01234567"
 
 
-class PinnedFileServer:
+class RemoteFileServer:
     """A local HTTP server that stands in for ``raw.githubusercontent.com``.
 
     It answers per URL path and records each request's path and headers.
-    Tests point :mod:`canvod.utils.pinned` at it, so no test reaches the
+    Tests point :mod:`canvod.utils.remote_file` at it, so no test reaches the
     network::
 
-        server = testing.PinnedFileServer()
-        monkeypatch.setattr(pinned, "_DOWNLOAD_ORIGIN", server.origin)
+        server = testing.RemoteFileServer()
+        monkeypatch.setattr(remote_file, "_DOWNLOAD_ORIGIN", server.origin)
         server.serve(url, b"...")
         ...
         server.close()

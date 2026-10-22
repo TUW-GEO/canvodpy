@@ -8,7 +8,10 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
+from canvod.utils.remote_file import is_url
+
 from .models import CanvodConfig
+from .remote import resolve_config_dir
 
 
 class ConfigValidationError(ValueError):
@@ -116,7 +119,9 @@ def get_default_config_dir() -> Path:
 
     Priority:
     0. ``CANVOD_CONFIG_DIR``, which the ``--config-dir`` option of every
-       ``canvodpy`` command sets.
+       ``canvodpy`` command sets. A URL of a settings file gives the
+       configuration folder made from it
+       (:func:`canvod.config.remote.resolve_config_dir`).
     1. Dev-mode convenience: if running from within a canvodpy monorepo
        checkout that already has a ``config/`` directory, use
        ``{monorepo_root}/config`` — preserves the existing contributor
@@ -140,6 +145,8 @@ def get_default_config_dir() -> Path:
     """
     env_dir = os.environ.get("CANVOD_CONFIG_DIR")
     if env_dir:
+        if is_url(env_dir):
+            return resolve_config_dir(env_dir)
         return Path(env_dir)
     try:
         monorepo_root = find_monorepo_root()

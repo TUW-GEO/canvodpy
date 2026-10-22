@@ -100,6 +100,40 @@ that exists:
 The same folder holds the naming recipes, in `recipes/`.
 `CANVOD_CONFIG_FILE` names an overlay file, like `--config`.
 
+### Settings from a GitHub repository
+
+`--config-dir` and `CANVOD_CONFIG_DIR` also take the raw link of a
+settings file in a GitHub repository, at a commit, a tag or a branch:
+
+```bash
+canvodpy run --site ExampleSite --start 2025001 --end 2025007 \
+  -c https://raw.githubusercontent.com/<account>/<repo>/refs/tags/<tag>/config/canvod-settings.yaml
+```
+
+- A receiver's `recipe:` name is read from the same repository at the
+  same commit, tag or branch, from `recipes/<site>/<name>.yaml` next to
+  the settings file, as in a local folder. A `recipe:` that is a URL is
+  read from that URL.
+- Every run downloads the files again, into a folder of the run that
+  only you can read. A run is a `canvodpy` command, a new `Site` in
+  Python (also the second one in the same notebook) or an Airflow task.
+  The folders are removed when the process ends: the command, the
+  notebook kernel or the Airflow worker. A run needs network access.
+- Each Airflow task is a run of its own, so the tasks of one DAG run read
+  the link again; they read other settings if the branch moved in
+  between.
+- `canvodpy doctor` names the link and the sha256 of the settings file.
+- The link is not recorded. Stores keep the settings, the run history
+  keeps the settings of each run, and both name a recipe URL by its file
+  name only.
+- A private repository needs a GitHub token in `GH_TOKEN` or
+  `GITHUB_TOKEN`, for example `export GH_TOKEN=$(gh auth token)`.
+- The folders of your machine (stores, auxiliary files, logs) go into an
+  overlay file with `--config`, so one settings file serves every machine.
+- `canvodpy config init` and `canvodpy config edit` write the settings
+  file, so they need a local folder; change settings from a link in their
+  repository.
+
 Settings come from these sources, the first one wins:
 overlay file, `canvod-settings.yaml`, package default. Write only the fields you want to change.
 
@@ -569,22 +603,6 @@ each file a canonical name without renaming it on disk. Naming recipes need an
 optional extension; see [Optional extensions](extensions.md). Where you can,
 rename the files to the convention instead.
 
-A recipe can also be read from a URL, so that every machine uses the same
-recipe from one repository. The URL is the raw link of the file, pinned to
-a commit or a tag:
-
-```yaml
-        recipe: https://raw.githubusercontent.com/<account>/<recipes-repo>/<commit>/my_site/my_site_reference.yaml
-```
-
-A tag is written `refs/tags/<tag>` in the URL; a branch is refused. A
-commit is the only pin that never changes: a tag can be moved. The
-GNSS store records each receiver's recipe and the sha256 of its file.
-Every run compares them with the settings and stops if the recipe or its
-content changed; the message names the `canvodpy store amend
---update-recipe` command that records a new recipe on purpose. A fetched
-recipe is cached in the system's temporary folder, so a run without
-network access works once the recipe was fetched. A recipe in a private
-repository needs a GitHub token with read access in `GH_TOKEN` or
-`GITHUB_TOKEN`; canvodpy never stores it
-([ADR 0022](../adr/0022-credentials-from-the-environment.md)).
+A recipe can also be read from a raw GitHub link, so that every machine
+uses the same recipe from one repository; see
+[Files that don't follow the convention](../packages/naming/overview.md#files-that-dont-follow-the-convention).

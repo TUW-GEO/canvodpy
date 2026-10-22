@@ -12,6 +12,7 @@ that finds and reads it. Every other package depends on it.
 | `models/storage.py` | Store paths and write strategies |
 | `models/preprocessing.py` | Optional preprocessing; `statistics` is reserved, not applied |
 | `loader.py` | `get_default_config_dir` (the only lookup of the config folder), `load_config` |
+| `remote.py` | A settings file URL (`-c URL`, `CANVOD_CONFIG_DIR=URL`) becomes a config folder of the run: the settings file and the recipes it names at the same link, fetched by every run. The URL is never written into the folder or recorded; `settings_url` gives it to `doctor`. Downloads through `canvod.utils.remote_file` |
 | `settings_help.py` | Every setting's path, description, type, limits and default, from the models: `canvodpy config explain`, the wizard's `?`, the settings reference page |
 | `templates/` | The template users start from (`just config-init`) |
 

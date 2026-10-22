@@ -1,23 +1,29 @@
-"""Files read from a pinned URL in a GitHub repository.
+"""Files read from a raw file link in a GitHub repository.
 
-A file is named by its raw file link, pinned to a commit or a tag::
+A file is named by its raw file link, at a commit, a tag or a branch::
 
     https://raw.githubusercontent.com/<account>/<repo>/<commit>/<path>
     https://raw.githubusercontent.com/<account>/<repo>/refs/tags/<tag>/<path>
+    https://raw.githubusercontent.com/<account>/<repo>/refs/heads/<branch>/<path>
 
-A full commit hash is the only pin that never changes: a tag can be moved.
-
-Fetched files are kept in a cache folder in the system's temporary
-folder, one per kind of file and user. A cached file is used without a
-new fetch, so a run works offline once the file was fetched; a file
-whose tag was moved keeps its old cached copy until the cache is
-emptied.
+The user is responsible for what the link points to. Each run fetches
+the file again; there is no cache. A run fetches a link once, into a
+folder of the run (:func:`run_folder`) that only its owner can read; the
+run's worker processes read the same file, so every part of a run sees
+the same content. The run folders of a process are removed when the
+process ends (the command, the notebook kernel, the Airflow worker), not
+at the next run: an earlier run's files may still be in use.
 
 A file in a private repository needs a GitHub token in the environment
 variable ``GH_TOKEN`` or ``GITHUB_TOKEN``. canvodpy stores no secrets
 (ADR "Credentials come from the environment"). The token is only sent to
 ``raw.githubusercontent.com``, never to the target of a redirect, and
 never appears in messages or logs.
+
+A link is shown in the terminal (``canvodpy doctor``, error messages) but
+never recorded: stores and the run history get only its file name
+(:func:`recorded_name`, :func:`without_urls`). A process that runs more
+than once starts each run with :func:`new_run`.
 
 canvod-filemap reads naming recipes with this module; canvodpy reads a
 settings file given as a URL with it.
@@ -28,17 +34,19 @@ from __future__ import annotations
 import hashlib
 import os
 import re
-import stat
+import shutil
 import tempfile
+import threading
 import urllib.error
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
+from multiprocessing.util import Finalize
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlsplit
 
 #: The only host files are read from.
-PINNED_HOST = "raw.githubusercontent.com"
+REMOTE_HOST = "raw.githubusercontent.com"
 
 #: Environment variables a GitHub token is read from, in this order.
 TOKEN_VARIABLES = ("GH_TOKEN", "GITHUB_TOKEN")
@@ -48,69 +56,59 @@ MAX_BYTES = 1_000_000
 
 #: Where downloads go: the URL's path is appended. Tests point it to a
 #: local HTTP server.
-_DOWNLOAD_ORIGIN = f"https://{PINNED_HOST}"
-
-_COMMIT = re.compile(r"[0-9a-f]{40}")
+_DOWNLOAD_ORIGIN = f"https://{REMOTE_HOST}"
 
 # A token is one word of visible ASCII characters.
 _TOKEN = re.compile(r"[\x21-\x7e]+")
 
-# A kind of cached file names its cache folder.
-_KIND = re.compile(r"[a-z][a-z0-9-]*")
+# A link inside a text, for :func:`without_urls`.
+_URL_IN_TEXT = re.compile(r"https?://[^\s'\"<>()]+", re.IGNORECASE)
+
+# Names the run folder for the worker processes of a run.
+_RUN_FOLDER_VARIABLE = "CANVODPY_RUN_FOLDER"
+
+# The run folder of this process.
+_FOLDER: Path | None = None
+_LOCK = threading.Lock()
 
 
-class PinnedFileError(Exception):
-    """A pinned URL that cannot be used."""
+class RemoteFileError(Exception):
+    """A file link that cannot be used."""
 
 
-class PinnedURLError(PinnedFileError, ValueError):
-    """A URL that is not a raw file link pinned to a commit or a tag."""
+class RemoteURLError(RemoteFileError, ValueError):
+    """A URL that is not a raw file link in a GitHub repository."""
 
 
-class PinnedFetchError(PinnedFileError):
+class RemoteFetchError(RemoteFileError):
     """A file that could not be fetched, or whose content was refused."""
 
 
 @dataclass(frozen=True)
-class PinnedURL:
-    """A raw file link in a GitHub repository, pinned to a commit or a tag.
+class RemoteURL:
+    """A raw file link in a GitHub repository.
 
     Attributes
     ----------
-    account : str
-        The account (user or organization) that owns the repository.
-    repo : str
-        The repository.
-    pin : str
-        A 40-character commit hash, or ``refs/tags/<tag>``.
     path : str
-        The file's path in the repository, without a leading ``/``.
+        The URL's path without the leading ``/``:
+        ``<account>/<repo>/<commit, refs/tags/tag or branch>/<file path>``.
     """
 
-    account: str
-    repo: str
-    pin: str
     path: str
 
     @property
     def url(self) -> str:
         """The raw file link."""
-        return (
-            f"https://{PINNED_HOST}/{self.account}/{self.repo}/{self.pin}/{self.path}"
-        )
+        return f"https://{REMOTE_HOST}/{self.path}"
 
     @property
-    def commit(self) -> str | None:
-        """The commit hash, or None if the URL is pinned to a tag."""
-        return self.pin if _COMMIT.fullmatch(self.pin) else None
+    def name(self) -> str:
+        """The file name, the only part of the link that is recorded."""
+        return PurePosixPath(self.path).name
 
-    @property
-    def tag(self) -> str | None:
-        """The tag, or None if the URL is pinned to a commit."""
-        return self.pin.removeprefix("refs/tags/") if self.commit is None else None
-
-    def sibling(self, relative: str) -> PinnedURL:
-        """The file at ``relative`` from this file's folder, at the same pin.
+    def sibling(self, relative: str) -> RemoteURL:
+        """The file at ``relative`` from this file's folder, at the same link.
 
         Parameters
         ----------
@@ -120,22 +118,21 @@ class PinnedURL:
 
         Returns
         -------
-        PinnedURL
-            The other file, in the same repository at the same pin.
+        RemoteURL
+            The other file, in the same repository at the same commit, tag
+            or branch.
 
         Raises
         ------
-        PinnedURLError
+        RemoteURLError
             If ``relative`` is absolute or leaves the folder.
         """
         parts = PurePosixPath(relative).parts
         if not parts or relative.startswith("/") or ".." in parts:
             msg = f"Path {relative!r} must stay inside the folder of {self.url}"
-            raise PinnedURLError(msg)
+            raise RemoteURLError(msg)
         folder = PurePosixPath(self.path).parent
-        return PinnedURL(
-            self.account, self.repo, self.pin, str(folder.joinpath(*parts))
-        )
+        return RemoteURL(str(folder.joinpath(*parts)))
 
 
 def is_url(value: str) -> bool:
@@ -154,13 +151,59 @@ def is_url(value: str) -> bool:
     return value.lower().startswith(("https://", "http://"))
 
 
-def parse_pinned_url(
+def recorded_name(value: str) -> str:
+    """The form of a setting that may be recorded: a URL's file name.
+
+    Parameters
+    ----------
+    value : str
+        A setting: a URL, a name or a local path.
+
+    Returns
+    -------
+    str
+        The file name of a raw file link (``ROSA_canopy.yaml``), the host
+        of any other link (its path can name a private repository), any
+        other value unchanged.
+    """
+    if not is_url(value):
+        return value
+    parts = urlsplit(value)
+    host = (parts.hostname or "").lower()
+    if host == REMOTE_HOST:
+        return PurePosixPath(parts.path).name or host
+    return host
+
+
+def without_urls(text: str) -> str:
+    """``text`` with each ``http(s)`` link replaced by what may be recorded.
+
+    For text that is recorded, such as an error kept in the run history.
+    Every link is replaced, not only raw file links: a message about a
+    refused link quotes it in other forms too (a GitHub page, another
+    host).
+
+    Parameters
+    ----------
+    text : str
+        Any text.
+
+    Returns
+    -------
+    str
+        The text, each link replaced by :func:`recorded_name`: a raw file
+        link by its file name, any other link by its host.
+    """
+    return _URL_IN_TEXT.sub(lambda m: recorded_name(m.group(0)), text)
+
+
+def parse_remote_url(
     url: str,
     *,
     what: str = "file",
     suffixes: tuple[str, ...] = (".yaml", ".yml"),
-) -> PinnedURL:
-    """Check that ``url`` is a raw file link pinned to a commit or a tag.
+) -> RemoteURL:
+    """Check that ``url`` is a raw file link in a GitHub repository.
 
     Parameters
     ----------
@@ -174,141 +217,137 @@ def parse_pinned_url(
 
     Returns
     -------
-    PinnedURL
-        The parts of the URL.
+    RemoteURL
+        The URL's path.
 
     Raises
     ------
-    PinnedURLError
+    RemoteURLError
         If the URL is not ``https``, holds a user name, password, query or
         fragment, points to a host other than ``raw.githubusercontent.com``
-        (a ``github.com/.../blob/...`` link gets the matching raw link), is
-        pinned to a branch or to a bare name that could be a branch, or
-        its file does not end in one of ``suffixes``.
+        (a ``github.com/.../blob/...`` link gets the matching raw link), has
+        no ``<account>/<repo>/<commit, tag or branch>/<file>`` path, or its
+        file does not end in one of ``suffixes``.
     """
     what_ = _upper(what)
     parts = urlsplit(url)
     if parts.scheme.lower() != "https":
         msg = f"{what_} URL must start with https://: {url}"
-        raise PinnedURLError(msg)
+        raise RemoteURLError(msg)
     if parts.username is not None or parts.password is not None:
         msg = (
             f"{what_} URL must not hold a user name or password; a token for a "
             f"private repository goes in {' or '.join(TOKEN_VARIABLES)}."
         )
-        raise PinnedURLError(msg)
+        raise RemoteURLError(msg)
     if parts.query or parts.fragment:
         msg = (
             f"{what_} URL must not have a query ('?') or fragment ('#'): {_shown(url)}. "
             f"A token for a private repository goes in {' or '.join(TOKEN_VARIABLES)}."
         )
-        raise PinnedURLError(msg)
+        raise RemoteURLError(msg)
     host = (parts.hostname or "").lower()
     segments = [s for s in parts.path.split("/") if s]
     if host == "github.com" and len(segments) > 3 and segments[2] == "blob":
-        raw = f"https://{PINNED_HOST}/" + "/".join(segments[:2] + segments[3:])
+        raw = f"https://{REMOTE_HOST}/" + "/".join(segments[:2] + segments[3:])
         msg = f"{what_} URL is a GitHub page, not the file. Use the raw link: {raw}"
-        raise PinnedURLError(msg)
-    if host != PINNED_HOST:
-        msg = f"{what_} URL must be a raw file link on {PINNED_HOST}: {url}"
-        raise PinnedURLError(msg)
+        raise RemoteURLError(msg)
+    if host != REMOTE_HOST:
+        msg = f"{what_} URL must be a raw file link on {REMOTE_HOST}: {url}"
+        raise RemoteURLError(msg)
     if len(segments) < 4:
-        msg = f"{what_} URL must be <account>/<repo>/<commit or refs/tags/tag>/<file>: {url}"
-        raise PinnedURLError(msg)
-    ref = segments[2]
-    if _COMMIT.fullmatch(ref):
-        pin, file_segments = ref, segments[3:]
-    elif ref == "refs" and segments[3] == "tags" and len(segments) > 5:
-        pin, file_segments = "/".join(segments[2:5]), segments[5:]
-    else:
-        branch = segments[4] if ref == "refs" and segments[3] == "heads" else ref
-        base = f"https://{PINNED_HOST}/{segments[0]}/{segments[1]}"
         msg = (
-            f"{what_} URL must be pinned to a full commit hash or a tag, not '{branch}': "
-            f"{url}\nUse {base}/<40-character commit>/... or "
-            f"{base}/refs/tags/<tag>/... (a commit is the only pin that never changes)."
+            f"{what_} URL must be <account>/<repo>/<commit, tag or branch>/<file>: "
+            f"{url}"
         )
-        raise PinnedURLError(msg)
-    if PurePosixPath(file_segments[-1]).suffix not in suffixes:
+        raise RemoteURLError(msg)
+    if PurePosixPath(segments[-1]).suffix not in suffixes:
         msg = f"{what_} URL must point to a {' or '.join(suffixes)} file: {url}"
-        raise PinnedURLError(msg)
-    return PinnedURL(segments[0], segments[1], pin, "/".join(file_segments))
+        raise RemoteURLError(msg)
+    return RemoteURL("/".join(segments))
 
 
-def cache_dir(kind: str) -> Path:
-    """The cache folder of one kind of fetched file, created if missing.
+def run_folder() -> Path:
+    """The folder of this run's fetched files, created if missing.
 
-    ``<system temp folder>/canvodpy-<kind>-<user id>`` on Linux and macOS,
-    readable by its owner only. On Windows the temporary folder already
-    belongs to the user, so it is ``<temp folder>/canvodpy-<kind>``.
-
-    Parameters
-    ----------
-    kind : str
-        The kind of file, lower case letters, digits and ``-``
-        (``"recipes"``, ``"settings"``).
+    A new folder in the system's temporary folder that only its owner can
+    read, removed when the process that made it ends. Worker processes
+    started after it was made use the same folder (it is named in the
+    environment variable ``CANVODPY_RUN_FOLDER``), so they read the files
+    the run fetched and leave its removal to the run.
 
     Returns
     -------
     Path
-        The cache folder.
-
-    Raises
-    ------
-    ValueError
-        If ``kind`` is not lower case letters, digits and ``-``.
-    PinnedFetchError
-        On Linux and macOS, if the folder is a link, belongs to another
-        user or can be read by others (on a shared ``/tmp``, another user
-        could otherwise place a file there).
+        The folder.
     """
-    if not _KIND.fullmatch(kind):
-        msg = f"Cache kind must be lower case letters, digits and '-': {kind!r}"
-        raise ValueError(msg)
-    getuid = getattr(os, "getuid", None)
-    if getuid is None:  # Windows: no owner ids; the temp folder is per user
-        path = Path(tempfile.gettempdir()) / f"canvodpy-{kind}"
-        path.mkdir(exist_ok=True)
-        return path
-    path = Path(tempfile.gettempdir()) / f"canvodpy-{kind}-{getuid()}"
-    path.mkdir(mode=0o700, exist_ok=True)
-    info = path.lstat()
-    if (
-        not stat.S_ISDIR(info.st_mode)
-        or info.st_uid != getuid()
-        or info.st_mode & 0o077
-    ):
-        msg = (
-            f"Cache folder {path} is not a folder that only you can "
-            "read and write. Remove it; it is created again."
-        )
-        raise PinnedFetchError(msg)
-    return path
+    global _FOLDER
+    with _LOCK:
+        if _FOLDER is not None and _FOLDER.is_dir():
+            return _FOLDER
+        inherited = os.environ.get(_RUN_FOLDER_VARIABLE)
+        if inherited and Path(inherited).is_dir():
+            _FOLDER = Path(inherited)
+            return _FOLDER
+        _FOLDER = _new_folder()
+        return _FOLDER
 
 
-def fetch_pinned(
+def new_run() -> Path:
+    """Start a new run: its files are fetched again, into a new run folder.
+
+    A process that runs more than once (a notebook, a long-lived worker)
+    calls this at the start of each run, so no run reads the files of an
+    earlier one. ``canvodpy.Site`` and the Airflow tasks call it. The
+    earlier folders are removed when the process ends.
+
+    Returns
+    -------
+    Path
+        The new run folder.
+    """
+    global _FOLDER
+    with _LOCK:
+        _FOLDER = _new_folder()
+        return _FOLDER
+
+
+def _new_folder() -> Path:
+    """A new run folder, named in the environment for worker processes."""
+    folder = Path(tempfile.mkdtemp(prefix="canvodpy-"))
+    os.environ[_RUN_FOLDER_VARIABLE] = str(folder)
+    # A multiprocessing finalizer runs only in the process that made the
+    # folder, also in a worker process, which ends without atexit.
+    Finalize(
+        None,
+        shutil.rmtree,
+        args=(folder,),
+        kwargs={"ignore_errors": True},
+        exitpriority=0,
+    )
+    return folder
+
+
+def fetch_remote(
     url: str,
     *,
-    kind: str,
     what: str = "file",
     check: Callable[[bytes], None] | None = None,
     suffixes: tuple[str, ...] = (".yaml", ".yml"),
     max_bytes: int = MAX_BYTES,
     timeout: float = 30.0,
 ) -> Path:
-    """The local file of the file at ``url``, fetched if not cached.
+    """The local file of the file at ``url``, fetched once per run.
 
-    The URL is checked with :func:`parse_pinned_url`. A cached copy is
-    used if its content still has the sha256 it was stored with.
-    Otherwise the file is fetched and given to ``check``; only if
-    ``check`` returns is it cached.
+    The URL is checked with :func:`parse_remote_url`. If the run already
+    fetched it, in this process or another process of the run, that file
+    is returned. Otherwise the file is fetched and given to ``check``; only
+    if ``check`` returns is it written into :func:`run_folder`.
 
     Parameters
     ----------
     url : str
         The URL.
-    kind : str
-        The kind of file; names the cache folder (:func:`cache_dir`).
     what : str
         What the file is, in lower case, for messages.
     check : Callable[[bytes], None] | None
@@ -323,40 +362,28 @@ def fetch_pinned(
     Returns
     -------
     Path
-        The cached file. Its name ends in the sha256 of its content and the
-        URL's file ending.
+        The local file, with the URL's file name.
 
     Raises
     ------
-    PinnedURLError
-        If the URL is not a pinned raw file link.
-    PinnedFetchError
+    RemoteURLError
+        If the URL is not a raw file link.
+    RemoteFetchError
         If the file cannot be fetched (not found, no access, a token that
-        is not a token, no network and not cached, timeout), is larger than
-        ``max_bytes``, or the cached copy changed.
+        is not a token, no network, timeout) or is larger than
+        ``max_bytes``.
     """
-    parsed = parse_pinned_url(url, what=what, suffixes=suffixes)
-    suffix = PurePosixPath(parsed.path).suffix
-    folder = cache_dir(kind)
-    key = hashlib.sha256(url.encode("utf-8")).hexdigest()
-    cached = sorted(folder.glob(f"{key}-*{suffix}"))
-    if len(cached) > 1:
-        msg = (
-            f"{_upper(what)} {url} has more than one cached copy (its tag was moved "
-            f"while it was fetched). Remove {folder}; it is created again."
-        )
-        raise PinnedFetchError(msg)
-    if cached:
-        path = cached[0]
-        if _sha256(path) != path.stem.removeprefix(f"{key}-"):
-            msg = f"Cached copy of {what} {url} changed: {path}. Remove it to fetch it again."
-            raise PinnedFetchError(msg)
+    remote = parse_remote_url(url, what=what, suffixes=suffixes)
+    folder = run_folder() / hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
+    path = folder / remote.name
+    if path.is_file():
         return path
     data = _download(url, what=what, max_bytes=max_bytes, timeout=timeout)
     if check is not None:
         check(data)
-    path = folder / f"{key}-{hashlib.sha256(data).hexdigest()}{suffix}"
-    # Written to a new file and renamed: parallel runs may fetch the same URL.
+    folder.mkdir(exist_ok=True)
+    # Written to a new file and renamed: processes of a run may fetch the
+    # same URL at once, and a reader never sees half a file.
     fd, tmp = tempfile.mkstemp(dir=folder, suffix=".part")
     try:
         with os.fdopen(fd, "wb") as f:
@@ -364,13 +391,12 @@ def fetch_pinned(
         os.replace(tmp, path)
     except OSError as exc:
         Path(tmp).unlink(missing_ok=True)
-        # Windows refuses to replace a file another process has open. The
-        # name holds the content's sha256, so an existing file is the same
-        # file, written by a parallel fetch.
-        if isinstance(exc, PermissionError) and path.exists():
+        # Windows refuses to replace a file another process has open: that
+        # file is the one a parallel fetch of this run wrote.
+        if isinstance(exc, PermissionError) and path.is_file():
             return path
-        msg = f"Cannot write the cached {what} {path}: {exc}"
-        raise PinnedFetchError(msg) from exc
+        msg = f"Cannot write the fetched {what} {path}: {exc}"
+        raise RemoteFetchError(msg) from exc
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
         raise
@@ -379,10 +405,6 @@ def fetch_pinned(
 
 def _upper(what: str) -> str:
     return what[:1].upper() + what[1:]
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _shown(url: str) -> str:
@@ -396,7 +418,7 @@ def _token() -> str | None:
 
     Raises
     ------
-    PinnedFetchError
+    RemoteFetchError
         If the variable holds something that cannot be a token, such as
         the help text of a command that failed. The value is not shown.
     """
@@ -411,7 +433,7 @@ def _token() -> str | None:
                 f"has (its value is not shown). Set {name} to the token alone, "
                 f"or unset it for a public repository."
             )
-            raise PinnedFetchError(msg)
+            raise RemoteFetchError(msg)
         return value
     return None
 
@@ -448,15 +470,15 @@ def _download(url: str, *, what: str, max_bytes: int, timeout: float) -> bytes:
             msg += " The token was refused, or GitHub limits the requests; try again later."
         elif exc.code in (401, 403, 429):
             msg += " GitHub limits the requests; try again later."
-        raise PinnedFetchError(msg) from None
+        raise RemoteFetchError(msg) from None
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         reason = getattr(exc, "reason", exc)
         msg = (
-            f"{_upper(what)} {url} could not be fetched ({reason}) and is not in the "
-            f"cache. A run without network access needs the {what} fetched once before."
+            f"{_upper(what)} {url} could not be fetched ({reason}). Each run "
+            "fetches it, so a run needs network access."
         )
-        raise PinnedFetchError(msg) from None
+        raise RemoteFetchError(msg) from None
     if len(data) > max_bytes:
         msg = f"{_upper(what)} {url} is larger than {max_bytes} bytes; it is not a {what}."
-        raise PinnedFetchError(msg)
+        raise RemoteFetchError(msg)
     return data

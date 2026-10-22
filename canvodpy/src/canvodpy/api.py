@@ -117,6 +117,11 @@ class Site:
     def __init__(self, name: str) -> None:
         # Lazy import to avoid circular dependency
         from canvod.store import GnssResearchSite
+        from canvod.utils.remote_file import new_run
+
+        # A new Site is a new run: settings and recipes given as links are
+        # fetched again, also in a notebook that runs more than once.
+        new_run()
 
         # Use proven implementation
         self._site = GnssResearchSite(name)

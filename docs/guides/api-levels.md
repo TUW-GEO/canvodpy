@@ -48,7 +48,7 @@ Dates are `YYYYDDD`: the year and the day of year, for example
 | `--write-catalog` | `write_catalog(stores_root_dir)` after the run | After a successful run, write the [STAC catalog](../packages/store-metadata/overview.md#write-the-stac-catalog) of every store under the data root. Without it, a run writes no catalog. |
 | `--label` | `site.pipeline(label=...)` | Free-text label stored with the run in the [run history](diagnostics.md#the-run-history), for example to group the repetitions of a benchmark. |
 | `--workers` | `site.pipeline(n_workers=...)` | Number of worker processes. |
-| `--config-dir`, `-c` | `CANVOD_CONFIG_DIR` | Folder that holds `canvod-settings.yaml` and `recipes/`; see [Where canVODpy finds the settings](configuration.md#where-canvodpy-finds-the-settings). |
+| `--config-dir`, `-c` | `CANVOD_CONFIG_DIR` | Folder that holds `canvod-settings.yaml` and `recipes/`, or the link of a settings file in a GitHub repository; see [Where canVODpy finds the settings](configuration.md#where-canvodpy-finds-the-settings). |
 | `--config` | `CANVOD_CONFIG_FILE` | [Overlay file](configuration.md#overlay-file) applied on top of `canvod-settings.yaml`. |
 | `--ephemeris-source` | `processing.params.ephemeris_source` in the settings | `final` (orbit and clock products of an analysis center) or `broadcast` (the satellite angles an SBF file holds); see [Ephemeris sources](../packages/readers/ephemeris-sources.md). |
 | `--vod-calculator` | `VodComputer(site, calculator=...)` | VOD calculator; `tau_omega` unless a [plugin](plugins.md) adds others. |

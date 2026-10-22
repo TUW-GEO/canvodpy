@@ -58,26 +58,32 @@ plugin, see [Your own readers and VOD calculators](../../guides/plugins.md).
 
 ---
 
-## Files from a pinned URL
+## Files from a GitHub link
 
-`canvod.utils.pinned` reads a file from a GitHub repository by its raw
-file link, pinned to a commit or a tag:
+`canvod.utils.remote_file` reads a file from a GitHub repository by its
+raw file link, at a commit, a tag or a branch:
 
 ```text
 https://raw.githubusercontent.com/<account>/<repo>/<commit>/<path>
 https://raw.githubusercontent.com/<account>/<repo>/refs/tags/<tag>/<path>
+https://raw.githubusercontent.com/<account>/<repo>/refs/heads/<branch>/<path>
 ```
 
-A link to a branch is refused, because a branch moves; a full commit hash
-is the only pin that never changes. `fetch_pinned` downloads the file
-once and keeps it in a cache folder that only you can read, so a run works
-without network access once the file is there. `parse_pinned_url` checks a
-link and splits it into account, repository, pin and path; `sibling`
-names another file of the same repository at the same pin. A file in a
-private repository needs a GitHub token in `GH_TOKEN` or `GITHUB_TOKEN`;
-the token goes only to `raw.githubusercontent.com` and never into a
-message or a log. canvod-filemap reads naming recipes given as a URL with
-this module.
+You are responsible for what the link points to. `fetch_remote` downloads
+the file in every run, once per run, into a folder of the run that only
+you can read; there is no cache, so a run needs network access. `new_run`
+starts a new run in a process that runs more than once; `canvodpy.Site`
+and the Airflow tasks call it. The run folders are removed when the
+process ends (the command, the notebook kernel, the Airflow worker).
+`parse_remote_url` checks a link; `sibling` names another file of the same
+repository at the same commit, tag or branch. A file in a private
+repository needs a GitHub token in `GH_TOKEN` or `GITHUB_TOKEN`; the token
+goes only to `raw.githubusercontent.com` and never into a message or a
+log. A link is shown in the terminal but never recorded: `recorded_name`
+gives the file name that stores keep, and `without_urls` replaces the
+links in a text the run history keeps (a raw file link by its file name,
+any other link by its host). canvod-filemap reads naming recipes given as
+a URL with this module.
 
 ---
 

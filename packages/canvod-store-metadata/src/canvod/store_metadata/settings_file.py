@@ -105,8 +105,10 @@ def settings_from_store(store: Any) -> dict[str, Any]:
         site and receivers from its repository metadata, ``stores_root_dir``
         and ``gnss_store_name`` from ``store``, and ``TODO`` for the machine
         values (``gnss_site_data_root``, each receiver ``directory``,
-        ``aux_data_dir``, ``shared_aux_cache_dir``, ``log_dir``, and
-        ``metadata.author``, ``metadata.email``, ``metadata.institution``).
+        ``aux_data_dir``, ``shared_aux_cache_dir``, ``log_dir``,
+        ``metadata.author``, ``metadata.email``, ``metadata.institution``,
+        and the ``recipe`` of a receiver whose recipe was a URL: the store
+        keeps only its file name).
 
     Raises
     ------
@@ -142,8 +144,13 @@ def settings_from_store(store: Any) -> dict[str, Any]:
         receiver["directory"] = PLACEHOLDER
         if meta.get("description") is not None:
             receiver["description"] = meta["description"]
-        if meta.get("recipe") is not None:
-            receiver["recipe"] = meta["recipe"]
+        recipe = meta.get("recipe")
+        if recipe is not None:
+            # A store keeps only the file name of a recipe URL; the run
+            # owner gives the URL again.
+            receiver["recipe"] = (
+                PLACEHOLDER if recipe.endswith((".yaml", ".yml")) else recipe
+            )
 
     # Processing: the content keys the store kept, plus the free fields.
     processing = settings.setdefault("processing", {})
