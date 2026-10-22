@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 from canvod.utils.pinned import is_url
 
-from .models import CanvodConfig, ProcessingConfig, SidsConfig, SitesConfig
+from .models import CanvodConfig
 from .remote import resolve_config_dir
 
 
@@ -268,11 +268,13 @@ class ConfigLoader:
         if sites_raw_overlay:
             sites_raw = self._deep_merge(sites_raw, sites_raw_overlay)
 
+        # Plain dicts, not models: pydantic-settings merges a CANVOD__
+        # variable into a dict, but a model it replaces as a whole.
         try:
             return CanvodConfig(
-                processing=ProcessingConfig(**proc_data),
-                sites=SitesConfig(sites=sites_raw),
-                sids=SidsConfig(**sids_data),
+                processing=proc_data,
+                sites={"sites": sites_raw},
+                sids=sids_data,
             )
         except ValidationError as e:
             raise ConfigValidationError(e, self.config_dir) from e
