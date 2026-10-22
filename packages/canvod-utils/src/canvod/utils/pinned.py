@@ -8,11 +8,10 @@ A file is named by its raw file link, pinned to a commit or a tag::
 A full commit hash is the only pin that never changes: a tag can be moved.
 
 Fetched files are kept in a cache folder in the system's temporary
-folder, one per kind of file and user. The system empties it (macOS
-removes old files, Linux clears ``/tmp`` at a restart). A cached file is
-used without a new fetch, so a run works offline once the file was
-fetched; a file whose tag was moved keeps its old cached copy until the
-cache is emptied.
+folder, one per kind of file and user. A cached file is used without a
+new fetch, so a run works offline once the file was fetched; a file
+whose tag was moved keeps its old cached copy until the cache is
+emptied.
 
 A file in a private repository needs a GitHub token in the environment
 variable ``GH_TOKEN`` or ``GITHUB_TOKEN``. canvodpy stores no secrets
