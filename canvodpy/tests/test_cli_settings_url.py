@@ -21,8 +21,10 @@ runner = CliRunner()
 
 
 def _text(output: str) -> str:
-    """The output without Rich's box and line breaks."""
-    return re.sub(r"[\s│╭╮╰╯─]+", " ", output)
+    """The output without color codes, Rich's box and line breaks."""
+    # On GitHub Actions typer forces a colored terminal.
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", output)
+    return re.sub(r"[\s│╭╮╰╯─]+", " ", plain)
 
 
 URL = (
