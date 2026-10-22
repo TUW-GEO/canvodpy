@@ -103,7 +103,7 @@ The folder must hold every profile: the check runs them all.
 
 The published stores were built by canVODpy at commit `bd2e6c7b` from
 the test data at commit `f0764c4`; the card of the dataset lists the
-profiles and the zips. The dataset's DOI,
+profiles and the zips. The DOI of the dataset,
 [doi:10.57967/hf/11189](https://doi.org/10.57967/hf/11189), names its
 earlier commit `ef448847`; the pinned commit is `1dea9a15`.
 
