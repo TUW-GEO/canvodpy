@@ -4,6 +4,6 @@
 # file. A new reference moves `revision` and replaces SHA256SUMS
 # (docs/guides/reference-stores.md, "Changing the reference stores").
 dataset: nfb2021/canvodpy-reference-stores
-# The commit of the dataset with the stores built by canvodpy 4648e776
+# The commit of the dataset with the stores built by canvodpy bd2e6c7b
 # from the test data at f0764c4.
-revision: 4fc30b242a4c3c1f298effdf75a0c6054a911da1
+revision: 1dea9a152c576d07b7ef5b2dc49dd0dcf8b0c5bf

@@ -101,11 +101,11 @@ difference. The reference stores it compares with:
 
 The folder must hold every profile: the check runs them all.
 
-The published stores were built by canVODpy at commit `4648e776` from
+The published stores were built by canVODpy at commit `bd2e6c7b` from
 the test data at commit `f0764c4`; the card of the dataset lists the
 profiles and the zips. The dataset's DOI,
 [doi:10.57967/hf/11189](https://doi.org/10.57967/hf/11189), names its
-earlier commit `ef448847`; the pinned commit is `4fc30b24`.
+earlier commit `ef448847`; the pinned commit is `1dea9a15`.
 
 For the `default` profile, a build and a check each take three to four
 minutes; the SBF day takes the longest. The `sbf-broadcast` profile
