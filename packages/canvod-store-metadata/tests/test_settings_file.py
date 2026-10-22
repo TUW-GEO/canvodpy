@@ -12,6 +12,7 @@ from __future__ import annotations
 import copy
 import itertools
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -231,3 +232,18 @@ def test_an_s3_url_not_at_the_site_layout_is_refused(store):
 
     with pytest.raises(ValueError, match=r"<stores_root_dir>/<site>/<store_name>"):
         _store_root_and_name(store, SITE)
+
+
+def test_a_store_that_recorded_a_whole_recipe_url_still_matches(tmp_path, monkeypatch):
+    from canvod.store_metadata import collectors
+    from canvod.store_metadata.io import check_recipes
+
+    monkeypatch.setattr(collectors, "recipe_sha256_of", lambda site, recipe: "0" * 64)
+    url = f"https://raw.githubusercontent.com/acc/recipes/main/{SITE}/rx.yaml"
+    store = _store_with_recipe(tmp_path, url)
+    repository = read_repository_metadata(store)
+    # What a store made before this change holds.
+    repository["instruments"]["receivers"]["canopy_01"]["recipe"] = url
+
+    site_config = SimpleNamespace(receivers={"canopy_01": SimpleNamespace(recipe=url)})
+    check_recipes(repository, site_config, SITE, store_path=store)

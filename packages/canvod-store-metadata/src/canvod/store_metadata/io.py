@@ -1199,12 +1199,19 @@ def check_recipes(
         Naming the receiver, both sha256s and the amend command that
         records the new recipe.
     """
+    from canvod.utils.remote_file import recorded_name
+
     listed = repository.get("instruments", {}).get("receivers", {})
     for name, (recipe, sha256) in current_recipes(site_config, site_name).items():
         entry = listed.get(name)
         if entry is None or (recipe is None and entry.get("recipe") is None):
             continue
-        stored = (entry.get("recipe"), entry.get("recipe_sha256"))
+        stored_recipe = entry.get("recipe")
+        # A store made before stores kept only the file name of a recipe
+        # URL holds the whole URL.
+        if stored_recipe is not None:
+            stored_recipe = recorded_name(stored_recipe)
+        stored = (stored_recipe, entry.get("recipe_sha256"))
         if stored == (recipe, sha256):
             continue
         msg = (

@@ -7,9 +7,10 @@ A file is named by its raw file link, at a commit, a tag or a branch::
     https://raw.githubusercontent.com/<account>/<repo>/refs/heads/<branch>/<path>
 
 The user is responsible for what the link points to. Each run fetches
-the file again; there is no cache. Within one process a link is fetched
-once, into a folder of that process (:func:`run_folder`) that only its
-owner can read and that is removed when the process ends.
+the file again; there is no cache. A run fetches a link once, into a
+folder of the run (:func:`run_folder`) that only its owner can read and
+that is removed when the run ends; the run's worker processes read the
+same file, so every part of a run sees the same content.
 
 A file in a private repository needs a GitHub token in the environment
 variable ``GH_TOKEN`` or ``GITHUB_TOKEN``. canvodpy stores no secrets
@@ -57,14 +58,13 @@ _DOWNLOAD_ORIGIN = f"https://{REMOTE_HOST}"
 # A token is one word of visible ASCII characters.
 _TOKEN = re.compile(r"[\x21-\x7e]+")
 
-# A raw file link inside a text, for :func:`without_urls`.
-_URL_IN_TEXT = re.compile(rf"https?://{re.escape(REMOTE_HOST)}/[^\s'\"<>)]*")
+# A link inside a text, for :func:`without_urls`.
+_URL_IN_TEXT = re.compile(r"https?://[^\s'\"<>()]+", re.IGNORECASE)
 
 # Names the run folder for the worker processes of a run.
 _RUN_FOLDER_VARIABLE = "CANVODPY_RUN_FOLDER"
 
-# The files this process fetched, by URL, and the folder they are in.
-_FETCHED: dict[str, Path] = {}
+# The run folder of this process.
 _FOLDER: Path | None = None
 _LOCK = threading.Lock()
 
@@ -159,18 +159,22 @@ def recorded_name(value: str) -> str:
     Returns
     -------
     str
-        The file name of a URL (``ROSA_canopy.yaml``); any other value
-        unchanged.
+        The file name of a URL (``ROSA_canopy.yaml``), its host if it has
+        no path; any other value unchanged.
     """
     if not is_url(value):
         return value
-    return PurePosixPath(urlsplit(value).path).name
+    parts = urlsplit(value)
+    return PurePosixPath(parts.path).name or (parts.hostname or "")
 
 
 def without_urls(text: str) -> str:
-    """``text`` with each raw file link replaced by its file name.
+    """``text`` with each ``http(s)`` link replaced by its file name.
 
     For text that is recorded, such as an error kept in the run history.
+    Every link is replaced, not only raw file links: a message about a
+    refused link quotes it in other forms too (a GitHub page, another
+    host).
 
     Parameters
     ----------
@@ -180,8 +184,8 @@ def without_urls(text: str) -> str:
     Returns
     -------
     str
-        The text, each ``https://raw.githubusercontent.com/...`` link
-        replaced by its file name.
+        The text, each link replaced by its file name
+        (:func:`recorded_name`).
     """
     return _URL_IN_TEXT.sub(lambda m: recorded_name(m.group(0)), text)
 
@@ -301,12 +305,12 @@ def fetch_remote(
     max_bytes: int = MAX_BYTES,
     timeout: float = 30.0,
 ) -> Path:
-    """The local file of the file at ``url``, fetched once per process.
+    """The local file of the file at ``url``, fetched once per run.
 
-    The URL is checked with :func:`parse_remote_url`, the file is fetched
-    and given to ``check``; only if ``check`` returns is it written into
-    :func:`run_folder`. A later call in the same process with the same URL
-    returns the same file.
+    The URL is checked with :func:`parse_remote_url`. If the run already
+    fetched it, in this process or another process of the run, that file
+    is returned. Otherwise the file is fetched and given to ``check``; only
+    if ``check`` returns is it written into :func:`run_folder`.
 
     Parameters
     ----------
@@ -338,23 +342,32 @@ def fetch_remote(
         ``max_bytes``.
     """
     remote = parse_remote_url(url, what=what, suffixes=suffixes)
-    with _LOCK:
-        path = _FETCHED.get(url)
-    if path is not None and path.is_file():
+    folder = run_folder() / hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
+    path = folder / remote.name
+    if path.is_file():
         return path
     data = _download(url, what=what, max_bytes=max_bytes, timeout=timeout)
     if check is not None:
         check(data)
-    folder = run_folder() / hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
     folder.mkdir(exist_ok=True)
-    path = folder / remote.name
+    # Written to a new file and renamed: processes of a run may fetch the
+    # same URL at once, and a reader never sees half a file.
+    fd, tmp = tempfile.mkstemp(dir=folder, suffix=".part")
     try:
-        path.write_bytes(data)
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        os.replace(tmp, path)
     except OSError as exc:
+        Path(tmp).unlink(missing_ok=True)
+        # Windows refuses to replace a file another process has open: that
+        # file is the one a parallel fetch of this run wrote.
+        if isinstance(exc, PermissionError) and path.is_file():
+            return path
         msg = f"Cannot write the fetched {what} {path}: {exc}"
         raise RemoteFetchError(msg) from exc
-    with _LOCK:
-        _FETCHED[url] = path
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
     return path
 
 

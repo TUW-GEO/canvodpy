@@ -46,7 +46,6 @@ def _isolated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         *remote_file.TOKEN_VARIABLES,
         "CANVOD_CONFIG_DIR",
         "CANVOD_CONFIG_FILE",
-        "CANVODPY_RUN_FOLDER",
     ):
         monkeypatch.delenv(name, raising=False)
     load_config.cache_clear()
@@ -55,7 +54,8 @@ def _isolated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
 
 
 def _new_run(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(remote_file, "_FETCHED", {})
+    # Set (empty) through monkeypatch, so run_folder()'s value is undone.
+    monkeypatch.setenv("CANVODPY_RUN_FOLDER", "")
     monkeypatch.setattr(remote_file, "_FOLDER", None)
     monkeypatch.setattr(remote, "_FOLDERS", {})
 

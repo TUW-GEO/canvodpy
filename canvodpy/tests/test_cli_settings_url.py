@@ -44,14 +44,14 @@ def _app() -> typer.Typer:
 def _isolated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     (tmp_path / "tmp").mkdir()
     monkeypatch.setattr(tempfile, "tempdir", str(tmp_path / "tmp"))
-    monkeypatch.setattr(remote_file, "_FETCHED", {})
+    # Set (empty) through monkeypatch, so run_folder()'s value is undone.
+    monkeypatch.setenv("CANVODPY_RUN_FOLDER", "")
     monkeypatch.setattr(remote_file, "_FOLDER", None)
     monkeypatch.setattr(remote, "_FOLDERS", {})
     for name in (
         *remote_file.TOKEN_VARIABLES,
         "CANVOD_CONFIG_DIR",
         "CANVOD_CONFIG_FILE",
-        "CANVODPY_RUN_FOLDER",
     ):
         monkeypatch.delenv(name, raising=False)
     load_config.cache_clear()

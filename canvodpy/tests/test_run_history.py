@@ -325,7 +325,10 @@ def test_settings_and_problems_keep_only_the_file_name_of_a_url(tmp_path):
         history.start_run(
             rid,
             site=SITE_KEY,
-            settings={"sites": {SITE_KEY: {"receivers": {"c": {"recipe": URL}}}}},
+            settings={
+                "sites": {SITE_KEY: {"receivers": {"c": {"recipe": URL}}}},
+                "processing": {"metadata": {"website": "https://example.org/fan"}},
+            },
             canvodpy_version="1.0.0",
             commit=None,
             machine={},
@@ -336,6 +339,10 @@ def test_settings_and_problems_keep_only_the_file_name_of_a_url(tmp_path):
         run = history.run(rid)
         (problem,) = history.problems(rid)
     assert run.settings["sites"][SITE_KEY]["receivers"]["c"]["recipe"] == "x.yaml"
+    # Other links of the settings stay.
+    assert run.settings["processing"]["metadata"]["website"] == (
+        "https://example.org/fan"
+    )
     assert problem.message == "Recipe x.yaml: field 'a' is ignored."
     assert run.error == "Recipe not found: x.yaml."
 

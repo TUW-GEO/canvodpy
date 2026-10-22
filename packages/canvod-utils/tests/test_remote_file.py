@@ -47,9 +47,14 @@ def fetch(url: str, **kwargs) -> Path:
     return fetch_remote(url, what="settings file", **kwargs)
 
 
-def new_process(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Forget what this process fetched, as a new run starts without it."""
-    monkeypatch.setattr(remote_file, "_FETCHED", {})
+def new_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Start a new run: a new run folder, nothing fetched yet.
+
+    The variable is set (empty) through monkeypatch, so the value
+    run_folder() writes is undone after the test.
+    """
+    monkeypatch.setattr(remote_file, "_FOLDER", None)
+    monkeypatch.setenv("CANVODPY_RUN_FOLDER", "")
 
 
 def _closed_origin() -> str:
@@ -62,11 +67,9 @@ def _closed_origin() -> str:
 
 @pytest.fixture(autouse=True)
 def _isolated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """Temporary folders in tmp_path, nothing fetched yet, no token."""
+    """A new run with its folders in tmp_path, no token."""
     monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
-    monkeypatch.setattr(remote_file, "_FOLDER", None)
-    monkeypatch.delenv("CANVODPY_RUN_FOLDER", raising=False)
-    new_process(monkeypatch)
+    new_run(monkeypatch)
     for name in remote_file.TOKEN_VARIABLES:
         monkeypatch.delenv(name, raising=False)
 
@@ -207,6 +210,24 @@ def test_links_in_a_text_become_file_names() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "link",
+    [
+        f"https://github.com/{REPO}/blob/main/{FILE}",
+        f"https://gitlab.com/{REPO}/-/raw/main/{FILE}",
+        f"http://raw.githubusercontent.com/{REPO}/main/{FILE}",
+    ],
+)
+def test_every_link_in_a_text_becomes_its_file_name(link: str) -> None:
+    # A message about a refused link quotes it as given.
+    with pytest.raises(RemoteURLError) as excinfo:
+        parse_remote_url(link, what="recipe")
+    recorded = without_urls(str(excinfo.value))
+    assert "the-inklings" not in recorded
+    assert "red-book" not in recorded
+    assert "canvod-settings.yaml" in recorded
+
+
 # ---------------------------------------------------------------------------
 # Fetch: once per process, again in every new run
 # ---------------------------------------------------------------------------
@@ -240,7 +261,7 @@ def test_every_run_fetches_again(
     fetch(BRANCH_URL)
     changed = BODY + b"# the branch moved on\n"
     server.serve(BRANCH_URL, changed)
-    new_process(monkeypatch)
+    new_run(monkeypatch)
     assert fetch(BRANCH_URL).read_bytes() == changed
     assert len(server.requests) == 2
 
@@ -250,11 +271,41 @@ def test_no_network_names_the_url(
 ) -> None:
     server.serve(COMMIT_URL, BODY)
     fetch(COMMIT_URL)
-    new_process(monkeypatch)
+    new_run(monkeypatch)
     monkeypatch.setattr(remote_file, "_DOWNLOAD_ORIGIN", _closed_origin())
     with pytest.raises(RemoteFetchError, match="needs network access") as excinfo:
         fetch(COMMIT_URL)
     assert COMMIT_URL in str(excinfo.value)
+
+
+def test_refused_replace_keeps_a_parallel_copy(
+    server: testing.RemoteFileServer, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # What Windows does when a parallel fetch holds the file open.
+    server.serve(COMMIT_URL, BODY)
+
+    def replace(src: str, dst: str) -> None:
+        Path(dst).write_bytes(BODY)  # the parallel fetch's copy
+        raise PermissionError(13, "Access is denied")
+
+    monkeypatch.setattr(remote_file.os, "replace", replace)
+    path = fetch(COMMIT_URL)
+    assert path.read_bytes() == BODY
+    assert _fetched_files() == [path]
+
+
+def test_refused_replace_without_a_copy_is_a_fetch_error(
+    server: testing.RemoteFileServer, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    server.serve(COMMIT_URL, BODY)
+
+    def replace(src: str, dst: str) -> None:
+        raise PermissionError(13, "Access is denied")
+
+    monkeypatch.setattr(remote_file.os, "replace", replace)
+    with pytest.raises(RemoteFetchError, match="Cannot write the fetched"):
+        fetch(COMMIT_URL)
+    assert _fetched_files() == []
 
 
 def test_files_with_one_name_are_kept_apart(server: testing.RemoteFileServer) -> None:
@@ -466,27 +517,33 @@ def test_run_folder_is_removed_when_the_run_ends(
     assert not Path(folder).exists()
 
 
-def test_workers_fetch_into_the_run_folder(
+def test_workers_read_the_file_the_run_fetched(
     server: testing.RemoteFileServer, tmp_path: Path
 ) -> None:
-    server.serve(COMMIT_URL, BODY)
-    run, worker = _run(
+    server.serve(BRANCH_URL, BODY)
+    run_file, worker_file, worker_body = _run(
         f"""
         from concurrent.futures import ProcessPoolExecutor
         import multiprocessing
         from canvod.utils import remote_file
 
+        ORIGIN = {server.origin!r}
+
         def fetch(_):
-            remote_file._DOWNLOAD_ORIGIN = {server.origin!r}
-            return str(remote_file.fetch_remote({COMMIT_URL!r}).parent.parent)
+            remote_file._DOWNLOAD_ORIGIN = ORIGIN
+            path = remote_file.fetch_remote({BRANCH_URL!r})
+            return str(path), path.read_text().split()[-1]
 
         if __name__ == "__main__":
-            print(remote_file.run_folder())
+            print(fetch(0)[0])
             context = multiprocessing.get_context("spawn")
             with ProcessPoolExecutor(1, mp_context=context) as pool:
-                print(pool.submit(fetch, 0).result())
+                print(*pool.submit(fetch, 0).result())
         """,
         tmp_path,
     )
-    assert worker == run
-    assert not Path(run).exists()
+    assert worker_file == run_file
+    assert worker_body == "Tolkien"
+    # The worker read the run's file instead of fetching it again.
+    assert len(server.requests) == 1
+    assert not Path(run_file).exists()

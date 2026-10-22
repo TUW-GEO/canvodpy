@@ -598,20 +598,6 @@ each file a canonical name without renaming it on disk. Naming recipes need an
 optional extension; see [Optional extensions](extensions.md). Where you can,
 rename the files to the convention instead.
 
-A recipe can also be read from a URL, so that every machine uses the same
-recipe from one repository. The URL is the raw link of the file, at a
-commit, a tag or a branch:
-
-```yaml
-        recipe: https://raw.githubusercontent.com/<account>/<recipes-repo>/<commit>/my_site/my_site_reference.yaml
-```
-
-Every run downloads the recipe again, so a run needs network access. The
-GNSS store records each receiver's recipe, a URL by its file name only,
-and the sha256 of the recipe file. Every run compares them with the
-settings and stops if the recipe or its content changed; the message
-names the `canvodpy store amend --update-recipe` command that records a
-new recipe on purpose. A recipe in a private
-repository needs a GitHub token with read access in `GH_TOKEN` or
-`GITHUB_TOKEN`; canvodpy never stores it
-([ADR 0022](../adr/0022-credentials-from-the-environment.md)).
+A recipe can also be read from a raw GitHub link, so that every machine
+uses the same recipe from one repository; see
+[Files that don't follow the convention](../packages/naming/overview.md#files-that-dont-follow-the-convention).
