@@ -71,10 +71,11 @@ https://raw.githubusercontent.com/<account>/<repo>/refs/heads/<branch>/<path>
 
 You are responsible for what the link points to. `fetch_remote` downloads
 the file in every run, once per run, into a folder of the run that only
-you can read and that is removed when the run ends; there is no cache, so
-a run needs network access. `new_run` starts a new run in a process that
-runs more than once; `canvodpy.Site` and the Airflow tasks call it. `parse_remote_url` checks a link; `sibling`
-names another file of the same repository at the same commit, tag or
+you can read; there is no cache, so a run needs network access. `new_run`
+starts a new run in a process that runs more than once; `canvodpy.Site`
+and the Airflow tasks call it. The run folders are removed when the
+process ends (the command, the notebook kernel, the Airflow worker).
+`parse_remote_url` checks a link; `sibling` names another file of the same repository at the same commit, tag or
 branch. A file in a private repository needs a GitHub token in `GH_TOKEN`
 or `GITHUB_TOKEN`; the token goes only to `raw.githubusercontent.com` and
 never into a message or a log. A link is shown in the terminal but never

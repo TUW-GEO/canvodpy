@@ -8,9 +8,11 @@ A file is named by its raw file link, at a commit, a tag or a branch::
 
 The user is responsible for what the link points to. Each run fetches
 the file again; there is no cache. A run fetches a link once, into a
-folder of the run (:func:`run_folder`) that only its owner can read and
-that is removed when the run ends; the run's worker processes read the
-same file, so every part of a run sees the same content.
+folder of the run (:func:`run_folder`) that only its owner can read; the
+run's worker processes read the same file, so every part of a run sees
+the same content. The run folders of a process are removed when the
+process ends (the command, the notebook kernel, the Airflow worker), not
+at the next run: an earlier run's files may still be in use.
 
 A file in a private repository needs a GitHub token in the environment
 variable ``GH_TOKEN`` or ``GITHUB_TOKEN``. canvodpy stores no secrets
