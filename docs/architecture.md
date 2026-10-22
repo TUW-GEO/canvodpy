@@ -116,8 +116,8 @@ only; the Airflow DAG computes VOD in its own task.
 ```mermaid
 flowchart TD
     OVERLAY["Overlay file<br/>--config, optional"] -.-> SETTINGS
-    RECIPE["Naming recipe<br/>canvod-filemap, optional"] -.-> FIND
-    SETTINGS["Settings<br/>canvod-settings.yaml"] --> FIND
+    RECIPE["Naming recipe<br/>canvod-filemap, optional,<br/>local file or GitHub link"] -.-> FIND
+    SETTINGS["Settings<br/>canvod-settings.yaml,<br/>local folder or GitHub link"] --> FIND
     FIND["Find and check the files<br/>of every receiver"] --> PREP
     PREP["Prepare each day<br/>orbits, clocks, receiver positions"] --> READ
     READ["Read the files<br/>in parallel worker processes"] --> ANGLES

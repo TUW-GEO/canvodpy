@@ -314,3 +314,41 @@ def test_a_run_history_of_schema_version_1_gets_the_file_index(tmp_path, monkeyp
         history.save_file_index(tmp_path, None, _listings())
         assert history.file_index(tmp_path, None) == _listings()
         assert len(history.runs()) == 1
+
+
+URL = "https://raw.githubusercontent.com/the-inklings/red-book/main/recipes/x.yaml"
+
+
+def test_settings_and_problems_keep_only_the_file_name_of_a_url(tmp_path):
+    rid = "fangorn-20261014-120000"
+    with RunHistory.open(tmp_path) as history:
+        history.start_run(
+            rid,
+            site=SITE_KEY,
+            settings={"sites": {SITE_KEY: {"receivers": {"c": {"recipe": URL}}}}},
+            canvodpy_version="1.0.0",
+            commit=None,
+            machine={},
+            workers=1,
+        )
+        history.record_problem(rid, "warning", f"Recipe {URL}: field 'a' is ignored.")
+        history.end_run(rid, "failed", error=f"Recipe not found: {URL}.")
+        run = history.run(rid)
+        (problem,) = history.problems(rid)
+    assert run.settings["sites"][SITE_KEY]["receivers"]["c"]["recipe"] == "x.yaml"
+    assert problem.message == "Recipe x.yaml: field 'a' is ignored."
+    assert run.error == "Recipe not found: x.yaml."
+
+
+def test_the_file_index_of_a_recipe_follows_its_content(tmp_path):
+    root = tmp_path / "data" / "canopy"
+    first, second = tmp_path / "run1" / "x.yaml", tmp_path / "run2" / "x.yaml"
+    for path in (first, second):
+        path.parent.mkdir()
+        path.write_text("name: x\n")
+    with RunHistory.open(tmp_path) as history:
+        history.save_file_index(root, first, _listings())
+        # A recipe fetched again by the next run, in another folder.
+        assert history.file_index(root, second) == _listings()
+        second.write_text("name: y\n")
+        assert history.file_index(root, second) == {}

@@ -30,6 +30,7 @@ from canvod.config import load_config
 from canvod.config.models import reference_store_group
 from canvod.ops import preprocess_files
 from canvod.readers import MatchedDirs
+from canvod.utils.remote_file import recorded_name
 from canvod.utils.tools import YYYYDOY, deprecated
 from canvodpy.orchestrator.discovery import (
     DiscoveredFile,
@@ -366,7 +367,8 @@ def validate_data_dirs(site: str) -> dict:
         ``{"site": str, "valid": True, "receivers": {name: {"directory",
         "recipe", "identity", "days", "files", "unrecognized",
         "warnings"}}}``. ``days`` is the number of days with files;
-        ``unrecognized`` counts files that are never processed.
+        ``unrecognized`` counts files that are never processed. A recipe
+        URL is given by its file name, since Airflow keeps the result.
 
     Raises
     ------
@@ -388,7 +390,7 @@ def validate_data_dirs(site: str) -> dict:
     receivers_result = {
         name: {
             "directory": str(r.directory),
-            "recipe": r.recipe,
+            "recipe": recorded_name(r.recipe) if r.recipe else r.recipe,
             "identity": r.identity,
             "days": len(r.days),
             "files": r.files,

@@ -13,6 +13,7 @@ manual checks.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.metadata as metadata
 import os
 import shutil
@@ -69,7 +70,7 @@ def doctor(
         get_template_dir,
         load_config,
     )
-    from canvod.config.remote import settings_source
+    from canvod.config.remote import settings_url
 
     console.print("\n[bold]canvodpy doctor[/bold]\n")
 
@@ -94,11 +95,13 @@ def doctor(
 
     console.print(f"  Config resolved to: {config_dir}")
     console.print(f"    (source: {source})")
-    remote = settings_source(config_dir)
-    if remote is not None:
-        pin = f"commit {remote.commit}" if remote.commit else f"tag {remote.tag}"
-        console.print(f"    Settings from {remote.url}")
-        console.print(f"    ({pin}, sha256 {remote.sha256})")
+    url = settings_url(config_dir)
+    if url is not None:
+        digest = hashlib.sha256(
+            (config_dir / "canvod-settings.yaml").read_bytes()
+        ).hexdigest()
+        console.print(f"    Settings from {url}")
+        console.print(f"    (sha256 {digest})")
 
     # --- Templates ------------------------------------------------------------
     template_dir = get_template_dir()

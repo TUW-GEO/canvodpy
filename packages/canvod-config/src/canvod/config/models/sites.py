@@ -123,9 +123,10 @@ class ReceiverConfig(_StrictModel):
         description=(
             "Naming recipe: a name (for example 'examplesite_reference'), "
             "read from <config dir>/recipes/<site>/{recipe}.yaml, or a raw "
-            "GitHub URL pinned to a commit or tag "
-            "('https://raw.githubusercontent.com/<account>/<repo>/<commit or "
-            "refs/tags/tag>/.../{name}.yaml'). A recipe in a private "
+            "GitHub URL, fetched by every run "
+            "('https://raw.githubusercontent.com/<account>/<repo>/<commit, "
+            "tag or branch>/.../{name}.yaml'); stores record only its file "
+            "name. A recipe in a private "
             "repository needs a token in GH_TOKEN or GITHUB_TOKEN. Without a "
             "recipe, only files with canonical canVOD names are processed."
         ),

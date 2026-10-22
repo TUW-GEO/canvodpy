@@ -132,18 +132,20 @@ def test_show_prints_the_sha256_of_the_recipe(tmp_path, monkeypatch):
     assert f"recipe_sha256: {hashlib.sha256(_RECIPE.encode()).hexdigest()}" in text
 
 
-def test_a_recipe_url_goes_back_into_the_settings(tmp_path, monkeypatch):
+def test_a_store_keeps_only_the_file_name_of_a_recipe_url(tmp_path, monkeypatch):
     from canvod.store_metadata import collectors
 
     # No download: the recipe's sha256 is made up.
     monkeypatch.setattr(collectors, "recipe_sha256_of", lambda site, recipe: "0" * 64)
-    url = f"https://raw.githubusercontent.com/acc/recipes/{'a' * 40}/{SITE}/rx.yaml"
+    url = f"https://raw.githubusercontent.com/acc/recipes/main/{SITE}/rx.yaml"
     store = _store_with_recipe(tmp_path, url)
 
     receiver = read_repository_metadata(store)["instruments"]["receivers"]["canopy_01"]
-    assert receiver["recipe"] == url
+    assert receiver["recipe"] == "rx.yaml"
+    assert receiver["recipe_sha256"] == "0" * 64
+    # The run owner gives the URL again.
     settings = settings_from_store(store)
-    assert settings["sites"][SITE]["receivers"]["canopy_01"]["recipe"] == url
+    assert settings["sites"][SITE]["receivers"]["canopy_01"]["recipe"] == "TODO"
 
 
 def test_a_store_is_not_created_without_the_sha256_of_its_recipe(tmp_path):

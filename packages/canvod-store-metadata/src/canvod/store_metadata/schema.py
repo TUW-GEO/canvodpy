@@ -524,7 +524,8 @@ class ReceiverInfo(BaseModel):
     reader_format: str = Field("auto", description="Reader format")
     description: str | None = Field(None)
     recipe: str | None = Field(
-        None, description="Naming recipe: its name or its pinned URL"
+        None,
+        description="Naming recipe: its name, or the file name of a recipe URL",
     )
     recipe_sha256: str | None = Field(
         None, description="sha256 of the naming recipe file the store was made with"

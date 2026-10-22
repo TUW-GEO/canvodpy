@@ -16,19 +16,21 @@ management lives in [canvod.config](canvod-config.md) instead.
         - isfloat
         - get_version_from_pyproject
 
-## Files from a pinned URL
+## Files from a GitHub link
 
-::: canvod.utils.pinned
+::: canvod.utils.remote_file
     options:
       members:
-        - fetch_pinned
-        - parse_pinned_url
-        - PinnedURL
+        - fetch_remote
+        - parse_remote_url
+        - RemoteURL
         - is_url
-        - cache_dir
-        - PinnedFileError
-        - PinnedURLError
-        - PinnedFetchError
+        - recorded_name
+        - without_urls
+        - run_folder
+        - RemoteFileError
+        - RemoteURLError
+        - RemoteFetchError
 
 ## Logging
 

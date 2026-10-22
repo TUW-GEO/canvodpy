@@ -8,7 +8,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from canvod.utils.pinned import is_url
+from canvod.utils.remote_file import is_url
 
 from .models import CanvodConfig
 from .remote import resolve_config_dir

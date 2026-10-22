@@ -358,15 +358,18 @@ def collect_receiver(
     """A receiver's entry in the store metadata, from its settings.
 
     With ``site_name``, a receiver with a naming recipe also gets the
-    sha256 of its recipe file (:func:`recipe_sha256_of`).
+    sha256 of its recipe file (:func:`recipe_sha256_of`). A recipe given
+    as a URL is recorded by its file name only.
     """
+    from canvod.utils.remote_file import recorded_name
+
     recipe = getattr(receiver_config, "recipe", None)
     return ReceiverInfo(
         type=receiver_config.type,
         directory=receiver_config.directory,
         reader_format=getattr(receiver_config, "reader_format", "auto"),
         description=getattr(receiver_config, "description", None),
-        recipe=recipe,
+        recipe=recorded_name(recipe) if recipe else recipe,
         recipe_sha256=(
             recipe_sha256_of(site_name, recipe) if site_name and recipe else None
         ),
@@ -381,7 +384,7 @@ def recipe_sha256_of(site_name: str, recipe: str) -> str | None:
 
     The file is found the way a run finds it (canvod-filemap's
     ``find_recipe``: a local recipe in the configuration directory, or a
-    URL recipe in the cache, fetched if it is not there).
+    URL recipe, fetched).
 
     Returns
     -------

@@ -1,132 +1,110 @@
-"""The settings file read from a pinned URL.
+"""The settings file read from a URL.
 
 ``canvodpy -c URL`` (or ``CANVOD_CONFIG_DIR=URL``) reads the settings file
-from a GitHub repository, pinned to a commit or a tag (the URL rules of
-:mod:`canvod.utils.pinned`)::
+from a GitHub repository, at a commit, a tag or a branch (the URL rules of
+:mod:`canvod.utils.remote_file`)::
 
-    https://raw.githubusercontent.com/<account>/<repo>/<commit>/<path>/canvod-settings.yaml
+    https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/<path>/canvod-settings.yaml
 
 A receiver whose ``recipe:`` is a name gets its recipe from the same
-repository at the same pin, from ``recipes/<site>/<name>.yaml`` next to
+repository at the same link, from ``recipes/<site>/<name>.yaml`` next to
 the settings file, as in a local configuration folder. A ``recipe:`` that
 is a URL is fetched by the recipe lookup, as with local settings.
 
-:func:`resolve_config_dir` fetches the settings file and those recipes and
-puts them into a configuration folder in the cache; everything after it
-reads that folder as it reads a local one. The folder also records where
-the settings came from (:func:`settings_source`).
+:func:`resolve_config_dir` fetches the settings file and those recipes,
+once per run, and puts them into a configuration folder of the run;
+everything after it reads that folder as it reads a local one. The URL is
+not recorded: stores and the run history keep the settings, not where
+they came from.
 """
 
 from __future__ import annotations
 
-import hashlib
-import json
-import os
 import shutil
 import tempfile
-from dataclasses import asdict, dataclass
+import threading
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from canvod.utils.pinned import (
-    PinnedFetchError,
-    PinnedURLError,
-    cache_dir,
-    fetch_pinned,
+from canvod.utils.remote_file import (
+    RemoteFetchError,
+    RemoteURLError,
+    fetch_remote,
     is_url,
-    parse_pinned_url,
+    parse_remote_url,
+    run_folder,
 )
 
 SETTINGS_FILE = "canvod-settings.yaml"
 
-#: Written into a configuration folder made from a URL; names its source.
-SOURCE_FILE = "settings-source.json"
-
-
-@dataclass(frozen=True)
-class SettingsSource:
-    """Where the settings of a configuration folder came from.
-
-    Attributes
-    ----------
-    url : str
-        The settings file's URL.
-    commit : str | None
-        The commit the URL is pinned to, or None for a tag.
-    tag : str | None
-        The tag the URL is pinned to, or None for a commit.
-    sha256 : str
-        The sha256 of the settings file's bytes.
-    """
-
-    url: str
-    commit: str | None
-    tag: str | None
-    sha256: str
+# The configuration folder of each settings URL of this process.
+_FOLDERS: dict[str, Path] = {}
+_LOCK = threading.Lock()
 
 
 def resolve_config_dir(url: str) -> Path:
     """The configuration folder of the settings file at ``url``.
 
     Fetches the settings file and the recipes its receivers name (not
-    those given as URLs), unless they are in the cache, and returns a
-    folder that holds them as a local configuration folder does:
-    ``canvod-settings.yaml`` and ``recipes/<site>/<name>.yaml``.
+    those given as URLs) and returns a folder that holds them as a local
+    configuration folder does: ``canvod-settings.yaml`` and
+    ``recipes/<site>/<name>.yaml``. A process fetches them once; the
+    folder is removed when the process ends.
 
     Parameters
     ----------
     url : str
-        The settings file's URL, pinned to a commit or a tag.
+        The settings file's URL.
 
     Returns
     -------
     Path
-        The configuration folder, in the cache. Don't edit it: change the
-        settings in their repository.
+        The configuration folder. Don't edit it: change the settings in
+        their repository.
 
     Raises
     ------
-    PinnedURLError
-        If the URL is not a pinned raw file link, or a recipe name is a
-        path.
-    PinnedFetchError
+    RemoteURLError
+        If the URL is not a raw file link, or a recipe name is a path.
+    RemoteFetchError
         If the settings file or a recipe cannot be fetched, or the settings
         file is not a YAML mapping.
     """
-    pinned = parse_pinned_url(url, what="settings file")
-    settings_path = fetch_pinned(
-        url, kind="settings", what="settings file", check=_settings_check(url)
-    )
+    with _LOCK:
+        folder = _FOLDERS.get(url)
+    if folder is not None and folder.is_dir():
+        return folder
+    remote = parse_remote_url(url, what="settings file")
+    settings_path = fetch_remote(url, what="settings file", check=_settings_check(url))
     settings = yaml.safe_load(settings_path.read_bytes())
 
     files = {SETTINGS_FILE: settings_path}
     for site, receiver, name in _recipe_names(settings):
         relative = f"recipes/{site}/{name}.yaml"
-        recipe_url = pinned.sibling(relative).url
+        recipe_url = remote.sibling(relative).url
         try:
-            files[relative] = fetch_pinned(recipe_url, kind="recipes", what="recipe")
-        except PinnedFetchError as exc:
+            files[relative] = fetch_remote(recipe_url, what="recipe")
+        except RemoteFetchError as exc:
             msg = (
                 f"Receiver '{receiver}' of site '{site}' in the settings file {url} "
                 f"names the recipe '{name}', which is read from the same repository "
-                f"at the same pin: {exc}"
+                f"at the same link: {exc}"
             )
-            raise PinnedFetchError(msg) from None
+            raise RemoteFetchError(msg) from None
 
-    source = SettingsSource(
-        url=url,
-        commit=pinned.commit,
-        tag=pinned.tag,
-        sha256=_sha256(settings_path),
-    )
-    folder = _config_folder(source, files)
+    folder = _config_folder(files)
+    with _LOCK:
+        _FOLDERS[url] = folder
     return folder
 
 
-def settings_source(config_dir: Path) -> SettingsSource | None:
-    """Where the settings of ``config_dir`` came from, if from a URL.
+def settings_url(config_dir: Path) -> str | None:
+    """The URL this process read the settings of ``config_dir`` from.
+
+    For ``canvodpy doctor``, which shows it in the terminal; it is never
+    recorded.
 
     Parameters
     ----------
@@ -135,13 +113,15 @@ def settings_source(config_dir: Path) -> SettingsSource | None:
 
     Returns
     -------
-    SettingsSource | None
-        The source, or None for a local folder.
+    str | None
+        The settings file's URL, or None for a local folder.
     """
-    path = Path(config_dir) / SOURCE_FILE
-    if not path.is_file():
-        return None
-    return SettingsSource(**json.loads(path.read_text(encoding="utf-8")))
+    config_dir = Path(config_dir).resolve()
+    with _LOCK:
+        for url, folder in _FOLDERS.items():
+            if folder.resolve() == config_dir:
+                return url
+    return None
 
 
 def _settings_check(url: str):
@@ -150,10 +130,10 @@ def _settings_check(url: str):
             settings = yaml.safe_load(data.decode("utf-8"))
         except (UnicodeDecodeError, yaml.YAMLError) as exc:
             msg = f"Settings file {url} is not a YAML file: {exc}"
-            raise PinnedFetchError(msg) from None
+            raise RemoteFetchError(msg) from None
         if not isinstance(settings, dict):
             msg = f"Settings file {url} is not a settings file: it holds no keys and values."
-            raise PinnedFetchError(msg)
+            raise RemoteFetchError(msg)
 
     return check
 
@@ -189,44 +169,22 @@ def _recipe_names(settings: dict[str, Any]) -> list[tuple[str, str, str]]:
                     f"Receiver '{receiver}' of site '{site}' has the recipe name "
                     f"'{name}': a recipe name is a file name without folders."
                 )
-                raise PinnedURLError(msg)
+                raise RemoteURLError(msg)
             found.append((str(site), str(receiver), name))
     return found
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _config_folder(source: SettingsSource, files: dict[str, Path]) -> Path:
-    """A folder in the cache with ``files`` (relative path -> cached file).
-
-    The folder's name follows from the source and the files' content, so a
-    folder that exists holds the same files; parallel runs may build it at
-    once, and the first one to finish wins.
-    """
-    record = json.dumps(asdict(source), indent=2, sort_keys=True)
-    listing = {relative: _sha256(path) for relative, path in sorted(files.items())}
-    key = hashlib.sha256((record + json.dumps(listing)).encode("utf-8")).hexdigest()
-    parent = cache_dir("config")
-    folder = parent / key[:32]
-    if (folder / SOURCE_FILE).is_file():
-        return folder
-    building = Path(tempfile.mkdtemp(dir=parent, prefix=".part-"))
+def _config_folder(files: dict[str, Path]) -> Path:
+    """A new folder of the run with ``files`` (relative path -> fetched file)."""
+    parent = run_folder() / "config"
+    parent.mkdir(exist_ok=True)
+    folder = Path(tempfile.mkdtemp(dir=parent))
     try:
         for relative, path in files.items():
-            target = building / relative
+            target = folder / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, target)
-        (building / SOURCE_FILE).write_text(record + "\n", encoding="utf-8")
-        try:
-            os.rename(building, folder)
-        except OSError:
-            if not (folder / SOURCE_FILE).is_file():
-                raise
     except OSError as exc:
         msg = f"Cannot write the configuration folder {folder}: {exc}"
-        raise PinnedFetchError(msg) from exc
-    finally:
-        shutil.rmtree(building, ignore_errors=True)
+        raise RemoteFetchError(msg) from exc
     return folder

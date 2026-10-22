@@ -1225,11 +1225,15 @@ def current_recipes(
 ) -> dict[str, tuple[str | None, str | None]]:
     """Each receiver's naming recipe in the settings and the sha256 of its file.
 
+    The recipe is given as a store records it: a recipe URL by its file name.
+
     Raises
     ------
     ValueError
         If a recipe is not found, so its sha256 is unknown.
     """
+    from canvod.utils.remote_file import recorded_name
+
     from .collectors import recipe_sha256_of
 
     recipes: dict[str, tuple[str | None, str | None]] = {}
@@ -1243,7 +1247,7 @@ def current_recipes(
                 f"that `canvodpy config validate --site {site_name}` finds it."
             )
             raise ValueError(msg)
-        recipes[name] = (recipe, sha256)
+        recipes[name] = (recorded_name(recipe) if recipe else None, sha256)
     return recipes
 
 

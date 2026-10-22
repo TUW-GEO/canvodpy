@@ -163,21 +163,19 @@ Naming recipes need an optional extension; see
 [Optional extensions](../../guides/extensions.md).
 
 A recipe can also be read from a URL, so that every machine uses the same
-recipe from one repository. The URL is the raw link of the file, pinned to
-a commit or a tag:
+recipe from one repository. The URL is the raw link of the file, at a
+commit, a tag or a branch:
 
 ```yaml
         recipe: https://raw.githubusercontent.com/<account>/<recipes-repo>/<commit>/my_site/my_site_reference.yaml
 ```
 
-A tag is written `refs/tags/<tag>` in the URL; a branch is refused. A
-commit is the only pin that never changes: a tag can be moved. The
-GNSS store records each receiver's recipe and the sha256 of its file.
-Every run compares them with the settings and stops if the recipe or its
-content changed; the message names the `canvodpy store amend
---update-recipe` command that records a new recipe on purpose. A fetched
-recipe is cached in the system's temporary folder, so a run without
-network access works once the recipe was fetched. A recipe in a private
+Every run downloads the recipe again, so a run needs network access. The
+GNSS store records each receiver's recipe, a URL by its file name only,
+and the sha256 of the recipe file. Every run compares them with the
+settings and stops if the recipe or its content changed; the message
+names the `canvodpy store amend --update-recipe` command that records a
+new recipe on purpose. A recipe in a private
 repository needs a GitHub token with read access in `GH_TOKEN` or
 `GITHUB_TOKEN`; canvodpy never stores it
 ([ADR 0022](../../adr/0022-credentials-from-the-environment.md)).

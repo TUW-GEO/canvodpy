@@ -3,7 +3,9 @@
 Every run records itself here (ADR 0018): its start (settings, canvodpy
 version and commit, machine, workers, an optional label), the
 receiver-days it plans and finishes, the time of each stage, resource
-samples, its warnings and errors, and its end. The run dashboard and
+samples, its warnings and errors, and its end. A settings file or naming
+recipe read from a URL is recorded by its file name, never by the URL.
+The run dashboard and
 scripts (the paper benchmark) read it through the queries of
 :class:`RunHistory`. This module is the only code that touches the SQL.
 
@@ -29,6 +31,7 @@ Examples
 
 from __future__ import annotations
 
+import hashlib
 import itertools
 import json
 import os
@@ -44,6 +47,8 @@ from pathlib import Path
 from typing import Any, Literal, Self
 
 import psutil
+
+from canvod.utils.remote_file import without_urls
 
 FILE_NAME = "run_history.sqlite"
 
@@ -149,7 +154,7 @@ CREATE INDEX IF NOT EXISTS problems_run ON problems (run_id);
 """
 
 # Version 2: the file index, one row per folder below a receiver directory
-# (root), per naming recipe ('' without one). files and folders are JSON
+# (root), per naming recipe (its content's sha256, '' without one). files and folders are JSON
 # lists of names; newest_day is the YYYYDOY of the newest data file in the
 # folder, NULL if it holds none.
 _SCHEMA_V2 = """
@@ -386,6 +391,19 @@ def is_network_filesystem(fs_type: str) -> bool:
     )
 
 
+def _recipe_key(recipe: Path | None) -> str:
+    """The file index's key of a naming recipe file: its content's sha256.
+
+    The path of a file that can't be read: a run stops at it anyway.
+    """
+    if recipe is None:
+        return ""
+    try:
+        return "sha256:" + hashlib.sha256(Path(recipe).read_bytes()).hexdigest()
+    except OSError:
+        return str(recipe)
+
+
 def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="milliseconds")
 
@@ -566,7 +584,7 @@ class RunHistory:
                     canvodpy_version,
                     commit,
                     workers,
-                    json.dumps(settings, default=str),
+                    without_urls(json.dumps(settings, default=str)),
                     json.dumps(machine, default=str),
                 ),
             )
@@ -647,12 +665,15 @@ class RunHistory:
         receiver: str | None = None,
         day: str | None = None,
     ) -> None:
-        """Record a warning or error of a run, in plain words."""
+        """Record a warning or error of a run, in plain words.
+
+        A settings or recipe URL in *message* is recorded as its file name.
+        """
         with self._write() as db:
             db.execute(
                 "INSERT INTO problems (run_id, recorded_at, level, message,"
                 " receiver, day) VALUES (?, ?, ?, ?, ?, ?)",
-                (run_id, _now(), level, message, receiver, day),
+                (run_id, _now(), level, without_urls(message), receiver, day),
             )
 
     def record_store_size(
@@ -709,6 +730,8 @@ class RunHistory:
     ) -> None:
         """Record the end of a run; *error* says why a failed run failed.
 
+        A settings or recipe URL in *error* is recorded as its file name.
+
         *ended_at* defaults to now; pass an aware UTC time (as the tests
         do) to fix the run's wall time.
         """
@@ -718,7 +741,7 @@ class RunHistory:
                 (
                     _now() if ended_at is None else ended_at.isoformat(),
                     result,
-                    error,
+                    None if error is None else without_urls(error),
                     run_id,
                 ),
             )
@@ -730,9 +753,10 @@ class RunHistory:
 
         *listings* maps each folder, relative to *root* (``"."`` for
         *root*), to its listing. A receiver directory with a naming recipe
-        has its own index per recipe file.
+        has its own index per recipe content: a recipe fetched from a URL
+        is in a new folder every run.
         """
-        key = (str(root), str(recipe or ""))
+        key = (str(root), _recipe_key(recipe))
         with self._write() as db:
             db.execute("DELETE FROM file_index WHERE root = ? AND recipe = ?", key)
             db.executemany(
@@ -819,7 +843,7 @@ class RunHistory:
                 "SELECT folder, files, folders, newest_day FROM file_index"
                 " WHERE root = ? AND recipe = ?",
                 str(root),
-                str(recipe or ""),
+                _recipe_key(recipe),
             )
             return {
                 row["folder"]: FolderListing(

@@ -114,9 +114,9 @@ with an unobstructed view of the sky.
 ```mermaid
 flowchart LR
     FILES["RINEX, SBF or NMEA files"] --> READ["Read"]
-    SETTINGS["Settings"] --> READ
+    SETTINGS["Settings<br/>local folder or GitHub link"] --> READ
     OVERLAY["Overlay file<br/>optional"] -.-> SETTINGS
-    RECIPE["Naming recipe<br/>optional"] -.-> READ
+    RECIPE["Naming recipe<br/>optional, local file or GitHub link"] -.-> READ
     READ --> ANGLES["Satellite angles"]
     ORBITS["SP3 orbits"] --> ANGLES
     ANGLES --> GSTORE["GNSS store"]

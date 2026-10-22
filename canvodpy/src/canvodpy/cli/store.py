@@ -1047,6 +1047,7 @@ def _amend_changes(
     from canvod.config import load_config
     from canvod.store_metadata.collectors import collect_receiver, recipe_sha256_of
     from canvod.store_metadata.schema import RepositoryReceiver
+    from canvod.utils.remote_file import recorded_name
 
     changes: dict[str, object] = {}
     for item in set_values:
@@ -1092,7 +1093,9 @@ def _amend_changes(
         sha256 = recipe_sha256_of(site, recipe) if recipe else None
         if recipe and sha256 is None:
             _refuse_missing_recipe(site, name, recipe)
-        changes[f"instruments.receivers.{name}.recipe"] = recipe
+        changes[f"instruments.receivers.{name}.recipe"] = (
+            recorded_name(recipe) if recipe else recipe
+        )
         changes[f"instruments.receivers.{name}.recipe_sha256"] = sha256
     analyses = site_cfg.vod_analyses or {}
     for name in add_vod_analyses:

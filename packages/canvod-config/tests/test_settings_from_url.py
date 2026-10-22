@@ -1,28 +1,28 @@
-"""Settings read from a pinned URL (canvod.config.remote).
+"""Settings read from a URL (canvod.config.remote).
 
-Downloads go to testing.PinnedFileServer, never to the network.
+Downloads go to testing.RemoteFileServer, never to the network.
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 import tempfile
 from pathlib import Path
 
 import pytest
 
-from canvod.config import load_config
+from canvod.config import load_config, remote
 from canvod.config.loader import get_default_config_dir
-from canvod.config.remote import resolve_config_dir, settings_source
-from canvod.utils import pinned, testing
-from canvod.utils.pinned import PinnedFetchError, PinnedURLError
+from canvod.config.remote import resolve_config_dir, settings_url
+from canvod.utils import remote_file, testing
+from canvod.utils.remote_file import RemoteFetchError, RemoteURLError
 
 BASE = (
     f"https://raw.githubusercontent.com/the-inklings/red-book/{testing.COMMIT}/config"
 )
 SETTINGS_URL = f"{BASE}/canvod-settings.yaml"
 TAG_URL = SETTINGS_URL.replace(testing.COMMIT, "refs/tags/v1")
+BRANCH_URL = SETTINGS_URL.replace(testing.COMMIT, "main")
 RECIPE = f"name: {testing.SITE_KEY}_canopy\n".encode()
 RECIPE_URL = f"{BASE}/recipes/{testing.SITE_KEY}/{testing.SITE_KEY}_canopy.yaml"
 
@@ -37,20 +37,33 @@ def _settings(tmp_path: Path, recipe: str | None = None) -> bytes:
 
 @pytest.fixture(autouse=True)
 def _isolated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    """Cache in tmp_path, no token or config folder from the environment."""
+    """A new run: nothing fetched, folders in tmp_path, no token or config
+    folder from the environment."""
     monkeypatch.setattr(tempfile, "tempdir", str(tmp_path / "tmp"))
     (tmp_path / "tmp").mkdir()
-    for name in (*pinned.TOKEN_VARIABLES, "CANVOD_CONFIG_DIR", "CANVOD_CONFIG_FILE"):
+    _new_run(monkeypatch)
+    for name in (
+        *remote_file.TOKEN_VARIABLES,
+        "CANVOD_CONFIG_DIR",
+        "CANVOD_CONFIG_FILE",
+        "CANVODPY_RUN_FOLDER",
+    ):
         monkeypatch.delenv(name, raising=False)
     load_config.cache_clear()
     yield
     load_config.cache_clear()
 
 
+def _new_run(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(remote_file, "_FETCHED", {})
+    monkeypatch.setattr(remote_file, "_FOLDER", None)
+    monkeypatch.setattr(remote, "_FOLDERS", {})
+
+
 @pytest.fixture
 def server(monkeypatch: pytest.MonkeyPatch):
-    srv = testing.PinnedFileServer()
-    monkeypatch.setattr(pinned, "_DOWNLOAD_ORIGIN", srv.origin)
+    srv = testing.RemoteFileServer()
+    monkeypatch.setattr(remote_file, "_DOWNLOAD_ORIGIN", srv.origin)
     yield srv
     srv.close()
 
@@ -65,7 +78,7 @@ def test_settings_from_a_url_load(server, tmp_path):
     assert testing.SITE_KEY in config.sites.sites
 
 
-def test_a_recipe_name_is_read_at_the_same_pin(server, tmp_path):
+def test_a_recipe_name_is_read_at_the_same_link(server, tmp_path):
     server.serve(SETTINGS_URL, _settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
     server.serve(RECIPE_URL, RECIPE)
 
@@ -75,11 +88,14 @@ def test_a_recipe_name_is_read_at_the_same_pin(server, tmp_path):
     assert recipe.read_bytes() == RECIPE
 
 
-def test_a_tag_pin_reads_the_recipe_at_the_tag(server, tmp_path):
-    server.serve(TAG_URL, _settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
-    server.serve(RECIPE_URL.replace(testing.COMMIT, "refs/tags/v1"), RECIPE)
+@pytest.mark.parametrize(
+    ("url", "ref"), [(TAG_URL, "refs/tags/v1"), (BRANCH_URL, "main")]
+)
+def test_a_tag_or_branch_link_reads_the_recipe_there(server, tmp_path, url, ref):
+    server.serve(url, _settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
+    server.serve(RECIPE_URL.replace(testing.COMMIT, ref), RECIPE)
 
-    folder = resolve_config_dir(TAG_URL)
+    folder = resolve_config_dir(url)
 
     assert (
         folder / "recipes" / testing.SITE_KEY / f"{testing.SITE_KEY}_canopy.yaml"
@@ -89,7 +105,7 @@ def test_a_tag_pin_reads_the_recipe_at_the_tag(server, tmp_path):
 def test_a_missing_recipe_names_the_receiver_and_the_url(server, tmp_path):
     server.serve(SETTINGS_URL, _settings(tmp_path, "entmoot"))
 
-    with pytest.raises(PinnedFetchError) as excinfo:
+    with pytest.raises(RemoteFetchError) as excinfo:
         resolve_config_dir(SETTINGS_URL)
 
     message = str(excinfo.value)
@@ -118,47 +134,67 @@ def test_a_recipe_url_is_left_to_the_recipe_lookup(server, tmp_path):
 def test_a_recipe_name_that_is_a_path_is_refused(server, tmp_path, name):
     server.serve(SETTINGS_URL, _settings(tmp_path, name))
 
-    with pytest.raises(PinnedURLError, match="recipe name"):
+    with pytest.raises(RemoteURLError, match="recipe name"):
         resolve_config_dir(SETTINGS_URL)
 
 
-def test_the_source_is_recorded(server, tmp_path):
-    body = _settings(tmp_path)
-    server.serve(SETTINGS_URL, body)
+def test_the_url_is_known_to_the_run_only(server, tmp_path):
+    server.serve(SETTINGS_URL, _settings(tmp_path))
 
-    source = settings_source(resolve_config_dir(SETTINGS_URL))
+    folder = resolve_config_dir(SETTINGS_URL)
 
-    assert source is not None
-    assert source.url == SETTINGS_URL
-    assert source.commit == testing.COMMIT
-    assert source.tag is None
-    assert source.sha256 == hashlib.sha256(body).hexdigest()
+    assert settings_url(folder) == SETTINGS_URL
+    assert SETTINGS_URL not in "".join(
+        p.read_text() for p in folder.rglob("*") if p.is_file()
+    )
 
 
-def test_a_local_folder_has_no_source(tmp_path):
-    assert settings_source(testing.write_settings(tmp_path / "config").parent) is None
+def test_a_local_folder_has_no_url(tmp_path):
+    assert settings_url(testing.write_settings(tmp_path / "config").parent) is None
 
 
-def test_a_second_resolve_needs_no_network(server, tmp_path, monkeypatch):
+def test_a_run_fetches_once(server, tmp_path):
     server.serve(SETTINGS_URL, _settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
     server.serve(RECIPE_URL, RECIPE)
+
     first = resolve_config_dir(SETTINGS_URL)
-    server.close()
-    monkeypatch.setattr(pinned, "_DOWNLOAD_ORIGIN", "http://127.0.0.1:9")
 
     assert resolve_config_dir(SETTINGS_URL) == first
+    assert len(server.requests) == 2
+
+
+def test_every_run_fetches_the_settings_and_recipes_again(
+    server, tmp_path, monkeypatch
+):
+    server.serve(BRANCH_URL, _settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
+    recipe_url = RECIPE_URL.replace(testing.COMMIT, "main")
+    server.serve(recipe_url, RECIPE)
+    resolve_config_dir(BRANCH_URL)
+    changed = RECIPE + b"# the branch moved on\n"
+    server.serve(recipe_url, changed)
+    _new_run(monkeypatch)
+
+    folder = resolve_config_dir(BRANCH_URL)
+
+    recipe = folder / "recipes" / testing.SITE_KEY / f"{testing.SITE_KEY}_canopy.yaml"
+    assert recipe.read_bytes() == changed
+    assert len(server.requests) == 4
+
+
+def test_a_run_without_network_names_the_url(tmp_path, monkeypatch):
+    monkeypatch.setattr(remote_file, "_DOWNLOAD_ORIGIN", "http://127.0.0.1:9")
+
+    with pytest.raises(RemoteFetchError, match="needs network access") as excinfo:
+        resolve_config_dir(SETTINGS_URL)
+
+    assert SETTINGS_URL in str(excinfo.value)
 
 
 def test_a_settings_file_that_is_not_a_mapping_is_refused(server):
     server.serve(SETTINGS_URL, b"- just\n- a list\n")
 
-    with pytest.raises(PinnedFetchError, match="not a settings file"):
+    with pytest.raises(RemoteFetchError, match="not a settings file"):
         resolve_config_dir(SETTINGS_URL)
-
-
-def test_a_branch_url_is_refused():
-    with pytest.raises(PinnedURLError, match="Settings file URL must be pinned"):
-        resolve_config_dir(SETTINGS_URL.replace(testing.COMMIT, "main"))
 
 
 def test_config_dir_variable_may_be_a_url(server, tmp_path, monkeypatch):
@@ -167,5 +203,5 @@ def test_config_dir_variable_may_be_a_url(server, tmp_path, monkeypatch):
 
     folder = get_default_config_dir()
 
-    assert settings_source(folder).url == SETTINGS_URL
+    assert settings_url(folder) == SETTINGS_URL
     assert load_config().processing.metadata.author == testing.PERSON_NAME

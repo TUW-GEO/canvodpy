@@ -12,11 +12,11 @@ import typer
 def _config_dir(value: str) -> Path:
     """A configuration directory, or the one made from a settings file URL.
 
-    A URL is a settings file in a GitHub repository, pinned to a commit or
-    a tag; its configuration directory is made in the cache by
+    A URL is a settings file in a GitHub repository; its configuration
+    directory is made for this run by
     :func:`canvod.config.remote.resolve_config_dir`.
     """
-    from canvod.utils.pinned import PinnedFileError, is_url
+    from canvod.utils.remote_file import RemoteFileError, is_url
 
     if not is_url(value):
         return Path(value)
@@ -24,13 +24,13 @@ def _config_dir(value: str) -> Path:
 
     try:
         return resolve_config_dir(value)
-    except PinnedFileError as exc:
+    except RemoteFileError as exc:
         raise typer.BadParameter(str(exc)) from None
 
 
 def _local_config_dir(value: str) -> Path:
     """A configuration directory that this command writes to: no URL."""
-    from canvod.utils.pinned import is_url
+    from canvod.utils.remote_file import is_url
 
     if is_url(value):
         msg = (
@@ -52,7 +52,7 @@ def _use_config_dir(config_dir: Path | None) -> Path | None:
     if config_dir is None:
         # A URL in the variable is resolved here too, so a failed fetch is
         # a usage error like one of the option, not a traceback later.
-        from canvod.utils.pinned import is_url
+        from canvod.utils.remote_file import is_url
 
         env_dir = os.environ.get("CANVOD_CONFIG_DIR", "")
         if is_url(env_dir):
@@ -67,9 +67,9 @@ CONFIG_DIR_OPTION = typer.Option(
     "-c",
     help=(
         "Configuration directory, holding canvod-settings.yaml and recipes/, "
-        "or the URL of a settings file in a GitHub repository, pinned to a "
-        "commit or tag (https://raw.githubusercontent.com/<account>/<repo>/"
-        "<commit or refs/tags/tag>/.../canvod-settings.yaml). "
+        "or the URL of a settings file in a GitHub repository, fetched by "
+        "each run (https://raw.githubusercontent.com/<account>/<repo>/"
+        "<commit, tag or branch>/.../canvod-settings.yaml). "
         "Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, "
         "else ~/.config/canvodpy."
     ),
