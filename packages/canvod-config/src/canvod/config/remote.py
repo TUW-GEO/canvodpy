@@ -39,8 +39,8 @@ from canvod.utils.remote_file import (
 
 SETTINGS_FILE = "canvod-settings.yaml"
 
-# The configuration folder of each settings URL of this process.
-_FOLDERS: dict[str, Path] = {}
+# The configuration folder of each run folder and settings URL.
+_FOLDERS: dict[tuple[Path, str], Path] = {}
 _LOCK = threading.Lock()
 
 
@@ -50,8 +50,9 @@ def resolve_config_dir(url: str) -> Path:
     Fetches the settings file and the recipes its receivers name (not
     those given as URLs) and returns a folder that holds them as a local
     configuration folder does: ``canvod-settings.yaml`` and
-    ``recipes/<site>/<name>.yaml``. A process fetches them once; the
-    folder is removed when the process ends.
+    ``recipes/<site>/<name>.yaml``. A run fetches them once
+    (:func:`canvod.utils.remote_file.new_run` starts a new run); the folder
+    is removed when the process ends.
 
     Parameters
     ----------
@@ -72,8 +73,9 @@ def resolve_config_dir(url: str) -> Path:
         If the settings file or a recipe cannot be fetched, or the settings
         file is not a YAML mapping.
     """
+    key = (run_folder(), url)
     with _LOCK:
-        folder = _FOLDERS.get(url)
+        folder = _FOLDERS.get(key)
     if folder is not None and folder.is_dir():
         return folder
     remote = parse_remote_url(url, what="settings file")
@@ -96,7 +98,7 @@ def resolve_config_dir(url: str) -> Path:
 
     folder = _config_folder(files)
     with _LOCK:
-        _FOLDERS[url] = folder
+        _FOLDERS[key] = folder
     return folder
 
 
@@ -118,7 +120,7 @@ def settings_url(config_dir: Path) -> str | None:
     """
     config_dir = Path(config_dir).resolve()
     with _LOCK:
-        for url, folder in _FOLDERS.items():
+        for (_, url), folder in _FOLDERS.items():
             if folder.resolve() == config_dir:
                 return url
     return None

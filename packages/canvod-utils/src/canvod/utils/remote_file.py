@@ -20,7 +20,8 @@ never appears in messages or logs.
 
 A link is shown in the terminal (``canvodpy doctor``, error messages) but
 never recorded: stores and the run history get only its file name
-(:func:`recorded_name`, :func:`without_urls`).
+(:func:`recorded_name`, :func:`without_urls`). A process that runs more
+than once starts each run with :func:`new_run`.
 
 canvod-filemap reads naming recipes with this module; canvodpy reads a
 settings file given as a URL with it.
@@ -159,17 +160,21 @@ def recorded_name(value: str) -> str:
     Returns
     -------
     str
-        The file name of a URL (``ROSA_canopy.yaml``), its host if it has
-        no path; any other value unchanged.
+        The file name of a raw file link (``ROSA_canopy.yaml``), the host
+        of any other link (its path can name a private repository), any
+        other value unchanged.
     """
     if not is_url(value):
         return value
     parts = urlsplit(value)
-    return PurePosixPath(parts.path).name or (parts.hostname or "")
+    host = (parts.hostname or "").lower()
+    if host == REMOTE_HOST:
+        return PurePosixPath(parts.path).name or host
+    return host
 
 
 def without_urls(text: str) -> str:
-    """``text`` with each ``http(s)`` link replaced by its file name.
+    """``text`` with each ``http(s)`` link replaced by what may be recorded.
 
     For text that is recorded, such as an error kept in the run history.
     Every link is replaced, not only raw file links: a message about a
@@ -184,8 +189,8 @@ def without_urls(text: str) -> str:
     Returns
     -------
     str
-        The text, each link replaced by its file name
-        (:func:`recorded_name`).
+        The text, each link replaced by :func:`recorded_name`: a raw file
+        link by its file name, any other link by its host.
     """
     return _URL_IN_TEXT.sub(lambda m: recorded_name(m.group(0)), text)
 
@@ -266,8 +271,8 @@ def run_folder() -> Path:
     A new folder in the system's temporary folder that only its owner can
     read, removed when the process that made it ends. Worker processes
     started after it was made use the same folder (it is named in the
-    environment variable ``CANVODPY_RUN_FOLDER``), so they fetch into it
-    and leave its removal to the run.
+    environment variable ``CANVODPY_RUN_FOLDER``), so they read the files
+    the run fetched and leave its removal to the run.
 
     Returns
     -------
@@ -282,18 +287,43 @@ def run_folder() -> Path:
         if inherited and Path(inherited).is_dir():
             _FOLDER = Path(inherited)
             return _FOLDER
-        _FOLDER = Path(tempfile.mkdtemp(prefix="canvodpy-"))
-        os.environ[_RUN_FOLDER_VARIABLE] = str(_FOLDER)
-        # A multiprocessing finalizer runs only in the process that made
-        # the folder, also in a worker process, which ends without atexit.
-        Finalize(
-            None,
-            shutil.rmtree,
-            args=(_FOLDER,),
-            kwargs={"ignore_errors": True},
-            exitpriority=0,
-        )
+        _FOLDER = _new_folder()
         return _FOLDER
+
+
+def new_run() -> Path:
+    """Start a new run: its files are fetched again, into a new run folder.
+
+    A process that runs more than once (a notebook, a long-lived worker)
+    calls this at the start of each run, so no run reads the files of an
+    earlier one. ``canvodpy.Site`` and the Airflow tasks call it. The
+    earlier folders are removed when the process ends.
+
+    Returns
+    -------
+    Path
+        The new run folder.
+    """
+    global _FOLDER
+    with _LOCK:
+        _FOLDER = _new_folder()
+        return _FOLDER
+
+
+def _new_folder() -> Path:
+    """A new run folder, named in the environment for worker processes."""
+    folder = Path(tempfile.mkdtemp(prefix="canvodpy-"))
+    os.environ[_RUN_FOLDER_VARIABLE] = str(folder)
+    # A multiprocessing finalizer runs only in the process that made the
+    # folder, also in a worker process, which ends without atexit.
+    Finalize(
+        None,
+        shutil.rmtree,
+        args=(folder,),
+        kwargs={"ignore_errors": True},
+        exitpriority=0,
+    )
+    return folder
 
 
 def fetch_remote(

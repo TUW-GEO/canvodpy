@@ -30,7 +30,7 @@ from canvod.config import load_config
 from canvod.config.models import reference_store_group
 from canvod.ops import preprocess_files
 from canvod.readers import MatchedDirs
-from canvod.utils.remote_file import recorded_name
+from canvod.utils.remote_file import new_run, recorded_name
 from canvod.utils.tools import YYYYDOY, deprecated
 from canvodpy.orchestrator.discovery import (
     DiscoveredFile,
@@ -66,6 +66,16 @@ def _resolve_date(yyyydoy: str) -> YYYYDOY:
     if "-" in yyyydoy:
         return YYYYDOY.from_date(datetime.date.fromisoformat(yyyydoy))
     return YYYYDOY.from_str(yyyydoy)
+
+
+def _task_settings() -> Any:
+    """The settings of a task, which is a run of its own.
+
+    Settings and recipes given as links are fetched again, also in an
+    Airflow worker process that runs many tasks.
+    """
+    new_run()
+    return load_config()
 
 
 def _day_files(
@@ -231,7 +241,7 @@ def check_day(site: str, yyyydoy: str) -> dict:
 
 def _check_files(site: str, yyyydoy: str, reader_format: str | None, kind: str) -> dict:
     """Shared body of :func:`check_day`, :func:`check_rinex` and :func:`check_sbf`."""
-    config = load_config()
+    config = _task_settings()
     site_cfg = config.sites.sites[site]
     date_obj = _resolve_date(yyyydoy)
     base = site_cfg.get_base_path()
@@ -380,7 +390,7 @@ def validate_data_dirs(site: str) -> dict:
     """
     from canvodpy.orchestrator.data_check import check_site_data
 
-    config = load_config()
+    config = _task_settings()
     if site not in config.sites.sites:
         available = ", ".join(config.sites.sites) or "(none)"
         msg = f"Unknown site '{site}'. Available sites: {available}"
@@ -523,7 +533,7 @@ def fetch_aux_data(
         ``{"site", "yyyydoy", "aux_zarr_path", "sampling_interval_s",
         "n_epochs", "n_sids"}``
     """
-    config = load_config()
+    config = _task_settings()
     site_cfg = config.sites.sites[site]
     date_obj = _resolve_date(yyyydoy)
     keep_sids = config.sids.get_sids()
@@ -653,7 +663,7 @@ def process_rinex(
     from canvod.store import GnssResearchSite
     from canvodpy.orchestrator.processor import preprocess_with_hermite_aux
 
-    config = load_config()
+    config = _task_settings()
     _cap_blas_threads(config.processing.processing.threads_per_worker or 1)
     site_cfg = config.sites.sites[site]
     date_obj = _resolve_date(yyyydoy)
@@ -841,7 +851,7 @@ def process_sbf(
     from canvod.store import GnssResearchSite
     from canvodpy.orchestrator.processor import preprocess_with_hermite_aux
 
-    config = load_config()
+    config = _task_settings()
     _cap_blas_threads(config.processing.processing.threads_per_worker or 1)
     site_cfg = config.sites.sites[site]
     date_obj = _resolve_date(yyyydoy)
@@ -1087,7 +1097,7 @@ def validate_ingest(site: str, yyyydoy: str) -> dict:
     """
     from canvod.store import GnssResearchSite
 
-    config = load_config()
+    config = _task_settings()
     site_cfg = config.sites.sites[site]
     date_obj = _resolve_date(yyyydoy)
 
@@ -1282,7 +1292,7 @@ def cleanup(site: str, yyyydoy: str) -> dict:
 
     # Clean up aux Zarr temp files
     try:
-        config = load_config()
+        config = _task_settings()
         aux_dir = config.processing.storage.get_aux_data_dir()
         aux_zarr_path = aux_dir / f"aux_{date_obj.to_str()}.zarr"
         if aux_zarr_path.exists():

@@ -181,6 +181,24 @@ def test_every_run_fetches_the_settings_and_recipes_again(
     assert len(server.requests) == 4
 
 
+def test_a_second_run_in_the_same_process_fetches_again(server, tmp_path):
+    # A notebook that runs twice: the recipe changed on the branch between.
+    server.serve(BRANCH_URL, _settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
+    recipe_url = RECIPE_URL.replace(testing.COMMIT, "main")
+    server.serve(recipe_url, RECIPE)
+    first = resolve_config_dir(BRANCH_URL)
+    changed = RECIPE + b"# changed on the branch\n"
+    server.serve(recipe_url, changed)
+
+    remote_file.new_run()
+    folder = resolve_config_dir(BRANCH_URL)
+
+    assert folder != first
+    recipe = folder / "recipes" / testing.SITE_KEY / f"{testing.SITE_KEY}_canopy.yaml"
+    assert recipe.read_bytes() == changed
+    assert settings_url(folder) == BRANCH_URL
+
+
 def test_a_run_without_network_names_the_url(tmp_path, monkeypatch):
     monkeypatch.setattr(remote_file, "_DOWNLOAD_ORIGIN", "http://127.0.0.1:9")
 

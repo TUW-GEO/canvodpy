@@ -138,3 +138,18 @@ def test_doctor_names_the_url_and_the_sha256(server, monkeypatch):
 
     assert f"Settings from {URL}" in result.output
     assert f"sha256 {hashlib.sha256(server.body).hexdigest()}" in result.output
+
+
+def test_a_new_site_is_a_new_run(server, monkeypatch):
+    # A notebook that makes a Site twice: the second run fetches again.
+    import canvod.store
+    from canvodpy import Site
+
+    monkeypatch.setattr(canvod.store, "GnssResearchSite", lambda name: object())
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", URL)
+    first = remote.resolve_config_dir(URL)
+
+    Site(testing.SITE_KEY)
+
+    assert remote.resolve_config_dir(URL) != first
+    assert len(server.requests) == 2

@@ -115,8 +115,9 @@ canvodpy run --site ExampleSite --start 2025001 --end 2025007 \
   the settings file, as in a local folder. A `recipe:` that is a URL is
   read from that URL.
 - Every run downloads the files again, into a folder of the run that
-  only you can read and that is removed when the run ends. A run needs
-  network access. `canvodpy doctor` names the link and the sha256 of the
+  only you can read and that is removed when the run ends. A run is a
+  `canvodpy` command, a new `Site` in Python (also the second one in the
+  same notebook) or an Airflow task. A run needs network access. `canvodpy doctor` names the link and the sha256 of the
   settings file.
 - The link is not recorded. Stores keep the settings, the run history
   keeps the settings of each run, and both name a recipe URL by its file

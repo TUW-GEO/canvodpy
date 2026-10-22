@@ -11,7 +11,7 @@ deprecation decorator, the logging run context. No CLI, no settings.
 | `tools/hashing.py` | File hash (the `"File Hash"` attribute) |
 | `tools/deprecation.py` | `deprecated` for code, `deprecated_argument` for one argument (both `FutureWarning`) |
 | `logging/` | `run_context`, `stage_timer` |
-| `remote_file.py` | Files from a raw GitHub link (commit, tag or branch): URL check, token from `GH_TOKEN`/`GITHUB_TOKEN`, fetched once per run into a run folder, no cache; `recorded_name`/`without_urls` keep links out of records. canvod-filemap's recipe URLs use it |
+| `remote_file.py` | Files from a raw GitHub link (commit, tag or branch): URL check, token from `GH_TOKEN`/`GITHUB_TOKEN`, fetched once per run into a run folder (`new_run` starts a run: `Site`, Airflow tasks), no cache; `recorded_name`/`without_urls` keep links out of records. canvod-filemap's recipe URLs use it |
 | `testing.py` | Made-up people, sites and settings for tests; `RemoteFileServer` stands in for GitHub |
 | `plugins.py` | Entry point groups `canvodpy.readers` / `canvodpy.vod_calculators`, `load_plugins`, `PluginError`: the one place plugins are found |
 

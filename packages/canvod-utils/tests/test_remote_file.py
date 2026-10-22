@@ -27,6 +27,7 @@ from canvod.utils.remote_file import (
     RemoteURLError,
     fetch_remote,
     is_url,
+    new_run,
     parse_remote_url,
     recorded_name,
     run_folder,
@@ -47,7 +48,7 @@ def fetch(url: str, **kwargs) -> Path:
     return fetch_remote(url, what="settings file", **kwargs)
 
 
-def new_run(monkeypatch: pytest.MonkeyPatch) -> None:
+def fresh_run(monkeypatch: pytest.MonkeyPatch) -> None:
     """Start a new run: a new run folder, nothing fetched yet.
 
     The variable is set (empty) through monkeypatch, so the value
@@ -69,7 +70,7 @@ def _closed_origin() -> str:
 def _isolated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """A new run with its folders in tmp_path, no token."""
     monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
-    new_run(monkeypatch)
+    fresh_run(monkeypatch)
     for name in remote_file.TOKEN_VARIABLES:
         monkeypatch.delenv(name, raising=False)
 
@@ -194,6 +195,11 @@ def test_a_refused_url_is_never_requested(server: testing.RemoteFileServer) -> N
     [
         (BRANCH_URL, "canvod-settings.yaml"),
         (TAG_URL, "canvod-settings.yaml"),
+        # Any other link: only its host, since its path can name a repository.
+        (f"https://github.com/{REPO}", "github.com"),
+        (f"https://github.com/{REPO}/tree/main/config", "github.com"),
+        (f"https://github.com/{REPO}/blob/main/{FILE}", "github.com"),
+        ("https://cddis.nasa.gov/archive/gnss/products/x.sp3.gz", "cddis.nasa.gov"),
         ("fangorn_canopy", "fangorn_canopy"),
         ("config/recipes/x.yaml", "config/recipes/x.yaml"),
     ],
@@ -225,7 +231,6 @@ def test_every_link_in_a_text_becomes_its_file_name(link: str) -> None:
     recorded = without_urls(str(excinfo.value))
     assert "the-inklings" not in recorded
     assert "red-book" not in recorded
-    assert "canvod-settings.yaml" in recorded
 
 
 # ---------------------------------------------------------------------------
@@ -261,8 +266,24 @@ def test_every_run_fetches_again(
     fetch(BRANCH_URL)
     changed = BODY + b"# the branch moved on\n"
     server.serve(BRANCH_URL, changed)
-    new_run(monkeypatch)
+    fresh_run(monkeypatch)
     assert fetch(BRANCH_URL).read_bytes() == changed
+    assert len(server.requests) == 2
+
+
+def test_a_new_run_in_the_same_process_fetches_again(
+    server: testing.RemoteFileServer,
+) -> None:
+    # A notebook that runs twice: the branch moved on between the runs.
+    server.serve(BRANCH_URL, BODY)
+    first = fetch(BRANCH_URL)
+    changed = BODY + b"# the branch moved on\n"
+    server.serve(BRANCH_URL, changed)
+    folder = new_run()
+    second = fetch(BRANCH_URL)
+    assert second.read_bytes() == changed
+    assert folder in second.parents
+    assert first.read_bytes() == BODY  # removed when the process ends
     assert len(server.requests) == 2
 
 
@@ -271,7 +292,7 @@ def test_no_network_names_the_url(
 ) -> None:
     server.serve(COMMIT_URL, BODY)
     fetch(COMMIT_URL)
-    new_run(monkeypatch)
+    fresh_run(monkeypatch)
     monkeypatch.setattr(remote_file, "_DOWNLOAD_ORIGIN", _closed_origin())
     with pytest.raises(RemoteFetchError, match="needs network access") as excinfo:
         fetch(COMMIT_URL)
