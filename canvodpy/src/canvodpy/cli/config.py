@@ -34,7 +34,11 @@ from canvod.config.models import (
     SitesConfig,
     reference_store_group,
 )
-from canvodpy.cli.options import CONFIG_DIR_OPTION, CONFIG_FILE_OPTION
+from canvodpy.cli.options import (
+    CONFIG_DIR_OPTION,
+    CONFIG_FILE_OPTION,
+    LOCAL_CONFIG_DIR_OPTION,
+)
 
 # Config subcommand
 config_app = typer.Typer(
@@ -261,7 +265,7 @@ def _init_from_store(config_dir: Path, store: str, no_interactive: bool) -> None
 
 @config_app.command()
 def init(
-    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+    config_dir: Annotated[Path | None, LOCAL_CONFIG_DIR_OPTION] = None,
     force: bool = typer.Option(
         False,
         "--force",
@@ -671,7 +675,7 @@ def show(
 
 @config_app.command()
 def edit(
-    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+    config_dir: Annotated[Path | None, LOCAL_CONFIG_DIR_OPTION] = None,
 ) -> None:
     """Open canvod-settings.yaml in $EDITOR.
 

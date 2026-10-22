@@ -100,6 +100,34 @@ that exists:
 The same folder holds the naming recipes, in `recipes/`.
 `CANVOD_CONFIG_FILE` names an overlay file, like `--config`.
 
+### Settings from a GitHub repository
+
+`--config-dir` and `CANVOD_CONFIG_DIR` also take the raw link of a
+settings file in a GitHub repository, pinned to a commit or a tag:
+
+```bash
+canvodpy run --site ExampleSite --start 2025001 --end 2025007 \
+  -c https://raw.githubusercontent.com/<account>/<repo>/refs/tags/<tag>/config/canvod-settings.yaml
+```
+
+- A link to a branch is refused, because a branch moves. A tag can be
+  moved too; a full commit hash never changes.
+- A receiver's `recipe:` name is read from the same repository at the
+  same commit or tag, from `recipes/<site>/<name>.yaml` next to the
+  settings file, as in a local folder. A `recipe:` that is a URL is read
+  from that URL.
+- canVODpy downloads the files once and keeps them in a cache folder that
+  only you can read; a later run with the same link works without network
+  access. `canvodpy doctor` names the link, its commit or tag, and the
+  sha256 of the settings file.
+- A private repository needs a GitHub token in `GH_TOKEN` or
+  `GITHUB_TOKEN`, for example `export GH_TOKEN=$(gh auth token)`.
+- The folders of your machine (stores, auxiliary files, logs) go into an
+  overlay file with `--config`, so one settings file serves every machine.
+- `canvodpy config init` and `canvodpy config edit` write the settings
+  file, so they need a local folder; change settings from a link in their
+  repository.
+
 Settings come from these sources, the first one wins:
 overlay file, `canvod-settings.yaml`, package default. Write only the fields you want to change.
 

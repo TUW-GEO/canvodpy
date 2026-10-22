@@ -69,6 +69,7 @@ def doctor(
         get_template_dir,
         load_config,
     )
+    from canvod.config.remote import settings_source
 
     console.print("\n[bold]canvodpy doctor[/bold]\n")
 
@@ -93,6 +94,11 @@ def doctor(
 
     console.print(f"  Config resolved to: {config_dir}")
     console.print(f"    (source: {source})")
+    remote = settings_source(config_dir)
+    if remote is not None:
+        pin = f"commit {remote.commit}" if remote.commit else f"tag {remote.tag}"
+        console.print(f"    Settings from {remote.url}")
+        console.print(f"    ({pin}, sha256 {remote.sha256})")
 
     # --- Templates ------------------------------------------------------------
     template_dir = get_template_dir()
