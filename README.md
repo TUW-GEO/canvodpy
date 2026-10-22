@@ -119,7 +119,7 @@ just test
 just check             # lint, format, type check
 ```
 
-`just --list` shows every command. The
+`just --list` shows every command, sorted into groups. The
 [contributor setup](https://canvodpy.eu/guides/contributor-setup/) has the
 details.
 

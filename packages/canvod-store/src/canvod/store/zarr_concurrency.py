@@ -26,10 +26,10 @@ import zarr
 # no locking or thread-local isolation of its own. Safe under a strictly
 # sequential caller, but multiple threads entering/exiting this block
 # concurrently (e.g. canvodpy's cross-group forked writes) could interleave
-# out of stack order and restore each other's scoped value mid-write. This
-# lock serializes only this small config-mutation+write critical section, not
-# whole callers -- cheap, and a no-op whenever concurrency is None (the
-# common case, since this feature is opt-in per deployment).
+# out of stack order and restore each other's scoped value mid-write. The
+# lock is held for the whole scoped block, the write included, so capped
+# writes from several threads run one after another. With concurrency None
+# (the default) no lock is taken.
 _zarr_config_scope_lock = threading.RLock()
 
 

@@ -4,26 +4,26 @@ Convention::
 
     {SIT}{T}{NN}{AGC}_R_{YYYY}{DOY}{HHMM}_{PERIOD}_{SAMPLING}_{CONTENT}.{TYPE}[.{COMPRESSION}]
 
-    SIT         3-char site ID, uppercase            (e.g. ROS, HAI, FON, LBS)
+    SIT         3-char site ID, uppercase            (e.g. FAN, ORT)
     T           Receiver type, single uppercase char  (R=reference, A=active/below-canopy)
     NN          Receiver number, zero-padded 01-99
-    AGC         3-char data provider ID, uppercase    (e.g. GFZ, TUD, TUW, MPI)
-    _R          Literal - 'R' for Receiver
+    AGC         3-char data provider ID, uppercase    (e.g. INK, MEA)
+    _R          Literal: always 'R', for receiver
     YYYY        4-digit year
     DOY         3-digit day of year (001-366)
     HHMM        Start time, hours + minutes
     PERIOD      Batch size: 2-digit value + unit      (e.g. 01D, 15M, 01H)
     SAMPLING    Data frequency: 2-digit value + unit  (e.g. 01S, 05S, 05M)
-    CONTENT     2-char user field, default 'AA'
+    CONTENT     2-char user field, filled as needed; default 'AA'
     TYPE        File type, lowercase                  (rnx, sbf, ubx, nmea, or
                 the type of an installed reader plugin)
     COMPRESSION Optional compression extension        (zip, gz, bz2, zst, ...)
 
 Examples::
 
-    HAIA01GFZ_R_20250010000_01D_01S_AA.rnx.zip
-    ROSR01TUW_R_20250010000_01D_05S_AA.rnx
-    ROSR35TUW_R_20232221530_15M_05S_AA.sbf
+    ORTA01MEA_R_20250010000_01D_01S_AA.rnx.zip
+    FANR01INK_R_20250010000_01D_05S_AA.rnx
+    FANR35INK_R_20232221530_15M_05S_AA.sbf
 """
 
 from __future__ import annotations

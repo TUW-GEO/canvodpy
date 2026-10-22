@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = ["packaging>=25"]
+# ///
 """Prepare a release of chosen packages at chosen versions.
 
 Every package has its own version. The maintainer chooses which packages to

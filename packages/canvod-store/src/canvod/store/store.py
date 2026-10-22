@@ -783,10 +783,12 @@ class MyIcechunkStore:
 
         Zarr v3 issues chunk writes for a single array as a concurrent
         ``asyncio.gather`` burst, sized by ``zarr.config``'s
-        ``async.concurrency`` (default 10). On network-mounted (CIFS/NFS)
-        stores that burst can trip connection-abort errors under load — but
-        capping it costs throughput, so it's opt-in via
-        ``IcechunkConfig.zarr_async_concurrency`` (None = untouched).
+        ``async.concurrency`` (default 10). The cap is opt-in via
+        ``IcechunkConfig.zarr_async_concurrency`` (None = untouched). Only
+        the store's own write methods call this; the GNSS store writes of
+        ``canvodpy run`` (``orchestrator/processor.py``) and the day-block
+        writes (``day_blocks.py``) call ``to_icechunk`` directly, without
+        the cap (#188).
 
         ``throttle`` overrides the config-derived default when explicitly
         passed; leave it ``None`` to defer to config.

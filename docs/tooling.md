@@ -66,6 +66,14 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     `uv sync` resolves `uv.lock` and creates or updates the shared workspace
     `.venv` at the repo root; all 12 packages share a single environment.
 
+    The scripts under `scripts/` that need no canvodpy package
+    (`release.py`, `analyze_dependencies.py`, `check_agent_docs.py`,
+    `check_package_imports.py`) declare their Python version and
+    dependencies in a `# /// script` block at the top (inline script
+    metadata, PEP 723). `uv run --script scripts/release.py` runs such a
+    script in its own small environment, without the workspace; the `just`
+    recipes call them that way.
+
     Configuration in `pyproject.toml`:
 
     ```toml
@@ -145,8 +153,9 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 === "just: task runner"
 
-    Recipes are defined in `Justfile` at the repo root. Use `just --list` to
-    see all available recipes.
+    Recipes are defined in `Justfile` at the repo root. `just --list` shows
+    all recipes, sorted into groups such as `setup`, `run and settings`,
+    `stores`, `tests` and `docs`.
 
     All common tasks are single commands:
 
@@ -338,7 +347,7 @@ All quality checks run automatically:
 |----------|---------|---------|
 | `test_platforms.yml` | Push, PR | Multi-platform tests (Linux/macOS on Apple silicon/Windows) |
 | `test_coverage.yml` | Push, PR | Coverage tracking $\rightarrow$ Coveralls |
-| `code_quality.yml` | Push | Linting, formatting, type checking |
+| `code_quality.yml` | Push | Linting, formatting, type checking, building every package without the workspace sources (`just check-build`) |
 | `codeql.yml` | Push, PR, Weekly | CodeQL security analysis |
 | `fair-software.yml` | Push, PR | FAIR compliance checks |
 | `scorecard.yml` | Weekly, Push to main | Security best practices |

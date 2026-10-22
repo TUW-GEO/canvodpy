@@ -163,8 +163,9 @@ just config-validate                  # check the settings file
 ```
 
 Pre-commit runs ruff, `uv lock`, whitespace checks and the agent docs
-check; commitizen checks the commit message; the pre-push hook runs ty. CI runs lint, format, ty and
-the agent docs check (`.github/workflows/code_quality.yml`), Vale on the
+check; commitizen checks the commit message; the pre-push hook runs ty. CI runs lint, format, ty,
+the agent docs check and the package build without workspace sources
+(`just check-build`; `.github/workflows/code_quality.yml`), Vale on the
 changed docs pages and the link check of the built site
 (`.github/workflows/docs_quality.yml`), and the tests on Linux, macOS and
 Windows (`.github/workflows/test_platforms.yml`). A pull request that

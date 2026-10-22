@@ -21,17 +21,17 @@ Every canVOD-compatible GNSS file follows this naming format:
 
 | Field | Width | Description | Example |
 |-------|-------|-------------|---------|
-| `SIT` | 3 | Site ID, uppercase | `ROS`, `HAI` |
+| `SIT` | 3 | Site ID, uppercase | `FAN`, `ORT` |
 | `T` | 1 | Receiver type: **R** = reference, **A** = active (below the canopy) | `R`, `A` |
 | `NN` | 2 | Receiver number, zero-padded | `01`, `35` |
-| `AGC` | 3 | Data provider / agency ID | `TUW`, `GFZ` |
+| `AGC` | 3 | Data provider / agency ID | `INK`, `MEA` |
 | `_R` | 2 | RINEX data-source field, always `R` (receiver-generated) | `_R` |
 | `YYYY` | 4 | Year | `2025` |
 | `DOY` | 3 | Day of year (001--366) | `001` |
 | `HHMM` | 4 | Start time (hours + minutes) | `0000` |
 | `PERIOD` | 3 | Batch duration: value + unit | `01D`, `15M` |
 | `SAMPLING` | 3 | Data frequency: value + unit | `05S`, `01S` |
-| `CONTENT` | 2 | User-defined content code | `AA` |
+| `CONTENT` | 2 | User field, filled as needed (`AA` by default) | `AA` |
 | `TYPE` | 2--8 | File format, lowercase; runs read `rnx`, `sbf` and `nmea`, and the type of each installed [reader plugin](../../guides/plugins.md) | `rnx`, `sbf`, `nmea`, `ubx` |
 | `COMPRESSION` | -- | Optional compression extension; runs do not read compressed files (warning `compressed_files_not_processed`), decompress them first | `zip`, `gz` |
 

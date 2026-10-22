@@ -52,7 +52,7 @@ repos:
       # runs on every commit, since renaming code can break them too
       - id: check-agent-docs
         name: agent docs
-        entry: uv run --no-sync python scripts/check_agent_docs.py
+        entry: uv run --script scripts/check_agent_docs.py
         language: system
         pass_filenames: false
         always_run: true
