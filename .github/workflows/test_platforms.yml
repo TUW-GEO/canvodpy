@@ -59,7 +59,7 @@ jobs:
               run: uv sync --locked --dev --group optional --group filemap
             - name: Install the Project (Windows, no healpy)
               if: matrix.os == 'windows-latest'
-              run: uv sync --locked --dev
+              run: uv sync --locked --dev --group filemap
             - name: Run Tests
               run: |
                   uv run pytest canvodpy/tests/ --verbose --color=yes
