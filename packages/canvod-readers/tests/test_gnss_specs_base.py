@@ -240,3 +240,72 @@ class TestContractConstants:
         )
         # Should not raise
         validate_dataset(ds)
+
+
+class TestVodContract:
+    """Test validate_vod_dataset()."""
+
+    @staticmethod
+    def _vod_ds():
+        import numpy as np
+        import xarray as xr
+
+        from canvod.readers.base import SignalID
+        from canvod.readers.builder import sid_coords
+        from canvod.readers.gnss_specs.signals import SignalIDMapper
+
+        signals = [SignalID(sv="G01", band="L1", code="C")]
+        values = np.array([[0.4]])
+        return xr.Dataset(
+            {
+                "VOD": (("epoch", "sid"), values),
+                "phi": (("epoch", "sid"), values),
+                "theta": (("epoch", "sid"), values),
+            },
+            coords={
+                "epoch": [np.datetime64("2024-01-01T00:00:00", "ns")],
+                **sid_coords(signals, mapper=SignalIDMapper()),
+            },
+        )
+
+    def test_valid_vod_dataset_passes(self):
+        from canvod.readers.base import validate_vod_dataset
+
+        validate_vod_dataset(self._vod_ds())
+
+    def test_no_reader_attrs_required(self):
+        """VOD datasets carry no file hash: the reader attributes are not required."""
+        from canvod.readers.base import validate_vod_dataset
+
+        ds = self._vod_ds()
+        assert not ds.attrs
+        validate_vod_dataset(ds)
+
+    def test_collects_all_errors(self):
+        from canvod.readers.base import validate_vod_dataset
+
+        ds = self._vod_ds().drop_vars(["theta", "freq_center"])
+        ds["VOD"] = ds["VOD"].transpose("sid", "epoch")
+        with pytest.raises(ValueError, match="VOD dataset validation failed") as exc:
+            validate_vod_dataset(ds)
+        msg = str(exc.value)
+        assert "theta" in msg
+        assert "freq_center" in msg
+        assert "wrong dimensions" in msg
+
+    def test_gnssvod_shaped_dataset_fails(self):
+        """A dataset on (Epoch, SV) with angles in degrees is not a canvodpy VOD dataset."""
+        import numpy as np
+        import xarray as xr
+
+        from canvod.readers.base import validate_vod_dataset
+
+        ds = xr.Dataset(
+            {
+                "VOD_L1": (("Epoch", "SV"), np.array([[0.4]])),
+                "Elevation": (("Epoch", "SV"), np.array([[30.0]])),
+            },
+            coords={"Epoch": [np.datetime64("2024-01-01")], "SV": ["G01"]},
+        )
+        with pytest.raises(ValueError, match="Missing required dimensions"):
+            validate_vod_dataset(ds)

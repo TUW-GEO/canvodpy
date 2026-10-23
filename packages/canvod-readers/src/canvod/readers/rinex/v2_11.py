@@ -20,14 +20,12 @@ Classes:
 - Rnxv2Obs: Main reader class, converts RINEX v2.11 to xarray Dataset
 """
 
-import hashlib
 import json
-import warnings
 from collections import Counter
 from datetime import UTC, datetime
 from itertools import pairwise
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, ClassVar, Self
 
 import numpy as np
 import pint
@@ -43,6 +41,11 @@ from pydantic import (
 
 from canvod.readers.base import GNSSDataReader, validate_dataset
 from canvod.readers.gnss_specs.constants import UREG
+from canvod.readers.gnss_specs.constellations import (
+    V2_CODE_L2C_FAMILY,
+    V2_CODE_P_FAMILY,
+    V2_CODE_UNRESOLVED,
+)
 from canvod.readers.gnss_specs.exceptions import (
     IncompleteEpochError,
     InvalidEpochError,
@@ -52,14 +55,21 @@ from canvod.readers.gnss_specs.metadata import (
     DTYPES,
     OBSERVABLES_METADATA,
     SNR_METADATA,
+    epoch_coord_attrs,
     get_global_attrs,
+    require_gps_time,
 )
 from canvod.readers.gnss_specs.models import (
     Observation,
     Satellite,
 )
+from canvod.readers.gnss_specs.obs_codes import (
+    _parse_v2_obs_code,
+    _v2_tracking_code,
+)
 from canvod.readers.gnss_specs.signals import SignalIDMapper
 from canvod.readers.gnss_specs.utils import get_version_from_pyproject
+from canvod.utils.tools import bytes_hash, deprecated
 
 # --------------------------------------------------------------------------- #
 # Constants
@@ -70,6 +80,28 @@ V2_OBS_FIELD_WIDTH = 16  # F14.3 + I1 (LLI) + I1 (SSI)
 V2_MAX_OBS_PER_LINE = 5  # Max observations per line (5 x 16 = 80 chars)
 V2_MAX_SATS_PER_LINE = 12  # Max satellites on the epoch line
 V2_SAT_FIELD_WIDTH = 3  # Each satellite field: A1 + I2
+# LLI bits (rinex211.txt Table A2 -> RINEX 3.04 Table A3). Bit 0 (lost
+# lock) means the same in both. v2 bit 1 flags the opposite wavelength
+# factor; it is translated into v3 bit 1 (half-cycle ambiguity). v2 bit 2
+# (antispoofing) is obsolete in v3 (RINEX 3.04 sect. 7) and dropped.
+_LLI_LOST_LOCK = 0b001
+_V2_LLI_OPPOSITE_WL_FACTOR = 0b010
+_V3_LLI_HALF_CYCLE = 0b010
+# WAVELENGTH FACT L1/2 value for half-cycle ambiguities (squaring).
+_WL_FACTOR_HALF_CYCLE = 2
+_WL_FACTOR_OPPOSITE = {1: 2, 2: 1}
+# Observables an SSI may be taken from, by precedence: the phase's SSI, else
+# the code's (RINEX 3.04 Table A3 notes 2-3; 2.11 does not specify).
+_SSI_SOURCE_RANK = {"L": 2, "C": 1}
+# rinex211.txt Table A1 declares no unit for S observations.
+_V2_SNR_METADATA = {
+    **SNR_METADATA,
+    "description": (
+        "Raw signal strength or SNR value as given by the receiver for the "
+        "respective phase observation (RINEX 2.11 Table A1, observation code "
+        "S). RINEX 2.11 declares no unit; dB is assumed."
+    ),
+}
 V2_EPOCH_FLAG_OK = 0
 V2_EPOCH_FLAG_POWER_FAILURE = 1
 V2_EPOCH_FLAG_START_MOVING = 2
@@ -79,21 +111,85 @@ V2_EPOCH_FLAG_EXTERNAL_EVENT = 5
 V2_EPOCH_FLAG_CYCLE_SLIP = 6
 V2_YEAR_PIVOT = 80  # Two-digit year pivot: >= 80 → 19xx, < 80 → 20xx
 
-# RINEX v2 tracking-code map.
-# Only C1, P1, C2, P2 transmit an explicit ranging code.
-# All other v2 obs codes do not specify the ranging code → "X".
-_V2_TRACKING_CODE: dict[str, str] = {
-    "C1": "C",  # C/A code pseudorange on L1
-    "P1": "P",  # P-code pseudorange on L1
-    "C2": "C",  # L2C civil code pseudorange
-    "P2": "P",  # P-code pseudorange on L2
-}
-
-# v2 pseudorange codes P1/P2 map to obs-type "C" (pseudorange) in v3.
-_V2_OBS_TYPE_REMAP: dict[str, str] = {"P": "C"}
-
 # System identifiers recognized in RINEX v2.11
 V2_SYSTEM_CODES = {"G", "R", "S", "E", " "}
+
+
+def _parse_wavelength_fact_line(line: str) -> tuple[int, int, list[str]]:
+    """Parse a WAVELENGTH FACT L1/2 record into (L1, L2, satellites).
+
+    An empty satellite list means the record sets the defaults.
+    """
+    wl1 = int(line[0:6].strip() or "1")
+    wl2 = int(line[6:12].strip() or "1")
+    num_sats_str = line[12:18].strip()
+    sats: list[str] = []
+    if num_sats_str and int(num_sats_str) > 0:
+        for j in range(int(num_sats_str)):
+            offset = 18 + j * 6
+            sat_id = line[offset : offset + 6].strip()
+            # Normalize: "G14", "G 9" or " 14" -> "G14" / "G09"
+            if sat_id and len(sat_id) >= 2:
+                if not sat_id[0].isalpha():
+                    sat_id = "G" + sat_id
+                sat_id = sat_id[0] + sat_id[1:].strip().zfill(2)
+                sats.append(sat_id)
+    return wl1, wl2, sats
+
+
+# RINEX 2.11 Table A1, TIME OF FIRST OBS: default time system of a pure file.
+_DEFAULT_TIME_SYSTEM_V2 = {"G": "GPS", "R": "GLO", "E": "GAL"}
+
+
+class _WavelengthFactors:
+    """Wavelength factors in force at an epoch (rinex211.txt Table A1).
+
+    The factors apply to GPS L1 and L2 phase only (sect. 10.1.2); every
+    other phase has factor 1.
+    """
+
+    __slots__ = ("default", "per_sat")
+
+    def __init__(
+        self,
+        default: tuple[int, int],
+        per_sat: dict[str, tuple[int, int]],
+    ) -> None:
+        self.default = default
+        self.per_sat = per_sat
+
+    def factor(self, sv: str, freq_num: str) -> int:
+        if sv[0] != "G" or freq_num not in ("1", "2"):
+            return 1
+        return self.per_sat.get(sv, self.default)[int(freq_num) - 1]
+
+    def updated(self, line: str) -> _WavelengthFactors:
+        """Return the factors after an in-file WAVELENGTH FACT L1/2 record."""
+        wl1, wl2, sats = _parse_wavelength_fact_line(line)
+        if not sats:
+            return _WavelengthFactors((wl1, wl2), self.per_sat)
+        return _WavelengthFactors(
+            self.default, {**self.per_sat, **dict.fromkeys(sats, (wl1, wl2))}
+        )
+
+
+def _v3_phase_lli(v2_lli: int | None, wl_factor: int) -> int | None:
+    """Translate a RINEX 2 phase LLI into the RINEX 3.04 Table A3 meaning.
+
+    rinex211.txt Table A2: bit 1 flags the wavelength factor opposite to the
+    one in force, for the current epoch only. The phase's own factor is
+    therefore the one in force, switched when bit 1 is set; factor 2 means
+    half-cycle ambiguities (Table A1), which RINEX 3 flags with bit 1.
+    Bit 0 (lost lock) carries over; bit 2 (antispoofing) has no RINEX 3
+    counterpart. Returns None when nothing was recorded.
+    """
+    if v2_lli is not None and v2_lli & _V2_LLI_OPPOSITE_WL_FACTOR:
+        wl_factor = _WL_FACTOR_OPPOSITE.get(wl_factor, wl_factor)
+    half_cycle = wl_factor == _WL_FACTOR_HALF_CYCLE
+    if v2_lli is None and not half_cycle:
+        return None
+    lost_lock = (v2_lli or 0) & _LLI_LOST_LOCK
+    return lost_lock | (_V3_LLI_HALF_CYCLE if half_cycle else 0)
 
 
 def _expand_v2_year(yy: int) -> int:
@@ -104,29 +200,6 @@ def _expand_v2_year(yy: int) -> int:
     if yy >= V2_YEAR_PIVOT:
         return 1900 + yy
     return 2000 + yy
-
-
-def _parse_v2_obs_code(obs_code_v2: str) -> tuple[str, str, str]:
-    """Parse a RINEX v2 2-char obs code into (obs_type, freq_num, tracking_code).
-
-    Parameters
-    ----------
-    obs_code_v2 : str
-        Two-character RINEX v2 observation code (e.g. "L1", "P2", "C5").
-
-    Returns
-    -------
-    tuple[str, str, str]
-        (obs_type, freq_num, tracking_code) where:
-        - obs_type: v3 observation type character ("C", "L", "D", "S")
-        - freq_num: frequency number as string ("1", "2", "5", "6", "7", "8")
-        - tracking_code: "C" for C1/C2, "P" for P1/P2, "X" otherwise
-    """
-    raw_type = obs_code_v2[0]  # C, P, L, D, S
-    freq_num = obs_code_v2[1]  # 1, 2, 5, 6, 7, 8
-    obs_type = _V2_OBS_TYPE_REMAP.get(raw_type, raw_type)
-    tracking_code = _V2_TRACKING_CODE.get(obs_code_v2, "X")
-    return obs_type, freq_num, tracking_code
 
 
 # --------------------------------------------------------------------------- #
@@ -275,20 +348,10 @@ class Rnxv2Header(BaseModel):
                 data["antenna_delta"] = [h, e, n]
 
             elif label == "WAVELENGTH FACT L1/2":
-                wl1 = int(line[0:6].strip() or "1")
-                wl2 = int(line[6:12].strip() or "1")
-                num_sats_str = line[12:18].strip()
-                if num_sats_str and int(num_sats_str) > 0:
+                wl1, wl2, wl_sats = _parse_wavelength_fact_line(line)
+                if wl_sats:
                     # Satellite-specific wavelength factors
-                    num_sats = int(num_sats_str)
-                    for j in range(num_sats):
-                        offset = 18 + j * 6
-                        sat_id = line[offset : offset + 6].strip()
-                        # Normalize: "G14" or " 14" → "G14"
-                        if sat_id and len(sat_id) >= 2:
-                            if sat_id[0] == " ":
-                                sat_id = "G" + sat_id[-2:]
-                            sat_id = sat_id[0] + sat_id[-2:].zfill(2)
+                    for sat_id in wl_sats:
                         wavelength_sat_specific[sat_id] = (wl1, wl2)
                 else:
                     # Default wavelength factors
@@ -333,8 +396,19 @@ class Rnxv2Header(BaseModel):
                     int((sec % 1) * 1e6),
                     tzinfo=UTC,
                 )
-                data["time_system"] = time_sys if time_sys else "GPS"
-                data["t0"] = {"GPS": dt, "UTC": dt}
+                # RINEX 2.11 Table A1: compulsory in mixed GPS/GLONASS
+                # files; pure files default to their own system.
+                if not time_sys:
+                    time_sys = _DEFAULT_TIME_SYSTEM_V2.get(data.get("systems", "G"))
+                if time_sys not in ("GPS", "GLO", "GAL"):
+                    msg = (
+                        f"TIME OF FIRST OBS has no valid time system ({time_sys!r}); "
+                        "it is compulsory in mixed files"
+                    )
+                    raise ValueError(msg)
+                data["time_system"] = time_sys
+                # As written, in that time system; no conversion.
+                data["t0"] = {time_sys: dt}
 
             elif label == "TIME OF LAST OBS":
                 pass  # Not needed for parsing
@@ -370,8 +444,9 @@ class Rnxv2Header(BaseModel):
         data.setdefault("pgm", "")
         data.setdefault("run_by", "")
         data.setdefault("date", datetime.now(UTC))
-        data.setdefault("time_system", "GPS")
-        data.setdefault("t0", {"GPS": datetime.now(UTC)})
+        if "t0" not in data:
+            msg = "mandatory header record TIME OF FIRST OBS is missing"
+            raise ValueError(msg)
 
         data["obs_types"] = obs_types
         data["wavelength_fact_l1"] = wl_l1_default
@@ -392,11 +467,20 @@ class Rnxv2Header(BaseModel):
         else:
             systems_present = [system_char]
 
-        # Store parsed v2 obs codes per system (type+freq_num+tracking_code)
-        v3_style_codes = [
-            f"{t}{f}{c}" for t, f, c in (_parse_v2_obs_code(ot) for ot in obs_types)
-        ]
-        data["obs_codes_per_system"] = dict.fromkeys(systems_present, v3_style_codes)
+        # Store parsed v2 obs codes per system (type+freq_num+tracking_code).
+        # Tracking codes are system-dependent (see _v2_tracking_code()).
+        system_bands = SignalIDMapper().SYSTEM_BANDS
+        obs_codes_per_system: dict[str, list[str]] = {}
+        for system in systems_present:
+            codes = []
+            for ot in obs_types:
+                obs_type, freq_num = _parse_v2_obs_code(ot)
+                band = system_bands.get(system, {}).get(freq_num)
+                codes.append(
+                    f"{obs_type}{freq_num}{_v2_tracking_code(system, ot, band)}"
+                )
+            obs_codes_per_system[system] = codes
+        data["obs_codes_per_system"] = obs_codes_per_system
 
         return data
 
@@ -489,6 +573,9 @@ class Rnxv2EpochRecord:
         Receiver clock offset in seconds.
     satellites : list[Satellite]
         Parsed satellite observation data.
+    wavelength_factors : _WavelengthFactors or None
+        Wavelength factors in force at this epoch (header, updated by
+        event-flag-4 header records).
     """
 
     __slots__ = (
@@ -502,6 +589,7 @@ class Rnxv2EpochRecord:
         "satellite_list",
         "satellites",
         "seconds",
+        "wavelength_factors",
         "year",
     )
 
@@ -518,7 +606,9 @@ class Rnxv2EpochRecord:
         satellite_list: list[str],
         receiver_clock_offset: float | None,
         satellites: list[Satellite],
+        wavelength_factors: _WavelengthFactors | None = None,
     ) -> None:
+        self.wavelength_factors = wavelength_factors
         self.year = year
         self.month = month
         self.day = day
@@ -562,9 +652,10 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
     Inherits from ``GNSSDataReader`` and Pydantic ``BaseModel``.
     """
 
-    fpath: Path
+    file_type: ClassVar[str] = "rnx"
+    per_channel_glonass: ClassVar[bool] = True
+
     polarization: str = "RHCP"
-    aggregate_glonass_fdma: bool = True
     apply_overlap_filter: bool = False
     overlap_preferences: dict[str, str] | None = None
 
@@ -600,6 +691,11 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
     def header(self) -> Rnxv2Header:
         return self._header
 
+    @property
+    def source_format(self) -> str:
+        """Format identifier of this reader, as registered: ``"rinex2"``."""
+        return "rinex2"
+
     def __str__(self) -> str:
         return (
             f"{self.__class__.__name__}:\n"
@@ -615,12 +711,9 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
 
     def _load_file(self) -> list[str]:
         """Read file, cache lines, compute hash, find header end."""
-        h = hashlib.sha256()
-        with self.fpath.open("rb") as f:
-            data = f.read()
-            h.update(data)
-            lines = data.decode("utf-8", errors="replace").splitlines()
-        self._file_hash = h.hexdigest()[:16]
+        data = self.fpath.read_bytes()
+        lines = data.decode("utf-8", errors="replace").splitlines()
+        self._file_hash = bytes_hash(data)
 
         # Find line after END OF HEADER (PrivateAttr, mutable despite
         # frozen=True -- see _post_init's comment above)
@@ -859,7 +952,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                 value, lli, ssi = self._parse_observation_value(field)
 
                 obs_code_v2 = obs_types_v2[obs_idx]
-                obs_type_char, _freq_num, _tracking = _parse_v2_obs_code(obs_code_v2)
+                obs_type_char, _freq_num = _parse_v2_obs_code(obs_code_v2)
 
                 observation = Observation(
                     obs_type=obs_type_char,
@@ -883,6 +976,10 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         """
         lines = self._lines
         idx = self._header_end_line
+        wl_factors = _WavelengthFactors(
+            (self.header.wavelength_fact_l1, self.header.wavelength_fact_l2),
+            dict(self.header.wavelength_fact_satellites),
+        )
 
         while idx < len(lines):
             line = lines[idx]
@@ -914,7 +1011,13 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
 
             # Handle epoch flags 2-5: special records (header info, events)
             if V2_EPOCH_FLAG_START_MOVING <= epoch_flag <= V2_EPOCH_FLAG_EXTERNAL_EVENT:
-                # Skip the num_sats special records that follow
+                # num_sats special records follow. Of flag-4 header records
+                # only wavelength factors affect the data (the LLI half-cycle
+                # bit); other records are skipped.
+                if epoch_flag == V2_EPOCH_FLAG_HEADER_INFO:
+                    for special in lines[idx : idx + num_sats]:
+                        if special[60:80].strip() == "WAVELENGTH FACT L1/2":
+                            wl_factors = wl_factors.updated(special)
                 idx += num_sats
                 continue
 
@@ -968,6 +1071,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                 satellite_list=sat_list,
                 receiver_clock_offset=rcv_clock,
                 satellites=satellites,
+                wavelength_factors=wl_factors,
             )
 
     # ---- Time helpers ----------------------------------------------------- #
@@ -1039,7 +1143,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         1. First pass: discover all signal IDs and collect timestamps.
         2. Second pass: fill data arrays.
         """
-        # Pre-parse v2 obs codes → (obs_type, freq_num, tracking_code)
+        # Pre-parse v2 obs codes → (obs_type, freq_num)
         obs_types_v2 = self.header.obs_types
         parsed_obs_codes = [_parse_v2_obs_code(ot) for ot in obs_types_v2]
 
@@ -1052,18 +1156,36 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         signal_id_to_properties: dict[str, dict[str, object]] = {}
         timestamps: list[np.datetime64] = []
 
-        def _build_sid(sv: str, freq_num: str, tracking_code: str) -> str | None:
-            """Build SID from SV, freq number, and tracking code.
+        # (system, obs index) -> (band, tracking code); None if the system
+        # has no band for that frequency number.
+        sid_parts_cache: dict[tuple[str, int], tuple[str, str] | None] = {}
+
+        def _build_sid(sv: str, obs_idx: int) -> str | None:
+            """Build SID from SV and the index of the v2 obs type.
 
             Uses SignalIDMapper.SYSTEM_BANDS to resolve the system-specific
             band name (e.g. GPS freq "1" → "L1", Galileo freq "1" → "E1",
-            GLONASS freq "1" → "G1").
+            GLONASS freq "1" → "G1") and _v2_tracking_code() for the
+            system-dependent tracking code.
             """
             system = sv[0] if sv else "G"
-            band_name = system_bands.get(system, {}).get(freq_num)
-            if band_name is None:
+            key = (system, obs_idx)
+            if key not in sid_parts_cache:
+                band_name = system_bands.get(system, {}).get(
+                    parsed_obs_codes[obs_idx][1]
+                )
+                sid_parts_cache[key] = (
+                    None
+                    if band_name is None
+                    else (
+                        band_name,
+                        _v2_tracking_code(system, obs_types_v2[obs_idx], band_name),
+                    )
+                )
+            parts = sid_parts_cache[key]
+            if parts is None:
                 return None
-            return f"{sv}|{band_name}|{tracking_code}"
+            return f"{sv}|{parts[0]}|{parts[1]}"
 
         def _cache_band_freq(band: str) -> tuple[float, float, float, float]:
             if band not in band_freq_cache:
@@ -1102,8 +1224,8 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                 for i, obs in enumerate(sat.observations):
                     if i >= len(parsed_obs_codes):
                         break
-                    _obs_type, freq_num, tracking_code = parsed_obs_codes[i]
-                    sid = _build_sid(sv, freq_num, tracking_code)
+                    freq_num = parsed_obs_codes[i][1]
+                    sid = _build_sid(sv, i)
                     if sid is None:
                         continue
 
@@ -1121,7 +1243,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                             "sv": sv,
                             "system": system,
                             "band": band_name,
-                            "code": tracking_code,
+                            "code": sid.rsplit("|", 1)[1],
                             "freq_center": freq_center,
                             "freq_min": freq_min,
                             "freq_max": freq_max,
@@ -1158,6 +1280,8 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
             "SSI": np.full((n_epochs, n_signals), -1, dtype=DTYPES["SSI"]),
         }
         sid_to_idx = {sid: i for i, sid in enumerate(sorted_signal_ids)}
+        # Rank of the observable each SSI value came from (_SSI_SOURCE_RANK).
+        ssi_rank = np.zeros((n_epochs, n_signals), dtype=np.int8)
 
         # Second pass: fill arrays
         t_idx = 0
@@ -1173,8 +1297,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                 for i, obs in enumerate(sat.observations):
                     if obs.value is None or i >= len(parsed_obs_codes):
                         continue
-                    _ot, fn, tc = parsed_obs_codes[i]
-                    sid = _build_sid(sv, fn, tc)
+                    sid = _build_sid(sv, i)
                     if sid is None or sid not in sid_to_idx:
                         continue
                     s_idx = sid_to_idx[sid]
@@ -1189,10 +1312,27 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
                     elif ot == "D":
                         data_arrays["Doppler"][t_idx, s_idx] = obs.value
 
-                    if obs.lli is not None:
-                        data_arrays["LLI"][t_idx, s_idx] = obs.lli
+                    if ot == "L":
+                        # The LLI is written in the RINEX 3.04 meaning, which
+                        # ties it to the phase only (Table A3 note 1); flags
+                        # some converters (teqc) write on code, Doppler or
+                        # signal strength are ignored.
+                        wl_factor = (
+                            epoch.wavelength_factors.factor(sv, parsed_obs_codes[i][1])
+                            if epoch.wavelength_factors is not None
+                            else 1
+                        )
+                        lli = _v3_phase_lli(obs.lli, wl_factor)
+                        if lli is not None:
+                            data_arrays["LLI"][t_idx, s_idx] = lli
                     if obs.ssi is not None:
-                        data_arrays["SSI"][t_idx, s_idx] = obs.ssi
+                        # Same precedence as the RINEX 3 reader: the phase's
+                        # SSI, else the code's; other observables' SSI is
+                        # ignored (RINEX 3.04 Table A3 notes 2-3).
+                        rank = _SSI_SOURCE_RANK.get(ot, 0)
+                        if rank > ssi_rank[t_idx, s_idx]:
+                            data_arrays["SSI"][t_idx, s_idx] = obs.ssi
+                            ssi_rank[t_idx, s_idx] = rank
 
             t_idx += 1
 
@@ -1219,7 +1359,11 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         ]
 
         coords = {
-            "epoch": ("epoch", timestamps, COORDS_METADATA["epoch"]),
+            "epoch": (
+                "epoch",
+                timestamps,
+                epoch_coord_attrs(self.header.time_system, self.fpath.name),
+            ),
             "sid": signal_id_coord,
             "sv": ("sid", sv_list, COORDS_METADATA["sv"]),
             "system": ("sid", constellation_list, COORDS_METADATA["system"]),
@@ -1242,8 +1386,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
             ),
         }
 
-        # SNR metadata depends on signal strength unit
-        snr_meta = SNR_METADATA
+        snr_meta = _V2_SNR_METADATA
 
         ds = xr.Dataset(
             data_vars={
@@ -1293,7 +1436,8 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         Parameters
         ----------
         keep_data_vars : list of str, optional
-            Data variables to include. Defaults to config value.
+            Data variables to include. ``None`` includes all available. A
+            run passes the ``processing.params.keep_gnss_observables`` setting.
         **kwargs
             Additional keyword arguments:
             outname : Path or str, optional
@@ -1323,25 +1467,23 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         add_future_datavars = bool(kwargs.pop("add_future_datavars", True))
         keep_sids = cast(list[str] | None, kwargs.pop("keep_sids", None))
 
-        if keep_data_vars is None:
-            from canvod.config import load_config
-
-            keep_data_vars = load_config().processing.params.keep_gnss_observables
-
+        require_gps_time(self.header.time_system, self.fpath.name)
         ds = self.create_rinex_netcdf_with_signal_id()
 
-        # Drop unwanted vars
-        for var in list(ds.data_vars):
-            if var not in keep_data_vars:
-                ds = ds.drop_vars([var])
+        if keep_data_vars is not None:
+            ds = ds.drop_vars([v for v in ds.data_vars if v not in keep_data_vars])
 
         if pad_global_sid:
-            from canvod.auxiliary.preprocessing import pad_to_global_sid
+            from canvod.readers.preprocessing import pad_to_global_sid
 
-            ds = pad_to_global_sid(ds, keep_sids=keep_sids)
+            ds = pad_to_global_sid(
+                ds,
+                keep_sids=keep_sids,
+                aggregate_glonass_fdma=self.aggregate_glonass_fdma,
+            )
 
         if strip_fillval:
-            from canvod.auxiliary.preprocessing import strip_fillvalue
+            from canvod.readers.preprocessing import strip_fillvalue
 
             ds = strip_fillvalue(ds)
 
@@ -1352,7 +1494,7 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
             ds.attrs.update(self._create_comprehensive_attrs())
         ds.attrs.update(self._build_attrs())
 
-        # Normalise string dtypes for Icechunk / Zarr V3 compatibility
+        # Normalize string dtypes for Icechunk / Zarr V3 compatibility
         for name in list(ds.coords) + list(ds.data_vars):
             if ds[name].dtype.kind in ("U", "T"):
                 ds[name] = ds[name].astype(object)
@@ -1402,6 +1544,14 @@ class Rnxv2Obs(GNSSDataReader, BaseModel):
         attrs["Created"] = datetime.now(UTC).isoformat()
         attrs["Software"] = (
             f"{attrs['Software']}, Version: {get_version_from_pyproject()}"
+        )
+        attrs["RINEX Version"] = str(self.header.version)
+        attrs["Tracking Code Markers"] = (
+            "RINEX 2 does not record tracking codes; lowercase sid codes mark "
+            f"what it leaves unresolved: {V2_CODE_P_FAMILY!r} = P-code family "
+            f"(P/W/Y; D on L2), {V2_CODE_L2C_FAMILY!r} = GPS C2, C/A or L2C (C/S/L/X), "
+            f"{V2_CODE_UNRESOLVED!r} = carrier band only. See rinex211.txt "
+            "Table A1 and section 10.1."
         )
         return attrs
 
@@ -1509,6 +1659,12 @@ def _normalize_sv(sv_str: str) -> str:
 # --------------------------------------------------------------------------- #
 
 
+@deprecated(
+    "canvod.readers.rinex.v2_11._register_factory() is left over from "
+    "development and will be removed with the next major version. It never "
+    "registered anything. Rnxv2Obs is registered as 'rinex2' when canvodpy "
+    "is imported; nothing needs to be called instead."
+)
 def _register_factory() -> None:
     """Dead code, kept only to emit a deprecation notice before removal.
 
@@ -1520,21 +1676,9 @@ def _register_factory() -> None:
     import ``canvodpy.factories.ReaderFactory`` directly since canvodpy
     depends on canvod-readers, not the other way around.
     """
-    warnings.warn(
-        "Rnxv2Obs._register_factory() is dead code: canvod.readers.base "
-        "has no ReaderFactory, so this has always silently registered "
-        "nothing. Rnxv2Obs is actually registered as 'rinex2' via "
-        "canvodpy's _register_builtin_components(). This function will "
-        "be removed in a future release.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
     import contextlib
 
     with contextlib.suppress(ImportError):
         from canvod.readers.base import ReaderFactory
 
         ReaderFactory.register("rinex_v2", Rnxv2Obs)
-
-
-_register_factory()

@@ -17,9 +17,10 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import structlog
 import xarray as xr
+from canvod.utils.tools import deprecated
 
-from canvod.auxiliary._internal import get_logger
 from canvod.auxiliary.matching import DatasetMatcher
 from canvod.auxiliary.position import (
     ECEFPosition,
@@ -27,12 +28,23 @@ from canvod.auxiliary.position import (
     compute_spherical_coordinates,
 )
 
-# Lazy import to avoid gnssvodpy dependency at module load
-# AuxDataPipeline requires gnssvodpy - only imported for type hints
 if TYPE_CHECKING:
     from canvod.auxiliary.pipeline import AuxDataPipeline
 
+_USE_OPS = "Write a `canvod.ops.Op` and run it in a `canvod.ops.Pipeline` instead."
+_USE_POSITION = (
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
+)
 
+
+def _left_over(name: str, replacement: str) -> str:
+    return (
+        f"`{name}` is left over from development and will be removed with "
+        f"the next major version. {replacement}"
+    )
+
+
+@deprecated(_left_over("AugmentationContext", _USE_OPS))
 class AugmentationContext:
     """Context object passed to augmentation steps.
 
@@ -62,7 +74,7 @@ class AugmentationContext:
         self.receiver_type = receiver_type
         self.matched_datasets = matched_datasets or {}
         self.metadata = metadata or {}
-        self._logger = get_logger()
+        self._logger = structlog.get_logger(__name__)
 
     def get_matched_dataset(self, name: str) -> xr.Dataset:
         """Get a matched auxiliary dataset by name.
@@ -109,6 +121,7 @@ class AugmentationContext:
         )
 
 
+@deprecated(_left_over("AugmentationStep", _USE_OPS))
 class AugmentationStep(ABC):
     """Abstract base class for augmentation steps.
 
@@ -129,7 +142,7 @@ class AugmentationStep(ABC):
     def __init__(self, name: str):
         """Initialize augmentation step."""
         self.name = name
-        self._logger = get_logger()
+        self._logger = structlog.get_logger(__name__)
 
     @abstractmethod
     def augment(
@@ -171,6 +184,7 @@ class AugmentationStep(ABC):
         return f"{self.__class__.__name__}(name='{self.name}')"
 
 
+@deprecated(_left_over("SphericalCoordinateAugmentation", _USE_POSITION))
 class SphericalCoordinateAugmentation(AugmentationStep):
     """Compute spherical coordinates (phi, theta, r) in navigation convention.
 
@@ -227,6 +241,9 @@ class SphericalCoordinateAugmentation(AugmentationStep):
         return ds
 
 
+@deprecated(
+    _left_over("ClockCorrectionAugmentation", "It leaves the data unchanged; drop it.")
+)
 class ClockCorrectionAugmentation(AugmentationStep):
     """Apply satellite clock corrections (placeholder implementation).
 
@@ -300,6 +317,7 @@ class ClockCorrectionAugmentation(AugmentationStep):
         return ds
 
 
+@deprecated(_left_over("AuxDataAugmenter", _USE_POSITION))
 class AuxDataAugmenter:
     """Orchestrate multiple augmentation steps on RINEX datasets.
 
@@ -331,7 +349,7 @@ class AuxDataAugmenter:
     ) -> None:
         self.aux_pipeline = aux_pipeline
         self.steps = steps or self._get_default_steps()
-        self._logger = get_logger()
+        self._logger = structlog.get_logger(__name__)
         self._receiver_position_cache: ECEFPosition | None = None
 
         self._logger.info(
@@ -486,11 +504,14 @@ Demonstrates:
 3. Using default and custom augmentation steps
 4. Caching receiver position across multiple files
 
-NOTE: These examples require gnssvodpy to be installed.
-Run with: python -m canvod.auxiliary.augmentation
 """
 
 
+@deprecated(
+    "`example_basic_augmentation` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
+)
 def example_basic_augmentation():
     """Basic example: Augment a single RINEX dataset."""
     print("=" * 60)
@@ -531,6 +552,11 @@ def example_basic_augmentation():
     # print(f"  r (distance): {augmented_ds.r.attrs}")
 
 
+@deprecated(
+    "`example_custom_augmentation_step` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
+)
 def example_custom_augmentation_step():
     """Example: Create a custom augmentation step."""
     print("\n" + "=" * 60)
@@ -588,6 +614,11 @@ def example_custom_augmentation_step():
     print("  - Adds: elevation (in degrees)")
 
 
+@deprecated(
+    "`example_augmentation_pipeline` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
+)
 def example_augmentation_pipeline():
     """Example: Complete augmentation pipeline for multiple files."""
     print("\n" + "=" * 60)
@@ -644,6 +675,11 @@ def example_augmentation_pipeline():
         # augmented_ds.to_netcdf(rinex_file.replace('.nc', '_augmented.nc'))
 
 
+@deprecated(
+    "`example_integration_with_icechunk` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
+)
 def example_integration_with_icechunk():
     """Example: Integration with parallel RINEX processing."""
     print("\n" + "=" * 60)
@@ -703,6 +739,11 @@ In your parallel RINEX processing workflow:
     """)
 
 
+@deprecated(
+    "`example_adding_custom_steps` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.auxiliary.position.add_spherical_coords_to_dataset` instead."
+)
 def example_adding_custom_steps():
     """Example: Adding custom augmentation steps dynamically."""
     print("\n" + "=" * 60)
@@ -754,7 +795,6 @@ def example_adding_custom_steps():
 
 
 if __name__ == "__main__":
-    # Conditional imports for examples - requires gnssvodpy
     from pathlib import Path
 
     import xarray as xr

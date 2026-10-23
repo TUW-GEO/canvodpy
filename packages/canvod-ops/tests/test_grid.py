@@ -1,5 +1,6 @@
 """Tests for grid assignment operation."""
 
+import numpy as np
 import xarray as xr
 
 from canvod.ops.grid import GridAssignment, grid_assign
@@ -39,3 +40,15 @@ class TestGridAssignment:
         out = grid_assign(sample_ds, angular_resolution=10.0)
         cell_var = "cell_id_equal_area_10.0deg"
         assert cell_var in out.data_vars
+
+    def test_phi_theta_as_data_variables(self, sample_ds: xr.Dataset):
+        """The runs store phi/theta as data variables, not coordinates."""
+        as_vars = sample_ds.reset_coords(["phi", "theta"])
+        op = GridAssignment(grid_type="equal_area", angular_resolution=10.0)
+        out, result = op(as_vars)
+        expected, _ = op(sample_ds)
+        assert "skipped" not in result.notes
+        np.testing.assert_array_equal(
+            out["cell_id_equal_area_10.0deg"].values,
+            expected["cell_id_equal_area_10.0deg"].values,
+        )

@@ -35,6 +35,12 @@ jobs:
 
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - name: Check out the test data
+              # Only the readers' test data, without its history; the demo
+              # submodule is not needed for the tests. Switched off for now:
+              # remove the `if` to run the tests that need the data.
+              if: false
+              run: git submodule update --init --depth 1 packages/canvod-readers/tests/test_data
             - name: Install uv and set the python version
               uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
               with:
@@ -42,19 +48,18 @@ jobs:
                   enable-cache: true
             - name: Set up Python
               run: uv python install
-            - name: Update lock file (Dependabot only)
-              if: github.actor == 'dependabot[bot]'
-              run: uv lock
             - name: Install the Project
               # healpy (canvod-grids' HEALPix grid builder, canvod-grids'
               # `optional` group) ships no Windows wheels on PyPI, so it's
               # only installable on Linux/macOS -- HEALPix-dependent tests
               # skip on Windows, same as a local dev machine without it.
+              # --group filemap (canvod-filemap, from canvodpy-extensions)
+              # runs the recipe tests, which skip without it.
               if: matrix.os != 'windows-latest'
-              run: uv sync --locked --dev --group optional
+              run: uv sync --locked --dev --group optional --group filemap
             - name: Install the Project (Windows, no healpy)
               if: matrix.os == 'windows-latest'
-              run: uv sync --locked --dev
+              run: uv sync --locked --dev --group filemap
             - name: Run Tests
               run: |
                   uv run pytest canvodpy/tests/ --verbose --color=yes

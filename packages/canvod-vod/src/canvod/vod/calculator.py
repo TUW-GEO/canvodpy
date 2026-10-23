@@ -3,23 +3,27 @@
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
+import structlog
 import xarray as xr
-from pydantic import BaseModel, ConfigDict, field_validator
+from canvod.utils.tools import deprecated, deprecated_argument
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
-from canvod.vod._internal import get_logger
-
-log = get_logger(__name__)
+log = structlog.get_logger(__name__)
 
 
 class VODCalculator(ABC, BaseModel):
-    """Abstract base class for VOD calculation from RINEX store data.
+    """Abstract base class for VOD calculation from GNSS store data.
 
     Notes
     -----
     This is an abstract base class (ABC) and a Pydantic model.
+
+    On construction, ``canopy_ds`` and ``sky_ds`` are aligned with an inner
+    join on all shared coordinates, so every calculator works only on the
+    epochs and signals present in both receivers, whoever constructs it.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -53,6 +57,14 @@ class VODCalculator(ABC, BaseModel):
             raise ValueError("Dataset must contain 'SNR' variable")
         return v
 
+    @model_validator(mode="after")
+    def _align_receivers(self) -> VODCalculator:
+        """Restrict both datasets to the epochs and signals they share."""
+        self.canopy_ds, self.sky_ds = xr.align(
+            self.canopy_ds, self.sky_ds, join="inner"
+        )
+        return self
+
     @abstractmethod
     def calculate_vod(self) -> xr.Dataset:
         """Calculate VOD and return a dataset with VOD, phi, theta.
@@ -65,11 +77,18 @@ class VODCalculator(ABC, BaseModel):
         raise NotImplementedError
 
     @classmethod
+    @deprecated(
+        "VODCalculator.from_icechunkstore() is left over from development and "
+        "will be removed with the next major version. Use "
+        "canvodpy.Site(<site>).vod.compute_bulk(<analysis>, write=False) "
+        "instead, which reads the configured store groups, drops duplicate "
+        "epochs and sorts them."
+    )
     def from_icechunkstore(
         cls,
         icechunk_store_pth: Path,
-        canopy_group: str = "canopy_01",
-        sky_group: str = "reference_01",
+        canopy_group: str,
+        sky_group: str,
         **open_kwargs: Any,
     ) -> xr.Dataset:
         """Convenience method to calculate VOD directly from an IcechunkStore.
@@ -79,9 +98,11 @@ class VODCalculator(ABC, BaseModel):
         icechunk_store_pth : Path
             Path to Icechunk store.
         canopy_group : str
-            Canopy receiver group name.
+            Canopy receiver group name, e.g. ``"canopy_01"``.
         sky_group : str
-            Sky/reference receiver group name.
+            Reference receiver group name. Runs store a reference receiver
+            once per canopy receiver it is paired with, as
+            ``{reference}_{canopy}``, e.g. ``"reference_01_canopy_01"``.
         open_kwargs : dict[str, Any]
             Additional keyword arguments for IcechunkStore.open().
             Currently unused.
@@ -100,27 +121,34 @@ class VODCalculator(ABC, BaseModel):
         except ImportError as e:
             raise ImportError(
                 "canvod-store package required for from_icechunkstore(). "
-                "Install with: pip install canvod-store"
+                "Install with: uv add canvod-store"
             ) from e
 
         store = MyIcechunkStore(icechunk_store_pth)
 
-        with store.readonly_session() as session:
-            canopy_ds = xr.open_zarr(store=session.store, group=canopy_group)
-            sky_ds = xr.open_zarr(store=session.store, group=sky_group)
+        from canvod.store.day_blocks import load_group
 
-        return cls.from_datasets(
-            canopy_ds=canopy_ds,
-            sky_ds=sky_ds,
-            align=True,
-        )
+        # load_group, not xr.open_zarr: it drops the padding of day blocks.
+        with store.readonly_session() as session:
+            canopy_ds = load_group(session.store, canopy_group)
+            sky_ds = load_group(session.store, sky_group)
+
+        return cls.from_datasets(canopy_ds=canopy_ds, sky_ds=sky_ds)
 
     @classmethod
+    @deprecated_argument(
+        "align",
+        "The 'align' argument of from_datasets() is left over from "
+        "development and will be removed with the next major "
+        "version. It is ignored: the calculator always aligns both "
+        "datasets on their shared epochs and signals. Remove the "
+        "argument.",
+    )
     def from_datasets(
         cls,
         canopy_ds: xr.Dataset,
         sky_ds: xr.Dataset,
-        align: bool = True,
+        align: bool | None = None,
     ) -> xr.Dataset:
         """Convenience method to calculate VOD directly from datasets.
 
@@ -130,19 +158,31 @@ class VODCalculator(ABC, BaseModel):
             Canopy receiver dataset.
         sky_ds : xr.Dataset
             Sky/reference receiver dataset.
-        align : bool
-            Whether to align datasets on common coordinates.
 
         Returns
         -------
         xr.Dataset
             VOD dataset.
         """
-        if align:
-            canopy_ds, sky_ds = xr.align(canopy_ds, sky_ds, join="inner")
-
         calculator = cls(canopy_ds=canopy_ds, sky_ds=sky_ds)
         return calculator.calculate_vod()
+
+
+VOD_ATTRS: dict[str, str] = {
+    "long_name": "Vegetation optical depth",
+    "coverage_content_type": "modelResult",
+    "units": "1",
+    "description": (
+        "Zeroth-order tau-omega approximation: "
+        "VOD = -ln(10 ** (delta_snr / 10)) * cos(theta)."
+    ),
+}
+
+DELTA_SNR_ATTRS: dict[str, str] = {
+    "long_name": "SNR of the canopy receiver minus SNR of the reference receiver",
+    "coverage_content_type": "physicalMeasurement",
+    "units": "dB",
+}
 
 
 class TauOmegaZerothOrder(VODCalculator):
@@ -191,7 +231,7 @@ class TauOmegaZerothOrder(VODCalculator):
         Raises
         ------
         ValueError
-            If all delta SNR values are NaN (eager arrays only).
+            If all delta SNR values are NaN.
         """
         start_time = time.time()
         log.info(
@@ -203,20 +243,29 @@ class TauOmegaZerothOrder(VODCalculator):
 
         delta_snr = self.get_delta_snr()
 
-        # Detect lazy (dask-backed) arrays — avoid .item()/.any()/.all() on
-        # large dask arrays, as each call triggers a full compute pass.
+        # Lazy (dask-backed) inputs stay lazy so that a single write triggers
+        # the VOD computation; only the two input checks below are computed.
         _lazy = delta_snr.chunks is not None
 
-        if not _lazy and delta_snr.isnull().all():
+        canopy_transmissivity = self.decibel2linear(delta_snr)
+
+        # Both checks in one pass; for lazy inputs this reads only the two
+        # SNR variables, not the full datasets.
+        checks = xr.Dataset(
+            {
+                "all_nan": delta_snr.isnull().all(),
+                "n_invalid": (canopy_transmissivity <= 0).sum(),
+            }
+        ).compute()
+
+        if bool(checks["all_nan"]):
             log.error("vod_calculation_failed", reason="all_delta_snr_nan")
             raise ValueError(
                 "All delta_snr values are NaN - check data alignment",
             )
 
-        canopy_transmissivity = self.decibel2linear(delta_snr)
-
-        if not _lazy and (canopy_transmissivity <= 0).any():
-            n_invalid = int((canopy_transmissivity <= 0).sum())
+        n_invalid = int(checks["n_invalid"])
+        if n_invalid > 0:
             total = canopy_transmissivity.size
             log.warning(
                 "invalid_transmissivity",
@@ -226,14 +275,24 @@ class TauOmegaZerothOrder(VODCalculator):
             )
 
         theta = self.canopy_ds["theta"]
-        vod = -np.log(canopy_transmissivity) * np.cos(theta)
+        # numpy ufuncs on DataArrays return DataArrays; the stubs say ndarray.
+        vod = cast(xr.DataArray, -np.log(canopy_transmissivity) * np.cos(theta))
 
+        # Grid cells assigned before the store write (processing.preprocessing)
+        cell_ids = {
+            name: self.canopy_ds[name]
+            for name in self.canopy_ds.data_vars
+            if str(name).startswith("cell_id_")
+        }
         vod_ds = xr.Dataset(
             {
-                "VOD": vod,
-                "delta_snr": delta_snr,
+                "VOD": vod.drop_attrs(deep=False).assign_attrs(VOD_ATTRS),
+                "delta_snr": delta_snr.drop_attrs(deep=False).assign_attrs(
+                    DELTA_SNR_ATTRS
+                ),
                 "phi": self.canopy_ds["phi"],
                 "theta": self.canopy_ds["theta"],
+                **cell_ids,
             },
             coords=self.canopy_ds.coords,
         )

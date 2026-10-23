@@ -8,7 +8,7 @@ Removed and moved to config:
 - KEEP_RNX_VARS → processing.keep_gnss_observables
 - COMPRESSION → compression.{zlib, complevel}
 - AUTHOR, EMAIL, etc. → metadata.{author, email, ...}
-- SOFTWARE → canvod.utils._meta.SOFTWARE_ATTRS
+- SOFTWARE → the readers' ``Software`` attribute (``GNSSDataReader._build_attrs``)
 """
 
 import re
@@ -24,8 +24,8 @@ UREG: pint.UnitRegistry = pint.get_application_registry()
 if "dBHz" not in UREG:
     UREG.define("dBHz = 10 * log10(hertz)")
 
-# DEPRECATED: Use canvod.filemap.patterns.BUILTIN_PATTERNS instead.
-# These are kept only for backward compatibility with DataDirMatcher.
+# Left over from development: canvodpy run finds files by their canonical
+# names (canvodpy.orchestrator.discovery) or a naming recipe (canvod-filemap).
 FORMAT_GLOB_PATTERNS: dict[str, tuple[str, ...]] = {
     "rinex3": ("*.[0-9][0-9]o", "*.O", "*.rnx"),
     "rinex2": ("*.[0-9][0-9]o", "*.O", "*.rnx", "*.obs"),

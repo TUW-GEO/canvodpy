@@ -3,12 +3,13 @@
 from pathlib import Path
 
 import numpy as np
+import structlog
 import xarray as xr
 from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass
 
 from canvod.auxiliary._internal import UREG, get_gps_week_from_filename
-from canvod.auxiliary.core.base import AuxFile
+from canvod.auxiliary.core.base import DAY_JOIN_MARGIN, AuxFile
 from canvod.auxiliary.ephemeris.parser import Sp3Parser
 from canvod.auxiliary.ephemeris.validator import Sp3Validator
 from canvod.auxiliary.interpolation import (
@@ -17,6 +18,8 @@ from canvod.auxiliary.interpolation import (
     Sp3InterpolationStrategy,
 )
 from canvod.auxiliary.products.registry_config import ProductSpec, get_product_spec
+
+log = structlog.get_logger(__name__)
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
@@ -78,10 +81,10 @@ class Sp3File(AuxFile):
         )
         return Sp3InterpolationStrategy(config=config)
 
-    def generate_filename_based_on_type(self) -> Path:
-        """Generate filename using product registry.
+    def candidate_filenames(self) -> list[str]:
+        """SP3 file names, one per sampling the product has been published with.
 
-        Pattern: {PREFIX}_{YYYYDOY}0000_{DURATION}_{SAMPLING}_ORB.SP3
+        Pattern: {PREFIX}_{YYYYDOY}0000_01D_{SAMPLING}_ORB.SP3
 
         Example: COD0MGXFIN_20240150000_01D_05M_ORB.SP3
         """
@@ -89,18 +92,19 @@ class Sp3File(AuxFile):
             "product_spec must be set via \
             __post_init__"
         )
-        prefix = self.product_spec.prefix
-        duration = self.product_spec.duration
-        sampling = self.product_spec.sampling_rate
+        return self.product_spec.sp3_filenames(self.date)
 
-        return Path(f"{prefix}_{self.date}0000_{duration}_{sampling}_ORB.SP3")
-
-    def download_aux_file(self) -> None:
-        """Download SP3 file, trying all servers from the product registry.
+    def download_aux_file(self, filename: str) -> None:
+        """Download one SP3 file, trying all servers from the product registry.
 
         Servers are tried in priority order from products.toml. Auth-required
         servers are skipped when no credentials are configured. Warnings are
         printed when falling back to alternate servers.
+
+        Parameters
+        ----------
+        filename : str
+            One of :meth:`candidate_filenames`.
 
         Raises
         ------
@@ -113,7 +117,7 @@ class Sp3File(AuxFile):
             "product_spec must be set via \
             __post_init__"
         )
-        orbit_file = self.generate_filename_based_on_type()
+        orbit_file = Path(filename)
         gps_week = get_gps_week_from_filename(orbit_file)
 
         ftp_path = self.product_spec.ftp_path_pattern.format(
@@ -129,7 +133,9 @@ class Sp3File(AuxFile):
         }
 
         self.download_with_fallback(ftp_path, destination, file_info, self.product_spec)
-        print(f"Downloaded orbit file for {self.agency} on date {self.date}")
+        log.info(
+            "aux_file_downloaded", kind="orbit", agency=self.agency, date=str(self.date)
+        )
 
     def read_file(self) -> xr.Dataset:
         """Read and validate SP3 file.
@@ -181,16 +187,34 @@ class Sp3File(AuxFile):
             "product_type": self.product_type,
             "ftp_server": self.ftp_server,
             "date": self.date,
-            "sampling_rate": self.product_spec.sampling_rate,
-            "duration": self.product_spec.duration,
+            "sampling_rate": self.fpath.name.split("_")[3],
+            "duration": self.fpath.name.split("_")[2],
         }
         return ds
+
+    def join_days(
+        self,
+        previous: AuxFile,
+        following: AuxFile,
+        margin: np.timedelta64 = DAY_JOIN_MARGIN,
+    ) -> xr.Dataset:
+        """Like :meth:`AuxFile.join_days`, with the velocities recomputed.
+
+        The velocities of each file have one-sided differences at its first
+        and last epoch; recomputed on the joined data, the day's first and
+        last epochs get central differences.
+        """
+        joined = super().join_days(previous, following, margin)
+        if self.add_velocities:
+            joined = self.compute_velocity(joined)
+        return joined
 
     def compute_velocity(self, ds: xr.Dataset) -> xr.Dataset:
         """Compute satellite velocities from position data.
 
         Uses central differences for interior points, forward/backward
-        differences for endpoints.
+        differences for endpoints, with the actual epoch spacing (the days
+        joined by :meth:`join_days` may come with different samplings).
 
         Parameters
         ----------
@@ -200,31 +224,13 @@ class Sp3File(AuxFile):
         Returns
         -------
         xr.Dataset
-            Dataset augmented with Vx, Vy, Vz velocities.
+            Dataset augmented (or updated) with Vx, Vy, Vz velocities.
         """
-        # Calculate time step
-        time_diffs = np.diff(ds["epoch"].values)
-        dt = np.median(time_diffs).astype("timedelta64[s]").astype(float)
+        epochs = ds["epoch"].values
+        t = (epochs - epochs[0]) / np.timedelta64(1, "s")
+        dt = float(np.median(np.diff(t)))
 
-        # Initialize velocity arrays
-        vx = np.zeros_like(ds["X"].values)
-        vy = np.zeros_like(ds["Y"].values)
-        vz = np.zeros_like(ds["Z"].values)
-
-        # Central difference for interior points
-        vx[1:-1] = (ds["X"].values[2:] - ds["X"].values[:-2]) / (2 * dt)
-        vy[1:-1] = (ds["Y"].values[2:] - ds["Y"].values[:-2]) / (2 * dt)
-        vz[1:-1] = (ds["Z"].values[2:] - ds["Z"].values[:-2]) / (2 * dt)
-
-        # Forward difference for first point
-        vx[0] = (ds["X"].values[1] - ds["X"].values[0]) / dt
-        vy[0] = (ds["Y"].values[1] - ds["Y"].values[0]) / dt
-        vz[0] = (ds["Z"].values[1] - ds["Z"].values[0]) / dt
-
-        # Backward difference for last point
-        vx[-1] = (ds["X"].values[-1] - ds["X"].values[-2]) / dt
-        vy[-1] = (ds["Y"].values[-1] - ds["Y"].values[-2]) / dt
-        vz[-1] = (ds["Z"].values[-1] - ds["Z"].values[-2]) / dt
+        vx, vy, vz = (np.gradient(ds[c].values, t, axis=0, edge_order=1) for c in "XYZ")
 
         # Add units if needed
         if not self.dimensionless:
@@ -261,21 +267,18 @@ class Sp3File(AuxFile):
         return {
             "Vx": {
                 "long_name": "x-component of velocity",
-                "standard_name": "v_x",
                 "short_name": "v_x",
                 "axis": "v_x",
                 **base_attrs,
             },
             "Vy": {
                 "long_name": "y-component of velocity",
-                "standard_name": "v_y",
                 "short_name": "v_y",
                 "axis": "v_y",
                 **base_attrs,
             },
             "Vz": {
                 "long_name": "z-component of velocity",
-                "standard_name": "v_z",
                 "short_name": "v_z",
                 "axis": "v_z",
                 **base_attrs,

@@ -21,8 +21,9 @@ from pathlib import Path
 
 import numpy as np
 import xarray as xr
+from _helpers import new_gnss_store
 
-from canvod.store import MyIcechunkStore, create_gnss_store
+from canvod.store import MyIcechunkStore
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -66,7 +67,7 @@ def _make_15min_dataset(
     ds = xr.Dataset(
         {"SNR": (["epoch", "sid"], np.random.rand(n_epochs, 3).astype(np.float32))},
         coords={
-            "epoch": epochs,
+            "epoch": ("epoch", epochs, {"time_system": "GPS"}),
             "sid": ["G01|L1|C", "G02|L1|C", "G03|L1|C"],
         },
         attrs={"File Hash": f"hash_{day}_slot{slot:02d}"},
@@ -89,7 +90,7 @@ def _make_daily_dataset(day: str, n_epochs: int = 1000) -> tuple[Path, xr.Datase
     ds = xr.Dataset(
         {"SNR": (["epoch", "sid"], np.random.rand(n_epochs, 3).astype(np.float32))},
         coords={
-            "epoch": epochs,
+            "epoch": ("epoch", epochs, {"time_system": "GPS"}),
             "sid": ["G01|L1|C", "G02|L1|C", "G03|L1|C"],
         },
         attrs={"File Hash": f"hash_{day}_daily"},
@@ -226,7 +227,7 @@ class TestIntraBatchOverlap:
     def test_daily_file_skipped_subfiles_written(self, tmp_path: Path) -> None:
         """When a batch contains a daily file and its sub-files,
         the daily file is skipped and only the sub-files are written."""
-        store = create_gnss_store(tmp_path / "store")
+        store = new_gnss_store(tmp_path / "store")
 
         # 4 sub-files + 1 daily concat (sorted: daily comes first alphabetically)
         daily_fname, daily_ds = _make_daily_dataset("2025-01-01", n_epochs=40)
@@ -247,7 +248,7 @@ class TestIntraBatchOverlap:
 
     def test_subfiles_only_no_skips(self, tmp_path: Path) -> None:
         """Batch with only non-overlapping sub-files: nothing skipped."""
-        store = create_gnss_store(tmp_path / "store")
+        store = new_gnss_store(tmp_path / "store")
 
         sub_datasets = [
             _make_15min_dataset("2025-01-01", slot=i, n_epochs=10) for i in range(4)
@@ -264,7 +265,7 @@ class TestReRunIdempotency:
 
     def test_skip_strategy_no_duplicates(self, tmp_path: Path) -> None:
         """Processing the same files twice produces no duplicate epochs."""
-        store = create_gnss_store(tmp_path / "store")
+        store = new_gnss_store(tmp_path / "store")
 
         sub_datasets = [
             _make_15min_dataset("2025-01-01", slot=i, n_epochs=10) for i in range(4)
@@ -287,7 +288,7 @@ class TestReRunIdempotency:
     def test_daily_file_blocked_by_existing_subfiles(self, tmp_path: Path) -> None:
         """A daily file arriving after sub-files are already in the store
         is blocked by temporal overlap detection."""
-        store = create_gnss_store(tmp_path / "store")
+        store = new_gnss_store(tmp_path / "store")
 
         # First run: write sub-files
         sub_datasets = [
@@ -311,7 +312,7 @@ class TestMultipleBatches:
 
     def test_two_days_no_duplicates(self, tmp_path: Path) -> None:
         """Two separate day batches produce correct combined epoch count."""
-        store = create_gnss_store(tmp_path / "store")
+        store = new_gnss_store(tmp_path / "store")
 
         day1 = [
             _make_15min_dataset("2025-01-01", slot=i, n_epochs=10) for i in range(4)
@@ -330,7 +331,7 @@ class TestMultipleBatches:
 
     def test_second_batch_after_daily_overlap(self, tmp_path: Path) -> None:
         """Day 1 batch with daily concat skipped, day 2 batch appends fine."""
-        store = create_gnss_store(tmp_path / "store")
+        store = new_gnss_store(tmp_path / "store")
 
         # Day 1: daily + sub-files
         daily_fname, daily_ds = _make_daily_dataset("2025-01-01", n_epochs=40)
@@ -358,7 +359,7 @@ class TestInitialWriteSkipped:
     def test_first_file_skipped_second_initializes(self, tmp_path: Path) -> None:
         """When the alphabetically first file is a daily concat,
         the group is initialized by the second (first sub-file)."""
-        store = create_gnss_store(tmp_path / "store")
+        store = new_gnss_store(tmp_path / "store")
 
         # daily file sorts first: "aaa_daily" < "bbb_slot00"
         daily_fname = Path("/fake/aaa_daily.25o")
@@ -383,7 +384,7 @@ class TestAppendToGroupGuardrailEndToEnd:
 
     def test_append_to_group_blocks_temporal_overlap(self, tmp_path: Path) -> None:
         """append_to_group refuses to write data that overlaps existing epochs."""
-        store = create_gnss_store(tmp_path / "store")
+        store = new_gnss_store(tmp_path / "store")
 
         # Write initial data
         _, ds1 = _make_15min_dataset("2025-01-01", slot=0, n_epochs=10)
@@ -414,7 +415,7 @@ class TestAppendToGroupGuardrailEndToEnd:
 
     def test_append_to_group_allows_non_overlapping(self, tmp_path: Path) -> None:
         """append_to_group allows data that doesn't overlap."""
-        store = create_gnss_store(tmp_path / "store")
+        store = new_gnss_store(tmp_path / "store")
 
         _, ds1 = _make_15min_dataset("2025-01-01", slot=0, n_epochs=10)
         store.write_initial_group(

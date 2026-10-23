@@ -1,0 +1,14 @@
+# Setting profile "sbf-broadcast" of the reference stores (spec #318, #323).
+#
+# The default profile with one change: satellite geometry from the
+# broadcast ephemerides the SBF files carry instead of final SP3/CLK.
+# Only the SBF test data carries them. The runs use the settings folder
+# of the base profile with `settings` merged in (scripts/reference_stores.py).
+base: default
+settings:
+  processing:
+    params:
+      ephemeris_source: broadcast
+sites:
+  # The base's days and SIDs.
+  rosalia_sbf: {}

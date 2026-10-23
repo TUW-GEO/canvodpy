@@ -6,7 +6,7 @@ The `canvod-vod` package implements vegetation optical depth (VOD) estimation fr
 
 ---
 
-## Physical Background
+## Physical background
 
 !!! abstract "Tau-Omega Radiative Transfer Model"
 
@@ -14,7 +14,7 @@ The `canvod-vod` package implements vegetation optical depth (VOD) estimation fr
     following [Humphrey & Frankenberg (2022)](https://doi.org/10.1016/j.rse.2022.113208){:target="_blank"}.
 
     A reference receiver in open sky and a canopy receiver beneath vegetation observe
-    the same satellite at [polar angle](https://gssc.esa.int/navipedia/index.php/Satellite_Elevation,_Azimuth_and_Visible_Satellites){:target="_blank"} θ. The [SNR](https://gssc.esa.int/navipedia/index.php/GNSS_Measurements){:target="_blank"} difference encodes the two-way
+    the same satellite at [polar angle](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates){:target="_blank"} $\theta$. The SNR difference encodes the two-way
     canopy attenuation:
 
     $$\Delta\text{SNR} = \text{SNR}_\text{canopy} - \text{SNR}_\text{reference}$$
@@ -32,6 +32,11 @@ The `canvod-vod` package implements vegetation optical depth (VOD) estimation fr
 
 ## Usage
 
+In a run, VOD is computed by `VodComputer` (`Site(site).vod`, `canvodpy run`,
+`canvodpy vod`): it picks the configured canopy/reference pairs and days, calls the
+calculator and writes the VOD store. Use the calculator directly only for your own
+analyses.
+
 === "Direct instantiation"
 
     ```python
@@ -41,35 +46,52 @@ The `canvod-vod` package implements vegetation optical depth (VOD) estimation fr
     vod_result = calculator.calculate_vod()
     ```
 
-=== "From aligned datasets"
+=== "From two datasets"
 
     ```python
     from canvod.vod import TauOmegaZerothOrder
 
+    # Aligns both datasets on their shared epochs and signals
     vod_result = TauOmegaZerothOrder.from_datasets(
         canopy_ds=canopy_ds,
         sky_ds=sky_ds,
-        align=True,  # auto-align epochs before differencing
     )
     ```
 
-=== "From Icechunk store"
+=== "From the GNSS store"
 
     ```python
-    from canvod.vod import TauOmegaZerothOrder
+    from datetime import datetime
 
-    vod_result = TauOmegaZerothOrder.from_icechunkstore(
-        icechunk_store_pth="path/to/store",
-        canopy_group="canopy_01",
-        sky_group="reference_01",
+    from canvodpy import Site
+
+    # Computes the days of the range in the worker pool, writes them to
+    # the VOD store and returns the VOD from start to end (write=False
+    # computes in memory and writes nothing)
+    vod_result = Site("ExampleSite").vod.compute_bulk(
+        "canopy_01_vs_reference_01",
+        start=datetime(2025, 1, 1),
+        end=datetime(2025, 1, 31, 23, 59, 59),
     )
     ```
 
 !!! info "Input requirements"
 
-    Both datasets must contain an `SNR` data variable.
-    Both should be augmented with spherical coordinates (θ, φ) from `canvod-auxiliary`
-    and assigned to grid cells by `canvod-grids`.
+    Both datasets must contain an `SNR` data variable on `(epoch, sid)`, and the
+    canopy dataset the polar angle `theta` (radians) from `canvod-auxiliary`.
+    The result passes `canvod.readers.validate_vod_dataset`, which the VOD store
+    checks on every write.
+
+!!! info "Calculator parameters and the GNSS store"
+
+    `VodComputer(site, calculator=..., calculator_params=...)` passes
+    `calculator_params` to the calculator. On the first write to a VOD group
+    `{calculator}/{analysis}`, `VodComputer` records the calculator and its
+    parameters in the group's attributes; every later write compares them, and
+    a group never holds results computed with other parameters (ADR 0019 D2).
+    The VOD store also records the content-settings hash of the GNSS store it
+    was computed from (`gnss_content_hash`, ADR 0019 D1/D3): a run that reads a
+    GNSS store with other content settings stops before anything is written.
 
 ---
 
@@ -85,9 +107,9 @@ The `canvod-vod` package implements vegetation optical depth (VOD) estimation fr
 
 ---
 
-## Multi-Receiver SCS Expansion
+## One reference receiver, several canopy receivers
 
-When a single reference receiver serves multiple canopy positions, satellite geometry must be recomputed relative to each canopy location. The `scs_from` field in `canvod-settings.yaml` (`sites.<name>.receivers.<ref>.scs_from`) drives this expansion.
+When a single reference receiver serves multiple canopy positions, satellite geometry must be recomputed relative to each canopy location. The `paired_canopies` field in `canvod-settings.yaml` (`sites.<name>.receivers.<ref>.paired_canopies`) drives this: the reference data is stored once per paired canopy, in the group `{reference}_{canopy}`.
 
 ```mermaid
 flowchart TD
@@ -100,7 +122,7 @@ flowchart TD
         open sky`"]
     end
 
-    subgraph STORE["RINEX Store Groups"]
+    subgraph STORE["GNSS Store Groups"]
         SG1["canopy_01"]
         SG2["canopy_02"]
         SG3["`**reference_01_canopy_01**
@@ -133,19 +155,22 @@ flowchart TD
     receivers:
       reference_01:
         type: reference
-        scs_from:
+        paired_canopies:   # or: all
           - canopy_01    # recompute geometry at canopy_01 position
           - canopy_02    # recompute geometry at canopy_02 position
     ```
 
 ---
 
-## References
+## Your own VOD model
 
-Humphrey, V. and Frankenberg, C. (2022). GNSS-transmissometry: A new approach for vegetation optical depth estimation. *Remote Sensing of Environment*.
+A VOD calculator of your own inherits `VODCalculator` and implements
+`calculate_vod()`. Installed as a plugin package, it is a choice of
+`canvodpy run --vod-calculator`; see
+[Your Own Readers and VOD Calculators](../../guides/plugins.md).
 
 ---
 
-!!! example "Try it"
-    [10 · VOD Retrieval](../../notebooks/_build/10_vod_retrieval.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/10_vod_retrieval.py)
+## References
+
+Humphrey, V. and Frankenberg, C. (2022). GNSS-transmissometry: A new approach for vegetation optical depth estimation. *Remote Sensing of Environment*.

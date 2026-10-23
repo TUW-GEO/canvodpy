@@ -27,7 +27,6 @@ Implement a reader for NMEA sentences
             "freq_min": "float32",
             "freq_max": "float32",
         }
-- There is testdata in /home/konsch/Documents/5-Repos/canvodpy/packages/canvod-readers/tests/test_data/valid/nmea/01_reference/rref001a00.251
 - Don't make inference from the filename, but use the first encountered RMC or GGA sentence for time and date information. Infer epoch and length of the dataset from the time and date information in the RMC or GGA sentence. If both sentences are present, you can choose either one to extract the time and date information, but make sure to handle cases where one of them might be missing or incomplete.
 
 ## GSV reading

@@ -2,12 +2,11 @@
 
 Aligns auxiliary datasets (ephemeris, clock) to reference RINEX datasets
 using appropriate interpolation strategies.
-
-Migrated from gnssvodpy.processor.matcher
 """
 
 import warnings
 
+import numpy as np
 import xarray as xr
 
 from canvod.auxiliary.interpolation import create_interpolator_from_attrs
@@ -188,10 +187,21 @@ class DatasetMatcher:
         Returns
         -------
         float
-            Interval between first two epochs in seconds.
+            Median step between consecutive epochs in seconds, so a gap
+            in the data does not change it.
+
+        Raises
+        ------
+        ValueError
+            If the dataset has fewer than two epochs.
         """
-        time_diff = ds["epoch"][1] - ds["epoch"][0]
-        return float(time_diff.values)
+        if ds.sizes["epoch"] < 2:
+            raise ValueError(
+                f"Need at least two epochs to find the sampling interval, "
+                f"got {ds.sizes['epoch']}"
+            )
+        steps = np.diff(ds["epoch"].values) / np.timedelta64(1, "s")
+        return float(np.median(steps))
 
     def _match_temporal_resolution(
         self,

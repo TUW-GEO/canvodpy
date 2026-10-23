@@ -1,7 +1,7 @@
 """Tests for grid storage and loading operations.
 
-Tests the recently added store_grid() and load_grid() functions
-that persist GridData structures to Icechunk stores.
+Tests store_grid() and load_grid(), which persist GridData structures to
+Icechunk stores, and the old canvod.grids names of both.
 
 Tests cover:
 - Storing equal-area grids
@@ -12,6 +12,7 @@ Tests cover:
 - Metadata preservation
 - Error handling for invalid inputs
 - Concurrent grid access from multiple sessions
+- Reporting through the log instead of print()
 """
 
 from __future__ import annotations
@@ -21,16 +22,17 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
-from canvod.grids import create_hemigrid, load_grid, store_grid
+from _helpers import new_vod_store
+from canvod.grids import create_hemigrid
 
-from canvod.store import create_vod_store
+from canvod.store import load_grid, store_grid
 
 
 @pytest.fixture
 def vod_store(tmp_path: Path):
     """Create temporary VOD store for testing."""
     store_path = tmp_path / "test_site" / "vod_store"
-    return create_vod_store(store_path)
+    return new_vod_store(store_path)
 
 
 @pytest.fixture
@@ -334,3 +336,48 @@ class TestConcurrentAccess:
         # Both should be valid and equal
         assert grid1.ncells == grid2.ncells
         assert grid1.grid_type == grid2.grid_type
+
+
+class TestOldGridsNames:
+    """The canvod.grids names are left over from development."""
+
+    def test_store_and_load_warn_and_delegate(
+        self, vod_store, small_equal_area_grid
+    ) -> None:
+        import canvod.grids
+
+        with pytest.warns(FutureWarning, match="canvod.store.store_grid"):
+            canvod.grids.store_grid(small_equal_area_grid, vod_store, "old_name")
+        with pytest.warns(FutureWarning, match="canvod.store.load_grid"):
+            grid = canvod.grids.load_grid(vod_store, "old_name")
+        assert grid.ncells == small_equal_area_grid.ncells
+
+    def test_analysis_storage_warns_and_returns_store_class(self, vod_store) -> None:
+        from canvod.grids.analysis import AnalysisStorage as OldAnalysisStorage
+
+        from canvod.store import AnalysisStorage
+
+        with pytest.warns(FutureWarning, match="canvod.store.AnalysisStorage"):
+            storage = OldAnalysisStorage(vod_store.store_path)
+        assert isinstance(storage, AnalysisStorage)
+
+
+def test_store_and_load_log_instead_of_printing(
+    vod_store, small_equal_area_grid
+) -> None:
+    """store_grid() and load_grid() report through the log, not print()."""
+    from structlog.testing import capture_logs
+
+    with capture_logs() as logs:
+        store_grid(small_equal_area_grid, vod_store, "logged")
+        load_grid(vod_store, "logged")
+    events = [
+        (e["event"], e["group"], e["ncells"])
+        for e in logs
+        if e["event"] != "commit_parts"  # the commit's own timing
+    ]
+    ncells = small_equal_area_grid.ncells
+    assert events == [
+        ("grid_stored", "grids/logged", ncells),
+        ("grid_loaded", "grids/logged", ncells),
+    ]

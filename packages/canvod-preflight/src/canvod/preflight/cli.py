@@ -1,4 +1,4 @@
-"""CLI entry point: canvod-preflight validate <dir>."""
+"""CLI entry point: canvod-preflight <dir> (deprecated, use canvodpy config validate)."""
 
 from __future__ import annotations
 
@@ -48,7 +48,18 @@ def validate(
         help="Expected file format: auto | rinex3 | sbf.",
     ),
 ) -> None:
-    """Validate a receiver data directory against the canVOD naming convention."""
+    """Validate a receiver data directory against the canVOD naming convention.
+
+    Deprecated: use ``canvodpy config validate`` instead.
+    """
+    import warnings
+
+    warnings.warn(
+        "The canvod-preflight command is left over from development and will be removed with the next major version. "
+        "Use canvodpy config validate instead.",
+        FutureWarning,
+        stacklevel=1,
+    )
     from .config_models import DirectoryLayout, ReceiverNamingConfig, SiteNamingConfig
     from .validator import DataDirectoryValidator
 
@@ -69,13 +80,15 @@ def validate(
         )
         raise typer.Exit(1) from None
 
-    site_naming = SiteNamingConfig(site_id=site_id, agency=agency)
-    receiver_naming = ReceiverNamingConfig(
-        receiver_number=receiver_number,
-        directory_layout=layout_enum,
-    )
-
-    validator = DataDirectoryValidator()
+    # One warning for the deprecated command, not one per class it uses.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", ".*left over from development", FutureWarning)
+        site_naming = SiteNamingConfig(site_id=site_id, agency=agency)
+        receiver_naming = ReceiverNamingConfig(
+            receiver_number=receiver_number,
+            directory_layout=layout_enum,
+        )
+        validator = DataDirectoryValidator()
     try:
         report = validator.validate_receiver(
             site_naming=site_naming,

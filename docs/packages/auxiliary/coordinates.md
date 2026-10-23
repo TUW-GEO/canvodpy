@@ -1,4 +1,4 @@
-# Coordinate Systems
+# Coordinate systems
 
 canvod-auxiliary works with three [coordinate systems](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"}. Knowing which one is used where prevents sign errors and unit confusion in downstream VOD calculations.
 
@@ -8,30 +8,30 @@ canvod-auxiliary works with three [coordinate systems](https://gssc.esa.int/navi
 
     ---
 
-    Earth-Centered, Earth-Fixed Cartesian **(X, Y, Z)** in metres.
+    Earth-Centered, Earth-Fixed Cartesian **(X, Y, Z)** in meters.
     Used in SP3 ephemerides and the internal satellite position pipeline.
 
 -   :fontawesome-solid-location-dot: &nbsp; **Geodetic (WGS84)**
 
     ---
 
-    Latitude, longitude (degrees), altitude above ellipsoid (metres).
+    Latitude, longitude (degrees), altitude above ellipsoid (meters).
     Stored in RINEX headers as the approximate receiver position.
 
 -   :fontawesome-solid-compass: &nbsp; **Spherical (receiver-relative)**
 
     ---
 
-    Slant range **r**, polar angle **θ**, geographic azimuth **φ**.
+    Slant range $r$, polar angle $\theta$, geographic azimuth $\varphi$.
     This is the output added to the obs Dataset for VOD geometry.
 
 </div>
 
 ---
 
-## ECEF Coordinates
+## ECEF coordinates
 
-Satellite positions from SP3 files are in ECEF Cartesian coordinates (metres, epoch-tagged to account for Earth's rotation).
+Satellite positions from SP3 files are ECEF Cartesian coordinates in meters, one position per satellite and epoch.
 
 ```python
 from canvod.auxiliary import ECEFPosition
@@ -48,9 +48,9 @@ lat, lon, alt = ecef.to_geodetic()
 
 ---
 
-## Geodetic Coordinates
+## Geodetic coordinates
 
-WGS84 geodetic coordinates for the **receiver** position — read from the `APPROX POSITION XYZ` RINEX header field.
+WGS84 geodetic coordinates for the **receiver** position, read from the `APPROX POSITION XYZ` RINEX header field.
 
 ```python
 from canvod.auxiliary import GeodeticPosition
@@ -58,37 +58,42 @@ from canvod.auxiliary import GeodeticPosition
 geo = GeodeticPosition(lat=48.2, lon=16.4, alt=200.0)
 
 # Convert to ECEF for vector calculations
-x, y, z = geo.to_ecef()
+ecef = geo.to_ecef()  # ECEFPosition
 ```
 
 ---
 
-## Spherical Coordinates (receiver-relative)
+## Spherical coordinates (receiver-relative)
 
-The key output of the auxiliary pipeline — added to the obs Dataset as `theta` and `phi` coordinates for each `(epoch, sid)` cell.
+The key output of the auxiliary pipeline, added to the obs Dataset as `theta` and `phi` coordinates for each `(epoch, sid)` cell.
 
 | Variable | Symbol | Range | Convention |
 |----------|--------|-------|------------|
-| Slant range | r | ≥ 0 m | Distance from receiver antenna to satellite |
-| Polar angle | θ | 0 … π | 0 = overhead (zenith), π/2 = horizon |
-| Geographic azimuth | φ | 0 … 2π | 0 = North, π/2 = East, clockwise |
+| Slant range | $r$ | $\geq 0$ m | Distance from receiver antenna to satellite |
+| Polar angle | $\theta$ | $[0, \pi/2]$ | 0 = overhead (zenith), $\pi/2$ = horizon |
+| Geographic azimuth | $\varphi$ | $[0, 2\pi)$ | 0 = North, $\pi/2$ = East, clockwise |
+
+All three are NaN while the satellite is below the receiver's horizon.
 
 !!! note "Polar angle vs elevation"
-    VOD literature often uses **elevation** angle `e = π/2 − θ`.
-    canvod-auxiliary stores **polar angle** θ internally.
-    The `cos(θ)` factor in the tau-omega formula uses θ directly:
-    `VOD = −ln(T) · cos(θ)`.
+    VOD literature often uses **elevation** angle $e = \pi/2 - \theta$.
+    canvod-auxiliary stores **polar angle** $\theta$ internally.
+    The $\cos\theta$ factor in the tau-omega formula uses $\theta$ directly:
+    $\text{VOD} = -\ln(T) \cdot \cos\theta$.
 
 ---
 
-## Computing Spherical Coordinates
+## Computing spherical coordinates
 
 ```python
 from canvod.auxiliary import compute_spherical_coordinates
 
 r, theta, phi = compute_spherical_coordinates(
-    sat_x, sat_y, sat_z,   # satellite ECEF positions (epoch × sv)
-    receiver_position,     # ECEFPosition
+    # satellite ECEF positions, arrays of any shape
+    sat_x,
+    sat_y,
+    sat_z,
+    receiver_position,  # ECEFPosition
 )
 ```
 
@@ -96,13 +101,13 @@ The function:
 
 1. Subtracts the receiver ECEF position from each satellite ECEF position.
 2. Rotates the difference vector into the local ENU (East-North-Up) frame.
-3. Converts ENU to spherical `(r, θ, φ)`.
+3. Converts ENU to spherical $(r, \theta, \varphi)$ and sets all three to NaN below the horizon.
 
 ---
 
-## Adding Coordinates to Datasets
+## Adding coordinates to datasets
 
-After computing `(r, θ, φ)` from interpolated SP3 orbits, the results are broadcast from `(epoch × sv)` to `(epoch × sid)` and attached to the obs Dataset:
+In a run the interpolated satellite positions are first selected for each signal, so $(r, \theta, \varphi)$ come out on `(epoch, sid)` and are attached to the observation dataset:
 
 ```python
 from canvod.auxiliary import add_spherical_coords_to_dataset
@@ -115,8 +120,5 @@ augmented_ds = add_spherical_coords_to_dataset(rinex_ds, r, theta, phi)
 # augmented_ds["r"]       → slant range [m]
 ```
 
----
-
-!!! example "Try it"
-    [08 · Ephemeris & Coordinates](../../notebooks/_build/08_ephemeris_coordinates.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/08_ephemeris_coordinates.py)
+A run keeps `r` only when `processing.params.store_radial_distance` is
+`true` (default `false`).

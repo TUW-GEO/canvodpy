@@ -15,7 +15,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Final
+from typing import ClassVar, Final
 
 import xarray as xr
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -44,34 +44,17 @@ REQUIRED_ATTRS: Final = {"Created", "Software", "Institution", "File Hash"}
 
 DEFAULT_REQUIRED_VARS: Final = ["SNR"]
 
+#: Data variables of a VOD dataset (VOD calculator output, VOD store input).
+VOD_REQUIRED_VARS: Final = ("VOD", "phi", "theta")
+
 
 # ---------------------------------------------------------------------------
 # Standalone validation function
 # ---------------------------------------------------------------------------
 
 
-def validate_dataset(ds: xr.Dataset, required_vars: list[str] | None = None) -> None:
-    """Validate *ds* meets the GNSSDataReader output contract.
-
-    Collects **all** violations and raises a single ``ValueError`` listing
-    every problem, rather than stopping at the first failure.
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        Dataset to validate.
-    required_vars : list of str, optional
-        Data variables that must be present.  Defaults to
-        :data:`DEFAULT_REQUIRED_VARS` (``["SNR"]``).
-
-    Raises
-    ------
-    ValueError
-        If any contract violation is found.
-    """
-    if required_vars is None:
-        required_vars = list(DEFAULT_REQUIRED_VARS)
-
+def _structure_errors(ds: xr.Dataset, required_vars: list[str]) -> list[str]:
+    """Violations of the ``(epoch, sid)`` dimensions, coordinates and variables."""
     errors: list[str] = []
 
     # -- dimensions --
@@ -116,21 +99,103 @@ def validate_dataset(ds: xr.Dataset, required_vars: list[str] | None = None) -> 
                 f"Data variable {var} has wrong dimensions: "
                 f"expected {expected_var_dims}, got {ds[var].dims}"
             )
+    return errors
+
+
+def _raise_if(errors: list[str], what: str) -> None:
+    if errors:
+        raise ValueError(
+            f"{what} validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
+        )
+
+
+def validate_dataset(ds: xr.Dataset, required_vars: list[str] | None = None) -> None:
+    """Validate *ds* meets the GNSSDataReader output contract.
+
+    Collects **all** violations and raises a single ``ValueError`` listing
+    every problem, rather than stopping at the first failure.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to validate.
+    required_vars : list of str, optional
+        Data variables that must be present.  Defaults to
+        :data:`DEFAULT_REQUIRED_VARS` (``["SNR"]``).
+
+    Raises
+    ------
+    ValueError
+        If any contract violation is found.
+    """
+    if required_vars is None:
+        required_vars = list(DEFAULT_REQUIRED_VARS)
+
+    errors = _structure_errors(ds, required_vars)
 
     # -- attributes --
     missing_attrs = REQUIRED_ATTRS - set(ds.attrs.keys())
     if missing_attrs:
         errors.append(f"Missing required attributes: {missing_attrs}")
 
-    if errors:
-        raise ValueError(
-            "Dataset validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
-        )
+    _raise_if(errors, "Dataset")
+
+
+def validate_vod_dataset(ds: xr.Dataset) -> None:
+    """Validate *ds* meets the VOD dataset contract.
+
+    The contract of VOD calculator output and of what the VOD store
+    accepts: the dimensions and coordinates of :func:`validate_dataset`,
+    the variables :data:`VOD_REQUIRED_VARS` (``theta`` and ``phi`` in
+    radians), every variable on ``(epoch, sid)``. Collects **all**
+    violations and raises a single ``ValueError``.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to validate.
+
+    Raises
+    ------
+    ValueError
+        If any contract violation is found.
+    """
+    _raise_if(_structure_errors(ds, list(VOD_REQUIRED_VARS)), "VOD dataset")
 
 
 # ---------------------------------------------------------------------------
 # Pydantic validator — runtime contract enforcement
 # ---------------------------------------------------------------------------
+
+
+def require_aggregated_glonass(reader: str, aggregate_glonass_fdma: bool) -> bool:
+    """Refuse ``aggregate_glonass_fdma=False`` for a reader that cannot honor it.
+
+    Parameters
+    ----------
+    reader : str
+        Reader name for the message (e.g. ``"SBF"``).
+    aggregate_glonass_fdma : bool
+        The requested setting.
+
+    Returns
+    -------
+    bool
+        ``True``.
+
+    Raises
+    ------
+    ValueError
+        If ``aggregate_glonass_fdma`` is ``False``.
+    """
+    if not aggregate_glonass_fdma:
+        msg = (
+            f"The reader {reader} gives GLONASS FDMA signals as aggregated G1/G2 "
+            f"bands only. Set processing.params.aggregate_glonass_fdma to true "
+            f"for its data."
+        )
+        raise ValueError(msg)
+    return aggregate_glonass_fdma
 
 
 class DatasetStructureValidator(BaseModel):
@@ -228,7 +293,7 @@ class SignalID(BaseModel):
     def _validate_sv(cls, v: str) -> str:
         if not SV_PATTERN.match(v):
             raise ValueError(
-                f"Invalid SV: {v!r} — expected system letter + 2-digit PRN "
+                f"Invalid SV: {v!r}; expected system letter + 2-digit PRN "
                 f"(e.g. 'G01'). Valid systems: G, R, E, C, J, S, I"
             )
         return v
@@ -276,7 +341,7 @@ class SignalID(BaseModel):
         parts = sid_str.split("|")
         if len(parts) != 3:
             raise ValueError(
-                f"Invalid SID format: {sid_str!r} — expected 'SV|band|code'"
+                f"Invalid SID format: {sid_str!r}; expected 'SV|band|code'"
             )
         return cls(sv=parts[0], band=parts[1], code=parts[2])
 
@@ -318,7 +383,25 @@ class GNSSDataReader(BaseModel, ABC):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    #: Canonical file type of the files the reader reads: the TYPE field of
+    #: a canVOD file name (``"rnx"``, ``"sbf"``, ``"nmea"``, or a new type
+    #: of a plugin reader). Every reader sets it.
+    file_type: ClassVar[str]
+
+    #: Whether the reader can give GLONASS FDMA signals per frequency
+    #: channel. Readers that cannot refuse ``aggregate_glonass_fdma=False``.
+    per_channel_glonass: ClassVar[bool] = False
+
     fpath: Path
+    aggregate_glonass_fdma: bool = True
+
+    @field_validator("aggregate_glonass_fdma")
+    @classmethod
+    def _glonass_channels_supported(cls, v: bool) -> bool:
+        """Refuse ``False`` unless the reader gives per-channel GLONASS."""
+        if cls.per_channel_glonass:
+            return v
+        return require_aggregated_glonass(cls.__name__, v)
 
     @field_validator("fpath")
     @classmethod
@@ -330,9 +413,15 @@ class GNSSDataReader(BaseModel, ABC):
         return v
 
     @property
+    @abstractmethod
     def source_format(self) -> str:
-        """Return the format identifier for this reader (e.g. ``"rinex3"``, ``"sbf"``)."""
-        return "rinex3"
+        """Return the format identifier for this reader (e.g. ``"rinex3"``, ``"sbf"``).
+
+        A run puts it on each file's dataset (attribute ``"Source Format"``)
+        and the GNSS store records it as its ``source_format``: the root
+        attribute and ``identity.source_format`` of the store's metadata.
+        A run refuses files of different formats in one store.
+        """
 
     @property
     @abstractmethod
@@ -494,8 +583,10 @@ __all__ = [
     "REQUIRED_ATTRS",
     "REQUIRED_COORDS",
     "REQUIRED_DIMS",
+    "VOD_REQUIRED_VARS",
     "DatasetStructureValidator",
     "GNSSDataReader",
     "SignalID",
     "validate_dataset",
+    "validate_vod_dataset",
 ]

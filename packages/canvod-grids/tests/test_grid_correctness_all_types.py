@@ -247,3 +247,50 @@ class TestStructuralInvariantsAllTypes:
         assert grid.grid_type == grid_type, (
             f"{grid_type}: grid_type attribute mismatch ({grid.grid_type})"
         )
+
+
+class TestRingGridCoverage:
+    """Ring grids end exactly at 90° - cutoff_theta."""
+
+    @pytest.mark.parametrize(
+        "grid_type", ["equal_area", "equal_angle", "equirectangular"]
+    )
+    @pytest.mark.parametrize("resolution", [2.0, 5.0, 10.0, 7.0])
+    def test_solid_angles_sum_to_the_hemisphere(
+        self, grid_type: str, resolution: float
+    ) -> None:
+        grid = create_hemigrid(grid_type, angular_resolution=resolution)
+        np.testing.assert_allclose(grid.get_solid_angles().sum(), 2 * np.pi)
+        assert grid.grid["theta_max"].max() == pytest.approx(np.pi / 2)
+
+    @pytest.mark.parametrize(
+        "grid_type", ["equal_area", "equal_angle", "equirectangular"]
+    )
+    @pytest.mark.parametrize("cutoff", [10, 25])
+    def test_outer_edge_is_the_cutoff(self, grid_type: str, cutoff: int) -> None:
+        # The cutoff is an elevation mask: it moves the outer edge only, the
+        # grid still starts at the zenith (equal_area used to drop the cells
+        # within the cutoff angle of the zenith, A20 #9).
+        grid = create_hemigrid(grid_type, angular_resolution=5.0, cutoff_theta=cutoff)
+        assert grid.grid["theta_min"].min() == 0.0
+        assert grid.grid["theta_max"].max() == pytest.approx(np.deg2rad(90 - cutoff))
+        np.testing.assert_allclose(
+            grid.get_solid_angles().sum(),
+            2 * np.pi * (1 - np.cos(np.deg2rad(90 - cutoff))),
+        )
+
+    @pytest.mark.parametrize(
+        "grid_type", ["equal_area", "equal_angle", "equirectangular"]
+    )
+    @pytest.mark.parametrize("resolution", [3.75, 7.0, 25.0, 30.0])
+    def test_sectors_end_at_2pi_with_centres_inside(
+        self, grid_type: str, resolution: float
+    ) -> None:
+        # 7° and 25° do not divide 360°; at 3.75° and 30° np.arange rounding
+        # used to add a zero-width equirectangular sector at 2*pi.
+        grid = create_hemigrid(grid_type, angular_resolution=resolution).grid
+        assert grid["phi_max"].max() == pytest.approx(2 * np.pi)
+        assert (grid["phi_max"] - grid["phi_min"]).min() > 1e-9
+        assert (
+            (grid["phi"] >= grid["phi_min"]) & (grid["phi"] <= grid["phi_max"])
+        ).all()

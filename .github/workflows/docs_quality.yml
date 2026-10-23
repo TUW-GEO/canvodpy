@@ -1,0 +1,89 @@
+name: Docs Quality
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+    schedule:
+        - cron: '0 6 * * 1' # Weekly on Monday at 06:00 UTC: links go stale without a change here
+    workflow_dispatch: # the full link check, started by hand
+
+permissions: read-all
+
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+    language:
+        # Vale (Google style) on the docs pages, README.md and CONTRIBUTING.md
+        # that the pull request changes.
+        if: github.event_name == 'pull_request'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  fetch-depth: 0 # the diff against the base branch
+            - uses: ./.github/actions/setup
+            - name: Install just
+              uses: taiki-e/install-action@9983c65e42da123ff25d1f78505eb6de315aa172 # v2.87.20
+              with:
+                  tool: just
+            - name: Check the language of the changed docs pages and root files
+              run: just docs-lint-changed "origin/${{ github.base_ref }}"
+
+    cli-reference:
+        # The command-line reference page is written from the --help texts;
+        # it must match them.
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: ./.github/actions/setup
+            - name: Check the command-line reference page
+              run: uv run python scripts/cli_docs.py --check
+
+    settings-reference:
+        # The settings reference page is written from the descriptions on
+        # the settings models; it must match them.
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: ./.github/actions/setup
+            - name: Check the settings reference page
+              run: uv run python scripts/settings_docs.py --check
+
+    links:
+        # lychee on the built site and README.md (settings in lychee.toml).
+        # Pushes and pull requests check the links between our pages and
+        # their anchors only (--offline): an outside server that is down for
+        # an hour must not fail a pull request (pangeo.io, #394). The weekly
+        # run, or one started by hand, also checks the external links and
+        # opens an issue when one fails.
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            issues: write
+        env:
+            FULL: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - uses: ./.github/actions/setup
+            - name: Build the docs site
+              run: uv run zensical build --clean
+            - name: Check the links of the built site and of README.md
+              uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+              with:
+                  args: ${{ env.FULL != 'true' && '--offline' || '' }} --root-dir "${{ github.workspace }}/site" 'site/**/*.html' README.md
+                  output: lychee/out.md
+                  fail: true
+            - name: Open an issue for the failed external links
+              if: failure() && env.FULL == 'true'
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  TITLE: 'Docs: external links failed the weekly link check'
+              run: |
+                  number=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+                  if [ -n "$number" ]; then
+                      gh issue comment "$number" --body-file lychee/out.md
+                  else
+                      gh issue create --title "$TITLE" --label documentation --body-file lychee/out.md
+                  fi

@@ -5,13 +5,12 @@ import warnings
 import xarray as xr
 
 from canvod.auxiliary.interpolation import create_interpolator_from_attrs
-from canvodpy._deprecation import deprecated
+from canvod.utils.tools import deprecated
 
 
 @deprecated(
-    "canvodpy.orchestrator.matcher.DatasetMatcher is never instantiated and "
-    "duplicates canvod.auxiliary.augmentation's DatasetMatcher, which is the "
-    "one actually reachable via the augmentation-step framework."
+    "canvodpy.orchestrator.matcher.DatasetMatcher is left over from development and will be removed with the next major version. "
+    "Use canvod.auxiliary.matching.DatasetMatcher instead."
 )
 class DatasetMatcher:
     """Class responsible for matching multiple datasets to a reference timeline.

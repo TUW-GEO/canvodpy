@@ -3,20 +3,20 @@ title: Namespace Packages
 description: Implementation of Python implicit namespace packages in canVODpy
 ---
 
-# Namespace Packages
+# Namespace packages
 
-canVODpy uses Python 3.3+ **implicit namespace packages** to let ten independent packages share the `canvod.*` import prefix — a unified API backed by separately installable wheels.
+canVODpy uses Python 3.3+ **implicit namespace packages** to let eleven independent packages share the `canvod.*` import prefix: a unified API backed by separately installable wheels.
 
 ```python
-from canvod.readers   import Rnxv3Obs
+from canvod.readers import Rnxv3Obs
 from canvod.auxiliary import Sp3File
-from canvod.grids     import EqualAreaBuilder
-from canvod.store     import MyIcechunkStore
+from canvod.grids import EqualAreaBuilder
+from canvod.store import MyIcechunkStore
 ```
 
 ---
 
-## How It Works
+## How it works
 
 A namespace package is created by **omitting `__init__.py`** from the shared parent directory. Python treats a directory without `__init__.py` as a namespace that multiple packages can contribute to.
 
@@ -24,7 +24,7 @@ A namespace package is created by **omitting `__init__.py`** from the shared par
 
     ```
     canvod-readers/src/
-      canvod/                  ← namespace directory — NO __init__.py
+      canvod/                  ← namespace directory, NO __init__.py
         readers/
           __init__.py          ← regular package starts here
           base.py
@@ -45,7 +45,7 @@ A namespace package is created by **omitting `__init__.py`** from the shared par
     ```
 
     If any installed package adds `canvod/__init__.py`, it claims
-    exclusive ownership of `canvod` — breaking all other sub-packages.
+    exclusive ownership of `canvod`, breaking all other sub-packages.
 
 === "Combined site-packages"
 
@@ -65,19 +65,18 @@ A namespace package is created by **omitting `__init__.py`** from the shared par
         utils/            ← from canvod-utils
         ops/              ← from canvod-ops
         preflight/        ← from canvod-preflight
-        filemap/          ← from canvod-filemap (only if the optional extra/group is installed)
     ```
 
 ---
 
-## Build Configuration
+## Build configuration
 
 The `uv_build` backend uses a dotted `module-name` to produce the correct wheel structure:
 
 ```toml
 # packages/canvod-readers/pyproject.toml
 [build-system]
-requires      = ["uv_build>=0.9.17,<0.10.0"]
+requires      = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -91,7 +90,7 @@ The dot in `"canvod.readers"` tells uv_build:
 
 ---
 
-## Wheel Contents
+## Wheel contents
 
 ```
 canvod_readers-0.1.0-py3-none-any.whl
@@ -107,28 +106,28 @@ canvod_readers-0.1.0-py3-none-any.whl
 
 !!! note
     The wheel contains `canvod/readers/` but no `canvod/__init__.py`.
-    This is correct — the absence of `__init__.py` is what makes it a namespace.
+    This is correct: the absence of `__init__.py` is what makes it a namespace.
 
 ---
 
-## Import Resolution
+## Import resolution
 
 When Python processes `from canvod.readers import Rnxv3Obs`:
 
-1. `canvod` — no `__init__.py` found → **namespace package** (open for extension).
-2. `readers` — has `__init__.py` → **regular package** (standard import).
-3. `Rnxv3Obs` — imported from `canvod/readers/__init__.py`.
+1. `canvod`: no `__init__.py` found $\rightarrow$ **namespace package** (open for extension).
+2. `readers`: has `__init__.py` $\rightarrow$ **regular package** (standard import).
+3. `Rnxv3Obs`: imported from `canvod/readers/__init__.py`.
 
 ---
 
-## Independent Installation
+## Independent installation
 
 Because each sub-package is self-contained, users install only what they need:
 
 ```bash
-pip install canvod-readers            # readers only
-pip install canvod-readers canvod-store   # subset
-pip install canvodpy                  # everything
+uv add canvod-readers                # readers only
+uv add canvod-readers canvod-store   # subset
+uv add canvodpy                      # everything
 ```
 
 ---
@@ -137,15 +136,17 @@ pip install canvodpy                  # everything
 
 ```python
 import canvod
-print(canvod.__file__)   # AttributeError — namespace packages have no __file__
+
+print(canvod.__file__)  # AttributeError: namespace packages have no __file__
 
 from canvod import readers
+
 print(readers.__file__)  # e.g. …/site-packages/canvod/readers/__init__.py
 ```
 
 ---
 
-## Common Pitfalls
+## Common pitfalls
 
 !!! failure "Adding `__init__.py` to the namespace directory"
     `src/canvod/__init__.py` converts the namespace into a regular package,
@@ -153,9 +154,9 @@ print(readers.__file__)  # e.g. …/site-packages/canvod/readers/__init__.py
 
 !!! failure "Incorrect `module-name`"
     ```toml
-    # WRONG — creates a regular top-level package
+    # WRONG: creates a regular top-level package
     module-name = "canvod_readers"
 
-    # CORRECT — creates a namespace sub-package
+    # CORRECT: creates a namespace sub-package
     module-name = "canvod.readers"
     ```

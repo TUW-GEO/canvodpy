@@ -37,17 +37,17 @@ class SbfHeader(BaseModel):
     ant_type : str
         Antenna type string.
     delta_h : pint.Quantity
-        Antenna height above marker in metres.
+        Antenna height above marker in meters.
     delta_e : pint.Quantity
-        Antenna east offset in metres.
+        Antenna east offset in meters.
     delta_n : pint.Quantity
-        Antenna north offset in metres.
+        Antenna north offset in meters.
     latitude_rad : float
         Approximate receiver latitude [rad].
     longitude_rad : float
         Approximate receiver longitude [rad].
     height_m : pint.Quantity
-        Approximate receiver height above ellipsoid in metres.
+        Approximate receiver height above ellipsoid in meters.
     gnss_fw_version : str
         Full GNSS firmware version string.
     product_name : str
@@ -57,7 +57,7 @@ class SbfHeader(BaseModel):
     -----
     Source: RefGuide-4.14.0, ReceiverSetup block.
     String fields decoded from NUL-padded ``c1[n]`` binary arrays.
-    Offset fields (deltaH/E/N) and height use UREG metres.
+    Offset fields (deltaH/E/N) and height use UREG meters.
     """
 
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
@@ -107,9 +107,10 @@ class SbfSignalObs(BaseModel):
         raw value). Type1: ``u2``, clipped at 65534 s, 65535 = Do-Not-Use.
         Type2: ``u1``, clipped at 254 s, 255 = Do-Not-Use.
     cn0 : pint.Quantity or None
-        C/N0 in ``dBHz``. ``None`` if Do-Not-Use (raw == 0).
+        C/N0 in ``dBHz``, with the MeasExtra CN0HighRes value of the same
+        epoch added where logged. ``None`` if Do-Not-Use (raw == 255).
     pseudorange : pint.Quantity or None
-        Pseudorange in metres. ``None`` if Do-Not-Use.
+        Pseudorange in meters. ``None`` if Do-Not-Use.
     doppler : pint.Quantity or None
         Doppler shift in Hz (positive = approaching). ``None`` if Do-Not-Use.
     phase_cycles : float or None
@@ -122,7 +123,7 @@ class SbfSignalObs(BaseModel):
 
     Notes
     -----
-    Source: RefGuide-4.14.0, MeasEpoch block, pp. 260-263.
+    Source: RefGuide-4.14.0, MeasEpoch block, pp. 259-263.
     """
 
     model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
@@ -152,10 +153,11 @@ class SbfEpoch(BaseModel):
     wn : int
         GPS Week Number (continuous, no rollover).
     timestamp : datetime
-        UTC timestamp derived from TOW + WN + leap seconds.
+        GPS time derived from TOW + WN (no leap seconds).
     common_flags : int
-        Raw CommonFlags byte.
-        Bit 0: smoothing applied; Bit 1: carrier-phase half-cycle ambiguity.
+        Raw CommonFlags byte. Bit 0: multipath mitigation enabled;
+        bit 1: at least one code measurement smoothed; bit 3: clock
+        steering active (RefGuide-4.14.0, MeasEpoch, p.260).
     cum_clk_jumps : int
         Cumulative receiver clock jumps modulo 256 since power-on.
     observations : tuple of SbfSignalObs

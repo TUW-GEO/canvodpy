@@ -4,25 +4,36 @@ Scans filesystem to identify directories containing RINEX files for
 canopy and reference receivers across multiple dates.
 """
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from natsort import natsorted
 
 from canvod.readers.gnss_specs.constants import RINEX_OBS_GLOB_PATTERNS
-from canvod.utils.tools import YYYYDOY
+from canvod.utils.tools import YYYYDOY, deprecated
 
 from .models import MatchedDirs, PairMatchedDirs
 
 DATE_DIR_LEN = 5
 
+#: Files that make a directory count as holding GNSS data: RINEX and
+#: Septentrio short names, canonical canVOD names, and their compressed forms.
+_GNSS_FILE_GLOBS: tuple[str, ...] = (
+    *RINEX_OBS_GLOB_PATTERNS,
+    "*_R_*_*_*_*.rnx*",
+    "*_R_*_*_*_*.crx*",
+    "*_R_*_*_*_*.sbf*",
+    "*_R_*_*_*_*.ubx*",
+    "*_R_*_*_*_*.nmea*",
+    "*.[0-9][0-9][oOdD]",
+    "*.[0-9][0-9][oOdD].*",
+    "*.[0-9][0-9]_.*",
+)
+
 
 def _has_rinex_files(directory: Path) -> bool:
     """Check if directory exists and contains GNSS observation files.
-
-    Checks for RINEX and SBF files using all builtin patterns from
-    ``canvod.filemap.patterns``.
 
     Parameters
     ----------
@@ -32,30 +43,19 @@ def _has_rinex_files(directory: Path) -> bool:
     Returns
     -------
     bool
-        True if directory exists and contains GNSS data files.
+        True if directory exists and contains GNSS data files
+        (see ``_GNSS_FILE_GLOBS``).
 
     """
     if not directory.exists():
         return False
-
-    # Check RINEX patterns first (fast path)
-    if any(f for pattern in RINEX_OBS_GLOB_PATTERNS for f in directory.glob(pattern)):
-        return True
-
-    # Also check SBF and other formats via BUILTIN_PATTERNS (optional package)
-    try:
-        from canvod.filemap.patterns import BUILTIN_PATTERNS, auto_match_order
-
-        for name in auto_match_order():
-            for glob_pat in BUILTIN_PATTERNS[name].file_globs:
-                if any(directory.glob(glob_pat)):
-                    return True
-    except ImportError:
-        pass
-
-    return False
+    return any(any(directory.glob(pattern)) for pattern in _GNSS_FILE_GLOBS)
 
 
+@deprecated(
+    "DataDirMatcher is left over from development and will be removed with the next major version. "
+    "Use canvodpy.Site(<site>).pipeline() or the `canvodpy run` command instead."
+)
 class DataDirMatcher:
     """Match RINEX data directories for canopy and reference receivers.
 
@@ -101,14 +101,6 @@ class DataDirMatcher:
         canopy_pattern: Path = Path("02_canopy/01_GNSS/01_raw"),
     ) -> None:
         """Initialize matcher with directory structure."""
-        import warnings
-
-        warnings.warn(
-            "DataDirMatcher is deprecated. Use canvod.filemap.FilenameMapper "
-            "with DataDirectoryValidator instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         self.root = Path(root)
         self.reference_dir = self.root / reference_pattern
         self.canopy_dir = self.root / canopy_pattern
@@ -229,6 +221,11 @@ class DataDirMatcher:
             raise FileNotFoundError(msg)
 
 
+@deprecated(
+    "PairDataDirMatcher is left over from development and will be removed with the next major version. "
+    "It only finds data in YYDDD day folders. Use canvodpy.Site(<site>).pipeline() or the "
+    "`canvodpy run` command instead, which find each file's day from its name in any folder layout."
+)
 class PairDataDirMatcher:
     """Match RINEX directories for receiver pairs across dates.
 
@@ -250,6 +247,11 @@ class PairDataDirMatcher:
         Analysis pair configuration specifying which receivers to match
         Example: {"pair_01": {"canopy_receiver": "canopy_01",
                                "reference_receiver": "reference_01"}}
+    has_data : Callable[[str, Path], bool], optional
+        ``has_data(receiver_name, day_dir)`` decides whether a receiver's
+        day directory holds data to process. The pipeline passes its own
+        file discovery here, so a day counts only if the run would process
+        files from it. Defaults to a filename-glob check.
 
     Examples
     --------
@@ -282,19 +284,13 @@ class PairDataDirMatcher:
         base_dir: Path,
         receivers: dict[str, dict[str, str]],
         analysis_pairs: dict[str, dict[str, str]],
+        has_data: Callable[[str, Path], bool] | None = None,
     ) -> None:
         """Initialize pair matcher with receiver configuration."""
-        import warnings
-
-        warnings.warn(
-            "PairDataDirMatcher is deprecated. Use canvod.filemap.FilenameMapper "
-            "with DataDirectoryValidator instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         self.base_dir = Path(base_dir)
         self.receivers = receivers
         self.analysis_pairs = analysis_pairs
+        self._has_data = has_data or (lambda _receiver, path: _has_rinex_files(path))
 
         # Validate receivers have directory config
         self.receiver_dirs = self._build_receiver_dir_mapping()
@@ -408,8 +404,8 @@ class PairDataDirMatcher:
                 reference_path = self._get_receiver_path(reference_rx, yyyydoy)
 
                 # Check for RINEX files
-                canopy_has_files = _has_rinex_files(canopy_path)
-                reference_has_files = _has_rinex_files(reference_path)
+                canopy_has_files = self._has_data(canopy_rx, canopy_path)
+                reference_has_files = self._has_data(reference_rx, reference_path)
 
                 # Only yield if both directories exist and have data
                 if canopy_has_files and reference_has_files:

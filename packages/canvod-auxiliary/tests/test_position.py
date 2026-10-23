@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 import xarray as xr
+from canvod.utils import testing
 from pydantic import ValidationError
 
 from canvod.auxiliary.position import (
@@ -17,28 +18,28 @@ class TestECEFPositionGuardRail:
     """Regression tests for #111: reject implausible receiver positions.
 
     A zeroed/unpopulated RINEX ``APPROX POSITION XYZ`` header used to be
-    silently accepted as (0, 0, 0) -- the Earth's centre -- and passed on
+    silently accepted as (0, 0, 0) -- the Earth's center -- and passed on
     as the receiver position, corrupting every downstream satellite
     geometry computation without any error or warning.
     """
 
     def test_rejects_exact_origin(self):
         """(0, 0, 0) is never a valid ECEF point, receiver or otherwise."""
-        with pytest.raises(ValidationError, match="Earth's centre"):
+        with pytest.raises(ValidationError, match="Earth's center"):
             ECEFPosition(x=0.0, y=0.0, z=0.0)
 
     def test_rejects_nan_component(self):
         with pytest.raises(ValidationError, match="finite"):
-            ECEFPosition(x=float("nan"), y=931735.3, z=4801629.6)
+            ECEFPosition(x=float("nan"), y=testing.ECEF_Y, z=testing.ECEF_Z)
 
     def test_rejects_inf_component(self):
         with pytest.raises(ValidationError, match="finite"):
-            ECEFPosition(x=4075539.8, y=float("inf"), z=4801629.6)
+            ECEFPosition(x=testing.ECEF_X, y=float("inf"), z=testing.ECEF_Z)
 
     def test_accepts_plausible_ground_station(self):
         """A real ground-station position must still construct cleanly."""
-        pos = ECEFPosition(x=4075539.8, y=931735.3, z=4801629.6)
-        assert pos.x == 4075539.8
+        pos = ECEFPosition(x=testing.ECEF_X, y=testing.ECEF_Y, z=testing.ECEF_Z)
+        assert pos.x == testing.ECEF_X
 
     def test_satellite_range_positions_still_construct(self):
         """ECEFPosition itself stays general-purpose (satellite ranges too).
@@ -59,7 +60,7 @@ class TestECEFPositionGuardRail:
         corrupted.attrs["APPROX POSITION Y"] = 0.0
         corrupted.attrs["APPROX POSITION Z"] = 0.0
 
-        with pytest.raises(ValidationError, match="Earth's centre"):
+        with pytest.raises(ValidationError, match="Earth's center"):
             ECEFPosition.from_ds_metadata(corrupted)
 
     def test_from_ds_metadata_rejects_implausible_but_finite_position(
@@ -78,7 +79,7 @@ class TestECEFPositionGuardRail:
     def test_from_ds_metadata_accepts_real_position(self, sample_rinex_data):
         """Sanity check: the real, correct fixture position still passes."""
         pos = ECEFPosition.from_ds_metadata(sample_rinex_data)
-        assert pos.x == 4075539.8
+        assert pos.x == testing.ECEF_X
 
     def test_alternative_format_rejects_zeroed_position(self):
         """The 'Approximate Position' string-format branch gets the same
@@ -86,7 +87,7 @@ class TestECEFPositionGuardRail:
         ds = xr.Dataset(
             attrs={"Approximate Position": "(X = 0.0 m, Y = 0.0 m, Z = 0.0 m)"}
         )
-        with pytest.raises(ValidationError, match="Earth's centre"):
+        with pytest.raises(ValidationError, match="Earth's center"):
             ECEFPosition.from_ds_metadata(ds)
 
 
@@ -95,32 +96,33 @@ class TestECEFPosition:
 
     def test_initialization(self):
         """Test ECEF position can be created."""
-        pos = ECEFPosition(x=4075539.8, y=931735.3, z=4801629.6)
+        pos = ECEFPosition(x=testing.ECEF_X, y=testing.ECEF_Y, z=testing.ECEF_Z)
 
-        assert pos.x == 4075539.8
-        assert pos.y == 931735.3
-        assert pos.z == 4801629.6
+        assert pos.x == testing.ECEF_X
+        assert pos.y == testing.ECEF_Y
+        assert pos.z == testing.ECEF_Z
 
     def test_from_ds_metadata(self, sample_rinex_data):
         """Test creating ECEF from RINEX metadata."""
         pos = ECEFPosition.from_ds_metadata(sample_rinex_data)
 
-        assert pos.x == 4075539.8
-        assert pos.y == 931735.3
-        assert pos.z == 4801629.6
+        assert pos.x == testing.ECEF_X
+        assert pos.y == testing.ECEF_Y
+        assert pos.z == testing.ECEF_Z
 
     def test_to_geodetic_conversion(self, ecef_position):
         """Test ECEF to geodetic conversion."""
         lat, lon, alt = ecef_position.to_geodetic()
 
-        # TU Wien ECEF position converts to these geodetic coordinates
-        assert 49.0 < lat < 49.5
-        assert 12.5 < lon < 13.5
-        assert 600 < alt < 700  # Actual altitude from conversion
+        # Expected: the geodetic position the ECEF constants were computed
+        # from with PROJ (canvod.utils.testing)
+        assert lat == pytest.approx(testing.LATITUDE, abs=1e-8)
+        assert lon == pytest.approx(testing.LONGITUDE, abs=1e-8)
+        assert alt == pytest.approx(testing.ALTITUDE_M, abs=1e-3)
 
     def test_roundtrip_ecef_geodetic(self):
         """Test ECEF → Geodetic → ECEF roundtrip."""
-        original = ECEFPosition(x=4075539.8, y=931735.3, z=4801629.6)
+        original = ECEFPosition(x=testing.ECEF_X, y=testing.ECEF_Y, z=testing.ECEF_Z)
 
         # Convert to geodetic
         lat, lon, alt = original.to_geodetic()
@@ -136,16 +138,16 @@ class TestECEFPosition:
 
     def test_attribute_access(self, ecef_position):
         """Test direct attribute access."""
-        assert ecef_position.x == 4075539.8
-        assert ecef_position.y == 931735.3
-        assert ecef_position.z == 4801629.6
+        assert ecef_position.x == testing.ECEF_X
+        assert ecef_position.y == testing.ECEF_Y
+        assert ecef_position.z == testing.ECEF_Z
 
     def test_repr(self, ecef_position):
         """Test string representation."""
         repr_str = repr(ecef_position)
 
         assert "ECEFPosition" in repr_str
-        assert "4075539.8" in repr_str or "4075539.800" in repr_str
+        assert f"{testing.ECEF_X:.3f}" in repr_str
 
 
 class TestGeodeticPosition:
@@ -153,24 +155,29 @@ class TestGeodeticPosition:
 
     def test_initialization(self):
         """Test geodetic position can be created."""
-        pos = GeodeticPosition(lat=49.145, lon=12.877, alt=311.5)
+        pos = GeodeticPosition(
+            lat=testing.LATITUDE, lon=testing.LONGITUDE, alt=testing.ALTITUDE_M
+        )
 
-        assert pos.lat == 49.145
-        assert pos.lon == 12.877
-        assert pos.alt == 311.5
+        assert pos.lat == testing.LATITUDE
+        assert pos.lon == testing.LONGITUDE
+        assert pos.alt == testing.ALTITUDE_M
 
     def test_to_ecef_conversion(self, geodetic_position):
         """Test geodetic to ECEF conversion."""
         ecef = geodetic_position.to_ecef()
 
-        # Should convert back to approximately TU Wien ECEF position
-        assert 4e6 < ecef.x < 4.1e6
-        assert 9e5 < ecef.y < 1e6
-        assert 4.7e6 < ecef.z < 4.9e6
+        # Expected: the ECEF position PROJ gives (canvod.utils.testing),
+        # rounded to the millimeter there
+        assert ecef.x == pytest.approx(testing.ECEF_X, abs=1e-3)
+        assert ecef.y == pytest.approx(testing.ECEF_Y, abs=1e-3)
+        assert ecef.z == pytest.approx(testing.ECEF_Z, abs=1e-3)
 
     def test_roundtrip_geodetic_ecef(self):
         """Test Geodetic → ECEF → Geodetic roundtrip."""
-        original = GeodeticPosition(lat=49.145, lon=12.877, alt=311.5)
+        original = GeodeticPosition(
+            lat=testing.LATITUDE, lon=testing.LONGITUDE, alt=testing.ALTITUDE_M
+        )
 
         # Convert to ECEF
         ecef = original.to_ecef()
@@ -185,16 +192,16 @@ class TestGeodeticPosition:
 
     def test_attribute_access(self, geodetic_position):
         """Test direct attribute access."""
-        assert geodetic_position.lat == 49.145
-        assert geodetic_position.lon == 12.877
-        assert geodetic_position.alt == 311.5
+        assert geodetic_position.lat == testing.LATITUDE
+        assert geodetic_position.lon == testing.LONGITUDE
+        assert geodetic_position.alt == testing.ALTITUDE_M
 
     def test_repr(self, geodetic_position):
         """Test string representation."""
         repr_str = repr(geodetic_position)
 
         assert "GeodeticPosition" in repr_str
-        assert "49.145" in repr_str
+        assert f"{testing.LATITUDE:.6f}" in repr_str
 
 
 class TestComputeSphericalCoordinates:
@@ -396,18 +403,20 @@ class TestCoordinateTransformationIntegration:
 
     def test_physical_validity(self, ecef_position):
         """Test physically valid transformations."""
-        # Known satellite position (GPS II/IIA orbit)
-        sat_x = 12611471.0
-        sat_y = -13413103.0
-        sat_z = 17894606.0
+        # A GPS satellite above the site: on the line from the geocenter
+        # through the receiver, at the GPS reference orbit radius
+        # (A_REF = 26,559,710 m, IS-GPS-200).
+        receiver = np.array([ecef_position.x, ecef_position.y, ecef_position.z])
+        receiver_radius = np.linalg.norm(receiver)
+        sat_x, sat_y, sat_z = receiver * (26_559_710.0 / receiver_radius)
 
         r, theta, phi = compute_spherical_coordinates(
             sat_x, sat_y, sat_z, ecef_position
         )
 
         # GPS orbit altitude ~20,200 km above Earth surface
-        # Distance from surface to satellite should be reasonable
         assert 15e6 < r < 30e6  # 15,000 - 30,000 km range
+        assert r == pytest.approx(26_559_710.0 - receiver_radius, abs=1e-3)
 
         # Should not be below horizon (theta > π/2 would be underground)
         assert 0 <= theta <= np.pi

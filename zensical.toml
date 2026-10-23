@@ -6,10 +6,6 @@
 # Serve locally with: just docs
 # Build with:         just docs-build
 #
-# Root-level files (CONTRIBUTING.md, VERSIONING.md, RELEASING.md) are
-# copied into docs/ so zensical can serve them from the default docs_dir.
-# Keep them in sync: cp CONTRIBUTING.md VERSIONING.md RELEASING.md docs/
-#
 # ==========================================================================
 
 [project]
@@ -19,8 +15,8 @@ site_author = "Nicolas Bader"
 site_url = "https://canvodpy.eu/"
 copyright = "Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose."
 
-repo_url = "https://github.com/nfb2021/canvodpy"
-repo_name = "nfb2021/canvodpy"
+repo_url = "https://github.com/TUW-GEO/canvodpy"
+repo_name = "TUW-GEO/canvodpy"
 edit_uri = "edit/main/docs/"
 
 extra_css = ["assets/canvod-nordic.css"]
@@ -37,97 +33,112 @@ extra_javascript = [
 nav = [
   { "Home" = "index.md" },
 
-  { "Usage" = [
-    { "Get Started" = "users/index.md" },
-    { "CLI Quickstart" = "users/cli.md" },
-    { "Python Quickstart" = "users/python.md" },
-    { "Configuration" = "guides/configuration.md" },
-    { "Optional Extensions" = "guides/extensions.md" },
-    { "API Levels" = "guides/api-levels.md" },
-    { "Parallel Processing" = "guides/parallel-processing.md" },
-    { "Diagnostics & Monitoring" = "guides/diagnostics.md" },
-    { "Notebooks" = "notebooks/index.md" },
-    { "Packages" = [
-      { "canvod-readers" = [
-        { "Overview" = "packages/readers/overview.md" },
-        { "RINEX v3.04 Format" = "packages/readers/rinex-format.md" },
-        { "SBF Reader" = "packages/readers/sbf.md" },
-        { "SBF Field Decoding" = "packages/readers/sbf-decoding.md" },
-        { "Ephemeris Sources" = "packages/readers/ephemeris-sources.md" },
-        { "Satellite Catalog (IGS SINEX)" = "packages/readers/satellite-catalog.md" },
-        { "Reader Architecture" = "packages/readers/architecture.md" },
-        { "Extending Readers" = "packages/readers/extending.md" },
-      ]},
-      { "canvod-auxiliary" = [
-        { "Overview" = "packages/auxiliary/overview.md" },
-        { "Preprocessing Pipeline" = "packages/auxiliary/preprocessing.md" },
-        { "Interpolation Methods" = "packages/auxiliary/interpolation.md" },
-        { "Coordinate Systems" = "packages/auxiliary/coordinates.md" },
-        { "Product Registry" = "packages/auxiliary/products.md" },
-      ]},
-      { "canvod-grids" = [
-        { "Overview" = "packages/grids/overview.md" },
-      ]},
-      { "canvod-vod" = [
-        { "Overview" = "packages/vod/overview.md" },
-      ]},
-      { "canvod-store" = [
-        { "Overview" = "packages/store/overview.md" },
-        { "Icechunk Storage" = "packages/store/icechunk.md" },
-        { "Storage Strategies" = "packages/store/storage-strategies.md" },
-      ]},
-      { "canvod-store-metadata" = [
-        { "Overview" = "packages/store-metadata/overview.md" },
-      ]},
-      { "canvod-viz" = [
-        { "Overview" = "packages/viz/overview.md" },
-      ]},
-      { "canvod-config" = [
-        { "Overview" = "packages/config/overview.md" },
-      ]},
-      { "canvod-utils" = [
-        { "Overview" = "packages/utils/overview.md" },
-      ]},
-      { "canvod-ops" = [
-        { "Overview" = "packages/ops/overview.md" },
-      ]},
-      { "canvod-preflight" = [
-        { "Naming Convention & Validation" = "packages/naming/overview.md" },
-      ]},
+  { "Retrieve VOD" = [
+    { "Start here" = "users/index.md" },
+    { "Upgrading to v1.0.0" = "guides/upgrading.md" },
+    { "Configure" = [
+      { "Settings file" = "guides/configuration.md" },
+      { "Settings reference" = "guides/settings.md" },
+      { "Stores on S3" = "guides/s3.md" },
+      { "Settings models" = "packages/config/overview.md" },
+      { "File names" = "packages/naming/overview.md" },
+    ]},
+    { "Run" = [
+      { "CLI and Python" = "guides/api-levels.md" },
+      { "Parallel processing" = "guides/parallel-processing.md" },
+      { "Diagnostics and monitoring" = "guides/diagnostics.md" },
+      { "Preprocessing" = "packages/ops/overview.md" },
+      { "Optional extensions" = "guides/extensions.md" },
+    ]},
+    { "How it works" = [
+      { "Reading GNSS files" = "packages/readers/overview.md" },
+      { "Ephemeris sources" = "packages/readers/ephemeris-sources.md" },
+      { "Orbits and clocks" = "packages/auxiliary/overview.md" },
+      { "Orbit and clock preparation" = "packages/auxiliary/preprocessing.md" },
+      { "Interpolation" = "packages/auxiliary/interpolation.md" },
+      { "Coordinate systems" = "packages/auxiliary/coordinates.md" },
+      { "Hemispheric grids" = "packages/grids/overview.md" },
+      { "VOD retrieval" = "packages/vod/overview.md" },
+      { "Stores" = "packages/store/overview.md" },
+      { "Chunks" = "packages/store/chunks.md" },
+      { "Versioning with Icechunk" = "packages/store/icechunk.md" },
+      { "Write strategies" = "packages/store/storage-strategies.md" },
+      { "Store metadata" = "packages/store-metadata/overview.md" },
+      { "Visualization" = "packages/viz/overview.md" },
+    ]},
+    { "Data formats" = [
+      { "RINEX v3.04" = "packages/readers/rinex-format.md" },
+      { "RINEX v2.11" = "packages/readers/rinex-v2-format.md" },
+      { "SBF" = "packages/readers/sbf.md" },
+      { "SBF field decoding" = "packages/readers/sbf-decoding.md" },
+      { "Satellite catalog" = "packages/readers/satellite-catalog.md" },
+      { "Product registry" = "packages/auxiliary/products.md" },
+    ]},
+    { "Extend" = [
+      { "Your own readers and VOD calculators" = "guides/plugins.md" },
+      { "Build a reader" = "packages/readers/building-a-reader.md" },
+      { "Utilities" = "packages/utils/overview.md" },
     ]},
   ]},
 
-  { "Development" = [
+  { "Contribute" = [
     { "Contributing" = "CONTRIBUTING.md" },
-    { "Contributor Setup" = "guides/contributor-setup.md" },
-    { "Development Guide" = "guides/DEVELOPMENT.md" },
-    { "Architecture & Design Patterns" = "guides/architecture-design.md" },
-    { "Developing with Claude Code" = "guides/ai-development.md" },
-    { "Build System" = "build-system.md" },
-    { "Tooling" = "tooling.md" },
-    { "Conventions & Defaults" = "principles.md" },
+    { "Contributor setup" = "guides/contributor-setup.md" },
+    { "Development guide" = "guides/DEVELOPMENT.md" },
+    { "Reference stores" = "guides/reference-stores.md" },
+    { "Coding agents" = [
+      { "Developing with coding agents" = "guides/ai-development.md" },
+      { "Issue tracker" = "agents/issue-tracker.md" },
+      { "Triage labels" = "agents/triage-labels.md" },
+      { "Domain docs" = "agents/domain.md" },
+    ]},
     { "Architecture" = [
-      { "Monorepo Structure" = "architecture.md" },
-      { "Namespace Packages" = "namespace-packages.md" },
-      { "Package Dependencies" = "dependencies.md" },
+      { "Monorepo structure" = "architecture.md" },
+      { "Namespace packages" = "namespace-packages.md" },
+      { "Package dependencies" = "dependencies.md" },
     ]},
-    { "Release & Publishing" = [
+    { "Conventions and defaults" = "principles.md" },
+    { "Decisions" = [
+      { "Overview" = "adr/index.md" },
+      { "0001 Versioned stores" = "adr/0001-versioned-stores.md" },
+      { "0002 GPS time" = "adr/0002-gps-time.md" },
+      { "0003 One file format per site" = "adr/0003-receivers-share-a-file-format.md" },
+      { "0004 Explicit over implicit" = "adr/0004-explicit-over-implicit.md" },
+      { "0005 Deprecation" = "adr/0005-deprecate-until-next-major.md" },
+      { "0006 Preprocessing only when set" = "adr/0006-preprocessing-only-when-set.md" },
+      { "0007 Provenance in log books" = "adr/0007-provenance-in-log-books.md" },
+      { "0008 Files found by name" = "adr/0008-files-found-by-name.md" },
+      { "0009 Plugins" = "adr/0009-plugins-via-entry-points.md" },
+      { "0010 Package versions" = "adr/0010-per-package-versions.md" },
+      { "0011 Free tools only" = "adr/0011-free-tools-only.md" },
+      { "0012 Agent workflow" = "adr/0012-agent-development-workflow.md" },
+      { "0013 Agents never merge" = "adr/0013-agents-never-merge.md" },
+      { "0014 Store metadata" = "adr/0014-store-metadata-split.md" },
+      { "0015 STAC catalog and releases" = "adr/0015-stac-catalog-at-data-root.md" },
+      { "0016 Day blocks and parallel writes" = "adr/0016-day-blocks-and-forked-writes.md" },
+    ]},
+    { "Glossary" = "glossary.md" },
+    { "Build and tooling" = [
+      { "Build system" = "build-system.md" },
+      { "Tooling" = "tooling.md" },
+    ]},
+    { "Release and publishing" = [
       { "Versioning" = "VERSIONING.md" },
-      { "Release Process" = "RELEASING.md" },
-      { "PyPI Setup" = "guides/PYPI_SETUP.md" },
+      { "Release process" = "RELEASING.md" },
       { "Zenodo DOI" = "guides/ZENODO_SETUP.md" },
-      { "OIDC Authentication" = "guides/OIDC_EXPLAINED.md" },
-      { "Release Internals" = "guides/HOW_RELEASE_WORKS.md" },
+      { "OIDC authentication" = "guides/OIDC_EXPLAINED.md" },
+      { "Release internals" = "guides/HOW_RELEASE_WORKS.md" },
     ]},
-    { "Quality & Compliance" = [
-      { "FOSS Principles" = "FOSS_PRINCIPLES.md" },
-      { "FAIR Software Compliance" = "FAIR_IMPLEMENTATION_SUMMARY.md" },
-      { "OpenSSF Best Practices" = "OPENSSF_BADGE_GUIDE.md" },
-      { "Security Policy" = "../SECURITY.md" },
+    { "Quality and compliance" = [
+      { "FOSS principles" = "FOSS_PRINCIPLES.md" },
+      { "FAIR software" = "FAIR_IMPLEMENTATION_SUMMARY.md" },
+      { "OpenSSF best practices" = "OPENSSF_BADGE_GUIDE.md" },
+      { "Security policy" = "SECURITY.md" },
     ]},
   ]},
 
-  { "API Reference" = [
+  { "Reference" = [
+    { "Command line" = "api/cli.md" },
     { "canvodpy" = "api/canvodpy.md" },
     { "canvod.readers" = "api/canvod-readers.md" },
     { "canvod.auxiliary" = "api/canvod-auxiliary.md" },
@@ -140,19 +151,19 @@ nav = [
     { "canvod.utils" = "api/canvod-utils.md" },
     { "canvod.ops" = "api/canvod-ops.md" },
   ]},
-
-  { "Legal" = [
-    { "Impressum & AI Disclosure" = "impressum.md" },
-  ]},
 ]
+# The Impressum is linked from the footer (overrides/partials/copyright.html).
 
 # --------------------------------------------------------------------------
 # Plugins
 # --------------------------------------------------------------------------
 [project.plugins.mkdocstrings.handlers.python]
 [project.plugins.mkdocstrings.handlers.python.options]
-docstring_style = "google"
-show_source = true
+docstring_style = "numpy"
+# Deprecated code still ships until the next major version, but the docs
+# leave it out (scripts/griffe_hide_deprecated.py).
+extensions = ["scripts/griffe_hide_deprecated.py:HideDeprecated"]
+show_source = false
 show_bases = true
 members_order = "source"
 
@@ -184,7 +195,8 @@ emoji_index = "zensical.extensions.emoji.twemoji"
 [project.markdown_extensions.pymdownx.mark]
 [project.markdown_extensions.pymdownx.smartsymbols]
 [project.markdown_extensions.pymdownx.snippets]
-auto_append = ["docs/includes/abbreviations.md"]
+# Outside docs/ so it is not published as a page of its own.
+auto_append = ["includes/abbreviations.md"]
 [project.markdown_extensions.pymdownx.superfences]
 custom_fences = [
   { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
@@ -202,14 +214,17 @@ custom_checkbox = true
 language = "en"
 # The header is dark green in both color schemes, so it takes the light
 # (dark mode) logo. The favicon follows the browser's color scheme
-# (docs/overrides/main.html adds the dark one).
+# (overrides/main.html adds the dark one).
 logo = "assets/logo/canvodpy_logo_dark_mode.svg"
 favicon = "assets/logo/canvodpy_favicon_bright_mode.svg"
-custom_dir = "docs/overrides"
+# Template overrides; outside docs/ so they are not published as pages.
+custom_dir = "overrides"
 
 features = [
+  "announce.dismiss",
   "content.code.copy",
   "content.code.annotate",
+  "content.footnote.tooltips",
   "content.tooltips",
   "content.tabs.link",
   "navigation.footer",
@@ -220,32 +235,33 @@ features = [
   "navigation.path",
   "navigation.sections",
   "navigation.tabs",
+  "navigation.tabs.sticky",
   "navigation.top",
   "navigation.tracking",
   "search.highlight",
-  "search.suggest",
   "toc.follow",
 ]
 
 [project.theme.icon]
 repo = "fontawesome/brands/github"
 
-[[project.theme.palette]]
-scheme = "default"
-toggle.icon = "lucide/sun"
-toggle.name = "Switch to dark mode"
-
+# The first palette is the default: dark mode.
 [[project.theme.palette]]
 scheme = "slate"
 toggle.icon = "lucide/moon"
 toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
 
 # --------------------------------------------------------------------------
 # Social links (footer)
 # --------------------------------------------------------------------------
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
-link = "https://github.com/nfb2021/canvodpy"
+link = "https://github.com/TUW-GEO/canvodpy"
 
 [[project.extra.social]]
 icon = "fontawesome/brands/python"

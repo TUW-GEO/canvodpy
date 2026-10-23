@@ -9,6 +9,7 @@ from canvod.auxiliary.interpolation import (
     Sp3Config,
     Sp3InterpolationStrategy,
 )
+from canvod.auxiliary.interpolation.interpolator import _detect_jumps
 
 
 class TestSp3Config:
@@ -239,6 +240,53 @@ class TestClockInterpolationStrategy:
         # Interpolated values shouldn't exceed input range significantly
         assert result["clock_bias"].min() >= -2e-6
         assert result["clock_bias"].max() <= 2e-6
+
+
+class TestDetectJumps:
+    """Test the windowed clock-jump detector (ClockConfig.window_size)."""
+
+    def test_window_size_one_matches_raw_diff(self):
+        """window_size<=1 must degenerate exactly to the pre-fix behavior."""
+        rng = np.random.default_rng(0)
+        data = rng.normal(scale=1e-7, size=50)
+        data[30:] += 5e-6  # genuine sustained jump
+
+        threshold = 1e-6
+        expected = np.where(np.abs(np.diff(data)) > threshold)[0]
+        actual = _detect_jumps(data, window_size=1, threshold=threshold)
+        np.testing.assert_array_equal(actual, expected)
+
+    def test_detects_genuine_sustained_jump(self):
+        """A real, sustained step must still be found, precisely located."""
+        data = np.zeros(20)
+        data[10:] = 1e-6
+
+        jumps = _detect_jumps(data, window_size=9, threshold=5e-7)
+        np.testing.assert_array_equal(jumps, [9])
+
+    def test_windowed_reduces_false_positives_under_noise(self):
+        """A windowed comparison must be far less prone to spurious splits
+        from ordinary sample-to-sample noise than the raw two-point diff —
+        this robustness is the entire point of ClockConfig.window_size.
+        """
+        threshold = 1e-6
+        rng = np.random.default_rng(42)
+        # No real jump anywhere — pure noise at ~0.6x the jump threshold.
+        noise = rng.normal(scale=0.6 * threshold, size=200)
+
+        raw_jumps = _detect_jumps(noise, window_size=1, threshold=threshold)
+        windowed_jumps = _detect_jumps(noise, window_size=9, threshold=threshold)
+
+        assert len(raw_jumps) > 10, (
+            "expected the raw single-sample diff to be noise-triggered often"
+        )
+        assert len(windowed_jumps) <= 1, (
+            "windowed detection should suppress almost all noise-only false positives"
+        )
+
+    def test_empty_and_single_sample_inputs(self):
+        assert len(_detect_jumps(np.array([]), window_size=9, threshold=1e-6)) == 0
+        assert len(_detect_jumps(np.array([1.0]), window_size=9, threshold=1e-6)) == 0
 
 
 class TestInterpolationIntegration:

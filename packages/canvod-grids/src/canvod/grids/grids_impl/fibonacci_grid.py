@@ -16,7 +16,7 @@ class FibonacciBuilder(BaseGridBuilder):
     Points are distributed on the sphere using the *Fibonacci lattice*
     (golden-spiral method), which provides one of the most uniform
     point distributions achievable on a sphere without iterative
-    optimisation.  Each point then becomes the centre of a *spherical
+    optimization.  Each point then becomes the center of a *spherical
     Voronoi cell* — the region of the sphere closer to that point than
     to any other.  The resulting tessellation has no polar singularities
     and near-uniform cell areas.
@@ -69,7 +69,7 @@ class FibonacciBuilder(BaseGridBuilder):
        Tessellating the full sphere (rather than hemisphere-only points)
        is required for correctness: with no sites in the southern
        hemisphere, cells along the horizon would have no southern
-       neighbour to bound them and would balloon out to cover the entire
+       neighbor to bound them and would balloon out to cover the entire
        (empty) opposite hemisphere.
     3. **Hemisphere filter** – of the resulting cells, only those whose
        *generating point* has ``θ ≤ π/2 − cutoff_theta`` are kept.
@@ -163,7 +163,7 @@ class FibonacciBuilder(BaseGridBuilder):
         Returns
         -------
         grid : pl.DataFrame
-            One row per Voronoi cell.  Contains phi, theta (centre),
+            One row per Voronoi cell.  Contains phi, theta (center),
             bounding-box limits, ``voronoi_region`` (list of vertex indices
             into the Voronoi vertex array), and ``n_vertices``.
         theta_lims : np.ndarray
@@ -202,7 +202,7 @@ class FibonacciBuilder(BaseGridBuilder):
 
         except ImportError as e:
             raise ImportError(
-                "scipy required for Fibonacci grid. Install: pip install scipy"
+                "scipy required for Fibonacci grid. Install: uv add scipy"
             ) from e
 
         mask = theta_full <= (np.pi / 2 - self.cutoff_theta_rad)

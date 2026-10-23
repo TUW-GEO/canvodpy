@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
+from canvod.utils import testing
 
 
 def pytest_configure(config):
@@ -190,9 +191,9 @@ def sample_rinex_data():
         attrs={
             "Created": "2024-01-01T00:00:00Z",
             "File Hash": "abc123",
-            "APPROX POSITION X": 4075539.8,
-            "APPROX POSITION Y": 931735.3,
-            "APPROX POSITION Z": 4801629.6,
+            "APPROX POSITION X": testing.ECEF_X,
+            "APPROX POSITION Y": testing.ECEF_Y,
+            "APPROX POSITION Z": testing.ECEF_Z,
         },
     )
 
@@ -293,21 +294,21 @@ def sample_preprocessed_sp3():
 
 @pytest.fixture
 def ecef_position():
-    """Fixture providing sample ECEF position (TU Wien station)."""
+    """Fixture providing the made-up site's ECEF position (Bloemfontein)."""
     from canvod.auxiliary import ECEFPosition
 
-    return ECEFPosition(x=4075539.8, y=931735.3, z=4801629.6)
+    return ECEFPosition(x=testing.ECEF_X, y=testing.ECEF_Y, z=testing.ECEF_Z)
 
 
 @pytest.fixture
 def geodetic_position():
     """Fixture providing sample geodetic position.
 
-    Using coordinates that convert correctly to TU Wien ECEF position.
-    These values were calculated by converting the TU Wien ECEF coordinates.
+    The made-up site's position (Bloemfontein), the same point as the
+    ``ecef_position`` fixture.
     """
     from canvod.auxiliary import GeodeticPosition
 
-    # Convert TU Wien ECEF to geodetic to get correct values
-    # ECEF(4075539.8, 931735.3, 4801629.6) → Geodetic(49.145°N, 12.877°E, 311.5m)
-    return GeodeticPosition(lat=49.145, lon=12.877, alt=311.5)
+    return GeodeticPosition(
+        lat=testing.LATITUDE, lon=testing.LONGITUDE, alt=testing.ALTITUDE_M
+    )

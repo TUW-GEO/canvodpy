@@ -1,4 +1,4 @@
-"""canvodpy doctor — environment and configuration diagnostics.
+"""canvodpy doctor: environment and configuration diagnostics.
 
 Reports canvodpy's resolved version, Python/uv environment, where config
 was resolved from and why (dev-checkout convenience vs. XDG default, see
@@ -13,14 +13,18 @@ manual checks.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.metadata as metadata
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Annotated
 
 from rich.console import Console
+
+from canvodpy.cli.options import CONFIG_DIR_OPTION
 
 console = Console()
 
@@ -46,16 +50,27 @@ def _package_version(name: str) -> str:
         return "unknown (not installed as a package)"
 
 
-def doctor() -> None:
-    """Report canvodpy's version, environment, and config resolution."""
+def _is_checkout_config(config_dir: Path) -> bool:
+    from canvod.config.loader import find_monorepo_root
+
+    try:
+        return config_dir == find_monorepo_root() / "config"
+    except RuntimeError:
+        return False
+
+
+def doctor(
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+) -> None:
+    """Report canvodpy's version, its environment, and its configuration directory."""
     from canvod.config.loader import (
         ConfigValidationError,
-        find_monorepo_root,
         format_validation_error,
         get_default_config_dir,
         get_template_dir,
         load_config,
     )
+    from canvod.config.remote import settings_url
 
     console.print("\n[bold]canvodpy doctor[/bold]\n")
 
@@ -70,25 +85,23 @@ def doctor() -> None:
 
     # --- Config resolution ----------------------------------------------------
     console.print()
-    env_dir = os.environ.get("CANVOD_CONFIG_DIR")
-    if env_dir:
-        config_dir = Path(env_dir)
-        source = "CANVOD_CONFIG_DIR environment variable"
+    config_dir = get_default_config_dir()
+    if os.environ.get("CANVOD_CONFIG_DIR"):
+        source = "--config-dir option or CANVOD_CONFIG_DIR environment variable"
+    elif _is_checkout_config(config_dir):
+        source = f"dev checkout at {config_dir.parent}"
     else:
-        try:
-            monorepo_root = find_monorepo_root()
-            monorepo_config = monorepo_root / "config"
-        except RuntimeError:
-            monorepo_config = None
-        if monorepo_config is not None and monorepo_config.exists():
-            config_dir = monorepo_config
-            source = f"dev checkout at {monorepo_root}"
-        else:
-            config_dir = get_default_config_dir()
-            source = "XDG default (no monorepo checkout found)"
+        source = "XDG default (no monorepo checkout found)"
 
     console.print(f"  Config resolved to: {config_dir}")
     console.print(f"    (source: {source})")
+    url = settings_url(config_dir)
+    if url is not None:
+        digest = hashlib.sha256(
+            (config_dir / "canvod-settings.yaml").read_bytes()
+        ).hexdigest()
+        console.print(f"    Settings from {url}")
+        console.print(f"    (sha256 {digest})")
 
     # --- Templates ------------------------------------------------------------
     template_dir = get_template_dir()
@@ -103,7 +116,7 @@ def doctor() -> None:
             f"  Templates reachable: [red]❌ not found at {template_dir}[/red]"
         )
         console.print(
-            "    This looks like a broken canvod-config install — reinstall it."
+            "    This looks like a broken canvod-config install; reinstall it."
         )
 
     # --- canvod-settings.yaml ---------------------------------------------------

@@ -5,25 +5,36 @@
 The `canvod-readers` package provides validated parsers for [GNSS](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"} observation data. It transforms raw receiver files into analysis-ready [xarray Datasets](https://docs.xarray.dev){:target="_blank"}, serving as the data ingestion layer for GNSS Transmissometry (GNSS-T) analysis.
 !!! note "Storage stack"
 
-    [**xarray**](https://docs.xarray.dev){:target="_blank"} provides labelled N-D arrays with named axes and coordinates — think NumPy with named dimensions and attached metadata. Readers output xarray Datasets that flow into [**Zarr**](https://zarr.dev){:target="_blank"} — a chunked, compressed array format designed for parallel cloud reads. [**Icechunk**](https://icechunk.io){:target="_blank"} sits on top of Zarr and adds git-like version control: every append is a commit-snapshot retrievable by ID. Together they form part of the [**Pangeo**](https://pangeo.io){:target="_blank"} open scientific Python ecosystem for large geoscience datasets that canvodpy builds on.
+    [**xarray**](https://docs.xarray.dev){:target="_blank"} provides labeled N-D arrays with named axes and coordinates, like NumPy with named dimensions and attached metadata. Readers output xarray Datasets that flow into [**Zarr**](https://zarr.dev){:target="_blank"}, a chunked, compressed array format designed for parallel cloud reads. [**Icechunk**](https://icechunk.io){:target="_blank"} sits on top of Zarr and adds git-like version control: every write is a commit, a snapshot retrievable by its ID. Together they form part of the [**Pangeo**](https://pangeo.io){:target="_blank"} open scientific Python ecosystem for large geoscience datasets that canvodpy builds on.
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-file-lines: &nbsp; **RINEX v3.04 — `Rnxv3Obs`**
+-   :fontawesome-solid-file-lines: &nbsp; **RINEX v3.04 (`Rnxv3Obs`)**
 
     ---
 
-    [RINEX](https://igs.org/wg/rinex/){:target="_blank"} (Receiver Independent Exchange Format) is the IGS-standardised
+    [RINEX](https://igs.org/wg/rinex/){:target="_blank"} (Receiver Independent Exchange Format) is the IGS-standardized
     plain-text format for GNSS observations, supported by every major receiver manufacturer.
     Observation files (`.rnx`) contain timestamped pseudorange, carrier phase, Doppler, and
     signal-to-noise measurements per satellite and signal.
-    Satellite geometry is not embedded — it requires external SP3 precise ephemerides
+    Satellite geometry is not embedded; it requires external SP3 precise ephemerides
     (CLK clock corrections are fetched too by default, though unused for VOD;
     see `aux_data.fetch_clock`).
 
     [:octicons-arrow-right-24: RINEX format](rinex-format.md)
 
--   :fontawesome-solid-satellite-dish: &nbsp; **SBF Binary — `SbfReader`**
+-   :fontawesome-solid-file-lines: &nbsp; **RINEX v2.11 (`Rnxv2Obs`)**
+
+    ---
+
+    Legacy RINEX 2 observation files (`.YYo`, `.rnx`), read into the same RINEX 3
+    based `SV|BAND|CODE` structure. RINEX 2 does not record tracking codes;
+    where the specification leaves a code unresolved, the SID carries a
+    lowercase marker (`p`, `l`, `u`) instead of a guessed RINEX 3 code.
+
+    [:octicons-arrow-right-24: RINEX v2.11 format](rinex-v2-format.md)
+
+-   :fontawesome-solid-satellite-dish: &nbsp; **SBF binary (`SbfReader`)**
 
     ---
 
@@ -34,33 +45,54 @@ The `canvod-readers` package provides validated parsers for [GNSS](https://gssc.
 
     [:octicons-arrow-right-24: SBF reader](sbf.md)
 
+-   :fontawesome-solid-file-lines: &nbsp; **NMEA 0183 v4.00 (`NmeaObs`)**
+
+    ---
+
+    Signal strengths from GSV sentences (GPS, GLONASS, Galileo, BeiDou), epochs
+    from RMC/GGA (UTC), checksums validated. Band and tracking code come from the
+    GSV signal ID where the sentence has one, else the system's main band with
+    code `X`. NMEA carries SNR only: no pseudorange and no phase. The
+    receiver position is the median of the file's GGA fixes (fix indicator
+    1, 2, 4 or 5; ellipsoidal height = altitude + geoid separation);
+    a run takes it from the first file of a receiver-day that has one. A
+    day none of whose files has such a fix can't be processed.
+
 </div>
 
 ---
 
-## Supported Formats at a Glance
+## Supported formats at a glance
 
-| Feature | `Rnxv3Obs` | `SbfReader` |
-| ------- | ---------- | ----------- |
-| Format | Plain text | Binary |
-| Extension | `.rnx` | `.sbf` |
-| Satellite geometry (θ, φ) | SP3 download | **Embedded** |
-| Extra metadata | Header only | PVT · DOP · quality |
-| `to_ds()` | ✓ | ✓ |
-| `iter_epochs()` | ✓ | ✓ |
-| `to_metadata_ds()` | — | ✓ |
-| `to_ds_and_auxiliary()` | `{}` aux | `{"sbf_obs": meta_ds}` |
+| Feature | `Rnxv3Obs` | `Rnxv2Obs` | `SbfReader` | `NmeaObs` |
+| ------- | ---------- | ---------- | ----------- | --------- |
+| Format | Plain text | Plain text | Binary | Plain text |
+| Extension | `.rnx` | `.YYo`, `.rnx` | `.sbf` | `.nmea` |
+| Tracking codes | Exact (RINEX 3 attribute) | Exact where RINEX 2.11 defines them, else lowercase marker | Exact | From the GSV signal ID, else `X` |
+| Observables | SNR, pseudorange, phase, Doppler, LLI, SSI | as RINEX 3 | SNR, pseudorange, phase, Doppler, SSI, flags | SNR only |
+| Epoch time scale | GPS time (header; other time systems refused) | GPS time (header; other time systems refused) | GPS time | UTC, converted to GPS time |
+| Satellite geometry ($\theta$, $\varphi$) | SP3 download | SP3 download | SP3 download, or **embedded** (SatVisibility) | SP3 download |
+| Extra metadata | Header only | Header only | PVT · DOP · quality | None |
+| `to_ds_and_auxiliary()` | `{}` aux | `{}` aux | `{"sbf_obs": meta_ds}` | `{}` aux |
+
+Every reader has `to_ds()` and `iter_epochs()`. Every epoch is GPS time,
+the time scale of the orbits and clocks (SP3, CLK), recorded in the
+`time_system` attribute of the `epoch` coordinate (`GPS`). NMEA times are
+UTC: the reader adds the leap seconds of the date ($\text{GPS} - \text{UTC}$, 18 s since
+2017; `canvod.readers.gnss_specs.leap_seconds`). Stores written before
+canVODpy stored every epoch in GPS time have SBF and NMEA epochs in UTC;
+the store refuses to append to them (`EpochTimeSystemError`).
 
 !!! note "Consistent output structure"
 
-    Both readers always produce data with the same two dimensions — time (epoch) and signal (SID) — and the same required attributes, so analysis code works with RINEX and SBF data interchangeably.
-    Both readers produce `(epoch × sid)` xarray Datasets that pass
+    All readers always produce data with the same two dimensions, time (epoch) and signal (SID), and the same required attributes, so analysis code works with RINEX and SBF data interchangeably.
+    All readers produce `(epoch × sid)` xarray Datasets that pass
     `validate_dataset()`. Every row is one timestep (an epoch), every column
-    is one signal (a SID), and every cell is one observable — for example,
-    SNR in dB-Hz. The same dimensions, coordinates, and required attributes
+    is one signal (a SID), and every cell is one observable, for example
+    SNR, with its unit in the `units` attribute. The same dimensions, coordinates, and required attributes
     are guaranteed, so downstream analysis code is reader-agnostic for observables.
     Geometry provisioning differs: RINEX datasets are augmented with satellite
-    positions from SP3 files (CLK too, by default — optional, see
+    positions from SP3 files (by default CLK too, which is optional; see
     `aux_data.fetch_clock`); SBF datasets carry embedded SatVisibility
     data from the receiver.
 
@@ -74,8 +106,12 @@ The `canvod-readers` package provides validated parsers for [GNSS](https://gssc.
 graph TD
     A1["RINEX v3 File (.rnx)"] --> B1["Rnxv3Obs (+ SP3/CLK)"]
     A2["SBF File (.sbf)"] --> B2["SbfReader"]
+    A3["RINEX v2 File (.YYo)"] --> B3["Rnxv2Obs (+ SP3/CLK)"]
+    A4["NMEA File (.nmea)"] --> B4["NmeaObs (+ SP3/CLK)"]
     B1 --> C["validate_dataset()"]
+    B3 --> C
     B2 --> C
+    B4 --> C
     C --> D["`**xarray.Dataset**
     epoch x sid`"]
     B2 --> E["`**Metadata Dataset**
@@ -84,54 +120,35 @@ graph TD
     E --> F
 ```
 
-### Contract-Based Design
+### Contract-based design
 
-All readers implement the `GNSSDataReader` base class — a Pydantic `BaseModel` + ABC that provides file path validation, model configuration, and a consistent interface:
+All readers implement the `GNSSDataReader` base class, a Pydantic `BaseModel`
+and ABC. It holds the validated path `fpath` and declares what every
+reader must provide:
 
-```python
-from pydantic import BaseModel, ConfigDict, field_validator
-from abc import ABC, abstractmethod
-import xarray as xr
+| Abstract member | What it returns |
+|---|---|
+| `to_ds(**kwargs)` | The `(epoch × sid)` dataset |
+| `iter_epochs()` | The file's epochs one by one |
+| `file_hash` | First 16 hex digits of the file's SHA-256 (deduplication) |
+| `source_format` | Format identifier, for example `"rinex3"` or `"sbf"`, recorded in the GNSS store |
+| `start_time`, `end_time` | First and last epoch |
+| `systems`, `num_satellites` | Systems and number of satellites in the file |
 
-class GNSSDataReader(BaseModel, ABC):
-    """Base class for all GNSS data format readers."""
+`to_ds_and_auxiliary(**kwargs)` returns the dataset and a dict of auxiliary
+datasets; by default the dict is empty, and `SbfReader` fills it from the
+same pass over the file. A missing member fails as soon as the class is
+instantiated.
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    fpath: Path  # Validated at construction time
+Subclasses only need to inherit from `GNSSDataReader`: no separate `BaseModel` import, no `fpath` field, no file validation boilerplate.
 
-    @abstractmethod
-    def to_ds(self, **kwargs) -> xr.Dataset:
-        """Convert to xarray.Dataset (epoch × sid)."""
-
-    @abstractmethod
-    def iter_epochs(self):
-        """Iterate through epochs."""
-
-    @property
-    @abstractmethod
-    def file_hash(self) -> str:
-        """SHA-256 hash for deduplication."""
-
-    def to_ds_and_auxiliary(
-        self, **kwargs
-    ) -> tuple[xr.Dataset, dict[str, xr.Dataset]]:
-        """Single-pass scan: obs dataset + any auxiliary datasets.
-
-        Default returns empty aux dict.
-        SbfReader overrides for one-pass binary decode.
-        """
-        return self.to_ds(**kwargs), {}
-```
-
-Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel` import, no `fpath` field, no file validation boilerplate.
-
-[:octicons-arrow-right-24: Full architecture](architecture.md)
+[:octicons-arrow-right-24: The reader contract](building-a-reader.md#the-reader-contract)
 
 ---
 
-## Usage Examples
+## Usage examples
 
-=== "RINEX — VOD pipeline"
+=== "RINEX for the VOD pipeline"
 
     ```python
     from canvod.readers import Rnxv3Obs
@@ -143,9 +160,10 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
     l_band = ds.where(ds.band.isin(["L1", "L2", "L5"]), drop=True)
     ```
 
-=== "SBF — quick-look (no downloads)"
+=== "SBF quick look (no downloads)"
 
     ```python
+    import numpy as np
     from canvod.readers.sbf import SbfReader
 
     reader = SbfReader(fpath="rref001a00.sbf")
@@ -153,7 +171,7 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
     meta_ds = aux["sbf_obs"]
 
     # Polar angle filter: elevation ≥ 20°
-    snr_filtered = obs_ds["SNR"].where(meta_ds["theta"] <= 70)
+    snr_filtered = obs_ds["SNR"].where(meta_ds["broadcast_theta"] <= np.deg2rad(70))
     ```
 
 === "Multi-constellation analysis"
@@ -167,7 +185,7 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
         print(f"{system}: {mean_snr:.2f} dB")
     ```
 
-=== "ReaderFactory — format registry"
+=== "ReaderFactory format registry"
 
     ```python
     from canvodpy import ReaderFactory
@@ -182,7 +200,7 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
     ds = reader.to_ds(keep_data_vars=["SNR"])
     ```
 
-=== "Time-series concat"
+=== "Time series of several files"
 
     ```python
     import xarray as xr
@@ -198,16 +216,16 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
 
 ---
 
-## Key Components
+## Key components
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-fingerprint: &nbsp; **`SignalID` — Validated Signal Identifiers**
+-   :fontawesome-solid-fingerprint: &nbsp; **`SignalID` (validated signal identifiers)**
 
     ---
 
     Pydantic model for signal identifiers (`SV|band|code`).
-    GNSS observations span six dimensions: epoch, satellite (SV), band, ranging code type, polar angle (θ), and azimuth (φ). Different satellite generations broadcast different signal combinations, and a single SV may simultaneously transmit on multiple ranging code types. `SignalID` collapses the three signal-characterising dimensions — SV, band (RINEX v3.04 nomenclature), and ranging code — into a single composite key, reducing the 6D observation space to 2D: (epoch, SID). Unlike most GNSS tools that aggregate or discard sub-SV signal distinctions at ingestion, canvodpy retains **all signal characteristics** throughout processing — treating signals as non-comparable across codes until explicitly aggregated downstream. This full signal fidelity enables per-band and per-constellation aggregation as an analysis choice, not an ingestion constraint, and is essential for rigorous validation.
+    GNSS observations span six dimensions: epoch, satellite (SV), band, ranging code type, polar angle ($\theta$), and azimuth ($\varphi$). Different satellite generations broadcast different signal combinations, and a single SV may simultaneously transmit on multiple ranging code types. `SignalID` collapses the three dimensions that characterize a signal (SV, band in RINEX v3.04 nomenclature, and ranging code) into a single composite key, reducing the 6D observation space to 2D: (epoch, SID). Unlike most GNSS tools that aggregate or discard sub-SV signal distinctions at ingestion, canvodpy retains **all signal characteristics** throughout processing, treating signals as non-comparable across codes until explicitly aggregated downstream. This full signal fidelity enables per-band and per-constellation aggregation as an analysis choice, not an ingestion constraint, and is essential for rigorous validation.
     Validates the SV against known GNSS systems at creation time.
     Frozen, hashable, and used throughout the builder and readers.
 
@@ -215,22 +233,22 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
     from canvod.readers import SignalID
 
     sig = SignalID(sv="G01", band="L1", code="C")
-    sig.sid     # → "G01|L1|C"
+    sig.sid  # → "G01|L1|C"
     sig.system  # → "G"
     ```
 
--   :fontawesome-solid-hammer: &nbsp; **`DatasetBuilder` — Guided Dataset Construction**
+-   :fontawesome-solid-hammer: &nbsp; **`DatasetBuilder` (guided dataset construction)**
 
     ---
 
     Handles coordinate assembly, frequency resolution, dtype enforcement,
-    and validation. Readers use `add_epoch()` → `add_signal()` → `set_value()`
-    → `build()` instead of manual numpy/xarray assembly.
+    and validation. Readers use `add_epoch()` $\rightarrow$ `add_signal()` $\rightarrow$ `set_value()`
+    $\rightarrow$ `build()` instead of manual NumPy or xarray assembly.
 
     ```python
     from canvod.readers.builder import DatasetBuilder
 
-    builder = DatasetBuilder(reader)
+    builder = DatasetBuilder(reader, time_system="GPS")
     ei = builder.add_epoch(timestamp)
     sig = builder.add_signal(sv="G01", band="L1", code="C")
     builder.set_value(ei, sig, "SNR", 42.0)
@@ -243,10 +261,11 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
 
     `gnss_specs` provides constellation definitions for GPS, Galileo,
     GLONASS, BeiDou, QZSS, SBAS, and IRNSS including band mappings and
-    centre frequencies.
+    center frequencies.
 
     ```python
     from canvod.readers.gnss_specs.constellations import GPS
+
     gps = GPS()  # static SVs from IGS SINEX catalog
     gps.BANDS  # {'1': 'L1', '2': 'L2', '5': 'L5'}
     ```
@@ -256,13 +275,12 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
     ---
 
     `SignalIDMapper` provides frequency, bandwidth, and overlap-group
-    lookups for canonical `SV|Band|Code` signal IDs.  SIDs are
-    constructed directly from header obs codes in the fast-path reader.
+    lookups for canonical `SV|Band|Code` signal IDs.
 
     ```python
     mapper = SignalIDMapper()
-    freq = mapper.get_band_frequency("L1")   # → 1575.42
-    bw   = mapper.get_band_bandwidth("L1")   # → 30.69
+    freq = mapper.get_band_frequency("L1")  # → 1575.42
+    bw = mapper.get_band_bandwidth("L1")  # → 30.69
     ```
 
 -   :fontawesome-solid-circle-check: &nbsp; **`validate_dataset()`**
@@ -270,14 +288,15 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
     ---
 
     Every dataset produced by any reader must pass structural validation
-    before it is returned. Checks dimensions, coordinate dtypes, required
-    variables, and global attributes — including `"File Hash"`, a SHA-256
-    of the source file contents that `canvod-store` uses as its first
+    before it is returned. Checks dimensions, coordinate data types, required
+    variables, and global attributes, including `"File Hash"`, the first
+    16 hex digits of the SHA-256 of the source file contents that `canvod-store` uses as its first
     deduplication layer, ensuring the same physical file is never ingested
     twice regardless of when it is processed.
 
     ```python
     from canvod.readers.base import validate_dataset
+
     validate_dataset(ds)  # raises ValueError listing ALL violations
     ```
 
@@ -287,30 +306,51 @@ Subclasses only need to inherit from `GNSSDataReader` — no separate `BaseModel
 
 ## Performance
 
-### Single-Pass Parser
+### RINEX v3 parsers
 
-`Rnxv3Obs` uses a single-pass parser that pre-computes the full Signal ID (SID) space from the RINEX header and fills pre-allocated NumPy arrays in one pass over the file. This avoids the overhead of:
+`Rnxv3Obs` pre-computes the full Signal ID (SID) space from the RINEX header and fills pre-allocated NumPy arrays. A pre-built lookup table maps `(SV, obs_code)` to the array index, and the SIDs are derived once from the header.
 
-- **Per-observation object allocation** — inline string parsing replaces per-observation model instantiation
-- **Repeated signal ID lookups** — a pre-built lookup table maps `(SV, obs_code)` → array index directly
-- **Redundant header re-parsing** — SIDs are derived once from header metadata at parse start
+Two parsers fill these arrays:
+
+- **`validated`** (default): checks every epoch and drops the epochs that fail. The reader logs how many and at which lines (`rinex_epochs_rejected`). An epoch is dropped if:
+    - its epoch line doesn't match the RINEX 3 format (Pydantic epoch line model);
+    - a satellite line has an invalid satellite ID (Pydantic satellite model), or a system without a `SYS / # / OBS TYPES` header record;
+    - an observation field is neither blank nor in the standard RINEX form: a value in F14.3 with the decimal point in its fixed column, followed by the LLI and the SSI flag; each flag is blank or a single digit. A field with stray characters, null bytes or a shifted decimal point is malformed; the reader never guesses a value from it. A fully blank field or a value of 0.0 is a missing observation (RINEX 3.04 Table A3): its value stays missing and its LLI and SSI flags aren't kept. Stores written with canVODpy 0.4.0 or earlier can hold pseudorange, phase, and Doppler values of 0.0 from RINEX 3 files;
+    - the satellite count of the epoch line differs from the number of satellite lines (Pydantic epoch record model).
+
+    `to_ds()` reads and checks only the fields that the variables in `keep_data_vars` need. `SNR` needs the `S` fields, `Pseudorange` the `C` fields, `Phase` the `L` fields, `Doppler` the `D` fields, `LLI` the `L` fields and `SSI` the `L` and `C` fields. Fields of other observation types are never stored, so they aren't read. A malformed field of a variable that `keep_data_vars` leaves out therefore doesn't drop its epoch, and an SNR-only read can keep epochs that a read of all variables drops. The values go into the arrays directly, without a Pydantic object per observation; `iter_epochs()` reads and checks every field and also returns an `Observation` model per field.
+- **`unvalidated_fast`**: slices fixed columns without any check.
+
+Both share the SID space, the array allocation, the epoch-time conversion and the dataset assembly. For a valid file they give the identical dataset (`test_rinex_v3_path_parity.py`).
+
+!!! danger "`unvalidated_fast` is your responsibility"
+
+    The unvalidated parser does not check epochs, satellite IDs, satellite
+    counts or observation fields. A corrupted record can enter the dataset
+    as partial or wrong values, for example the fields of a truncated
+    satellite line, or an epoch whose satellite count does not match its
+    records. canVODpy takes no responsibility for its results; checking the
+    input files is entirely up to you. Every use emits an
+    `UnvalidatedParserWarning`. Select it with
+    `to_ds(parser="unvalidated_fast")` or
+    `processing.params.rinex_v3_parser: unvalidated_fast`.
 
 ### Tips
 
 !!! tip "Memory"
 
-    Use `keep_data_vars=["SNR"]` to load only what you need.
-    Full RINEX with phase + Doppler uses ~4× more memory.
+    Use `keep_data_vars=["SNR"]` to load only what you need;
+    pseudorange, phase and Doppler add one array each.
 
-!!! tip "Batch processing"
+!!! tip "Parallel processing"
 
-    For many files, the orchestrator parallelises across receivers using
-    `ThreadPoolExecutor` (Wave A/B) and across files using
-    `ProcessPoolExecutor`. Each worker handles one file at a time.
+    For many files, a run reads them in a pool of worker processes, one task
+    per group of files that share an epoch chunk, across all receivers and
+    the days of a unit.
     See [Parallel Processing](../../guides/parallel-processing.md)
     for configuration and resource limits.
 
 !!! tip "Storage"
 
     After processing, write to Icechunk via `canvod-store` for
-    compressed, versioned storage with O(1) epoch lookups.
+    compressed, versioned storage.

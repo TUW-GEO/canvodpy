@@ -86,6 +86,19 @@ class TestHasRinexFiles:
         _create_rinex_file(tmp_path, suffix=".O")
         assert _has_rinex_files(tmp_path) is True
 
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "FANA00INK_R_20250010000_15M_05S_AA.sbf",
+            "FANA00INK_R_20250010000_01D_30S_MO.rnx.gz",
+            "fana0010.25o.gz",
+            "fana001a00.25_.gz",
+        ],
+    )
+    def test_dir_with_canonical_or_compressed_files(self, tmp_path, name):
+        (tmp_path / name).write_text("")
+        assert _has_rinex_files(tmp_path) is True
+
     def test_dir_with_unrelated_files(self, tmp_path):
         """Non-RINEX files should not trigger detection."""
         (tmp_path / "readme.txt").write_text("not RINEX")
@@ -376,3 +389,23 @@ class TestPairDataDirMatcher:
         results = list(matcher)
         dates = [r.yyyydoy for r in results]
         assert dates == sorted(dates)
+
+    def test_has_data_decides_which_days_match(self, pair_setup):
+        """An injected ``has_data`` replaces the filename-glob check."""
+        base, receivers, pairs = pair_setup
+        calls = []
+
+        def has_data(receiver, path):
+            calls.append(receiver)
+            return path.name == "25002"
+
+        matcher = PairDataDirMatcher(base, receivers, pairs, has_data=has_data)
+        results = list(matcher)
+        assert [r.yyyydoy.to_str() for r in results] == ["2025002"]
+        assert set(calls) == {"canopy_01", "reference_01"}
+
+    def test_is_deprecated(self, pair_setup):
+        """The pipeline finds days through its own discovery now."""
+        base, receivers, pairs = pair_setup
+        with pytest.warns(FutureWarning, match="left over from development"):
+            PairDataDirMatcher(base, receivers, pairs)

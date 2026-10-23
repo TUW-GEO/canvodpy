@@ -1,17 +1,28 @@
 """Abstract base class for auxiliary GNSS files."""
 
+from __future__ import annotations
+
 import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+import structlog
 import xarray as xr
-from canvod.utils.tools import YYYYDOY
+from canvod.utils.tools import YYYYDOY, deprecated
 from pydantic import ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from canvod.auxiliary.core.downloader import FileDownloader, FtpDownloader
 from canvod.auxiliary.interpolation import Interpolator
+
+log = structlog.get_logger(__name__)
+
+# How much of the previous and next day AuxFile.join_days keeps: several
+# epochs of any product (15 min orbits, 30 s clocks), enough for the clock
+# jump detection window on both sides.
+DAY_JOIN_MARGIN = np.timedelta64(1, "h")
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
@@ -30,7 +41,8 @@ class AuxFile(ABC):
     - user_email: Optional email for NASA CDDIS authentication
       - If None: Uses ESA FTP server exclusively (no authentication required)
       - If provided: Enables NASA CDDIS as fallback server (requires registration)
-      - To enable CDDIS, set nasa_earthdata_acc_mail in config/processing.yaml
+      - To enable CDDIS, set processing.credentials.nasa_earthdata_acc_mail
+        in config/canvod-settings.yaml
 
     Notes
     -----
@@ -86,7 +98,7 @@ class AuxFile(ABC):
         agency : str
             Agency providing the data (e.g., "COD", "IGS").
         product_type : str
-            Product type ("final", "rapid", "ultrarapid").
+            Product type ("final" or "rapid").
         ftp_server : str
             Base URL for file downloads.
         local_dir : Path
@@ -246,10 +258,9 @@ class AuxFile(ABC):
             try:
                 result = self.downloader.download(url, destination, file_info)
                 if i > 0:
-                    # We got here via fallback — log which server succeeded
-                    print(
-                        f"  ✓ Download succeeded from fallback server: "
-                        f"{server.description or server.url}"
+                    log.info(
+                        "fallback_server_succeeded",
+                        server=server.description or server.url,
                     )
                 return result
             except Exception as e:
@@ -262,13 +273,16 @@ class AuxFile(ABC):
                 server_label = server.description or server.url
                 error_msg = f"{server_label}: {e!s}"
                 errors.append(error_msg)
-                print(f"  ⚠ Download failed from {server_label}: {e!s}")
-
-                # Warn about fallback if there are more servers to try
+                next_label = None
                 if i < len(available_servers) - 1:
                     next_server = available_servers[i + 1]
                     next_label = next_server.description or next_server.url
-                    print(f"  → Trying fallback server: {next_label}")
+                log.warning(
+                    "server_download_failed",
+                    server=server_label,
+                    error=str(e),
+                    next_server=next_label,
+                )
 
         # All servers exhausted
         product_label = f"{product_spec.agency_code}/{product_spec.product_type}"
@@ -308,6 +322,55 @@ class AuxFile(ABC):
         """Get the interpolation strategy for this file type."""
         pass
 
+    def join_days(
+        self,
+        previous: AuxFile,
+        following: AuxFile,
+        margin: np.timedelta64 = DAY_JOIN_MARGIN,
+    ) -> xr.Dataset:
+        """This file's data with the end of the previous and the start of the next day.
+
+        A daily file can end before midnight (e.g. a 15 min orbit file at
+        23:45), and its first and last epochs have neighbors on one side
+        only. With ``margin`` of the neighboring days on both sides, the
+        whole day lies inside the data: nothing is extrapolated.
+
+        Parameters
+        ----------
+        previous, following : AuxFile
+            The same product for the previous and the next day.
+        margin : np.timedelta64
+            How much of each neighboring day is kept.
+
+        Returns
+        -------
+        xr.Dataset
+            The epochs of this file, plus those of the neighbors within
+            ``margin`` of this day that this file lacks (e.g. this file's
+            24:00 epoch wins over the next file's 00:00), sorted by epoch.
+            Satellites missing in a file are NaN there. Attrs of this file.
+        """
+        day = self.data
+        start = np.datetime64(YYYYDOY.from_str(self.date).date, "ns")
+        end = start + np.timedelta64(1, "D")
+        before = previous.data.sel(epoch=slice(start - margin, None))
+        after = following.data.sel(epoch=slice(None, end + margin))
+        parts = [
+            part.sel(epoch=~part.epoch.isin(day.epoch.values))
+            for part in (before, after)
+        ]
+        joined = xr.concat(
+            [parts[0], day, parts[1]],
+            dim="epoch",
+            join="outer",
+            data_vars="minimal",
+            coords="minimal",
+            compat="override",
+            combine_attrs="override",
+        ).sortby("epoch")
+        joined.attrs = dict(day.attrs)
+        return joined
+
     @property
     def data(self) -> xr.Dataset:
         """Access the file's data, loading it if necessary."""
@@ -318,28 +381,68 @@ class AuxFile(ABC):
         return self._data
 
     def check_file_exists(self) -> Path:
-        """Verify file exists locally or download it if needed.
+        """Return the local file, downloading it if needed.
+
+        The candidate names (one per sampling the product has been
+        published with) are tried in order: first a local copy of any of
+        them, then a download of each in turn.
 
         Returns
         -------
         Path
             Local file path.
+
+        Raises
+        ------
+        RuntimeError
+            If no candidate could be downloaded; the message names every
+            file tried.
         """
-        filename = self.generate_filename_based_on_type()
-        file_path = self.local_dir / filename
-        if not file_path.exists():
-            print(f"File {file_path} does not exist. Downloading...")
-            self.download_aux_file()
-        else:
-            print(f"File {file_path} exists.")
-        return file_path
+        candidates = self.candidate_filenames()
+        for name in candidates:
+            file_path = self.local_dir / name
+            if file_path.exists():
+                log.debug("aux_file_exists", path=str(file_path))
+                return file_path
+
+        errors: list[str] = []
+        for name in candidates:
+            log.debug("aux_file_downloading", path=str(self.local_dir / name))
+            try:
+                self.download_aux_file(name)
+            except RuntimeError as e:
+                if "No internet connection" in str(e):
+                    raise
+                errors.append(f"{name}:\n{e}")
+                continue
+            return self.local_dir / name
+
+        raise RuntimeError(
+            f"No {'/'.join(self.file_type)} file of {self.agency}/"
+            f"{self.product_type} for {self.date} could be downloaded. "
+            f"Tried {', '.join(candidates)}.\n\n" + "\n\n".join(errors)
+        )
 
     @abstractmethod
+    def candidate_filenames(self) -> list[str]:
+        """File names of this file, in the order they are tried."""
+
+    @deprecated(
+        "AuxFile.generate_filename_based_on_type() is left over from "
+        "development and will be removed with the next major version. Use "
+        "AuxFile.candidate_filenames() instead: a product can be published "
+        "with several samplings."
+    )
     def generate_filename_based_on_type(self) -> Path:
-        """Generate the appropriate filename for this type of auxiliary file."""
-        pass
+        """First candidate file name."""
+        return Path(self.candidate_filenames()[0])
 
     @abstractmethod
-    def download_aux_file(self) -> None:
-        """Download the auxiliary file from the specified FTP server."""
-        pass
+    def download_aux_file(self, filename: str) -> None:
+        """Download one candidate file into ``local_dir``.
+
+        Parameters
+        ----------
+        filename : str
+            One of :meth:`candidate_filenames`.
+        """

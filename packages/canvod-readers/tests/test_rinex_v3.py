@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 import xarray as xr
 
@@ -12,6 +13,13 @@ TEST_DATA_DIR = Path(__file__).parent / "test_data"
 RINEX_FILE = (
     TEST_DATA_DIR
     / "valid/rinex_v3_04/01_Rosalia/02_canopy/01_GNSS/01_raw/25001/ROSA01TUW_R_20250010000_15M_05S_AA.rnx"
+)
+
+
+# Contains SBAS GEO S48 (EGNOS PRN 148) besides S23 and S36.
+RINEX_FILE_WITH_S48 = (
+    TEST_DATA_DIR
+    / "valid/rinex_v3_04/01_Rosalia/02_canopy/01_GNSS/01_raw/25001/ROSA01TUW_R_20250012230_15M_05S_AA.rnx"
 )
 
 
@@ -217,6 +225,65 @@ class TestSignalMapping:
                 continue
 
             assert dataset_system == sv_system
+
+
+def test_sbas_satellites_beyond_s36_are_read():
+    """Regression: SBAS sats are Snn with nn = PRN - 100 over the full
+    two-digit range (RINEX 3.04 section 8.4). The reader used to keep its own
+    S01-S36 list and silently dropped S48's observations at read time."""
+    if not RINEX_FILE_WITH_S48.exists():
+        pytest.skip(f"Test file not found: {RINEX_FILE_WITH_S48}")
+    lines = RINEX_FILE_WITH_S48.read_text(encoding="ascii").splitlines()
+    n_s48_records = sum(line.startswith("S48") for line in lines)
+    assert n_s48_records > 0
+
+    ds = Rnxv3Obs(fpath=RINEX_FILE_WITH_S48).to_ds(
+        keep_data_vars=["SNR"], pad_global_sid=False
+    )
+    assert int(np.isfinite(ds.SNR.sel(sid="S48|L1|C")).sum()) == n_s48_records
+
+
+def _v3_obs_field(value: float, lli: int | None, ssi: int | None) -> str:
+    """One F14.3 + LLI + SSI observation field."""
+    return f"{value:14.3f}{'' if lli is None else lli:1}{'' if ssi is None else ssi:1}"
+
+
+def test_lli_and_ssi_come_from_phase_then_code(rinex_file, tmp_path):
+    """Regression: phase, code, Doppler and SNR of one signal share a sid, and
+    the reader used to keep whichever flag came last in the header order
+    (S1C after L1C). RINEX 3.04 Table A3 notes 1-3: LLI belongs to the phase
+    only; SSI to the phase, or to the code when the signal has no phase."""
+    lines = rinex_file.read_text(encoding="ascii").splitlines()
+    header = lines[
+        : next(i for i, line in enumerate(lines) if "END OF HEADER" in line) + 1
+    ]
+    # G obs types start: X1 C1C L1C D1C S1C C1W S1W
+    record = "G01" + "".join(
+        [
+            _v3_obs_field(1.0, None, None),  # X1
+            _v3_obs_field(2.1e7, 1, 6),  # C1C: flags a code must not carry
+            _v3_obs_field(1.1e8, 1, 7),  # L1C: slip, SSI 7
+            _v3_obs_field(-500.0, 1, 3),  # D1C
+            _v3_obs_field(45.0, 0, 9),  # S1C: written last in header order
+            _v3_obs_field(2.1e7, None, 5),  # C1W: signal with no phase
+            _v3_obs_field(40.0, 1, 8),  # S1W
+        ]
+    )
+    body = []
+    for second in (0, 5):
+        body += [f"> 2025 01 01 00 00 {second:2d}.0000000  0  1", record]
+    path = tmp_path / rinex_file.name
+    path.write_text("\n".join([*header, *body]) + "\n", encoding="ascii")
+
+    ds = Rnxv3Obs(fpath=path).to_ds(
+        keep_data_vars=["SNR", "Phase", "LLI", "SSI"], pad_global_sid=False
+    )
+    l1c = ds.sel(sid="G01|L1|C").isel(epoch=0)
+    l1w = ds.sel(sid="G01|L1|W").isel(epoch=0)
+    assert int(l1c.LLI) == 1
+    assert int(l1c.SSI) == 7
+    assert int(l1w.LLI) == -1
+    assert int(l1w.SSI) == 5
 
 
 class TestErrorHandling:

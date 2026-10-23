@@ -24,7 +24,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
-from _helpers import GROUP, make_synthetic_dataset
+import zarr
+from _helpers import GROUP, SBF_CANOPY_DIR, make_synthetic_dataset, new_gnss_store
 from build_day0_store import build_store
 
 from canvod.store import MyIcechunkStore
@@ -55,7 +56,7 @@ class TestStructureMatchesDay0:
 
     def test_groups_present(self, day0_store_path, tmp_path):
         store = MyIcechunkStore(day0_store_path)
-        fresh_store = MyIcechunkStore(tmp_path / "s")
+        fresh_store = new_gnss_store(tmp_path / "s")
         # write one dataset so the group exists
         ds = make_synthetic_dataset(slot=0)
         fresh_store.write_initial_group(ds, group_name=GROUP)
@@ -354,7 +355,8 @@ class TestBugFixes:
         # After fix: logger must be assigned before it is used
         assert logger_assignment_pos < logger_usage_pos, (
             "B5: self._logger is used before it is assigned in __init__. "
-            "Move 'self._logger = get_logger(__name__)' to the top of __init__."
+            "Move 'self._logger = structlog.get_logger(__name__)' to the top of "
+            "__init__."
         )
 
 
@@ -440,8 +442,114 @@ class TestMetadataDatasets:
                     rng.uniform(1.0, 4.0, n_ep).astype(np.float32), dims=["epoch"]
                 )
             },
-            coords={"epoch": epochs},
+            coords={"epoch": ("epoch", epochs, {"time_system": "GPS"})},
         )
+
+    def _make_flagged_meta_ds(self, slot: int) -> xr.Dataset:
+        """Like the SBF reader's sbf_obs: int8 values that declare -1 as missing."""
+        meta = self._make_meta_ds(slot)
+        n_ep = meta.sizes["epoch"]
+        flags = np.tile(np.array([-1, 0, 1], dtype=np.int8), n_ep // 3 + 1)[:n_ep]
+        meta["rise_set"] = xr.DataArray(flags, dims=["epoch"], attrs={"_FillValue": -1})
+        return meta.assign_coords(
+            pvt_mode=("epoch", flags[::-1].copy(), {"_FillValue": -1})
+        )
+
+    def test_append_keeps_declared_fill_value(self, tmp_store):
+        """Integer variables that declare _FillValue append (#450).
+
+        The append used to refuse them: xarray took the stored _FillValue
+        into the encoding and found it in the attributes as well.
+        """
+        ds = make_synthetic_dataset(slot=0)
+        tmp_store.write_initial_group(ds, group_name=GROUP)
+
+        parts = [self._make_flagged_meta_ds(slot=i) for i in range(3)]
+        tmp_store.append_metadata_datasets(parts[:2], group_name=GROUP, name="sbf_obs")
+        tmp_store.append_metadata_datasets(parts[2:], group_name=GROUP, name="sbf_obs")
+
+        with tmp_store.readonly_session("main") as session:
+            zgroup = zarr.open_group(
+                session.store, mode="r", path=f"{GROUP}/metadata/sbf_obs"
+            )
+            for name in ("rise_set", "pvt_mode"):
+                assert zgroup[name].dtype == np.int8, name
+                assert zgroup[name].fill_value == -1, name
+                assert zgroup[name].attrs["_FillValue"] == -1, name
+                expected = np.concatenate([p[name].values for p in parts])
+                np.testing.assert_array_equal(zgroup[name][:], expected)
+        # The caller's datasets keep their declaration, and no encoding.
+        for p in parts:
+            for name in ("rise_set", "pvt_mode"):
+                assert p[name].attrs["_FillValue"] == -1, name
+                assert "_FillValue" not in p[name].encoding, name
+
+    def test_append_to_sbf_obs_stored_with_fill_zero(self, tmp_store, monkeypatch):
+        """An sbf_obs written before #450 (Zarr fill_value 0) still appends.
+
+        The stored arrays keep their fill_value 0; the values append unchanged.
+        """
+        import canvod.store.store as store_module
+
+        ds = make_synthetic_dataset(slot=0)
+        tmp_store.write_initial_group(ds, group_name=GROUP)
+        parts = [self._make_flagged_meta_ds(slot=i) for i in range(3)]
+
+        # The first write as before #450: the declaration stays in the attributes.
+        with monkeypatch.context() as m:
+            m.setattr(store_module, "fill_encoding", lambda var, name: {})
+            tmp_store.append_metadata_datasets(
+                parts[:1], group_name=GROUP, name="sbf_obs"
+            )
+        with tmp_store.readonly_session("main") as session:
+            zgroup = zarr.open_group(
+                session.store, mode="r", path=f"{GROUP}/metadata/sbf_obs"
+            )
+            assert zgroup["rise_set"].fill_value == 0
+
+        tmp_store.append_metadata_datasets(parts[1:], group_name=GROUP, name="sbf_obs")
+
+        with tmp_store.readonly_session("main") as session:
+            zgroup = zarr.open_group(
+                session.store, mode="r", path=f"{GROUP}/metadata/sbf_obs"
+            )
+            for name in ("rise_set", "pvt_mode"):
+                assert zgroup[name].dtype == np.int8, name
+                assert zgroup[name].fill_value == 0, name
+                expected = np.concatenate([p[name].values for p in parts])
+                np.testing.assert_array_equal(zgroup[name][:], expected)
+
+    @pytest.mark.skipif(
+        not SBF_CANOPY_DIR.exists(), reason="SBF test data not available"
+    )
+    def test_append_sbf_obs_of_three_files(self, tmp_store):
+        """The sbf_obs of real SBF files appends, in one call and the next (#450)."""
+        from canvod.readers.sbf.reader import SbfReader
+
+        files = sorted(SBF_CANOPY_DIR.glob("*.sbf"))[:3]
+        parts = [
+            SbfReader(fpath=f).to_ds_and_auxiliary(keep_data_vars=["SNR"])[1]["sbf_obs"]
+            for f in files
+        ]
+        flagged = [
+            name
+            for name, var in parts[0].variables.items()
+            if "_FillValue" in var.attrs
+        ]
+        assert {"rise_set", "broadcast_angle_source", "pvt_mode"} <= set(flagged)
+
+        tmp_store.write_initial_group(make_synthetic_dataset(slot=0), group_name=GROUP)
+        tmp_store.append_metadata_datasets(parts[:2], group_name=GROUP, name="sbf_obs")
+        tmp_store.append_metadata_datasets(parts[2:], group_name=GROUP, name="sbf_obs")
+
+        with tmp_store.readonly_session("main") as session:
+            zgroup = zarr.open_group(
+                session.store, mode="r", path=f"{GROUP}/metadata/sbf_obs"
+            )
+            assert zgroup["epoch"].shape[0] == sum(p.sizes["epoch"] for p in parts)
+            for name in flagged:
+                assert zgroup[name].fill_value == -1, name
+                assert zgroup[name].attrs["_FillValue"] == -1, name
 
     def test_write_and_read_metadata_dataset(self, tmp_store):
         # Need a group first
@@ -471,3 +579,77 @@ class TestMetadataDatasets:
         np.testing.assert_array_almost_equal(
             ds_back["pdop"].values, expected["pdop"].values, decimal=5
         )
+
+    def test_append_metadata_datasets_keeps_earlier_days(self, tmp_store):
+        """A second call (next day) appends instead of replacing the first."""
+        ds = make_synthetic_dataset(slot=0)
+        tmp_store.write_initial_group(ds, group_name=GROUP)
+
+        day1 = [self._make_meta_ds(slot=i) for i in range(2)]
+        day2 = [self._make_meta_ds(slot=i) for i in range(2, 4)]
+        tmp_store.append_metadata_datasets(day1, group_name=GROUP, name="sbf_obs")
+        tmp_store.append_metadata_datasets(day2, group_name=GROUP, name="sbf_obs")
+
+        ds_back = tmp_store.read_metadata_dataset(GROUP, "sbf_obs").compute()
+        expected = xr.concat(day1 + day2, dim="epoch")
+        np.testing.assert_array_equal(ds_back["epoch"].values, expected["epoch"].values)
+
+    def test_metadata_parts_commit_with_observations(self, tmp_store):
+        """write_or_append_group puts data and metadata in one snapshot."""
+        ds = make_synthetic_dataset(slot=0)
+        meta = self._make_meta_ds(slot=0)
+        tmp_store.write_or_append_group(
+            ds, group_name=GROUP, metadata_datasets={"sbf_obs": meta}
+        )
+        snapshots = list(tmp_store.repo.ancestry(branch="main"))
+        tmp_store.write_or_append_group(
+            make_synthetic_dataset(slot=1),
+            group_name=GROUP,
+            metadata_datasets={"sbf_obs": self._make_meta_ds(slot=1)},
+        )
+        # One new snapshot per call, holding both data and metadata
+        assert len(list(tmp_store.repo.ancestry(branch="main"))) == len(snapshots) + 1
+        ds_back = tmp_store.read_metadata_dataset(GROUP, "sbf_obs").compute()
+        assert ds_back.sizes["epoch"] == 2 * meta.sizes["epoch"]
+
+    def test_rewrite_group_keeps_metadata(self, tmp_store):
+        """Overwrite strategy: rewriting the group keeps the log book, and
+        sbf_obs keeps the other files' epochs and gets the new part for the
+        replaced range."""
+        ds = make_synthetic_dataset(slot=0)
+        tmp_store.write_initial_group(ds, group_name=GROUP)
+        parts = [self._make_meta_ds(slot=i) for i in range(3)]
+        tmp_store.append_metadata_datasets(parts, group_name=GROUP, name="sbf_obs")
+        rows = tmp_store.metadata_row_count(GROUP)
+
+        corrected = self._make_meta_ds(slot=1)
+        corrected["pdop"] = corrected["pdop"] * 0 + 9.0
+        replaced = (corrected["epoch"].values.min(), corrected["epoch"].values.max())
+        with tmp_store.writable_session("main") as session:
+            tmp_store.rewrite_group(
+                session, GROUP, ds, [replaced], {"sbf_obs": [corrected]}
+            )
+            session.commit("overwrite")
+
+        assert tmp_store.metadata_row_count(GROUP) == rows
+        ds_back = tmp_store.read_metadata_dataset(GROUP, "sbf_obs").compute()
+        expected = xr.concat([parts[0], corrected, parts[2]], dim="epoch")
+        np.testing.assert_array_equal(ds_back["epoch"].values, expected["epoch"].values)
+        np.testing.assert_array_almost_equal(
+            ds_back["pdop"].values, expected["pdop"].values, decimal=5
+        )
+
+    def test_rewrite_group_drops_replaced_range_without_new_part(self, tmp_store):
+        ds = make_synthetic_dataset(slot=0)
+        tmp_store.write_initial_group(ds, group_name=GROUP)
+        parts = [self._make_meta_ds(slot=i) for i in range(3)]
+        tmp_store.append_metadata_datasets(parts, group_name=GROUP, name="sbf_obs")
+
+        replaced = (parts[1]["epoch"].values.min(), parts[1]["epoch"].values.max())
+        with tmp_store.writable_session("main") as session:
+            tmp_store.rewrite_group(session, GROUP, ds, [replaced])
+            session.commit("overwrite")
+
+        ds_back = tmp_store.read_metadata_dataset(GROUP, "sbf_obs").compute()
+        expected = xr.concat([parts[0], parts[2]], dim="epoch")
+        np.testing.assert_array_equal(ds_back["epoch"].values, expected["epoch"].values)

@@ -1,4 +1,4 @@
-# canvod.store API Reference
+# `canvod.store` API reference
 
 Versioned data storage using Icechunk.
 
@@ -8,27 +8,29 @@ Versioned data storage using Icechunk.
     options:
       members:
         - MyIcechunkStore
-        - create_rinex_store
-        - create_vod_store
+        - open_gnss_store
+        - open_vod_store
         - GnssResearchSite
-        - IcechunkDataReader
+        - store_grid
+        - load_grid
+        - AnalysisStorage
 
-## Store Manager
+## Store manager
 
 ::: canvod.store.manager
 
-## Data Store
+## Data store
 
 ::: canvod.store.store
 
-## Data Reader
+## Grid storage
 
-::: canvod.store.reader
+::: canvod.store.grid_storage
+
+## Analysis storage
+
+::: canvod.store.analysis_storage
 
 ## Preprocessing
 
 ::: canvod.store.preprocessing
-
-## Grid Adapters
-
-::: canvod.store.grid_adapters

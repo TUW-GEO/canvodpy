@@ -3,12 +3,19 @@
 Each ``SourcePattern`` describes how to discover and parse a particular
 naming scheme (RINEX v2, RINEX v3, Septentrio SBF, etc.) so the mapping
 engine can extract date/time metadata from any filename.
+
+.. deprecated::
+    Left over from development and removed with the next major version,
+    together with ``FilenameMapper``. Naming recipes (``canvod-filemap``)
+    describe non-canonical filenames instead.
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+
+from canvod.utils.tools import deprecated
 
 
 @dataclass(frozen=True)
@@ -213,6 +220,10 @@ def auto_match_order() -> tuple[str, ...]:
     return AUTO_PATTERN_ORDER
 
 
+@deprecated(
+    "match_pattern is left over from development and will be removed with the next major version. "
+    "Use a naming recipe (the receiver setting 'recipe', see canvod-filemap) instead; canvodpy run finds the files in any folder layout."
+)
 def match_pattern(
     filename: str, pattern_name: str = "auto"
 ) -> tuple[SourcePattern, re.Match[str]] | None:

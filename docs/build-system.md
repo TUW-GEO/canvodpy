@@ -3,13 +3,13 @@ title: Build System
 description: Package building and distribution for canVODpy
 ---
 
-# Build System
+# Build system
 
-canVODpy uses `uv_build` as its build backend — a modern, fast backend from the Astral ecosystem with native namespace package support.
+canVODpy uses `uv_build` as its build backend: a modern, fast backend from the Astral ecosystem with native namespace package support.
 
 ---
 
-## Distribution Formats
+## Distribution formats
 
 === "Wheel (preferred)"
 
@@ -28,17 +28,17 @@ canVODpy uses `uv_build` as its build backend — a modern, fast backend from th
 
 === "Source Distribution"
 
-    `canvod_readers-0.1.0.tar.gz` — contains source code + metadata.
+    `canvod_readers-0.1.0.tar.gz`: contains source code + metadata.
     Requires a build step during installation. Provided alongside wheels for PyPI.
 
 ---
 
-## Build Configuration
+## Build configuration
 
 ```toml
 # packages/canvod-readers/pyproject.toml
 [build-system]
-requires      = ["uv_build>=0.9.17,<0.10.0"]
+requires      = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -46,10 +46,6 @@ module-name = "canvod.readers"       # dot → namespace package
 include     = ["src/canvod/readers/data/*.dat"]
 exclude     = ["src/canvod/readers/tests/"]
 ```
-
-!!! note "canvod-utils exception"
-    `canvod-utils` uses `hatchling` as its build backend — the only
-    package in the monorepo that does not use `uv_build`.
 
 ---
 
@@ -68,7 +64,7 @@ just dist
 
 ---
 
-## Package Metadata
+## Package metadata
 
 ```toml
 [project]
@@ -76,41 +72,31 @@ name            = "canvod-readers"
 version         = "0.1.0"
 description     = "GNSS data format readers for canVODpy"
 readme          = "README.md"
-license         = {text = "Apache-2.0"}
+license         = "Apache-2.0"
+license-files   = ["LICENSE", "NOTICE"]
 authors         = [{name = "Nicolas Bader", email = "support@canvodpy.eu"}]
 requires-python = ">=3.14"
 keywords        = ["gnss", "rinex", "geodesy", "vod"]
 
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.14",
-    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering",
 ]
 
 dependencies = ["numpy>=2.0", "xarray>=2024.0"]
 
 [project.urls]
-Homepage   = "https://github.com/nfb2021/canvodpy"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues     = "https://github.com/nfb2021/canvodpy/issues"
+Homepage   = "https://github.com/TUW-GEO/canvodpy"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues     = "https://github.com/TUW-GEO/canvodpy/issues"
 ```
 
 ---
 
 ## Publishing
-
-=== "TestPyPI (test first)"
-
-    ```bash
-    cd packages/canvod-readers
-    uv build
-    uv publish --repository testpypi
-
-    # Verify installation
-    pip install --index-url https://test.pypi.org/simple/ canvod-readers
-    ```
 
 === "Production PyPI"
 
@@ -121,26 +107,27 @@ Issues     = "https://github.com/nfb2021/canvodpy/issues"
 
 === "Automated (CI/CD)"
 
-    The `just release` command handles version bump + publish for all packages.
-    See [`docs/RELEASING.md`](../RELEASING.md) for the full release workflow.
+    `just release` prepares the release commit for the packages the
+    maintainer chose; a maintainer tags the merged commit and starts the
+    PyPI publish of the packages tagged there.
+    See [Release process](RELEASING.md) for the full release workflow.
 
 ---
 
-## Version Management
+## Version management
 
-All packages follow [Semantic Versioning](https://semver.org/) with unified version numbers across the monorepo.
+Each package has its own version, following
+[Semantic Versioning](https://semver.org/); `canvodpy` pins every package
+exactly ([Versioning](VERSIONING.md)). The maintainer chooses the versions:
 
 ```bash
-just bump patch    # 0.1.0 → 0.1.1  (bug fix)
-just bump minor    # 0.1.0 → 0.2.0  (new feature, backwards compatible)
-just bump major    # 0.1.0 → 1.0.0  (breaking change)
+just release-status                               # commits per package since its last tag
+just release canvod-store=1.1.0 canvodpy=1.1.0    # versions, pins, changelogs, uv.lock
 ```
 
-A version bump:
-
-1. Updates `version` in all `pyproject.toml` files.
-2. Creates a git commit `chore: bump version to x.y.z`.
-3. Creates a git tag `vx.y.z`.
+`just release` updates `version` of each released package, canvodpy's pins,
+the `CHANGELOG.md` files and `uv.lock`, and commits them on a release
+branch; it makes no tag (`just tag-release` on the merged commit).
 
 ---
 
@@ -150,7 +137,7 @@ A version bump:
     Verify `module-name` in `pyproject.toml` uses dotted notation:
     ```toml
     module-name = "canvod.readers"    # correct
-    # module-name = "canvod_readers"  # wrong — creates regular package
+    # module-name = "canvod_readers"  # wrong: creates regular package
     ```
 
 !!! failure "Wrong package structure in wheel"

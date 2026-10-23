@@ -1,60 +1,67 @@
 [project]
 name = "canvodpy"
 version = "0.4.0"
-description = "Python ecosystem for GNSS-Transmissometry canopy VOD retrievals"
+description = "An open Python ecosystem for GNSS-Transmissometry canopy VOD retrievals"
 readme = "README.md"
 requires-python = ">=3.14"
 authors = [
-    { name = "Nicolas François Bader", email = "support@canvodpy.eu" },
+    {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]
-keywords = ["GNSS", "VOD", "vegetation", "remote sensing", "geodesy"]
+maintainers = [
+    {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
+]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "GNSS-Transmissometry",
+    "VOD",
+    "vegetation",
+    "remote sensing",
+    "geodesy",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.14",
-    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering",
 ]
 
 # Core dependencies - sub-packages from workspace
 dependencies = [
-    "canvod-readers",
-    "canvod-auxiliary",
-    "canvod-grids",
-    "canvod-store",
-    "canvod-store-metadata",
-    "canvod-utils",
-    "canvod-config",
-    "canvod-viz",
-    "canvod-vod",
-    "canvod-ops",
-    "matplotlib>=3.8.0",
+    "canvod-readers==0.4.0",
+    "canvod-auxiliary==0.4.0",
+    "canvod-grids==0.4.0",
+    "canvod-store==0.4.0",
+    "canvod-store-metadata==0.4.0",
+    "canvod-utils==0.4.0",
+    "canvod-config==0.4.0",
+    "canvod-viz==0.4.0",
+    "canvod-vod==0.4.0",
+    "canvod-ops==0.4.0",
+    "canvod-preflight==0.4.0",
+    "numpy>=1.26.0",
+    "pandas>=2.1.0",
+    "polars>=1.0.0",
+    "xarray>=2024.1.0",
+    "zarr>=3.1.2",
     "pint>=0.20",
     "structlog>=23.0",
     "pydantic>=2.0",
-    "tqdm>=4.65",
     "natsort>=8.0.0",
     "loky>=3.5.6",
-    "mystmd>=1.8.0",
-    "docker>=7.1.0",
-    "howfairis>=0.13.0",
     "pyarrow>=23.0.1",
-    "palettable>=3.3.3",
     "altair>=6.0.0",
-    "tabulate>=0.10.0",
-    "sqlglot>=29.0.1",
     "icechunk>=2.0.1",
     "typer>=0.9",
     "rich>=13.0",
     "marimo>=0.23.13",
+    "platformdirs>=4.0",
+    "psutil>=7.2.2",
 ]
-
-# Optional slot-in extensions (github.com/nfb2021/canvodpy-extensions).
-# canvodpy works without these — file discovery falls back to canonical
-# canVOD-only glob patterns (*.rnx, *.sbf) when absent.
-[project.optional-dependencies]
-filemap = ["canvod-filemap"]
 
 [dependency-groups]
 dev = [
@@ -68,13 +75,13 @@ dev = [
 canvodpy = "canvodpy.cli.app:main"
 
 [project.urls]
-Homepage = "https://github.com/nfb2021/canvodpy"
+Homepage = "https://github.com/TUW-GEO/canvodpy"
 Documentation = "https://canvodpy.eu/"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues = "https://github.com/nfb2021/canvodpy/issues"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues = "https://github.com/TUW-GEO/canvodpy/issues"
 
 [build-system]
-requires = ["uv_build>=0.9.17,<0.10.0"]
+requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 # Workspace package sources
@@ -90,9 +97,9 @@ canvod-config = { workspace = true }
 canvod-viz = { workspace = true }
 canvod-vod = { workspace = true }
 canvod-ops = { workspace = true }
+canvod-preflight = { workspace = true }
 
 [tool.ty.src]
 exclude = [
     "**/docs/*.ipynb",
-    "**/docs/notebooks/*.py",
 ]

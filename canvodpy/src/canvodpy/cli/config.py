@@ -6,6 +6,7 @@ Provides commands for:
 - Validating configuration
 - Viewing current configuration
 - Editing configuration files
+- Explaining a setting
 """
 
 import os
@@ -20,50 +21,40 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.table import Table
 
+from canvod.config import settings_help
 from canvod.config.loader import (
     ConfigValidationError,
     format_validation_error,
     get_default_config_dir,
     get_template_dir,
 )
-from canvod.config.models import ProcessingConfig, SidsConfig, SitesConfig
+from canvod.config.models import (
+    ProcessingConfig,
+    SidsConfig,
+    SitesConfig,
+    reference_store_group,
+)
+from canvodpy.cli.options import (
+    CONFIG_DIR_OPTION,
+    CONFIG_FILE_OPTION,
+    LOCAL_CONFIG_DIR_OPTION,
+)
 
 # Config subcommand
 config_app = typer.Typer(
     name="config",
-    help="Configuration management",
+    help="Create, check, show, and edit canvod-settings.yaml.",
     no_args_is_help=True,
 )
 
 console = Console()
 
-# Dev-checkout config/ if present, else XDG (~/.config/canvodpy) — see
-# get_default_config_dir()'s docstring for the full precedence rule.
-DEFAULT_CONFIG_DIR = get_default_config_dir()
-
-CONFIG_DIR_OPTION = typer.Option(
-    "--config-dir",
-    "-c",
-    help="Configuration directory",
-)
-
 
 @config_app.callback()
 def config_callback(
-    config: Annotated[
-        Path | None,
-        typer.Option(
-            "--config",
-            help="Overlay config file applied on top of the main canvod-settings.yaml",
-            show_default=False,
-        ),
-    ] = None,
+    config_file: Annotated[Path | None, CONFIG_FILE_OPTION] = None,
 ) -> None:
-    if config is not None:
-        if not config.exists():
-            typer.echo(f"Error: overlay config file not found: {config}", err=True)
-            raise typer.Exit(1)
-        os.environ["CANVOD_CONFIG_FILE"] = str(config.expanduser().resolve())
+    """The overlay file, set by the option's callback."""
 
 
 def _yaml_scalar(value: str) -> str:
@@ -76,6 +67,25 @@ def _yaml_scalar(value: str) -> str:
     return dumped.removesuffix("...").strip()
 
 
+def _print_setting_help(setting: str) -> None:
+    """Print what *setting* means, indented under the question."""
+    text = settings_help.explain(setting)
+    indented = "\n".join(f"    {line}" if line else "" for line in text.splitlines())
+    console.print(f"\n{indented}\n", markup=False, highlight=False, soft_wrap=True)
+
+
+def _ask(question: str, setting: str, default: str | None = None) -> str:
+    """Ask *question*; the answer ``?`` explains *setting* and asks again."""
+    while True:
+        if default is None:
+            answer = Prompt.ask(question)
+        else:
+            answer = Prompt.ask(question, default=default)
+        if answer.strip() != "?":
+            return answer
+        _print_setting_help(setting)
+
+
 def _run_interactive_wizard(canvod_dest: Path) -> None:
     """Ask ~8 setup questions and patch their answers into canvod_dest's text.
 
@@ -85,20 +95,32 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
     invocation just created (never one that already existed), so the known
     placeholder strings are guaranteed present.
     """
-    console.print("\n[bold]Interactive setup[/bold] — answer a few questions:\n")
+    console.print(
+        "\n[bold]Interactive setup[/bold]. Answer a few questions; "
+        "answer ? to see what a question sets.\n"
+    )
 
-    author = Prompt.ask("  Your name")
-    email = Prompt.ask("  Your email")
-    institution = Prompt.ask("  Institution")
-    stores_root_dir = Prompt.ask("  Where should processed results be stored?")
-    site_name = Prompt.ask("  Site name (e.g. ExampleSite)")
-    data_root = Prompt.ask(f"  Data root directory for site '{site_name}'")
-    canopy_dir = Prompt.ask(
+    author = _ask("  Your name", "processing.metadata.author")
+    email = _ask("  Your email", "processing.metadata.email")
+    institution = _ask("  Institution", "processing.metadata.institution")
+    stores_root_dir = _ask(
+        "  Where should processed results be stored?",
+        "processing.storage.stores_root_dir",
+    )
+    log_dir = _ask("  Where should the log files go?", "processing.logging.log_dir")
+    site_name = _ask("  Site name (e.g. ExampleSite)", "sites.<site>")
+    data_root = _ask(
+        f"  Data root directory for site '{site_name}'",
+        "sites.<site>.gnss_site_data_root",
+    )
+    canopy_dir = _ask(
         "  Canopy receiver directory (relative to the data root)",
+        "sites.<site>.receivers.<receiver>.directory",
         default="02_canopy",
     )
-    reference_dir = Prompt.ask(
+    reference_dir = _ask(
         "  Reference receiver directory (relative to the data root)",
+        "sites.<site>.receivers.<receiver>.directory",
         default="01_reference",
     )
 
@@ -110,6 +132,7 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
         "    stores_root_dir: /path/to/your/gnss/stores": (
             f"    stores_root_dir: {_yaml_scalar(stores_root_dir)}"
         ),
+        "    log_dir: /path/to/your/gnss/logs": f"    log_dir: {_yaml_scalar(log_dir)}",
         "  my_site:": f"  {site_name}:",
         "    gnss_site_data_root: /path/to/your/gnss/data/my_site": (
             f"    gnss_site_data_root: {_yaml_scalar(data_root)}"
@@ -131,17 +154,123 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
         console.print(format_validation_error(e))
         console.print()
     else:
-        console.print("[green]✓ Configuration is valid — you're ready to go![/green]\n")
+        console.print("[green]✓ Configuration is valid: you're ready to go![/green]\n")
+
+
+def _store_file_comment(store: str) -> str:
+    """The comment header of a settings file written from a store."""
+    return (
+        f"# Settings written by `canvodpy config init --from-store {store}`.\n"
+        "# The content settings below are the store's and must stay as they "
+        "are;\n"
+        "# the values that are TODO are yours to fill in (an interactive run "
+        "asks).\n"
+    )
+
+
+def _run_store_wizard(settings, site_name, receiver_dirs):
+    """Ask the machine values in ``settings``; answers fill them in.
+
+    ``settings`` is the mapping from ``settings_from_store``, whose machine
+    values are ``TODO``. A receiver's directory offers the directory the
+    store records as the default answer.
+    """
+    site = settings["sites"][site_name]
+    site["gnss_site_data_root"] = _ask(
+        f"  Data root directory for site '{site_name}'",
+        f"sites.{site_name}.gnss_site_data_root",
+    )
+    for name, receiver in site["receivers"].items():
+        receiver["directory"] = _ask(
+            f"  Data directory for receiver '{name}'",
+            f"sites.{site_name}.receivers.{name}.directory",
+            default=receiver_dirs.get(name),
+        )
+    storage = settings["processing"]["storage"]
+    storage["aux_data_dir"] = _ask(
+        "  Where should the auxiliary files go?",
+        "processing.storage.aux_data_dir",
+    )
+    storage["shared_aux_cache_dir"] = _ask(
+        "  Where should the shared aux cache go?",
+        "processing.storage.shared_aux_cache_dir",
+    )
+    settings["processing"]["logging"]["log_dir"] = _ask(
+        "  Where should the log files go?", "processing.logging.log_dir"
+    )
+    metadata = settings["processing"]["metadata"]
+    metadata["author"] = _ask("  Your name", "processing.metadata.author")
+    metadata["email"] = _ask("  Your email", "processing.metadata.email")
+    metadata["institution"] = _ask("  Institution", "processing.metadata.institution")
+    return settings
+
+
+def _print_store_credentials(store: str) -> None:
+    """Tell the user which environment variables to set (never written)."""
+    console.print("\n[bold]Set these environment variables:[/bold]")
+    console.print("  - For NASA CDDIS access:")
+    console.print(
+        "      export CANVOD__PROCESSING__CREDENTIALS__NASA_EARTHDATA_ACC_MAIL="
+        "you@example.com"
+    )
+    if store.startswith("s3://"):
+        console.print("  - For the S3 store, credentials and endpoint come from:")
+        console.print(
+            "      AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (or AWS_PROFILE), "
+            "AWS_REGION,"
+        )
+        console.print(
+            "      AWS_ENDPOINT_URL; set CANVOD_S3_PATH_STYLE=1 for a "
+            "self-hosted S3 service."
+        )
+    console.print()
+
+
+def _init_from_store(config_dir: Path, store: str, no_interactive: bool) -> None:
+    """Write ``config_dir/canvod-settings.yaml`` from ``store``."""
+    from canvod.store_metadata import read_repository_metadata, settings_from_store
+
+    canvod_dest = config_dir / "canvod-settings.yaml"
+    if canvod_dest.exists():
+        console.print(f"[red]❌ {canvod_dest} already exists; not overwritten.[/red]")
+        console.print(
+            "  Use a different --config-dir, or remove the file and run it again."
+        )
+        raise typer.Exit(1)
+
+    try:
+        settings = settings_from_store(store)
+    except (ValueError, OSError) as e:
+        console.print(f"[red]❌ {e}[/red]", highlight=False)
+        raise typer.Exit(1) from e
+
+    site_name = next(iter(settings["sites"]))
+    if not no_interactive:
+        repository = read_repository_metadata(store)
+        receivers = repository.get("instruments", {}).get("receivers", {})
+        receiver_dirs = {
+            name: meta.get("directory") for name, meta in receivers.items()
+        }
+        settings = _run_store_wizard(settings, site_name, receiver_dirs)
+
+    text = _store_file_comment(store) + yaml.safe_dump(settings, sort_keys=False)
+    canvod_dest.write_text(text)
+    console.print(f"[green]✓ Wrote {canvod_dest}[/green]")
+    console.print(
+        "\n[i]The content settings are the store's and must stay as they are; "
+        "the TODO values are yours to fill in.[/i]"
+    )
+    _print_store_credentials(store)
 
 
 @config_app.command()
 def init(
-    config_dir: Annotated[Path, CONFIG_DIR_OPTION] = DEFAULT_CONFIG_DIR,
+    config_dir: Annotated[Path | None, LOCAL_CONFIG_DIR_OPTION] = None,
     force: bool = typer.Option(
         False,
         "--force",
         "-f",
-        help="Overwrite existing files",
+        help="Overwrite existing files (no effect with --from-store)",
     ),
     interactive: bool = typer.Option(
         False,
@@ -149,34 +278,64 @@ def init(
         "-i",
         help="Walk through setup with a guided Q&A instead of hand-editing YAML",
     ),
+    from_store: Annotated[
+        str | None,
+        typer.Option(
+            "--from-store",
+            help="Write the settings of a store from its content settings: a "
+            "local dir or an s3://bucket/prefix URL",
+        ),
+    ] = None,
+    no_interactive: bool = typer.Option(
+        False,
+        "--no-interactive",
+        help="With --from-store: keep the machine-value placeholders (TODO) "
+        "instead of asking",
+    ),
 ) -> None:
-    """Initialize configuration from the canvod-settings.yaml template.
+    """Create canvod-settings.yaml from its template, or from a store.
 
-    Creates:
-      - config/canvod-settings.yaml
-      - config/recipes/*.yaml (example naming recipes)
+    The file goes into the configuration directory that --config-dir sets.
+    Create a naming recipe for each receiver with
+    just naming-init SITE NAME.
 
+    With --from-store STORE, the file is written from the store's content
+    settings (a folder or an s3:// URL): the settings that shape its data
+    stay as they are, and the machine values are asked (or left as TODO
+    with --no-interactive).
+
+    \f
     Parameters
     ----------
-    config_dir : Path
-        Directory where configuration files are created.
+    config_dir : Path | None
+        Directory where configuration files are created (see
+        ``--config-dir``).
     force : bool
         Overwrite existing files.
     interactive : bool
         Ask setup questions instead of leaving placeholder values for the
         user to hand-edit afterward.
+    from_store : str | None
+        A store whose content settings the file reproduces.
+    no_interactive : bool
+        Keep the ``TODO`` machine values instead of asking.
 
     Returns
     -------
     None
     """
+    config_dir = get_default_config_dir()
     console.print("\n[bold]Initializing canvodpy configuration...[/bold]\n")
 
     # Create config directory
     config_dir.mkdir(parents=True, exist_ok=True)
 
+    if from_store is not None:
+        _init_from_store(config_dir, from_store, no_interactive)
+        return
+
     # Templates ship as real package data inside canvod-config (see
-    # get_template_dir()'s docstring) — always reachable regardless of
+    # get_template_dir()'s docstring): always reachable regardless of
     # install method or invocation directory, no monorepo search needed.
     template_dir = get_template_dir()
 
@@ -184,9 +343,7 @@ def init(
         console.print(
             f"[red]❌ Template directory not found: {template_dir}[/red]",
         )
-        console.print(
-            "\nThis looks like a broken canvod-config install — reinstall it."
-        )
+        console.print("\nThis looks like a broken canvod-config install; reinstall it.")
         raise typer.Exit(1)
 
     files_created = []
@@ -203,20 +360,6 @@ def init(
             files_created.append(canvod_dest)
     else:
         console.print(f"[yellow]⚠️  Template not found: {canvod_example}[/yellow]")
-
-    # Copy example recipe files (bundled as *.yaml.example, same convention
-    # as canvod-settings.yaml.example above — strip the suffix on copy).
-    recipes_src = template_dir / "recipes"
-    recipes_dest = config_dir / "recipes"
-    if recipes_src.exists():
-        recipes_dest.mkdir(parents=True, exist_ok=True)
-        for recipe_file in sorted(recipes_src.glob("*.yaml.example")):
-            dest = recipes_dest / recipe_file.name.removesuffix(".example")
-            if dest.exists() and not force:
-                files_skipped.append(dest)
-            else:
-                shutil.copy(recipe_file, dest)
-                files_created.append(dest)
 
     # Show results
     if files_created:
@@ -238,13 +381,14 @@ def init(
             "      export CANVOD__PROCESSING__CREDENTIALS__NASA_EARTHDATA_ACC_MAIL=you@example.com"
         )
         console.print(
-            "  - Edit config/recipes/*.yaml if your receivers use non-canonical filenames\n"
+            "  - If a receiver writes non-canonical file names, create its naming "
+            "recipe with: just naming-init SITE NAME\n"
         )
         return
 
     if interactive:
         console.print(
-            "\n[yellow]⊘ canvod-settings.yaml already exists — skipping interactive "
+            "\n[yellow]⊘ canvod-settings.yaml already exists; skipping interactive "
             "setup.[/yellow] Use --force to start over.\n"
         )
 
@@ -253,156 +397,163 @@ def init(
     console.print("  1. Edit config/canvod-settings.yaml:")
     console.print("     - processing.metadata: fill in author, email, institution")
     console.print("     - processing.storage.stores_root_dir: set your store path")
+    console.print("     - processing.logging.log_dir: set your log folder")
     console.print("     - sites: replace the example site with your own")
     console.print("     (or re-run with --interactive/-i for a guided Q&A instead)")
     console.print("  2. For NASA CDDIS access, set this environment variable:")
     console.print(
         "       export CANVOD__PROCESSING__CREDENTIALS__NASA_EARTHDATA_ACC_MAIL=you@example.com"
     )
-    console.print("  3. Edit config/recipes/*.yaml to match your filename format")
+    console.print(
+        "  3. If a receiver writes non-canonical file names, create its naming "
+        "recipe with: just naming-init SITE NAME"
+    )
     console.print("  4. Run: canvodpy config validate\n")
+
+
+def _print_site_report(report) -> None:
+    """Print a :class:`~canvodpy.orchestrator.data_check.SiteReport`.
+
+    Lines are not wrapped, so the paths in them can be copied.
+    """
+
+    from rich.markup import escape
+
+    from canvodpy.orchestrator.data_check import group_by_file_type
+
+    def say(text: str) -> None:
+        console.print(text, soft_wrap=True, highlight=False)
+
+    for error in report.errors:
+        say(f"  [red]❌ {report.site}: {escape(error)}[/red]")
+    for rx in report.receivers.values():
+        label = f"{report.site}/{rx.name}"
+        if rx.errors:
+            say(f"  [red]❌ {label}[/red]")
+        elif rx.files:
+            recipe = f", recipe '{rx.recipe}'" if rx.recipe else ""
+            say(
+                f"  [green]✓ {label} ({rx.identity}): {rx.files} files on "
+                f"{len(rx.days)} days, {rx.days[0]} to {rx.days[-1]} "
+                f"({rx.reader_format}{recipe})[/green]"
+            )
+            if rx.sampling_checked:
+                intervals = ", ".join(
+                    f"{s:g} s" for s in dict.fromkeys(rx.sampling_checked)
+                )
+                say(
+                    f"      Sampling matches the file names in "
+                    f"{len(rx.sampling_checked)} file(s) checked: {intervals}"
+                )
+        else:
+            say(f"  [yellow]⚠️  {label}[/yellow]")
+        for error in rx.errors:
+            say(f"      [red]{escape(error)}[/red]")
+        for warning in rx.warnings:
+            say(f"      [yellow]{escape(warning)}[/yellow]")
+        if rx.compressed:
+            say("      Compressed, not processed, by file type:")
+            for kind, count, example in group_by_file_type(rx.compressed):
+                say(f"        {escape(kind)}: {count} (e.g. {escape(example.name)})")
+        if rx.unrecognized:
+            say("      Not processed, by file type:")
+            for kind, count, example in group_by_file_type(rx.unrecognized):
+                say(f"        {escape(kind)}: {count} (e.g. {escape(example.name)})")
+
+
+def _todo_placeholders(config_dir: Path) -> list[str]:
+    """The dotted keys of every ``TODO`` value in ``config_dir``'s settings."""
+    from canvod.store_metadata import PLACEHOLDER
+
+    settings_file = config_dir / "canvod-settings.yaml"
+    if not settings_file.exists():
+        return []
+    data = yaml.safe_load(settings_file.read_text()) or {}
+
+    def walk(node, path: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                walk(value, f"{path}.{key}" if path else str(key))
+        elif isinstance(node, list):
+            for index, value in enumerate(node):
+                walk(value, f"{path}[{index}]")
+        elif node == PLACEHOLDER:
+            placeholder_keys.append(path)
+
+    placeholder_keys: list[str] = []
+    walk(data, "")
+    return placeholder_keys
 
 
 @config_app.command()
 def validate(
-    config_dir: Annotated[Path, CONFIG_DIR_OPTION] = DEFAULT_CONFIG_DIR,
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
+    config_file: Annotated[Path | None, CONFIG_FILE_OPTION] = None,
+    site: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--site",
+            help="Check the data of this site only. Repeat for several sites. "
+            "Default: all sites.",
+            show_default=False,
+        ),
+    ] = None,
+    check_sampling: Annotated[
+        bool,
+        typer.Option(
+            "--check-sampling/--no-check-sampling",
+            help="Read the first file of the first and the last day of each "
+            "receiver and compare the sampling interval of its data with the "
+            "one in its canonical name.",
+        ),
+    ] = True,
 ) -> None:
-    """Validate configuration files.
+    """Validate the configuration and the receiver data it points to.
 
+    It finds the data files the same way as canvodpy run, so every error
+    it reports would stop a run or make its results wrong. A settings file
+    written from a store (:meth:`init`) that still has placeholder values is
+    listed, and the command exits with code 1.
+
+    \f
     Parameters
     ----------
-    config_dir : Path
-        Directory containing config files.
+    config_dir : Path | None
+        Directory containing config files (see ``--config-dir``).
+    config_file : Path | None
+        Overlay file (see ``--config``), also accepted before ``validate``.
+    site : list[str] | None
+        Sites whose data to check; ``None`` checks all sites.
+    check_sampling : bool
+        Compare named and actual sampling intervals.
 
     Returns
     -------
     None
     """
     from canvod.config.loader import load_config
-    from canvod.readers.gnss_specs.constants import (
-        FORMAT_GLOB_PATTERNS,
-        RINEX_OBS_GLOB_PATTERNS,
-    )
+    from canvodpy.orchestrator.data_check import check_site_data
 
-    console.print("\n[bold]Validating configuration...[/bold]\n")
+    config_dir = get_default_config_dir()
+    console.print(f"\n[bold]Validating configuration in {config_dir}...[/bold]\n")
+
+    # A settings file written from a store keeps TODO machine values; list
+    # them before anything else, so the user knows what to fill in (and so a
+    # not-yet-valid value such as a placeholder email does not hide them).
+    placeholders = _todo_placeholders(config_dir)
+    if placeholders:
+        console.print(
+            f"\n[yellow]⚠️  {len(placeholders)} placeholder value(s) (TODO) "
+            "in canvod-settings.yaml:[/yellow]\n"
+        )
+        for key in placeholders:
+            console.print(f"    {key}")
+        console.print("\nFill them in, or re-run the interactive wizard:")
+        console.print("  canvodpy config init --from-store <store>\n")
+        raise typer.Exit(1)
 
     try:
         config = load_config(config_dir)
-        console.print("[green]✓ Configuration is valid![/green]\n")
-
-        # Show summary
-        console.print(f"  Sites: {len(config.sites.sites)}")
-        for name in config.sites.sites.keys():
-            console.print(f"    - {name}")
-
-        console.print(f"\n  SID mode: {config.sids.mode}")
-        console.print(f"  Agency: {config.processing.aux_data.agency}")
-
-        # Show site data roots
-        for name, site in config.sites.sites.items():
-            console.print(f"  {name} data root: {site.gnss_site_data_root}")
-
-        # Show credentials from config
-        email = config.processing.credentials.nasa_earthdata_acc_mail
-        if email:
-            console.print(f"  NASA Earthdata email: {email}")
-            console.print("  [green]✓ NASA CDDIS enabled[/green]")
-        else:
-            console.print("  [yellow]⊘ NASA CDDIS disabled (ESA only)[/yellow]")
-
-        console.print()
-
-        # Check receiver directories exist and contain data
-        console.print("[bold]Checking receiver directories...[/bold]")
-        dir_errors: list[str] = []
-        recipe_errors: list[str] = []
-
-        try:
-            import canvod.filemap  # noqa: F401
-
-            filemap_available = True
-        except ImportError:
-            filemap_available = False
-
-        for site_name, site in config.sites.sites.items():
-            base_path = site.get_base_path()
-            for recv_name, recv in site.receivers.items():
-                if recv.recipe and not filemap_available:
-                    recipe_errors.append(
-                        f"{site_name}/{recv_name} (recipe: {recv.recipe})"
-                    )
-                recv_dir = base_path / recv.directory
-                if not recv_dir.exists():
-                    msg = f"  [red]❌ {site_name}/{recv_name}: {recv_dir} (directory not found)[/red]"
-                    console.print(msg)
-                    dir_errors.append(f"{site_name}/{recv_name}")
-                    continue
-
-                # Check for any GNSS data files anywhere in the tree
-                has_data = False
-                if RINEX_OBS_GLOB_PATTERNS:
-                    has_data = any(
-                        f
-                        for pattern in RINEX_OBS_GLOB_PATTERNS
-                        for f in recv_dir.rglob(pattern)
-                        if f.is_file()
-                    )
-                else:
-                    # Fallback: any file anywhere
-                    has_data = any(True for _ in recv_dir.rglob("*") if _.is_file())
-
-                if has_data:
-                    # Detect format from files on disk
-                    detected_fmt = None
-                    if FORMAT_GLOB_PATTERNS:
-                        for fmt, patterns in FORMAT_GLOB_PATTERNS.items():
-                            if any(
-                                f
-                                for pat in patterns
-                                for f in recv_dir.rglob(pat)
-                                if f.is_file()
-                            ):
-                                detected_fmt = fmt
-                                break
-                    configured_fmt = recv.reader_format
-                    if configured_fmt == "auto" and detected_fmt:
-                        fmt_info = f"format: auto → {detected_fmt}"
-                    elif configured_fmt == "auto":
-                        fmt_info = "format: auto"
-                    else:
-                        fmt_info = f"format: {configured_fmt}"
-                    console.print(
-                        f"  [green]✓ {site_name}/{recv_name}: {recv_dir} ({fmt_info})[/green]"
-                    )
-                else:
-                    console.print(
-                        f"  [yellow]⚠️  {site_name}/{recv_name}: {recv_dir} "
-                        f"(directory exists but no GNSS data files found)[/yellow]"
-                    )
-
-        if recipe_errors:
-            console.print(
-                f"\n[red]❌ {len(recipe_errors)} receiver(s) configure a naming "
-                f"recipe but canvod-filemap is not installed:[/red]"
-            )
-            for entry in recipe_errors:
-                console.print(f"  {entry}")
-            console.print("  Install with: uv sync --extra filemap")
-            console.print()
-            raise typer.Exit(1)
-
-        if dir_errors:
-            console.print(
-                f"\n[red]❌ {len(dir_errors)} receiver director(y/ies) not found.[/red]"
-            )
-            console.print(
-                "  Check gnss_site_data_root and receiver directory settings in canvod-settings.yaml"
-            )
-            console.print()
-            raise typer.Exit(1)
-
-        console.print()
-
     except ConfigValidationError as e:
         console.print("[red]❌ Validation failed:[/red]\n")
         console.print(format_validation_error(e))
@@ -414,23 +565,79 @@ def validate(
         console.print()
         raise typer.Exit(1) from e
 
+    console.print("[green]✓ Configuration is valid![/green]\n")
+
+    console.print(f"  Sites: {len(config.sites.sites)}")
+    for name in config.sites.sites.keys():
+        console.print(f"    - {name}")
+
+    console.print(f"\n  SID mode: {config.sids.mode}")
+    aux = config.processing.aux_data
+    console.print(f"  Agency: {aux.agency} ({aux.product_type})")
+    if config.processing.params.ephemeris_source != "broadcast":
+        from canvod.auxiliary.products import check_product
+
+        try:
+            spec = check_product(aux.agency, aux.product_type, aux.fetch_clock)
+        except (KeyError, ValueError) as e:
+            console.print(f"\n[red]❌ Orbit product:[/red]\n{e}\n")
+            raise typer.Exit(1) from e
+        console.print(f"  Orbit product: {spec.prefix} ({spec.description})")
+
+    for name, site_cfg in config.sites.sites.items():
+        console.print(f"  {name} data root: {site_cfg.gnss_site_data_root}")
+
+    email = config.processing.credentials.nasa_earthdata_acc_mail
+    if email:
+        console.print(f"  NASA Earthdata email: {email}")
+        console.print("  [green]✓ NASA CDDIS enabled[/green]")
+    else:
+        console.print("  [yellow]⊘ NASA CDDIS disabled (ESA only)[/yellow]")
+
+    unknown = [s for s in site or [] if s not in config.sites.sites]
+    if unknown:
+        console.print(
+            f"\n[red]❌ Unknown site(s): {', '.join(unknown)}. Configured: "
+            f"{', '.join(config.sites.sites) or '(none)'}[/red]\n"
+        )
+        raise typer.Exit(1)
+
+    console.print("\n[bold]Checking receiver data...[/bold]")
+    reports = [
+        check_site_data(name, config, check_sampling)
+        for name in site or list(config.sites.sites)
+    ]
+    for report in reports:
+        _print_site_report(report)
+
+    failed = [r.site for r in reports if not r.ok]
+    if failed:
+        console.print(
+            f"\n[red]❌ Receiver data of {', '.join(failed)} would not be "
+            f"processed correctly. Fix the errors above.[/red]\n"
+        )
+        raise typer.Exit(1)
+    console.print()
+
 
 @config_app.command()
 def show(
-    config_dir: Annotated[Path, CONFIG_DIR_OPTION] = DEFAULT_CONFIG_DIR,
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
     section: str = typer.Option(
         None,
         "--section",
         "-s",
-        help="Show specific section (processing, sites, sids)",
+        metavar="processing|sites|sids",
+        help="Show this section only. Default: all sections.",
     ),
 ) -> None:
-    """Display current configuration.
+    """Show the settings that canvodpy uses.
 
+    \f
     Parameters
     ----------
-    config_dir : Path
-        Directory containing config files.
+    config_dir : Path | None
+        Directory containing config files (see ``--config-dir``).
     section : str
         Optional section name (processing, sites, sids).
 
@@ -440,6 +647,7 @@ def show(
     """
     from canvod.config.loader import load_config
 
+    config_dir = get_default_config_dir()
     try:
         config = load_config(config_dir)
     except ConfigValidationError as e:
@@ -467,21 +675,22 @@ def show(
 
 @config_app.command()
 def edit(
-    config_dir: Annotated[Path, CONFIG_DIR_OPTION] = DEFAULT_CONFIG_DIR,
+    config_dir: Annotated[Path | None, LOCAL_CONFIG_DIR_OPTION] = None,
 ) -> None:
     """Open canvod-settings.yaml in $EDITOR.
 
+    \f
     Parameters
     ----------
-    config_dir : Path
-        Directory containing config files.
+    config_dir : Path | None
+        Directory containing config files (see ``--config-dir``).
 
     Returns
     -------
     None
     """
-    import os
 
+    config_dir = get_default_config_dir()
     file_path = config_dir / "canvod-settings.yaml"
 
     if not file_path.exists():
@@ -528,13 +737,12 @@ def _show_processing(config: ProcessingConfig) -> None:
     table.add_row(
         "Keep GNSS Observables", ", ".join(config.params.keep_gnss_observables)
     )
-    table.add_row("Days per Batch", str(config.params.days_per_batch))
-    mem_str = (
-        f"{config.params.max_memory_gb} GB"
-        if config.params.max_memory_gb
-        else "[dim]no limit[/dim]"
+    table.add_row(
+        "Days per Unit",
+        "from the memory budget"
+        if config.params.days_per_batch is None
+        else f"at most {config.params.days_per_batch} (days_per_batch, deprecated)",
     )
-    table.add_row("Max Memory", mem_str)
     affinity_str = (
         str(config.params.cpu_affinity)
         if config.params.cpu_affinity
@@ -554,7 +762,6 @@ def _show_processing(config: ProcessingConfig) -> None:
     aux_dir = str(st.aux_data_dir) if st.aux_data_dir else "[dim]system temp[/dim]"
     console.print(f"  Aux data dir:      {aux_dir}")
     console.print(f"  GNSS strategy:     {st.gnss_store_strategy}")
-    console.print(f"  VOD strategy:      {st.vod_store_strategy}")
     console.print()
 
     # Icechunk
@@ -565,7 +772,7 @@ def _show_processing(config: ProcessingConfig) -> None:
     )
     console.print(f"  Inline threshold:  {ic.inline_chunk_threshold_bytes} bytes")
     console.print(f"  Get concurrency:   {ic.get_partial_values_concurrency}")
-    for store_name, strategy in ic.chunk_strategies.items():
+    for store_name, strategy in ic.chunk_strategies:
         console.print(
             f"  Chunks ({store_name}): epoch={strategy.epoch}, sid={strategy.sid}"
         )
@@ -574,9 +781,13 @@ def _show_processing(config: ProcessingConfig) -> None:
     # Logging
     lg = config.logging
     console.print("[bold]Logging:[/bold]")
-    log_dir = str(lg.log_dir) if lg.log_dir else "[dim]<monorepo>/.logs[/dim]"
+    log_dir = (
+        str(lg.log_dir) if lg.log_dir else "[red]not set (required for a run)[/red]"
+    )
     console.print(f"  Log directory:     {log_dir}")
-    console.print(f"  Log file name:     {lg.log_file_name}")
+    console.print(
+        f"  Worker log files:  deleted after {lg.worker_log_retention_days} days"
+    )
     console.print(f"  Log path depth:    {lg.log_path_depth}")
     console.print()
 
@@ -653,7 +864,7 @@ def _show_sites(config: SitesConfig) -> None:
             pair_table.add_column("Position From")
 
             for ref_name, canopy_name in pairs:
-                group_name = f"{ref_name}_{canopy_name}"
+                group_name = reference_store_group(ref_name, canopy_name)
                 pair_table.add_row(group_name, ref_name, canopy_name)
 
             console.print(pair_table)
@@ -701,3 +912,41 @@ def _show_sids(config: SidsConfig) -> None:
         table.add_row("Custom SIDs", f"{len(config.custom_sids)} defined")
     console.print(table)
     console.print()
+
+
+@config_app.command()
+def explain(
+    setting: Annotated[
+        str,
+        typer.Argument(
+            help=(
+                "The setting's path in canvod-settings.yaml, or the end of it "
+                "(for example gnss_store.epoch)."
+            ),
+        ),
+    ],
+) -> None:
+    """Print what a setting of canvod-settings.yaml means.
+
+    Prints the setting's description, type, limits and default, and a link
+    to its entry in the settings reference. Name a site, receiver or VOD
+    analysis as in your file:
+    sites.my_site.receivers.reference_01.directory.
+
+    \f
+    Parameters
+    ----------
+    setting : str
+        The setting's path, or the end of it.
+
+    Raises
+    ------
+    typer.Exit
+        With code 1 if no setting, or more than one, has that path.
+    """
+    try:
+        text = settings_help.explain(setting)
+    except settings_help.UnknownSettingError as exc:
+        console.print(f"[red]{exc.args[0]}[/red]", highlight=False)
+        raise typer.Exit(1) from exc
+    console.print(text, markup=False, highlight=False, soft_wrap=True)

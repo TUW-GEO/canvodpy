@@ -1,5 +1,7 @@
 """Basic metadata tests for canvod-viz package."""
 
+from importlib.metadata import version
+
 
 def test_package_importable():
     """Test that package can be imported."""
@@ -13,7 +15,7 @@ def test_package_has_version():
     from canvod.viz import __version__
 
     assert isinstance(__version__, str)
-    assert __version__ == "0.1.0"
+    assert __version__ == version("canvod-viz")
 
 
 def test_package_has_all():

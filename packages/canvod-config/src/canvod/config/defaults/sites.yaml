@@ -1,7 +1,7 @@
 # ============================================================================
 # Default Sites Configuration
 # ============================================================================
-# This is a package default - users MUST create their own config/sites.yaml
-# Run: just config-init
+# This is a package default - users MUST define their sites in the sites:
+# section of config/canvod-settings.yaml. Run: just config-init
 
 sites: {}

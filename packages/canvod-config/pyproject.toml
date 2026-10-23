@@ -1,30 +1,57 @@
 [project]
 name = "canvod-config"
 version = "0.4.0"
-description = "Configuration models and YAML loading for canVODpy"
+description = "The canVODpy settings file: models, loading, and checks"
 readme = "README.md"
 requires-python = ">=3.14"
 authors = [
-    {name = "Nicolas François Bader", email = "support@canvodpy.eu"}
+    {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]
-license = {text = "Apache-2.0"}
+maintainers = [
+    {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
+]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "VOD",
+    "configuration",
+    "settings",
+    "YAML",
+    "pydantic",
+    "remote sensing",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+]
 
 dependencies = [
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
     "pyyaml>=6.0",
     "email-validator>=2.0",
+    "psutil>=7.2.2",
+    "canvod-utils>=1.0.0,<2",
 ]
 
 [project.urls]
-Homepage = "https://github.com/nfb2021/canvodpy"
+Homepage = "https://github.com/TUW-GEO/canvodpy"
 Documentation = "https://canvodpy.eu/packages/config/overview/"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues = "https://github.com/nfb2021/canvodpy/issues"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues = "https://github.com/TUW-GEO/canvodpy/issues"
 
 [build-system]
-requires = ["uv_build>=0.9.17,<0.10.0"]
+requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.uv.sources]
+canvod-utils = { workspace = true }
 
 [tool.uv.build-backend]
 module-name = "canvod.config"

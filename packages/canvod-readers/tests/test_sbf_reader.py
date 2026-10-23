@@ -1,4 +1,4 @@
-"""Integration tests for SbfReader — ABC compliance, to_ds(), to_metadata_ds()."""
+"""Integration tests for SbfReader — ABC compliance, to_ds(), to_ds_and_auxiliary()."""
 
 from __future__ import annotations
 
@@ -58,17 +58,17 @@ def obs_ds(reader: SbfReader) -> xr.Dataset:
 
 
 @pytest.fixture(scope="module")
-def meta_ds(reader: SbfReader) -> xr.Dataset:
-    """Full metadata dataset (no padding)."""
-    return reader.to_metadata_ds(pad_global_sid=False)
-
-
-@pytest.fixture(scope="module")
 def combined_result(
     reader: SbfReader,
 ) -> tuple[xr.Dataset, dict[str, xr.Dataset]]:
     """Result of to_ds_and_auxiliary() — single-pass combined scan."""
     return reader.to_ds_and_auxiliary(pad_global_sid=False, strip_fillval=False)
+
+
+@pytest.fixture(scope="module")
+def meta_ds(combined_result: tuple[xr.Dataset, dict[str, xr.Dataset]]) -> xr.Dataset:
+    """SBF metadata dataset ``sbf_obs`` (no padding)."""
+    return combined_result[1]["sbf_obs"]
 
 
 # ---------------------------------------------------------------------------
@@ -163,25 +163,19 @@ class TestSbfReaderABC:
         st = reader.start_time
         et = reader.end_time
         assert st < et
-        assert st.tzinfo is not None  # tz-aware UTC
+        assert st.tzinfo is not None  # timezone-aware (GPS time)
         assert st.tzinfo == UTC
 
-    def test_start_time_near_midnight(self, reader: SbfReader) -> None:
-        """ROSR01TUW_R_20250010000_15M_05S_AA.sbf straddles the 2024-12-31/2025-01-01 GPS midnight.
+    def test_start_time_is_gps_time(self, reader: SbfReader) -> None:
+        """ROSR01TUW_R_20250010000_15M_05S_AA.sbf starts at the GPS day boundary.
 
-        GPS time precedes UTC by 18 leap seconds, so the first epoch of the
-        GPS slot starting at 2025-01-01 00:00:00 GPS falls at
-        2024-12-31 23:59:42 UTC.  Verify the file boundary is within
-        60 seconds of 2025-01-01 00:00:00 UTC.
+        Its first MeasEpoch has TOW 259200 s (Wednesday 00:00:00 GPS time).
+        Stored in GPS time, the first epoch is 2025-01-01 00:00:00, not
+        2024-12-31 23:59:42 (UTC, 18 leap seconds earlier).
         """
         from datetime import datetime
 
-        boundary = datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC)
-        delta_s = abs((reader.start_time - boundary).total_seconds())
-        assert delta_s < 60, (
-            f"Start time {reader.start_time} is more than 60 s from "
-            f"the expected file boundary {boundary}"
-        )
+        assert reader.start_time == datetime(2025, 1, 1, tzinfo=UTC)
 
     def test_systems(self, reader: SbfReader) -> None:
         valid = {"G", "R", "E", "C", "J", "I", "S"}
@@ -251,7 +245,7 @@ class TestSbfHeader:
 
     def test_header_height_plausible(self, header: SbfHeader) -> None:
         """Rosalia reference station is ~460 m a.s.l.; allow generous 0–4000 m."""
-        h_m = header.height_m.magnitude  # pint.Quantity in metres
+        h_m = header.height_m.magnitude  # pint.Quantity in meters
         assert 0 < h_m < 4000, f"Implausible station height: {h_m:.1f} m"
 
 
@@ -397,16 +391,16 @@ class TestToDs:
         assert list(ds.data_vars) == ["SNR"]
 
 
-class TestToMetadataDs:
-    """to_metadata_ds() produces a valid (epoch, sid) metadata dataset."""
+class TestSbfObsDataset:
+    """The ``sbf_obs`` dataset of to_ds_and_auxiliary() is a valid (epoch, sid) dataset."""
 
-    def test_to_metadata_ds_dims(self, meta_ds: xr.Dataset, obs_ds: xr.Dataset) -> None:
+    def test_sbf_obs_dims(self, meta_ds: xr.Dataset, obs_ds: xr.Dataset) -> None:
         assert "epoch" in meta_ds.dims
         assert "sid" in meta_ds.dims
         # Must span at least as many epochs as observations
         assert meta_ds.sizes["epoch"] == obs_ds.sizes["epoch"]
 
-    def test_to_metadata_ds_sid_coverage(
+    def test_sbf_obs_sid_coverage(
         self, meta_ds: xr.Dataset, obs_ds: xr.Dataset
     ) -> None:
         obs_sids = set(obs_ds.sid.values)
@@ -416,7 +410,7 @@ class TestToMetadataDs:
             f"Metadata dataset missing sids from observations: {missing}"
         )
 
-    def test_to_metadata_ds_broadcast_theta_phi(self, meta_ds: xr.Dataset) -> None:
+    def test_sbf_obs_broadcast_theta_phi(self, meta_ds: xr.Dataset) -> None:
         theta = meta_ds["broadcast_theta"].values
         phi = meta_ds["broadcast_phi"].values
         valid_theta = theta[~np.isnan(theta)]
@@ -441,26 +435,50 @@ class TestToMetadataDs:
         assert meta_ds["broadcast_theta"].attrs["units"] == "rad"
         assert meta_ds["broadcast_phi"].attrs["units"] == "rad"
 
-    def test_to_metadata_ds_broadcast_theta_not_all_nan(
-        self, meta_ds: xr.Dataset
-    ) -> None:
+    def test_sbf_obs_broadcast_theta_not_all_nan(self, meta_ds: xr.Dataset) -> None:
         """At least some epochs must have SatVisibility-derived geometry."""
         assert not np.all(np.isnan(meta_ds["broadcast_theta"].values)), (
             "broadcast_theta is entirely NaN — SatVisibility blocks absent or not matched?"
         )
 
-    def test_to_metadata_ds_rise_set_values(self, meta_ds: xr.Dataset) -> None:
+    def test_sbf_obs_rise_set_values(self, meta_ds: xr.Dataset) -> None:
         """rise_set cells must only contain {-1, 0, 1}: fill, setting, rising."""
         rs = meta_ds["rise_set"].values
         unique_vals = set(np.unique(rs).tolist())
         unexpected = unique_vals - {-1, 0, 1}
         assert not unexpected, f"Unexpected rise_set values: {unexpected}"
 
-    def test_to_metadata_ds_epoch_coords(self, meta_ds: xr.Dataset) -> None:
+    def test_sbf_obs_broadcast_angle_source_values(self, meta_ds: xr.Dataset) -> None:
+        """broadcast_angle_source only holds {-1, 1, 2}: fill, almanac, ephemeris."""
+        src = meta_ds["broadcast_angle_source"].values
+        assert src.dtype == np.int8
+        unexpected = set(np.unique(src).tolist()) - {-1, 1, 2}
+        assert not unexpected, f"Unexpected broadcast_angle_source: {unexpected}"
+
+    def test_sbf_obs_broadcast_angle_source_has_geometry(
+        self, meta_ds: xr.Dataset
+    ) -> None:
+        """Every almanac/ephemeris cell carries a reported elevation."""
+        src = meta_ds["broadcast_angle_source"].values
+        theta = meta_ds["broadcast_theta"].values
+        assert not np.isnan(theta[src > 0]).any()
+
+    def test_sbf_obs_epoch_coords(self, meta_ds: xr.Dataset) -> None:
         for coord in ("pdop", "hdop", "n_sv"):
             assert coord in meta_ds.coords, f"Missing epoch coord: {coord}"
 
-    def test_to_metadata_ds_pdop_plausible(self, meta_ds: xr.Dataset) -> None:
+    def test_epochs_record_gps_time(
+        self, meta_ds: xr.Dataset, obs_ds: xr.Dataset
+    ) -> None:
+        for ds in (obs_ds, meta_ds):
+            assert ds["epoch"].attrs["time_system"] == "GPS"
+
+    def test_epochs_lie_on_the_sampling_grid(self, obs_ds: xr.Dataset) -> None:
+        """GPS time keeps the receiver's 5 s grid; UTC would shift it by 2 s."""
+        seconds = obs_ds["epoch"].values.astype("datetime64[s]").astype(np.int64)
+        assert (seconds % 5 == 0).all()
+
+    def test_sbf_obs_pdop_plausible(self, meta_ds: xr.Dataset) -> None:
         pdop = meta_ds["pdop"].values
         valid = pdop[~np.isnan(pdop)]
         if len(valid) > 0:
@@ -469,31 +487,37 @@ class TestToMetadataDs:
                 f"PDOP unrealistically large: max={valid.max():.2f}"
             )
 
-    def test_to_metadata_ds_data_vars(self, meta_ds: xr.Dataset) -> None:
-        for var in ("broadcast_theta", "broadcast_phi", "rise_set", "mp_correction_m"):
+    def test_sbf_obs_data_vars(self, meta_ds: xr.Dataset) -> None:
+        for var in (
+            "broadcast_theta",
+            "broadcast_phi",
+            "broadcast_angle_source",
+            "rise_set",
+            "mp_correction_m",
+        ):
             assert var in meta_ds.data_vars, f"Missing metadata data var: {var}"
 
-    def test_to_metadata_ds_epoch_coord_dims(self, meta_ds: xr.Dataset) -> None:
+    def test_sbf_obs_epoch_coord_dims(self, meta_ds: xr.Dataset) -> None:
         for coord in ("pdop", "hdop", "vdop", "n_sv", "cpu_load"):
             if coord in meta_ds.coords:
                 assert meta_ds[coord].dims == ("epoch",), (
                     f"Coord {coord} should be 1-D over epoch"
                 )
 
-    def test_to_metadata_ds_global_attrs(self, meta_ds: xr.Dataset) -> None:
+    def test_sbf_obs_global_attrs(self, meta_ds: xr.Dataset) -> None:
         for attr in ("File Hash", "Created", "Software", "Institution"):
             assert attr in meta_ds.attrs, f"Missing global attr: {attr}"
 
-    def test_to_metadata_ds_file_hash_attr(self, meta_ds: xr.Dataset) -> None:
+    def test_sbf_obs_file_hash_attr(self, meta_ds: xr.Dataset) -> None:
         assert "File Hash" in meta_ds.attrs
 
-    def test_to_metadata_ds_hash_matches_obs(
+    def test_sbf_obs_hash_matches_obs(
         self, meta_ds: xr.Dataset, obs_ds: xr.Dataset
     ) -> None:
         """Both datasets must reference the same source file."""
         assert meta_ds.attrs["File Hash"] == obs_ds.attrs["File Hash"]
 
-    def test_to_metadata_ds_epoch_alignment(
+    def test_sbf_obs_epoch_alignment(
         self, meta_ds: xr.Dataset, obs_ds: xr.Dataset
     ) -> None:
         """Epoch arrays in metadata and observation datasets must be identical."""
@@ -584,6 +608,35 @@ class TestToDsAndAuxiliary:
         assert "broadcast_theta" in meta.data_vars
         assert "broadcast_phi" in meta.data_vars
 
+    def test_keep_data_vars_raw_observables_does_not_raise(
+        self, reader: SbfReader
+    ) -> None:
+        """Regression test: requesting raw observables via keep_data_vars must
+        not raise, as long as store_raw_observables=True is also passed —
+        validation previously ran before the raw variables were created.
+        """
+        obs, _ = reader.to_ds_and_auxiliary(
+            keep_data_vars=["SNR", "Pseudorange_raw", "Phase_raw", "SNR_raw"],
+            store_raw_observables=True,
+            pad_global_sid=False,
+            strip_fillval=False,
+        )
+        assert set(obs.data_vars) == {"SNR", "Pseudorange_raw", "Phase_raw", "SNR_raw"}
+
+    def test_keep_data_vars_raw_observables_without_store_raises(
+        self, reader: SbfReader
+    ) -> None:
+        """Requesting a raw observable without store_raw_observables=True must
+        still raise — the raw variables genuinely don't exist in that case.
+        """
+        with pytest.raises(ValueError, match="Missing required data variable"):
+            reader.to_ds_and_auxiliary(
+                keep_data_vars=["SNR", "Pseudorange_raw"],
+                store_raw_observables=False,
+                pad_global_sid=False,
+                strip_fillval=False,
+            )
+
     def test_meta_sid_matches_obs_sid(
         self, combined_result: tuple[xr.Dataset, dict]
     ) -> None:
@@ -622,18 +675,46 @@ class TestToDsAndAuxiliary:
         meta = aux["sbf_obs"]
         assert meta.sizes["epoch"] == obs.sizes["epoch"]
 
-    def test_meta_epoch_values_match_standalone(
-        self,
-        combined_result: tuple[xr.Dataset, dict],
-        meta_ds: xr.Dataset,
-    ) -> None:
-        _, aux = combined_result
-        meta = aux["sbf_obs"]
-        np.testing.assert_array_equal(meta.epoch.values, meta_ds.epoch.values)
-
     def test_meta_file_hash_matches_obs(
         self, combined_result: tuple[xr.Dataset, dict]
     ) -> None:
         obs, aux = combined_result
         meta = aux["sbf_obs"]
         assert meta.attrs.get("File Hash") == obs.attrs.get("File Hash")
+
+
+class TestSbfObsUnknownMarker:
+    """Epoch variables that store -1 for "unknown" declare it as _FillValue."""
+
+    _MARKED = (
+        "cpu_load",
+        "qual_overall",
+        "qual_gnss_main",
+        "qual_rf_main",
+        "qual_cpu",
+        "qual_scintillation",
+        "pvt_mode",
+        "spoofing_flag",
+        "nma_fail_flag",
+        "rise_set",
+        "broadcast_angle_source",
+    )
+
+    def test_unknown_marker_is_declared(self, meta_ds: xr.Dataset) -> None:
+        for name in self._MARKED:
+            assert meta_ds[name].attrs.get("_FillValue") == -1, name
+
+    def test_cpu_load_holds_every_raw_value(self, meta_ds: xr.Dataset) -> None:
+        # ReceiverStatus.CPULoad is u1: 0-254 are values, 255 Do-Not-Use.
+        assert np.iinfo(meta_ds["cpu_load"].dtype).max >= 254
+
+    def test_unknown_reads_back_as_missing(
+        self, meta_ds: xr.Dataset, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        path = tmp_path_factory.mktemp("sbf_obs") / "meta.zarr"
+        meta_ds[list(self._MARKED)].to_zarr(path, mode="w")
+        back = xr.open_zarr(path)
+        for name in self._MARKED:
+            unknown = (meta_ds[name] == -1).values
+            assert back[name].isnull().values[unknown].all(), name
+            assert not back[name].isnull().values[~unknown].any(), name

@@ -1,4 +1,4 @@
-"""Store catalog builder — scan directories for Icechunk stores."""
+"""Store catalog builder: scan directories for Icechunk stores."""
 
 from __future__ import annotations
 
@@ -7,37 +7,43 @@ from pathlib import Path
 from typing import Any
 
 import polars as pl
+from canvod.utils.tools import deprecated
 
-from .io import metadata_exists, read_metadata
+from .io import (
+    SITE_MIGRATE_COMMAND,
+    _written_before_metadata,
+    read_metadata,
+)
+from .location import StoreLocation, open_repository, store_exists
 from .schema import StoreMetadata
 
 
-def _is_icechunk_store(path: Path) -> bool:
-    """Return True if path looks like an Icechunk ≥2.0 store.
+def _store_candidates(root_dir: Path, recursive: bool = True) -> list[Path]:
+    """The folders under root_dir that may hold an Icechunk store.
 
-    Icechunk 2.x layout: snapshots/ + transactions/ directories at the root.
+    A folder with a ``snapshots`` folder is a candidate; Icechunk decides
+    whether it holds a repository (:func:`store_exists`).
     """
-    return (path / "snapshots").is_dir() and (path / "transactions").is_dir()
-
-
-def _find_icechunk_stores(root_dir: Path, recursive: bool = True) -> list[Path]:
-    """Find Icechunk stores under root_dir by their layout markers."""
-    stores: list[Path] = []
     if not root_dir.is_dir():
-        return stores
-
+        return []
     # snapshots/ is always non-empty and reliably findable; refs/ may be empty
     # in v2 so we glob on snapshots/ only.
     pattern = "**/snapshots" if recursive else "*/snapshots"
-    for marker in root_dir.glob(pattern):
-        candidate = marker.parent
-        if _is_icechunk_store(candidate):
-            stores.append(candidate)
-
-    return sorted(set(stores))
+    return sorted({marker.parent for marker in root_dir.glob(pattern)})
 
 
-def _metadata_to_row(store_path: Path, meta: StoreMetadata) -> dict[str, Any]:
+def _find_icechunk_stores(root_dir: Path, recursive: bool = True) -> list[Path]:
+    """Find the Icechunk stores under root_dir."""
+    return [
+        candidate
+        for candidate in _store_candidates(root_dir, recursive)
+        if store_exists(candidate)
+    ]
+
+
+def _metadata_to_row(
+    store_path: StoreLocation | Path | str, meta: StoreMetadata
+) -> dict[str, Any]:
     """Convert metadata to a flat dict for a DataFrame row."""
     return {
         "id": meta.identity.id,
@@ -59,10 +65,12 @@ def _metadata_to_row(store_path: Path, meta: StoreMetadata) -> dict[str, Any]:
         "file_count": meta.summaries.file_count,
         "store_size_mb": meta.summaries.store_size_mb,
         "path": str(store_path),
+        "needs_migration": False,
+        "migrate_command": None,
     }
 
 
-def _empty_row(store_path: Path) -> dict[str, Any]:
+def _empty_row(store_path: StoreLocation | Path | str) -> dict[str, Any]:
     """Row for a store without metadata."""
     return {
         "id": None,
@@ -84,6 +92,8 @@ def _empty_row(store_path: Path) -> dict[str, Any]:
         "file_count": None,
         "store_size_mb": None,
         "path": str(store_path),
+        "needs_migration": False,
+        "migrate_command": None,
     }
 
 
@@ -107,11 +117,67 @@ _SCHEMA = {
     "file_count": pl.Int64,
     "store_size_mb": pl.Float64,
     "path": pl.Utf8,
+    "needs_migration": pl.Boolean,
+    "migrate_command": pl.Utf8,
 }
 
 
+def _store_state(store_path: StoreLocation | Path | str) -> str:
+    """``"current"``, ``"needs_migration"`` or ``"empty"`` (no metadata, no data)."""
+    repo = open_repository(store_path)
+    if repo.get_metadata():
+        return "current"
+    return "needs_migration" if _written_before_metadata(repo) else "empty"
+
+
+def _row(store_path: StoreLocation | Path | str) -> dict[str, Any]:
+    """A store's catalog row; one needing migration says so, with the command."""
+    state = _store_state(store_path)
+    if state == "empty":
+        return _empty_row(store_path)
+    if state == "current":
+        return _metadata_to_row(store_path, read_metadata(store_path))
+    try:
+        meta = read_metadata(store_path)
+    except KeyError:  # data, but not even old-form metadata
+        row, command = _empty_row(store_path), f"{SITE_MIGRATE_COMMAND} SITE"
+    else:
+        row = _metadata_to_row(store_path, meta)
+        command = f"{SITE_MIGRATE_COMMAND} {meta.spatial.site.name}"
+    return {**row, "needs_migration": True, "migrate_command": command}
+
+
+def _check_catalog_stores(store_paths: list[Path]) -> None:
+    """Refuse a catalog that would leave out a store.
+
+    Raises
+    ------
+    ValueError
+        If a store needs migration or has no metadata.
+    """
+    problems = []
+    for sp in store_paths:
+        state = _store_state(sp)
+        if state == "needs_migration":
+            problems.append(
+                f"  {sp}: written before stores kept repository metadata; "
+                f"migrate it with {SITE_MIGRATE_COMMAND} SITE"
+            )
+        elif state == "empty":
+            problems.append(f"  {sp}: has no metadata and no data")
+    if problems:
+        msg = (
+            "A catalog lists every store under its data root; these stores "
+            "cannot be listed:\n" + "\n".join(problems)
+        )
+        raise ValueError(msg)
+
+
 def scan_stores(root_dir: Path, recursive: bool = True) -> pl.DataFrame:
-    """Walk directories, find Icechunk stores, build a catalog.
+    """List the Icechunk stores under a directory, one row per store.
+
+    A store written before stores kept repository metadata is listed with
+    ``needs_migration`` and the command that migrates it.
 
     Returns
     -------
@@ -119,17 +185,7 @@ def scan_stores(root_dir: Path, recursive: bool = True) -> pl.DataFrame:
         One row per store with metadata columns.
     """
     store_paths = _find_icechunk_stores(root_dir, recursive)
-    rows: list[dict[str, Any]] = []
-
-    for sp in store_paths:
-        if metadata_exists(sp):
-            try:
-                meta = read_metadata(sp)
-                rows.append(_metadata_to_row(sp, meta))
-            except Exception:
-                rows.append(_empty_row(sp))
-        else:
-            rows.append(_empty_row(sp))
+    rows = [_row(sp) for sp in store_paths]
 
     if not rows:
         return pl.DataFrame(schema=_SCHEMA)
@@ -137,18 +193,21 @@ def scan_stores(root_dir: Path, recursive: bool = True) -> pl.DataFrame:
     return pl.DataFrame(rows)
 
 
-def scan_stores_as_stac(root_dir: Path) -> dict[str, Any]:
-    """Build a STAC Catalog JSON dict from stores."""
+def _scan_stores_as_stac(root_dir: Path) -> dict[str, Any]:
+    """Build a STAC Catalog JSON dict from stores.
+
+    Raises
+    ------
+    ValueError
+        If a store needs migration or has no metadata: the catalog would
+        leave it out.
+    """
     store_paths = _find_icechunk_stores(root_dir)
+    _check_catalog_stores(store_paths)
     collections: list[dict[str, Any]] = []
 
     for sp in store_paths:
-        if not metadata_exists(sp):
-            continue
-        try:
-            meta = read_metadata(sp)
-        except Exception:
-            continue
+        meta = read_metadata(sp)
 
         collection: dict[str, Any] = {
             "type": "Collection",
@@ -189,7 +248,7 @@ def scan_stores_as_stac(root_dir: Path) -> dict[str, Any]:
     }
 
 
-def to_stac_collection(meta: StoreMetadata) -> dict[str, Any]:
+def _to_stac_collection(meta: StoreMetadata) -> dict[str, Any]:
     """Convert a single StoreMetadata to a STAC 1.1 Collection dict, in-memory.
 
     Parameters
@@ -201,7 +260,7 @@ def to_stac_collection(meta: StoreMetadata) -> dict[str, Any]:
     -------
     dict[str, Any]
         A STAC Collection object, ready to ``json.dumps()`` or inspect
-        directly -- no file I/O. See ``write_stac_collection()`` to also
+        directly -- no file I/O. See ``_write_stac_collection()`` to also
         persist it to disk.
     """
     collection: dict[str, Any] = {
@@ -245,10 +304,10 @@ def to_stac_collection(meta: StoreMetadata) -> dict[str, Any]:
     return collection
 
 
-def to_stac_collection_json(meta: StoreMetadata, indent: int = 2) -> str:
+def _to_stac_collection_json(meta: StoreMetadata, indent: int = 2) -> str:
     """Convert a single StoreMetadata to a STAC 1.1 Collection JSON string.
 
-    Convenience wrapper around ``to_stac_collection()`` for callers who want
+    Convenience wrapper around ``_to_stac_collection()`` for callers who want
     the serialized form directly (e.g. to display, hash, or send over the
     wire) without touching the filesystem.
 
@@ -264,10 +323,10 @@ def to_stac_collection_json(meta: StoreMetadata, indent: int = 2) -> str:
     str
         The STAC Collection, serialized as JSON.
     """
-    return json.dumps(to_stac_collection(meta), indent=indent, default=str)
+    return json.dumps(_to_stac_collection(meta), indent=indent, default=str)
 
 
-def write_stac_collection(
+def _write_stac_collection(
     store_path: Path,
     output_path: Path | None = None,
     branch: str = "main",
@@ -289,7 +348,7 @@ def write_stac_collection(
         The written JSON file path.
     """
     meta = read_metadata(store_path, branch)
-    collection = to_stac_collection(meta)
+    collection = _to_stac_collection(meta)
 
     if output_path is None:
         output_path = store_path / "collection.json"
@@ -299,7 +358,7 @@ def write_stac_collection(
     return output_path
 
 
-def write_stac_catalog(
+def _write_stac_catalog(
     root_dir: Path,
     output_path: Path | None = None,
     write_collections: bool = True,
@@ -319,29 +378,91 @@ def write_stac_catalog(
     -------
     Path
         The written catalog JSON file path.
+
+    Raises
+    ------
+    ValueError
+        If a store needs migration or has no metadata.
     """
-    catalog = scan_stores_as_stac(root_dir)
+    catalog = _scan_stores_as_stac(root_dir)
 
     if output_path is None:
         output_path = root_dir / "catalog.json"
 
     # Rewrite links to point to actual collection.json files
     if write_collections:
-        store_paths = _find_icechunk_stores(root_dir)
-        for sp in store_paths:
-            if not metadata_exists(sp):
-                continue
-            try:
-                coll_path = write_stac_collection(sp)
-                # Update catalog link to relative path
-                rel = coll_path.relative_to(output_path.parent)
-                for link in catalog["links"]:
-                    meta = read_metadata(sp)
-                    if link.get("href") == f"#{meta.identity.id}":
-                        link["href"] = str(rel)
-            except Exception:
-                continue
+        for sp in _find_icechunk_stores(root_dir):
+            coll_path = _write_stac_collection(sp)
+            # Update catalog link to relative path
+            rel = coll_path.relative_to(output_path.parent)
+            store_id = read_metadata(sp).identity.id
+            for link in catalog["links"]:
+                if link.get("href") == f"#{store_id}":
+                    link["href"] = rel.as_posix()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(catalog, indent=2, default=str))
     return output_path
+
+
+@deprecated(
+    "`scan_stores_as_stac` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.store_metadata.build_catalog` instead: it builds the STAC "
+    "catalog of every store under the data root."
+)
+def scan_stores_as_stac(root_dir: Path) -> dict[str, Any]:
+    """Build a STAC Catalog JSON dict from stores (deprecated)."""
+    return _scan_stores_as_stac(root_dir)
+
+
+@deprecated(
+    "`to_stac_collection` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.store_metadata.store_item(store_path)` instead: it gives "
+    "the STAC item of one store."
+)
+def to_stac_collection(meta: StoreMetadata) -> dict[str, Any]:
+    """Convert a StoreMetadata to a STAC 1.1 Collection dict (deprecated)."""
+    return _to_stac_collection(meta)
+
+
+@deprecated(
+    "`to_stac_collection_json` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.store_metadata.store_item(store_path)` instead: it gives "
+    "the STAC item of one store; `json.dumps(item.to_dict())` is its JSON."
+)
+def to_stac_collection_json(meta: StoreMetadata, indent: int = 2) -> str:
+    """Convert a StoreMetadata to STAC 1.1 Collection JSON (deprecated)."""
+    return _to_stac_collection_json(meta, indent)
+
+
+@deprecated(
+    "`write_stac_collection` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.store_metadata.write_catalog` (or `canvodpy stac write`) "
+    "instead: it writes each store's item into the catalog at the data root."
+)
+def write_stac_collection(
+    store_path: Path,
+    output_path: Path | None = None,
+    branch: str = "main",
+) -> Path:
+    """Write a STAC Collection JSON file for one store (deprecated)."""
+    return _write_stac_collection(store_path, output_path, branch)
+
+
+@deprecated(
+    "`write_stac_catalog` is left over from development and will be "
+    "removed with the next major version. "
+    "Use `canvod.store_metadata.write_catalog` (or `canvodpy stac write`) "
+    "instead: it writes the catalog at the data root."
+)
+def write_stac_catalog(
+    root_dir: Path,
+    output_path: Path | None = None,
+    write_collections: bool = True,
+) -> Path:
+    """Write a STAC Catalog JSON and per-store Collections (deprecated)."""
+    return _write_stac_catalog(root_dir, output_path, write_collections)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest.mock
+from pathlib import Path
 
 import pytest
 from canvodpy.orchestrator.resources import MemoryMonitor
@@ -92,3 +93,12 @@ class TestPipelineRunLock:
                 raise ValueError("simulated pipeline crash")
         assert is_pipeline_running(pid_file) is False
         assert not pid_file.exists()
+
+
+class TestRunPidFileInTests:
+    def test_tests_never_use_the_users_run_pid(self):
+        """The conftest fixture moves the lock; the defaults must follow (#401)."""
+        from canvodpy.orchestrator.resources import PipelineRunLock
+
+        real = Path.home() / ".cache" / "canvodpy" / "run.pid"
+        assert PipelineRunLock().pid_file != real

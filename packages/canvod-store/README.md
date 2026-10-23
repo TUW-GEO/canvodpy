@@ -1,58 +1,60 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_dark_mode.svg">
+    <img alt="canVODpy" src="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_bright_mode.svg" width="260">
+  </picture>
+</p>
+
 # canvod-store
 
-Icechunk storage for GNSS VOD data.
+[![PyPI](https://img.shields.io/pypi/v/canvod-store.svg)](https://pypi.org/project/canvod-store/)
+[![Python](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18496233-blue)](https://doi.org/10.5281/zenodo.18496233)
 
-Part of the [canVODpy](https://github.com/nfb2021/canvodpy) ecosystem.
+**Versioned Icechunk stores for GNSS-T observations and VOD.** `canvod-store` is a package of
+[canVODpy](https://canvodpy.eu/), an open Python ecosystem for
+GNSS-Transmissometry canopy VOD retrievals.
 
-## Overview
+## What it does
 
-This package provides versioned storage for GNSS data using Icechunk, managing:
+- Keeps the observations of a site in a GNSS store and its VOD in a VOD store, both [Icechunk](https://icechunk.io/) repositories of Zarr arrays.
+- Records every write as a commit, so earlier states of a store stay readable.
+- Keeps a log book of which file produced which data, so a file is never stored twice.
 
-- **RINEX Store (Level 1)**: Augmented observations per receiver
-- **VOD Store (Level 2)**: Analysis products comparing receiver pairs
-
-## Installation
+## Install
 
 ```bash
-uv pip install canvod-store
+uv add canvod-store
 ```
 
-## Configuration (optional)
+Most users install [canvodpy](https://pypi.org/project/canvodpy/), which
+includes this package, the command line, and the processing pipeline.
+canVODpy requires Python 3.14.
 
-`MyIcechunkStore`, `GnssResearchSite`, and `IcechunkDataReader` read
-compression/chunking/resource settings from `canvod-config`'s
-`load_config()`. In a standalone install outside a canvodpy monorepo
-checkout, point it at a settings file with:
-
-- `CANVOD_CONFIG_DIR` — directory containing `canvod-settings.yaml`
-- `CANVOD_CONFIG_FILE` — an overlay YAML file merged on top
-
-## Quick Start
+## Example
 
 ```python
-from canvod.store import create_rinex_store, GnssResearchSite
 from pathlib import Path
+from canvod.store import open_gnss_store
 
-# Create stores
-rinex_store = create_rinex_store(Path("./rinex_store"))
-
-# Or use site manager
-site = GnssResearchSite(site_name="ExampleSite")
+store = open_gnss_store(Path("stores/ExampleSite/rinex"))
+print(store.list_groups())  # one group per receiver
+ds = store.read_group("canopy_01", date="2025001")
 ```
-
-## Features
-
-- Automatic repository creation/connection
-- Group management with validation
-- Session management with context managers
-- Integrated logging and metadata tracking
-- Configurable compression and chunking
-- Deduplication support
 
 ## Documentation
 
-[Full documentation](https://canvodpy.eu/packages/store/overview/)
+- [canvod-store in the canVODpy documentation](https://canvodpy.eu/packages/store/overview/)
+- [Start here](https://canvodpy.eu/users/): from installation to the first VOD
+
+## How to cite
+
+If you use canVODpy, please cite it with its DOI,
+[`10.5281/zenodo.18496233`](https://doi.org/10.5281/zenodo.18496233), which always leads to the newest
+version. [CITATION.cff](https://github.com/TUW-GEO/canvodpy/blob/main/CITATION.cff) has the full
+citation.
 
 ## License
 
-Apache License 2.0 - see LICENSE file
+[Apache License 2.0](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE)

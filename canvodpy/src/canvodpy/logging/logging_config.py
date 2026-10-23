@@ -19,7 +19,9 @@ will ever exist.
 import logging
 import multiprocessing
 import os
+import re
 import sys
+import time
 import traceback
 from collections.abc import Callable
 from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
@@ -29,7 +31,16 @@ from typing import Any
 import structlog
 
 from canvod.config import load_config
-from canvodpy.logging.run_context import get_run_id
+from canvod.utils.logging import get_run_id
+from canvod.utils.tools import deprecated, deprecated_argument
+from canvodpy.logging.run_history_handler import RunHistoryHandler
+
+# Log folder that file logging currently writes to; None while console only.
+_active_log_dir: Path | None = None
+
+# Log files of worker processes: the process ID before the extension, e.g.
+# ``agent.12345.json``, ``main.12345.log.2026-10-09``.
+_WORKER_LOG_FILE = re.compile(r"^[a-z]+\.\d+\.(json|log)")
 
 
 def _process_log_suffix() -> str:
@@ -65,13 +76,42 @@ def _setup_log_directories(base_dir: Path) -> dict[str, Path]:
         "machine": base_dir / "machine",
         "human": base_dir / "human",
         "component": base_dir / "component",
-        "archive": base_dir / "archive",
     }
 
     for directory in dirs.values():
         directory.mkdir(parents=True, exist_ok=True)
 
     return dirs
+
+
+def _delete_old_worker_logs(
+    log_dirs: dict[str, Path], retention_days: int
+) -> list[Path]:
+    """Delete worker log files that have not changed for *retention_days*.
+
+    Each worker process writes its own files (see ``_process_log_suffix``)
+    and new workers get new process IDs, so rotation, which works per file
+    name, never removes them.
+
+    Returns
+    -------
+    list[Path]
+        Files that could not be deleted.
+    """
+    cutoff = time.time() - retention_days * 86_400
+    failed: list[Path] = []
+    for directory in log_dirs.values():
+        for path in directory.iterdir():
+            if not _WORKER_LOG_FILE.match(path.name):
+                continue
+            try:
+                if path.stat().st_mtime < cutoff:
+                    path.unlink()
+            except FileNotFoundError:
+                continue
+            except OSError:
+                failed.append(path)
+    return failed
 
 
 def _create_human_renderer() -> Callable[..., Any]:
@@ -251,9 +291,9 @@ def _install_excepthook(logger: structlog.BoundLogger) -> None:
     full traceback) before chaining to the default hook, which still runs
     so console behavior for attended sessions is unchanged.
 
-    Idempotent: ``configure_logging()`` runs once per process in normal
-    operation (module-level ``LOGGER = configure_logging()``), but can run
-    more than once (tests, or a hypothetical re-configuration). Without
+    Idempotent: ``configure_logging()`` usually runs once per process
+    (through ``ensure_file_logging()``), but can run more than once (tests,
+    or a second run in the same process with another log location). Without
     this guard, each call would wrap the *previous* call's hook, growing an
     ever-longer chain that re-logs the same exception once per wrap. The
     marker lives on ``sys.excepthook`` itself (not separate module state),
@@ -289,46 +329,10 @@ def _install_excepthook(logger: structlog.BoundLogger) -> None:
     sys.excepthook = _excepthook
 
 
-def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
-    """Configure structlog with dual-output system.
-
-    Creates organized logging structure:
-    - machine/agent.json - Always-on agent-diagnostic causal narrative
-    - human/main.log - Traditional readable logs
-    - Console output for warnings/errors
-
-    All file handlers include log rotation.
-
-    Parameters
-    ----------
-    logfile : Path, optional
-        Legacy parameter for backwards compatibility. Now used to determine
-        base log directory. Defaults to LOG_FILE.
-
-    Returns
-    -------
-    structlog.BoundLogger
-        Configured structlog logger.
-    """
-    if logfile is None:
-        try:
-            logfile = load_config().processing.logging.get_log_file()
-        except Exception:
-            # Fallback when config system isn't available (e.g. CI, tests)
-            logfile = Path.cwd() / ".logs" / "canvodpy.log"
-
-    # Set up directory structure
-    base_dir = logfile.parent
-    log_dirs = _setup_log_directories(base_dir)
-
-    # Distinguishes worker-process log files from the main process's, so
-    # concurrent processes never share a physical path (see _process_log_suffix).
-    suffix = _process_log_suffix()
-
-    timestamper = structlog.processors.TimeStamper(fmt="iso", utc=True)
-
-    shared_processors = [
-        timestamper,
+def _shared_processors() -> list[Callable[..., Any]]:
+    """Return the processors every log record passes, on every output."""
+    return [
+        structlog.processors.TimeStamper(fmt="iso", utc=True),
         structlog.processors.add_log_level,
         _add_run_id,
         structlog.processors.StackInfoRenderer(),
@@ -336,29 +340,157 @@ def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
         structlog.processors.format_exc_info,
     ]
 
-    # Renderers
-    console_renderer = structlog.dev.ConsoleRenderer()
-    json_renderer = structlog.processors.JSONRenderer()
 
-    # Reset root logger
+def _reset_root_logger() -> logging.Logger:
+    """Remove all handlers from the root logger and let it accept all levels."""
     logging.basicConfig(level=logging.DEBUG, format="%(message)s")
     root_logger = logging.getLogger()
+    for handler in root_logger.handlers:
+        handler.close()  # releases files and the run history
     root_logger.handlers.clear()
-    root_logger.setLevel(logging.DEBUG)  # Ensure root accepts all levels
+    root_logger.setLevel(logging.DEBUG)
+    return root_logger
 
-    # ========================================================================
-    # HANDLER 1: Console (stdout) - Warnings and errors only
-    # ========================================================================
+
+def _console_handler(shared_processors: list[Callable[..., Any]]) -> logging.Handler:
+    """Return the stdout handler: warnings and errors only."""
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.WARNING)
-    console_formatter = structlog.stdlib.ProcessorFormatter(
-        foreign_pre_chain=shared_processors,
-        processors=[
-            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-            console_renderer,
-        ],
+    console_handler.setFormatter(
+        structlog.stdlib.ProcessorFormatter(
+            foreign_pre_chain=shared_processors,
+            processors=[
+                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                structlog.dev.ConsoleRenderer(),
+            ],
+        )
     )
-    console_handler.setFormatter(console_formatter)
+    return console_handler
+
+
+def _configure_structlog(shared_processors: list[Callable[..., Any]]) -> None:
+    """Route structlog through the stdlib root logger's handlers."""
+    structlog.configure(
+        processors=[
+            *shared_processors,
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.make_filtering_bound_logger(logging.DEBUG),
+        cache_logger_on_first_use=True,
+    )
+    logging.getLogger("canvodpy").setLevel(logging.DEBUG)
+
+
+def configure_console_logging() -> None:
+    """Log warnings and errors to stdout only, without reading the settings.
+
+    Runs when canvodpy is imported. It writes no files: file logging starts
+    with :func:`configure_logging`, which a pipeline calls once the
+    configuration directory of the run is known.
+    """
+    global _active_log_dir
+    shared_processors = _shared_processors()
+    _reset_root_logger().addHandler(_console_handler(shared_processors))
+    _configure_structlog(shared_processors)
+    _active_log_dir = None
+
+
+def active_log_dir() -> Path | None:
+    """Return the folder file logging writes to, or None while console only."""
+    return _active_log_dir
+
+
+def ensure_file_logging() -> None:
+    """Start file logging from the settings, unless it already writes there.
+
+    Called when a pipeline is created, so the log location comes from the
+    configuration of the run (for the CLI: after ``--config-dir`` and
+    ``--config`` are applied), not from whatever configuration was found
+    when canvodpy was imported. Worker processes get the resulting folder
+    from their parent (``active_log_dir()``) instead of reading the
+    settings again.
+
+    Raises
+    ------
+    canvod.config.loader.ConfigValidationError
+        If the settings are invalid.
+    canvod.config.models.logging.LogDirNotSetError
+        If ``processing.logging.log_dir`` is not set.
+    """
+    settings = load_config().processing.logging
+    log_dir = settings.get_log_dir()
+    if log_dir != _active_log_dir:
+        configure_logging(
+            log_dir=log_dir,
+            worker_log_retention_days=settings.worker_log_retention_days,
+        )
+
+
+@deprecated_argument(
+    "logfile",
+    "The `logfile` argument of `configure_logging` is left over from development "
+    "and will be removed with the next major version. Pass the folder as "
+    "`log_dir` instead.",
+)
+def configure_logging(
+    logfile: Path | None = None,
+    *,
+    log_dir: Path | None = None,
+    worker_log_retention_days: int | None = None,
+) -> structlog.BoundLogger:
+    """Write the log files under *log_dir*, and warnings and errors to stdout.
+
+    Creates the log tree (all file handlers rotate):
+
+    - ``machine/agent.json``: every event, as JSON lines
+    - ``machine/performance.json``: the timing events
+    - ``human/main.log``, ``human/errors.log``: readable logs
+    - ``component/{processor,auxiliary,icechunk}.log``: per component
+
+    Parameters
+    ----------
+    log_dir : Path, optional
+        Log folder. Without it, ``processing.logging.log_dir`` of the
+        settings.
+    worker_log_retention_days : int, optional
+        In the main process, delete worker log files that have not changed
+        for this many days. Without it: the setting
+        ``processing.logging.worker_log_retention_days`` if *log_dir* is
+        not given, otherwise no files are deleted.
+
+    Raises
+    ------
+    canvod.config.loader.ConfigValidationError
+        If ``log_dir`` is not given and the settings are invalid.
+    canvod.config.models.logging.LogDirNotSetError
+        If ``log_dir`` is not given and the settings set none.
+
+    Returns
+    -------
+    structlog.BoundLogger
+        Configured structlog logger.
+    """
+    global _active_log_dir
+    if logfile is not None:
+        log_dir = logfile.parent
+    if log_dir is None:
+        settings = load_config().processing.logging
+        log_dir = settings.get_log_dir()
+        if worker_log_retention_days is None:
+            worker_log_retention_days = settings.worker_log_retention_days
+
+    # Set up directory structure
+    log_dirs = _setup_log_directories(log_dir)
+
+    # Distinguishes worker-process log files from the main process's, so
+    # concurrent processes never share a physical path (see _process_log_suffix).
+    suffix = _process_log_suffix()
+
+    shared_processors = _shared_processors()
+    json_renderer = structlog.processors.JSONRenderer()
+    root_logger = _reset_root_logger()
+    console_handler = _console_handler(shared_processors)
 
     # ========================================================================
     # HANDLER 2: Agent-diagnostic JSON - always-on DEBUG causal narrative
@@ -378,10 +510,13 @@ def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
         # run was already gone. 150 (~15GB, ~7 days at this rate) is a
         # stopgap sized for "don't lose crash forensics within about a
         # week," not a durable fix -- same caveat as performance.json's
-        # backupCount bump (see dev/todo_later.md §37): the real answer is
+        # backupCount bump: the real answer is
         # exporting before rotation can touch it.
         backupCount=150,
         encoding="utf-8",
+        # Opens the file at the first record: a worker that logs nothing
+        # leaves no empty files behind.
+        delay=True,
     )
     agent_handler.setLevel(logging.DEBUG)  # Capture everything
     agent_formatter = structlog.stdlib.ProcessorFormatter(
@@ -403,6 +538,9 @@ def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
         interval=1,  # Daily rotation
         backupCount=30,  # Keep 30 days
         encoding="utf-8",
+        # Opens the file at the first record: a worker that logs nothing
+        # leaves no empty files behind.
+        delay=True,
     )
     human_handler.setLevel(logging.INFO)
     human_formatter = structlog.stdlib.ProcessorFormatter(
@@ -423,6 +561,9 @@ def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
         maxBytes=50 * 1024 * 1024,  # 50MB max per file
         backupCount=5,  # Keep 5 rotated files
         encoding="utf-8",
+        # Opens the file at the first record: a worker that logs nothing
+        # leaves no empty files behind.
+        delay=True,
     )
     error_handler.setLevel(logging.ERROR)
     error_handler.addFilter(ErrorFilter())
@@ -447,10 +588,12 @@ def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
         # short for the "runs may take days, or are triggered daily and run
         # forever" case. 60 (~3GB/~31 days) is a stopgap, not a fix: the
         # durable answer is exporting machine/performance*.json into a
-        # persistent store before rotation can touch it (dev/todo_later.md
-        # §34 Tier 1, not yet built).
+        # persistent store before rotation can touch it (not yet built).
         backupCount=60,
         encoding="utf-8",
+        # Opens the file at the first record: a worker that logs nothing
+        # leaves no empty files behind.
+        delay=True,
     )
     perf_handler.setLevel(logging.DEBUG)
     perf_handler.addFilter(PerformanceFilter())
@@ -475,6 +618,7 @@ def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
             interval=1,
             backupCount=7,  # Keep 1 week
             encoding="utf-8",
+            delay=True,
         )
         comp_handler.setLevel(logging.DEBUG)
         comp_handler.addFilter(ComponentFilter(component_name))
@@ -496,31 +640,36 @@ def configure_logging(logfile: Path | None = None) -> structlog.BoundLogger:
     root_logger.addHandler(perf_handler)
     for handler in component_handlers:
         root_logger.addHandler(handler)
+    # The warnings and errors of recorded runs, in the run history.
+    root_logger.addHandler(RunHistoryHandler(log_dir))
 
-    # Structlog config
-    structlog.configure(
-        processors=[
-            *shared_processors,
-            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
-        ],
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        wrapper_class=structlog.make_filtering_bound_logger(logging.DEBUG),
-        cache_logger_on_first_use=True,
-    )
-
-    logger = structlog.get_logger("gnssvodpy")
-    # Ensure the underlying stdlib logger accepts all levels
-    logging.getLogger("gnssvodpy").setLevel(logging.DEBUG)
-
+    _configure_structlog(shared_processors)
+    logger = structlog.get_logger("canvodpy")
     _install_excepthook(logger)
+    _active_log_dir = log_dir
+
+    if worker_log_retention_days is not None and not suffix:
+        failed = _delete_old_worker_logs(log_dirs, worker_log_retention_days)
+        if failed:
+            logger.warning(
+                "worker_logs_not_deleted",
+                files=[str(path) for path in failed],
+                retention_days=worker_log_retention_days,
+            )
 
     return logger
 
 
-# Global base logger
-LOGGER = configure_logging()
+# Importing canvodpy reads no settings and writes no log files.
+configure_console_logging()
+LOGGER = structlog.get_logger("canvodpy")
 
 
+@deprecated(
+    "`get_file_logger` is left over from development and will be removed with "
+    "the next major version. Use `structlog.get_logger(__name__).bind(file=...)` "
+    "instead."
+)
 def get_file_logger(fname: Path) -> structlog.BoundLogger:
     """Return logger bound with parent/parent/file path.
 

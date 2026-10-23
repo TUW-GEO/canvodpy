@@ -1,22 +1,32 @@
 [project]
 name = "canvod-vod"
 version = "0.4.0"
-description = "Vegetation Optical Depth retrieval algorithms for GNSS-Transmissometry"
+description = "VOD retrieval from a canopy and a reference GNSS receiver"
+readme = "README.md"
+requires-python = ">=3.14"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]
 maintainers = [
     {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
 ]
-readme = "README.md"
-requires-python = ">=3.14"
-keywords = ["GNSS", "VOD", "vegetation", "tau-omega"]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "VOD",
+    "vegetation",
+    "tau-omega",
+    "remote sensing",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
 ]
 
 dependencies = [
@@ -24,6 +34,7 @@ dependencies = [
     "xarray>=2023.12.0",
     "pydantic>=2.0.0",
     "structlog>=24.1.0",
+    "canvod-utils>=1.0.0,<2",
 ]
 
 [dependency-groups]
@@ -35,13 +46,13 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nfb2021/canvodpy"
+Homepage = "https://github.com/TUW-GEO/canvodpy"
 Documentation = "https://canvodpy.eu/packages/vod/overview/"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues = "https://github.com/nfb2021/canvodpy/issues"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues = "https://github.com/TUW-GEO/canvodpy/issues"
 
 [build-system]
-requires = ["uv_build>=0.9.17,<0.10.0"]
+requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -70,3 +81,6 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
 ]
+
+[tool.uv.sources]
+canvod-utils = { workspace = true }

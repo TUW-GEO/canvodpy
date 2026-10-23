@@ -11,6 +11,10 @@ import pandas as pd
 import pytest
 import xarray as xr
 
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*left over from development:FutureWarning"
+)
+
 
 def _make_ds(n_epochs: int = 5, n_sids: int = 3) -> xr.Dataset:
     epochs = pd.date_range("2025-01-01", periods=n_epochs, freq="30s")
@@ -297,3 +301,43 @@ class TestFunctionalToFile:
             )
 
         assert Path(result).exists()
+
+
+# ---------------------------------------------------------------------------
+# Deprecation
+# ---------------------------------------------------------------------------
+
+
+class TestDeprecation:
+    @pytest.mark.filterwarnings("default::FutureWarning")
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "read_rinex",
+            "augment_with_ephemeris",
+            "create_grid",
+            "assign_grid_cells",
+            "calculate_vod",
+            "read_rinex_to_file",
+            "create_grid_to_file",
+            "assign_grid_cells_to_file",
+            "calculate_vod_to_file",
+        ],
+    )
+    def test_warns_and_names_replacement(self, name: str) -> None:
+        from canvodpy import functional
+
+        func = getattr(functional, name)
+        # Fail inside the body: only the warning on entry matters here.
+        with (
+            unittest.mock.patch.object(functional, "log") as log,
+            pytest.warns(FutureWarning, match="left over from development") as record,
+        ):
+            log.info.side_effect = RuntimeError("stop")
+            with pytest.raises((RuntimeError, TypeError, OSError, ValueError)):
+                func(*([None] * 3))
+        assert len(record) == 1
+        message = str(record[0].message)
+        assert f"canvodpy.functional.{name}()" in message
+        assert "no longer maintained" in message
+        assert " instead." in message

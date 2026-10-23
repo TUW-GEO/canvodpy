@@ -1,13 +1,14 @@
 """High-level public API for canvodpy.
 
-This module provides the user-friendly API that wraps proven gnssvodpy logic.
+This module provides the user-friendly API.
 
 Recommended surfaces:
 - Run the pipeline via the ``canvodpy`` CLI (production runs, resumable).
 - Script a configured pipeline run in Python via ``Site.pipeline()``
   (``Pipeline`` class) — this is what the CLI wraps internally.
-- Component-level scripting/analysis (custom readers, ephemeris source,
-  grid, VOD calculator) via ``canvodpy.functional``.
+
+``canvodpy.functional`` is deprecated: it is no longer maintained and gives
+different results than ``canvodpy run``.
 
 ``process_date()``, ``calculate_vod()``, and ``preview_processing()`` below
 are deprecated convenience wrappers around ``Pipeline`` — use
@@ -30,19 +31,48 @@ Low-level (full control):
 
 from __future__ import annotations
 
+import sys
+import time
+import warnings
+from contextlib import ExitStack, contextmanager
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from canvodpy._deprecation import deprecated
+from canvod.utils.tools import deprecated, deprecated_argument
+from canvodpy.orchestrator.resources import deprecate_no_effect_arguments
+from canvodpy.orchestrator.run_dates import check_run_dates
 
 # Lazy imports to avoid circular dependencies
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator
+    from collections.abc import Callable, Generator, Sequence
+    from pathlib import Path
+    from types import TracebackType
 
     import xarray as xr
 
     from canvod.store import MyIcechunkStore
+    from canvodpy.orchestrator.vod_phase import VodUnitReport
     from canvodpy.vod_computer import VodComputer
+
+
+def _passed(**arguments: object) -> dict[str, object]:
+    """The arguments that are not ``None``.
+
+    For passing on a deprecated argument only when the caller gave it, so
+    that the callee warns only then.
+    """
+    return {name: value for name, value in arguments.items() if value is not None}
+
+
+@contextmanager
+def _forwarded_days_per_batch() -> Generator[None]:
+    """Warn about ``days_per_batch`` once: the caller warned, the callee doesn't."""
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "The 'days_per_batch' argument of", FutureWarning
+        )
+        yield
 
 
 class Site:
@@ -88,6 +118,11 @@ class Site:
     def __init__(self, name: str) -> None:
         # Lazy import to avoid circular dependency
         from canvod.store import GnssResearchSite
+        from canvod.utils.remote_file import new_run
+
+        # A new Site is a new run: settings and recipes given as links are
+        # fetched again, also in a notebook that runs more than once.
+        new_run()
 
         # Use proven implementation
         self._site = GnssResearchSite(name)
@@ -127,6 +162,30 @@ class Site:
         """Access VOD results store."""
         return self._site.vod_store
 
+    @property
+    def gnss_store_path(self) -> Path | str:
+        """Where the site's GNSS store is, from the settings; read-only.
+
+        A local directory, or the ``s3://`` URL of a store on S3.
+        """
+        return self._site.gnss_store_path
+
+    @property
+    def vod_store_path(self) -> Path | str:
+        """Where the site's VOD store is, from the settings; read-only.
+
+        A local directory, or the ``s3://`` URL of a store on S3.
+        """
+        return self._site.vod_store_path
+
+    @deprecate_no_effect_arguments
+    @deprecated_argument(
+        "days_per_batch",
+        "The 'days_per_batch' argument of Site.pipeline() is left over from "
+        "development and will be removed with the next major version. A run "
+        "derives its days per unit from the memory budget; until then the "
+        "argument caps them. Remove the argument.",
+    )
     def pipeline(
         self,
         keep_vars: list[str] | None = None,
@@ -139,6 +198,11 @@ class Site:
         nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
+        label: str | None = None,
+        on_discovery_start: Callable[[str, Path], None] | None = None,
+        on_discovery_end: Callable[[str, int, int, float], None] | None = None,
+        on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
+        on_days_without_vod: Callable[[str, list[str]], None] | None = None,
     ) -> Pipeline:
         """Create a processing pipeline for this site.
 
@@ -146,7 +210,8 @@ class Site:
         Explicit values override the config.
 
         Reader format is configured per-receiver via ``reader_format`` in
-        ``sites.yaml`` (default: ``"auto"``).
+        the ``sites:`` section of ``config/canvod-settings.yaml`` (default:
+        ``"auto"``).
 
         Parameters
         ----------
@@ -159,15 +224,10 @@ class Site:
             Number of parallel workers. Default: from config.
         dry_run : bool, default False
             If True, simulate processing without execution.
-        days_per_batch : int, optional
-            Number of DOYs per loky wave. Default: from config.
         max_memory_gb : float, optional
-            Total RAM budget across all workers. Default: from config.
-        cpu_affinity : list[int], optional
-            Pin workers to specific CPU core IDs (Linux only).
-            Default: from config.
-        nice_priority : int, optional
-            Process nice value (0=normal, 19=lowest). Default: from config.
+            Memory budget of the run in GB: the workers and the days per
+            unit are sized to fit it. Default: from config; without a value
+            there, the memory available when the run starts.
         threads_per_worker : int, optional
             Threads per worker process. Default: from config.
         on_group_written : Callable[[str], None], optional
@@ -175,6 +235,24 @@ class Site:
             one day finishes writing to Icechunk. Lets a caller drive its own
             progress display (e.g. the CLI's per-site/receiver rows) without
             this class owning any display itself.
+        label : str, optional
+            Free-text label of the run, stored in the run history (for
+            example to group the repetitions of a benchmark).
+        on_discovery_start : Callable[[str, Path], None], optional
+            Called with the receiver name and its data folder when the run
+            starts finding that receiver's files.
+        on_discovery_end : Callable[[str, int, int, float], None], optional
+            Called with the receiver name, the number of files found, the
+            number of days and the elapsed seconds when the run has found
+            them.
+        on_incomplete_day : Callable[[str, str, int, int], None], optional
+            Called with ``(receiver, YYYYDOY, files_found, files_expected)``
+            for each receiver-day to process that has fewer files than its
+            file length gives for a whole day. Today is not checked.
+        on_days_without_vod : Callable[[str, list[str]], None], optional
+            Called with a receiver and the days in the range on which it has
+            no files while its pair has: those days are not processed and
+            get no VOD.
 
         Returns
         -------
@@ -184,23 +262,27 @@ class Site:
         Examples
         --------
         >>> site = Site("ExampleSite")
-        >>> pipeline = site.pipeline(n_workers=8, max_memory_gb=16)
+        >>> pipeline = site.pipeline(n_workers=8)
         >>> data = pipeline.process_date("2025001")
 
         """
-        return Pipeline(
-            site=self,
-            keep_vars=keep_vars,
-            aux_agency=aux_agency,
-            n_workers=n_workers,
-            dry_run=dry_run,
-            days_per_batch=days_per_batch,
-            max_memory_gb=max_memory_gb,
-            cpu_affinity=cpu_affinity,
-            nice_priority=nice_priority,
-            threads_per_worker=threads_per_worker,
-            on_group_written=on_group_written,
-        )
+        with _forwarded_days_per_batch():
+            return Pipeline(
+                site=self,
+                keep_vars=keep_vars,
+                aux_agency=aux_agency,
+                n_workers=n_workers,
+                dry_run=dry_run,
+                max_memory_gb=max_memory_gb,
+                threads_per_worker=threads_per_worker,
+                on_group_written=on_group_written,
+                label=label,
+                **_passed(days_per_batch=days_per_batch),
+                on_discovery_start=on_discovery_start,
+                on_discovery_end=on_discovery_end,
+                on_incomplete_day=on_incomplete_day,
+                on_days_without_vod=on_days_without_vod,
+            )
 
     def __repr__(self) -> str:
         n_receivers = len(self.active_receivers)
@@ -211,17 +293,47 @@ class Site:
         return f"GNSS Site: {self.name}"
 
 
+@dataclass
+class RunUnit:
+    """What :meth:`Pipeline.run` did with one unit of days.
+
+    Attributes
+    ----------
+    days
+        Each day (YYYYDOY) the GNSS phase stored, with the groups that
+        stored it. A day that failed in every group is not here; it stays
+        open for the next run.
+    vod
+        What the VOD phase did with the days: written, stored before, or
+        missing (with the reason), per analysis. ``None`` when the run
+        computes no VOD or the VOD phase failed.
+    vod_error
+        Why the VOD phase failed, if it did. The days then have their GNSS
+        data but no VOD; ``canvodpy vod-reconcile`` finds them.
+    gnss_seconds, vod_seconds
+        Wall time of the unit's GNSS phase (as the caller waited for it)
+        and of its VOD phase.
+    """
+
+    days: dict[str, tuple[str, ...]]
+    vod: VodUnitReport | None = None
+    vod_error: Exception | None = None
+    gnss_seconds: float = 0.0
+    vod_seconds: float = 0.0
+
+
 class Pipeline:
     """User-friendly wrapper around PipelineOrchestrator.
 
     Provides a clean API for processing workflows while using
     proven orchestrator logic internally.
 
-    All parameters default to ``None``, which means "read from
-    ``config/processing.yaml``". Explicit values override the config.
+    All parameters default to ``None``, which means "read from the
+    ``processing:`` section of ``config/canvod-settings.yaml``". Explicit
+    values override the config.
 
-    Reader format is configured per-receiver via ``reader_format`` in
-    ``sites.yaml`` (default: ``"auto"``).
+    Reader format is configured per-receiver via ``reader_format`` in the
+    ``sites:`` section (default: ``"auto"``).
 
     Parameters
     ----------
@@ -236,20 +348,37 @@ class Pipeline:
         (``processing.n_max_threads``).
     dry_run : bool, default False
         If True, simulate without execution.
-    days_per_batch : int, optional
-        Calendar days to pool per processing wave. Default: from config.
     max_memory_gb : float, optional
-        Total RAM budget across all workers. Default: from config.
-    cpu_affinity : list[int], optional
-        Pin workers to specific CPU core IDs. Default: from config.
-    nice_priority : int, optional
-        Process nice value (0=normal, 19=lowest). Default: from config.
+        Memory budget of the run in GB: the workers and the days per unit
+        are sized to fit it (ADR 0021). Default: from config; without a
+        value there, the memory available when the run starts.
     threads_per_worker : int, optional
         Threads per loky worker process. Default: from config.
     on_group_written : Callable[[str], None], optional
         Called with the receiver-group name each time a group's data for one
         day finishes writing to Icechunk. Lets a caller drive its own
         progress display without this class owning any display itself.
+    label : str, optional
+        Free-text label of the run, stored in the run history.
+    on_discovery_start : Callable[[str, Path], None], optional
+        Called with the receiver name and its data folder when the run starts
+        finding that receiver's files.
+    on_discovery_end : Callable[[str, int, int, float], None], optional
+        Called with the receiver name, the number of files found, the number
+        of days and the elapsed seconds when the run has found them.
+    on_incomplete_day : Callable[[str, str, int, int], None], optional
+        Called with ``(receiver, YYYYDOY, files_found, files_expected)`` for
+        each receiver-day to process that has fewer files than its file
+        length gives for a whole day. Today is not checked.
+    on_days_without_vod : Callable[[str, list[str]], None], optional
+        Called with a receiver and the days in the range on which it has no
+        files while its pair has: those days are not processed and get no
+        VOD.
+
+    A pipeline that is not a dry run is a run: it records itself in the run
+    history of the log folder (ADR 0018) from its creation until
+    :meth:`close` (or the end of its ``with`` block), and ends as failed
+    with the error when processing raises.
 
     Examples
     --------
@@ -269,6 +398,14 @@ class Pipeline:
 
     """
 
+    @deprecate_no_effect_arguments
+    @deprecated_argument(
+        "days_per_batch",
+        "The 'days_per_batch' argument of Pipeline() is left over from "
+        "development and will be removed with the next major version. A run "
+        "derives its days per unit from the memory budget; until then the "
+        "argument caps them. Remove the argument.",
+    )
     def __init__(
         self,
         site: Site | str,
@@ -282,6 +419,11 @@ class Pipeline:
         nice_priority: int | None = None,
         threads_per_worker: int | None = None,
         on_group_written: Callable[[str], None] | None = None,
+        label: str | None = None,
+        on_discovery_start: Callable[[str, Path], None] | None = None,
+        on_discovery_end: Callable[[str, int, int, float], None] | None = None,
+        on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
+        on_days_without_vod: Callable[[str, list[str]], None] | None = None,
     ) -> None:
         # Handle both Site object and string
         if isinstance(site, str):
@@ -299,31 +441,19 @@ class Pipeline:
             keep_vars = proc.keep_gnss_observables
         if aux_agency is None:
             aux_agency = config.processing.aux_data.agency
-        if days_per_batch is None:
-            days_per_batch = proc.days_per_batch
+        if max_memory_gb is None:
+            max_memory_gb = proc.max_memory_gb
 
         # Resource resolution: explicit n_workers overrides everything,
         # otherwise use resolve_resources() which respects resource_mode.
         if n_workers is not None:
             # Caller explicitly set n_workers → manual-like behavior
-            if max_memory_gb is None:
-                max_memory_gb = proc.max_memory_gb
-            if cpu_affinity is None:
-                cpu_affinity = proc.cpu_affinity
-            if nice_priority is None:
-                nice_priority = proc.nice_priority
             if threads_per_worker is None:
                 threads_per_worker = proc.threads_per_worker
         else:
             # No explicit n_workers → use resource_mode from config
             resources = proc.resolve_resources()
             n_workers = resources["n_workers"]
-            if max_memory_gb is None:
-                max_memory_gb = resources["max_memory_gb"]
-            if cpu_affinity is None:
-                cpu_affinity = resources["cpu_affinity"]
-            if nice_priority is None:
-                nice_priority = resources["nice_priority"]
             if threads_per_worker is None:
                 threads_per_worker = resources["threads_per_worker"]
 
@@ -331,31 +461,71 @@ class Pipeline:
         self.aux_agency = aux_agency
         self.n_workers = n_workers
         self.dry_run = dry_run
-        self.days_per_batch = days_per_batch
+        # The deprecated cap on the days per unit, if any.
+        self.days_per_batch = (
+            days_per_batch if days_per_batch is not None else proc.days_per_batch
+        )
 
         # Setup logging
-        from canvodpy.logging import get_logger
+        import structlog
 
-        self.log = get_logger(__name__).bind(
+        self.log = structlog.get_logger(__name__).bind(
             site=site.name,
             component="pipeline",
         )
 
         # Lazy import to avoid circular dependency
+        from canvod.store_metadata import store_location
         from canvodpy.orchestrator import PipelineOrchestrator
+        from canvodpy.run_history import recorded_run
 
-        # Use proven orchestrator implementation
-        self._orchestrator = PipelineOrchestrator(
-            site=site._site,
-            n_max_workers=n_workers,
-            dry_run=dry_run,
-            days_per_batch=days_per_batch,
-            max_memory_gb=max_memory_gb,
-            cpu_affinity=cpu_affinity,
-            nice_priority=nice_priority,
-            threads_per_worker=threads_per_worker,
-            on_group_written=on_group_written,
-        )
+        self._run = ExitStack()
+        active_run = None
+        if not dry_run:
+            local_stores = {
+                name: location.local_path
+                for name, path in (
+                    ("GNSS store", site.gnss_store_path),
+                    ("VOD store", site.vod_store_path),
+                )
+                for location in [store_location(path)]
+                if location.local_path is not None
+            }
+            active_run = self._run.enter_context(
+                recorded_run(
+                    site.name,
+                    log_dir=config.processing.logging.get_log_dir(),
+                    settings=config.model_dump(mode="json"),
+                    workers=n_workers,
+                    # Free disk of local stores only; S3 has no disk here.
+                    disks=list(local_stores.values()),
+                    # The on-disk size of each local store, measured in the
+                    # background; a store on S3 has no local size to record.
+                    stores=local_stores,
+                    label=label,
+                )
+            )
+        try:
+            # Use proven orchestrator implementation
+            with _forwarded_days_per_batch():
+                self._orchestrator = PipelineOrchestrator(
+                    site=site._site,
+                    n_max_workers=n_workers,
+                    dry_run=dry_run,
+                    max_memory_gb=max_memory_gb,
+                    threads_per_worker=threads_per_worker,
+                    on_group_written=on_group_written,
+                    on_discovery_start=on_discovery_start,
+                    on_discovery_end=on_discovery_end,
+                    on_incomplete_day=on_incomplete_day,
+                    on_days_without_vod=on_days_without_vod,
+                    config=config,
+                    run=active_run,
+                    **_passed(days_per_batch=days_per_batch),
+                )
+        except Exception:
+            self._run.__exit__(*sys.exc_info())
+            raise
 
         self.log.info(
             "pipeline_initialized",
@@ -363,21 +533,42 @@ class Pipeline:
             n_workers=n_workers,
             keep_vars=len(self.keep_vars),
             dry_run=dry_run,
-            days_per_batch=days_per_batch,
-            max_memory_gb=max_memory_gb,
-            nice_priority=nice_priority,
             threads_per_worker=threads_per_worker,
         )
 
+    @property
+    def failed_receiver_days(self) -> tuple[tuple[str, str], ...]:
+        """Receiver-days of this run that failed.
+
+        ``(receiver, YYYYDOY)`` pairs, empty while every receiver-day is
+        written or skipped. ``canvodpy run`` exits with code 3 when a run
+        has any; the log says why each one failed.
+        """
+        return self._orchestrator.failed_receiver_days
+
     def close(self) -> None:
-        """Release orchestrator resources (loky's reusable executor is shared and left running)."""
+        """End the run and release orchestrator resources.
+
+        loky's reusable executor is shared and left running.
+        """
         self._orchestrator.close()
+        self._run.close()
 
     def __enter__(self) -> Pipeline:
         return self
 
-    def __exit__(self, *exc: object) -> None:
-        self.close()
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        self._orchestrator.close()
+        self._run.__exit__(exc_type, exc, tb)
+
+    def _fail(self) -> None:
+        """End the run as failed with the exception being handled."""
+        self._run.__exit__(*sys.exc_info())
 
     def process_date(self, date: str) -> dict[str, xr.Dataset]:
         """Process RINEX data for one date.
@@ -409,17 +600,21 @@ class Pipeline:
         log.info("date_processing_started")
 
         # Use proven orchestrator logic
-        for _date_key, datasets, _timing in self._orchestrator.process_by_date(
-            keep_vars=self.keep_vars,
-            start_from=date,
-            end_at=date,
-        ):
-            log.info(
-                "date_processing_complete",
-                receivers=len(datasets),
-                receiver_names=list(datasets.keys()),
-            )
-            return datasets  # Return first (only) date
+        try:
+            for _date_key, datasets, _timing in self._orchestrator.process_by_date(
+                keep_vars=self.keep_vars,
+                start_from=date,
+                end_at=date,
+            ):
+                log.info(
+                    "date_processing_complete",
+                    receivers=len(datasets),
+                    receiver_names=list(datasets.keys()),
+                )
+                return datasets  # Return first (only) date
+        except Exception:
+            self._fail()
+            raise
 
         log.warning("no_data_processed", date=date)
         return {}  # No data processed
@@ -454,13 +649,119 @@ class Pipeline:
 
         """
         # Use proven orchestrator logic
-        for date_key, datasets, _timing in self._orchestrator.process_by_date(
-            keep_vars=self.keep_vars,
-            start_from=start,
-            end_at=end,
-        ):
-            yield date_key, datasets
+        try:
+            for date_key, datasets, _timing in self._orchestrator.process_by_date(
+                keep_vars=self.keep_vars,
+                start_from=start,
+                end_at=end,
+            ):
+                yield date_key, datasets
+        except Exception:
+            self._fail()
+            raise
 
+    def run(
+        self,
+        start: str | None = None,
+        end: str | None = None,
+        *,
+        update_to_latest: bool = False,
+        vod_analyses: Sequence[str] | None = None,
+        calculator: str = "tau_omega",
+    ) -> Generator[RunUnit]:
+        """Store the days from ``start`` to ``end``, then compute their VOD.
+
+        The run of ``canvodpy run`` (ADR 0021). The GNSS phase stores the
+        days in units of days and reads nothing back; after each unit, the
+        VOD phase computes the VOD of its days in the same worker pool,
+        from the GNSS store, and commits once (``VodComputer.compute_days``).
+        Meanwhile, the GNSS phase works on the next unit. A day that failed
+        gets no VOD and stays open for the next run.
+
+        Parameters
+        ----------
+        start, end : str, optional
+            First and last day (YYYYDOY). ``start`` is needed unless
+            ``update_to_latest``; without ``end`` the run goes to the last
+            day with files.
+        update_to_latest : bool, default False
+            Process the days from the last stored day on instead of
+            ``start``/``end`` (:meth:`update_range`); with nothing new, the
+            run yields nothing.
+        vod_analyses : sequence of str, optional
+            The VOD analyses to compute; all the site's by default. An
+            empty sequence computes no VOD.
+        calculator : str, default "tau_omega"
+            The registered VOD calculator.
+
+        Yields
+        ------
+        RunUnit
+            Per unit, once its VOD is committed: the days stored and what
+            the VOD phase did. A failing VOD phase is logged and reported
+            in ``RunUnit.vod_error``; the run goes on.
+
+        Raises
+        ------
+        ValueError
+            If neither ``start`` nor ``update_to_latest`` is given, or
+            ``update_to_latest`` comes with ``start`` or ``end``.
+        NothingStoredError
+            With ``update_to_latest``, if nothing is stored for the site yet.
+
+        Examples
+        --------
+        >>> with Site("ExampleSite").pipeline() as pipeline:
+        ...     for unit in pipeline.run("2025001", "2025007"):
+        ...         print(sorted(unit.days), unit.vod.written)
+        """
+        from canvod.utils.tools import YYYYDOY
+        from canvodpy.vod_computer import VodComputer
+
+        check_run_dates(start, end, update_to_latest=update_to_latest)
+        if update_to_latest:
+            dates = self.update_range()
+            if dates is None:
+                return
+            start, end = dates
+        analyses = list(
+            self.site.vod_analyses if vod_analyses is None else vod_analyses
+        )
+        vod_computer = VodComputer(self.site, calculator=calculator)
+        try:
+            units = self._orchestrator.store_by_unit(start_from=start, end_at=end)
+            while True:
+                t_gnss = time.perf_counter()
+                days = next(units, None)
+                if days is None:
+                    return
+                unit = RunUnit(days=days, gnss_seconds=time.perf_counter() - t_gnss)
+                if analyses:
+                    t_vod = time.perf_counter()
+                    try:
+                        unit.vod = vod_computer.compute_days(
+                            [YYYYDOY.from_str(day).date for day in days],
+                            analyses,
+                            unit_days=len(days),
+                            executor=self._orchestrator.worker_pool(),
+                        )
+                    except Exception as exc:
+                        # The days keep their GNSS data; the next run says
+                        # which days have no VOD (vod-reconcile).
+                        self.log.exception("vod_failed", days=sorted(days))
+                        unit.vod_error = exc
+                    unit.vod_seconds = time.perf_counter() - t_vod
+                yield unit
+        except Exception:
+            self._fail()
+            raise
+
+    @deprecated(
+        "Pipeline.calculate_vod() is left over from development and will be "
+        "removed with the next major version. Use "
+        "canvodpy.Site(<site>).vod.compute_bulk(<analysis>, start=..., end=...) "
+        "instead."
+    )
     def calculate_vod(
         self,
         canopy: str,
@@ -468,7 +769,10 @@ class Pipeline:
         date: str,
         write_to_store: bool = True,
     ) -> xr.Dataset:
-        """Calculate VOD for a receiver pair.
+        """Calculate VOD for a receiver pair on one day.
+
+        Delegates to ``Site.vod.compute_bulk()`` for the configured analysis
+        of this canopy/reference pair, restricted to the given day.
 
         Parameters
         ----------
@@ -478,82 +782,23 @@ class Pipeline:
             Reference receiver name (e.g., "reference_01")
         date : str
             Date in YYYYDOY format
+        write_to_store : bool, default True
+            If True, write the result to the VOD store.
 
         Returns
         -------
         xr.Dataset
             VOD analysis results
 
-        Examples
-        --------
-        >>> pipeline = Pipeline("ExampleSite")
-        >>> vod = pipeline.calculate_vod("canopy_01", "reference_01", "2025001")
-        >>> print(vod.vod.mean().values)
-        0.42
-
         """
-        log = self.log.bind(date=date, canopy=canopy, reference=reference)
-        log.info("vod_calculation_started")
-
-        try:
-            # Convert YYYYDOY string to a one-day time_slice for read_group
-            import datetime
-
-            from canvod.utils.tools.date_utils import YYYYDOY
-
-            _d = YYYYDOY.from_str(date).date
-            if _d is None:
-                raise ValueError(f"Could not parse date from {date!r}")
-            _time_slice = slice(str(_d), str(_d + datetime.timedelta(days=1)))
-            # Load processed data from stores
-            # canopy_data = self.site.gnss_store.read_group(canopy, date=date)
-            # ref_data = self.site.gnss_store.read_group(reference, date=date)
-            canopy_data = self.site.gnss_store.read_group(
-                canopy, time_slice=_time_slice
-            )
-            try:
-                ref_data = self.site.gnss_store.read_group(
-                    reference, time_slice=_time_slice
-                )
-            except Exception:
-                paired_name = f"{reference}_{canopy}"
-                log.info("group_fallback", original=reference, paired=paired_name)
-                ref_data = self.site.gnss_store.read_group(
-                    paired_name, time_slice=_time_slice
-                )
-
-            # Lazy import to avoid circular dependency
-            from canvod.vod import TauOmegaZerothOrder
-
-            # Use proven VOD calculator
-            calculator = TauOmegaZerothOrder(canopy_ds=canopy_data, sky_ds=ref_data)
-            vod_results = calculator.calculate_vod()
-
-            # Store results
-            analysis_name = f"{canopy}_vs_{reference}"
-            if write_to_store:
-                self.site.vod_store.write_or_append_group(vod_results, analysis_name)
-
-            log.info(
-                "vod_calculation_complete",
-                analysis=analysis_name,
-                vod_mean=float(vod_results.vod.mean().values)
-                if "vod" in vod_results
-                else None,
-            )
-            return vod_results
-        except Exception as e:
-            log.error(
-                "vod_calculation_failed",
-                error=str(e),
-                exception=type(e).__name__,
-            )
-            raise
+        return _vod_for_day(self.site, canopy, reference, date, write_to_store)
 
     def preview(
         self,
         start: str | None = None,
         end: str | None = None,
+        *,
+        update_to_latest: bool = False,
     ) -> dict:
         """Preview processing plan without execution.
 
@@ -565,11 +810,21 @@ class Pipeline:
         end : str, optional
             YYYYDOY string to end at (inclusive). ``None`` previews every
             available date.
+        update_to_latest : bool, default False
+            Preview the days a run with ``update_to_latest`` processes
+            (:meth:`update_range`); with nothing new, the plan has no dates.
 
         Returns
         -------
         dict
             Summary of dates, receivers, and files
+
+        Raises
+        ------
+        ValueError
+            If ``update_to_latest`` comes with ``start`` or ``end``.
+        NothingStoredError
+            With ``update_to_latest``, if nothing is stored for the site yet.
 
         Examples
         --------
@@ -578,7 +833,47 @@ class Pipeline:
         >>> print(f"Total files: {plan['total_files']}")
 
         """
+        if update_to_latest:
+            check_run_dates(start, end, update_to_latest=True)
+            dates = self.update_range()
+            if dates is None:
+                return {
+                    "site": self.site.name,
+                    "dates": [],
+                    "total_receivers": 0,
+                    "total_files": 0,
+                }
+            start, end = dates
         return self._orchestrator.preview_processing_plan(start, end)
+
+    def update_range(self) -> tuple[str, str] | None:
+        """The days a run with ``update_to_latest`` processes.
+
+        It starts on the earliest last stored day in the site's GNSS store,
+        counting only the receivers with new files: after their own last
+        stored day, or on it but not in the store's log book. A day stored
+        while its files were still arriving thus gets the rest, and a
+        retired receiver doesn't hold the start back. It ends on the latest
+        day with files.
+
+        Returns
+        -------
+        tuple[str, str] | None
+            The first and last day (YYYYDOY); None if no receiver has new
+            files.
+
+        Raises
+        ------
+        NothingStoredError
+            If nothing is stored for the site yet.
+
+        Examples
+        --------
+        >>> with Site("ExampleSite").pipeline(dry_run=True) as pipeline:
+        ...     pipeline.update_range()
+        ('2026293', '2026298')
+        """
+        return self._orchestrator.update_range()
 
     def __repr__(self) -> str:
         return (
@@ -589,14 +884,54 @@ class Pipeline:
         )
 
 
+def _vod_for_day(
+    site: Site,
+    canopy: str,
+    reference: str,
+    date: str,
+    write: bool,
+) -> xr.Dataset:
+    """Compute one day of VOD for a canopy/reference pair via ``site.vod``.
+
+    Backs the deprecated ``Pipeline.calculate_vod()`` and
+    ``canvodpy.calculate_vod()``.
+    """
+    import datetime
+
+    from canvod.utils.tools.date_utils import YYYYDOY
+
+    analysis_name = next(
+        (
+            name
+            for name, cfg in site.vod_analyses.items()
+            if cfg.canopy_receiver == canopy and cfg.reference_receiver == reference
+        ),
+        None,
+    )
+    if analysis_name is None:
+        raise ValueError(
+            f"No VOD analysis configured for canopy {canopy!r} and reference "
+            f"{reference!r}. Configured analyses: {list(site.vod_analyses)}"
+        )
+
+    day = YYYYDOY.from_str(date).date
+    if day is None:
+        raise ValueError(f"Could not parse date from {date!r}")
+    start = datetime.datetime.combine(day, datetime.time())
+    end = start + datetime.timedelta(days=1) - datetime.timedelta(microseconds=1)
+
+    return site.vod.compute_bulk(analysis_name, start=start, end=end, write=write)
+
+
 # ============================================================================
 # Deprecated convenience functions — use Site.pipeline() instead
 # ============================================================================
 
 
 @deprecated(
-    "process_date() is deprecated. Use Site(site).pipeline().process_date(date) "
-    "instead, or run the pipeline via the `canvodpy` CLI."
+    "canvodpy.process_date() is left over from development and will be removed with the next major version. "
+    "Use canvodpy.Site(<site>).pipeline().process_date(<date>) or the "
+    "terminal command `canvodpy run` instead."
 )
 def process_date(
     site: str,
@@ -609,7 +944,8 @@ def process_date(
 
     This is the simplest way to process GNSS data - just provide
     the site name and date. All optional parameters default to
-    values from ``config/processing.yaml``.
+    values from the ``processing:`` section of
+    ``config/canvod-settings.yaml``.
 
     Parameters
     ----------
@@ -655,9 +991,11 @@ def process_date(
 
 
 @deprecated(
-    "calculate_vod() is deprecated. Use "
-    "Site(site).pipeline().calculate_vod(canopy, reference, date) instead, "
-    "or run the pipeline via the `canvodpy` CLI."
+    "canvodpy.calculate_vod() is left over from development and will be removed with the next major version. "
+    "Use the terminal command `canvodpy run` instead, or process the day "
+    "with canvodpy.Site(<site>).pipeline().process_date(<date>) and compute "
+    "VOD with canvodpy.Site(<site>).vod.compute_bulk(<analysis>, "
+    "start=..., end=...)."
 )
 def calculate_vod(
     site: str,
@@ -668,11 +1006,11 @@ def calculate_vod(
     aux_agency: str | None = None,
     write_to_store: bool = True,
 ) -> xr.Dataset:
-    """Calculate VOD for a receiver pair (convenience function).
+    """Calculate VOD for a receiver pair on one day (convenience function).
 
-    This is the simplest way to calculate VOD - just provide
-    site, receivers, and date. All optional parameters default to
-    values from ``config/processing.yaml``.
+    Computes VOD from the site's GNSS store via ``Site.vod.compute_bulk()``
+    for the configured analysis of this canopy/reference pair. The day must
+    already be processed into the GNSS store.
 
     Parameters
     ----------
@@ -685,9 +1023,11 @@ def calculate_vod(
     date : str
         Date in YYYYDOY format
     keep_vars : list[str], optional
-        RINEX variables to keep. Default: from config.
+        Unused. VOD is computed from the stored data.
     aux_agency : str, optional
-        Analysis center. Default: from config.
+        Unused. VOD is computed from the stored data.
+    write_to_store : bool, default True
+        If True, write the result to the VOD store.
 
     Returns
     -------
@@ -707,19 +1047,12 @@ def calculate_vod(
     0.42
 
     """
-    with Pipeline(
-        site=site,
-        keep_vars=keep_vars,
-        aux_agency=aux_agency,
-    ) as pipeline:
-        return pipeline.calculate_vod(
-            canopy, reference, date, write_to_store=write_to_store
-        )
+    return _vod_for_day(Site(site), canopy, reference, date, write_to_store)
 
 
 @deprecated(
-    "preview_processing() is deprecated. Use "
-    "Site(site).pipeline(dry_run=True).preview() instead."
+    "canvodpy.preview_processing() is left over from development and will be removed with the next major version. "
+    "Use canvodpy.Site(<site>).pipeline(dry_run=True).preview() instead."
 )
 def preview_processing(site: str) -> dict:
     """Preview processing plan for a site (convenience function).

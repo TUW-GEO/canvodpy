@@ -5,7 +5,7 @@ and contract validation automatically.
 
 Examples
 --------
->>> builder = DatasetBuilder(reader)
+>>> builder = DatasetBuilder(reader, time_system="GPS")
 >>> for epoch in reader.iter_epochs():
 ...     ei = builder.add_epoch(epoch.timestamp)
 ...     for obs in epoch.observations:
@@ -27,8 +27,10 @@ from canvod.readers.gnss_specs.metadata import (
     CN0_METADATA,
     COORDS_METADATA,
     DTYPES,
+    INTEGER_FILL_VALUE,
     OBSERVABLES_METADATA,
     SNR_METADATA,
+    epoch_coord_attrs,
 )
 from canvod.readers.gnss_specs.signals import SignalIDMapper
 
@@ -47,6 +49,77 @@ _VAR_METADATA: dict[str, dict] = {
 }
 
 
+def sid_coords(
+    signals: list[SignalID], *, mapper: SignalIDMapper
+) -> dict[str, xr.DataArray | tuple]:
+    """Coordinates of the ``sid`` dimension for the given signals.
+
+    ``sid`` and its per-signal coordinates (``sv``, ``system``, ``band``,
+    ``code``, ``freq_center``, ``freq_min``, ``freq_max``) as required by
+    :data:`~canvod.readers.base.REQUIRED_COORDS`, with their metadata.
+    Frequencies come from the band; a band without a known frequency gets
+    NaN.
+
+    Parameters
+    ----------
+    signals : list of SignalID
+        Signals in the order of the ``sid`` dimension.
+    mapper : SignalIDMapper
+        Band lookup for the frequencies.
+
+    Returns
+    -------
+    dict
+        Coordinates to pass to :class:`xarray.Dataset`.
+    """
+    freq_center = np.array(
+        [mapper.get_band_frequency(sig.band) or np.nan for sig in signals],
+        dtype=np.float32,
+    )
+    bandwidths = np.array(
+        [mapper.get_band_bandwidth(sig.band) or 0.0 for sig in signals],
+        dtype=np.float32,
+    )
+
+    def _strings(values: list[str]) -> np.ndarray:
+        return np.array(values, dtype=object)
+
+    return {
+        "sid": xr.DataArray(
+            _strings([sig.sid for sig in signals]),
+            dims=["sid"],
+            attrs=COORDS_METADATA["sid"],
+        ),
+        "sv": ("sid", _strings([sig.sv for sig in signals]), COORDS_METADATA["sv"]),
+        "system": (
+            "sid",
+            _strings([sig.system for sig in signals]),
+            COORDS_METADATA["system"],
+        ),
+        "band": (
+            "sid",
+            _strings([sig.band for sig in signals]),
+            COORDS_METADATA["band"],
+        ),
+        "code": (
+            "sid",
+            _strings([sig.code for sig in signals]),
+            COORDS_METADATA["code"],
+        ),
+        "freq_center": ("sid", freq_center, COORDS_METADATA["freq_center"]),
+        "freq_min": (
+            "sid",
+            (freq_center - bandwidths / 2).astype(np.float32),
+            COORDS_METADATA["freq_min"],
+        ),
+        "freq_max": (
+            "sid",
+            (freq_center + bandwidths / 2).astype(np.float32),
+            COORDS_METADATA["freq_max"],
+        ),
+    }
+
+
 class DatasetBuilder:
     """Guided builder for constructing valid GNSSDataReader output Datasets.
 
@@ -57,12 +130,20 @@ class DatasetBuilder:
     ----------
     reader : GNSSDataReader
         The reader instance (used for ``_build_attrs()`` and file hash).
+    time_system : str
+        Time scale of the epoch timestamps as given to :meth:`add_epoch`,
+        recorded in the epoch coordinate's ``time_system`` attribute. Must be
+        ``"GPS"``: canVODpy stores every epoch in GPS time, so convert other
+        time scales (for example UTC, plus the leap seconds from
+        :func:`canvod.readers.gnss_specs.leap_seconds.utc_to_gps`) before
+        :meth:`add_epoch`. Required, since the builder cannot infer it from
+        the timestamps; anything else raises ``ValueError``.
     aggregate_glonass_fdma : bool, optional
         Whether to aggregate GLONASS FDMA channels (default True).
 
     Examples
     --------
-    >>> builder = DatasetBuilder(reader)
+    >>> builder = DatasetBuilder(reader, time_system="GPS")
     >>> for epoch in reader.iter_epochs():
     ...     ei = builder.add_epoch(epoch.timestamp)
     ...     for obs in epoch.observations:
@@ -75,9 +156,12 @@ class DatasetBuilder:
         self,
         reader: GNSSDataReader,
         *,
+        time_system: str,
         aggregate_glonass_fdma: bool = True,
     ) -> None:
         self._reader = reader
+        # Validate now, not at build() after all epochs were added.
+        self._epoch_attrs = epoch_coord_attrs(time_system)
         self._mapper = SignalIDMapper(aggregate_glonass_fdma=aggregate_glonass_fdma)
         self._signals: dict[str, SignalID] = {}
         self._epochs: list[datetime] = []
@@ -155,30 +239,6 @@ class DatasetBuilder:
             np.datetime64(ts.replace(tzinfo=None) if ts.tzinfo else ts, "ns")
             for ts in self._epochs
         ]
-        sv_arr = np.array([self._signals[s].sv for s in sorted_sids], dtype=object)
-        system_arr = np.array(
-            [self._signals[s].system for s in sorted_sids], dtype=object
-        )
-        band_arr = np.array([self._signals[s].band for s in sorted_sids], dtype=object)
-        code_arr = np.array([self._signals[s].code for s in sorted_sids], dtype=object)
-
-        # Frequency resolution via SignalIDMapper
-        freq_center = np.array(
-            [
-                self._mapper.get_band_frequency(self._signals[s].band) or np.nan
-                for s in sorted_sids
-            ],
-            dtype=np.float32,
-        )
-        bandwidths = np.array(
-            [
-                self._mapper.get_band_bandwidth(self._signals[s].band) or 0.0
-                for s in sorted_sids
-            ],
-            dtype=np.float32,
-        )
-        freq_min = (freq_center - bandwidths / 2).astype(np.float32)
-        freq_max = (freq_center + bandwidths / 2).astype(np.float32)
 
         # --- Determine which variables to include ---
         all_vars = set(self._values.keys())
@@ -191,7 +251,7 @@ class DatasetBuilder:
         data_vars: dict[str, tuple] = {}
         for var in vars_to_build:
             dtype = DTYPES.get(var, np.dtype("float32"))
-            fill = np.nan if np.issubdtype(dtype, np.floating) else -1
+            fill = np.nan if np.issubdtype(dtype, np.floating) else INTEGER_FILL_VALUE
             arr = np.full((n_epochs, n_sids), fill, dtype=dtype)
 
             for (ei, sid_str), val in self._values[var].items():
@@ -203,19 +263,8 @@ class DatasetBuilder:
 
         # --- Coordinates ---
         coords = {
-            "epoch": ("epoch", epoch_arr, COORDS_METADATA["epoch"]),
-            "sid": xr.DataArray(
-                np.array(sorted_sids, dtype=object),
-                dims=["sid"],
-                attrs=COORDS_METADATA["sid"],
-            ),
-            "sv": ("sid", sv_arr, COORDS_METADATA["sv"]),
-            "system": ("sid", system_arr, COORDS_METADATA["system"]),
-            "band": ("sid", band_arr, COORDS_METADATA["band"]),
-            "code": ("sid", code_arr, COORDS_METADATA["code"]),
-            "freq_center": ("sid", freq_center, COORDS_METADATA["freq_center"]),
-            "freq_min": ("sid", freq_min, COORDS_METADATA["freq_min"]),
-            "freq_max": ("sid", freq_max, COORDS_METADATA["freq_max"]),
+            "epoch": ("epoch", epoch_arr, self._epoch_attrs),
+            **sid_coords([self._signals[s] for s in sorted_sids], mapper=self._mapper),
         }
 
         # --- Global attributes ---
@@ -231,4 +280,4 @@ class DatasetBuilder:
         return ds
 
 
-__all__ = ["DatasetBuilder"]
+__all__ = ["DatasetBuilder", "sid_coords"]

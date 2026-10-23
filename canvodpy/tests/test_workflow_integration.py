@@ -19,7 +19,7 @@ from canvodpy import VODWorkflow
 class _FakeSite:
     """Minimal stand-in for :class:`canvodpy.api.Site` (no I/O)."""
 
-    def __init__(self, name: str = "Rosalia"):
+    def __init__(self, name: str = "Fangorn"):
         self.name = name
         self.receivers = {"canopy_01": {}, "reference_01": {}}
         self.active_receivers = {"canopy_01": {}, "reference_01": {}}
@@ -37,13 +37,13 @@ class TestWorkflowInitialization:
     def test_workflow_creates_with_site_object(self):
         """Should create workflow from a Site-like object."""
         workflow = _make_workflow()
-        assert workflow.site.name == "Rosalia"
+        assert workflow.site.name == "Fangorn"
 
     def test_workflow_creates_with_site_name(self):
         """Should create workflow from site name string."""
         with patch("canvodpy.workflow.Site", side_effect=lambda n: _FakeSite(n)):
-            workflow = VODWorkflow(site="Rosalia", keep_vars=["SNR"])
-        assert workflow.site.name == "Rosalia"
+            workflow = VODWorkflow(site="Fangorn", keep_vars=["SNR"])
+        assert workflow.site.name == "Fangorn"
 
     def test_workflow_uses_default_components(self):
         """Should use default component names."""
@@ -109,7 +109,7 @@ class TestWorkflowRepr:
         workflow = _make_workflow()
         repr_str = repr(workflow)
         assert "VODWorkflow" in repr_str
-        assert "Rosalia" in repr_str
+        assert "Fangorn" in repr_str
         assert "equal_area" in repr_str
         assert "rinex3" in repr_str
 

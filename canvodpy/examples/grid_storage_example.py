@@ -7,7 +7,8 @@ Demonstrates how to:
 4. Use it for VOD data processing
 """
 
-from canvod.grids import create_hemigrid, store_grid
+from canvod.grids import create_hemigrid
+from canvod.store import store_grid
 
 
 def example_store_grids(store, grid_configs):

@@ -12,8 +12,8 @@ class SignalIDMapper:
 
     Provides frequency, bandwidth, and overlap-group lookups for
     GNSS signal bands.  Signal IDs are constructed directly by the
-    fast-path reader (``_create_dataset_single_pass``) rather than
-    through this class.
+    RINEX v3 reader (``Rnxv3Obs._precompute_sids_from_header``) rather
+    than through this class.
 
     Signal ID Format
     ----------------

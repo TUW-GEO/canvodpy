@@ -7,7 +7,8 @@ from typing import Any
 import structlog
 import xarray as xr
 
-from canvod.ops.base import Op, OpResult
+from canvod.config.models import preprocessing_record
+from canvod.ops.base import Op, OpResult, software_versions
 
 logger = structlog.get_logger(__name__)
 
@@ -18,9 +19,16 @@ class PipelineResult:
 
     results: list[OpResult] = field(default_factory=list)
     total_duration_seconds: float = 0.0
+    packages: tuple[str, ...] = ("canvod-ops",)
+
+    def record(self) -> str:
+        """Preprocessing record (JSON) of the operations, in the order they ran."""
+        return preprocessing_record(
+            [r.step() for r in self.results], software_versions(self.packages)
+        )
 
     def to_metadata_dict(self) -> dict[str, Any]:
-        """Serialise to a dict suitable for ``ds.attrs``."""
+        """Serialize to a dict suitable for ``ds.attrs``."""
         return {
             "preprocessing_ops": [r.to_dict() for r in self.results],
             "preprocessing_total_seconds": self.total_duration_seconds,
@@ -32,6 +40,18 @@ class Pipeline:
 
     def __init__(self, ops: list[Op] | None = None) -> None:
         self._ops: list[Op] = list(ops) if ops else []
+
+    def __len__(self) -> int:
+        """Number of operations."""
+        return len(self._ops)
+
+    def settings(self) -> list[dict[str, Any]]:
+        """Operations and settings this pipeline records, before it runs.
+
+        Same layout as ``canvod.config.models.preprocessing_settings`` gives
+        for a stored record: ``[{"op", "settings"}, ...]`` in run order.
+        """
+        return [{"op": op.name, "settings": op.settings} for op in self._ops]
 
     def add(self, op: Op) -> Pipeline:
         """Append an operation and return self for chaining."""
@@ -48,7 +68,13 @@ class Pipeline:
             results.append(op_result)
 
         total = time.perf_counter() - t0
-        pr = PipelineResult(results=results, total_duration_seconds=total)
+        pr = PipelineResult(
+            results=results,
+            total_duration_seconds=total,
+            packages=tuple(
+                sorted({"canvod-ops", *(p for op in self._ops for p in op.packages)})
+            ),
+        )
 
         logger.info(
             "pipeline_complete",

@@ -5,31 +5,30 @@ instances and VOD xarray Datasets.
 
 Cell assignment
 ---------------
-``add_cell_ids_to_vod_fast``   – vectorised KDTree lookup (preferred)
-``add_cell_ids_to_vod``        – element-wise fallback
-``add_cell_ids_to_ds_fast``    – dask-lazy variant for out-of-core data
+``add_cell_ids_to_ds_fast``    – the cell that contains each observation, eager or dask-lazy
 
 Vertex / grid conversion
 ------------------------
-``extract_grid_vertices``      – flat (x, y, z) arrays for 3-D visualisation
+``extract_grid_vertices``      – flat (x, y, z) arrays for 3-D visualization
 ``grid_to_dataset``            – xarray Dataset with vertices and solid angles
 """
 
 from __future__ import annotations
 
-import time
+from importlib.metadata import version
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import structlog
 import xarray as xr
-from scipy.spatial import cKDTree  # type: ignore[unresolved-import]
 
-from canvod.grids._internal import get_logger
+from canvod.grids._internal.cell_lookup import cell_lookup
+from canvod.utils.tools import deprecated, deprecated_argument
 
 if TYPE_CHECKING:
     from canvod.grids.core import GridData
 
-log = get_logger(__name__)
+log = structlog.get_logger(__name__)
 
 # Per-grid-type description of what ``angular_resolution`` controls.
 _RESOLUTION_DESCRIPTIONS: dict[str, str] = {
@@ -61,276 +60,120 @@ _RESOLUTION_DESCRIPTIONS: dict[str, str] = {
 
 
 # ==============================================================================
-# Internal: KDTree builder
-# ==============================================================================
-
-
-def _build_kdtree(grid: GridData) -> cKDTree:
-    """Build a KDTree from grid cell centres (φ, θ → Cartesian)."""
-    phi = grid.grid["phi"].to_numpy()
-    theta = grid.grid["theta"].to_numpy()
-    x = np.sin(theta) * np.cos(phi)
-    y = np.sin(theta) * np.sin(phi)
-    z = np.cos(theta)
-    return cKDTree(np.column_stack([x, y, z]))
-
-
-def _query_points(
-    tree: cKDTree, cell_id_col: np.ndarray, phi: np.ndarray, theta: np.ndarray
-) -> np.ndarray:
-    """Vectorised nearest-cell lookup via KDTree.
-
-    Parameters
-    ----------
-    tree : cKDTree
-        KDTree built from grid cell centres.
-    cell_id_col : np.ndarray
-        ``cell_id`` column of the grid DataFrame (length = ncells).
-    phi : np.ndarray
-        Azimuth angles of query points.
-    theta : np.ndarray
-        Polar angles of query points.
-
-    Returns
-    -------
-    np.ndarray
-        Cell IDs for each query point.
-
-    """
-    x = np.sin(theta) * np.cos(phi)
-    y = np.sin(theta) * np.sin(phi)
-    z = np.cos(theta)
-    _, indices = tree.query(np.column_stack([x, y, z]), workers=-1)
-    return cell_id_col[indices]
-
-
-# ==============================================================================
 # Cell assignment
 # ==============================================================================
 
 
-def add_cell_ids_to_vod_fast(
-    vod_ds: xr.Dataset, grid: GridData, grid_name: str
-) -> xr.Dataset:
-    """Assign grid cells to every observation in a VOD dataset (vectorised).
-
-    Uses a KDTree built from the grid cell centres for O(n log m) lookup.
-
-    Parameters
-    ----------
-    vod_ds : xr.Dataset
-        VOD dataset with ``phi(epoch, sid)`` and ``theta(epoch, sid)``
-        coordinate variables and a ``VOD`` data variable.
-    grid : GridData
-        Hemisphere grid instance.
-    grid_name : str
-        Grid identifier used to name the output coordinate
-        (``cell_id_<grid_name>``).
-
-    Returns
-    -------
-    xr.Dataset
-        *vod_ds* with an additional ``cell_id_<grid_name>(epoch, sid)``
-        variable.  Observations with non-finite φ or θ receive NaN.
-
-    """
-    start_time = time.time()
-    print(f"\nAssigning cells for '{grid_name}'...")
-
-    log.info(
-        "cell_assignment_started",
-        grid_name=grid_name,
-        grid_cells=len(grid.grid),
-        observations=vod_ds["VOD"].size,
-        method="kdtree_fast",
-    )
-
-    tree = _build_kdtree(grid)
-    cell_id_col = grid.grid["cell_id"].to_numpy()
-
-    phi = vod_ds["phi"].values.ravel()
-    theta = vod_ds["theta"].values.ravel()
-
-    valid = np.isfinite(phi) & np.isfinite(theta)
-
-    cell_ids = np.full(len(phi), np.nan, dtype=np.float64)
-
-    if np.any(valid):
-        cell_ids[valid] = _query_points(tree, cell_id_col, phi[valid], theta[valid])
-
-    cell_ids_2d = cell_ids.reshape(vod_ds["VOD"].shape)
-
-    coord_name = f"cell_id_{grid_name}"
-    vod_ds[coord_name] = (("epoch", "sid"), cell_ids_2d)
-
-    n_assigned = np.sum(np.isfinite(cell_ids_2d))
-    n_unique = len(np.unique(cell_ids[np.isfinite(cell_ids)]))
-    duration = time.time() - start_time
-
-    print(f"  ✓ Assigned: {n_assigned:,} / {cell_ids_2d.size:,} observations")
-    print(f"  ✓ Unique cells: {n_unique:,}")
-
-    log.info(
-        "cell_assignment_complete",
-        grid_name=grid_name,
-        duration_seconds=round(duration, 2),
-        observations_assigned=int(n_assigned),
-        observations_total=cell_ids_2d.size,
-        unique_cells=int(n_unique),
-        coverage_percent=round(100 * n_assigned / cell_ids_2d.size, 2),
-    )
-
-    return vod_ds
-
-
-def add_cell_ids_to_vod(
-    vod_ds: xr.Dataset, grid: GridData, grid_name: str
-) -> xr.Dataset:
-    """Assign grid cells to a VOD dataset (element-wise fallback).
-
-    Slower than :func:`add_cell_ids_to_vod_fast`; kept for cases where the
-    full dataset does not fit in memory as numpy arrays.
-
-    Parameters
-    ----------
-    vod_ds : xr.Dataset
-        VOD dataset with ``phi``, ``theta``, and ``VOD`` variables.
-    grid : GridData
-        Hemisphere grid instance.
-    grid_name : str
-        Grid identifier for the output coordinate name.
-
-    Returns
-    -------
-    xr.Dataset
-        *vod_ds* with ``cell_id_<grid_name>(epoch, sid)`` added.
-
-    """
-    print(f"\nAssigning cells for '{grid_name}'...")
-
-    tree = _build_kdtree(grid)
-    cell_id_col = grid.grid["cell_id"].to_numpy()
-
-    phi_flat = vod_ds["phi"].to_numpy().ravel()
-    theta_flat = vod_ds["theta"].to_numpy().ravel()
-
-    cell_ids_flat = np.full(vod_ds["VOD"].size, np.nan)
-
-    for i in range(len(phi_flat)):
-        if np.isfinite(phi_flat[i]) and np.isfinite(theta_flat[i]):
-            cell_ids_flat[i] = _query_points(
-                tree, cell_id_col, np.array([phi_flat[i]]), np.array([theta_flat[i]])
-            )[0]
-
-    cell_ids_2d = cell_ids_flat.reshape(vod_ds["VOD"].shape)
-
-    coord_name = f"cell_id_{grid_name}"
-    vod_ds[coord_name] = (("epoch", "sid"), cell_ids_2d)
-
-    n_assigned = np.sum(~np.isnan(cell_ids_2d))
-    print(f"  ✓ Added coordinate '{coord_name}'")
-    print(f"  ✓ Assigned: {n_assigned:,} / {cell_ids_2d.size:,} observations")
-
-    # Track grid references in dataset attrs
-    if "grid_references" not in vod_ds.attrs:
-        vod_ds.attrs["grid_references"] = []
-    vod_ds.attrs["grid_references"].append(f"grids/{grid_name}")
-
-    return vod_ds
-
-
+@deprecated_argument(
+    "data_var",
+    "The data_var argument of add_cell_ids_to_ds_fast() is left over "
+    "from development and will be removed with the next major version. "
+    "Use add_cell_ids_to_ds_fast(ds, grid, grid_name) instead.",
+)
 def add_cell_ids_to_ds_fast(
-    ds: xr.Dataset, grid: GridData, grid_name: str, data_var: str = "VOD"
+    ds: xr.Dataset,
+    grid: GridData,
+    grid_name: str,
+    data_var: str | None = None,
 ) -> xr.Dataset:
-    """Assign grid cells lazily via dask (avoids loading full arrays).
+    """Assign every observation to the grid cell that contains it.
 
-    The output ``cell_id_<grid_name>`` variable is a dask array that
-    computes on access or save.
+    Each grid type is looked up by its own cell boundaries: theta band and
+    phi sector for ``equal_area``, ``equal_angle`` and ``equirectangular``;
+    the spherical triangle for ``htm`` and ``geodesic``; the pixel for
+    ``healpix``; the Voronoi cell for ``fibonacci``. Bands and sectors are
+    closed at their inner edge and open at their outer edge; the last band
+    also includes its outer edge.
+
+    An observation outside the grid gets NaN: below the outer edge of the
+    last band of a ring grid (the horizon, or ``90° - cutoff_theta``), or,
+    for the triangle, pixel and Voronoi grids, in a cell the hemisphere
+    filter left out (these grids keep a cell when its center lies above
+    ``90° - cutoff_theta``, so their edge near the horizon is not a circle).
+
+    ``phi`` and ``theta`` may be data variables (as the runs write them) or
+    coordinates, with ``(epoch, sid)`` dimensions in either order. If they
+    are dask arrays, the cell IDs are computed lazily, block by block.
 
     Parameters
     ----------
     ds : xr.Dataset
-        Dataset with dask-backed ``phi`` and ``theta`` arrays.
+        Dataset with ``phi(epoch, sid)`` and ``theta(epoch, sid)`` in
+        radians.
     grid : GridData
-        Hemisphere grid instance.
+        Hemisphere grid built with ``create_hemigrid()``. A grid loaded with
+        ``canvod.store.load_grid()`` works for the ring grids only; the others lose the
+        geometry the lookup needs (ValueError).
     grid_name : str
-        Grid identifier for the output coordinate name.
-    data_var : str
-        Name of the main data variable (used only for shape reference).
+        Grid identifier; the output variable is ``cell_id_<grid_name>``.
 
     Returns
     -------
     xr.Dataset
-        *ds* with a lazy ``cell_id_<grid_name>(epoch, sid)`` variable.
-
+        *ds* with a ``cell_id_<grid_name>(epoch, sid)`` float64 data
+        variable; NaN where ``phi`` or ``theta`` is not finite or the
+        observation lies outside the grid.
     """
     import dask.array as da
 
-    print(f"\nAssigning cells for '{grid_name}'...")
+    lookup = cell_lookup(grid)
 
-    tree = _build_kdtree(grid)
-    cell_id_col = grid.grid["cell_id"].to_numpy()
-
-    def _assign_chunk(
-        phi_chunk: np.ndarray,
-        theta_chunk: np.ndarray,
-    ) -> np.ndarray:
-        """Assign cell IDs for a chunk of data.
-
-        Parameters
-        ----------
-        phi_chunk : np.ndarray
-            Chunk of azimuth values.
-        theta_chunk : np.ndarray
-            Chunk of elevation values.
-
-        Returns
-        -------
-        np.ndarray
-            Chunk of cell IDs.
-
-        """
-        phi_flat = phi_chunk.ravel()
-        theta_flat = theta_chunk.ravel()
-
+    def _assign_block(phi_block: np.ndarray, theta_block: np.ndarray) -> np.ndarray:
+        phi_flat = phi_block.ravel()
+        theta_flat = theta_block.ravel()
         valid = np.isfinite(phi_flat) & np.isfinite(theta_flat)
-        cell_ids = np.full(len(phi_flat), np.nan, dtype=np.float32)
-
+        cell_ids = np.full(len(phi_flat), np.nan, dtype=np.float64)
         if np.any(valid):
-            cell_ids[valid] = _query_points(
-                tree, cell_id_col, phi_flat[valid], theta_flat[valid]
-            )
+            cell_ids[valid] = lookup(phi_flat[valid], theta_flat[valid])
+        return cell_ids.reshape(phi_block.shape)
 
-        return cell_ids.reshape(phi_chunk.shape)
-
-    phi_data = ds["phi"].data
-    theta_data = ds["theta"].data
-
-    if isinstance(phi_data, da.Array):
-        cell_ids_arr = da.map_blocks(
-            _assign_chunk,
-            phi_data,
-            theta_data,
-            dtype=np.float32,
-            drop_axis=[],
+    phi = ds["phi"].transpose("epoch", "sid").data
+    theta = ds["theta"].transpose("epoch", "sid").data
+    if isinstance(phi, da.Array) or isinstance(theta, da.Array):
+        theta = da.asarray(theta).rechunk(da.asarray(phi).chunks)
+        cell_ids = da.map_blocks(
+            _assign_block, da.asarray(phi), theta, dtype=np.float64
         )
-        lazy = True
     else:
-        cell_ids_arr = _assign_chunk(np.asarray(phi_data), np.asarray(theta_data))
-        lazy = False
+        cell_ids = _assign_block(np.asarray(phi), np.asarray(theta))
 
-    coord_name = f"cell_id_{grid_name}"
-    ds[coord_name] = (("epoch", "sid"), cell_ids_arr)
-
-    print(
-        "  ✓ Cell IDs assigned as lazy dask array"
-        if lazy
-        else "  ✓ Cell IDs assigned eagerly"
+    ds[f"cell_id_{grid_name}"] = (
+        ("epoch", "sid"),
+        cell_ids,
+        {
+            "long_name": f"Cell of the {grid_name} grid",
+            "coverage_content_type": "referenceInformation",
+        },
     )
-    if lazy:
-        print("  ✓ Will compute on access/save")
-
+    log.info(
+        "cell_assignment_complete",
+        grid_name=grid_name,
+        grid_cells=grid.ncells,
+        lazy=isinstance(cell_ids, da.Array),
+    )
     return ds
+
+
+@deprecated(
+    "add_cell_ids_to_vod_fast() is left over from development and will be "
+    "removed with the next major version. Use add_cell_ids_to_ds_fast() instead."
+)
+def add_cell_ids_to_vod_fast(
+    vod_ds: xr.Dataset, grid: GridData, grid_name: str
+) -> xr.Dataset:
+    """Assign grid cells to a VOD dataset; see :func:`add_cell_ids_to_ds_fast`."""
+    return add_cell_ids_to_ds_fast(vod_ds, grid, grid_name)
+
+
+@deprecated(
+    "add_cell_ids_to_vod() is left over from development and will be removed "
+    "with the next major version. Use add_cell_ids_to_ds_fast() instead."
+)
+def add_cell_ids_to_vod(
+    vod_ds: xr.Dataset, grid: GridData, grid_name: str
+) -> xr.Dataset:
+    """Assign grid cells to a VOD dataset; see :func:`add_cell_ids_to_ds_fast`."""
+    return add_cell_ids_to_ds_fast(vod_ds, grid, grid_name)
 
 
 # ==============================================================================
@@ -426,7 +269,7 @@ def _extract_geodesic_vertices(
     """Extract vertices from geodesic grid triangles.
 
     Uses the shared vertex array and per-cell index column to return
-    actual triangle vertices.  Falls back to cell centres if the shared
+    actual triangle vertices.  Falls back to cell centers if the shared
     vertex data is unavailable.
     """
     shared = grid.vertices  # (n_vertices, 3) from extra_kwargs
@@ -442,7 +285,7 @@ def _extract_geodesic_vertices(
                     all_z.append(max(v[2], 0.0))
         return np.array(all_x), np.array(all_y), np.array(all_z)
 
-    # Fallback: cell centres
+    # Fallback: cell centers
     phi_vals = grid.grid["phi"].to_numpy()
     theta_vals = grid.grid["theta"].to_numpy()
     x = np.sin(theta_vals) * np.cos(phi_vals)
@@ -485,7 +328,7 @@ def _extract_fibonacci_vertices(
 
     Uses per-cell ``voronoi_region`` indices and the
     :class:`~scipy.spatial.SphericalVoronoi` stored on *grid*.
-    Falls back to cell centres if Voronoi data is unavailable.
+    Falls back to cell centers if Voronoi data is unavailable.
     """
     voronoi = grid.voronoi
     if voronoi is not None and "voronoi_region" in grid.grid.columns:
@@ -502,7 +345,7 @@ def _extract_fibonacci_vertices(
                     all_z.append(max(v[2], 0.0))
         return np.array(all_x), np.array(all_y), np.array(all_z)
 
-    # Fallback: cell centres
+    # Fallback: cell centers
     phi_vals = grid.grid["phi"].to_numpy()
     theta_vals = grid.grid["theta"].to_numpy()
     x = np.sin(theta_vals) * np.cos(phi_vals)
@@ -519,8 +362,8 @@ def _extract_fibonacci_vertices(
 def grid_to_dataset(grid: GridData) -> xr.Dataset:
     """Convert a HemiGrid to a unified xarray Dataset with vertices.
 
-    The returned Dataset carries cell centres, NaN-padded vertex arrays,
-    vertex counts, and solid angles — all indexed by ``cell_id``.
+    The returned Dataset carries cell centers, NaN-padded vertex arrays,
+    vertex counts, and solid angles, all indexed by ``cell_id``.
 
     Parameters
     ----------
@@ -534,17 +377,8 @@ def grid_to_dataset(grid: GridData) -> xr.Dataset:
         ``cell_phi``, ``cell_theta``, ``vertices_phi``, ``vertices_theta``,
         ``n_vertices``, ``solid_angle``.
 
-    Notes
-    -----
-    This function is distinct from
-    :meth:`HemiGridStorageAdapter._prepare_vertices_dataframe` in
-    ``canvod-store``. That method produces a long-form DataFrame for zarr
-    ragged-array storage; this one produces a rectangular xarray Dataset
-    suitable for analysis and visualisation.
-
     """
-    # Reuse the commented-out logic pattern from gnssvodpy vertices.py:
-    # extract per-cell vertices into (n_cells, max_vertices) arrays.
+    # Extract per-cell vertices into (n_cells, max_vertices) arrays.
     n_cells = grid.ncells
     grid_type = grid.grid_type
 
@@ -596,7 +430,7 @@ def grid_to_dataset(grid: GridData) -> xr.Dataset:
                     vertices_theta[i, j] = np.arccos(np.clip(z, -1, 1))
                     vertices_phi[i, j] = np.mod(np.arctan2(y, x), 2 * np.pi)
         else:
-            # Fallback: use cell centres as single-point "vertices"
+            # Fallback: use cell centers as single-point "vertices"
             n_vertices[:] = 1
             vertices_phi[:, 0] = grid.grid["phi"].to_numpy()
             vertices_theta[:, 0] = grid.grid["theta"].to_numpy()
@@ -614,7 +448,7 @@ def grid_to_dataset(grid: GridData) -> xr.Dataset:
             vertices_theta[i, :] = [theta_min, theta_min, theta_max, theta_max]
 
     elif grid_type == "fibonacci":
-        # Point-based: single vertex per cell (the centre)
+        # Point-based: single vertex per cell (the center)
         max_v = 1
         vertices_phi = grid.grid["phi"].to_numpy().reshape(n_cells, 1)
         vertices_theta = grid.grid["theta"].to_numpy().reshape(n_cells, 1)
@@ -623,7 +457,7 @@ def grid_to_dataset(grid: GridData) -> xr.Dataset:
     else:
         raise ValueError(f"Unknown grid type: {grid_type}")
 
-    # Cell centres
+    # Cell centers
     cell_phi = grid.grid["phi"].to_numpy()
     cell_theta = grid.grid["theta"].to_numpy()
     solid_angles = grid.get_solid_angles()
@@ -652,6 +486,9 @@ def grid_to_dataset(grid: GridData) -> xr.Dataset:
             "cutoff_theta_deg": float(
                 grid.metadata.get("cutoff_theta", 0.0) if grid.metadata else 0.0
             ),
+            "phi_rotation_deg": float(
+                grid.metadata.get("phi_rotation", 0.0) if grid.metadata else 0.0
+            ),
             "n_cells": n_cells,
         },
     )
@@ -660,267 +497,85 @@ def grid_to_dataset(grid: GridData) -> xr.Dataset:
 
 
 # ==============================================================================
-# Grid storage to Icechunk
+# Grid storage to Icechunk (moved to canvod-store)
 # ==============================================================================
 
 
-def store_grid(
-    grid: GridData,
-    store: Any,
-    grid_name: str,
-) -> str:
-    """Store grid in unified xarray format to Icechunk store.
+@deprecated(
+    "canvod.grids.store_grid() is left over from development and will be "
+    "removed with the next major version. Use canvod.store.store_grid() "
+    "instead."
+)
+def store_grid(grid: GridData, store: Any, grid_name: str) -> str:
+    """Store a grid in an Icechunk store.
 
-    Converts the grid to an xarray Dataset with vertex information
-    and writes it to the ``grids/`` group in the store.
-
-    Parameters
-    ----------
-    grid : GridData
-        Hemisphere grid instance to store.
-    store
-        Icechunk store instance (e.g., MyIcechunkStore).
-    grid_name : str
-        Grid identifier for storage path (e.g., 'equal_area_4deg').
-
-    Returns
-    -------
-    str
-        Snapshot ID from the commit.
-
-    Examples
-    --------
-    >>> from canvod.grids import create_hemigrid, store_grid
-    >>> grid = create_hemigrid(angular_resolution=4, grid_type='equal_area')
-    >>> snapshot_id = store_grid(grid, my_store, 'equal_area_4deg')
-
+    Calls ``canvod.store.store_grid``. Needs ``canvod-store`` installed.
     """
-    print(f"\nStoring grid '{grid_name}'...")
+    from canvod.store.grid_storage import store_grid as _store_grid
 
-    # Convert to unified xarray format
-    ds_grid = grid_to_dataset(grid)
-
-    # Store in grids/ directory
-    group_path = f"grids/{grid_name}"
-
-    with store.writable_session() as session:
-        from icechunk.xarray import to_icechunk
-
-        to_icechunk(ds_grid, session, group=group_path, mode="w")
-        snapshot_id = session.commit(f"Stored {grid_name} grid structure")
-
-    print(f"  ✓ Stored to '{group_path}'")
-    print(f"  ✓ Snapshot: {snapshot_id[:8]}...")
-    print(f"  ✓ Cells: {grid.ncells}, Type: {grid.grid_type}")
-
-    return snapshot_id
+    return _store_grid(grid, store, grid_name)
 
 
+@deprecated(
+    "store_dataset_with_cell_ids() is left over from development and will be "
+    "removed with the next major version. Use canvod.ops.assign_grid_cells_in_store() "
+    "instead."
+)
 def store_dataset_with_cell_ids(
     ds: xr.Dataset,
     store: Any,
     group_name: str,
 ) -> str:
-    """Write a dataset (with cell-ID LUT columns) back to the store.
+    """Add the ``cell_id_*`` variables of a dataset to its store group.
 
-    After calling :func:`add_cell_ids_to_vod_fast` or
-    :func:`add_cell_ids_to_ds_fast`, the dataset carries
-    ``cell_id_<grid_name>`` variables and a ``grid_references`` attr.
-    This function persists those additions to the Icechunk store.
+    Only the ``cell_id_*`` variables are written
+    (``MyIcechunkStore.add_group_variables``); the group's data, log book
+    and other subgroups stay as they are. ``ds`` must cover all epochs and
+    signals of the group, in the same order.
+
+    The cells were computed outside canVODpy's preprocessing, so the log
+    book records them as an operation no run applies: later writes into
+    the group are refused. ``canvod.ops.assign_grid_cells_in_store`` computes the
+    cells as a run does, so runs with the same grid assignment can still
+    append.
 
     Parameters
     ----------
     ds : xr.Dataset
         Dataset with cell-ID variables already added.
     store
-        Icechunk store instance (e.g., MyIcechunkStore).
+        Icechunk store instance (``MyIcechunkStore``).
     group_name : str
-        Zarr group path, e.g. ``'reference_01_canopy_01'``.
+        Zarr group path, e.g. ``'canopy_01'``.
 
     Returns
     -------
     str
-        Snapshot ID from the commit.
-
-    Examples
-    --------
-    >>> from canvod.grids import (
-    ...     add_cell_ids_to_ds_fast, store_dataset_with_cell_ids,
-    ... )
-    >>> ds = add_cell_ids_to_ds_fast(vod_ds, grid, "equal_area_2deg")
-    >>> snapshot_id = store_dataset_with_cell_ids(ds, store, "receiver_01")
-
+        The new tip of ``main``.
     """
     cell_id_vars = [str(v) for v in ds.data_vars if str(v).startswith("cell_id_")]
-    grid_refs = ds.attrs.get("grid_references", [])
-
-    print(f"\nStoring dataset to '{group_name}'...")
-    print(f"  Cell-ID variables: {cell_id_vars}")
-    print(f"  Grid references: {grid_refs}")
-
-    with store.writable_session() as session:
-        from icechunk.xarray import to_icechunk
-
-        to_icechunk(ds, session, group=group_name, mode="w")
-        snapshot_id = session.commit(
-            f"Stored {group_name} with cell-ID mappings ({', '.join(cell_id_vars)})"
-        )
-
-    print(f"  ✓ Snapshot: {snapshot_id[:8]}...")
-
-    return snapshot_id
-
-
-def load_grid(
-    store: Any,
-    grid_name: str,
-) -> GridData:
-    """Load a grid from Icechunk store.
-
-    Loads the grid structure from ``grids/{grid_name}`` and reconstructs
-    a GridData object.
-
-    Parameters
-    ----------
-    store
-        Icechunk store instance (e.g., MyIcechunkStore).
-    grid_name : str
-        Grid identifier (e.g., 'equal_area_4deg').
-
-    Returns
-    -------
-    GridData
-        Reconstructed grid instance.
-
-    Examples
-    --------
-    >>> from canvod.grids import load_grid
-    >>> grid = load_grid(my_store, 'equal_area_4deg')
-    >>> print(f"Loaded {grid.ncells} cells")
-
-    """
-    import polars as pl
-
-    print(f"\nLoading grid '{grid_name}'...")
-
-    group_path = f"grids/{grid_name}"
-
-    # Load from store
-    with store.readonly_session() as session:
-        ds_grid = xr.open_zarr(session.store, group=group_path, consolidated=False)
-
-    # Extract metadata (support both old and new attr names)
-    grid_type = ds_grid.attrs.get("grid_type")
-    angular_resolution = ds_grid.attrs.get(
-        "angular_resolution_deg",
-        ds_grid.attrs.get("angular_resolution", 0.0),
-    )
-    cutoff_theta = ds_grid.attrs.get(
-        "cutoff_theta_deg",
-        ds_grid.attrs.get("cutoff_theta", 0.0),
-    )
-
-    if not grid_type:
-        raise ValueError(f"Grid '{grid_name}' missing grid_type attribute")
-
-    # Reconstruct grid DataFrame from cell centers
-    cell_phi = ds_grid["cell_phi"].values
-    cell_theta = ds_grid["cell_theta"].values
-    n_cells = len(cell_phi)
-
-    # Build basic grid DataFrame
-    grid_data = {
-        "cell_id": np.arange(n_cells),
-        "phi": cell_phi,
-        "theta": cell_theta,
-    }
-
-    # Add grid-type-specific columns
-    if grid_type in ("equal_area", "equal_angle", "equirectangular"):
-        # Reconstruct boundaries from vertices
-        vertices_phi = ds_grid["vertices_phi"].values
-        vertices_theta = ds_grid["vertices_theta"].values
-
-        phi_min = vertices_phi[:, 0]  # All 4 vertices are corners
-        phi_max = vertices_phi[:, 1]
-        theta_min = vertices_theta[:, 0]
-        theta_max = vertices_theta[:, 2]
-
-        grid_data.update(
-            {
-                "phi_min": phi_min,
-                "phi_max": phi_max,
-                "theta_min": theta_min,
-                "theta_max": theta_max,
-            }
-        )
-
-    elif grid_type == "htm":
-        # Reconstruct HTM vertices from spherical to Cartesian
-        vertices_phi = ds_grid["vertices_phi"].values
-        vertices_theta = ds_grid["vertices_theta"].values
-
-        htm_v0 = []
-        htm_v1 = []
-        htm_v2 = []
-
-        for i in range(n_cells):
-            vertices = []
-            for j in range(3):
-                phi_v = vertices_phi[i, j]
-                theta_v = vertices_theta[i, j]
-                x = np.sin(theta_v) * np.cos(phi_v)
-                y = np.sin(theta_v) * np.sin(phi_v)
-                z = np.cos(theta_v)
-                vertices.append([x, y, z])
-
-            htm_v0.append(vertices[0])
-            htm_v1.append(vertices[1])
-            htm_v2.append(vertices[2])
-
-        grid_data.update(
-            {
-                "htm_vertex_0": htm_v0,
-                "htm_vertex_1": htm_v1,
-                "htm_vertex_2": htm_v2,
-            }
-        )
-
-    # Create Polars DataFrame
-    df_grid = pl.DataFrame(grid_data)
-
-    # Reconstruct theta_lims, phi_lims, and cell_ids from grid
-    # These are required for GridData but not critical for basic usage
-    unique_theta = sorted(df_grid["theta"].unique().to_list())
-    theta_lims = np.array(unique_theta)
-
-    # Group cells by theta bin
-    phi_lims_list = []
-    cell_ids_list = []
-    for theta_val in unique_theta:
-        theta_cells = df_grid.filter(pl.col("theta") == theta_val)
-        phi_vals = sorted(theta_cells["phi"].to_list())
-        cell_ids = theta_cells["cell_id"].to_list()
-
-        phi_lims_list.append(np.array(phi_vals))
-        cell_ids_list.append(np.array(cell_ids))
-
-    # Create GridData instance
-    from canvod.grids.core import GridData
-
-    grid = GridData(
-        grid=df_grid,
-        theta_lims=theta_lims,
-        phi_lims=phi_lims_list,
-        cell_ids=cell_ids_list,
-        grid_type=grid_type,
-        metadata={
-            "angular_resolution": angular_resolution,
-            "cutoff_theta": cutoff_theta,
+    return store.add_group_variables(
+        group_name,
+        ds[cell_id_vars],
+        step={
+            "op": "store_dataset_with_cell_ids",
+            "settings": {"variables": cell_id_vars},
+            "result": {},
         },
+        software={"canvod-grids": version("canvod-grids")},
     )
 
-    print(f"  ✓ Loaded from '{group_path}'")
-    print(f"  ✓ Cells: {grid.ncells}, Type: {grid.grid_type}")
 
-    return grid
+@deprecated(
+    "canvod.grids.load_grid() is left over from development and will be "
+    "removed with the next major version. Use canvod.store.load_grid() "
+    "instead."
+)
+def load_grid(store: Any, grid_name: str) -> GridData:
+    """Load a grid from an Icechunk store.
+
+    Calls ``canvod.store.load_grid``. Needs ``canvod-store`` installed.
+    """
+    from canvod.store.grid_storage import load_grid as _load_grid
+
+    return _load_grid(store, grid_name)

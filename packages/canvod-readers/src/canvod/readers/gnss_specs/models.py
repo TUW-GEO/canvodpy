@@ -21,11 +21,11 @@ from canvod.readers.gnss_specs.constants import (
     EPOCH_RECORD_INDICATOR,
     IGS_RNX_DUMP_INTERVALS,
     RINEX_OBS_SUFFIX_RE,
-    SEPTENTRIO_SAMPLING_INTERVALS,
     UREG,
 )
 from canvod.readers.gnss_specs.constellations import SV_PATTERN
 from canvod.readers.gnss_specs.exceptions import IncompleteEpochError, MissingEpochError
+from canvod.utils.tools import deprecated
 
 _log = structlog.get_logger(__name__)
 
@@ -272,7 +272,7 @@ class Quantity(pint.Quantity):
             if isinstance(value, pint.Quantity):
                 return value
             try:
-                return UREG.Quantity(value)  # ty: ignore[invalid-return-type]
+                return UREG.Quantity(value)
             except pint.errors.UndefinedUnitError:
                 msg = f"Invalid unit for {value}"
                 _raise_value_error(msg)
@@ -436,7 +436,7 @@ class Rnxv3ObsEpochRecordCompletenessModel(BaseModel):
             value = UREG.Quantity(value).to(UREG.minutes)  # ty: ignore[invalid-assignment]
         if value not in IGS_RNX_DUMP_INTERVALS:
             _log.debug(
-                "Non-standard dump interval %s (expected one of %s) — processing continues normally.",
+                "Non-standard dump interval %s (expected one of %s); processing continues normally.",
                 value,
                 [str(v) for v in IGS_RNX_DUMP_INTERVALS],
             )
@@ -463,16 +463,16 @@ class Rnxv3ObsEpochRecordCompletenessModel(BaseModel):
         Raises
         ------
         ValueError
-            If not a standard Septentrio sampling interval.
+            If the interval is not positive. Any positive interval is
+            accepted: receivers are not limited to one vendor's settings.
 
         """
         if not isinstance(value, pint.Quantity):
             value = UREG.Quantity(value).to(UREG.seconds)  # ty: ignore[invalid-assignment]
-        if value not in SEPTENTRIO_SAMPLING_INTERVALS:
+        if value.magnitude <= 0:  # ty: ignore[unresolved-attribute]
             msg = (
                 f"sampling_interval={value.magnitude} {value.units}, "  # ty: ignore[unresolved-attribute]
-                "but must be one of: "
-                f"{[str(v) for v in SEPTENTRIO_SAMPLING_INTERVALS]}"
+                "but must be positive"
             )
             _raise_value_error(msg)
         return value  # ty: ignore[invalid-return-type]
@@ -489,37 +489,25 @@ class Rnxv3ObsEpochRecordCompletenessModel(BaseModel):
         Raises
         ------
         MissingEpochError
-            If total sampling time doesn't match dump interval.
-
-        Warns
-        -----
-        UserWarning
-            If there's a mismatch in expected intervals.
+            If the number of epochs differs from the dump interval divided
+            by the sampling interval.
 
         """
-        epoch_records_indeces = self.epoch_records_indeces
-        rnx_file_dump_interval = self.rnx_file_dump_interval
-        sampling_interval = self.sampling_interval
-
-        if epoch_records_indeces and rnx_file_dump_interval and sampling_interval:
-            total_sampling_time = len(epoch_records_indeces) * sampling_interval.to(  # ty: ignore[unresolved-attribute]
-                UREG.seconds
+        n_found = len(self.epoch_records_indeces)
+        dump_s = self.rnx_file_dump_interval.to(UREG.seconds).magnitude  # ty: ignore[unresolved-attribute]
+        sampling_s = self.sampling_interval.to(UREG.seconds).magnitude  # ty: ignore[unresolved-attribute]
+        n_expected = round(dump_s / sampling_s)
+        if n_found != n_expected:
+            missing = (
+                f"{n_expected - n_found} of {n_expected} epochs are missing"
+                if n_found < n_expected
+                else f"{n_found} epochs, more than the {n_expected} expected"
             )
-            rnx_file_dump_interval_in_seconds = rnx_file_dump_interval.to(UREG.seconds)  # ty: ignore[unresolved-attribute]
-            if total_sampling_time != rnx_file_dump_interval_in_seconds:
-                warnings.warn(
-                    "Mismatch in expected dump interval: "
-                    f"total_sampling_time={total_sampling_time}, "
-                    f"expected={rnx_file_dump_interval_in_seconds}",
-                    stacklevel=2,
-                )
-                msg = (
-                    f"The total sampling time ({total_sampling_time}) does "
-                    "not equal the rnx_file_dump_interval "
-                    f"({rnx_file_dump_interval_in_seconds}). This might "
-                    "indicate missing epochs."
-                )
-                raise MissingEpochError(msg)
+            msg = (
+                f"{missing} ({dump_s:g} s sampled every {sampling_s:g} s, "
+                f"{n_found} epochs in the file)."
+            )
+            raise MissingEpochError(msg)
         return self
 
 
@@ -668,6 +656,11 @@ class Rnxv3ObsEpochRecord:
         return [sat for sat in self.data if sat.sv.startswith(system)]
 
 
+@deprecated(
+    "`VodDataValidator` is left over from development and will be removed "
+    "with the next major version. Use `canvod.readers.validate_vod_dataset` "
+    "instead."
+)
 class VodDataValidator(BaseModel):
     """Validates VOD (Vegetation Optical Depth) data structure.
 

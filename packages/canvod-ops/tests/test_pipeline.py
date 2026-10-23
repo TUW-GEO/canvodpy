@@ -20,6 +20,10 @@ class _NoOp(Op):
     def name(self) -> str:
         return "noop"
 
+    @property
+    def settings(self) -> dict:
+        return {}
+
     def __call__(self, ds: xr.Dataset) -> tuple[xr.Dataset, OpResult]:
         return ds, OpResult(
             op_name=self.name,
@@ -82,43 +86,47 @@ class TestPipelineResult:
         assert d["preprocessing_total_seconds"] == 0.5
 
 
+TEMPORAL = {"freq": "1min", "method": "mean", "integer_method": "first"}
+GRID = {"grid_type": "equal_area", "angular_resolution": 2.0}
+
+
 class TestBuildDefaultPipeline:
-    def test_default_config(self):
-        """Default config should create a pipeline with 2 ops."""
-        pipe = build_default_pipeline(PreprocessingConfig())
-        assert len(pipe._ops) == 2
+    def test_nothing_set_is_empty(self):
+        """No operation runs unless its section is set."""
+        assert len(build_default_pipeline(PreprocessingConfig())) == 0
+
+    def test_both_set(self):
+        """Temporal aggregation runs first, then the grid assignment."""
+        config = PreprocessingConfig(
+            temporal_aggregation=TemporalAggregationConfig(**TEMPORAL),
+            grid_assignment=GridAssignmentConfig(**GRID),
+        )
+        pipe = build_default_pipeline(config)
+        assert [op.name for op in pipe._ops] == ["temporal_aggregate", "grid_assign"]
 
     def test_disabled_temporal(self):
-        """Disabling temporal aggregation should skip it."""
+        """A set but disabled section is skipped."""
         config = PreprocessingConfig(
-            temporal_aggregation=TemporalAggregationConfig(enabled=False),
+            temporal_aggregation=TemporalAggregationConfig(**TEMPORAL, enabled=False),
+            grid_assignment=GridAssignmentConfig(**GRID),
         )
         pipe = build_default_pipeline(config)
-        assert len(pipe._ops) == 1
-        assert pipe._ops[0].name == "grid_assign"
+        assert [op.name for op in pipe._ops] == ["grid_assign"]
 
-    def test_disabled_grid(self):
-        """Disabling grid assignment should skip it."""
+    def test_only_temporal_set(self):
+        """Setting only the aggregation does not add a grid assignment."""
         config = PreprocessingConfig(
-            grid_assignment=GridAssignmentConfig(enabled=False),
+            temporal_aggregation=TemporalAggregationConfig(**TEMPORAL)
         )
         pipe = build_default_pipeline(config)
-        assert len(pipe._ops) == 1
-        assert pipe._ops[0].name == "temporal_aggregate"
-
-    def test_all_disabled(self):
-        """Disabling everything should produce an empty pipeline."""
-        config = PreprocessingConfig(
-            temporal_aggregation=TemporalAggregationConfig(enabled=False),
-            grid_assignment=GridAssignmentConfig(enabled=False),
-        )
-        pipe = build_default_pipeline(config)
-        assert len(pipe._ops) == 0
+        assert [op.name for op in pipe._ops] == ["temporal_aggregate"]
 
     def test_custom_freq(self):
         """Custom freq from config should propagate to the op."""
         config = PreprocessingConfig(
-            temporal_aggregation=TemporalAggregationConfig(freq="5min"),
+            temporal_aggregation=TemporalAggregationConfig(
+                freq="5min", method="mean", integer_method="first"
+            ),
         )
         pipe = build_default_pipeline(config)
         temporal_op = pipe._ops[0]

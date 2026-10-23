@@ -5,30 +5,7 @@ Tests basic imports and package structure to ensure
 the package is properly configured.
 """
 
-import pytest
-
-
-# Helper functions for skipif conditions (must be defined before use)
-def _can_import_pipeline():
-    """Check if pipeline can be imported (requires gnssvodpy)."""
-    try:
-        from canvod.auxiliary import (
-            AuxDataPipeline,  # noqa: F401  # type: ignore[unresolved-import]
-        )
-
-        return True
-    except ImportError, AttributeError:
-        return False
-
-
-def _can_import_augmentation():
-    """Check if augmentation can be imported (requires gnssvodpy)."""
-    try:
-        from canvod.auxiliary import AuxDataAugmenter  # noqa: F401
-
-        return True
-    except ImportError, AttributeError:
-        return False
+from importlib.metadata import version
 
 
 # Tests
@@ -43,15 +20,14 @@ def test_internal_utilities_import():
     """Test that internal utilities can be imported."""
     from canvod.utils.tools import YYYYDOY
 
-    from canvod.auxiliary._internal import UREG, get_logger
+    from canvod.auxiliary._internal import UREG
 
     assert UREG is not None
     assert YYYYDOY is not None
-    assert get_logger is not None
 
 
 def test_core_api_imports():
-    """Test that core API classes can be imported (no gnssvodpy dependencies)."""
+    """Test that core API classes can be imported."""
     from canvod.auxiliary import (
         AuxFile,
         ClkFile,
@@ -79,25 +55,16 @@ def test_public_api_imports():
     assert hasattr(canvod.auxiliary, "ClkFile")
     assert hasattr(canvod.auxiliary, "AuxFile")
 
-    # Optional classes (require gnssvodpy)
-    # These may or may not be available depending on whether gnssvodpy is installed
 
-
-@pytest.mark.skipif(
-    not _can_import_pipeline(), reason="Requires gnssvodpy (optional dependency)"
-)
 def test_pipeline_import():
-    """Test that pipeline can be imported (requires gnssvodpy)."""
+    """Test that pipeline can be imported."""
     from canvod.auxiliary import AuxDataPipeline
 
     assert AuxDataPipeline is not None
 
 
-@pytest.mark.skipif(
-    not _can_import_augmentation(), reason="Requires gnssvodpy (optional dependency)"
-)
 def test_augmentation_imports():
-    """Test that augmentation framework can be imported (requires gnssvodpy)."""
+    """Test that augmentation framework can be imported."""
     from canvod.auxiliary import (
         AugmentationContext,
         AugmentationStep,
@@ -136,4 +103,4 @@ def test_version_attribute():
     import canvod.auxiliary
 
     assert hasattr(canvod.auxiliary, "__version__")
-    assert canvod.auxiliary.__version__ == "0.1.0"
+    assert canvod.auxiliary.__version__ == version("canvod-auxiliary")

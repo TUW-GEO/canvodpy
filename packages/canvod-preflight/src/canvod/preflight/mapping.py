@@ -3,21 +3,34 @@
 The ``FilenameMapper`` discovers files on disk according to the configured
 directory layout and source pattern, then wraps each in a ``VirtualFile``
 that pairs the physical path with its canVOD conventional name.
+
+.. deprecated::
+    ``FilenameMapper`` is left over from development and will be removed
+    with the next major version. Naming recipes (``canvod-filemap``) map
+    non-canonical filenames, and ``canvodpy run`` finds the files in any
+    folder layout (:mod:`canvodpy.orchestrator.discovery`).
 """
 
 from __future__ import annotations
 
 import logging
 import re
-from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 from natsort import natsorted
 
+from canvod.utils.tools import deprecated
+
 from .config_models import DirectoryLayout, ReceiverNamingConfig, SiteNamingConfig
-from .convention import CanVODFilename, FileType, ReceiverType
+from .convention import (
+    CanVODFilename,
+    FileType,
+    ReceiverType,
+    find_overlaps,
+    known_file_types,
+)
 from .patterns import (
     BUILTIN_PATTERNS,
     auto_match_order,
@@ -61,8 +74,8 @@ _RNX2_OBS_CHARS = set("oOdD")
 _COMPRESSION_EXTS = {".zip", ".gz", ".bz2", ".zst", ".Z"}
 
 
-def _detect_file_type(path: Path) -> tuple[FileType, str | None]:
-    """Detect FileType and compression from a file path."""
+def _detect_file_type(path: Path) -> tuple[str, str | None]:
+    """Detect the file type and compression from a file path."""
     suffixes = path.suffixes
     compression = None
 
@@ -81,6 +94,9 @@ def _detect_file_type(path: Path) -> tuple[FileType, str | None]:
     if ext in _EXT_TO_FILETYPE:
         return _EXT_TO_FILETYPE[ext], compression
 
+    if ext[1:] in known_file_types():
+        return ext[1:], compression
+
     if len(ext) == 4 and ext[1:3].isdigit():
         type_char = ext[3]
         if type_char in _RNX2_OBS_CHARS:
@@ -92,6 +108,10 @@ def _detect_file_type(path: Path) -> tuple[FileType, str | None]:
     raise ValueError(f"Cannot detect file type for {path.name}")
 
 
+@deprecated(
+    "FilenameMapper is left over from development and will be removed with the next major version. "
+    "Use a naming recipe (the receiver setting 'recipe', see canvod-filemap) instead; canvodpy run finds the files in any folder layout."
+)
 class FilenameMapper:
     """Maps physical files to canVOD conventional names.
 
@@ -134,7 +154,7 @@ class FilenameMapper:
                 vf = self.map_single_file(path)
                 results.append(vf)
             except ValueError, KeyError:
-                logger.warning("Could not map %s — skipping", path.name)
+                logger.warning("Could not map %s; skipping", path.name)
                 continue
         return results
 
@@ -167,7 +187,7 @@ class FilenameMapper:
                 vf = self.map_single_file(path, year=year, doy=doy)
                 results.append(vf)
             except ValueError, KeyError:
-                logger.warning("Could not map %s — skipping", path.name)
+                logger.warning("Could not map %s; skipping", path.name)
                 continue
         return results
 
@@ -265,31 +285,11 @@ class FilenameMapper:
     def detect_overlaps(
         vfs: list[VirtualFile],
     ) -> list[tuple[VirtualFile, VirtualFile]]:
-        """Detect temporal overlaps among virtual files."""
-        by_date: dict[tuple[int, int], list[VirtualFile]] = defaultdict(list)
-        for vf in vfs:
-            cn = vf.conventional_name
-            by_date[(cn.year, cn.doy)].append(vf)
+        """Detect pairs of files whose named time spans overlap.
 
-        overlaps: list[tuple[VirtualFile, VirtualFile]] = []
-        for group in by_date.values():
-            if len(group) < 2:
-                continue
-            ranges: list[tuple[int, int, VirtualFile]] = []
-            for vf in group:
-                cn = vf.conventional_name
-                start_min = cn.hour * 60 + cn.minute
-                duration_sec = int(cn.batch_duration.total_seconds())
-                end_min = start_min + duration_sec // 60
-                ranges.append((start_min, end_min, vf))
-
-            for i in range(len(ranges)):
-                for j in range(i + 1, len(ranges)):
-                    s_i, e_i, vf_i = ranges[i]
-                    s_j, e_j, vf_j = ranges[j]
-                    if s_i < e_j and s_j < e_i:
-                        overlaps.append((vf_i, vf_j))
-        return overlaps
+        See :func:`canvod.preflight.convention.find_overlaps`.
+        """
+        return find_overlaps(vfs, key=lambda vf: vf.conventional_name)
 
     # -- Private helpers ------------------------------------------------------
 

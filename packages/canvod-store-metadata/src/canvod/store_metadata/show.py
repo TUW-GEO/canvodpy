@@ -12,10 +12,17 @@ from __future__ import annotations
 
 import sys
 import textwrap
+import warnings
 from pathlib import Path
 from typing import Any
 
-from .io import metadata_exists, read_metadata
+from .io import amendments_since, read_metadata
+from .location import (
+    LocalStoreLocation,
+    StoreLocation,
+    open_repository,
+    store_location,
+)
 from .schema import StoreMetadata
 from .validate import validate_all
 
@@ -135,6 +142,7 @@ def format_instruments(meta: StoreMetadata) -> str:
         lines.append(_kv("format", rcv.reader_format, indent=6))
         lines.append(_kv("description", rcv.description, indent=6))
         lines.append(_kv("recipe", rcv.recipe, indent=6))
+        lines.append(_kv("recipe_sha256", rcv.recipe_sha256, indent=6))
         if rcv.epochs is not None:
             lines.append(_kv("epochs", rcv.epochs, indent=6))
         if rcv.sids is not None:
@@ -161,7 +169,8 @@ def format_processing(meta: StoreMetadata) -> str:
 def format_environment(meta: StoreMetadata) -> str:
     e = meta.environment
     lines = [_section("Environment")]
-    lines.append(_kv("Hostname", e.hostname))
+    if e.hostname is not None:  # recorded only by stores before 1.0.0
+        lines.append(_kv("Hostname", e.hostname))
     lines.append(_kv("OS", e.os))
     lines.append(_kv("Arch", e.arch))
     lines.append(_kv("CPUs", e.cpu_count))
@@ -218,6 +227,23 @@ def format_config(meta: StoreMetadata) -> str:
     return "\n".join(lines)
 
 
+def format_content_settings(meta: StoreMetadata) -> str:
+    """The store's content settings (ADR 0019): every run must have them."""
+    lines = [_section("Content Settings")]
+    content = meta.content_settings
+    if not content:
+        lines.append("  (none: created before stores kept them, or not a GNSS store)")
+        return "\n".join(lines)
+    lines.append(_kv("Set", f"{content.get('origin')} {content.get('set_at')}"))
+    lines.append(_kv("Set by", content.get("set_by")))
+    lines.append(_kv("canVODpy", content.get("canvodpy_version")))
+    lines.append(_kv("Hash", content.get("hash")))
+    lines.append(_dict_block(content.get("settings", {}), indent=4))
+    sids = content.get("resolved_sids")
+    lines.append(_kv("SIDs", "all" if sids is None else f"{len(sids)} listed"))
+    return "\n".join(lines)
+
+
 def format_references(meta: StoreMetadata) -> str:
     r = meta.references
     lines = [_section("References")]
@@ -249,46 +275,66 @@ def format_summaries(meta: StoreMetadata) -> str:
     lines.append(_kv("Temporal res (s)", s.temporal_resolution_s))
     lines.append(_kv("File count", s.file_count))
     lines.append(_kv("Store size (MB)", s.store_size_mb))
-    if s.history:
-        lines.append("    History:")
-        for entry in s.history[-10:]:
+    # Only snapshots written before the migration have a stored history;
+    # the history of every other snapshot is its commit log.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        history = s.history
+    if history:
+        lines.append("    History (stored before migration):")
+        for entry in history[-10:]:
             lines.append(f"      {entry}")
-        if len(s.history) > 10:
-            lines.append(f"      ... +{len(s.history) - 10} older entries")
+        if len(history) > 10:
+            lines.append(f"      ... +{len(history) - 10} older entries")
     return "\n".join(lines)
 
 
-def format_validation(meta: StoreMetadata) -> str:
-    results = validate_all(meta)
+def format_validation(meta: StoreMetadata, store_path: Path | None = None) -> str:
+    """Failures per standard, then the recommendations, FAIR advice and
+    warnings.
+
+    ``store_path``, the local store ``meta`` comes from, adds the warning
+    about a catalog link without an item file (:func:`validate_all`).
+    """
+    failures = validate_all(meta, recommended=False)
+    results = validate_all(meta, store_path=store_path)
     lines = [_section("FAIR & Compliance Validation")]
     for standard, issues in results.items():
-        status = "PASS" if not issues else f"{len(issues)} issues"
+        failed = failures[standard]
+        advice = len(issues) - len(failed)
+        status = "PASS" if not failed else f"{len(failed)} failures"
+        if advice:
+            status += f", {advice} recommendations"
         lines.append(f"    {standard.upper()}: {status}")
         for issue in issues:
             lines.append(f"      - {issue}")
     return "\n".join(lines)
 
 
-# Section name → formatter mapping
-_SECTIONS: dict[str, Any] = {
-    "identity": format_identity,
-    "creator": format_creator,
-    "publisher": format_publisher,
-    "temporal": format_temporal,
-    "spatial": format_spatial,
-    "instruments": format_instruments,
-    "processing": format_processing,
-    "env": format_environment,
-    "config": format_config,
-    "references": format_references,
-    "summaries": format_summaries,
-    "validation": format_validation,
-}
+def _sections(store_path: Path | None = None) -> dict[str, Any]:
+    """Section name to formatter; ``store_path`` goes to the validation."""
+    return {
+        "identity": format_identity,
+        "creator": format_creator,
+        "publisher": format_publisher,
+        "temporal": format_temporal,
+        "spatial": format_spatial,
+        "instruments": format_instruments,
+        "processing": format_processing,
+        "env": format_environment,
+        "config": format_config,
+        "content": format_content_settings,
+        "references": format_references,
+        "summaries": format_summaries,
+        "validation": lambda meta: format_validation(meta, store_path),
+    }
 
 
 def format_metadata(
     meta: StoreMetadata,
     section: str | None = None,
+    *,
+    store_path: Path | None = None,
 ) -> str:
     """Format metadata as a human-readable string.
 
@@ -301,9 +347,13 @@ def format_metadata(
         - "uv" / "uv.lock": dump raw uv.lock content
         - "toml" / "pyproject": dump raw pyproject.toml content
         - "env-reproduce": print instructions to reproduce env
-        - Any key from _SECTIONS: show that section only
+        - Any section name of :func:`_sections`: show that section only
         If None, show full report.
+    store_path : Path | None
+        The local store ``meta`` comes from, for the validation section
+        (:func:`format_validation`).
     """
+    sections = _sections(store_path)
     if section in ("uv", "uv.lock"):
         if meta.environment.uv_lock_text:
             return meta.environment.uv_lock_text
@@ -318,9 +368,9 @@ def format_metadata(
         return _format_reproduce_instructions(meta)
 
     if section is not None:
-        formatter = _SECTIONS.get(section)
+        formatter = sections.get(section)
         if formatter is None:
-            available = ", ".join(list(_SECTIONS.keys()) + ["uv", "toml", "reproduce"])
+            available = ", ".join(list(sections) + ["uv", "toml", "reproduce"])
             return f"Unknown section '{section}'. Available: {available}"
         return formatter(meta)
 
@@ -331,7 +381,7 @@ def format_metadata(
         f"  Schema version: {meta.metadata_version}",
         f"{'=' * 72}",
     ]
-    for formatter in _SECTIONS.values():
+    for formatter in sections.values():
         parts.append("")
         parts.append(formatter(meta))
     parts.append("")
@@ -367,11 +417,11 @@ def _format_reproduce_instructions(meta: StoreMetadata) -> str:
             from pathlib import Path
 
             meta = read_metadata(Path("your/store"))
-            Path("pyproject.toml").write_text(
-                meta.environment.pyproject_toml_text
+            Path("pyproject.toml").write_bytes(
+                meta.environment.pyproject_toml_text.encode()
             )
-            Path("uv.lock").write_text(
-                meta.environment.uv_lock_text
+            Path("uv.lock").write_bytes(
+                meta.environment.uv_lock_text.encode()
             )
 
         2. Create the virtual environment:
@@ -392,7 +442,7 @@ def _format_reproduce_instructions(meta: StoreMetadata) -> str:
 
 
 def extract_env(
-    store_path: Path,
+    store_path: StoreLocation | Path | str,
     output_dir: Path,
     branch: str = "main",
 ) -> Path:
@@ -422,15 +472,40 @@ def extract_env(
         msg = "uv.lock not stored in this metadata"
         raise ValueError(msg)
 
-    (output_dir / "pyproject.toml").write_text(meta.environment.pyproject_toml_text)
-    (output_dir / "uv.lock").write_text(meta.environment.uv_lock_text)
+    # Bytes, not text mode: on Windows text mode writes \r\n, and the
+    # restored uv.lock would no longer match its recorded hash.
+    (output_dir / "pyproject.toml").write_bytes(
+        meta.environment.pyproject_toml_text.encode()
+    )
+    (output_dir / "uv.lock").write_bytes(meta.environment.uv_lock_text.encode())
     return output_dir
+
+
+def _commit_log(
+    store_path: StoreLocation | Path | str, snapshot_id: str, limit: int = 20
+) -> list[str]:
+    """The newest commits up to ``snapshot_id``: time, message, settings hash."""
+    lines = []
+    for i, snapshot in enumerate(
+        open_repository(store_path).ancestry(snapshot_id=snapshot_id)
+    ):
+        if i == limit:
+            lines.append(f"  ... older commits not shown (the {limit} newest are)")
+            break
+        config_hash = snapshot.metadata.get("config", {}).get("config_hash")
+        settings = f"  (settings {config_hash[:12]})" if config_hash else ""
+        lines.append(
+            f"  {snapshot.written_at:%Y-%m-%d %H:%M:%S}  {snapshot.message}{settings}"
+        )
+    return lines
 
 
 def show_metadata(
     store_path: str | Path,
     section: str | None = None,
     branch: str = "main",
+    *,
+    snapshot_id: str | None = None,
 ) -> None:
     """Print store metadata to stdout.
 
@@ -441,21 +516,48 @@ def show_metadata(
     section : str | None
         Section to show (None = full report).
     branch : str
-        Store branch.
+        Show the tip of this branch.
+    snapshot_id : str | None
+        Show this snapshot instead of a branch tip.
     """
-    path = Path(store_path)
-    if not metadata_exists(path, branch):
+    path = store_location(store_path)
+    try:
+        meta = read_metadata(path, branch, snapshot_id=snapshot_id)
+    except KeyError:
         print(f"No metadata found in {path}")
         return
-    meta = read_metadata(path, branch)
-    print(format_metadata(meta, section))
+    repo = open_repository(path)
+    # Native and inlined chunks: what the store itself holds.
+    meta.summaries.store_size_mb = round(
+        repo.chunk_storage_stats().non_virtual_bytes() / 1e6, 3
+    )
+    if meta.written_before_migration:
+        print(
+            "This snapshot was written before migration: the store kept its "
+            "metadata in one attribute then (canvodpy store migrate-metadata)."
+        )
+    local = path.path if isinstance(path, LocalStoreLocation) else None
+    print(format_metadata(meta, section, store_path=local))
+    if section is not None:
+        return
+    since = [] if meta.written_before_migration else amendments_since(path, meta)
+    if since:
+        print(_section("Amended since this snapshot"))
+        for amendment in since:
+            print(
+                f"  {amendment.when}  {amendment.field}: {amendment.old!r} -> "
+                f"{amendment.new!r} ({amendment.reason}; {amendment.who})"
+            )
+    snapshot = snapshot_id or repo.lookup_branch(branch)
+    print(_section("History (commit log)"))
+    print("\n".join(_commit_log(path, snapshot)))
 
 
 # CLI entry point
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python -m canvod.store_metadata.show <store_path> [section]")
-        print(f"Sections: {', '.join(_SECTIONS.keys())}, uv, toml, reproduce")
+        print(f"Sections: {', '.join(_sections())}, uv, toml, reproduce")
         sys.exit(1)
 
     store = sys.argv[1]

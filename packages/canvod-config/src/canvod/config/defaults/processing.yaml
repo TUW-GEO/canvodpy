@@ -1,8 +1,8 @@
 # ============================================================================
 # Default Processing Configuration
 # ============================================================================
-# These are package defaults. Users should create config/processing.yaml
-# with their own settings by running: just config-init
+# These are package defaults. The processing: section of the user's
+# config/canvod-settings.yaml (created by: just config-init) overrides them.
 
 metadata:
   author: Unknown
@@ -19,15 +19,15 @@ aux_data:
 params:
   keep_gnss_observables:
     - SNR
+  rinex_v3_parser: validated  # 'unvalidated_fast' is DANGEROUS: no checks, results are the user's responsibility
   aggregate_glonass_fdma: true
   store_radial_distance: false
   store_delta_snr: false
   store_radial_diff: false
   receiver_position_mode: shared
   ephemeris_source: final  # 'final' (SP3/CLK) or 'broadcast' (SBF SatVisibility)
-  days_per_batch: 1
   resource_mode: auto
-  # n_max_threads, max_memory_gb, cpu_affinity, nice_priority
+  # n_max_threads, cpu_affinity, nice_priority
   # are only used when resource_mode: manual
 
 netcdf_compression:
@@ -44,34 +44,23 @@ icechunk:
   # cache_num_bytes_chunks: null    # icechunk default
   chunk_strategies:
     gnss_store:
-      epoch: 17280  # 24h at 5s sampling; override to match your site's rate
+      epoch: 180  # one 15-min file at 5 s sampling; set to the epochs per file
       sid: -1
     vod_store:
-      epoch: 17280
+      epoch: 180  # as gnss_store, so every cadence of a GNSS day fits
       sid: -1
   manifest_preload_enabled: false
   manifest_preload_max_refs: 10000
   manifest_preload_max_arrays_to_scan: 500
   manifest_preload_pattern: "^(epoch|sid)$"
   manifest_splitting_enabled: true
-  manifest_splitting_epoch_range: 17280
+  manifest_splitting_epoch_range: 17280  # epoch chunks per manifest, not epochs
 
 storage:
   stores_root_dir: /path/to/stores  # MUST be set by user!
   gnss_store_strategy: skip
-  vod_store_strategy: overwrite
 
 logging:
-  log_dir: null  # Defaults to .logs/ in monorepo root
-  log_file_name: canvodpy.log
+  log_dir: null  # required for a processing run; set in canvod-settings.yaml
+  worker_log_retention_days: 30
   log_path_depth: 6
-
-preprocessing:
-  temporal_aggregation:
-    enabled: true
-    freq: "1min"
-    method: "mean"
-  grid_assignment:
-    enabled: true
-    grid_type: "equal_area"
-    angular_resolution: 2.0

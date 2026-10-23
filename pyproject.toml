@@ -6,39 +6,58 @@
 members = ["packages/*", "canvodpy"]
 exclude = ["packages/canvod-filemap"]
 
-# canvod-filemap and canvod-adapters live in the separate canvodpy-extensions
-# repo (https://github.com/nfb2021/canvodpy-extensions), not in this
-# monorepo's workspace. Point uv at the public repo directly — a local
-# sibling-path source would break `uv run`/`uv sync` on any machine without
-# that repo cloned alongside canvodpy, since uv resolves optional-dependency-
-# group sources even when the extra isn't requested.
+# canvod-filemap lives in the separate canvodpy-extensions
+# repo (https://github.com/TUW-GEO/canvodpy-extensions), GitHub-only. It is a
+# dependency group of this workspace (`uv sync --group filemap`), not an extra
+# of canvodpy: groups are never published, and an extra naming a package that
+# is not on PyPI cannot install from PyPI. Point uv at the public repo, pinned
+# to a release tag (<package>-v<version>); a local sibling-path source would
+# break `uv sync` on any machine without that repo cloned alongside canvodpy.
 [tool.uv.sources]
-canvod-filemap = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", tag = "v0.1.0" }
-canvod-adapters = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-adapters", tag = "v0.1.0" }
+# Extensions main after PR #83 (recipe links fetched in every run, #78)
+# until the canvod-filemap-v1.0.0 tag exists.
+canvod-filemap = { git = "https://github.com/TUW-GEO/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", rev = "08ab0fa6cdbbbc98498b39acc6f1f0efa484d002" }
+# The extensions repo takes canvod-preflight and canvod-utils from this repo
+# on GitHub until canvodpy 1.0.0 is on PyPI. The override makes
+# canvod-filemap use the local workspace packages instead, so the lock has
+# one of each (A8).
+# Drop the override, and the two source lines below, once both sides take them
+# from PyPI.
+canvod-preflight = { workspace = true }
+canvod-utils = { workspace = true }
+
+[tool.uv]
+# Everyone, CI included, uses the same uv minor version, so uv.lock is
+# written the same way everywhere. setup-uv reads this range.
+required-version = ">=0.13.0,<0.14"
+override-dependencies = ["canvod-preflight", "canvod-utils"]
 
 # ============================================================================
 # Development Dependencies (Workspace-wide)
 # ============================================================================
 
 [dependency-groups]
+# Naming recipes for non-canonical receiver filenames: uv sync --group filemap
+filemap = ["canvod-filemap"]
 dev = [
     "anywidget>=0.11.0",
     "commitizen>=4.19.2",
-    "hypothesis>=6.168.5",
+    "compliance-checker>=6.1.0",
+    "hypothesis>=6.170.0",
     "ipykernel>=7.4.0",
     "loky>=3.7.0",
     "marimo>=0.25.1",
     "mkdocstrings-python>=2.0.9",
     "mystmd>=1.11.0",
-    "pre-commit>=4.6.2",
+    "pre-commit>=4.7.0",
     "psutil>=7.2.2",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
     "pytest-mock>=3.16.0",
-    "ruff>=0.17.0",
+    "ruff>=0.17.1",
     "traitlets>=5.16.1",
-    "ty>=0.0.86",
-    "zensical>=0.0.69",
+    "ty>=0.0.88",
+    "zensical>=0.0.70",
 ]
 
 # ============================================================================
@@ -65,10 +84,9 @@ target-version = "py314"
 # though that file has no [tool.ruff] section of its own (confirmed
 # empirically, not documented ruff behavior we could find). The same gap
 # applies to any workspace package under packages/*/, each of which has
-# its own [tool.ruff] section shadowing this one, and to the new default
-# where `ruff format` also reformats fenced Python code in Markdown.
+# its own [tool.ruff] section shadowing this one.
 # justfile's check-format/check-format-only recipes carry the actual
-# fix (`--exclude "demo"` / `--exclude "*.md"` on the CLI, which works
+# fix (`--exclude "demo"` on the CLI, which works
 # regardless of nested pyproject.toml resolution) -- this root `exclude`
 # is kept for `ruff check` and as a form of documentation, not as the
 # mechanism that keeps `ruff format` out of demo/.
@@ -147,14 +165,13 @@ unresolved-import = "ignore"
 [tool.ty.src]
 # Tests use assert, magic numbers and intentional patterns — skip entirely.
 # Demo notebooks are not production code.
-# The two store files below have deep icechunk/xarray generics that need
+# The store file below has deep icechunk/xarray generics that need
 # dedicated refactoring before ty can analyse them cleanly.
 exclude = [
     "**/tests/**",
     "demo/**",
     "dev/**",
     "prototypes/**",
-    "packages/canvod-store/src/canvod/store/grid_adapters/grid_storage.py",
     "packages/canvod-store/src/canvod/store/store.py",
 ]
 
@@ -204,26 +221,10 @@ source = [
 # ============================================================================
 
 [tool.commitizen]
+# commitizen only checks commit messages (commit-msg hook). Versions are
+# per package and chosen by hand: `just release-status`, `just release`
+# (scripts/release.py, docs/VERSIONING.md).
 name = "cz_conventional_commits"
-version = "0.4.0"
-version_files = [
-    "canvodpy/pyproject.toml:version",
-    "packages/canvod-readers/pyproject.toml:version",
-    "packages/canvod-auxiliary/pyproject.toml:version",
-    "packages/canvod-config/pyproject.toml:version",
-    "packages/canvod-grids/pyproject.toml:version",
-    "packages/canvod-preflight/pyproject.toml:version",
-    "packages/canvod-vod/pyproject.toml:version",
-    "packages/canvod-store/pyproject.toml:version",
-    "packages/canvod-store-metadata/pyproject.toml:version",
-    "packages/canvod-viz/pyproject.toml:version",
-    "packages/canvod-utils/pyproject.toml:version",
-    "packages/canvod-ops/pyproject.toml:version",
-]
-tag_format = "v$version"
-update_changelog_on_bump = true
-changelog_incremental = true
-annotated_tag = true
 
 [tool.commitizen.customize]
 # Monorepo scopes for canvodpy
@@ -254,22 +255,6 @@ scopes = [
 
 [[tool.ty.overrides]]
 include = ["packages/canvod-store/src/canvod/store/store.py"]
-
-[tool.ty.overrides.rules]
-invalid-argument-type = "ignore"
-not-subscriptable = "ignore"
-unresolved-attribute = "ignore"
-invalid-assignment = "ignore"
-unresolved-import = "ignore"
-unsupported-operator = "ignore"
-no-matching-overload = "ignore"
-invalid-return-type = "ignore"
-missing-argument = "ignore"
-possibly-missing-submodule = "ignore"
-deprecated = "ignore"
-
-[[tool.ty.overrides]]
-include = ["packages/canvod-store/src/canvod/store/grid_adapters/grid_storage.py"]
 
 [tool.ty.overrides.rules]
 invalid-argument-type = "ignore"

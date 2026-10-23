@@ -1,19 +1,11 @@
 """RINEX v3.04 observation file reader.
 
-Migrated from: gnssvodpy/rinexreader/rinex_reader.py
-
-Changes from original:
-- Updated imports to use canvod.readers.gnss_specs
-- Added structured logging for LLM-friendly diagnostics
-- Removed IcechunkPreprocessor calls (TODO: move to canvod-store)
-- Preserved all other functionality
-
 Classes:
 - Rnxv3Header: Parse RINEX v3 headers
 - Rnxv3Obs: Main reader class, converts RINEX to xarray Dataset
 """
 
-import hashlib
+import functools
 import json
 import re
 import warnings
@@ -22,12 +14,13 @@ from collections.abc import Iterable, Iterator
 from datetime import UTC, datetime, timedelta
 from itertools import pairwise
 from pathlib import Path
-from typing import Any, Literal, Self, cast
+from typing import Any, ClassVar, Literal, Self, cast
 
 import georinex as gr
 import numpy as np
 import pint
 import pytz
+import structlog
 import xarray as xr
 from pydantic import (
     BaseModel,
@@ -43,6 +36,15 @@ from canvod.readers.gnss_specs.constants import (
     EPOCH_RECORD_INDICATOR,
     UREG,
 )
+from canvod.readers.gnss_specs.constellations import (
+    BEIDOU,
+    GALILEO,
+    GLONASS,
+    GPS,
+    IRNSS,
+    QZSS,
+    SBAS,
+)
 from canvod.readers.gnss_specs.exceptions import (
     IncompleteEpochError,
     InvalidEpochError,
@@ -52,8 +54,11 @@ from canvod.readers.gnss_specs.metadata import (
     CN0_METADATA,
     COORDS_METADATA,
     DTYPES,
+    INTEGER_FILL_VALUE,
     OBSERVABLES_METADATA,
     SNR_METADATA,
+    epoch_coord_attrs,
+    require_gps_time,
 )
 from canvod.readers.gnss_specs.models import (
     Observation,
@@ -66,6 +71,9 @@ from canvod.readers.gnss_specs.models import (
     Satellite,
 )
 from canvod.readers.gnss_specs.signals import SignalIDMapper
+from canvod.utils.tools import bytes_hash, deprecated
+
+log = structlog.get_logger(__name__)
 
 GLONASS_COD_PHS_MIN_COMPONENTS = 6
 PGM_RUNBY_MIN_COMPONENTS = 4
@@ -77,6 +85,9 @@ OBS_SLICE_MIN_LEN = 6
 OBS_SLICE_MAX_LEN = 16
 OBS_SLICE_DECIMAL_POS = -6
 LLI_SSI_PAIR_LEN = 2
+# Observables an SSI may be taken from, by precedence (RINEX 3.04 Table A3
+# notes 2-3): the phase's SSI, else the code's when no phase was observed.
+_SSI_SOURCE_RANK = {"L": 2, "C": 1}
 MIN_EPOCHS_FOR_INTERVAL = 2
 
 
@@ -85,8 +96,8 @@ def _str_to_object(ds: xr.Dataset) -> xr.Dataset:
 
     NumPy 2.x introduces ``StringDType`` (kind ``"T"``) which Zarr V3 /
     Icechunk cannot round-trip.  Fixed-width unicode (kind ``"U"``) also
-    causes dtype mismatches on store append.  Normalising to ``object``
-    keeps behaviour identical to NumPy 1.x.
+    causes dtype mismatches on store append.  Normalizing to ``object``
+    keeps behavior identical to NumPy 1.x.
     """
     for name in list(ds.coords) + list(ds.data_vars):
         if ds[name].dtype.kind in ("U", "T"):
@@ -99,22 +110,42 @@ _EPOCH_RE = re.compile(
     r"^>\s*(\d{4})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d{2})\s+(\d+\.\d+)\s+(\d+)\s+(\d+)"
 )
 
-_CONSTELLATION_SVS: dict[str, list[str]] = {
-    "G": [f"G{i:02d}" for i in range(1, 33)],
-    "E": [f"E{i:02d}" for i in range(1, 37)],
-    "R": [f"R{i:02d}" for i in range(1, 25)],
-    "C": [f"C{i:02d}" for i in range(1, 64)],
-    "J": [f"J{i:02d}" for i in range(1, 11)],
-    "S": [f"S{i:02d}" for i in range(1, 37)],
-    "I": [f"I{i:02d}" for i in range(1, 15)],
-}
-
 _OBS_VAL_END = 14
 
+# A satellite line: the SV in columns 0-2, then one 16-character field per
+# observation type of the system's SYS / # / OBS TYPES record.
+_OBS_FIELD_LEN = 16
+# The value of the standard field form (RINEX 3.04 Table A3: F14.3), so the
+# decimal point is in column 10; ASCII digits only.
+_OBS_VALUE_RE = re.compile(r" *-?[0-9]*\.[0-9]{3}")
+# LLI and SSI characters of the standard field form (RINEX 3.04 Table A3:
+# I1, blank if not known); any other character makes the field malformed.
+_FLAG_OF_CHAR: dict[str, int | None] = {" ": None} | {str(d): d for d in range(10)}
+_NOT_A_FLAG = -1
 
-def _get_constellation_svs(system: str) -> list[str]:
-    """Return static list of SV identifiers for a GNSS system."""
-    return _CONSTELLATION_SVS.get(system, [])
+ObsField = tuple[float | None, int | None, int | None]
+
+
+@functools.cache
+def _get_constellation_svs(system: str) -> tuple[str, ...]:
+    """Return the static SV identifiers for a GNSS system.
+
+    Taken from the constellation models that also define the global sid
+    space (``pad_to_global_sid()``), so the reader cannot keep a stale copy:
+    a separate table here once limited SBAS to S01-S36 and silently dropped
+    real GEOs such as EGNOS PRN 148 (S48) at read time.
+    """
+    models = {
+        "G": GPS,
+        "E": GALILEO,
+        "R": GLONASS,
+        "C": BEIDOU,
+        "J": QZSS,
+        "S": SBAS,
+        "I": IRNSS,
+    }
+    model = models.get(system)
+    return tuple(model().svs) if model is not None else ()
 
 
 def _parse_obs_fast(slice_text: str) -> tuple[float | None, int | None, int | None]:
@@ -147,6 +178,125 @@ def _parse_obs_fast(slice_text: str) -> tuple[float | None, int | None, int | No
         return value, obs_lli, obs_ssi
     except ValueError:
         return None, None, None
+
+
+# RINEX 3.04 Table A2, TIME OF FIRST OBS: time systems, and the default of a
+# single-system file.
+_TIME_SYSTEMS = frozenset({"GPS", "GLO", "GAL", "QZS", "BDT", "IRN"})
+_DEFAULT_TIME_SYSTEM = {
+    "G": "GPS",
+    "R": "GLO",
+    "E": "GAL",
+    "J": "QZS",
+    "C": "BDT",
+    "I": "IRN",
+}
+
+# --- Shared by both dataset builders ---
+RinexV3Parser = Literal["validated", "unvalidated_fast"]
+
+_OBS_VAR_ORDER = ("SNR", "Pseudorange", "Phase", "Doppler", "LLI", "SSI")
+_OBS_VARS = frozenset(_OBS_VAR_ORDER)
+# Rank of the observable each SSI value came from, so phase outranks code
+# regardless of the header's observable order. Internal, never in a dataset.
+_SSI_RANK_KEY = "_ssi_rank"
+
+_UNVALIDATED_PARSER_MESSAGE = (
+    "DANGEROUS: the unvalidated fast RINEX v3 parser is in use. It does not "
+    "validate epochs, satellite IDs, satellite counts or observation fields, "
+    "so corrupted records can enter the dataset as partial or wrong values. "
+    "canVODpy takes no responsibility for its results; checking the input "
+    "files is entirely the user's responsibility. Use parser='validated' "
+    "(config: processing.params.rinex_v3_parser: validated) unless the files "
+    "were verified otherwise."
+)
+
+
+class UnvalidatedParserWarning(UserWarning):
+    """Emitted on every use of the unvalidated fast RINEX v3 parser."""
+
+
+def _allocate_obs_arrays(
+    n_epochs: int, n_sids: int, kept_vars: frozenset[str]
+) -> dict[str, np.ndarray]:
+    """Allocate the fill-valued (epoch, sid) arrays of the kept variables."""
+    arrays: dict[str, np.ndarray] = {}
+    for var in _OBS_VAR_ORDER:
+        if var in kept_vars:
+            fill = INTEGER_FILL_VALUE if var in ("LLI", "SSI") else np.nan
+            arrays[var] = np.full((n_epochs, n_sids), fill, dtype=DTYPES[var])
+    if "SSI" in arrays:
+        arrays[_SSI_RANK_KEY] = np.zeros((n_epochs, n_sids), dtype=np.int8)
+    return arrays
+
+
+def _store_observation(
+    arrays: dict[str, np.ndarray],
+    t_idx: int,
+    s_idx: int,
+    obs_type: str,
+    value: float,
+    lli: int | None,
+    ssi: int | None,
+) -> None:
+    """Store one observation; the single definition of the storage rules.
+
+    RINEX 3.04 Table A3 (rinex304.pdf, PDF p.67, printed A13): "Missing
+    observations are written as 0.0 or blanks." A 0.0 of any observable is
+    therefore missing and stores nothing, like a blank field: the value
+    stays NaN and its LLI and SSI are not kept, so the SSI then comes from
+    the code if that was observed. Table A3 notes 1-3: the LLI belongs to
+    the phase observation only; the SSI to the phase, or to the code when
+    the signal has no phase. Phase, code, Doppler and SNR share a sid, so
+    flags on other observables must not overwrite the phase's.
+    """
+    if value == 0:
+        return
+    var = _VAR_OF_OBS_TYPE.get(obs_type)
+    if var is not None and var in arrays:
+        arrays[var][t_idx, s_idx] = value
+    if lli is not None and obs_type == "L" and "LLI" in arrays:
+        arrays["LLI"][t_idx, s_idx] = lli
+    if ssi is not None and "SSI" in arrays:
+        rank = _SSI_SOURCE_RANK.get(obs_type, 0)
+        if rank > arrays[_SSI_RANK_KEY][t_idx, s_idx]:
+            arrays["SSI"][t_idx, s_idx] = ssi
+            arrays[_SSI_RANK_KEY][t_idx, s_idx] = rank
+
+
+_VAR_OF_OBS_TYPE = {"S": "SNR", "C": "Pseudorange", "L": "Phase", "D": "Doppler"}
+
+
+def _obs_types_to_read(kept_vars: frozenset[str]) -> frozenset[str]:
+    """Return the observation types whose fields the kept variables need.
+
+    A variable needs the fields of its own type; the LLI those of the phase,
+    the SSI those of the phase and the code (see :func:`_store_observation`).
+    Fields of other types are never stored, so they are not read.
+    """
+    types = {t for t, var in _VAR_OF_OBS_TYPE.items() if var in kept_vars}
+    if "LLI" in kept_vars:
+        types.add("L")
+    if "SSI" in kept_vars:
+        types.update(_SSI_SOURCE_RANK)
+    return frozenset(types)
+
+
+def _epoch_datetime64(
+    year: int, month: int, day: int, hour: int, minute: int, seconds: float
+) -> np.datetime64:
+    """Return a RINEX v3 epoch as ``datetime64[ns]``, as written in the file.
+
+    The seconds field is F11.7 (RINEX 3.04 Table A3), so the time is rounded
+    to its 100 ns resolution; truncating a float such as 0.1 would lose
+    100 ns. Seconds outside [0, 60) raise ``ValueError``, like an invalid
+    calendar date.
+    """
+    if not 0 <= seconds < 60:
+        msg = f"second must be in [0, 60), not {seconds}"
+        raise ValueError(msg)
+    start_of_minute = np.datetime64(datetime(year, month, day, hour, minute), "ns")
+    return start_of_minute + np.timedelta64(round(seconds * 1e7) * 100, "ns")
 
 
 class Rnxv3Header(BaseModel):
@@ -356,14 +506,9 @@ class Rnxv3Header(BaseModel):
             }
         )
 
-        if "TIME OF FIRST OBS" in header:
-            data["t0"] = Rnxv3Header._get_time_of_first_obs(header)
-        else:
-            now = datetime.now(UTC)
-            data["t0"] = {
-                "UTC": now if now.tzinfo is not None else now.replace(tzinfo=UTC),
-                "GPS": now,
-            }
+        data["t0"] = Rnxv3Header._get_time_of_first_obs(
+            header, file_system=data["systems"]
+        )
 
         # Signal strength unit
         data["signal_strength_unit"] = Rnxv3Header._get_signal_strength_unit(header)
@@ -520,52 +665,67 @@ class Rnxv3Header(BaseModel):
     @staticmethod
     def _get_time_of_first_obs(
         header_dict: dict[str, Any],
+        file_system: str = "",
     ) -> dict[str, datetime]:
-        """Parse ``TIME OF FIRST OBS`` record.
+        """Parse the mandatory ``TIME OF FIRST OBS`` record.
+
+        RINEX 3.04 Table A2: ``5I6,F13.7,5X,A3``, the time of the first
+        observation record followed by its time system (GPS, GLO, GAL, QZS,
+        BDT, IRN). The time system is compulsory in mixed files; a
+        single-system file defaults to its own system. The time is returned
+        as written, in that time system, like the epochs of the file; no
+        conversion to another time scale is made.
 
         Parameters
         ----------
         header_dict : dict[str, Any]
             Raw header dictionary.
+        file_system : str, optional
+            System letter of ``RINEX VERSION / TYPE`` (``"M"`` for mixed),
+            used for the default time system.
 
         Returns
         -------
         dict[str, datetime]
-            Mapping of time system labels to datetimes.
+            ``{time_system: time of first observation}``. The datetime carries
+            ``tzinfo=UTC`` only to be timezone-aware; its time scale is the key.
+
+        Raises
+        ------
+        ValueError
+            If the record is missing or malformed, or if the time system is
+            neither given nor implied by a single-system file.
 
         """
-        header_value = header_dict.get("TIME OF FIRST OBS", "")
-        components = header_value.split()
-
+        header_value = header_dict.get("TIME OF FIRST OBS")
+        if header_value is None:
+            msg = "mandatory header record TIME OF FIRST OBS is missing"
+            raise ValueError(msg)
+        components = str(header_value).split()
         if len(components) < TIME_OF_FIRST_OBS_MIN_COMPONENTS:
-            now = datetime.now(UTC)
-            return {"UTC": now, "GPS": now}
+            msg = f"malformed TIME OF FIRST OBS record: {header_value!r}"
+            raise ValueError(msg)
 
         try:
-            year, month, day = map(int, components[:3])
-            hour, minute = map(int, components[3:5])
-            second = float(components[5])
+            year, month, day, hour, minute = map(int, components[:5])
+            seconds = float(components[5])
+        except ValueError as e:
+            msg = f"malformed TIME OF FIRST OBS record: {header_value!r}"
+            raise ValueError(msg) from e
 
-            dt_gps = datetime(
-                year,
-                month,
-                day,
-                hour,
-                minute,
-                int(second),
-                int((second - int(second)) * 1e6),
-                tzinfo=UTC,
+        if len(components) > TIME_OF_FIRST_OBS_MIN_COMPONENTS:
+            time_system = components[TIME_OF_FIRST_OBS_MIN_COMPONENTS]
+        else:
+            time_system = _DEFAULT_TIME_SYSTEM.get(file_system.strip())
+        if time_system not in _TIME_SYSTEMS:
+            msg = (
+                f"TIME OF FIRST OBS has no valid time system ({time_system!r}); "
+                "it is compulsory in mixed files"
             )
+            raise ValueError(msg)
 
-            gps_utc_offset = timedelta(seconds=18)
-            dt_utc = dt_gps - gps_utc_offset
-            tz = pytz.timezone("UTC")
-
-            return {"UTC": tz.localize(dt_utc), "GPS": dt_gps}
-
-        except ValueError, TypeError, IndexError:
-            now = datetime.now(UTC)
-            return {"UTC": now, "GPS": now}
+        ts = _epoch_datetime64(year, month, day, hour, minute, seconds)
+        return {time_system: ts.astype("datetime64[us]").item().replace(tzinfo=UTC)}
 
     @staticmethod
     def _get_glonass_cod_phs_bis(
@@ -706,6 +866,11 @@ class Rnxv3Header(BaseModel):
                 return header_value if header_value else "dB"
 
     @property
+    def time_system(self) -> str:
+        """Time system of all time tags in the file (``TIME OF FIRST OBS``)."""
+        return next(iter(self.t0))
+
+    @property
     def is_mixed_systems(self) -> bool:
         """Check if the RINEX file contains mixed GNSS systems."""
         return self.systems == "M"
@@ -771,7 +936,8 @@ class Rnxv3Obs(GNSSDataReader):
     apply_overlap_filter: bool = False
     overlap_preferences: dict[str, str] | None = None
 
-    aggregate_glonass_fdma: bool = True
+    file_type: ClassVar[str] = "rnx"
+    per_channel_glonass: ClassVar[bool] = True
 
     # Pydantic exempts PrivateAttr fields from frozen=True immutability, but ty
     # doesn't model that and flags every assignment below as read-only.
@@ -850,13 +1016,14 @@ class Rnxv3Obs(GNSSDataReader):
 
         """
         if not hasattr(self, "_lines"):
-            h = hashlib.sha256()
-            with self.fpath.open("rb") as f:  # binary mode for consistent hash
-                data = f.read()
-                h.update(data)
-                self._lines = data.decode("utf-8", errors="replace").splitlines()
-            self._file_hash = h.hexdigest()[:16]  # short hash for storage
+            data = self.fpath.read_bytes()  # binary mode for consistent hash
+            self._lines = data.decode("utf-8", errors="replace").splitlines()
+            self._file_hash = bytes_hash(data)
         return self._lines
+
+    @property
+    def source_format(self) -> str:
+        return "rinex3"
 
     @property
     def file_hash(self) -> str:
@@ -973,6 +1140,12 @@ class Rnxv3Obs(GNSSDataReader):
         ]
         return self._cached_epoch_batches
 
+    @deprecated(
+        "`Rnxv3Obs.parse_observation_slice` is left over from development and "
+        "will be removed with the next major version. Observation fields are "
+        "read strictly by `Rnxv3Obs.iter_epochs()` and `Rnxv3Obs.to_ds()`; "
+        "use those instead."
+    )
     def parse_observation_slice(
         self,
         slice_text: str,
@@ -1070,56 +1243,103 @@ class Rnxv3Obs(GNSSDataReader):
 
         return None, None, None
 
+    def _read_observation_field(self, field: str) -> ObsField:
+        """Return the (value, LLI, SSI) of one 16-character observation field.
+
+        A field in the standard form (F14.3 with the decimal point in column
+        10, then LLI and SSI, each blank or a digit) gives its value and
+        flags. A fully blank field is a missing observation.
+
+        Raises
+        ------
+        InvalidEpochError
+            If the field is neither blank nor in the standard form.
+
+        """
+        if field.isspace():
+            return None, None, None
+        lli = _FLAG_OF_CHAR.get(field[14], _NOT_A_FLAG)
+        ssi = _FLAG_OF_CHAR.get(field[15], _NOT_A_FLAG)
+        if (
+            lli == _NOT_A_FLAG
+            or ssi == _NOT_A_FLAG
+            or _OBS_VALUE_RE.fullmatch(field, 0, _OBS_VAL_END) is None
+        ):
+            msg = f"Malformed observation field: {field!r}"
+            raise InvalidEpochError(msg)
+        return float(field[:_OBS_VAL_END]), lli, ssi
+
+    def _read_satellite_line(
+        self, line: str, obs_types: frozenset[str] | None = None
+    ) -> tuple[Satellite, list[ObsField]]:
+        """Return the satellite and the (value, LLI, SSI) per observation type.
+
+        The :class:`Satellite` model validates the SV; its observations are
+        not filled in (see :meth:`_add_observations`).
+
+        One entry per observation type of the system's ``SYS / # / OBS
+        TYPES`` record, in its order. Fields missing at the end of a short
+        line are empty; text beyond the last field is ignored.
+
+        Parameters
+        ----------
+        line : str
+            The satellite line.
+        obs_types : frozenset of str or None
+            If given, only the fields whose observation type (first letter of
+            the code) is in it are read and checked; the others are returned
+            empty. ``None`` reads every field.
+
+        Raises
+        ------
+        ValueError
+            If the SV is not a valid satellite identifier (pydantic
+            ``ValidationError``).
+        InvalidEpochError
+            If the system has no ``SYS / # / OBS TYPES`` record, or a field
+            is neither blank nor in the standard form.
+
+        """
+        sv = line[:3].strip()
+        satellite = Satellite(sv=sv)
+        obs_codes = self.header.obs_codes_per_system.get(sv[0])
+        if obs_codes is None:
+            msg = f"{sv}: system {sv[0]} has no SYS / # / OBS TYPES header record"
+            raise InvalidEpochError(msg)
+
+        data_part = line[3:]
+        n_chars = len(data_part)
+        fields: list[ObsField] = []
+        for i, obs_code in enumerate(obs_codes):
+            col = i * _OBS_FIELD_LEN
+            if col >= n_chars or (
+                obs_types is not None and obs_code[0] not in obs_types
+            ):
+                fields.append((None, None, None))
+            else:
+                field = data_part[col : col + _OBS_FIELD_LEN].ljust(_OBS_FIELD_LEN)
+                fields.append(self._read_observation_field(field))
+        return satellite, fields
+
     def process_satellite_data(self, s: str) -> Satellite:
         """Process satellite data line into a Satellite object with observations.
 
-        Handles variable-length observation records correctly by adaptively parsing
-        based on the actual line length and content.
+        Reads the line with the rules of the dataset builder (see
+        :meth:`_read_satellite_line`); a field that is neither blank nor in
+        the standard form raises :class:`InvalidEpochError`.
         """
-        sv = s[:3].strip()
-        satellite = Satellite(sv=sv)
-        bands_tbe = [f"{sv}|{b}" for b in self.header.obs_codes_per_system[sv[0]]]
-
-        # Get the data part (after sv identifier)
-        data_part = s[3:]
-
-        # Process each observation adaptively
-        for i, band in enumerate(bands_tbe):
-            start_idx = i * 16
-            end_idx = start_idx + 16
-
-            # Check if we have enough data for this observation
-            if start_idx >= len(data_part):
-                # No more data available - create empty observation
-                observation = Observation(
-                    obs_type=band.split("|")[1][0],
-                    value=None,
-                    lli=None,
-                    ssi=None,
-                )
-                satellite.add_observation(observation)
-                continue
-
-            # Extract the slice, but handle variable length
-            if end_idx <= len(data_part):
-                # Full 16-character slice available
-                slice_data = data_part[start_idx:end_idx]
-            else:
-                # Partial slice - pad with spaces to maintain consistency
-                available_slice = data_part[start_idx:]
-                slice_data = available_slice.ljust(16)  # Pad with spaces if needed
-
-            value, lli, ssi = self.parse_observation_slice(slice_data)
-
-            observation = Observation(
-                obs_type=band.split("|")[1][0],
-                value=value,
-                lli=lli,
-                ssi=ssi,
-            )
-            satellite.add_observation(observation)
-
+        satellite, fields = self._read_satellite_line(s)
+        self._add_observations(satellite, fields)
         return satellite
+
+    def _add_observations(self, satellite: Satellite, fields: list[ObsField]) -> None:
+        """Add an :class:`Observation` model per read field to the satellite."""
+        for obs_code, (value, lli, ssi) in zip(
+            self.header.obs_codes_per_system[satellite.sv[0]], fields, strict=True
+        ):
+            satellite.add_observation(
+                Observation(obs_type=obs_code[0], value=value, lli=lli, ssi=ssi)
+            )
 
     @property
     def epochs(self) -> list[Rnxv3ObsEpochRecord]:
@@ -1147,27 +1367,77 @@ class Rnxv3Obs(GNSSDataReader):
             Each epoch with timestamp and satellite observations
 
         """
+        yield from self._iter_validated_epochs(rejected=None)
+
+    def _iter_validated_epochs(
+        self, rejected: list[int] | None
+    ) -> Iterator[Rnxv3ObsEpochRecord]:
+        """Yield the epochs that pass validation (see :meth:`iter_epochs`).
+
+        Parameters
+        ----------
+        rejected : list of int or None
+            If given, the 0-based line index of each epoch record that failed
+            validation is appended to it. Event epochs are not rejections.
+
+        """
+        for record, fields_per_satellite in self._iter_checked_epochs(rejected):
+            for satellite, fields in zip(
+                record.data, fields_per_satellite, strict=True
+            ):
+                self._add_observations(satellite, fields)
+            yield record
+
+    def _iter_checked_epochs(
+        self, rejected: list[int] | None, obs_types: frozenset[str] | None = None
+    ) -> Iterator[tuple[Rnxv3ObsEpochRecord, list[list[ObsField]]]]:
+        """Yield each valid epoch and the read fields of its satellite lines.
+
+        The single definition of the epoch checks of the validated parser.
+        The pydantic models check the epoch line
+        (:class:`Rnxv3ObsEpochRecordLineModel`), the SVs (:class:`Satellite`)
+        and the satellite count (:class:`Rnxv3ObsEpochRecord`); the
+        satellites of the record have no observations, their fields are
+        returned as plain tuples, one list per satellite. An epoch is also
+        rejected if a satellite's system has no ``SYS / # / OBS TYPES``
+        record, or an observation field is not blank but holds no readable
+        value.
+        Event epochs (flag 2-6) and out-of-range flags are skipped and are
+        not rejections.
+
+        Parameters
+        ----------
+        rejected : list of int or None
+            If given, the 0-based line index of each rejected epoch record is
+            appended to it.
+        obs_types : frozenset of str or None
+            If given, only the observation fields of these types are read and
+            checked (see :meth:`_read_satellite_line`); ``None`` reads every
+            field.
+
+        """
+        lines = self._load_file()
         for start, end in self.get_epoch_record_batches():
             try:
                 info = Rnxv3ObsEpochRecordLineModel.model_validate(
-                    {"epoch": self._lines[start]}
+                    {"epoch": lines[start]}
                 )
-
-                # Skip event epochs (flag 2-6: special records, not observations)
                 if info.epoch_flag > 1:
                     continue
-
-                # Filter out blank/whitespace-only lines from data slice
-                data = [line for line in self._lines[start + 1 : end] if line.strip()]
-                epoch = Rnxv3ObsEpochRecord(
-                    info=info,
-                    data=[self.process_satellite_data(line) for line in data],
+                read = [
+                    self._read_satellite_line(line, obs_types)
+                    for line in lines[start + 1 : end]
+                    if line.strip()
+                ]
+                record = Rnxv3ObsEpochRecord(
+                    info=info, data=[satellite for satellite, _ in read]
                 )
-                yield epoch
             except InvalidEpochError, IncompleteEpochError, ValueError:
-                # Skip epochs with validation errors (invalid SV, malformed data,
-                # pydantic ValidationError inherits from ValueError)
-                pass
+                # pydantic's ValidationError is a ValueError
+                if rejected is not None:
+                    rejected.append(start)
+                continue
+            yield record, [fields for _, fields in read]
 
     def iter_epochs_in_range(
         self,
@@ -1216,21 +1486,23 @@ class Rnxv3Obs(GNSSDataReader):
             Timestamp from epoch record
 
         """
-        return datetime(
-            year=int(epoch_record_info.year),
-            month=int(epoch_record_info.month),
-            day=int(epoch_record_info.day),
-            hour=int(epoch_record_info.hour),
-            minute=int(epoch_record_info.minute),
-            second=int(epoch_record_info.seconds),
-            tzinfo=UTC,
+        info = epoch_record_info
+        ts = _epoch_datetime64(
+            int(info.year),
+            int(info.month),
+            int(info.day),
+            int(info.hour),
+            int(info.minute),
+            info.seconds,
         )
+        # datetime holds microseconds; the F11.7 field has 100 ns resolution.
+        return ts.astype("datetime64[us]").item().replace(tzinfo=UTC)
 
     @staticmethod
     def epochrecordinfo_dt_to_numpy_dt(
         epch: Rnxv3ObsEpochRecord,
     ) -> np.datetime64:
-        """Convert Python datetime to numpy datetime64[ns].
+        """Return the epoch record's time as numpy datetime64[ns].
 
         Parameters
         ----------
@@ -1243,18 +1515,15 @@ class Rnxv3Obs(GNSSDataReader):
             Numpy datetime64 with nanosecond precision
 
         """
-        dt = datetime(
-            year=int(epch.info.year),
-            month=int(epch.info.month),
-            day=int(epch.info.day),
-            hour=int(epch.info.hour),
-            minute=int(epch.info.minute),
-            second=int(epch.info.seconds),
-            tzinfo=UTC,
+        info = epch.info
+        return _epoch_datetime64(
+            int(info.year),
+            int(info.month),
+            int(info.day),
+            int(info.hour),
+            int(info.minute),
+            info.seconds,
         )
-        # np.datetime64 doesn't support timezone info, but datetime is already UTC
-        # Convert to naive datetime (UTC) to avoid warning
-        return np.datetime64(dt.replace(tzinfo=None), "ns")
 
     def _epoch_datetimes(self) -> list[datetime]:
         """Extract epoch datetimes from the file.
@@ -1274,9 +1543,9 @@ class Rnxv3Obs(GNSSDataReader):
                     day=int(info.day),
                     hour=int(info.hour),
                     minute=int(info.minute),
-                    second=int(info.seconds),
                     tzinfo=UTC,
                 )
+                + timedelta(seconds=float(info.seconds))
             )
         return dts
 
@@ -1296,9 +1565,10 @@ class Rnxv3Obs(GNSSDataReader):
         deltas: list[timedelta] = [b - a for a, b in pairwise(dts) if b >= a]
         if not deltas:
             return None
-        # Pick the most common delta (robust to an occasional missing epoch)
+        # Pick the most common delta (robust to missing epochs); rounded to
+        # the millisecond so sub-second sampling (e.g. 0.1 s) is kept.
         seconds = Counter(
-            int(dt.total_seconds()) for dt in deltas if dt.total_seconds() > 0
+            round(dt.total_seconds(), 3) for dt in deltas if dt.total_seconds() > 0
         )
         if not seconds:
             return None
@@ -1308,43 +1578,34 @@ class Rnxv3Obs(GNSSDataReader):
     def infer_dump_interval(
         self, sampling_interval: pint.Quantity | None = None
     ) -> pint.Quantity | None:
-        """Infer the intended dump interval for the RINEX file.
+        """Infer the dump interval from the time the epochs span.
+
+        The span from the first to the last epoch plus one sampling
+        interval. Epochs missing between the first and the last epoch
+        therefore show up in the completeness check; epochs missing before
+        the first or after the last epoch (e.g. a file cut short) do not,
+        since only the file name or the caller knows the intended length.
 
         Parameters
         ----------
         sampling_interval : pint.Quantity, optional
-            Known sampling interval. If provided, returns (#epochs * sampling_interval)
+            Known sampling interval. Inferred from the epochs if not given.
 
         Returns
         -------
         pint.Quantity or None
-            Dump interval in seconds, or None if cannot be inferred
+            Dump interval in seconds, or None if it cannot be inferred
+            (fewer than two epochs).
 
         """
-        idx = self.get_epoch_record_batches()
-        n_epochs = len(idx)
-        if n_epochs == 0:
-            return None
-
-        if sampling_interval is not None:
-            return (n_epochs * sampling_interval).to(UREG.seconds)
-
-        # Fallback: time coverage inclusive (last - first) + typical step
         dts = self._epoch_datetimes()
-        if len(dts) == 0:
+        if len(dts) < 2:
             return None
-        if len(dts) == 1:
-            # single epoch: treat as 1 * unknown step (cannot infer)
+        step = sampling_interval or self.infer_sampling_interval()
+        if step is None:
             return None
-
-        # Estimate step from data
-        est_step = self.infer_sampling_interval()
-        if est_step is None:
-            return None
-
-        # Inclusive coverage often equals (n_epochs - 1) * step; intended
-        # dump interval is n_epochs * step.
-        return (n_epochs * est_step.to(UREG.seconds)).to(UREG.seconds)
+        span = (dts[-1] - dts[0]).total_seconds() * UREG.seconds
+        return (span + step.to(UREG.seconds)).to(UREG.seconds)
 
     def validate_epoch_completeness(
         self,
@@ -1353,12 +1614,18 @@ class Rnxv3Obs(GNSSDataReader):
     ) -> None:
         """Validate that the number of epochs matches the expected dump interval.
 
+        The file must hold dump interval / sampling interval epochs.
+
         Parameters
         ----------
         dump_interval : str or pint.Quantity, optional
-            Expected file dump interval. If None, inferred from epochs.
+            Expected file dump interval (e.g. ``"15 min"``). If None, the
+            span of the epochs is used (:meth:`infer_dump_interval`), which
+            detects gaps between the first and the last epoch but not a
+            file cut short.
         sampling_interval : str or pint.Quantity, optional
-            Expected sampling interval. If None, inferred from epochs.
+            Expected sampling interval. If None, the most common interval
+            between consecutive epochs.
 
         Returns
         -------
@@ -1381,12 +1648,12 @@ class Rnxv3Obs(GNSSDataReader):
             sampling_interval = inferred
         # normalize to pint
         elif not isinstance(sampling_interval, pint.Quantity):
-            sampling_interval = UREG.Quantity(sampling_interval).to(UREG.seconds)  # ty: ignore[invalid-assignment]
+            sampling_interval = UREG.Quantity(sampling_interval).to(UREG.seconds)
 
         # Normalize/Infer dump interval
         if dump_interval is None:
             inferred_dump = self.infer_dump_interval(
-                sampling_interval=sampling_interval  # ty: ignore[invalid-argument-type]
+                sampling_interval=sampling_interval
             )
             if inferred_dump is None:
                 msg = "Could not infer dump interval from file"
@@ -1394,7 +1661,7 @@ class Rnxv3Obs(GNSSDataReader):
             dump_interval = inferred_dump
         elif not isinstance(dump_interval, pint.Quantity):
             # Accept '15 min', '1h', etc.
-            dump_interval = UREG.Quantity(dump_interval).to(UREG.seconds)  # ty: ignore[invalid-assignment]
+            dump_interval = UREG.Quantity(dump_interval).to(UREG.seconds)
 
         # Build inputs for the validator model
         epoch_indices = self.get_epoch_record_batches()
@@ -1530,14 +1797,111 @@ class Rnxv3Obs(GNSSDataReader):
         sorted_sids = sorted(signal_ids)
         return sorted_sids, {s: sid_properties[s] for s in sorted_sids}
 
-    def _create_dataset_single_pass(
+    def _kept_vars(self, keep_data_vars: frozenset[str] | None) -> frozenset[str]:
+        """Return the observation variables the dataset builders allocate."""
+        return _OBS_VARS if keep_data_vars is None else keep_data_vars & _OBS_VARS
+
+    def _obs_code_lut(self) -> dict[str, list[tuple[str, str]]]:
+        """Map each system's header observation codes to (type, sid suffix).
+
+        Entries follow the order of ``SYS / # / OBS TYPES``, so the i-th entry
+        belongs to the i-th observation on a satellite line. Codes shorter
+        than three characters map to ``("", "")`` and are skipped.
+        """
+        bands = self._signal_mapper.SYSTEM_BANDS
+        lut: dict[str, list[tuple[str, str]]] = {}
+        for system, obs_codes in self.header.obs_codes_per_system.items():
+            entries: list[tuple[str, str]] = []
+            for obs_code in obs_codes:
+                if len(obs_code) < 3:
+                    entries.append(("", ""))
+                    continue
+                band_name = bands.get(system, {}).get(
+                    obs_code[1], f"UnknownBand{obs_code[1]}"
+                )
+                entries.append((obs_code[0], "|" + band_name + "|" + obs_code[2]))
+            lut[system] = entries
+        return lut
+
+    def _create_dataset_validated(
         self, keep_data_vars: frozenset[str] | None = None
     ) -> xr.Dataset:
-        """Create xarray Dataset in a single pass over the file.
+        """Build the dataset from the epochs that pass validation.
 
-        Pre-allocates arrays using header-derived SID set and epoch count,
-        then fills them by parsing observations inline without Pydantic
-        models or function-call overhead.
+        Uses the checks of :meth:`_iter_checked_epochs`, the same as
+        :meth:`iter_epochs`: pydantic models for the epoch line, the
+        satellites and the epoch record, but no model object per
+        observation. Only the observation fields the kept variables need are
+        read and checked (:func:`_obs_types_to_read`), so a malformed field
+        of a left-out variable does not drop its epoch. Epochs that fail are
+        dropped and logged with their line numbers. Values are stored with the same rules as
+        :meth:`_create_dataset_unvalidated_fast`, so both give the same
+        dataset for a valid file.
+
+        Returns
+        -------
+        xr.Dataset
+            Dataset with dimensions (epoch, sid) and standard variables.
+
+        """
+        sorted_sids, sid_properties = self._precompute_sids_from_header()
+        sid_to_idx = {sid: i for i, sid in enumerate(sorted_sids)}
+        obs_lut = self._obs_code_lut()
+
+        kept_vars = self._kept_vars(keep_data_vars)
+        rejected: list[int] = []
+        records = list(
+            self._iter_checked_epochs(rejected, _obs_types_to_read(kept_vars))
+        )
+        if rejected:
+            log.warning(
+                "rinex_epochs_rejected",
+                file=self.fpath.name,
+                n_rejected=len(rejected),
+                first_lines=[i + 1 for i in rejected[:10]],
+                reason="failed epoch validation (epoch line, satellite ID, "
+                "satellite count or observation field)",
+            )
+
+        arrays = _allocate_obs_arrays(len(records), len(sorted_sids), kept_vars)
+        timestamps = np.empty(len(records), dtype="datetime64[ns]")
+        for t_idx, (record, fields_per_satellite) in enumerate(records):
+            info = record.info
+            timestamps[t_idx] = _epoch_datetime64(
+                info.year, info.month, info.day, info.hour, info.minute, info.seconds
+            )
+            for satellite, fields in zip(
+                record.data, fields_per_satellite, strict=True
+            ):
+                sv = satellite.sv
+                for (obs_type, sid_suffix), (value, lli, ssi) in zip(
+                    obs_lut[sv[0]], fields, strict=True
+                ):
+                    if not obs_type or value is None:
+                        continue
+                    s_idx = sid_to_idx.get(sv + sid_suffix)
+                    if s_idx is None:
+                        continue
+                    _store_observation(arrays, t_idx, s_idx, obs_type, value, lli, ssi)
+
+        return self._assemble_dataset(timestamps, arrays, sorted_sids, sid_properties)
+
+    def _create_dataset_unvalidated_fast(
+        self, keep_data_vars: frozenset[str] | None = None
+    ) -> xr.Dataset:
+        """Build the dataset by fixed-column slicing, WITHOUT any validation.
+
+        DANGEROUS: no epoch, satellite or observation model is applied. A
+        corrupted record can enter the dataset as partial or wrong values,
+        e.g. the fields of a truncated satellite line, or an epoch whose
+        satellite count does not match its records. Only epoch lines that do
+        not match the epoch pattern, and event epochs, are skipped. Use it
+        only for files that were checked otherwise; the results are the
+        user's responsibility. For a valid file it gives the same dataset as
+        :meth:`_create_dataset_validated` (``test_rinex_v3_path_parity.py``).
+
+        The storage rules are inlined from :func:`_store_observation` for
+        speed and must stay identical to it.
 
         Returns
         -------
@@ -1550,75 +1914,38 @@ class Rnxv3Obs(GNSSDataReader):
         n_epochs = len(epoch_batches)
 
         sorted_sids, sid_properties = self._precompute_sids_from_header()
-        n_sids = len(sorted_sids)
         sid_to_idx = {sid: i for i, sid in enumerate(sorted_sids)}
+        system_obs_lut = self._obs_code_lut()
 
-        # Pre-allocate only the arrays that will be kept
-        _all = keep_data_vars is None
-        need_snr = _all or "SNR" in keep_data_vars
-        need_pseudo = _all or "Pseudorange" in keep_data_vars
-        need_phase = _all or "Phase" in keep_data_vars
-        need_doppler = _all or "Doppler" in keep_data_vars
-        need_lli = _all or "LLI" in keep_data_vars
-        need_ssi = _all or "SSI" in keep_data_vars
+        arrays = _allocate_obs_arrays(
+            n_epochs, len(sorted_sids), self._kept_vars(keep_data_vars)
+        )
+        snr = arrays.get("SNR")
+        pseudo = arrays.get("Pseudorange")
+        phase = arrays.get("Phase")
+        doppler = arrays.get("Doppler")
+        lli = arrays.get("LLI")
+        ssi = arrays.get("SSI")
+        ssi_rank = arrays.get(_SSI_RANK_KEY)
 
         timestamps = np.empty(n_epochs, dtype="datetime64[ns]")
-        if need_snr:
-            snr = np.full((n_epochs, n_sids), np.nan, dtype=DTYPES["SNR"])
-        if need_pseudo:
-            pseudo = np.full((n_epochs, n_sids), np.nan, dtype=DTYPES["Pseudorange"])
-        if need_phase:
-            phase = np.full((n_epochs, n_sids), np.nan, dtype=DTYPES["Phase"])
-        if need_doppler:
-            doppler = np.full((n_epochs, n_sids), np.nan, dtype=DTYPES["Doppler"])
-        if need_lli:
-            lli = np.full((n_epochs, n_sids), -1, dtype=DTYPES["LLI"])
-        if need_ssi:
-            ssi = np.full((n_epochs, n_sids), -1, dtype=DTYPES["SSI"])
-
-        # Build obs_code → (obs_type, sid_suffix) lookup per system
-        mapper = self._signal_mapper
-        system_obs_lut: dict[str, list[tuple[str, str]]] = {}
-        for system, obs_codes in self.header.obs_codes_per_system.items():
-            lut: list[tuple[str, str]] = []
-            for obs_code in obs_codes:
-                if len(obs_code) < 3:
-                    lut.append(("", ""))
-                    continue
-                band_num = obs_code[1]
-                code_char = obs_code[2]
-                band_name = mapper.SYSTEM_BANDS.get(system, {}).get(
-                    band_num, f"UnknownBand{band_num}"
-                )
-                obs_type = obs_code[0]
-                lut.append((obs_type, "|" + band_name + "|" + code_char))
-            system_obs_lut[system] = lut
-
-        # Single pass over all epochs — skip unparseable epoch lines
         valid_mask = np.ones(n_epochs, dtype=bool)
         for t_idx, (start, end) in enumerate(epoch_batches):
-            epoch_line = lines[start]
-
-            # Inline epoch parsing (no Pydantic model)
-            m = _EPOCH_RE.match(epoch_line)
+            m = _EPOCH_RE.match(lines[start])
             if m is None:
                 valid_mask[t_idx] = False
                 continue
 
-            year, month, day = int(m[1]), int(m[2]), int(m[3])
-            hour, minute = int(m[4]), int(m[5])
-            seconds = float(m[6])
-            sec_int = int(seconds)
-            usec = int((seconds - sec_int) * 1_000_000)
-            ts = np.datetime64(
-                f"{year:04d}-{month:02d}-{day:02d}"
-                f"T{hour:02d}:{minute:02d}:{sec_int:02d}",
-                "ns",
-            )
-            ts += np.timedelta64(usec, "us")
-            timestamps[t_idx] = ts
+            # Skip event epochs (flag 2-6: special records, not observations)
+            # and out-of-range flags, as iter_epochs() does
+            if int(m[7]) > 1:
+                valid_mask[t_idx] = False
+                continue
 
-            # Parse satellite data lines inline
+            timestamps[t_idx] = _epoch_datetime64(
+                int(m[1]), int(m[2]), int(m[3]), int(m[4]), int(m[5]), float(m[6])
+            )
+
             for line_idx in range(start + 1, end):
                 sat_line = lines[line_idx]
                 if len(sat_line) < 3:
@@ -1626,8 +1953,7 @@ class Rnxv3Obs(GNSSDataReader):
                 sv = sat_line[:3].strip()
                 if not sv:
                     continue
-                system = sv[0]
-                lut_list = system_obs_lut.get(system)
+                lut_list = system_obs_lut.get(sv[0])
                 if lut_list is None:
                     continue
 
@@ -1642,132 +1968,116 @@ class Rnxv3Obs(GNSSDataReader):
                     if col_start >= data_part_len:
                         break
 
-                    sid_key = sv + sid_suffix
-                    s_idx = sid_to_idx.get(sid_key)
+                    s_idx = sid_to_idx.get(sv + sid_suffix)
                     if s_idx is None:
                         continue
 
-                    col_end = col_start + 16
-                    slice_text = data_part[col_start:col_end]
-
-                    value, obs_lli, obs_ssi = _parse_obs_fast(slice_text)
-                    if value is None:
+                    value, obs_lli, obs_ssi = _parse_obs_fast(
+                        data_part[col_start : col_start + 16]
+                    )
+                    # Inlined _store_observation(); keep the two identical.
+                    # A 0.0 is missing like a blank (RINEX 3.04 Table A3).
+                    if value is None or value == 0:
                         continue
-
                     match obs_type:
                         case "S":
-                            if need_snr and value != 0:
+                            if snr is not None:
                                 snr[t_idx, s_idx] = value
                         case "C":
-                            if need_pseudo:
+                            if pseudo is not None:
                                 pseudo[t_idx, s_idx] = value
                         case "L":
-                            if need_phase:
+                            if phase is not None:
                                 phase[t_idx, s_idx] = value
                         case "D":
-                            if need_doppler:
+                            if doppler is not None:
                                 doppler[t_idx, s_idx] = value
-
-                    if need_lli and obs_lli is not None:
+                    if lli is not None and obs_lli is not None and obs_type == "L":
                         lli[t_idx, s_idx] = obs_lli
-                    if need_ssi and obs_ssi is not None:
-                        ssi[t_idx, s_idx] = obs_ssi
+                    if ssi is not None and ssi_rank is not None and obs_ssi is not None:
+                        rank = _SSI_SOURCE_RANK.get(obs_type, 0)
+                        if rank > ssi_rank[t_idx, s_idx]:
+                            ssi[t_idx, s_idx] = obs_ssi
+                            ssi_rank[t_idx, s_idx] = rank
 
-        # Drop epochs that failed to parse
         if not valid_mask.all():
             timestamps = timestamps[valid_mask]
-            if need_snr:
-                snr = snr[valid_mask]
-            if need_pseudo:
-                pseudo = pseudo[valid_mask]
-            if need_phase:
-                phase = phase[valid_mask]
-            if need_doppler:
-                doppler = doppler[valid_mask]
-            if need_lli:
-                lli = lli[valid_mask]
-            if need_ssi:
-                ssi = ssi[valid_mask]
+            arrays = {name: arr[valid_mask] for name, arr in arrays.items()}
 
-        # Build coordinate arrays from pre-computed properties
-        sv_list = np.array(
-            [sid_properties[sid]["sv"] for sid in sorted_sids], dtype=object
-        )
-        constellation_list = np.array(
-            [sid_properties[sid]["system"] for sid in sorted_sids], dtype=object
-        )
-        band_list = np.array(
-            [sid_properties[sid]["band"] for sid in sorted_sids], dtype=object
-        )
-        code_list = np.array(
-            [sid_properties[sid]["code"] for sid in sorted_sids], dtype=object
-        )
-        freq_center_list = [sid_properties[sid]["freq_center"] for sid in sorted_sids]
-        freq_min_list = [sid_properties[sid]["freq_min"] for sid in sorted_sids]
-        freq_max_list = [sid_properties[sid]["freq_max"] for sid in sorted_sids]
+        return self._assemble_dataset(timestamps, arrays, sorted_sids, sid_properties)
 
-        signal_id_coord = xr.DataArray(
-            np.array(sorted_sids, dtype=object),
-            dims=["sid"],
-            attrs=COORDS_METADATA["sid"],
-        )
+    def _assemble_dataset(
+        self,
+        timestamps: np.ndarray,
+        arrays: dict[str, np.ndarray],
+        sorted_sids: list[str],
+        sid_properties: dict[str, dict[str, object]],
+    ) -> xr.Dataset:
+        """Wrap filled observation arrays in the (epoch, sid) dataset.
+
+        Shared by both parsers, so coordinates, attributes and variable order
+        do not depend on the parser.
+        """
+
+        def sid_prop(key: str) -> list[object]:
+            return [sid_properties[sid][key] for sid in sorted_sids]
+
         coords = {
-            "epoch": ("epoch", timestamps, COORDS_METADATA["epoch"]),
-            "sid": signal_id_coord,
-            "sv": ("sid", sv_list, COORDS_METADATA["sv"]),
-            "system": ("sid", constellation_list, COORDS_METADATA["system"]),
-            "band": ("sid", band_list, COORDS_METADATA["band"]),
-            "code": ("sid", code_list, COORDS_METADATA["code"]),
-            "freq_center": (
-                "sid",
-                np.asarray(freq_center_list, dtype=DTYPES["freq_center"]),
-                COORDS_METADATA["freq_center"],
+            "epoch": (
+                "epoch",
+                timestamps,
+                epoch_coord_attrs(self.header.time_system, self.fpath.name),
             ),
-            "freq_min": (
-                "sid",
-                np.asarray(freq_min_list, dtype=DTYPES["freq_min"]),
-                COORDS_METADATA["freq_min"],
+            "sid": xr.DataArray(
+                np.array(sorted_sids, dtype=object),
+                dims=["sid"],
+                attrs=COORDS_METADATA["sid"],
             ),
-            "freq_max": (
+            "sv": (
                 "sid",
-                np.asarray(freq_max_list, dtype=DTYPES["freq_max"]),
-                COORDS_METADATA["freq_max"],
+                np.array(sid_prop("sv"), dtype=object),
+                COORDS_METADATA["sv"],
+            ),
+            "system": (
+                "sid",
+                np.array(sid_prop("system"), dtype=object),
+                COORDS_METADATA["system"],
+            ),
+            "band": (
+                "sid",
+                np.array(sid_prop("band"), dtype=object),
+                COORDS_METADATA["band"],
+            ),
+            "code": (
+                "sid",
+                np.array(sid_prop("code"), dtype=object),
+                COORDS_METADATA["code"],
             ),
         }
+        for key in ("freq_center", "freq_min", "freq_max"):
+            coords[key] = (
+                "sid",
+                np.asarray(sid_prop(key), dtype=DTYPES[key]),
+                COORDS_METADATA[key],
+            )
 
         if self.header.signal_strength_unit == UREG.dBHz:
             snr_meta = CN0_METADATA
         else:
             snr_meta = SNR_METADATA
 
-        _data_vars: dict = {}
-        if need_snr:
-            _data_vars["SNR"] = (["epoch", "sid"], snr, snr_meta)
-        if need_pseudo:
-            _data_vars["Pseudorange"] = (
+        data_vars = {
+            var: (
                 ["epoch", "sid"],
-                pseudo,
-                OBSERVABLES_METADATA["Pseudorange"],
+                arrays[var],
+                snr_meta if var == "SNR" else OBSERVABLES_METADATA[var],
             )
-        if need_phase:
-            _data_vars["Phase"] = (
-                ["epoch", "sid"],
-                phase,
-                OBSERVABLES_METADATA["Phase"],
-            )
-        if need_doppler:
-            _data_vars["Doppler"] = (
-                ["epoch", "sid"],
-                doppler,
-                OBSERVABLES_METADATA["Doppler"],
-            )
-        if need_lli:
-            _data_vars["LLI"] = (["epoch", "sid"], lli, OBSERVABLES_METADATA["LLI"])
-        if need_ssi:
-            _data_vars["SSI"] = (["epoch", "sid"], ssi, OBSERVABLES_METADATA["SSI"])
+            for var in _OBS_VAR_ORDER
+            if var in arrays
+        }
 
         ds = xr.Dataset(
-            data_vars=_data_vars,
+            data_vars=data_vars,
             coords=coords,
             attrs={**self._build_attrs()},
         )
@@ -1777,15 +2087,41 @@ class Rnxv3Obs(GNSSDataReader):
 
         return ds
 
+    def _create_dataset(
+        self,
+        keep_data_vars: frozenset[str] | None,
+        parser: RinexV3Parser,
+    ) -> xr.Dataset:
+        """Build the dataset with the chosen parser.
+
+        ``"unvalidated_fast"`` emits an :class:`UnvalidatedParserWarning` and a
+        log warning on every use.
+        """
+        if parser == "validated":
+            return self._create_dataset_validated(keep_data_vars)
+        if parser == "unvalidated_fast":
+            warnings.warn(
+                _UNVALIDATED_PARSER_MESSAGE, UnvalidatedParserWarning, stacklevel=3
+            )
+            log.warning(
+                "rinex_unvalidated_parser",
+                file=self.fpath.name,
+                message=_UNVALIDATED_PARSER_MESSAGE,
+            )
+            return self._create_dataset_unvalidated_fast(keep_data_vars)
+        msg = f"parser must be 'validated' or 'unvalidated_fast', not {parser!r}"
+        raise ValueError(msg)
+
     def create_rinex_netcdf_with_signal_id(
         self,
         start: datetime | None = None,
         end: datetime | None = None,
+        parser: RinexV3Parser = "validated",
     ) -> xr.Dataset:
         """Create a NetCDF dataset with signal IDs.
 
-        Always uses the fast single-pass path.  Optionally restricts to
-        epochs within a datetime range via post-filtering.
+        Optionally restricts to epochs within a datetime range via
+        post-filtering.
 
         Parameters
         ----------
@@ -1793,6 +2129,8 @@ class Rnxv3Obs(GNSSDataReader):
             Start of time range (inclusive).
         end : datetime, optional
             End of time range (inclusive).
+        parser : {"validated", "unvalidated_fast"}, default "validated"
+            As for :meth:`to_ds`.
 
         Returns
         -------
@@ -1800,7 +2138,7 @@ class Rnxv3Obs(GNSSDataReader):
             Dataset with dimensions (epoch, sid).
 
         """
-        ds = self._create_dataset_single_pass()
+        ds = self._create_dataset(None, parser)
 
         if start or end:
             ds = ds.sel(epoch=slice(start, end))
@@ -1819,7 +2157,12 @@ class Rnxv3Obs(GNSSDataReader):
         outname : Path or str, optional
             If provided, saves dataset to this file path
         keep_data_vars : list of str or None, optional
-            Data variables to include in dataset. Defaults to config value.
+            Data variables to include in dataset. ``None`` includes all
+            available. A run passes the
+            ``processing.params.keep_gnss_observables`` setting. The
+            validated parser reads and checks only the observation fields
+            these variables need, so a malformed field of a left-out
+            variable does not drop its epoch.
         write_global_attrs : bool, default False
             If True, adds comprehensive global attributes
         pad_global_sid : bool, default True
@@ -1831,6 +2174,17 @@ class Rnxv3Obs(GNSSDataReader):
         keep_sids : list of str or None, default None
             If provided, filters/pads dataset to these specific SIDs.
             If None and pad_global_sid=True, pads to all possible SIDs.
+        parser : {"validated", "unvalidated_fast"}, default "validated"
+            ``"validated"`` checks every epoch (epoch line, satellite IDs,
+            satellite count, the observation fields of the kept variables)
+            and drops (and logs) epochs that fail; see
+            :meth:`_create_dataset_validated`.
+            ``"unvalidated_fast"`` is DANGEROUS: it slices fixed columns
+            without any check, so corrupted records can enter the dataset as
+            partial or wrong values; canVODpy takes no responsibility for its
+            results, and every use emits an :class:`UnvalidatedParserWarning`.
+            Both give the same dataset for a valid file. A run passes the
+            ``processing.params.rinex_v3_parser`` setting.
 
         Returns
         -------
@@ -1844,22 +2198,24 @@ class Rnxv3Obs(GNSSDataReader):
         strip_fillval = bool(kwargs.pop("strip_fillval", True))
         add_future_datavars = bool(kwargs.pop("add_future_datavars", True))
         keep_sids = cast(list[str] | None, kwargs.pop("keep_sids", None))
+        parser = cast(RinexV3Parser, kwargs.pop("parser", "validated"))
 
-        if keep_data_vars is None:
-            from canvod.config import load_config
-
-            keep_data_vars = load_config().processing.params.keep_gnss_observables
-
-        ds = self._create_dataset_single_pass(frozenset(keep_data_vars))
+        kept = None if keep_data_vars is None else frozenset(keep_data_vars)
+        require_gps_time(self.header.time_system, self.fpath.name)
+        ds = self._create_dataset(kept, parser)
 
         if pad_global_sid:
-            from canvod.auxiliary.preprocessing import pad_to_global_sid
+            from canvod.readers.preprocessing import pad_to_global_sid
 
             # Pad/filter to specified sids or all possible sids
-            ds = pad_to_global_sid(ds, keep_sids=keep_sids)
+            ds = pad_to_global_sid(
+                ds,
+                keep_sids=keep_sids,
+                aggregate_glonass_fdma=self.aggregate_glonass_fdma,
+            )
 
         if strip_fillval:
-            from canvod.auxiliary.preprocessing import strip_fillvalue
+            from canvod.readers.preprocessing import strip_fillvalue
 
             ds = strip_fillvalue(ds)
 
@@ -1881,7 +2237,7 @@ class Rnxv3Obs(GNSSDataReader):
             }
             ds.to_netcdf(str(outname), encoding=encoding)
 
-        # Normalise string dtypes for Icechunk / Zarr V3 compatibility
+        # Normalize string dtypes for Icechunk / Zarr V3 compatibility
         ds = _str_to_object(ds)
 
         # Validate output structure for pipeline compatibility

@@ -138,11 +138,11 @@ Tests marked with `@pytest.mark.network`:
 
 **ecef_position**
 - ECEFPosition instance
-- TU Wien station coordinates
+- The made-up site (Bloemfontein) from `canvod.utils.testing`
 
 **geodetic_position**
 - GeodeticPosition instance
-- TU Wien station coordinates
+- The made-up site (Bloemfontein) from `canvod.utils.testing`
 
 ## Coverage Goals
 
@@ -232,8 +232,8 @@ CI configuration: `.github/workflows/test.yml`
 
 ### Import Errors
 ```bash
-# Install package in development mode
-uv pip install -e .
+# Install the workspace packages (editable) from the repository root
+uv sync
 ```
 
 ### Missing Dependencies

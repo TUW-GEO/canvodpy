@@ -16,47 +16,43 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 import zarr
+from canvod.store_metadata.testing import create_test_store
 
 from canvod.store import (
     MyIcechunkStore,
-    create_gnss_store,
-    create_vod_store,
+    open_gnss_store,
+    open_vod_store,
 )
 
 
-class TestStoreCreation:
-    """Test store creation and initialization."""
+class TestStoreOpening:
+    """Test opening stores."""
 
-    def test_create_gnss_store(self, tmp_path: Path) -> None:
-        """Create RINEX store and verify directory structure."""
-        store_path = tmp_path / "test_site" / "gnss_store"
+    def test_open_gnss_store(self, tmp_path: Path) -> None:
+        """Open a GNSS store."""
+        store_path = create_test_store(tmp_path / "test_site" / "gnss_store")
 
-        store = create_gnss_store(store_path)
+        store = open_gnss_store(store_path)
 
         assert isinstance(store, MyIcechunkStore)
         assert store.store_path == store_path
         assert store.store_type == "gnss_store"
-        assert store_path.exists()
-        assert any(store_path.iterdir())  # Not empty after creation
 
-    def test_create_vod_store(self, tmp_path: Path) -> None:
-        """Create VOD store and verify structure."""
-        store_path = tmp_path / "test_site" / "vod_store"
+    def test_open_vod_store(self, tmp_path: Path) -> None:
+        """Open a VOD store."""
+        store_path = create_test_store(tmp_path / "test_site" / "vod_store")
 
-        store = create_vod_store(store_path)
+        store = open_vod_store(store_path)
 
         assert isinstance(store, MyIcechunkStore)
         assert store.store_path == store_path
         assert store.store_type == "vod_store"
-        assert store_path.exists()
-        assert any(store_path.iterdir())
 
     def test_store_initialization_existing(self, tmp_path: Path) -> None:
-        """Initialize existing store and verify repo connection."""
-        store_path = tmp_path / "test_site" / "vod_store"
+        """Open a store twice and verify each has its own repo connection."""
+        store_path = create_test_store(tmp_path / "test_site" / "vod_store")
 
-        # Create store
-        store1 = create_vod_store(store_path)
+        store1 = open_vod_store(store_path)
         repo1_id = id(store1.repo)
 
         # Re-open existing store
@@ -73,7 +69,7 @@ class TestSessionManagement:
     def test_readonly_session_context_manager(self, tmp_path: Path) -> None:
         """Test readonly session with context manager."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         # Need to create root group first
         with store.writable_session() as wsession:
@@ -90,7 +86,7 @@ class TestSessionManagement:
     def test_writable_session_context_manager(self, tmp_path: Path) -> None:
         """Test writable session with context manager."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         with store.writable_session() as session:
             assert session is not None
@@ -106,7 +102,7 @@ class TestGroupOperations:
     def test_list_groups_empty_store(self, tmp_path: Path) -> None:
         """List groups in newly created store."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         groups = store.list_groups()
 
@@ -116,7 +112,7 @@ class TestGroupOperations:
     def test_create_and_list_group(self, tmp_path: Path) -> None:
         """Create group and verify it appears in listing."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         # Create a group by writing data
         with store.writable_session() as session:
@@ -136,7 +132,7 @@ class TestGroupOperations:
     def test_get_branch_names(self, tmp_path: Path) -> None:
         """Get list of branches in store."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         branches = store.get_branch_names()
 
@@ -150,7 +146,7 @@ class TestWriteReadOperations:
     def test_write_dataset_to_group(self, tmp_path: Path) -> None:
         """Write xarray Dataset to store."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         # Create sample dataset
         ds = xr.Dataset(
@@ -175,7 +171,7 @@ class TestWriteReadOperations:
     def test_read_dataset_from_group(self, tmp_path: Path) -> None:
         """Read back Dataset and verify integrity."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         # Create and write dataset
         original_ds = xr.Dataset(
@@ -209,7 +205,7 @@ class TestCommitWorkflow:
     def test_commit_creates_snapshot(self, tmp_path: Path) -> None:
         """Create session, write, commit, and verify snapshot."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         # Write and commit
         with store.writable_session() as session:
@@ -230,7 +226,7 @@ class TestCommitWorkflow:
     def test_uncommitted_changes_not_visible(self, tmp_path: Path) -> None:
         """Verify uncommitted changes are not visible in readonly session."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         # Write but don't commit
         with store.writable_session() as session:

@@ -1,10 +1,10 @@
 """Find RINEX-ingested-but-VOD-missing dates for a VOD analysis pair.
 
-dev/todo_later.md §43 -- a run can complete RINEX ingestion for a date
+A run can complete RINEX ingestion for a date
 range cleanly, then fail before (or during) the corresponding VOD-store
-write, leaving those dates permanently un-backfilled: the pipeline's
-resume logic (``_last_processed_date()``, ``cli/run.py``) only looks at
-the RINEX store, so an already-RINEX-complete date is never re-yielded
+write, leaving those dates permanently un-backfilled: a run without
+dates (``cli/run.py``) only processes days with files the GNSS store
+doesn't hold, so an already-RINEX-complete date is never re-yielded
 for VOD computation on a later run. This module finds that gap cheaply
 -- two whole-table metadata reads (RINEX group + VOD group), not one
 query per candidate date -- so it scales fine to a site's full history.
@@ -21,6 +21,7 @@ import datetime
 
 import polars as pl
 
+from canvod.store_metadata import store_exists
 from canvod.utils.tools import YYYYDOY
 from canvodpy.api import Site
 
@@ -74,10 +75,8 @@ def _require_date(yyyydoy: str) -> datetime.date:
 def _group_into_ranges(dates: list[str]) -> list[tuple[str, str]]:
     """Collapse a sorted list of YYYYDOY strings into contiguous ranges.
 
-    ``VodComputer.compute_bulk()`` only takes a single ``start``/``end``
-    range per call -- grouping gap dates into runs of consecutive
-    calendar days lets a scattered gap set be backfilled with one
-    ``compute_bulk()`` call per contiguous run instead of one per date.
+    For the report of ``canvodpy vod-reconcile``: a scattered gap set reads
+    as a few runs of consecutive calendar days.
     """
     if not dates:
         return []
@@ -99,7 +98,7 @@ def find_vod_backfill_gaps(
 ) -> list[str]:
     """Dates with RINEX data ingested but no corresponding VOD result.
 
-    Compares the RINEX store's ``{reference}_{canopy}`` group metadata
+    Compares the GNSS store's ``{reference}_{canopy}`` group metadata
     table against the VOD store's ``{calculator}/{analysis}`` group
     metadata table for ``analysis_name`` -- two single, cheap whole-table
     reads via ``read_metadata_table()``, not a per-date query.
@@ -117,7 +116,7 @@ def find_vod_backfill_gaps(
     Returns
     -------
     list[str]
-        Sorted YYYYDOY strings present in the RINEX store's analysis
+        Sorted YYYYDOY strings present in the GNSS store's analysis
         pair group but absent from the VOD store's result group. Empty
         if there's no gap.
 
@@ -132,17 +131,19 @@ def find_vod_backfill_gaps(
             f"VOD analysis '{analysis_name}' not configured. Available: {available}"
         )
     cfg = site.vod_analyses[analysis_name]
-    rinex_group = f"{cfg.reference_receiver}_{cfg.canopy_receiver}"
+    rinex_group = cfg.reference_store_group
     vod_group = f"{calculator_name}/{analysis_name}"
 
-    if not site.gnss_store.group_exists(rinex_group):
+    if not store_exists(site.gnss_store_path) or not site.gnss_store.group_exists(
+        rinex_group
+    ):
         return []
     with site.gnss_store.readonly_session() as session:
         rinex_df = site.gnss_store.read_metadata_table(session, rinex_group)
     rinex_dates = _dates_covered(rinex_df) if not rinex_df.is_empty() else set()
 
     vod_dates: set[str] = set()
-    if site.vod_store.group_exists(vod_group):
+    if store_exists(site.vod_store_path) and site.vod_store.group_exists(vod_group):
         with site.vod_store.readonly_session() as session:
             vod_df = site.vod_store.read_metadata_table(session, vod_group)
         vod_dates = _dates_covered(vod_df) if not vod_df.is_empty() else set()

@@ -6,9 +6,11 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import xarray as xr
 
-from canvod.readers.base import GNSSDataReader, validate_dataset
-from canvod.readers.builder import DatasetBuilder
+from canvod.readers.base import GNSSDataReader, SignalID, validate_dataset
+from canvod.readers.builder import DatasetBuilder, sid_coords
+from canvod.readers.gnss_specs.signals import SignalIDMapper
 
 # ---------------------------------------------------------------------------
 # Concrete reader stub for tests
@@ -21,6 +23,10 @@ class _StubReader(GNSSDataReader):
     @property
     def file_hash(self) -> str:
         return "abcdef1234567890"
+
+    @property
+    def source_format(self) -> str:
+        return "stub"
 
     def to_ds(self, keep_data_vars=None, **kwargs):
         raise NotImplementedError
@@ -63,12 +69,22 @@ def reader(stub_file: Path) -> _StubReader:
 # ---------------------------------------------------------------------------
 
 
+def test_reader_must_name_its_source_format(stub_file: Path) -> None:
+    """A reader without ``source_format`` cannot be created."""
+
+    class _NoFormat(_StubReader):
+        source_format = GNSSDataReader.source_format
+
+    with pytest.raises(TypeError, match="source_format"):
+        _NoFormat(fpath=stub_file)
+
+
 class TestDatasetBuilder:
     """End-to-end DatasetBuilder tests."""
 
     def test_basic_build(self, reader: _StubReader):
         """Build a minimal Dataset with one epoch, one signal, one value."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         ei = builder.add_epoch(datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC))
         sig = builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(ei, sig, "SNR", 42.0)
@@ -83,7 +99,7 @@ class TestDatasetBuilder:
 
     def test_multiple_signals_and_epochs(self, reader: _StubReader):
         """Build with multiple signals across multiple epochs."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
 
         e0 = builder.add_epoch(datetime(2025, 1, 1, 0, 0, 0, tzinfo=UTC))
         e1 = builder.add_epoch(datetime(2025, 1, 1, 0, 0, 30, tzinfo=UTC))
@@ -106,7 +122,7 @@ class TestDatasetBuilder:
 
     def test_add_signal_is_idempotent(self, reader: _StubReader):
         """Calling add_signal with same args returns same SignalID."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         sig1 = builder.add_signal(sv="G01", band="L1", code="C")
         sig2 = builder.add_signal(sv="G01", band="L1", code="C")
         assert sig1 == sig2
@@ -118,7 +134,7 @@ class TestDatasetBuilder:
 
     def test_set_value_accepts_string(self, reader: _StubReader):
         """set_value accepts a string SID instead of SignalID."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(0, "G01|L1|C", "SNR", 42.0)
@@ -127,7 +143,7 @@ class TestDatasetBuilder:
 
     def test_missing_values_are_nan(self, reader: _StubReader):
         """Unset values should be NaN for float vars."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         builder.add_epoch(datetime(2025, 1, 1, 0, 0, 30, tzinfo=UTC))
         builder.add_signal(sv="G01", band="L1", code="C")
@@ -140,7 +156,7 @@ class TestDatasetBuilder:
 
     def test_multiple_variables(self, reader: _StubReader):
         """Build with SNR and Pseudorange."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         sig = builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(ei, sig, "SNR", 42.0)
@@ -154,7 +170,7 @@ class TestDatasetBuilder:
 
     def test_keep_data_vars_filter(self, reader: _StubReader):
         """keep_data_vars filters output variables."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         sig = builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(ei, sig, "SNR", 42.0)
@@ -166,7 +182,7 @@ class TestDatasetBuilder:
 
     def test_extra_attrs(self, reader: _StubReader):
         """extra_attrs are merged into global attributes."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         sig = builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(ei, sig, "SNR", 42.0)
@@ -175,7 +191,7 @@ class TestDatasetBuilder:
 
     def test_coordinates_have_correct_dtypes(self, reader: _StubReader):
         """Frequency coordinates must be float32."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         sig = builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(ei, sig, "SNR", 42.0)
@@ -187,7 +203,7 @@ class TestDatasetBuilder:
 
     def test_frequency_resolution(self, reader: _StubReader):
         """GPS L1 frequency should be resolved correctly."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         sig = builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(ei, sig, "SNR", 42.0)
@@ -198,7 +214,7 @@ class TestDatasetBuilder:
 
     def test_validate_dataset_called(self, reader: _StubReader):
         """build() calls validate_dataset; result passes validation."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         sig = builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(ei, sig, "SNR", 42.0)
@@ -209,7 +225,7 @@ class TestDatasetBuilder:
 
     def test_required_attrs_present(self, reader: _StubReader):
         """Dataset must have all required attributes."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         sig = builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(ei, sig, "SNR", 42.0)
@@ -222,7 +238,7 @@ class TestDatasetBuilder:
 
     def test_file_hash_from_reader(self, reader: _StubReader):
         """File Hash attribute should match reader.file_hash."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
         sig = builder.add_signal(sv="G01", band="L1", code="C")
         builder.set_value(ei, sig, "SNR", 42.0)
@@ -232,6 +248,35 @@ class TestDatasetBuilder:
 
     def test_signal_validation_rejects_bad_sv(self, reader: _StubReader):
         """add_signal should reject invalid SVs."""
-        builder = DatasetBuilder(reader)
+        builder = DatasetBuilder(reader, time_system="GPS")
         with pytest.raises(Exception, match="Invalid SV"):
             builder.add_signal(sv="X01", band="L1", code="C")
+
+    def test_epoch_records_time_system(self, reader: _StubReader):
+        builder = DatasetBuilder(reader, time_system="GPS")
+        ei = builder.add_epoch(datetime(2025, 1, 1, tzinfo=UTC))
+        sig = builder.add_signal(sv="G01", band="L1", code="C")
+        builder.set_value(ei, sig, "SNR", 42.0)
+        assert builder.build()["epoch"].attrs["time_system"] == "GPS"
+
+    @pytest.mark.parametrize("scale", ["UTC", "GLO", "LOCAL"])
+    def test_other_time_systems_are_rejected(self, reader: _StubReader, scale):
+        with pytest.raises(ValueError, match="stores every epoch in GPS time"):
+            DatasetBuilder(reader, time_system=scale)
+
+
+class TestSidCoords:
+    def test_coordinates_of_signals(self):
+        signals = [
+            SignalID(sv="E05", band="E5a", code="Q"),
+            SignalID(sv="G01", band="L1", code="u"),
+        ]
+        coords = sid_coords(signals, mapper=SignalIDMapper())
+        ds = xr.Dataset(coords=coords)
+        assert list(ds["sid"].values) == ["E05|E5a|Q", "G01|L1|u"]
+        assert list(ds["system"].values) == ["E", "G"]
+        assert list(ds["code"].values) == ["Q", "u"]
+        assert ds["freq_center"].dtype == np.float32
+        np.testing.assert_allclose(ds["freq_center"].values, [1176.45, 1575.42])
+        assert np.all(ds["freq_min"].values < ds["freq_center"].values)
+        assert np.all(ds["freq_max"].values > ds["freq_center"].values)

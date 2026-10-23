@@ -1,56 +1,59 @@
-# Configuration Guide
+# Configuration guide
 
-## Why canVODpy needs a configuration file
+canVODpy reads its settings from one file, `canvod-settings.yaml`. The
+file holds what canVODpy cannot know on its own:
 
-Most scientific Python packages work immediately after installation. Opposed to that, canVODpy manages a long-running, multi-file, multi-site data pipeline that
-produces versioned scientific stores. Some things cannot be inferred from the code:
+- **Where your data is.** Paths differ on every machine.
+- **Who you are.** Your name, institution, and ORCID go into the
+  metadata of each store.
+- **How much of the machine to use.** By default, canVODpy sizes the
+  workers to the machine; you can set limits.
 
-- **Where your data lives** — file paths differ on every machine, HPC cluster, or deployment.
-- **Who you are** — your name, institution, and ORCID are written into the Icechunk store's
-  provenance metadata for reproducibility and FAIR compliance.
-- **How much compute to use** — a laptop and a 64-core server require different resource
-  limits. canVODpy defaults to an automatic mode; you can override this for your hardware.
+Everything else, such as the signals to keep or the chunk sizes, has a
+default that you can change.
 
-Everything else, SID filtering, chunk strategies, aggregation parameters, ships with defaults, but can be tuned according to your needs.
-
-Configuration is validated by
-[pydantic-settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/).
-Every field is type-checked at load time: a typo in a field name, or a string where a number
-belongs, is reported immediately with the exact location.
+canVODpy checks the file with
+[`pydantic-settings`](https://docs.pydantic.dev/latest/concepts/pydantic_settings/)
+when it loads it. A misspelled field name, or text where a number
+belongs, stops the load with the location of the error.
 
 ---
 
 ## Configuration commands
 
 ```bash
-# Setup
-just config-init                       # scaffold canvod-settings.yaml from template
-just config-edit                       # open canvod-settings.yaml in $EDITOR
-just config-delete                     # delete canvod-settings.yaml (requires typed confirmation)
-
-# Verification
-just config-validate                   # validate config against Pydantic models
-just config-show                       # print the fully resolved config (see note below)
-just config-check-data <site>          # validate file names in all receiver directories
+canvodpy config init        # create canvod-settings.yaml from the template
+canvodpy config edit        # open canvod-settings.yaml in $EDITOR
+canvodpy config validate    # check the settings and the receiver data of all sites
+canvodpy config show        # print the settings canVODpy uses
+canvodpy config explain processing.storage.stores_root_dir  # what a setting means
+canvodpy doctor             # show which settings file canVODpy found
 ```
 
-`just config-show` prints the **fully resolved** configuration. Any value set via environment
-variable (see [Environment variable overrides](#environment-variable-overrides) below) is shown
-as the effective value — not the YAML value it supersedes. This is the authoritative way to
-confirm what canVODpy will actually use at runtime.
+Every setting is described in the [Settings reference](settings.md), and
+the template links each setting to its entry there.
+`canvodpy config explain` prints the same entry in the terminal; it takes
+the setting's path, or its end (`gnss_store.epoch`), and names a site or
+receiver as in your file (`sites.my_site.receivers.reference_01.directory`).
+In `canvodpy config init --interactive`, answer `?` to a question to see
+the entry of the setting it asks for.
+
+`canvodpy config show` prints the settings after the
+[overlay file](#overlay-file) is applied, so a value set there appears
+instead of the value in `canvod-settings.yaml`.
 
 ---
 
-## Overlay config file
+## Overlay file
 
-For deployment-specific overrides — different store paths on a cluster, a CI environment,
-a shared server — use an overlay file instead of modifying `canvod-settings.yaml`.
+To change settings for one machine, such as the store path on a cluster,
+use an overlay file instead of editing `canvod-settings.yaml`.
 
 Pass `--config` to any command that accepts it:
 
 ```bash
-# Inspect or validate with an overlay applied
-canvodpy config --config cluster-overlay.yaml validate
+# Validate or inspect with an overlay applied
+canvodpy config validate --config cluster-overlay.yaml
 canvodpy config --config cluster-overlay.yaml show
 
 # Run the pipeline with an overlay
@@ -58,114 +61,97 @@ uv run canvodpy run --site mysite --start 2025001 --end 2025028 \
     --config cluster-overlay.yaml
 ```
 
-Only the fields present in the overlay are changed; everything else is read from the main file.
+`canvodpy config` also takes `--config` before its command, for every
+command: `canvodpy config --config cluster-overlay.yaml validate` works
+too.
 
-### Overlays can only add or override — never delete
+Only the fields present in the overlay are changed; everything else is read from the main file.
+A list in the overlay, such as `sids.custom_sids`, replaces the list of the main file as a
+whole; its entries are not added to the main file's.
+
+### An overlay can add and change settings, not remove them
 
 The overlay is merged **on top of** the base `canvod-settings.yaml`; it can add new keys or
 override existing ones, but it cannot remove a key that exists in the base file. If your base
 file defines a site (or any other field) that isn't mentioned in the overlay, that entry stays
-in the resolved config no matter what the overlay contains.
+in the settings canVODpy uses, no matter what the overlay contains.
 
-!!! warning "Common trap: the scaffolded placeholder site"
+!!! warning "Rename the template site"
 
-    `canvod-settings.yaml` (from `just config-init`) ships with a live, uncommented `my_site:`
-    placeholder under `sites:` — meant to be **renamed** to your real site, not kept alongside
-    it. If you added your real site as a new block instead of renaming the placeholder,
-    `my_site` is still there with unreachable paths like `/path/to/your/gnss/data/my_site` —
-    and `config validate` / `run` will fail on it, since no overlay can delete it, only the
-    base file itself can.
-
-    Fix: edit the base `canvod-settings.yaml` directly and remove the leftover placeholder
-    site under `sites:`. If the base file has accumulated enough cruft that starting over is
-    easier, `just config-delete` removes it (with a typed confirmation, since this is
-    destructive) so you can `just config-init` fresh.
+    The template from `canvodpy config init` contains a site `my_site`
+    under `sites:`. Rename it to your site. If you add your site next to
+    it, `my_site` stays, with paths such as
+    `/path/to/your/gnss/data/my_site`, and `canvodpy config validate` and
+    `canvodpy run` fail on it. An overlay can't remove it; remove it from
+    `canvod-settings.yaml`. To start over, run
+    `canvodpy config init --force`, which overwrites the file.
 
 ---
 
-## File layout
+## Where canVODpy finds the settings
 
-```
-config/
-└── canvod-settings.yaml          # unified configuration (processing, sites, sids)
-```
+canVODpy looks for `canvod-settings.yaml` in the first of these folders
+that exists:
 
-**Precedence:** environment variable > overlay file (`--config`) > `canvod-settings.yaml` > package defaults.
+1. `$CANVOD_CONFIG_DIR`, or the folder passed with `--config-dir`
+2. `config/` of a canVODpy clone
+3. `~/.config/canvodpy`
 
-Only the fields you want to change need to be written — everything else falls back to package
-defaults. Unknown field names are rejected throughout the config tree (`extra="forbid"`),
-so typos surface at load time rather than causing silent misconfiguration.
+The same folder holds the naming recipes, in `recipes/`.
+`CANVOD_CONFIG_FILE` names an overlay file, like `--config`.
 
-Two environment variables control *where* configuration is read from:
+### Settings from a GitHub repository
 
-| Variable             | Effect                                                           |
-| -------------------- | ---------------------------------------------------------------- |
-| `CANVOD_CONFIG_DIR`  | Use a different config directory (default: `{repo_root}/config`) |
-| `CANVOD_CONFIG_FILE` | Apply an overlay YAML on top of the main `canvod-settings.yaml`  |
-
----
-
-## Environment variable overrides
-
-Any configuration value can be overridden without editing the file by setting an environment
-variable with the `CANVOD__` prefix, using double underscores (`__`) to separate nesting
-levels. This is particularly useful on HPC clusters and shared servers, where resource limits
-vary per job but the configuration file is version-controlled:
+`--config-dir` and `CANVOD_CONFIG_DIR` also take the raw link of a
+settings file in a GitHub repository, at a commit, a tag or a branch:
 
 ```bash
-CANVOD__PROCESSING__PARAMS__N_MAX_THREADS=4 \
-    uv run canvodpy run --site mysite
-CANVOD__PROCESSING__PARAMS__DAYS_PER_BATCH=7 \
-    uv run canvodpy run --site mysite
+canvodpy run --site ExampleSite --start 2025001 --end 2025007 \
+  -c https://raw.githubusercontent.com/<account>/<repo>/refs/tags/<tag>/config/canvod-settings.yaml
 ```
 
-!!! warning "This must stay one shell command"
+- A receiver's `recipe:` name is read from the same repository at the
+  same commit, tag or branch, from `recipes/<site>/<name>.yaml` next to
+  the settings file, as in a local folder. A `recipe:` that is a URL is
+  read from that URL.
+- Every run downloads the files again, into a folder of the run that
+  only you can read. A run is a `canvodpy` command, a new `Site` in
+  Python (also the second one in the same notebook) or an Airflow task.
+  The folders are removed when the process ends: the command, the
+  notebook kernel or the Airflow worker. A run needs network access.
+- Each Airflow task is a run of its own, so the tasks of one DAG run read
+  the link again; they read other settings if the branch moved in
+  between.
+- `canvodpy doctor` names the link and the sha256 of the settings file.
+- The link is not recorded. Stores keep the settings, the run history
+  keeps the settings of each run, and both name a recipe URL by its file
+  name only.
+- A private repository needs a GitHub token in `GH_TOKEN` or
+  `GITHUB_TOKEN`, for example `export GH_TOKEN=$(gh auth token)`.
+- The folders of your machine (stores, auxiliary files, logs) go into an
+  overlay file with `--config`, so one settings file serves every machine.
+- `canvodpy config init` and `canvodpy config edit` write the settings
+  file, so they need a local folder; change settings from a link in their
+  repository.
 
-    `VAR=value` set on its own line (without `export`) only exists in your *current*
-    shell — it is never passed down to `canvodpy`, a separate process. The `\` above
-    is a line continuation: it keeps `VAR=value` and the command that follows as a
-    single shell statement. Do not press Enter after the `VAR=value` line and then
-    run the command separately — that sets a local variable and silently does
-    nothing.
+Settings come from these sources, the first one wins:
+overlay file, `canvod-settings.yaml`, package default. Write only the fields you want to change.
 
-    Two ways to avoid the trap:
+canVODpy rejects unknown field names. The error names the closest
+allowed field and lists all allowed fields; canVODpy never corrects a
+name by itself:
 
-    ```bash
-    # inline, one line, no backslash needed:
-    CANVOD__PROCESSING__PARAMS__DAYS_PER_BATCH=7 uv run canvodpy run --site mysite
-
-    # or export it once, then reuse it across multiple commands:
-    export CANVOD__PROCESSING__PARAMS__DAYS_PER_BATCH=7
-    just config-show   # confirms the override took effect
-    uv run canvodpy run --site mysite
-    ```
-
-Scalar values (strings, integers, booleans) are passed as-is. List values require JSON
-encoding:
-
-```bash
-CANVOD__PROCESSING__PARAMS__KEEP_GNSS_OBSERVABLES='["SNR","Pseudorange"]' \
-    uv run canvodpy run --site mysite
+```text
+processing.icechunk.chunk_strategies.vod_stores
+  Unknown key 'vod_stores'. Did you mean 'vod_store'? Allowed keys: gnss_store, vod_store
 ```
-
-Some examples, but really all configuration fields can be overwritten:
-
-| Variable                                                   | Overrides                                        |
-| ---------------------------------------------------------- | ------------------------------------------------ |
-| `CANVOD__PROCESSING__STORAGE__STORES_ROOT_DIR`             | `processing.storage.stores_root_dir`             |
-| `CANVOD__PROCESSING__CREDENTIALS__NASA_EARTHDATA_ACC_MAIL` | `processing.credentials.nasa_earthdata_acc_mail` |
-| `CANVOD__PROCESSING__PARAMS__N_MAX_THREADS`                | `processing.params.n_max_threads`                |
-
-Environment variables take priority over all other sources. To confirm the effective value,
-run `just config-show` — if `CANVOD__PROCESSING__PARAMS__N_MAX_THREADS=4` is set in the
-environment, the output will show `n_max_threads: 4` regardless of what the YAML file says.
 
 ---
 
 ## Minimal working example
 
-A complete, valid `canvod-settings.yaml` requires only a handful of fields — everything
-else is covered by package defaults:
+A `canvod-settings.yaml` that can create stores needs only these fields;
+the rest have defaults:
 
 ```yaml
 processing:
@@ -173,13 +159,20 @@ processing:
     author: Jane Scientist
     email: jane.scientist@example.edu
     institution: Example University
+    naming_authority: edu.example
+    publisher: Example University
+    license: CC-BY-4.0
 
   storage:
     stores_root_dir: /data/stores
 
+  logging:
+    log_dir: /data/logs
+
 sites:
   mysite:
     gnss_site_data_root: /data/mysite
+    store_description: GNSS-T observations below a beech canopy
 
     receivers:
       reference_01:
@@ -198,9 +191,143 @@ sites:
 
 ---
 
-## processing:
+## Content settings: fixed for each store
 
-Controls metadata, resource allocation, storage, and auxiliary data retrieval.
+Some settings shape the data a store holds: which signals are kept, how
+the files are read, the orbit product, the preprocessing, the chunk
+sizes and the compression. These are the store's **content settings**.
+The run that creates a store records them in it, and every later run that
+writes to the store must have the same ones, also a run on another
+computer. Data written with other content settings would sit next to the
+old data in one store without anything showing the difference.
+
+A run compares its settings with the store's twice: when it starts,
+before it reads a file, and again just before each commit, because
+another run may have created the store or written to it meanwhile. On a
+difference the run stops and lists each setting with the store's value
+and its own. You then have two options:
+
+- use the store's settings: `canvodpy config init --from-store <store>`
+  writes a settings file from them, or
+- write to a new store: set `processing.storage.gnss_store_name` to the
+  kind plus a suffix (for example `gnss-recompute`, see
+  [Store folders](../packages/store/overview.md#store-folders)), or set
+  another `stores_root_dir`.
+
+There is no option to write anyway. A store's content settings never
+change; to process with other settings, create a new store.
+
+| Content setting | Where |
+| --------------- | ----- |
+| The signals kept | `sids.mode`, `sids.preset`, `sids.custom_sids`, and the list of signals they give |
+| Observables and how they are stored | `processing.params.keep_gnss_observables`, `aggregate_glonass_fdma`, `store_radial_distance`, `store_delta_snr`, `store_radial_diff`, `store_sbf_raw_observables`, `store_sbf_metadata` |
+| How files are read and paired | `processing.params.rinex_v3_parser`, `file_pairing`, `receiver_position_mode`, `ephemeris_source` |
+| The orbit product | `processing.aux_data.agency`, `product_type`, `fetch_clock` |
+| Preprocessing | all of `processing.preprocessing`, statistics included |
+| Store layout | `processing.icechunk.compression_algorithm`, `compression_level`, `inline_chunk_threshold_bytes`, `manifest_splitting_enabled`, `manifest_splitting_epoch_range`, `chunk_strategies.gnss_store` |
+| Maintenance | all of `processing.storage.maintenance` |
+| Each receiver | `type`, `reader_format`, `paired_canopies` |
+
+A VOD store keeps its own content settings too. It has no SIDs, receivers
+or site entries of its own; it records the settings that shape the VOD
+output and the content-settings hash of the GNSS store it was computed
+from (`gnss_content_hash`), so a run that computes VOD from a GNSS store
+with other content settings stops.
+
+| VOD content setting | Where |
+| ------------------- | ----- |
+| The VOD output options | `processing.params.store_delta_snr`, `store_radial_diff` |
+| Store layout | `processing.icechunk.compression_algorithm`, `compression_level`, `inline_chunk_threshold_bytes`, `manifest_splitting_enabled`, `manifest_splitting_epoch_range`, `chunk_strategies.vod_store` |
+| Maintenance | all of `processing.storage.maintenance` |
+| Where the VOD came from | `gnss_content_hash` (the GNSS store's content-settings hash) |
+
+The calculator and its parameters are recorded per VOD group
+(`{calculator}/{analysis}`) when the group is first written, and every
+later write compares them: a group never holds results computed with
+other calculator parameters. On a difference the run stops and names each
+parameter with both values; use a new analysis name
+(`canvodpy store amend --add-vod-analysis`) or a new VOD store.
+
+Every other setting may differ from run to run: the resources
+(`resource_mode`, `n_max_threads`, memory), the
+Icechunk cache and concurrency settings, `aux_data.ftp_timeout_s`,
+logging, folders, credentials, the store strategies, `keeper_tags`,
+`netcdf_compression`, and a receiver's `directory`, `naming` and
+`recipe`. The metadata (`processing.metadata`, `processing.references`,
+descriptions, receiver hardware and antenna) is written into the store
+when it's created and changes only with `canvodpy store amend`.
+
+`canvodpy store info <site>` shows when and by whom a store's content
+settings were set, and their hash. In Python,
+`show_metadata(store_path, section="content")` from
+`canvod.store_metadata` lists them in full.
+A receiver added to a store with `canvodpy store amend --add-receiver`
+brings its own three content settings from the settings file.
+
+A store created before canVODpy kept content settings is refused by
+runs until it has them. `canvodpy store migrate-metadata <site>` takes
+them from the settings recorded in the store's first commit. A setting
+that commit doesn't record, such as the `paired_canopies` of a reference
+receiver, isn't guessed: the command stops, lists it, and you give the
+value the data was written with, for example
+`--set sites.mysite.receivers.reference_01.paired_canopies=[canopy_01]`.
+A setting the data show, such as `processing.preprocessing` or
+`store_delta_snr`, is read from the data, since canVODpy 0.x recorded
+settings its runs didn't follow
+([Move an older store](../packages/store-metadata/overview.md#move-an-older-store-to-the-current-form)).
+
+ADR 0019 records why ([Decisions](../adr/index.md)).
+
+---
+
+## Join or reproduce a store
+
+A store's content settings are what a second machine must match to write
+into that store. `canvodpy config init --from-store <store>` writes a
+settings file from them, which is how a fresh worker joins a store, and
+how anyone reproduces the processing of a store they can open (a published
+one, or a copy):
+
+```bash
+canvodpy config init --from-store /data/stores/fangorn/gnss
+canvodpy config init --from-store s3://my-bucket/fangorn/gnss
+```
+
+`<store>` is the store's directory, or its `s3://bucket/prefix` URL. The
+written file keeps:
+
+- the store's content settings, unchanged. They must stay as they are:
+  other settings mean a different store (see
+  [Content settings](#content-settings-fixed-for-each-store));
+- the site and its receivers as the store describes them (the site name,
+  description, coordinates, the store's description, and each receiver's
+  description, recipe and recorded data directory as the default);
+- `processing.storage.stores_root_dir` and `gnss_store_name`, taken from
+  the store argument: `<root>/<site>/<name>`;
+
+and writes `TODO` for the values the run owner fills in: the folders of
+their computer, which stores never record (`gnss_site_data_root`,
+`aux_data_dir`, `shared_aux_cache_dir`, `log_dir`), each receiver's
+`directory`, and `processing.metadata.author`, `email` and
+`institution`. Interactive (the default) asks for each and
+offers the store's recorded receiver directory as the default;
+`--no-interactive` keeps the `TODO` values.
+
+Credentials are never written. At the end the command prints the
+environment variables to set instead: the NASA Earthdata one for CDDIS,
+and the `AWS_*` ones for a store on S3. An existing settings file is not
+overwritten, also with `--force`.
+
+`canvodpy config validate` lists every `TODO` value with its dotted key
+and exits with code 1, so a settings file written this way is easy to
+finish. A store without content settings (created before canVODpy kept
+them) is refused, naming `canvodpy store migrate-metadata`.
+
+---
+
+## `processing:`
+
+Metadata, resources, storage, and ephemeris products.
 
 ```yaml
 processing:
@@ -208,43 +335,46 @@ processing:
     author: Your Name
     email: your.email@example.com
     institution: Your Institution
+    naming_authority: org.example  # your domain in reverse; required to create a store
+    publisher: Example University  # required to create a store
+    license: CC-BY-4.0  # SPDX identifier, or "other"; required to create a store
+    initials: JD  # who set a new store's content settings or changed its metadata; required to amend or migrate
     # optional: orcid, institution_ror, department, research_group,
-    # website, license, publisher, publisher_url, naming_authority
+    # website, publisher_url, license_uri (required when license is "other")
 
   credentials:
-    nasa_earthdata_acc_mail: null  # prefer the env var — see table above
+    nasa_earthdata_acc_mail: null
 
   aux_data:
     agency: COD          # SP3/CLK analysis center code
-    product_type: final  # final, rapid, or ultra-rapid
-    # fetch_clock: true  # set false to skip CLK download/interpolation — unused by VOD
+    product_type: final  # final or rapid; the agency must publish it
+    # fetch_clock: false # true adds the CLK files; VOD does not use them
 
   params:
     keep_gnss_observables: [SNR]   # observables to keep (SNR, Pseudorange, Phase, Doppler)
+    rinex_v3_parser: validated     # 'unvalidated_fast' is DANGEROUS: no checks, your responsibility
     store_radial_distance: false   # store satellite distance (r)
     receiver_position_mode: shared # or per_receiver
     file_pairing: complete         # or paired
     ephemeris_source: final        # or broadcast (SBF only)
-    days_per_batch: 1              # calendar days per processing wave (1–30)
 
     # --- Resource management ---
     resource_mode: auto            # auto or manual
     # n_max_threads: 4             # required if manual
-    # max_memory_gb: 16            # soft RAM limit (manual only)
-    # cpu_affinity: [0, 1, 2, 3]  # pin to CPU cores (Linux)
-    # nice_priority: 10            # 0=normal, 19=lowest priority
+    # cpu_affinity: [0, 1, 2, 3]  # CPU cores (manual only; not on macOS)
+    # nice_priority: 10            # manual only; 0=normal, 19=lowest priority
 
-  preprocessing:
-    temporal_aggregation:
-      enabled: true
-      freq: "1min"                 # target time resolution
-      method: mean                 # mean or median
-    grid_assignment:
-      enabled: true
-      grid_type: equal_area
-      angular_resolution: 2.0     # degrees
+  # Optional; nothing is applied unless set (see Preprocessing)
+  # preprocessing:
+  #   temporal_aggregation:
+  #     freq: "1min"               # divides one day
+  #     method: median             # mean or median (floating-point variables)
+  #     integer_method: first      # first, last or middle (integer flags)
+  #   grid_assignment:
+  #     grid_type: equal_area
+  #     angular_resolution: 2.0    # degrees
 
-  netcdf_compression:              # NetCDF output from RINEX readers
+  netcdf_compression:              # NetCDF files written by the RINEX readers
     zlib: true
     complevel: 5
 
@@ -253,74 +383,87 @@ processing:
     compression_algorithm: zstd
     inline_chunk_threshold_bytes: 512
     chunk_strategies:
-      rinex_store:
-        epoch: 17280  # 24h at 5s sampling; override to match your site's rate
+      gnss_store:
+        epoch: 180    # epochs per file (15 min at 5 s sampling)
         sid: -1
       vod_store:
-        epoch: 17280
+        epoch: 180    # as gnss_store
         sid: -1
 
   storage:
-    stores_root_dir: /path/to/stores  # prefer CANVOD__PROCESSING__STORAGE__STORES_ROOT_DIR
-    gnss_store_strategy: skip         # skip, overwrite, or unsafe_append -- see warning below
-    vod_store_strategy: overwrite
+    stores_root_dir: /path/to/stores
+    gnss_store_strategy: skip         # skip, overwrite, or unsafe_append; see the warning below
+
+  logging:
+    log_dir: /path/to/logs            # required for a run
 ```
 
 ### Key fields
 
 | Field                           | Values                   | Description                                                                                                                                                                              |
 | ------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `params.keep_gnss_observables`  | list                     | GNSS observables to retain (default `[SNR]`).                                                                                                                                            |
+| `params.keep_gnss_observables`  | list                     | GNSS observables to retain (default `[SNR]`). With the `validated` parser, only the fields of these observables are read and checked, so a malformed field of a left-out observable doesn't drop its epoch. |
+| `params.rinex_v3_parser`        | `validated`, `unvalidated_fast` | How RINEX v3 files are parsed. `validated` (default) checks every epoch and drops (and logs) epochs that fail. `unvalidated_fast` is **dangerous**: no checks, corrupted records can enter the store, and the results are entirely your responsibility; every use emits an `UnvalidatedParserWarning`. Both give the identical dataset for a valid file. |
 | `params.receiver_position_mode` | `shared`, `per_receiver` | `shared` uses canopy receiver position for all receivers (enables 1:1 SNR comparison). `per_receiver` uses each receiver's own position.                                                 |
 | `params.file_pairing`           | `complete`, `paired`     | `complete` ingests all files per receiver independently. `paired` only processes dates where both receivers have data.                                                                   |
-| `params.ephemeris_source`       | `final`, `broadcast`     | `final` computes satellite positions from agency SP3/CLK products. `broadcast` uses ephemerides from SBF SatVisibility blocks (SBF only, no SP3/CLK download, faster but less accurate). |
-| `aux_data.fetch_clock`          | `true`, `false`          | Whether to download and interpolate CLK clock-correction files alongside SP3 (only applies to `ephemeris_source: final`). Default `true`. VOD doesn't consume clock data — disable to save downloads/parsing/interpolation time. |
-| `params.days_per_batch`         | 1–30                     | Calendar days pooled per parallel processing wave.                                                                                                                                       |
-| `params.resource_mode`          | `auto`, `manual`         | `auto` detects available CPU cores and leaves two free for the operating system. `manual` enforces explicit limits (`n_max_threads` is then required) — use this on shared servers.      |
+| `params.ephemeris_source`       | `final`, `broadcast`     | `final` computes satellite positions from agency SP3/CLK products. `broadcast` uses the satellite angles the receiver computed from the broadcast ephemeris (SBF SatVisibility blocks; almanac-based angles are not used; SBF only, no SP3/CLK download, faster but less accurate). |
+| `aux_data.fetch_clock`          | `true`, `false`          | Whether to download and interpolate CLK clock-correction files alongside SP3 (only applies to `ephemeris_source: final`). Default `false`: VOD does not use clock data. `true` adds each satellite's clock correction to the GNSS store as the variable `clock`. |
+| `params.days_per_batch`         | 1–30                     | Deprecated, removed in v2.0.0; prints a `FutureWarning`. Only caps the days per unit, which the run sizes from the memory budget ([Parallel processing](parallel-processing.md)). Leave it out. |
+| `params.resource_mode`          | `auto`, `manual`         | `auto` starts one worker per physical CPU core and leaves at least two CPU threads free for the operating system. `manual` uses the limits you set (`n_max_threads` is then required); use it on shared servers.      |
 | `params.store_radial_distance`  | `true`, `false`          | Whether to store satellite radial distance in the output.                                                                                                                                |
+| `params.store_sbf_raw_observables` | `true`, `false`       | SBF only: add the pre-correction observables (`SNR_raw`, `Pseudorange_unsmoothed`, `Pseudorange_raw`, `Phase_raw`) to the observations. Default `true`. |
+| `params.store_sbf_metadata`     | `true`, `false`          | SBF only: store the per-file metadata dataset `sbf_obs` (SatVisibility geometry, MeasExtra, PVT, DOP, receiver status) under `{group}/metadata/sbf_obs`, in the same commit as the observations. Default `true`. |
+| `storage.stores_root_dir`       | folder or S3 URL         | Where the stores are, one folder per site: a local folder, or `s3://bucket/prefix` to write the stores on S3, experimental ([Stores on S3](s3.md)). Credentials, region and endpoint of S3 come only from the environment. Other URLs are refused. |
 | `storage.gnss_store_strategy`   | `skip`, `overwrite`, `unsafe_append` | What to do when a file already exists in the store. `skip` (default) is the normal case. See warning below before ever using `unsafe_append`.                              |
+| `logging.log_dir`               | folder                   | Folder of the log files. Required: a run stops if it is not set. [Diagnostics](diagnostics.md) describes the files. |
 
-For a full explanation of how `resource_mode`, `days_per_batch`, and `n_max_threads` interact
-with the parallel processing architecture, see
-[Parallel Processing](parallel-processing.md).
+[Parallel processing](parallel-processing.md) explains `resource_mode`,
+`n_max_threads`, `max_memory_gb` and the other resource settings.
 
-!!! warning "`gnss_store_strategy: unsafe_append` can corrupt unguarded reads"
-    `skip` (the default) is a no-op when a file already exists — the correct behavior for
-    the normal workflow of chronologically filling an initially-empty store, where a
-    re-run over already-ingested files should change nothing. `overwrite` deletes the old
-    epochs for a file's range before writing the replacement — use it after a *pipeline*
-    bug fix (reader logic, ephemeris source) when you need to regenerate previously-stored
-    results, not because the raw GNSS file itself changed.
+!!! warning "`gnss_store_strategy: unsafe_append` writes duplicate epochs"
 
-    `unsafe_append` writes the file's data again on top of what's already there, with **no
-    epoch-level uniqueness check**, producing duplicate `epoch` coordinate values in the
-    Zarr array. The two built-in pipeline read paths already guard against this:
-    `GnssResearchSite.read_receiver_data()` routes through `read_group_deduplicated()`
-    whenever this strategy is set, and `VodComputer.compute_bulk()` unconditionally
-    deduplicates every read via `_dedup_sort()` regardless of strategy. But
-    `MyIcechunkStore.read_group()` itself — the low-level API used directly by custom
-    scripts/notebooks, and by the deprecated L1 `Pipeline.calculate_vod()` — has no such
-    guard: `.sel()` on a duplicated label can raise or silently return multiple matches,
-    and aligning two datasets that both carry the duplicate (e.g. canopy vs. reference)
-    produces a cartesian product at those epochs. The duplication is also physical, not
-    just a read-time artifact: Icechunk stores the extra chunks permanently regardless of
-    whether the read side protects against it. Avoid `unsafe_append` unless you have a
-    specific reason, and be aware any read path outside the two guarded ones above is
-    unprotected.
+    `skip`, the default, leaves a file that is already in the store
+    alone, so a second run over the same files changes no data; the
+    log book gets a row per file it saw, with `action` set to `skipped`. A run
+    finds the days whose files are all stored by the files' hashes,
+    before it downloads auxiliary data or reads a file, writes their
+    rows in one commit and passes the days on to the VOD phase, which
+    computes only VOD that is missing.
+    `overwrite` deletes the stored epochs of the file's time span and
+    writes the file again. Use it after a fix in canVODpy, such as in a
+    reader, to recompute stored data. The VOD of those days stays as it
+    was: the rewritten files are the same files, so their VOD results
+    are skipped. For VOD of the recomputed data, write it to a new VOD
+    store (set `storage.vod_store_name` to another name, such as `vod-recompute`).
+
+    `unsafe_append` writes the file again on top of the stored data,
+    without checking for epochs that are already there. The store then
+    holds each of these epochs twice, and the extra chunks stay in the
+    store. The pipeline and `Site.vod.compute_bulk(..., write=False)` remove the duplicates when they
+    read; `MyIcechunkStore.read_group()` does not. On duplicated epochs,
+    `.sel()` can fail or return several matches, and aligning canopy and
+    reference data multiplies the rows. Don't use `unsafe_append` unless
+    you need it.
 
 ### Ephemeris data sources
 
-Agency SP3/CLK products are downloaded from **ESA GSSC** by default — no account or
-credentials are required. Setting `credentials.nasa_earthdata_acc_mail` to a registered
-NASA Earthdata email address enables **NASA CDDIS** as a primary source, with ESA GSSC
-as fallback.
+canVODpy downloads SP3 and CLK products from **ESA GSSC**, which needs
+no account. If you set `credentials.nasa_earthdata_acc_mail` to the email
+address of a (free) NASA Earthdata account, canVODpy downloads from
+**NASA CDDIS** first and falls back to ESA GSSC when that download fails.
+
+`aux_data.agency` and `aux_data.product_type` must name a product of the
+[product registry](../packages/auxiliary/products.md), which also lists the
+GNSS each product covers; a run and `canvodpy config validate` stop on any
+other combination and name the closest products. Ultra-rapid products are
+not supported.
 
 ---
 
-## sites:
+## `sites:`
 
-Defines research sites, their receivers, and VOD analysis pairs.
-Each top-level key under `sites:` is a site name — there is no additional `sites:` nesting.
+Your sites, their receivers, and the receiver pairs to compute VOD for.
+Each key under `sites:` is the name of a site.
 
 ```yaml
 sites:
@@ -330,13 +473,13 @@ sites:
     country: null            # ISO 3166-1 alpha-2, e.g. AT
     latitude: null           # WGS84 decimal degrees
     longitude: null
-    altitude_m: null         # metres above WGS84 ellipsoid
+    altitude_m: null         # meters above WGS84 ellipsoid
 
     receivers:
       reference_01:
         type: reference
         directory: 01_reference
-        reader_format: auto           # rinex3, sbf, or auto
+        reader_format: auto           # auto, rinex3, rinex3_stripped, rinex2, sbf, nmea, or a reader plugin
         paired_canopies: all          # 'all' or list of canopy receiver names
       canopy_01:
         type: canopy
@@ -355,28 +498,47 @@ sites:
 | ----------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `type`            | --      | `reference` or `canopy`.                                                                                                                                                                                                                           |
 | `directory`       | --      | Subdirectory under `gnss_site_data_root` holding this receiver's files.                                                                                                                                                                            |
-| `reader_format`   | `auto`  | Force a specific reader: `rinex3`, `sbf`, or `auto` (detect from file).                                                                                                                                                                            |
-| `paired_canopies` | --      | Which canopy receivers this reference is paired with: `all` or a list of canopy receiver names. Required for reference receivers, must not be set for canopy receivers. (The old name `scs_from` is deprecated and still accepted with a warning.) |
+| `reader_format`   | `auto`  | Reader for the receiver's files: `rinex3`, `rinex3_stripped` (signal strengths only, faster), `rinex2`, `sbf`, `nmea`, or the name of an installed reader plugin ([Your Own Readers and VOD Calculators](plugins.md)). `auto` detects it per day, never choosing a plugin: SBF and NMEA by file type, and the RINEX version from the header. A day whose files need different readers stops the run with an error; then set the reader, or keep each format in its own directory. A canopy receiver and its reference must record the same file format (`rinex3` and `rinex3_stripped` both read RINEX 3); mixed formats are rejected when the settings load, or, with `auto`, by `canvodpy config validate` and at the start of a run. |
+| `paired_canopies` | --      | Which canopy receivers this reference is paired with: `all` or a list of canopy receiver names. Required for reference receivers, must not be set for canopy receivers. |
+| `receiver_hardware` | --    | Optional: `manufacturer`, `model`, `serial_number` and `firmware` of the receiver. Copied into the GNSS store's metadata when the store is created or the receiver is added to it. |
+| `antenna`         | --      | Optional: `manufacturer`, `model` and `radome` (IGS names), `serial_number`, `height_m` (meters), `choke_ring` (`true` or `false`) and `polarization` (`RHCP`, the standard, `LHCP` or `dual-pol`) of the antenna. Copied into the GNSS store's metadata like `receiver_hardware`. |
+
+Leave out the receiver and antenna details you don't want to disclose; every
+field in them is optional.
 
 ---
 
-## sids:
+## `sids:`
 
-Controls which satellite signal IDs (SIDs) are retained during processing.
-Three modes are available:
+The signals (signal IDs, SIDs) to keep. There are three modes:
 
-| Mode     | Behaviour                                          |
+| Mode     | Behavior                                           |
 | -------- | -------------------------------------------------- |
-| `all`    | Keep every SID observed in the file — no filtering |
+| `all`    | Keep every SID in the file                         |
 | `preset` | Use a named built-in list (see below)              |
 | `custom` | Keep only the SIDs you list explicitly             |
 
 === "Default preset"
 
-    The package ships one built-in preset: `default` — a curated 277-SID
-    multi-GNSS list covering MEO satellites only (GPS + Galileo + BeiDou MEO +
-    GLONASS). GEO, IGSO, augmentation signals (SBAS/IRNSS/QZSS), and GPS L2W are
-    excluded because they are not useful for canopy transmissometry.
+    canVODpy has one preset, `default`: 271 SIDs of MEO satellites of GPS,
+    Galileo, BeiDou, and GLONASS. It leaves out:
+
+    - GEO satellites, which stand still in the sky, and IGSO satellites,
+      which cover only a narrow track;
+    - SBAS, IRNSS, and QZSS;
+    - GPS L2W: semi-codeless tracking gives a less precise SNR and higher,
+      more variable VOD (Bader et al., 2026, *Remote Sensing of
+      Environment* 345, 115580).
+
+    The list names PRNs, and PRNs are reassigned to other satellites over
+    time. BeiDou C13 and C16 are left out: both were IGSO satellites until
+    2026-04-18 (IGS satellite metadata), and C13 is a MEO satellite from
+    2026-04-19 on. For data from 2026-04-19 on, add the C13 SIDs with
+    `mode: custom` if you want them. `SatelliteCatalog` shows which satellite
+    held a PRN on a given day ([Satellite Catalog](../packages/readers/satellite-catalog.md)).
+    All are RINEX 3 signals. RINEX 2 band-only SIDs (e.g. `L1|u`) are not
+    included and must be selected explicitly, see
+    [RINEX v2.11 Parsing](../packages/readers/rinex-v2-format.md#default-sid-preset).
 
     ```yaml
     sids:
@@ -384,7 +546,7 @@ Three modes are available:
       preset: default
     ```
 
-    This is the **package default**. Use `mode: all` to opt out and keep every observed SID.
+    This is the default. To keep every SID, use `mode: all`.
 
 === "All signals"
 
@@ -403,78 +565,44 @@ Three modes are available:
         - "E01|E1|C"
     ```
 
-The `default` preset is reviewed and updated at every release to reflect satellite launches,
-decommissions, and orbit reclassifications. See the [release procedure](../../RELEASING.md)
-for details.
-
 ---
 
-## Validating configuration and data
+## Check the settings and the data
 
-Validation runs in two distinct steps — one for the configuration file, one for the data
-directories it references.
-
-**Config validation** runs `canvod-settings.yaml` through the Pydantic models and reports
-field errors (wrong types, missing required values, unknown keys), then checks that each
-receiver directory exists and contains data files:
-
-```bash
-just config-validate
-```
-
-**Data directory validation** checks the file names inside a receiver directory against
-the canVOD naming convention before any data is read:
+`canvodpy config validate` checks the settings file (types, required
+values, unknown fields), then finds the files of each receiver exactly
+as `canvodpy run` does. It reports the days and files a run would
+process, the files it would skip, and the problems that would stop it,
+for example two files that cover the same time. A first run, and
+`config validate`, refuse to start when a setting the new store needs is
+missing (its description, publisher, license or naming authority). To
+check one site:
 
 ```bash
-canvod-preflight validate /data/examplesite/02_canopy \
-    --site ROS --agency TUW --receiver 1 --role canopy
+canvodpy config validate --site <site>
 ```
-
-For a site already defined in `canvod-settings.yaml`: `just config-check-data <site>`.
 
 ---
 
 ## Optional: non-canonical filenames
 
-!!! warning "This deviates from the community-agreed GNSS-T file naming convention"
-    The standard pipeline expects every GNSS data file to follow the
-    [community-agreed  filename convention](../packages/naming/overview.md),
-    which is enforced by `canvod-preflight` before any data is read.
-
-    If your receiver outputs files in a proprietary or legacy format —
-    Septentrio SBF with firmware-generated names, RINEX v2 short names,
-    or a custom directory layout — the optional
-    [`canvod-filemap`](https://github.com/nfb2021/canvodpy-extensions) package
-    provides a recipe-based mapping layer that translates physical filenames to
-    canonical names **without renaming anything on disk**.
-
-    Recipes are an escape hatch for non-conforming data, not the intended workflow.
-    Where possible, rename files to the canonical convention using `gfzrnx` as a
-    one-time per-site step.
-
-Install separately from the [canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions)
-repository (see [Optional Extensions](extensions.md) for details and alternatives):
-
-```bash
-uv add "canvod-filemap @ git+https://github.com/nfb2021/canvodpy-extensions.git@v0.1.0#subdirectory=packages/canvod-filemap"
-```
-
-Reference a recipe from `canvod-settings.yaml` on the receiver whose files use non-canonical names:
+A run processes only files that follow the
+[file naming convention](../packages/naming/overview.md). For a receiver
+whose files have other names, set a naming recipe:
 
 ```yaml
 sites:
   my_site:
     receivers:
       reference_01:
-        recipe: my_site_reference   # → config/recipes/my_site_reference.yaml
+        recipe: my_site_reference
 ```
 
-`just config-init` copies recipe templates into `config/recipes/` alongside
-`canvod-settings.yaml`. The full recipe format and API are documented in the
-[canvod-filemap repository](https://github.com/nfb2021/canvodpy-extensions).
+The recipe is read from `<config dir>/recipes/<site>/<recipe>.yaml` and gives
+each file a canonical name without renaming it on disk. Naming recipes need an
+optional extension; see [Optional extensions](extensions.md). Where you can,
+rename the files to the convention instead.
 
----
-
-!!! example "Try it"
-    [02 · Configuration](../notebooks/_build/02_configuration.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/02_configuration.py)
+A recipe can also be read from a raw GitHub link, so that every machine
+uses the same recipe from one repository; see
+[Files that don't follow the convention](../packages/naming/overview.md#files-that-dont-follow-the-convention).

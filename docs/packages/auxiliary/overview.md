@@ -2,11 +2,11 @@
 
 ## Purpose
 
-The `canvod-auxiliary` package provides auxiliary data management for [GNSS Transmissometry](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"} (GNSS-T) analysis. It handles downloading, parsing, preprocessing, and interpolating [SP3 ephemerides](https://gssc.esa.int/navipedia/index.php/SP3){:target="_blank"} to augment RINEX observation data with precise satellite positions. By default it also fetches CLK [clock corrections](https://gssc.esa.int/navipedia/index.php/Precise_Satellite_Clocks){:target="_blank"}, though these are unused by the VOD formula and can be skipped via `aux_data.fetch_clock: false`.
+The `canvod-auxiliary` package provides auxiliary data management for [GNSS Transmissometry](https://gssc.esa.int/navipedia/index.php/GNSS){:target="_blank"} (GNSS-T) analysis. It handles downloading, parsing, preprocessing, and interpolating [SP3 ephemerides](https://igs.org/formats-and-standards/){:target="_blank"} to augment RINEX observation data with precise satellite positions. It can also fetch CLK [clock corrections](https://gssc.esa.int/navipedia/index.php/Precise_GNSS_Satellite_Coordinates_Computation){:target="_blank"} with `aux_data.fetch_clock: true`; the VOD formula doesn't use them, so they are off by default.
 
 ---
 
-## The Dimension Alignment Problem
+## The dimension alignment problem
 
 GNSS-T analysis requires combining two data sources with fundamentally different indexing:
 
@@ -23,15 +23,15 @@ GNSS-T analysis requires combining two data sources with fundamentally different
     - Low temporal resolution: 5–15 min
     - Satellite-level indexing by SV: `"G01"`
     - Dimensions: `(epoch: 96, sv: 32)`
-    - CLK is optional (`aux_data.fetch_clock`, default `true`) — SP3 is always required
+    - CLK is optional (`aux_data.fetch_clock`, default `false`); SP3 is always required
 
 </div>
 
 Combining these requires:
 
-1. **Dimension conversion** — sv (32 satellites) → sid (384 signal IDs)
-2. **Temporal interpolation** — 15 min → 30 s sampling
-3. **Coordinate transform** — ECEF → geodetic → spherical (r, θ, φ)
+1. **Dimension conversion** from `sv` (32 satellites) to `sid` (384 signal IDs)
+2. **Temporal interpolation** from 15 min to the observations' sampling interval, on a grid from 00:00
+3. **Coordinate transform** from ECEF to geodetic to spherical $(r, \theta, \varphi)$
 4. **Physically correct interpolation** per data type
 
 ```mermaid
@@ -50,26 +50,26 @@ graph TD
 
 ---
 
-## Interpolation Strategies
+## Interpolation strategies
 
 Different data types require different methods based on the underlying physics:
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-circle-nodes: &nbsp; **SP3 — Hermite Cubic Splines**
+-   :fontawesome-solid-circle-nodes: &nbsp; **SP3 (Hermite cubic splines)**
 
     ---
 
     Satellite orbital motion is smooth and predictable.
     Hermite splines exploit available velocity data for C1-continuity
-    and sub-millimetre interpolation accuracy.
+    and sub-millimeter interpolation accuracy.
 
     ```python
     config = Sp3Config(use_velocities=True, fallback="linear")
     strategy = Sp3InterpolationStrategy(config=config)
     ```
 
--   :fontawesome-solid-clock: &nbsp; **CLK — Piecewise Linear**
+-   :fontawesome-solid-clock: &nbsp; **CLK (piecewise linear)**
 
     ---
 
@@ -86,7 +86,7 @@ Different data types require different methods based on the underlying physics:
 
 ---
 
-## Key Components
+## Key components
 
 <div class="grid cards" markdown>
 
@@ -94,18 +94,18 @@ Different data types require different methods based on the underlying physics:
 
     ---
 
-    `Sp3File` — SP3a/c/d format: positions (X, Y, Z) + velocities (VX, VY, VZ)
+    `Sp3File` reads SP3a/c/d files: positions (X, Y, Z) and velocities (VX, VY, VZ)
 
-    `ClkFile` — RINEX clock format: satellite clock biases
+    `ClkFile` reads RINEX clock files: satellite clock biases
 
-    `ProductSpec` — Declarative config for URLs, latency, and auth
+    `ProductSpec` describes a product: its URLs, latency, and authentication
 
 -   :fontawesome-solid-arrows-rotate: &nbsp; **Preprocessing**
 
     ---
 
-    `prep_aux_ds()` — Full 4-step pipeline: sv→sid mapping, pad to global SID,
-    normalise dtype, strip `_FillValue`
+    `prep_aux_ds()` runs four steps: map `sv` to `sid`, pad to the global SIDs,
+    normalize the dtype, strip `_FillValue`
 
     ```python
     sp3_sid = prep_aux_ds(sp3_raw)
@@ -116,19 +116,19 @@ Different data types require different methods based on the underlying physics:
 
     ---
 
-    `ECEFPosition` — [Earth-Centred Earth-Fixed](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"} (X, Y, Z)
+    `ECEFPosition` holds [Earth-Centered Earth-Fixed](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"} (X, Y, Z)
 
-    `GeodeticPosition` — [WGS84](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"} latitude, longitude, altitude
+    `GeodeticPosition` holds [WGS84](https://gssc.esa.int/navipedia/index.php/Reference_Frames_in_GNSS){:target="_blank"} latitude, longitude, and altitude
 
-    [Spherical coordinates](https://gssc.esa.int/navipedia/index.php/Satellite_Elevation,_Azimuth_and_Visible_Satellites){:target="_blank"} (r, θ, φ) relative to receiver position
+    [Spherical coordinates](https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates){:target="_blank"} $(r, \theta, \varphi)$ relative to receiver position
 
 -   :fontawesome-solid-cloud-arrow-down: &nbsp; **FTP Download**
 
     ---
 
-    Primary: ESA/CODE FTP server
+    Without a NASA Earthdata account, from ESA GSSC only
 
-    Fallback: NASA CDDIS (requires Earthdata account)
+    With one, from NASA CDDIS first and from ESA GSSC if that fails
 
     Per-DOY caching prevents redundant downloads
 
@@ -138,38 +138,31 @@ Different data types require different methods based on the underlying physics:
 
 ## Usage
 
-=== "Full RINEX augmentation"
+=== "Add satellite geometry to a dataset"
+
+    In a run, an ephemeris provider does every step below; use it the same
+    way in your own code:
 
     ```python
-    from canvod.auxiliary import (
-        Sp3File, prep_aux_ds,
-        Sp3InterpolationStrategy, Sp3Config,
-        compute_spherical_coordinates, ECEFPosition,
-        add_spherical_coords_to_dataset,
-    )
+    from canvod.auxiliary import ECEFPosition
+    from canvod.auxiliary.ephemeris.provider import AgencyEphemerisProvider
+    from canvod.config import load_config
+    from canvod.readers import Rnxv3Obs
 
-    rinex_ds = Rnxv3Obs("station.25o").to_ds()
-    target_epochs = rinex_ds.epoch.values
+    site_config = load_config().sites.sites["ExampleSite"]
+    ds = Rnxv3Obs(fpath="ROSA01TUW_R_20250010000_01D_05S_AA.rnx").to_ds()
 
-    # Download and parse
-    sp3_raw = Sp3File.from_url(date, "CODE", "final").to_dataset()
-
-    # Preprocess: sv → sid
-    sp3_sid = prep_aux_ds(sp3_raw)
-
-    # Interpolate to obs epochs
-    interp = Sp3InterpolationStrategy(config=Sp3Config(use_velocities=True))
-    sp3_at_obs = interp.interpolate(sp3_sid, target_epochs)
-
-    # Compute geometry
-    rx_pos = ECEFPosition.from_ds_metadata(rinex_ds)
-    r, theta, phi = compute_spherical_coordinates(
-        sp3_at_obs["X"], sp3_at_obs["Y"], sp3_at_obs["Z"], rx_pos
-    )
-
-    # Augment dataset
-    augmented = add_spherical_coords_to_dataset(rinex_ds, r, theta, phi)
+    provider = AgencyEphemerisProvider(agency="COD", product_type="final", fetch_clock=True)
+    provider.preprocess_day("2025001", site_config)  # download and read SP3 (and CLK)
+    augmented = provider.augment_dataset(ds, ECEFPosition.from_ds_metadata(ds))
+    # augmented has theta and phi (radians) on (epoch, sid)
     ```
+
+    `augment_dataset` interpolates the day once onto the epoch grid (00:00 plus
+    multiples of the dataset's sampling interval,
+    `canvod.auxiliary.interpolation.day_grid`), caches it, gives each observation
+    the nearest grid epoch and converts ECEF positions to $\theta$, $\varphi$ relative to the
+    receiver position from the data.
 
 === "Data flow"
 
@@ -181,14 +174,14 @@ Different data types require different methods based on the underlying physics:
         participant Interpolator
         participant Coordinates
 
-        User->>Sp3File: from_url(date, agency, product_type)
+        User->>Sp3File: Sp3File(date, agency, product_type, ...)
         Sp3File->>Sp3File: FTP download + parse
         Sp3File-->>User: to_dataset() {epoch: 96, sv: 32}
 
         User->>Preprocessor: prep_aux_ds(sp3_raw)
         Preprocessor-->>User: {epoch: 96, sid: 384}
 
-        User->>Interpolator: interpolate(sp3_sid, target_epochs)
+        User->>Interpolator: interpolate onto the day's epoch grid
         Interpolator->>Interpolator: Hermite splines
         Interpolator-->>User: {epoch: 2880, sid: 384}
 

@@ -1,8 +1,6 @@
 """Position representations for GNSS data processing.
 
 Provides classes for ECEF and geodetic position handling.
-
-Migrated and simplified from gnssvodpy.position
 """
 
 import math
@@ -45,7 +43,7 @@ class ECEFPosition(BaseModel):
     ------
     pydantic.ValidationError
         If any component is non-finite (NaN/inf), or the position is
-        exactly (0, 0, 0) -- Earth's centre, never a physically valid ECEF
+        exactly (0, 0, 0) -- Earth's center, never a physically valid ECEF
         point for anything this codebase computes geometry relative to.
         This is deliberately a *general* sanity check (applies to satellite
         positions too, not just receivers) -- see ``from_ds_metadata()`` for
@@ -75,7 +73,7 @@ class ECEFPosition(BaseModel):
                 raise ValueError(f"ECEF {_name} must be finite, got {_v!r}")
         if self.x == 0.0 and self.y == 0.0 and self.z == 0.0:
             raise ValueError(
-                "ECEF position is exactly (0, 0, 0) -- Earth's centre, not "
+                "ECEF position is exactly (0, 0, 0) -- Earth's center, not "
                 "a physically valid point. This usually means an upstream "
                 "parser defaulted to a placeholder instead of a real "
                 "position (e.g. a RINEX header's APPROX POSITION XYZ was "
@@ -155,9 +153,12 @@ class ECEFPosition(BaseModel):
             y = sanitize(pos_parts[1])
             z = sanitize(pos_parts[2])
         else:
+            source = ds.attrs.get("Position Source")
             raise KeyError(
                 "Position not found in dataset attributes. "
-                "Expected 'APPROX POSITION X/Y/Z' or 'Approximate Position'"
+                "Expected 'APPROX POSITION X/Y/Z' or 'Approximate Position' "
+                "(from the RINEX header, the SBF PVT block or the NMEA GGA "
+                "fixes)" + (f"; position source: {source}" if source else "")
             )
 
         pos = cls(x=x, y=y, z=z)

@@ -419,7 +419,7 @@ class SatelliteCatalog:
                 "satellite_catalog_download_failed",
                 url=url,
                 error=str(exc),
-                hint="Working offline? No problem — stale or bundled copy will be used.",
+                hint="Working offline? No problem; stale or bundled copy will be used.",
             )
             return None
 
@@ -725,7 +725,10 @@ class SatelliteCatalog:
         Parameters
         ----------
         ds : xarray.Dataset
-            Dataset with a ``sid`` dimension containing PRN codes.
+            Dataset with a ``sid`` dimension and an ``sv`` coordinate
+            containing bare PRN codes (e.g. ``"G01"``), as produced by every
+            ``canvod-readers`` reader. ``sid`` itself is the compound
+            ``"{sv}|{band}|{code}"`` form and is never matched directly.
         on_date : date, optional
             Date for resolving time-varying fields.  If not provided,
             inferred from the first epoch in the dataset.
@@ -746,7 +749,7 @@ class SatelliteCatalog:
                 msg = "Cannot infer date from empty dataset; provide on_date."
                 raise ValueError(msg)
 
-        sids = list(ds.sid.values)
+        svs = list(ds.sv.values)
         svn_arr = []
         block_arr = []
         tx_power_arr = []
@@ -754,7 +757,7 @@ class SatelliteCatalog:
         plane_arr = []
         slot_arr = []
 
-        for prn in sids:
+        for prn in svs:
             meta = self.get_prn_metadata(str(prn), on_date)
             if meta:
                 svn_arr.append(meta["svn"])
@@ -783,11 +786,12 @@ class SatelliteCatalog:
         )
 
         n_enriched = sum(1 for s in svn_arr if s)
-        _log.info(
+        log_fn = _log.warning if svs and n_enriched == 0 else _log.info
+        log_fn(
             "dataset_enriched_with_catalog",
-            total_sids=len(sids),
+            total_sids=len(svs),
             enriched=n_enriched,
-            missing=len(sids) - n_enriched,
+            missing=len(svs) - n_enriched,
         )
         return ds
 

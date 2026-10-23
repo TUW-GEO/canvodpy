@@ -1,40 +1,57 @@
 [project]
 name = "canvod-viz"
 version = "0.4.0"
-description = "Basic visualization tools for GNSS-Transmissometry VOD data"
+description = "2D and 3D hemispheric plots of GNSS-T observations and VOD"
 readme = "README.md"
+requires-python = ">=3.14"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]
 maintainers = [
     {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
 ]
-requires-python = ">=3.14"
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.14",
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "VOD",
+    "visualization",
+    "hemispheric plot",
+    "sky plot",
+    "remote sensing",
 ]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+]
+
 dependencies = [
     "matplotlib>=3.8.0",
     "plotly>=5.18.0",
     "numpy>=1.26.0",
-    "canvod-grids>=0.1.0",
+    "canvod-grids>=1.0.0,<2",
 ]
+
+[project.optional-dependencies]
+# Interactive hemisphere selectors (canvod.viz.widgets)
+widgets = ["anywidget>=0.11.0"]
 
 [tool.uv.sources]
 canvod-grids = { workspace = true }
 
 [project.urls]
-Homepage = "https://github.com/nfb2021/canvodpy"
+Homepage = "https://github.com/TUW-GEO/canvodpy"
 Documentation = "https://canvodpy.eu/packages/viz/overview/"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues = "https://github.com/nfb2021/canvodpy/issues"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues = "https://github.com/TUW-GEO/canvodpy/issues"
 
 [build-system]
-requires = ["uv_build>=0.9.17,<0.10.0"]
+requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.ty.src]

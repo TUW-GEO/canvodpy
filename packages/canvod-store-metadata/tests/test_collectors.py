@@ -1,18 +1,34 @@
 """Test runtime collectors."""
 
+import hashlib
+import platform
+import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+from canvod.utils import testing
+
+from canvod.store_metadata import collectors
 from canvod.store_metadata.collectors import (
     collect_config_snapshot,
     collect_creator,
     collect_environment,
     collect_metadata,
+    collect_processing_provenance,
     collect_python_info,
     collect_references,
     collect_software_versions,
     collect_spatial,
+    missing_store_settings,
 )
+
+
+@pytest.fixture(autouse=True)
+def _no_content_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The mocked settings here have no site sections to take them from;
+    content settings are tested in test_content_settings.py."""
+    monkeypatch.setattr(collectors, "new_content_settings", lambda *a, **k: None)
 
 
 class TestCollectors:
@@ -21,14 +37,32 @@ class TestCollectors:
         assert isinstance(versions, dict)
         assert "pydantic" in versions
 
+    def test_collect_software_versions_has_every_canvod_package(self):
+        # Every package of the repository is installed in its environment.
+        versions = collect_software_versions()
+        for pkg in [
+            "canvodpy",
+            "canvod-utils",
+            "canvod-config",
+            "canvod-readers",
+            "canvod-auxiliary",
+            "canvod-preflight",
+            "canvod-vod",
+            "canvod-grids",
+            "canvod-ops",
+            "canvod-store-metadata",
+            "canvod-store",
+            "canvod-viz",
+        ]:
+            assert pkg in versions
+
     def test_collect_python_info(self):
         info = collect_python_info()
-        assert "3." in info
-        assert "CPython" in info
+        assert info == f"{platform.python_version()} CPython"
+        assert "[" not in info  # no compiler or build date
 
     def test_collect_environment(self):
         env = collect_environment()
-        assert env.hostname is not None
         assert env.os is not None
         assert env.cpu_count is not None and env.cpu_count > 0
 
@@ -64,16 +98,21 @@ class TestCollectors:
 
     def test_collect_spatial(self):
         site_cfg = MagicMock()
-        site_cfg.latitude = 47.7
-        site_cfg.longitude = 16.3
-        site_cfg.altitude_m = 400.0
+        site_cfg.latitude = testing.LATITUDE
+        site_cfg.longitude = testing.LONGITUDE
+        site_cfg.altitude_m = testing.ALTITUDE_M
         site_cfg.description = "Test site"
         site_cfg.country = "AT"
 
-        spatial = collect_spatial(site_cfg, "Rosalia")
-        assert spatial.site.name == "Rosalia"
-        assert spatial.geospatial_lat == 47.7
-        assert spatial.bbox == [16.3, 47.7, 16.3, 47.7]
+        spatial = collect_spatial(site_cfg, "Fangorn")
+        assert spatial.site.name == "Fangorn"
+        assert spatial.geospatial_lat == testing.LATITUDE
+        assert spatial.bbox == [
+            testing.LONGITUDE,
+            testing.LATITUDE,
+            testing.LONGITUDE,
+            testing.LATITUDE,
+        ]
 
     def test_collect_config_snapshot(self):
         config = {
@@ -89,6 +128,97 @@ class TestCollectors:
         assert snap.config_hash is not None
         assert len(snap.config_hash) == 64
         assert snap.processing == {"batch_hours": 24}
+
+    def test_config_snapshot_leaves_out_credentials(self):
+        with_account = {
+            "processing": {
+                "batch_hours": 24,
+                "credentials": {"nasa_earthdata_acc_mail": "jane@example.org"},
+            }
+        }
+        without = {"processing": {"batch_hours": 24}}
+
+        snap = collect_config_snapshot(with_account)
+
+        assert snap.processing == {"batch_hours": 24}
+        assert snap.config_hash == collect_config_snapshot(without).config_hash
+
+    def test_config_snapshot_leaves_out_the_computers_folders(self):
+        root = "/home/jrrt/stores"
+        local = {
+            "processing": {
+                "batch_hours": 24,
+                "storage": {
+                    "stores_root_dir": root,
+                    "gnss_store_name": "gnss",
+                    "aux_data_dir": "/home/jrrt/aux",
+                    "shared_aux_cache_dir": "/home/jrrt/cache",
+                },
+                "logging": {"log_dir": "/home/jrrt/logs", "level": "INFO"},
+            }
+        }
+        elsewhere = {
+            "processing": {
+                "batch_hours": 24,
+                "storage": {
+                    "stores_root_dir": "/data/stores",
+                    "gnss_store_name": "gnss",
+                    "aux_data_dir": "/scratch/aux",
+                },
+                "logging": {"log_dir": "/var/log/canvod", "level": "INFO"},
+            }
+        }
+
+        snap = collect_config_snapshot(local)
+
+        assert snap.processing == {
+            "batch_hours": 24,
+            "storage": {"gnss_store_name": "gnss"},
+            "logging": {"level": "INFO"},
+        }
+        assert "jrrt" not in snap.model_dump_json()
+        assert local["processing"]["storage"]["stores_root_dir"] == root
+        # The same settings on another computer give the same hash.
+        assert snap.config_hash == collect_config_snapshot(elsewhere).config_hash
+
+    def test_config_snapshot_keeps_a_stores_root_on_s3(self):
+        snap = collect_config_snapshot(
+            {"processing": {"storage": {"stores_root_dir": "s3://fangorn/stores"}}}
+        )
+
+        assert snap.processing == {
+            "storage": {"stores_root_dir": "s3://fangorn/stores"}
+        }
+
+    def test_the_facility_is_the_institution_not_the_computer(self):
+        config, site_cfg = _settings()
+
+        meta = _collect(config, site_cfg)
+
+        assert meta.processing.facility == testing.INSTITUTION
+        assert meta.environment.hostname is None
+
+    def test_settings_that_record_no_machine_leave_it_out_of_every_commit(
+        self, tmp_path
+    ):
+        from canvod.config import load_config
+
+        testing.write_settings(tmp_path)
+        config = load_config(config_dir=tmp_path).model_copy(deep=True)
+        assert collectors.records_machine(config)
+        config.processing.metadata.record_machine = False
+
+        # Commits after the first take the settings from the snapshot.
+        snapshot = collect_config_snapshot(config)
+        assert not collectors.records_machine(config)
+        assert not collectors.records_machine(snapshot)
+        environment = collect_environment(tmp_path, record_machine=False)
+        assert (environment.os, environment.arch, environment.cpu_count) == (
+            None,
+            None,
+            None,
+        )
+        assert (environment.memory_gb, environment.disk_free_gb) == (None, None)
 
     def test_collect_references_none_config(self):
         config = MagicMock(spec=["processing"])
@@ -113,10 +243,10 @@ class TestCollectors:
                 "funding",
             ]
         )
-        refs_cfg.software_repository = "https://github.com/nfb2021/canvodpy"
-        refs_cfg.documentation = "https://github.com/nfb2021/canvodpy/tree/main/docs"
+        refs_cfg.software_repository = testing.REPOSITORY
+        refs_cfg.documentation = testing.DOCUMENTATION
         refs_cfg.access_url = "https://example.org/store"
-        refs_cfg.related_stores = ["rosalia_v3_04/vod_store"]
+        refs_cfg.related_stores = ["fangorn/vod_store"]
         refs_cfg.publications = []
 
         funding_entry = MagicMock(
@@ -134,162 +264,286 @@ class TestCollectors:
         config.processing = proc
 
         refs = collect_references(config)
-        assert refs.software_repository == "https://github.com/nfb2021/canvodpy"
-        assert (
-            refs.documentation == "https://github.com/nfb2021/canvodpy/tree/main/docs"
-        )
+        assert refs.software_repository == testing.REPOSITORY
+        assert refs.documentation == testing.DOCUMENTATION
         assert refs.access_url == "https://example.org/store"
-        assert refs.related_stores == ["rosalia_v3_04/vod_store"]
+        assert refs.related_stores == ["fangorn/vod_store"]
         assert refs.funding[0].funder == "European Space Agency (ESA)"
         assert refs.funding[0].award_title == "SIRENE"
 
     def test_collect_metadata_full(self):
-        meta_cfg = MagicMock(
-            spec=[
-                "author",
-                "email",
-                "institution",
-                "orcid",
-                "institution_ror",
-                "department",
-                "research_group",
-                "website",
-                "publisher",
-                "publisher_url",
-                "license",
-                "naming_authority",
-                "store_description",
-            ]
-        )
-        meta_cfg.author = "Test"
-        meta_cfg.email = "test@example.com"
-        meta_cfg.institution = "TestU"
-        meta_cfg.orcid = None
-        meta_cfg.institution_ror = None
-        meta_cfg.department = None
-        meta_cfg.research_group = None
-        meta_cfg.website = None
-        meta_cfg.publisher = None
-        meta_cfg.publisher_url = None
-        meta_cfg.license = None
-        meta_cfg.naming_authority = None
-        meta_cfg.store_description = "A test store for TestSite."
-
-        proc = MagicMock(spec=["metadata", "references"])
-        proc.metadata = meta_cfg
-        proc.references = None
-
-        config = MagicMock(spec=["processing", "sids"])
-        config.processing = proc
-        config.sids = MagicMock(spec=[])
-
-        site_cfg = MagicMock(
-            spec=[
-                "latitude",
-                "longitude",
-                "altitude_m",
-                "description",
-                "country",
-                "receivers",
-            ]
-        )
-        site_cfg.latitude = 47.7
-        site_cfg.longitude = 16.3
-        site_cfg.altitude_m = 400.0
-        site_cfg.description = None
-        site_cfg.country = None
-        site_cfg.receivers = {}
-
-        with patch(
-            "canvod.store_metadata.collectors.collect_config_snapshot"
-        ) as mock_snap:
-            from canvod.store_metadata.schema import ConfigSnapshot
-
-            mock_snap.return_value = ConfigSnapshot(config_hash="abc123")
-            meta = collect_metadata(
-                config=config,
-                site_name="TestSite",
-                site_config=site_cfg,
-                store_type="gnss_store",
-                source_format="rinex3",
-                store_path=Path("/tmp/test"),
-            )
-        assert meta.identity.id == "TestSite/gnss_store"
-        assert meta.identity.description == "A test store for TestSite."
-        assert meta.creator.name == "Test"
+        config, site_cfg = _settings()
+        meta = _collect(config, site_cfg)
+        assert meta.identity.id == "fangorn-gnss"
+        assert meta.identity.title.endswith(" GNSS Store")
+        assert meta.identity.description == testing.SITE_DESCRIPTION
+        assert meta.creator.name == testing.PERSON_NAME
+        assert meta.publisher.name == testing.PUBLISHER
+        assert meta.publisher.license == "CC-BY-4.0"
         assert meta.processing.python is not None
 
-    def test_collect_metadata_description_defaults_to_none(self):
-        """meta_cfg without store_description set must not raise, and
-        identity.description must stay None (regression guard for the
-        getattr(..., None) fallback in collect_metadata)."""
-        meta_cfg = MagicMock(
-            spec=[
-                "author",
-                "email",
-                "institution",
-                "orcid",
-                "institution_ror",
-                "department",
-                "research_group",
-                "website",
-                "publisher",
-                "publisher_url",
-                "license",
-                "naming_authority",
-                # store_description intentionally omitted from spec
-            ]
+    def test_a_license_outside_spdx_comes_with_the_uri_of_its_text(self):
+        config, site_cfg = _settings()
+        config.processing.metadata.license = "other"
+        config.processing.metadata.license_uri = "https://the.inklings.org/licence"
+
+        meta = _collect(config, site_cfg)
+
+        assert meta.publisher.license == "other"
+        assert meta.publisher.license_uri == "https://the.inklings.org/licence"
+
+    @pytest.mark.parametrize(
+        ("missing", "named"),
+        [
+            ("store_description", r"sites\.fangorn\.store_description"),
+            ("publisher", r"processing\.metadata\.publisher"),
+            ("license", r"processing\.metadata\.license"),
+        ],
+    )
+    def test_collect_metadata_refuses_a_missing_required_field(self, missing, named):
+        """A store is not created without description, publisher or license."""
+        config, site_cfg = _settings()
+        owner = (
+            site_cfg if missing == "store_description" else config.processing.metadata
         )
-        meta_cfg.author = "Test"
-        meta_cfg.email = "test@example.com"
-        meta_cfg.institution = "TestU"
-        meta_cfg.orcid = None
-        meta_cfg.institution_ror = None
-        meta_cfg.department = None
-        meta_cfg.research_group = None
-        meta_cfg.website = None
-        meta_cfg.publisher = None
-        meta_cfg.publisher_url = None
-        meta_cfg.license = None
-        meta_cfg.naming_authority = None
+        setattr(owner, missing, None)
+        with pytest.raises(ValueError, match=named):
+            _collect(config, site_cfg)
 
-        proc = MagicMock(spec=["metadata", "references"])
-        proc.metadata = meta_cfg
-        proc.references = None
+    def test_collect_metadata_names_every_missing_field(self):
+        config, site_cfg = _settings()
+        site_cfg.store_description = None
+        config.processing.metadata.publisher = " "
+        config.processing.metadata.license = None
+        with pytest.raises(ValueError) as err:
+            _collect(config, site_cfg)
+        for name in ("store_description", "publisher", "license"):
+            assert name in str(err.value)
 
-        config = MagicMock(spec=["processing", "sids"])
-        config.processing = proc
-        config.sids = MagicMock(spec=[])
+    def test_collect_metadata_takes_the_deprecated_shared_description(self):
+        """Settings from before the per-site description still create stores."""
+        config, site_cfg = _settings()
+        site_cfg.store_description = None
+        config.processing.metadata.store_description = testing.SITE_DESCRIPTION
+        meta = _collect(config, site_cfg)
+        assert meta.identity.description == testing.SITE_DESCRIPTION
 
-        site_cfg = MagicMock(
-            spec=[
-                "latitude",
-                "longitude",
-                "altitude_m",
-                "description",
-                "country",
-                "receivers",
-            ]
+    def test_missing_store_settings_all_set_is_empty(self):
+        config, site_cfg = _settings()
+        assert missing_store_settings("fangorn", site_cfg, config) == []
+
+    def test_missing_store_settings_names_a_missing_description(self):
+        config, site_cfg = _settings()
+        site_cfg.store_description = None
+        config.processing.metadata.store_description = None
+        missing = missing_store_settings("fangorn", site_cfg, config)
+        assert missing == [
+            "sites.fangorn.store_description (e.g. 'GNSS-T observations below "
+            "a beech canopy')"
+        ]
+
+    def test_missing_store_settings_names_description_and_license(self):
+        config, site_cfg = _settings()
+        site_cfg.store_description = None
+        config.processing.metadata.store_description = None
+        config.processing.metadata.license = None
+        missing = missing_store_settings("fangorn", site_cfg, config)
+        assert len(missing) == 2
+        assert missing[0].startswith("sites.fangorn.store_description")
+        assert missing[1].startswith("processing.metadata.license")
+
+    def test_missing_store_settings_the_deprecated_description_counts(self):
+        """The deprecated shared description still satisfies the site one."""
+        config, site_cfg = _settings()
+        site_cfg.store_description = None
+        config.processing.metadata.store_description = testing.SITE_DESCRIPTION
+        assert missing_store_settings("fangorn", site_cfg, config) == []
+
+
+def _settings() -> tuple[MagicMock, MagicMock]:
+    """Settings for a new store at the made-up site, every required field set."""
+    meta_cfg = MagicMock(
+        spec=[
+            "author",
+            "email",
+            "institution",
+            "orcid",
+            "institution_ror",
+            "department",
+            "research_group",
+            "website",
+            "publisher",
+            "publisher_url",
+            "license",
+            "license_uri",
+            "naming_authority",
+            "store_description",
+        ]
+    )
+    meta_cfg.author = testing.PERSON_NAME
+    meta_cfg.email = testing.PERSON_EMAIL
+    meta_cfg.institution = testing.INSTITUTION
+    for name in (
+        "orcid",
+        "institution_ror",
+        "department",
+        "research_group",
+        "website",
+        "publisher_url",
+        "license_uri",
+        "store_description",
+    ):
+        setattr(meta_cfg, name, None)
+    meta_cfg.publisher = testing.PUBLISHER
+    meta_cfg.license = "CC-BY-4.0"
+    meta_cfg.naming_authority = testing.NAMING_AUTHORITY
+
+    proc = MagicMock(spec=["metadata", "references"])
+    proc.metadata = meta_cfg
+    proc.references = None
+
+    config = MagicMock(spec=["processing", "sids"])
+    config.processing = proc
+    config.sids = MagicMock(spec=[])
+
+    site_cfg = MagicMock(
+        spec=[
+            "latitude",
+            "longitude",
+            "altitude_m",
+            "description",
+            "store_description",
+            "country",
+            "receivers",
+        ]
+    )
+    site_cfg.latitude = testing.LATITUDE
+    site_cfg.longitude = testing.LONGITUDE
+    site_cfg.altitude_m = testing.ALTITUDE_M
+    site_cfg.description = None
+    site_cfg.store_description = testing.SITE_DESCRIPTION
+    site_cfg.country = None
+    site_cfg.receivers = {}
+    return config, site_cfg
+
+
+def _collect(config: MagicMock, site_cfg: MagicMock):
+    from canvod.store_metadata.schema import ConfigSnapshot
+
+    with patch("canvod.store_metadata.collectors.collect_config_snapshot") as snap:
+        snap.return_value = ConfigSnapshot(config_hash="abc123")
+        return collect_metadata(
+            config=config,
+            site_name="fangorn",
+            site_config=site_cfg,
+            store_type="gnss_store",
+            source_format="rinex3",
+            store_path=Path("/tmp/fangorn/gnss"),
         )
-        site_cfg.latitude = 47.7
-        site_cfg.longitude = 16.3
-        site_cfg.altitude_m = 400.0
-        site_cfg.description = None
-        site_cfg.country = None
-        site_cfg.receivers = {}
 
-        with patch(
-            "canvod.store_metadata.collectors.collect_config_snapshot"
-        ) as mock_snap:
-            from canvod.store_metadata.schema import ConfigSnapshot
 
-            mock_snap.return_value = ConfigSnapshot(config_hash="abc123")
-            meta = collect_metadata(
-                config=config,
-                site_name="TestSite",
-                site_config=site_cfg,
-                store_type="gnss_store",
-                source_format="rinex3",
-                store_path=Path("/tmp/test"),
+def _project(path: Path, lock: str = "version = 1\n") -> Path:
+    """A uv project: pyproject.toml and uv.lock."""
+    path.mkdir(parents=True, exist_ok=True)
+    (path / "pyproject.toml").write_text('[project]\nname = "fangorn"\n')
+    (path / "uv.lock").write_bytes(lock.encode())
+    return path
+
+
+class TestLockfile:
+    def test_the_lockfile_of_the_project_run_from_is_recorded(
+        self, tmp_path, monkeypatch
+    ):
+        project = _project(tmp_path / "fangorn")
+        (project / "notebooks").mkdir()
+        monkeypatch.chdir(project / "notebooks")
+
+        env = collect_environment()
+
+        assert env.uv_lock_text == "version = 1\n"
+        assert env.uv_lock_hash == hashlib.sha256(b"version = 1\n").hexdigest()
+        assert env.pyproject_toml_text == '[project]\nname = "fangorn"\n'
+
+    def test_outside_a_project_no_lockfile_is_recorded(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+
+        env = collect_environment()
+
+        assert env.uv_lock_text is None
+        assert env.uv_lock_hash is None
+        assert env.pyproject_toml_text is None
+
+    def test_an_unreadable_lockfile_is_an_error(self, tmp_path, monkeypatch):
+        project = _project(tmp_path / "fangorn")
+        monkeypatch.chdir(project)
+        monkeypatch.setattr(
+            Path,
+            "read_bytes",
+            lambda self: (_ for _ in ()).throw(PermissionError(str(self))),
+        )
+
+        with pytest.raises(PermissionError, match="uv.lock"):
+            collect_environment()
+
+
+class TestOncePerProcess:
+    def test_uv_runs_once_for_many_commits(self, monkeypatch):
+        calls = []
+
+        def run(*args, **kwargs):
+            calls.append(args)
+            return subprocess.CompletedProcess(args, 0, stdout="uv 0.9.0\n")
+
+        monkeypatch.setattr(subprocess, "run", run)
+        collectors.collect_uv_version.cache_clear()
+        try:
+            first = collect_processing_provenance("gnss_store", "rinex3")
+            second = collect_processing_provenance("gnss_store", "rinex3")
+        finally:
+            collectors.collect_uv_version.cache_clear()
+
+        assert len(calls) == 1
+        assert first.uv_version == second.uv_version == "0.9.0"
+
+    def test_uv_version_is_the_number_only(self, monkeypatch):
+        def run(*args, **kwargs):
+            return subprocess.CompletedProcess(
+                args,
+                0,
+                stdout="uv 0.13.1 (Homebrew 2026-10-14 aarch64-apple-darwin)\n",
             )
-        assert meta.identity.description is None
+
+        monkeypatch.setattr(subprocess, "run", run)
+        collectors.collect_uv_version.cache_clear()
+        try:
+            assert collectors.collect_uv_version() == "0.13.1"
+        finally:
+            collectors.collect_uv_version.cache_clear()
+
+    def test_the_lockfile_is_read_once_until_it_changes(self, tmp_path, monkeypatch):
+        project = _project(tmp_path / "fangorn")
+        monkeypatch.chdir(project)
+        reads = []
+        read_bytes = Path.read_bytes
+
+        def counted(self):
+            reads.append(self.name)
+            return read_bytes(self)
+
+        monkeypatch.setattr(Path, "read_bytes", counted)
+
+        first = collect_environment()
+        second = collect_environment()
+        assert reads.count("uv.lock") == 1
+        assert first.uv_lock_hash == second.uv_lock_hash
+
+        (project / "uv.lock").write_bytes(b"version = 1\nrevision = 3\n")
+        third = collect_environment()
+        assert reads.count("uv.lock") == 2
+        assert third.uv_lock_text == "version = 1\nrevision = 3\n"
+        assert third.uv_lock_hash != first.uv_lock_hash
+
+    def test_software_versions_cannot_be_changed_by_a_caller(self):
+        collect_software_versions()["pydantic"] = "0"
+
+        assert collect_software_versions()["pydantic"] != "0"

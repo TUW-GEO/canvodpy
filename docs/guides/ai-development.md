@@ -1,192 +1,158 @@
 ---
-title: Developing with Claude Code
-description: How canVODpy uses AI-assisted development with Claude Code, skills, and persistent memory
+title: Developing with coding agents
+description: The instructions canVODpy gives coding agents such as Claude Code, the shared development workflow, how they stay correct, and the free code graph
 ---
 
-# Developing with Claude Code
+# Developing with coding agents
 
-canVODpy is developed with [Claude Code](https://docs.anthropic.com/en/docs/claude-code),
-Anthropic's agentic coding CLI. This page documents the setup, the breadcrumb trail
-Claude follows to understand the project, and how contributors can use it.
+canVODpy is developed with coding agents, mostly
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code). The
+repository carries instructions for them, so that an agent works by the
+same rules as a person and knows the science and the traps before it
+changes code. You don't need an agent to contribute: the same files are a
+compact summary of the project's conventions for people too.
 
----
-
-## Quick start
-
-```bash
-# Install Claude Code
-npm install -g @anthropic-ai/claude-code
-
-# Run in the project root — CLAUDE.md loads automatically
-cd canvodpy
-claude
-```
-
-Claude will automatically read `CLAUDE.md`, which provides scientific context,
-architecture overview, conventions, and pointers to deeper documentation.
-
-!!! tip "You don't need Claude Code to contribute"
-
-    `CLAUDE.md` is a plain markdown file that also serves as a human-readable
-    summary of project conventions. Everything documented there applies whether
-    you use Claude Code or not.
+Everything here works with free tools only. No step needs a paid service
+or an API key.
 
 ---
 
-## The breadcrumb trail
+## The instruction files
 
-When Claude Code starts, it follows this chain to build understanding:
+| File | What it holds |
+|---|---|
+| `AGENTS.md` (root) | Scientific context, packages, the one way to process data, data contracts, the development workflow, guardrails, and the reading order of these docs |
+| `canvodpy/AGENTS.md`, `packages/<package>/AGENTS.md` | Per package: where things live, invariants and decisions, tests |
+| `.claude/skills/<task>/SKILL.md` | Step-by-step guides for recurring tasks: run the pipeline, add a reader or constellation, deprecate code, store safety, the Icechunk 2 API, the link to canvodpy-extensions, releasing |
+| `CLAUDE.md` files | One line, `@AGENTS.md`. Claude Code reads `CLAUDE.md`, other agents read `AGENTS.md` |
+| `CODING_STANDARDS.md` | The rules every change follows and the checklist for each change; reviews check against it |
+| `GLOSSARY.md` | The project's words, and the words to avoid ([Glossary](../glossary.md)) |
+| `docs/adr/` | The decisions behind canVODpy and why they were made ([Decisions](../adr/index.md)) |
+| `docs/agents/` | How the workflow skills below use GitHub issues, triage labels, and the glossary |
+| `.claude/settings.json` | Enables the workflow plugin; blocks merging, pushing `main` or tags and bypassing checks (with `scripts/agent_git_guard.py`) |
 
-```
-CLAUDE.md (auto-loaded)
-├── Scientific context (GNSS-T, VOD, key domain concepts)
-├── Architecture (11 packages, CLI + Site.pipeline() + functional API, data contracts)
-├── Conventions (uv, ruff, ty, pytest, commitizen)
-├── Skills table (15+ domain skills, auto-applied)
-├── Guardrails (what NOT to change without understanding the underlying science)
-└── Key documentation pointers:
-    ├── docs/guides/ai-development.md  ← you are here
-    ├── docs/architecture.md           ← system design & data flow
-    ├── docs/principles.md             ← design philosophy
-    ├── docs/guides/api-levels.md      ← CLI, Site.pipeline(), functional API
-    ├── docs/guides/contributor-setup.md ← contributor setup & first run
-    ├── docs/findings/                 ← scientific comparison results
-    └── docs/packages/*/overview.md    ← per-package deep dives
-```
+Claude Code loads the root file at the start of a session, a package's
+file when it works in that package, and a task guide when the task fits
+its description. Other agents read the same Markdown files.
 
-Additionally, Claude Code maintains **persistent memory** across sessions in
-`.claude/projects/<hash>/memory/`, storing architectural decisions, known issues,
-and project conventions discovered during development.
+The files describe what cannot be seen quickly in the code: decisions,
+invariants, where the truth lives. They point at the code instead of
+copying it, so they go out of date less often.
+
+### Kept correct by a check
+
+Every path and `just` recipe named in these files must exist.
+`just check-agent-docs` verifies this; it runs in `just check`, as a
+pre-commit hook and in CI. Paths in canvodpy-extensions are written
+`extensions:<path>` and checked at the extensions commit canvodpy is
+locked to. A change that makes a statement wrong updates the file in the
+same pull request.
 
 ---
 
-## Skills
+## The development workflow
 
-Skills are domain-specific knowledge modules that Claude Code applies automatically
-when their domain is relevant. They provide deep expertise without needing to
-re-explain conventions each session.
+Contributors develop with one shared workflow: the open source
+[mattpocock/skills](https://github.com/mattpocock/skills), a set of
+skills for Claude Code. Each step guards against a typical failure of
+agent-written code: the agent building something other than what you
+meant, inventing its own words for things, leaving no record of why,
+writing code without tests, or ignoring the project's rules.
 
-### Installed skills
+Claude Code loads the skills when it is started in the canvodpy folder,
+and calls them only by their full name, `/mattpocock-skills:<skill>`; a
+short `/grill-with-docs` is an unknown command, and a short
+The plain `/code-review` command is the review built into Claude Code.
 
-| Skill | What it provides | Install |
+| Situation | Start with | What happens |
 |---|---|---|
-| `xarray` | Dims, coords, attrs, `.sel()`, `.where()`, Dask chunking | `npx skills add tondevrel/scientific-agent-skills@xarray -g -y` |
-| `zarr-python` | Zarr v3 stores, encoding, compression, parallel I/O | `npx skills add davila7/claude-code-templates@zarr-python -g -y` |
-| `icechunk` | Icechunk transactions, branching, time travel, xarray integration | `just install-skills` (bundled in repo at `.claude/skills/icechunk/`) |
-| `pydantic` | BaseModel patterns, validators, `ConfigDict`, frozen models | `npx skills add bobmatnyc/claude-mpm-skills@pydantic -g -y` |
-| `python-testing-patterns` | pytest fixtures, parametrize, mocking, assertion patterns | `npx skills add wshobson/agents@python-testing-patterns -g -y` |
-| `uv-package-manager` | `uv run`, `uv add`, workspace management, `pyproject.toml` | `npx skills add wshobson/agents@uv-package-manager -g -y` |
-| `marimo-notebook` | Marimo cell structure, reactive execution, `mo.ui` widgets | `npx skills add marimo-team/skills@marimo-notebook -g -y` |
-| `beautiful-mermaid` | Render `.mmd` diagrams to SVG/PNG with themed output | `npx skills add intellectronica/agent-skills@beautiful-mermaid -g -y` |
-| `mermaid-diagrams` | Architecture, flow, ERD, C4 diagrams in Mermaid syntax | `npx skills add softaworks/agent-toolkit@mermaid-diagrams -g -y` |
-| `scientific-writing` | IMRAD manuscripts, citations, reporting guidelines | `npx skills add davila7/claude-code-templates@scientific-writing -g -y` |
-| `airflow` | Airflow DAG operations, debugging, task logs, health checks | `npx skills add astronomer/agents@airflow -g -y` |
-| `airflow-dag-patterns` | DAG design patterns, TaskFlow API, dynamic DAGs, testing | `npx skills add wshobson/agents@airflow-dag-patterns -g -y` |
-| `docs-as-code` | Documentation pipeline automation, MkDocs, Zensical workflows | Custom (contact maintainer) |
-| `context-mode` | Large output handling, log analysis, data processing | MCP plugin (auto-configured) |
-| `notebooklm` | Generate podcasts, reports, quizzes from project sources | `pip install notebooklm-py && notebooklm skill install` |
-| `find-skills` | Discover and install new skills from the ecosystem | `npx skills add vercel-labs/skills@find-skills -g -y` |
-| `agent-browser` | Browser automation for testing and scraping | `npx skills add vercel-labs/agent-browser@agent-browser -g -y` |
-| `simplify` | Review changed code for reuse, quality, efficiency | Built-in Claude Code skill |
+| An idea or a change to design | `/mattpocock-skills:grill-with-docs` | The agent asks you questions in rounds, each with its recommended answer, until every decision is settled. New terms go to the glossary, decisions that are hard to reverse to `docs/adr/`. |
+| A change too big for one session | `/mattpocock-skills:to-spec`, then `/mattpocock-skills:to-tickets` | The settled design becomes a GitHub issue (the spec), split into small tickets that each work on their own. |
+| One ticket, or a change that fits one session | `/mattpocock-skills:implement` | Test first (`/mattpocock-skills:tdd`): a failing test, then the code that makes it pass. It ends with `/mattpocock-skills:code-review`. |
+| Review a branch or pull request | `/mattpocock-skills:code-review` | Two separate reviews: against `CODING_STANDARDS.md`, and against the issue the change was made for. |
+| Something is broken | `/mattpocock-skills:diagnosing-bugs` | First a command that shows the bug, then hypotheses, then the fix with a regression test. |
+| After a session that went wrong | `/mattpocock-skills:retro` | Suggests checks and rules so the same mistake can't happen again. |
+| Not sure which | `/mattpocock-skills:ask-matt` | Recommends the skill for your situation. |
 
-### Installing all skills at once
+The full flow is meant for real changes; a typo needs none of it. The
+domain guides of canVODpy (add a reader, deprecate code, store safety and
+the others) still apply inside any of these steps. Some skills run
+helper agents in parallel (`/mattpocock-skills:code-review`,
+`/mattpocock-skills:implement-spec`), which uses more of your agent's
+quota.
+
+---
+
+## The code graph
+
+`just graph` builds a graph of the code with
+[graphify](https://pypi.org/project/graphifyy/): every module, class and
+function, and who calls, imports, or subclasses whom. It is built from the
+syntax tree on your machine in about ten seconds, needs no API key, and is
+never committed (`.graphify/`). Git hooks rebuild it in the background
+after each commit, merge and checkout.
 
 ```bash
-# Core scientific stack
-npx skills add tondevrel/scientific-agent-skills@xarray -g -y
-npx skills add davila7/claude-code-templates@zarr-python -g -y
-npx skills add bobmatnyc/claude-mpm-skills@pydantic -g -y
-
-# Development workflow
-npx skills add wshobson/agents@python-testing-patterns -g -y
-npx skills add wshobson/agents@uv-package-manager -g -y
-npx skills add marimo-team/skills@marimo-notebook -g -y
-
-# Orchestration
-npx skills add astronomer/agents@airflow -g -y
-npx skills add wshobson/agents@airflow-dag-patterns -g -y
-
-# Diagrams & documentation
-npx skills add intellectronica/agent-skills@beautiful-mermaid -g -y
-npx skills add softaworks/agent-toolkit@mermaid-diagrams -g -y
-npx skills add davila7/claude-code-templates@scientific-writing -g -y
-
-# Bundled (ships with this repo)
-just install-skills
-
-# Utilities
-npx skills add vercel-labs/skills@find-skills -g -y
-npx skills add vercel-labs/agent-browser@agent-browser -g -y
-pip install notebooklm-py && notebooklm skill install
+just graph-affected add_cell_ids_to_ds_fast   # everything that uses it
+just graph-explain VodComputer                # its neighbors, both directions
+just graph-path VodComputer TauOmegaZerothOrder
 ```
+
+Agents use it before changing or deprecating anything (to find every
+caller) and before writing new code (to find an existing implementation).
+Connections marked `INFERRED` are guesses; check them in the code.
+
+graphify can also call paid language-model services. The `just` recipes
+use only its free, local commands, and remove API keys from its
+environment. Don't run other graphify commands (its output suggests
+`graphify cluster-only`, which can call a paid service) or install its
+assistant skill.
 
 ---
 
-## Typical workflows
+## Getting started
 
-### Exploring the codebase
-
-```
-> Explain how SBF broadcast ephemeris differs from SP3 agency ephemeris
-
-Claude will:
-1. Read CLAUDE.md scientific context (auto-loaded)
-2. Follow breadcrumb to docs/findings/ephemeris_source_architecture.md
-3. Read the EphemerisProvider ABC and both implementations
-4. Explain with domain-correct terminology
+```bash
+just sync          # dependencies and git hooks (including the graph rebuild)
+just graph         # first build of the code graph
+just agent-skills  # the workflow skills (Claude Code plugin); rerun to update
+claude             # in the repository root
 ```
 
-### Code generation
-
-```
-> Add a new reader for NMEA format following the GNSSDataReader ABC
-
-Claude will:
-1. Read GNSSDataReader base class
-2. Study Rnxv3Obs and SbfReader for patterns
-3. Generate the reader with proper Pydantic model, to_ds(), iter_epochs()
-4. Write tests following existing patterns
-5. Register in the factory
-```
-
-### Running the pipeline
-
-```
-> Process the last week of data for site ExampleSite
-
-Claude will:
-1. Recommend the CLI: canvodpy run --site ExampleSite --start ... --end ...
-2. Suggest omitting --start on subsequent runs (auto-resumes from the store)
-3. Only drop to Site(site).pipeline() in Python if the user needs scripted,
-   multi-site, or notebook-embedded control
-4. Not suggest FluentWorkflow, the flat process_date()/calculate_vod()
-   functions, or VODWorkflow — all deprecated, see docs/guides/api-levels.md
-```
+Start the agent in the repository root: it reads its instructions from
+there. `.claude/settings.json` declares the plugin's marketplace and
+enables the plugin, so Claude Code takes it from there once you trust the
+repository folder; `just agent-skills` installs and updates it
+explicitly. For
+other coding agents, `npx skills@latest add mattpocock/skills` installs
+the same skills.
 
 ---
 
-## Guidelines for AI-assisted contributions
+## Guidelines for agent-assisted contributions
 
-1. **Review all output.** AI-generated code must be reviewed by a human before merging.
-   The contributor submitting the change is responsible for correctness.
-
-2. **Run the test suite.** Always run `just test` after AI-assisted changes.
-
-3. **Check scientific claims.** AI may hallucinate references, formulas, or values.
-   Cross-check against primary sources (IGS documentation, Navipedia, literature).
-
-4. **Commit attribution.** Commits with significant AI assistance include:
-   ```
-   Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
-   ```
-
-5. **No secrets.** Never paste API keys, credentials, or private data into an AI tool.
-   Claude Code operates locally but sends prompts to Anthropic's API.
+1. **Review all output.** A person reviews every change before it is
+   merged and is responsible for it.
+2. **Run the checks.** `just check` and the tests of the changed packages
+   (`just test-package <package>`).
+3. **Check scientific claims.** Agents can invent references, formulas or
+   values. Compare with primary sources (IGS formats, interface control
+   documents, the literature).
+4. **Attribution.** Commits with substantial agent help say so in a
+   `Co-Authored-By:` line.
+5. **Agents don't merge.** An agent may push its feature branch and open
+   a pull request; it never merges or approves one, never pushes `main` or
+   tags, never force-pushes and never bypasses a check (`--no-verify`,
+   skipped hooks, changed settings). Claude Code blocks these through
+   `.claude/settings.json` and `scripts/agent_git_guard.py`; don't
+   turn that off. See the Git and GitHub section of `CODING_STANDARDS.md`.
+6. **No secrets.** Never give an agent credentials or private data. Hosted
+   agents send what they read to their provider.
 
 ---
 
 ## Related pages
 
-- [Architecture](../architecture.md) — system design and data flow
-- [Contributor Setup](contributor-setup.md) — contributor setup and first run
-- [API Levels](api-levels.md) — CLI, `Site.pipeline()`, and the functional API explained
+- [Architecture](../architecture.md): packages and data flow
+- [API levels](api-levels.md): the command line and `Site.pipeline()`
+- [Contributor setup](contributor-setup.md): setup and first run

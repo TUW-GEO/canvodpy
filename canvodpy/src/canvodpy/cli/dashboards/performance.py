@@ -1,41 +1,459 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "canvodpy",
+#     "marimo",
+#     "altair",
+# ]
+#
+# [tool.marimo.display]
+# theme = "dark"
+# ///
 import marimo
 
-__generated_with = "0.23.13"
+__generated_with = "0.25.1"
 app = marimo.App(
     width="medium",
-    app_title="canvodpy — Performance Dashboard",
+    app_title="canvodpy: Run dashboard",
     css_file="canvod_nordic.css",
 )
 
 
 @app.cell
 def _():
+    from datetime import UTC, datetime, timedelta
+
     import marimo as mo
 
-    return (mo,)
+    def format_duration(seconds):
+        """Short human text for a number of seconds, or 'n/a'."""
+        if seconds is None:
+            return "n/a"
+        if seconds < 60:
+            return f"{seconds:.0f} s"
+        minutes, remainder = divmod(int(seconds), 60)
+        if minutes < 60:
+            return f"{minutes} m {remainder} s"
+        hours, minutes = divmod(minutes, 60)
+        if hours < 24:
+            return f"{hours} h {minutes} m"
+        days, hours = divmod(hours, 24)
+        return f"{days} d {hours} h"
+
+    def eta_text(eta_seconds):
+        """Human text for an ETA; an estimate, never a fact."""
+        if eta_seconds is None:
+            return "none (only for a running run with a finished receiver-day)."
+        finish = datetime.now(UTC) + timedelta(seconds=eta_seconds)
+        return (
+            f"done about {finish.strftime('%H:%M')} UTC "
+            f"({format_duration(eta_seconds)} left). This is an estimate."
+        )
+
+    def status_text(status):
+        """Human text for a run's status."""
+        return {
+            "running": "Running",
+            "finished": "Finished",
+            "failed": "Failed",
+            "interrupted": "Interrupted",
+            "unknown": "Unknown (started on another machine)",
+        }[status]
+
+    def elapsed_seconds(run, last_activity):
+        """Seconds the run has taken, from its records.
+
+        Finished and failed runs run to their end. A running run counts up
+        to now. An interrupted or unknown run has no end record, so it
+        counts only to the last activity the run history saw; this keeps
+        its throughput from falling while the dashboard is open.
+        """
+        now = datetime.now(UTC)
+        if run.ended_at is not None and run.status in ("finished", "failed"):
+            return max((run.ended_at - run.started_at).total_seconds(), 0.0)
+        if run.status in ("interrupted", "unknown") and last_activity is not None:
+            return max((last_activity - run.started_at).total_seconds(), 0.0)
+        return max((now - run.started_at).total_seconds(), 0.0)
+
+    def last_step_text(last_step):
+        """Human text for the newest recorded stage of a run."""
+        if last_step is None:
+            return "none recorded yet."
+        base = f"**{last_step['stage']}**"
+        where = ", ".join(p for p in (last_step["receiver"], last_step["day"]) if p)
+        if where:
+            base += f" ({where})"
+        seconds_ago = last_step["seconds_ago"]
+        if seconds_ago < 60:
+            ago = "just now"
+        else:
+            minutes = int(seconds_ago) // 60
+            ago = f"{minutes} min ago" if minutes < 60 else f"{minutes // 60} h ago"
+        return f"{base}, {ago}."
+
+    def site_overview_rows(history, runs):
+        """One row per site: its last run and that run's progress."""
+        seen = set()
+        rows = []
+        for run in runs:
+            if run.site in seen:
+                continue
+            seen.add(run.site)
+            progress = history.progress(run.run_id)
+            planned = sum(p.planned for p in progress)
+            written = sum(p.written for p in progress)
+            skipped = sum(p.skipped for p in progress)
+            failed = sum(p.failed for p in progress)
+            rows.append(
+                {
+                    "Site": run.site,
+                    "Run": run.run_id,
+                    "Status": status_text(run.status),
+                    "Started (UTC)": run.started_at.strftime("%Y-%m-%d %H:%M"),
+                    "Ended (UTC)": (
+                        run.ended_at.strftime("%Y-%m-%d %H:%M") if run.ended_at else ""
+                    ),
+                    "Planned": planned,
+                    "Written": written,
+                    "Skipped": skipped,
+                    "Failed": failed,
+                    "Not yet done": planned - (written + skipped + failed),
+                }
+            )
+        return rows
+
+    def chart_data(run, days, timings, samples, store_sizes):
+        """The data every chart shows, from the run history records only.
+
+        Returns a dict of row lists, each a list of dicts, one per chart:
+        ``stage``, ``day``, ``store``, ``resources``, ``disk`` and
+        ``throughput``. A chart has no entry when the run history holds no
+        records for it.
+        """
+        charts = {}
+
+        # Time per stage: each stage's total and per-day median, by total.
+        if timings:
+            charts["stage"] = stage_stats(timings)
+
+        # Time per day: the stage seconds of a data day, summed; a record
+        # of a unit of days is split evenly over the days it names.
+        if day_seconds := day_rows(timings):
+            charts["day"] = day_seconds
+
+        # Store size per day: the on-disk size of each store, measured in
+        # the background; a "Total" row adds the stores of a day.
+        if store_sizes:
+            charts["store"] = store_rows(store_sizes)
+
+        # CPU and memory over time, one row per sample and metric.
+        resources = []
+        for sample in samples:
+            if sample.cpu_percent is not None:
+                resources.append(
+                    {
+                        "Time": sample.sampled_at,
+                        "Metric": "CPU (%)",
+                        "Percent": sample.cpu_percent,
+                    }
+                )
+            if sample.memory_percent is not None:
+                resources.append(
+                    {
+                        "Time": sample.sampled_at,
+                        "Metric": "Memory (%)",
+                        "Percent": sample.memory_percent,
+                    }
+                )
+        if resources:
+            charts["resources"] = resources
+
+        # Free disk over time, one row per sample and folder, in GB.
+        disk = []
+        for sample in samples:
+            for folder, bytes_free in sample.free_disk.items():
+                disk.append(
+                    {
+                        "Time": sample.sampled_at,
+                        "Folder": folder,
+                        "Free disk (GB)": bytes_free / 1e9,
+                    }
+                )
+        if disk:
+            charts["disk"] = disk
+
+        # Throughput over time: the receiver-days finished, cumulative.
+        finished_at = sorted(
+            day.finished_at
+            for day in days
+            if day.result is not None and day.finished_at is not None
+        )
+        if finished_at:
+            charts["throughput"] = [
+                {
+                    "Elapsed (h)": (at - run.started_at).total_seconds() / 3600,
+                    "Receiver-days finished": count,
+                }
+                for count, at in enumerate(finished_at, start=1)
+            ]
+
+        return charts
+
+    def build_run_view(run, progress, days, timings, problems, samples, store_sizes):
+        """Everything the run page shows, computed from the run history only."""
+        now = datetime.now(UTC)
+        finished = [d for d in days if d.result is not None]
+        pending = [d for d in days if d.result is None]
+        activity = [d.finished_at for d in days if d.finished_at is not None]
+        activity += [t.recorded_at for t in timings]
+        last_activity = max(activity) if activity else None
+        elapsed = elapsed_seconds(run, last_activity)
+        hours = elapsed / 3600 if elapsed else 0.0
+
+        eta_seconds = None
+        if run.status == "running" and finished and hours > 0:
+            mean_per_finished = elapsed / len(finished)
+            if pending:
+                eta_seconds = mean_per_finished * len(pending)
+
+        days_per_hour = len(finished) / hours if hours else None
+        bytes_total = sum(d.bytes_added or 0 for d in finished)
+        bytes_per_hour = bytes_total / hours if hours else None
+
+        last_step = None
+        if timings:
+            last = timings[-1]
+            last_step = {
+                "stage": last.stage,
+                "receiver": last.receiver,
+                "day": last.day,
+                "seconds_ago": (now - last.recorded_at).total_seconds(),
+            }
+
+        progress_rows = [
+            {
+                "Receiver": p.receiver,
+                "Planned": p.planned,
+                "Written": p.written,
+                "Skipped": p.skipped,
+                "Failed": p.failed,
+                "Not yet done": p.planned - (p.written + p.skipped + p.failed),
+                "Bytes added": p.bytes_added,
+            }
+            for p in progress
+        ]
+
+        problem_rows = [
+            {
+                "Time (UTC)": problem.recorded_at.strftime("%Y-%m-%d %H:%M"),
+                "Level": problem.level,
+                "Message": problem.message,
+                "Receiver": problem.receiver or "",
+                "Day": problem.day or "",
+            }
+            for problem in problems
+        ]
+
+        return {
+            "run": run,
+            "progress_rows": progress_rows,
+            "finished": len(finished),
+            "pending": len(pending),
+            "eta_seconds": eta_seconds,
+            "days_per_hour": days_per_hour,
+            "bytes_per_hour": bytes_per_hour,
+            "last_step": last_step,
+            "problem_rows": problem_rows,
+            "charts": chart_data(run, days, timings, samples, store_sizes),
+        }
+
+    def chart_style(chart):
+        """Make a chart follow the marimo theme: a transparent frame."""
+        return chart.properties(background="transparent").configure_view(stroke=None)
+
+    from canvodpy.cli.dashboards.charts import (
+        chart_categories,
+        chart_palette,
+        day_rows,
+        stage_stats,
+        store_rows,
+        time_bars,
+        time_line,
+    )
+
+    def comparison_view(log_dir, scale_type):
+        """The compare-by-label items, or a message when there is nothing.
+
+        The grouping and the statistics live in
+        :func:`canvodpy.cli.dashboards.comparison.build_comparison`; here
+        the run history is opened and the result rendered.
+        """
+        import altair as alt
+
+        from canvodpy.cli.dashboards.comparison import build_comparison
+        from canvodpy.cli.dashboards.export import export_zip
+        from canvodpy.run_history import (
+            NetworkDriveError,
+            RunHistory,
+            RunHistoryError,
+            RunHistoryVersionError,
+        )
+
+        def _charts(rows, labels):
+            """One grouped bar chart: per stage, one bar per label side by
+            side. Up to four labels get the colors of
+            :func:`chart_categories`; more, such as a series of worker
+            counts, get colors from dark to light in the sorted order of the
+            labels."""
+            scale = alt.Scale(range=chart_categories(len(labels)))
+            rows, time_encoding = time_bars(
+                "y", "Median (s)", "Median time (s)", rows, scale_type
+            )
+            return [
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": rows})  # type: ignore
+                        .mark_bar()
+                        .encode(
+                            x=alt.X("Stage:N", axis=alt.Axis(title="Stage")),
+                            xOffset=alt.XOffset("Label:N", sort="ascending"),
+                            **time_encoding,
+                            color=alt.Color(
+                                "Label:N",
+                                sort="ascending",
+                                scale=scale,
+                                legend=alt.Legend(orient="bottom", columns=4),
+                            ),
+                            tooltip=["Stage:N", "Label:N", "Median (s):Q"],
+                        )
+                        .properties(width="container")
+                    )
+                )
+            ]
+
+        intro = mo.md(
+            "A run gets an optional `--label` when it starts "
+            "(`canvodpy run --label <text>`). Runs with the same label are "
+            "grouped and compared. Only **finished** runs are compared, and "
+            "a run without a label is left out. Each group shows the median "
+            "time per stage and in total, with the spread from the minimum "
+            "to the maximum. A stage's time is summed over the run's "
+            "receivers and days (across its worker processes); the **Total** "
+            "is the run's wall time, so the stage times can add up to more "
+            "than the total."
+        )
+
+        items = [mo.md("## Compare runs by label")]
+        if log_dir is None:
+            items.append(mo.md("_No log folder to compare._"))
+            return items
+
+        try:
+            with RunHistory.open(log_dir, read_only=True) as history:
+                comparison = build_comparison(history)
+        except FileNotFoundError:
+            items.append(mo.md("_No run has been recorded in this folder yet._"))
+            return items
+        except (NetworkDriveError, RunHistoryVersionError, RunHistoryError) as error:
+            items.append(mo.md(f"_{error}_"))
+            return items
+
+        items.append(intro)
+        if not comparison.group_rows:
+            items.append(mo.md("_No finished labeled runs to compare yet._"))
+            return items
+
+        items.append(
+            mo.ui.table(comparison.group_rows, selection=None, label="Run groups")
+        )
+        if comparison.any_differs:
+            items.append(
+                mo.callout(
+                    mo.md(
+                        "A group whose machine, workers, version or settings "
+                        "differ is not a set of repetitions of the same run."
+                    ),
+                    kind="warn",
+                )
+            )
+        labels = [row["Label"] for row in comparison.group_rows]
+        items.append(mo.md("### Median time per stage"))
+        items.extend(_charts(comparison.chart_rows, labels))
+        items.append(
+            mo.ui.table(
+                comparison.stage_rows,
+                selection=None,
+                label="Timing per stage and in total",
+            )
+        )
+        items.append(
+            mo.download(
+                data=lambda: export_zip(
+                    log_dir,
+                    comparison.run_ids,
+                    {
+                        "run_groups": (
+                            "the Run groups table",
+                            comparison.group_rows,
+                        ),
+                        "timing_per_stage": (
+                            "the Timing per stage and in total table",
+                            comparison.stage_rows,
+                        ),
+                        "median_time_per_stage": (
+                            "the data of the Median time per stage chart",
+                            comparison.chart_rows,
+                        ),
+                    },
+                    title="canvodpy run dashboard: Compare runs by label",
+                ),
+                filename="canvodpy_compare_runs.zip",
+                mimetype="application/zip",
+                label="Download the data of this comparison",
+            )
+        )
+        return items
+
+    return (
+        mo,
+        format_duration,
+        eta_text,
+        status_text,
+        site_overview_rows,
+        last_step_text,
+        build_run_view,
+        chart_style,
+        chart_palette,
+        chart_categories,
+        time_bars,
+        time_line,
+        comparison_view,
+    )
 
 
 @app.cell
 def _(mo):
-    mo.md(
-        """
-# canvodpy — Performance Dashboard
+    from importlib.resources import files
 
-Reads `stage_timing` events from `machine/performance*.json` (see
-`canvodpy.logging.stage_timer` / `docs/guides/diagnostics.md`).
-Not full telemetry — this is a lightweight, always-on, file-based
-view of how a pipeline run spent its time. Works while a run is
-still in progress (partial data) or after it's finished.
-
-**Site** is parsed from `run_id` (`{site}-{YYYYMMDD-HHMMSS}`, see
-`cli/run.py`'s per-site loop) — multiple sites' logs in the same
-directory show up as separate rows and can be filtered below.
-**VOD model** comes from the `calculator` field emitted on
-`vod_calc`/`vod_store` events — different `--vod-calculator` runs
-are distinguishable the same way.
-"""
+    logos = files("canvodpy.cli.dashboards")
+    bright_svg = logos.joinpath("canvodpy_logo_bright_mode.svg").read_text(
+        encoding="utf-8"
     )
-    return
+    dark_svg = logos.joinpath("canvodpy_logo_dark_mode.svg").read_text(encoding="utf-8")
+    mo.hstack(
+        [
+            mo.Html(
+                f'<div class="canvodpy-logo">'
+                f'<div class="canvodpy-logo-bright">{bright_svg}</div>'
+                f'<div class="canvodpy-logo-dark">{dark_svg}</div>'
+                "</div>"
+            ),
+            mo.md("## Run Dashboard"),
+        ],
+        justify="start",
+        align="center",
+        gap=2,
+    )
 
 
 @app.cell
@@ -43,33 +461,46 @@ def _(mo):
     import os
     from pathlib import Path
 
-    def _default_log_dir() -> Path:
-        env_dir = os.environ.get("CANVODPY_PERF_LOG_DIR")
-        if env_dir:
-            return Path(env_dir).expanduser()
-        try:
-            from canvod.config import load_config
+    from canvod.config import load_config
+    from canvod.config.models.logging import LogDirNotSetError
 
-            return load_config().processing.logging.get_log_dir()
-        except Exception:
-            return Path.cwd() / ".logs"
+    def _resolve_log_dir():
+        # Order: --logs-dir on the marimo command line (after `--`), then the
+        # variable `canvodpy dashboard` / `canvodpy run --dashboard` set, then
+        # the settings file.
+        args = mo.cli_args()
+        if args.get("logs-dir"):
+            return Path(args["logs-dir"]).expanduser()
+        env = os.environ.get("CANVODPY_PERF_LOG_DIR")
+        if env:
+            return Path(env).expanduser()
+        return load_config().processing.logging.get_log_dir()
 
-    log_dir = _default_log_dir()
-    machine_dir = log_dir / "machine"
+    log_dir = None
+    log_dir_problem = None
+    try:
+        log_dir = _resolve_log_dir()
+    except LogDirNotSetError:
+        log_dir_problem = (
+            "No log folder is set. Pass it on the command line with "
+            "`--logs-dir <folder>` after `--`, or set "
+            "`processing.logging.log_dir` in `canvod-settings.yaml`."
+        )
+    except Exception as error:
+        log_dir_problem = (
+            "Could not read the log folder from the settings file. Pass it with "
+            f"`--logs-dir <folder>` after `--`. ({type(error).__name__}: {error})"
+        )
 
-    mo.md(f"**Log directory:** `{machine_dir}`")
-    return (machine_dir,)
+    mo.md(f"**Log directory:** `{log_dir}`" if log_dir is not None else "")
+    return log_dir, log_dir_problem
 
 
 @app.cell
 def _(mo):
-    # Auto-refreshing timer: re-runs every cell that references `refresh`
-    # on the chosen interval, so the dashboard tracks a live run without
-    # a manual click. The widget also exposes a manual refresh action.
-    # Long options (30m-24h) matter for the "runs may take days or run
-    # forever" case (dev/todo_later.md §37) -- a dashboard left open
-    # against an unattended multi-day backfill shouldn't have to poll
-    # every few seconds to eventually catch up.
+    # Auto-refresh: re-runs the cells that read `refresh` on the chosen
+    # interval, so the notebook follows a live run. A long interval suits a
+    # multi-day run; the widget also has a manual refresh.
     refresh = mo.ui.refresh(
         options=["2s", "5s", "10s", "30s", "1m", "5m", "30m", "1h", "2h", "6h", "24h"],
         default_interval="10s",
@@ -79,256 +510,546 @@ def _(mo):
 
 
 @app.cell
-def _(machine_dir, mo, refresh):
-    import json
+def _(mo):
+    # Linear or logarithmic time axes, for every chart that shows a
+    # duration: the stage and day charts and the comparison.
+    time_axis = mo.ui.radio(
+        options=["linear", "log"], value="linear", label="Time axis", inline=True
+    )
+    return (time_axis,)
 
-    import polars as pl
 
-    _ = refresh  # re-run this cell when the button is clicked
-
-    _STAGE_SCHEMA = {
-        "run_id": pl.Utf8,
-        "stage": pl.Utf8,
-        "receiver": pl.Utf8,
-        "date_key": pl.Utf8,
-        "duration_seconds": pl.Float64,
-        "status": pl.Utf8,
-        "timestamp": pl.Utf8,
-        # VOD-only fields: populated on "vod_calc"/"vod_store" events,
-        # null for the RINEX-side reading/validating/augmenting/writing
-        # events (see cli/run.py and orchestrator/processor.py).
-        "calculator": pl.Utf8,
-        "analysis": pl.Utf8,
-    }
-
-    def _read_stage_events(paths: list) -> pl.DataFrame:
-        """Read stage_timing events from one or more performance*.json files.
-
-        Line-by-line json.loads rather than pl.read_ndjson: a file being
-        actively appended to by a live run may have an incomplete trailing
-        line at read time, which would otherwise fail the whole read.
-        """
-        rows = []
-        for path in paths:
-            try:
-                text = path.read_text()
-            except OSError:
-                continue
-            for line in text.splitlines():
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    event = json.loads(line)
-                except json.JSONDecodeError:
-                    continue  # partial trailing line from a live writer
-                if event.get("event") != "stage_timing":
-                    continue
-                rows.append({key: event.get(key) for key in _STAGE_SCHEMA})
-
-        if not rows:
-            return pl.DataFrame(schema=_STAGE_SCHEMA)
-        return pl.DataFrame(rows, schema=_STAGE_SCHEMA)
-
-    # `performance*.json*` (trailing `*`), not `performance*.json`: the perf
-    # log uses a size-triggered RotatingFileHandler (50MB, backupCount now
-    # 60 -- was 10; see logging_config.py), so a run of any real length
-    # rotates the main process's file to `performance.json.1`, `.2`, ...
-    # -- names that don't end in `.json` and were silently invisible to the
-    # old pattern. On a ~15h overnight run, `performance.json.1` alone held
-    # 82% of the main process's *total* logged lines (150,842/184,763) but
-    # only ~0.4% of the `stage_timing` events this cell reads specifically
-    # (most `stage_timing` events come from per-PID worker files, which
-    # never rotated this run) -- still a real bug, just smaller in this
-    # dimension than the raw file sizes suggest (confirmed against a real
-    # backfill's logs, 2026-07-15).
-    perf_files = sorted(machine_dir.glob("performance*.json*"))
-    events = _read_stage_events(perf_files)
-
-    # `site` is not logged directly -- it's the prefix of run_id
-    # (`{site}-{YYYYMMDD-HHMMSS}`, see cli/run.py). `unit` unifies the
-    # RINEX-side "receiver" and the VOD-side "analysis" fields into one
-    # column so per-stage grouping/coloring works across both without
-    # conflating them. Applied unconditionally (incl. on the empty
-    # DataFrame) so every downstream cell can rely on both columns existing.
-    events = events.with_columns(
-        pl.col("run_id")
-        .str.extract(r"^(.*)-\d{8}-\d{6}$", 1)
-        .fill_null(pl.col("run_id"))
-        .alias("site"),
-        pl.coalesce([pl.col("receiver"), pl.col("analysis")]).alias("unit"),
+@app.cell
+def _(log_dir, log_dir_problem, refresh, site_overview_rows):
+    from canvodpy.run_history import (
+        NetworkDriveError,
+        RunHistory,
+        RunHistoryError,
+        RunHistoryVersionError,
     )
 
-    if events.is_empty():
-        summary = mo.callout(
+    _ = refresh  # re-read the run history on refresh
+
+    runs = []
+    overview = []
+    problem = log_dir_problem
+
+    if log_dir is not None:
+        try:
+            with RunHistory.open(log_dir, read_only=True) as history:
+                runs = history.runs()
+                overview = site_overview_rows(history, runs)
+        except FileNotFoundError:
+            problem = (
+                f"No run has been recorded in `{log_dir}` yet. "
+                "Run `canvodpy run ...` first."
+            )
+        except (NetworkDriveError, RunHistoryVersionError, RunHistoryError) as error:
+            problem = str(error)
+
+    return runs, overview, problem, RunHistory
+
+
+@app.cell
+def _(log_dir, mo, overview, problem, runs):
+    if problem is not None:
+        banner_items = [mo.callout(mo.md(problem), kind="warn")]
+    elif runs:
+        banner_items = [
             mo.md(
-                f"No `stage_timing` events found yet under `{machine_dir}`. "
-                "Run `canvodpy run ...` first, or wait for the next "
-                "auto-refresh once one has started writing."
+                f"**{len(runs)}** run(s), **{len(overview)}** site(s) in `{log_dir}`. "
+                "Reads the run history, not the log files."
+            )
+        ]
+    else:
+        banner_items = [
+            mo.callout(
+                mo.md(f"No run has been recorded in `{log_dir}` yet."), kind="warn"
+            )
+        ]
+    mo.vstack(banner_items)
+    return
+
+
+@app.cell
+def _(mo, overview):
+    if not overview:
+        overview_items = [mo.md("_No runs to show yet._")]
+    else:
+        overview_items = [
+            mo.md("## Site overview"),
+            mo.ui.table(overview, selection=None, label="Sites"),
+        ]
+    mo.vstack(overview_items)
+    return
+
+
+@app.cell
+def _(mo):
+    chosen_get, chosen_set = mo.state(None)
+    return (chosen_get, chosen_set)
+
+
+@app.cell
+def _(chosen_get, chosen_set, mo, runs):
+    selected = None
+    if runs:
+        labels = {f"{run.site} · {run.run_id}": run.run_id for run in runs}
+        value = chosen_get()
+        if value not in labels.values():
+            value = next(iter(labels))
+        selected = mo.ui.dropdown(
+            options=labels,
+            value=value,
+            label="Run",
+            full_width=False,
+            on_change=chosen_set,
+        )
+    selected
+
+
+@app.cell
+def _(RunHistory, build_run_view, log_dir, refresh, selected):
+    _ = refresh  # re-read the selected run's detail on refresh
+
+    chosen = selected.value if selected is not None else None
+
+    run_view = None
+    if chosen is not None and log_dir is not None:
+        try:
+            with RunHistory.open(log_dir, read_only=True) as rh:
+                run = rh.run(chosen)
+                progress = rh.progress(chosen)
+                days = rh.receiver_days(chosen)
+                timings = rh.stage_timings(chosen)
+                problems = rh.problems(chosen)
+                samples = rh.resource_samples(chosen)
+                store_sizes = rh.store_sizes(chosen)
+            run_view = build_run_view(
+                run, progress, days, timings, problems, samples, store_sizes
+            )
+        except KeyError:
+            run_view = None
+
+    return (run_view,)
+
+
+@app.cell
+def _(mo, run_view, status_text):
+    if run_view is None:
+        header_items = [mo.md("_Select a run._")]
+    else:
+        run_record = run_view["run"]
+        header_md = mo.md(
+            f"## Run: {run_record.run_id}\n\n"
+            f"**Site:** {run_record.site}  ·  **Status:** {status_text(run_record.status)}  ·  "
+            f"**Label:** {run_record.label or 'none'}\n\n"
+            f"**Started (UTC):** {run_record.started_at.strftime('%Y-%m-%d %H:%M')}  ·  "
+            f"**Ended (UTC):** {run_record.ended_at.strftime('%Y-%m-%d %H:%M') if run_record.ended_at else 'running'}\n\n"
+            f"**canvodpy:** {run_record.canvodpy_version}"
+            + (f" ({run_record.commit})" if run_record.commit else "")
+            + f"  ·  **Workers:** {run_record.workers or 'n/a'}"
+        )
+        # Folded by default: long, and rarely needed while a run goes.
+        details = mo.accordion(
+            {
+                "Settings": mo.json(run_record.settings),
+                "Machine": mo.json(run_record.machine),
+            },
+            multiple=True,
+        )
+        header_items = [header_md, details]
+    mo.vstack(header_items)
+    return
+
+
+@app.cell
+def _(log_dir, mo, run_view):
+    from canvodpy.cli.dashboards.export import export_zip
+
+    if run_view is None or log_dir is None:
+        download_items = [mo.md("")]
+    else:
+        run_id = run_view["run"].run_id
+        charts = run_view["charts"]
+        tables = {
+            "progress": ("the Progress table", run_view["progress_rows"]),
+            "warnings_and_errors": (
+                "the Warnings and errors table",
+                run_view["problem_rows"],
             ),
-            kind="warn",
-        )
-    else:
-        summary = mo.md(
-            f"**{len(events)}** stage_timing events across "
-            f"**{events['run_id'].n_unique()}** run(s), "
-            f"**{events['site'].n_unique()}** site(s), "
-            f"**{events['stage'].n_unique()}** distinct stages, "
-            f"**{events['calculator'].n_unique()}** VOD model(s)."
-        )
-    summary
-    return events, pl
-
-
-@app.cell
-def _(events, mo):
-    _sites = sorted(events["site"].drop_nulls().unique().to_list())
-    _models = sorted(events["calculator"].drop_nulls().unique().to_list())
-
-    site_filter = mo.ui.multiselect(
-        options=_sites, value=_sites, label="Site(s)", full_width=False
-    )
-    model_filter = mo.ui.multiselect(
-        options=_models,
-        value=_models,
-        label="VOD model(s) — n/a rows (RINEX stages) always included",
-        full_width=False,
-    )
-    mo.hstack([site_filter, model_filter], justify="start", gap=2)
-    return model_filter, site_filter
-
-
-@app.cell
-def _(events, model_filter, pl, site_filter):
-    if events.is_empty():
-        filtered = events
-    else:
-        filtered = events.filter(
-            pl.col("site").is_in(site_filter.value)
-            & (
-                pl.col("calculator").is_in(model_filter.value)
-                | pl.col("calculator").is_null()
+            "time_per_stage": (
+                "the data of the Time per stage chart (median and total)",
+                charts.get("stage", []),
+            ),
+            "time_per_day": (
+                "the data of the Time per day chart",
+                charts.get("day", []),
+            ),
+            "store_size": (
+                "the data of the Store size on disk chart",
+                charts.get("store", []),
+            ),
+            "cpu_and_memory": (
+                "the data of the CPU and memory chart",
+                charts.get("resources", []),
+            ),
+            "free_disk": (
+                "the data of the Free disk chart",
+                charts.get("disk", []),
+            ),
+            "throughput_over_time": (
+                "the data of the Throughput over time chart",
+                charts.get("throughput", []),
+            ),
+        }
+        download_items = [
+            mo.download(
+                data=lambda: export_zip(
+                    log_dir,
+                    [run_id],
+                    tables,
+                    title=f"canvodpy run dashboard: run {run_id}",
+                ),
+                filename=f"canvodpy_run_{run_id}.zip",
+                mimetype="application/zip",
+                label="Download the data of this run",
             )
-        )
-    return (filtered,)
-
-
-@app.cell
-def _(filtered, mo, pl):
-    mo.md(
-        """
-## Stage duration over time
-
-One panel per stage — trace each receiver or VOD analysis (color) across
-days to spot regressions per stage, not just totals. Rows facet by site
-when more than one site is present.
-"""
-    )
-
-    if filtered.is_empty():
-        trend_chart = mo.md("_No data yet._")
-    else:
-        trend_data = (
-            filtered.filter(
-                pl.col("date_key").is_not_null() & pl.col("unit").is_not_null()
-            )
-            .group_by(["site", "stage", "unit", "date_key"])
-            .agg(pl.col("duration_seconds").sum().alias("duration_seconds"))
-            .sort("date_key")
-        )
-        if trend_data.is_empty():
-            trend_chart = mo.md(
-                "_No stage_timing events carry receiver/analysis context yet._"
-            )
-        else:
-            import altair as _alt
-
-            _n_sites = trend_data["site"].n_unique()
-            _base = (
-                _alt.Chart(trend_data.to_pandas())
-                .mark_line(point=True)
-                .encode(  # ty: ignore[unresolved-attribute] -- altair's stubs lose the concrete Chart type across this chain
-                    x=_alt.X("date_key:N", title="Day (YYYYDOY)"),
-                    y=_alt.Y("duration_seconds:Q", title="Duration (s)"),
-                    color=_alt.Color("unit:N", title="Receiver / analysis"),
-                    tooltip=["site", "stage", "unit", "date_key", "duration_seconds"],
-                )
-                .properties(width=220, height=180)
-            )
-            _facet_kwargs = {"column": _alt.Column("stage:N", title="Stage")}
-            if _n_sites > 1:
-                _facet_kwargs["row"] = _alt.Row("site:N", title="Site")
-            # Faceted charts aren't wrapped in mo.ui.altair_chart (selection
-            # bindings don't apply cleanly to facets) -- rendered directly.
-            trend_chart = _base.facet(**_facet_kwargs).resolve_scale(y="independent")
-
-    trend_chart
+        ]
+    mo.vstack(download_items)
     return
 
 
 @app.cell
-def _(filtered, mo, pl):
-    mo.md("## Total elapsed time per day")
-
-    if filtered.is_empty():
-        agg_chart = mo.md("_No data yet._")
+def _(mo, run_view):
+    if run_view is None:
+        progress_items = [mo.md("")]
     else:
-        by_unit = (
-            filtered.filter(
-                pl.col("date_key").is_not_null() & pl.col("unit").is_not_null()
-            )
-            .group_by(["site", "unit", "date_key"])
-            .agg(pl.col("duration_seconds").sum().alias("total_seconds"))
-            .sort(["date_key", "site", "unit"])
-        )
-        if by_unit.is_empty():
-            agg_chart = mo.md("_No receiver/analysis-tagged events yet._")
-        else:
-            import altair as _alt
-
-            _n_sites = by_unit["site"].n_unique()
-            _base = (
-                _alt.Chart(by_unit.to_pandas())
-                .mark_bar()
-                .encode(  # ty: ignore[unresolved-attribute] -- altair's stubs lose the concrete Chart type across this chain
-                    x=_alt.X("date_key:N", title="Day (YYYYDOY)"),
-                    y=_alt.Y("total_seconds:Q", title="Total time (s)"),
-                    color=_alt.Color("unit:N", title="Receiver / analysis"),
-                    tooltip=["site", "unit", "date_key", "total_seconds"],
-                )
-                .properties(width=650, height=300)
-            )
-            if _n_sites > 1:
-                agg_chart = _base.facet(row=_alt.Row("site:N", title="Site"))
-            else:
-                agg_chart = mo.ui.altair_chart(_base)
-
-    agg_chart
+        progress_items = [
+            mo.md(
+                f"### Progress ({run_view['finished']} finished, "
+                f"{run_view['pending']} not yet done)"
+            ),
+            mo.ui.table(
+                run_view["progress_rows"], selection=None, label="Receiver-days"
+            ),
+        ]
+    mo.vstack(progress_items)
     return
 
 
 @app.cell
-def _(filtered, mo, pl):
-    mo.md("## Exact figures — duration (s) per site × stage × receiver/analysis")
-
-    if filtered.is_empty():
-        stats_table = mo.md("_No data yet._")
+def _(eta_text, last_step_text, mo, run_view):
+    if run_view is None:
+        timing_items = [mo.md("")]
     else:
-        stats = (
-            filtered.filter(pl.col("unit").is_not_null())
-            .group_by(["site", "stage", "unit"])
-            .agg(
-                pl.col("duration_seconds").mean().round(2).alias("mean_s"),
-                pl.col("duration_seconds").median().round(2).alias("median_s"),
-                pl.col("duration_seconds").max().round(2).alias("max_s"),
-                pl.col("duration_seconds").sum().round(1).alias("total_s"),
-                pl.len().alias("n"),
+        dp_hour = run_view["days_per_hour"]
+        bp_hour = run_view["bytes_per_hour"]
+        if dp_hour is None or bp_hour is None:
+            throughput_md = mo.md("**Throughput:** no receiver-day has finished yet.")
+        else:
+            suffix = (
+                " (over the run so far)" if run_view["run"].status == "running" else ""
             )
-            .sort(["site", "stage", "unit"])
-        )
-        stats_table = mo.ui.table(stats.to_pandas(), selection=None)
+            throughput_md = mo.md(
+                f"**Throughput:** {dp_hour:.2f} receiver-days per hour, "
+                f"{bp_hour / 1e6:.1f} MB per hour{suffix}"
+            )
+        timing_items = [
+            mo.md(f"**Estimate:** {eta_text(run_view['eta_seconds'])}"),
+            mo.md(f"**Last finished step:** {last_step_text(run_view['last_step'])}"),
+            throughput_md,
+        ]
+    mo.vstack(timing_items)
+    return
 
-    stats_table
+
+@app.cell
+def _(mo, run_view):
+    if run_view is None:
+        problem_items = [mo.md("")]
+    else:
+        if run_view["problem_rows"]:
+            body = mo.ui.table(
+                run_view["problem_rows"], selection=None, label="Problems"
+            )
+        else:
+            body = mo.md("_None recorded._")
+        problem_items = [
+            mo.md(f"### Warnings and errors ({len(run_view['problem_rows'])})"),
+            body,
+        ]
+    mo.vstack(problem_items)
+    return
+
+
+@app.cell
+def _(
+    chart_categories,
+    chart_palette,
+    chart_style,
+    mo,
+    run_view,
+    time_axis,
+    time_bars,
+    time_line,
+):
+    import altair as alt
+
+    run_charts = run_view["charts"] if run_view is not None else {}
+    chart_items = [mo.md("### Charts"), time_axis]
+    # A data day on a date axis: the labels thin out to fit the width, so a
+    # year of days stays readable. UTC, so a date never shifts by a day.
+    date_axis = alt.X(
+        "utcyearmonthdate(Date):T",
+        axis=alt.Axis(title="Day", format="%Y-%m-%d", labelOverlap=True),
+    )
+    date_tooltip = alt.Tooltip(
+        "utcyearmonthdate(Date):T", title="Date", format="%Y-%m-%d"
+    )
+    if not run_charts:
+        chart_items.append(mo.md("_No chart data for this run yet._"))
+    else:
+        chart_series = chart_palette()
+
+        if "stage" in run_charts:
+            chart_items.append(
+                mo.md(
+                    "**Time per stage.** On the left, the **median** of a stage's "
+                    "per-day seconds (Median per day); on the right, the "
+                    "**total** seconds of each stage (Total). The median is over "
+                    "the stage's per-day seconds (a day's seconds added up for "
+                    "that stage; a stage that names no day takes the median of its "
+                    "records; a unit of days is split evenly over its days). "
+                    "Receivers run in parallel, so these are not wall time."
+                )
+            )
+            stage_rows = run_charts["stage"]
+            stage_order = [row["Stage"] for row in stage_rows]
+            median_rows, median_time = time_bars(
+                "x", "Median (s)", "Median per day (s)", stage_rows, time_axis.value
+            )
+            total_rows, total_time = time_bars(
+                "x", "Total (s)", "Total (s)", stage_rows, time_axis.value
+            )
+            median_chart = chart_style(
+                alt.Chart({"values": median_rows})  # type: ignore
+                .mark_bar(color=chart_series[0])
+                .encode(
+                    y=alt.Y("Stage:N", sort=stage_order, axis=alt.Axis(title="Stage")),
+                    **median_time,
+                    tooltip=[
+                        "Stage:N",
+                        alt.Tooltip(
+                            "Median (s):Q", title="Median per day (s)", format=".2f"
+                        ),
+                    ],
+                )
+            )
+            total_chart = chart_style(
+                alt.Chart({"values": total_rows})  # type: ignore
+                .mark_bar(color=chart_series[0])
+                .encode(
+                    y=alt.Y("Stage:N", sort=stage_order, axis=alt.Axis(title="Stage")),
+                    **total_time,
+                    tooltip=[
+                        "Stage:N",
+                        alt.Tooltip("Total (s):Q", title="Total (s)", format=".1f"),
+                    ],
+                )
+            )
+            chart_items.append(mo.hstack([median_chart, total_chart]))
+
+        if "day" in run_charts:
+            chart_items.append(
+                mo.md(
+                    "**Time per day.** The stage seconds of a data day, added up; "
+                    "a run that works in units of days splits a unit's record "
+                    "evenly over its days. Receivers run in parallel, so this is "
+                    "not wall time. A day's time is final only after its unit's "
+                    "VOD phase: until then it still rises, since a unit's "
+                    "writing record is split over its days when the unit "
+                    "commits, and its VOD runs during the next unit."
+                )
+            )
+            day_points, day_time = time_line(
+                "y", "Seconds", "Time (s)", run_charts["day"], time_axis.value
+            )
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": day_points})  # type: ignore
+                        .mark_line(point=True, color=chart_series[0])
+                        .encode(
+                            x=date_axis,
+                            **day_time,
+                            tooltip=[
+                                alt.Tooltip("Day:N", title="Day (YYYYDOY)"),
+                                date_tooltip,
+                                alt.Tooltip("Seconds:Q", format=".1f"),
+                            ],
+                        )
+                        .properties(width="container")
+                    )
+                )
+            )
+
+        if "store" in run_charts:
+            chart_items.append(
+                mo.md(
+                    "**Store size on disk.** The on-disk size of each store, "
+                    "measured in the background when the run finished a new data "
+                    "day (never inside a stage or a commit; how long the walk took "
+                    "is recorded too). The **Total** line adds the stores of a day."
+                )
+            )
+            store_data = run_charts["store"]
+            byte_values = [row["Size (bytes)"] for row in store_data]
+            store_unit = "GB" if max(byte_values) >= 1e9 else "MB"
+            store_scale = 1e9 if store_unit == "GB" else 1e6
+            store_display = [
+                {**row, "Size": row["Size (bytes)"] / store_scale} for row in store_data
+            ]
+            store_count = len({row["Store"] for row in store_data})
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": store_display})  # type: ignore
+                        .mark_line(point=True)
+                        .encode(
+                            x=date_axis,
+                            y=alt.Y(
+                                "Size:Q",
+                                axis=alt.Axis(title=f"Store size ({store_unit})"),
+                                scale=alt.Scale(zero=False),
+                            ),
+                            color=alt.Color("Store:N").scale(
+                                range=chart_categories(store_count)
+                            ),
+                            tooltip=[
+                                alt.Tooltip("Day:N", title="Day (YYYYDOY)"),
+                                date_tooltip,
+                                "Store:N",
+                                alt.Tooltip(
+                                    "Size:Q", title=f"Size ({store_unit})", format=".2f"
+                                ),
+                            ],
+                        )
+                        .properties(width="container")
+                    )
+                )
+            )
+        elif run_charts:
+            chart_items.append(mo.md("_This run recorded no store sizes._"))
+
+        if "resources" in run_charts:
+            chart_items.append(
+                mo.md("**CPU and memory.** Percent used, sampled during the run.")
+            )
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": run_charts["resources"]})  # type: ignore
+                        .mark_line(point=True)
+                        .encode(
+                            x=alt.X("Time:T", axis=alt.Axis(title="Time (UTC)")),
+                            y=alt.Y(
+                                "Percent:Q", axis=alt.Axis(title="Percent used (%)")
+                            ),
+                            color=alt.Color("Metric:N").scale(
+                                range=chart_categories(2)
+                            ),
+                            tooltip=[
+                                alt.Tooltip(
+                                    "Time:T",
+                                    title="Time (UTC)",
+                                    format="%Y-%m-%d %H:%M:%S",
+                                ),
+                                "Metric:N",
+                                alt.Tooltip("Percent:Q", format=".1f"),
+                            ],
+                        )
+                    )
+                )
+            )
+
+        if "disk" in run_charts:
+            chart_items.append(
+                mo.md(
+                    "**Free disk.** Free space of each folder, sampled during the "
+                    "run. Folders on the same disk have the same free space, so "
+                    "their lines lie on top of each other; hover for the folder."
+                )
+            )
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": run_charts["disk"]})  # type: ignore
+                        .mark_line(point=True)
+                        .encode(
+                            x=alt.X("Time:T", axis=alt.Axis(title="Time (UTC)")),
+                            y=alt.Y(
+                                "Free disk (GB):Q",
+                                axis=alt.Axis(title="Free disk (GB)"),
+                                scale=alt.Scale(zero=False),
+                            ),
+                            tooltip=[
+                                "Folder:N",
+                                alt.Tooltip(
+                                    "Time:T",
+                                    title="Time (UTC)",
+                                    format="%Y-%m-%d %H:%M:%S",
+                                ),
+                                alt.Tooltip("Free disk (GB):Q", format=".1f"),
+                            ],
+                            color=alt.Color("Folder:N").scale(
+                                range=chart_categories(
+                                    len({row["Folder"] for row in run_charts["disk"]})
+                                )
+                            ),
+                        )
+                    )
+                )
+            )
+
+        if "throughput" in run_charts:
+            chart_items.append(
+                mo.md(
+                    "**Throughput over time.** Receiver-days finished, cumulative "
+                    "from the run start."
+                )
+            )
+            chart_items.append(
+                mo.ui.altair_chart(
+                    chart_style(
+                        alt.Chart({"values": run_charts["throughput"]})  # type: ignore
+                        .mark_line(point=True, color=chart_series[0])
+                        .encode(
+                            x=alt.X(
+                                "Elapsed (h):Q",
+                                axis=alt.Axis(title="Elapsed since start (h)"),
+                            ),
+                            y=alt.Y(
+                                "Receiver-days finished:Q",
+                                axis=alt.Axis(title="Receiver-days finished"),
+                            ),
+                            tooltip=[
+                                alt.Tooltip("Elapsed (h):Q", format=".2f"),
+                                "Receiver-days finished:Q",
+                            ],
+                        )
+                    )
+                )
+            )
+
+    mo.vstack(chart_items)
+    return
+
+
+@app.cell
+def _(comparison_view, log_dir, mo, refresh, time_axis):
+    _ = refresh  # re-read the comparison on refresh
+    mo.vstack([time_axis, *comparison_view(log_dir, time_axis.value)])
     return
 
 

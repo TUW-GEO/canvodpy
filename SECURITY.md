@@ -2,11 +2,14 @@
 
 ## Supported Versions
 
-canvodpy is currently in **beta** (pre-1.0 release). Security updates are provided for:
+Security fixes go into the latest 1.x release of each package. Releases
+before 1.0.0 get no fixes; upgrade with the
+[upgrading guide](https://canvodpy.eu/guides/upgrading/).
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.x.x   | :white_check_mark: |
+| 1.x.x   | :white_check_mark: |
+| < 1.0.0 | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -21,7 +24,7 @@ Please **do not** report security vulnerabilities through public GitHub issues, 
 Report security vulnerabilities via one of these methods:
 
 **Preferred:** Use GitHub's private vulnerability reporting:
-- Go to https://github.com/nfb2021/canvodpy/security/advisories
+- Go to https://github.com/TUW-GEO/canvodpy/security/advisories
 - Click "Report a vulnerability"
 - Fill in the details
 
@@ -68,9 +71,18 @@ we do not guarantee specific response or fix timelines.
 
 - Keep canvodpy and its dependencies up to date
 - Monitor security advisories:
-  - GitHub Dependabot alerts (enabled for this repository)
+  - GitHub Dependabot alerts
   - PyPI security notifications
-  - `pip-audit` or `safety` for your environment
+  - `uv audit` in your project, which checks the locked dependencies
+    against known vulnerabilities (experimental in uv)
+  - `pip-audit`, run through uv, which does the same check:
+
+    ```bash
+    uv export --format requirements-txt --no-emit-workspace -o requirements.txt
+    uvx pip-audit --disable-pip -r requirements.txt
+    ```
+
+<!-- Drop the pip-audit item once `uv audit` is no longer experimental. -->
 
 ### Credential Management
 
@@ -116,9 +128,9 @@ canvodpy loads Python configuration files:
 - ✅ SPDX license compliance (REUSE 3.3)
 - ✅ Pinned dependencies in `uv.lock`
 - ✅ Pre-commit hooks (ruff linting & formatting, ty type checking, conventional commits)
-- ✅ Continuous integration (8 workflows: tests, coverage, code quality, audit, FAIR checks)
-- ✅ Static analysis (ruff with 50+ rule sets)
-- ✅ Type checking (ty with type budget enforcement)
+- ✅ Continuous integration (GitHub Actions: tests, coverage, code quality, CodeQL, FAIR checks)
+- ✅ Static analysis (ruff, CodeQL)
+- ✅ Type checking (ty, in the pre-push hook and in CI)
 - ✅ Dynamic analysis (pytest test suite with coverage tracking)
 - ✅ Input validation framework for GNSS data files
 
@@ -150,8 +162,8 @@ For security-related questions or concerns:
 - **Affiliation:** Climate and Environmental Remote Sensing (CLIMERS), TU Wien
 
 For general questions (non-security), please use:
-- GitHub Discussions: https://github.com/nfb2021/canvodpy/discussions
-- GitHub Issues: https://github.com/nfb2021/canvodpy/issues
+- GitHub Discussions: https://github.com/TUW-GEO/canvodpy/discussions
+- GitHub Issues: https://github.com/TUW-GEO/canvodpy/issues
 
 ---
 

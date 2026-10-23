@@ -1,9 +1,9 @@
 """canvodpy console-script entry point.
 
-Composes the config/stats/run/doctor/store subcommands into a single Typer
+Composes the config/run/doctor/store/stac subcommands into a single Typer
 app. All CLI code lives in this package — the entry point, ``config``,
-``stats``, ``run``, ``doctor``, and ``store`` — matching where the rest of
-canvodpy's user-facing surface (``Site``, ``Pipeline``, the functional API)
+``run``, ``doctor``, ``store`` and ``stac`` — matching where the rest of
+canvodpy's user-facing surface (``Site``, ``Pipeline``)
 already lives.
 """
 
@@ -14,7 +14,7 @@ import typer
 
 main_app = typer.Typer(
     name="canvodpy",
-    help="canvodpy CLI tools",
+    help="Process GNSS observations into VOD and inspect the stores.",
     no_args_is_help=True,
 )
 
@@ -22,25 +22,30 @@ from canvodpy.cli.config import config_app  # noqa: E402
 from canvodpy.cli.doctor import doctor as doctor_command  # noqa: E402
 from canvodpy.cli.perf_dashboard import dashboard as dashboard_command  # noqa: E402
 from canvodpy.cli.run import run as run_command  # noqa: E402
-from canvodpy.cli.stats import stats_app  # noqa: E402
+from canvodpy.cli.stac import stac_app  # noqa: E402
 from canvodpy.cli.store import store_app  # noqa: E402
 from canvodpy.cli.vod import vod as vod_command  # noqa: E402
 from canvodpy.cli.vod import vod_reconcile as vod_reconcile_command  # noqa: E402
 
 main_app.add_typer(config_app, name="config")
-main_app.add_typer(stats_app, name="stats")
 main_app.add_typer(store_app, name="store")
+main_app.add_typer(stac_app, name="stac")
 main_app.command("run")(run_command)
 main_app.command(
     "vod",
-    help="Compute VOD in bulk from an existing RINEX store (backfill/reprocessing).",
+    help=(
+        "Compute VOD for a range of days from the GNSS store of a site, one day "
+        "per worker. Days stored from the same GNSS files are skipped; days "
+        "without data are listed."
+    ),
 )(vod_command)
 main_app.command(
     "vod-reconcile",
-    help="Find (and optionally backfill) RINEX-ingested-but-VOD-missing dates.",
+    help="List the dates that have observations but no VOD, and compute it with --execute.",
 )(vod_reconcile_command)
 main_app.command(
-    "doctor", help="Report canvodpy's version, environment, and config resolution."
+    "doctor",
+    help="Report canvodpy's version, its environment, and its configuration directory.",
 )(doctor_command)
 main_app.command(
     "dashboard", help="Launch the marimo performance dashboard for the pipeline's logs."
@@ -68,7 +73,7 @@ def _main_callback(
         ),
     ] = False,
 ) -> None:
-    """canvodpy CLI tools"""
+    """Process GNSS observations into VOD and inspect the stores."""
 
 
 def main() -> None:

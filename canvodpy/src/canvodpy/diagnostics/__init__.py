@@ -1,7 +1,6 @@
 """Diagnostic utilities for canvodpy.
 
-This package contains diagnostic scripts for testing and verifying
-the canvodpy implementation against the original gnssvodpy.
+This package contains diagnostic scripts for timing the canvodpy pipeline.
 """
 
 from canvodpy.diagnostics.timing_diagnostics_script import diagnose_processing

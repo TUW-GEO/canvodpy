@@ -1,9 +1,12 @@
 """Tests for product registry."""
 
 import pytest
+from pydantic import ValidationError
 
 from canvod.auxiliary.products import (
     ProductSpec,
+    UnknownProductError,
+    check_product,
     get_product_spec,
     list_agencies,
     list_products,
@@ -13,39 +16,68 @@ from canvod.auxiliary.products import (
 class TestProductSpec:
     """Test ProductSpec model."""
 
-    def test_valid_product_spec(self):
-        """Test creating valid ProductSpec."""
-        spec = ProductSpec(
+    def _spec(self, **kw):
+        fields = dict(
             agency_code="COD",
             agency_name="Test Agency",
             product_type="final",
             prefix="COD0MGXFIN",
-            sampling_rate="05M",
-            duration="01D",
-            available_formats=["SP3", "CLK"],
+            sp3_samplings=["05M", "15M"],
+            clk_samplings=["30S"],
             ftp_servers=[],
             ftp_path_pattern="/gnss/products/{gps_week}/{file}",
-            description="Test product",
         )
+        return ProductSpec(**(fields | kw))
+
+    def test_valid_product_spec(self):
+        spec = self._spec(description="Test product")
 
         assert spec.agency_code == "COD"
-        assert "SP3" in spec.available_formats
+        assert spec.available_formats == ["SP3", "CLK"]
 
-    def test_minimal_product_spec(self):
-        """Test minimal required fields."""
-        spec = ProductSpec(
-            agency_code="COD",
-            agency_name="Test Agency",
-            product_type="final",
-            prefix="COD0MGXFIN",
-            sampling_rate="05M",
-            duration="01D",
-            available_formats=["SP3"],
-            ftp_servers=[],
-            ftp_path_pattern="/path/{file}",
-        )
+    def test_filenames_in_sampling_order(self):
+        spec = self._spec()
 
-        assert spec.agency_code == "COD"
+        assert spec.sp3_filenames("2025001") == [
+            "COD0MGXFIN_20250010000_01D_05M_ORB.SP3",
+            "COD0MGXFIN_20250010000_01D_15M_ORB.SP3",
+        ]
+        assert spec.clk_filenames("2025001") == [
+            "COD0MGXFIN_20250010000_01D_30S_CLK.CLK"
+        ]
+
+    def test_no_clocks(self):
+        spec = self._spec(clk_samplings=[])
+
+        assert not spec.has_clock
+        assert spec.available_formats == ["SP3"]
+        assert spec.clk_filenames("2025001") == []
+
+    def test_ultra_rapid_refused(self):
+        with pytest.raises(ValidationError):
+            self._spec(product_type="ultrarapid")
+
+    def test_bad_sampling_refused(self):
+        with pytest.raises(ValidationError, match="05M or 30S"):
+            self._spec(sp3_samplings=["5min"])
+
+    def test_old_fields_deprecated(self):
+        with pytest.warns(FutureWarning, match="sp3_samplings"):
+            spec = ProductSpec(
+                agency_code="COD",
+                agency_name="Test Agency",
+                product_type="final",
+                prefix="COD0MGXFIN",
+                sampling_rate="05M",
+                duration="01D",
+                available_formats=["SP3"],
+                ftp_servers=[],
+                ftp_path_pattern="/path/{file}",
+            )
+        assert spec.sp3_samplings == ["05M"]
+        assert not spec.has_clock
+        with pytest.warns(FutureWarning, match="sp3_samplings"):
+            assert spec.sampling_rate == "05M"
 
 
 class TestGetProductSpec:
@@ -81,6 +113,30 @@ class TestGetProductSpec:
         """Test invalid product type raises KeyError."""
         with pytest.raises(KeyError):
             get_product_spec("COD", "invalid_product")
+
+    def test_misspelled_agency_suggested(self):
+        with pytest.raises(UnknownProductError, match="Did you mean agency 'COD'"):
+            get_product_spec("CDO", "final")
+
+    def test_ultra_rapid_explained(self):
+        with pytest.raises(UnknownProductError) as exc:
+            get_product_spec("COD", "ultrarapid")
+        assert "COD publishes: final, rapid" in str(exc.value)
+        assert "ultra-rapid" in str(exc.value)
+
+
+class TestCheckProduct:
+    def test_product_with_clocks(self):
+        assert check_product("COD", "final", fetch_clock=True).prefix == "COD0MGXFIN"
+
+    def test_product_without_clocks_needs_fetch_clock_off(self):
+        with pytest.raises(ValueError, match="fetch_clock"):
+            check_product("SIO", "final", fetch_clock=True)
+        assert not check_product("SIO", "final", fetch_clock=False).has_clock
+
+    def test_unknown_product(self):
+        with pytest.raises(KeyError):
+            check_product("WHU", "rapid", fetch_clock=True)
 
 
 class TestListAvailableProducts:

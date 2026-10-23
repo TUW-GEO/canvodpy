@@ -21,9 +21,39 @@ class TestFactoryRegistration:
         assert "rinex3" in available
 
     def test_builtin_grids_registered(self):
-        """Built-in grids should be auto-registered."""
-        available = GridFactory.list_available()
-        assert "equal_area" in available
+        """Every grid type of canvod-grids is registered under its GridType value."""
+        from canvod.grids import GridType
+
+        assert set(GridFactory.list_available()) == {t.value for t in GridType}
+
+    def test_grid_factory_registers_the_grid_builders_table(self):
+        """GridFactory and create_hemigrid take the builders from one table."""
+        from canvod.grids import GRID_BUILDERS
+
+        for grid_type, builder in GRID_BUILDERS.items():
+            assert GridFactory._registry[grid_type.value] is builder
+
+    @pytest.mark.parametrize(
+        "grid_type",
+        [
+            "equal_area",
+            "equal_angle",
+            "equirectangular",
+            "htm",
+            "geodesic",
+            "fibonacci",
+            "healpix",
+        ],
+    )
+    def test_factory_grid_matches_create_hemigrid(self, grid_type):
+        """The factory builds the same grid as create_hemigrid."""
+        from canvod.grids import create_hemigrid
+
+        if grid_type == "healpix":
+            pytest.importorskip("healpy")
+        built = GridFactory.create(grid_type, angular_resolution=10.0).build()
+        expected = create_hemigrid(grid_type, angular_resolution=10.0)
+        assert built.grid.equals(expected.grid)
 
     def test_builtin_vod_registered(self):
         """Built-in VOD calculators should be auto-registered."""
@@ -96,6 +126,31 @@ class TestFactoryABCValidation:
         # Clean up
         if "test_builder" in GridFactory._registry:
             del GridFactory._registry["test_builder"]
+
+    def test_register_taken_name_fails(self):
+        """A name that is taken is not replaced silently."""
+        from canvod.vod.calculator import TauOmegaZerothOrder
+
+        class OtherCalculator(TauOmegaZerothOrder):
+            """Another calculator."""
+
+        with pytest.raises(ValueError, match="already registered"):
+            VODFactory.register("tau_omega", OtherCalculator)
+        assert VODFactory.component_class("tau_omega") is TauOmegaZerothOrder
+
+    def test_register_replace(self):
+        """replace=True replaces the registered class."""
+        from canvod.vod.calculator import TauOmegaZerothOrder
+
+        class OtherCalculator(TauOmegaZerothOrder):
+            """Another calculator."""
+
+        VODFactory.register("test_replace", TauOmegaZerothOrder)
+        try:
+            VODFactory.register("test_replace", OtherCalculator, replace=True)
+            assert VODFactory.component_class("test_replace") is OtherCalculator
+        finally:
+            del VODFactory._registry["test_replace"]
 
 
 class TestFactoryPydanticValidation:
@@ -174,3 +229,37 @@ class TestFactoryThreadSafety:
         built1 = grid1.build()
         built2 = grid2.build()
         assert built1.ncells != built2.ncells
+
+
+class TestAugmentationFactoryDeprecated:
+    """AugmentationFactory is left over from development and warns."""
+
+    @pytest.mark.filterwarnings("default::FutureWarning")
+    def test_list_available_warns(self):
+        from canvodpy.factories import AugmentationFactory
+
+        with pytest.warns(FutureWarning, match="canvod.ops.Op"):
+            AugmentationFactory.list_available()
+
+    @pytest.mark.filterwarnings("ignore::FutureWarning")
+    def test_register_replace(self):
+        from canvodpy.factories import AugmentationFactory
+
+        from canvod.auxiliary.augmentation import AugmentationStep
+
+        class _First(AugmentationStep):
+            def augment(self, ds, aux_data, **kwargs):
+                return ds
+
+        class _Second(_First):
+            pass
+
+        name = "_test_replace"
+        try:
+            AugmentationFactory.register(name, _First)
+            with pytest.raises(ValueError, match="already registered"):
+                AugmentationFactory.register(name, _Second)
+            AugmentationFactory.register(name, _Second, replace=True)
+            assert AugmentationFactory._registry[name] is _Second
+        finally:
+            AugmentationFactory._registry.pop(name, None)

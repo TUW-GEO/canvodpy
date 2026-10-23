@@ -1,19 +1,32 @@
-"""Runtime collectors — pure functions that gather metadata."""
+"""Runtime collectors: pure functions that gather metadata."""
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
 import platform
+import re
 import shutil
-import socket
 import subprocess
-import sys
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from canvod.config.store_names import store_folder_name
+
+from .content import CONTENT_STORE_TYPES, new_content_settings
+from .identity import (
+    NAMING_AUTHORITY_SETTING,
+    check_naming_authority,
+    new_uuid,
+    stac_link,
+    store_id,
+)
+from .location import StoreLocation, store_location
+from .machine import without_machine_settings
 from .schema import (
     ConfigSnapshot,
     Creator,
@@ -27,8 +40,8 @@ from .schema import (
     SpatialExtent,
     StoreIdentity,
     StoreMetadata,
-    Summaries,
     TemporalExtent,
+    VodAnalysisInfo,
 )
 
 if TYPE_CHECKING:
@@ -37,14 +50,27 @@ if TYPE_CHECKING:
 
 def collect_software_versions() -> dict[str, str]:
     """Collect versions of key packages via importlib.metadata."""
+    return dict(_software_versions())
+
+
+@functools.cache
+def _software_versions() -> dict[str, str]:
+    """The installed versions, looked up once per process."""
     import importlib.metadata
 
     packages = [
         "canvodpy",
-        "canvod-readers",
-        "canvod-store",
-        "canvod-store-metadata",
         "canvod-utils",
+        "canvod-config",
+        "canvod-readers",
+        "canvod-auxiliary",
+        "canvod-preflight",
+        "canvod-vod",
+        "canvod-grids",
+        "canvod-ops",
+        "canvod-store-metadata",
+        "canvod-store",
+        "canvod-viz",
         "icechunk",
         "zarr",
         "xarray",
@@ -62,13 +88,25 @@ def collect_software_versions() -> dict[str, str]:
     return versions
 
 
+@functools.cache
 def collect_python_info() -> str:
-    """Return Python version + implementation."""
-    return f"{sys.version} ({platform.python_implementation()})"
+    """Return the Python version number and implementation (``"3.14.8 CPython"``).
+
+    Not ``sys.version``: it adds the build date and the compiler, and the
+    store records no machine information.
+    """
+    return f"{platform.python_version()} {platform.python_implementation()}"
 
 
+@functools.cache
 def collect_uv_version() -> str | None:
-    """Return uv version or None if not installed."""
+    """Return the uv version number, or None if uv is not installed.
+
+    Only the number is kept (``"0.13.1"``): ``uv --version`` may add how
+    uv was built and the platform, for example
+    ``"uv 0.13.1 (Homebrew 2026-10-14 aarch64-apple-darwin)"``, and the
+    store records no machine information. Asked once per process.
+    """
     try:
         result = subprocess.run(
             ["uv", "--version"],
@@ -77,52 +115,78 @@ def collect_uv_version() -> str | None:
             timeout=5,
         )
         if result.returncode == 0:
-            return result.stdout.strip()
+            match = re.match(r"uv\s+(\S+)", result.stdout.strip())
+            return match.group(1) if match else None
     except FileNotFoundError, subprocess.TimeoutExpired:
         pass
     return None
 
 
-def _find_monorepo_root() -> Path | None:
-    """Walk up from this file to find pyproject.toml with workspace."""
-    try:
-        from canvod.config.loader import find_monorepo_root
+def _find_project_root() -> Path | None:
+    """The uv project the process runs from: the nearest directory, from
+    the working directory up, that holds ``pyproject.toml`` and ``uv.lock``.
 
-        return find_monorepo_root()
-    except Exception:
-        pass
-    # Fallback: walk up from cwd
-    p = Path.cwd()
-    for _ in range(10):
-        if (p / "pyproject.toml").exists() and (p / "uv.lock").exists():
-            return p
-        if p.parent == p:
-            break
-        p = p.parent
+    ``None`` outside such a project; no lockfile is recorded then.
+    """
+    current = Path.cwd().resolve()
+    for path in [current, *current.parents]:
+        if (path / "pyproject.toml").is_file() and (path / "uv.lock").is_file():
+            return path
     return None
 
 
-def _read_file_text(path: Path) -> str | None:
-    """Read a file as UTF-8 text, return None if missing."""
-    if not path.exists():
-        return None
-    return path.read_text(encoding="utf-8")
+def _project_files(root: Path) -> tuple[str, str, str]:
+    """``pyproject.toml`` text, ``uv.lock`` text and its SHA256.
+
+    Read again only when either file changed (modification time or size).
+    """
+    pyproject, lock = (root / "pyproject.toml").stat(), (root / "uv.lock").stat()
+    return _read_project_files(
+        root,
+        (pyproject.st_mtime_ns, pyproject.st_size),
+        (lock.st_mtime_ns, lock.st_size),
+    )
 
 
-def _read_uv_lock_hash(root: Path) -> str | None:
-    """Return SHA256 of uv.lock for quick comparison."""
-    lock_path = root / "uv.lock"
-    if not lock_path.exists():
-        return None
-    return hashlib.sha256(lock_path.read_bytes()).hexdigest()
+@functools.lru_cache(maxsize=8)
+def _read_project_files(
+    root: Path, pyproject_key: tuple[int, int], lock_key: tuple[int, int]
+) -> tuple[str, str, str]:
+    """Read the project files; the keys only identify their versions."""
+    lock = (root / "uv.lock").read_bytes()
+    return (
+        (root / "pyproject.toml").read_text(encoding="utf-8"),
+        lock.decode("utf-8"),
+        hashlib.sha256(lock).hexdigest(),
+    )
 
 
 def collect_environment(
     store_path: Path | None = None,
     dask_workers: int | None = None,
     dask_threads_per_worker: int | None = None,
+    record_machine: bool = True,
 ) -> Environment:
-    """Collect runtime environment information."""
+    """Collect runtime environment information.
+
+    With ``record_machine=False`` the computer (operating system, architecture,
+    CPU count, memory, free disk) is not recorded: those fields are
+    ``None`` (``processing.metadata.record_machine``).
+    """
+    # Raw pyproject.toml + uv.lock of the project the process runs from
+    pyproject_text = uv_lock_text = uv_lock_hash = None
+    root = _find_project_root()
+    if root is not None:
+        pyproject_text, uv_lock_text, uv_lock_hash = _project_files(root)
+    if not record_machine:
+        return Environment(
+            dask_workers=dask_workers,
+            dask_threads_per_worker=dask_threads_per_worker,
+            uv_lock_hash=uv_lock_hash,
+            pyproject_toml_text=pyproject_text,
+            uv_lock_text=uv_lock_text,
+        )
+
     memory_gb = None
     try:
         import psutil
@@ -138,18 +202,7 @@ def collect_environment(
             usage = shutil.disk_usage(check_path)
             disk_free_gb = round(usage.free / (1024**3), 1)
 
-    # Read raw pyproject.toml + uv.lock from monorepo root
-    pyproject_text = None
-    uv_lock_text = None
-    uv_lock_hash = None
-    root = _find_monorepo_root()
-    if root is not None:
-        pyproject_text = _read_file_text(root / "pyproject.toml")
-        uv_lock_text = _read_file_text(root / "uv.lock")
-        uv_lock_hash = _read_uv_lock_hash(root)
-
     return Environment(
-        hostname=socket.gethostname(),
         os=platform.platform(),
         arch=platform.machine(),
         cpu_count=os.cpu_count(),
@@ -163,8 +216,40 @@ def collect_environment(
     )
 
 
+def records_machine(config: Any) -> bool:
+    """``processing.metadata.record_machine`` of ``config``: settings, a
+    plain dict of them or a :class:`ConfigSnapshot`; true when not set."""
+    processing = (
+        config.get("processing")
+        if isinstance(config, dict)
+        else getattr(config, "processing", None)
+    )
+    metadata = (
+        processing.get("metadata")
+        if isinstance(processing, dict)
+        else getattr(processing, "metadata", None)
+    )
+    value = (
+        metadata.get("record_machine")
+        if isinstance(metadata, dict)
+        else getattr(metadata, "record_machine", None)
+    )
+    return value is not False
+
+
+#: Settings never written into a store: account details for data servers.
+_PRIVATE_PROCESSING_KEYS = ("credentials",)
+
+
 def collect_config_snapshot(config: Any) -> ConfigSnapshot:
-    """Serialize config sections + compute SHA256 hash."""
+    """Serialize config sections + compute SHA256 hash.
+
+    Left out (and out of the hash), because stores are shared:
+    ``processing.credentials``, the account details for data servers, and
+    the settings of one computer (:data:`~.machine.MACHINE_SETTINGS`, and
+    the stores' root when it is a local folder). The same settings on two
+    computers give the same hash.
+    """
     sections: dict[str, Any] = {}
     keys = (
         "processing",
@@ -190,6 +275,17 @@ def collect_config_snapshot(config: Any) -> ConfigSnapshot:
                 sections[key] = obj
             else:
                 sections[key] = str(obj)
+
+    if isinstance(sections.get("processing"), dict):
+        sections["processing"] = without_machine_settings(
+            {
+                "processing": {
+                    k: v
+                    for k, v in sections["processing"].items()
+                    if k not in _PRIVATE_PROCESSING_KEYS
+                }
+            }
+        )["processing"]
 
     config_str = json.dumps(sections, sort_keys=True, default=str)
     config_hash = hashlib.sha256(config_str.encode()).hexdigest()
@@ -225,6 +321,7 @@ def collect_publisher(metadata_config: Any) -> Publisher:
         name=getattr(metadata_config, "publisher", None),
         url=getattr(metadata_config, "publisher_url", None),
         license=getattr(metadata_config, "license", None),
+        license_uri=getattr(metadata_config, "license_uri", None),
     )
 
 
@@ -255,26 +352,110 @@ def collect_spatial(site_config: Any, site_name: str) -> SpatialExtent:
     )
 
 
-def collect_instruments(site_config: Any) -> Instruments:
-    """Build Instruments from SiteConfig receivers."""
-    receivers: dict[str, ReceiverInfo] = {}
-    for name, rcv in site_config.receivers.items():
-        receivers[name] = ReceiverInfo(
-            type=rcv.type,
-            directory=rcv.directory,
-            reader_format=getattr(rcv, "reader_format", "auto"),
-            description=getattr(rcv, "description", None),
-            recipe=getattr(rcv, "recipe", None),
-            metadata=getattr(rcv, "metadata", None),
+def collect_receiver(
+    receiver_config: Any, site_name: str | None = None
+) -> ReceiverInfo:
+    """A receiver's entry in the store metadata, from its settings.
+
+    With ``site_name``, a receiver with a naming recipe also gets the
+    sha256 of its recipe file (:func:`recipe_sha256_of`). A recipe given
+    as a URL is recorded by its file name only.
+    """
+    from canvod.utils.remote_file import recorded_name
+
+    recipe = getattr(receiver_config, "recipe", None)
+    return ReceiverInfo(
+        type=receiver_config.type,
+        directory=receiver_config.directory,
+        reader_format=getattr(receiver_config, "reader_format", "auto"),
+        description=getattr(receiver_config, "description", None),
+        recipe=recorded_name(recipe) if recipe else recipe,
+        recipe_sha256=(
+            recipe_sha256_of(site_name, recipe) if site_name and recipe else None
+        ),
+        metadata=getattr(receiver_config, "metadata", None),
+        receiver_hardware=_dump(getattr(receiver_config, "receiver_hardware", None)),
+        antenna=_dump(getattr(receiver_config, "antenna", None)),
+    )
+
+
+def recipe_sha256_of(site_name: str, recipe: str) -> str | None:
+    """sha256 of the naming recipe file ``recipe`` of ``site_name``.
+
+    The file is found the way a run finds it (canvod-filemap's
+    ``find_recipe``: a local recipe in the configuration directory, or a
+    URL recipe, fetched).
+
+    Returns
+    -------
+    str | None
+        The hexadecimal sha256, ``None`` if canvod-filemap is not installed
+        or the recipe cannot be found (a run stops there before any store
+        is written).
+    """
+    try:
+        from canvod.filemap import (
+            RecipeNotFoundError,
+            RemoteRecipeError,
+            find_recipe,
+            recipe_sha256,
         )
+    except ImportError:
+        return None
+    from canvod.config.loader import get_default_config_dir
+
+    try:
+        return recipe_sha256(find_recipe(get_default_config_dir(), site_name, recipe))
+    except RecipeNotFoundError, RemoteRecipeError:
+        return None
+
+
+def _dump(settings: Any) -> dict[str, Any] | None:
+    """A settings block as a plain dict, ``None`` when not set."""
+    return None if settings is None else settings.model_dump()
+
+
+def collect_instruments(
+    site_config: Any, *, hardware: bool = True, site_name: str | None = None
+) -> Instruments:
+    """Build Instruments from SiteConfig receivers.
+
+    ``hardware=False`` leaves out the receiver and antenna details: a VOD
+    store reads them from the GNSS store's entries instead of copying them.
+    """
+    receivers = {
+        name: collect_receiver(rcv, site_name)
+        for name, rcv in site_config.receivers.items()
+    }
+    if not hardware:
+        receivers = {
+            name: r.model_copy(update={"receiver_hardware": None, "antenna": None})
+            for name, r in receivers.items()
+        }
     return Instruments(receivers=receivers)
+
+
+def collect_vod_analyses(site_config: Any) -> dict[str, VodAnalysisInfo]:
+    """The VOD analyses of a site, for its VOD store."""
+    return {
+        name: VodAnalysisInfo(
+            canopy_receiver=analysis.canopy_receiver,
+            reference_receiver=analysis.reference_receiver,
+        )
+        for name, analysis in (getattr(site_config, "vod_analyses", None) or {}).items()
+    }
 
 
 def collect_processing_provenance(
     store_type: str,
     source_format: str,
+    facility: str | None = None,
 ) -> ProcessingProvenance:
-    """Build ProcessingProvenance."""
+    """Build ProcessingProvenance.
+
+    ``facility`` is the institution that processed the data
+    (``processing.metadata.institution``), never the computer.
+    """
     now = datetime.now(UTC).isoformat()
     return ProcessingProvenance(
         software=collect_software_versions(),
@@ -282,7 +463,7 @@ def collect_processing_provenance(
         uv_version=collect_uv_version(),
         level="L1" if store_type == "gnss_store" else "L2",
         lineage=f"Raw {source_format} data ingested into Icechunk store",
-        facility=socket.gethostname(),
+        facility=facility,
         datetime=now,
     )
 
@@ -322,6 +503,93 @@ def collect_references(config: Any) -> References:
     )
 
 
+def _site_store_description(site_config: Any, meta_cfg: Any) -> str:
+    """The site's store description, the deprecated shared one still counts."""
+    return (
+        getattr(site_config, "store_description", None)
+        or getattr(meta_cfg, "store_description", None)
+        or ""
+    ).strip()
+
+
+def missing_store_settings(site_name: str, site_config: Any, config: Any) -> list[str]:
+    """Return the settings a new store needs but does not have.
+
+    A store records these when it is created (DataCite, STAC): the site's
+    store description, the publisher, the license and the naming authority.
+    Each returned name carries an example value, as the store-creation error
+    lists them. The deprecated shared ``processing.metadata.store_description``
+    still counts as the site's store description.
+
+    The naming authority is checked with ``check_naming_authority``: it is
+    listed as missing when it is absent or not a reverse DNS name.
+    """
+    meta_cfg = config.processing.metadata
+    required = {
+        f"sites.{site_name}.store_description (e.g. 'GNSS-T observations "
+        "below a beech canopy')": _site_store_description(site_config, meta_cfg),
+        "processing.metadata.publisher (e.g. your institution)": getattr(
+            meta_cfg, "publisher", None
+        ),
+        "processing.metadata.license (an SPDX identifier, e.g. 'CC-BY-4.0')": (
+            getattr(meta_cfg, "license", None)
+        ),
+    }
+    missing = [name for name, value in required.items() if not (value or "").strip()]
+    try:
+        check_naming_authority(getattr(meta_cfg, "naming_authority", None))
+    except ValueError:
+        missing.append(
+            f"{NAMING_AUTHORITY_SETTING} is missing or not a reverse DNS "
+            "name (e.g. 'org.middle-earth')"
+        )
+    return missing
+
+
+def missing_store_settings_message(
+    missing: list[str],
+    *,
+    stores: list[tuple[str, Path | str]] | None = None,
+    store_label: str | None = None,
+    store_path: Path | str | None = None,
+) -> str:
+    """Return the store-creation error message for *missing* settings.
+
+    *missing* is the list from :func:`missing_store_settings`. *stores*
+    names each of the new stores as ``(label, path)`` pairs and reads "the
+    new <label> at <path>", joined with " and ", with a plural verb: the
+    form for the one error that names several new stores. A single store is
+    described by *store_path* ("The new <store_label> at <path>") or
+    *store_label* ("A new <store_label>"), and with none of them the
+    message reads "A store", as ``collect_metadata`` prints it.
+    """
+    if stores:
+        subject = " and ".join(f"the new {label} at {path}" for label, path in stores)
+        subject = subject[0].upper() + subject[1:]
+        verb = "need these settings when they are"
+    elif store_path is not None:
+        subject = f"The new {store_label} at {store_path}"
+        verb = "needs these settings when it is"
+    elif store_label is not None:
+        subject = f"A new {store_label}"
+        verb = "needs these settings when it is"
+    else:
+        subject = "A store"
+        verb = "needs these settings when it is"
+    return (
+        f"{subject} {verb} created; the metadata "
+        f"standards (DataCite, STAC) require them: " + "; ".join(missing) + "."
+    )
+
+
+_ACRONYMS = {"gnss": "GNSS", "vod": "VOD"}
+
+
+def _store_title(store_type: str) -> str:
+    """``gnss_store`` -> ``GNSS Store``; other words title-cased."""
+    return " ".join(_ACRONYMS.get(word, word.title()) for word in store_type.split("_"))
+
+
 def collect_metadata(
     *,
     config: Any,
@@ -329,39 +597,80 @@ def collect_metadata(
     site_config: Any,
     store_type: str,
     source_format: str,
-    store_path: Path | None = None,
+    store_path: StoreLocation | Path | str | None = None,
     dask_workers: int | None = None,
     dask_threads_per_worker: int | None = None,
+    gnss_repository: Mapping[str, Any] | None = None,
 ) -> StoreMetadata:
     """Collect all metadata sections into a StoreMetadata object.
 
-    This is the main entry point for metadata collection.
+    This is the main entry point for metadata collection. It gives a new
+    store its id, UUID and catalog link.
+
+    Raises
+    ------
+    ValueError
+        If the site name gives no valid store id, the naming authority
+        is missing or not a reverse DNS name, or the site's store
+        description, the publisher or the license is missing.
     """
-    now = datetime.now(UTC).isoformat()
     meta_cfg = config.processing.metadata
+    sid = store_id(
+        site_name,
+        store_type,
+        None if store_path is None else store_folder_name(store_path),
+    )
+    missing = missing_store_settings(site_name, site_config, config)
+    if missing:
+        raise ValueError(missing_store_settings_message(missing))
+    naming_authority = check_naming_authority(
+        getattr(meta_cfg, "naming_authority", None)
+    )
+    description = _site_store_description(site_config, meta_cfg)
+    now = datetime.now(UTC).isoformat()
 
     return StoreMetadata(
         identity=StoreIdentity(
-            id=f"{site_name}/{store_type}",
-            title=f"{site_name} {store_type.replace('_', ' ').title()}",
-            description=getattr(meta_cfg, "store_description", None),
+            id=sid,
+            uuid=new_uuid(),
+            title=f"{site_name} {_store_title(store_type)}",
+            description=description,
             store_type=store_type,
             source_format=source_format,
             keywords=["GNSS", "VOD", site_name, source_format],
-            naming_authority=getattr(meta_cfg, "naming_authority", None),
+            naming_authority=naming_authority,
+            stac_link=stac_link(naming_authority, sid, store_type),
         ),
         creator=collect_creator(meta_cfg),
         publisher=collect_publisher(meta_cfg),
         temporal=TemporalExtent(created=now, updated=now),
         spatial=collect_spatial(site_config, site_name),
-        instruments=collect_instruments(site_config),
-        processing=collect_processing_provenance(store_type, source_format),
+        instruments=collect_instruments(
+            site_config, hardware=store_type != "vod_store", site_name=site_name
+        ),
+        processing=collect_processing_provenance(
+            store_type, source_format, getattr(meta_cfg, "institution", None)
+        ),
         environment=collect_environment(
-            store_path, dask_workers, dask_threads_per_worker
+            # The free disk of a local store's folder; S3 has none.
+            None if store_path is None else store_location(store_path).local_path,
+            dask_workers,
+            dask_threads_per_worker,
+            record_machine=records_machine(config),
         ),
         config=collect_config_snapshot(config),
         references=collect_references(config),
-        summaries=Summaries(
-            history=[f"{now}: Store created ({source_format})"],
+        vod_analyses=(
+            collect_vod_analyses(site_config) if store_type == "vod_store" else {}
+        ),
+        content_settings=(
+            new_content_settings(
+                config,
+                site_name,
+                store_type=store_type,
+                gnss_repository=gnss_repository,
+            )
+            if store_type in CONTENT_STORE_TYPES
+            else None
         ),
     )

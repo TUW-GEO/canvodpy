@@ -17,6 +17,71 @@ if TYPE_CHECKING:
     from canvod.grids import HemiGrid
 
 
+#: Color of cells without data (NaN), like matplotlib's ``set_bad``.
+DEFAULT_NAN_COLOR = "lightgray"
+
+
+def _split_missing(trace: go.Mesh3d | go.Scatter3d, nan_color: str) -> list:
+    """Draw the cells without data (NaN) of ``trace`` in ``nan_color``.
+
+    Plotly has no color for NaN: a NaN intensity is drawn in the lowest
+    color of the scale, so a cell without data looks like the minimum.
+    The cells with data stay in ``trace``; the others move to a second
+    trace of one fixed color, which the color scale does not include.
+    """
+    if isinstance(trace, go.Mesh3d):
+        intensity = np.asarray(trace.intensity, dtype=float)
+        tri = np.column_stack([trace.i, trace.j, trace.k])
+        missing = np.isnan(intensity[tri]).any(axis=1)
+        if not missing.any():
+            return [trace]
+        kept = go.Mesh3d(trace)
+        kept.update(
+            i=tri[~missing, 0],
+            j=tri[~missing, 1],
+            k=tri[~missing, 2],
+            cmin=np.nanmin(intensity) if (~missing).any() else None,
+            cmax=np.nanmax(intensity) if (~missing).any() else None,
+        )
+        empty = go.Mesh3d(
+            x=trace.x,
+            y=trace.y,
+            z=trace.z,
+            i=tri[missing, 0],
+            j=tri[missing, 1],
+            k=tri[missing, 2],
+            color=nan_color,
+            opacity=trace.opacity,
+            flatshading=True,
+            name="No data",
+            hoverinfo="name",
+        )
+        return [kept, empty] if (~missing).any() else [empty]
+    values = np.asarray(trace.marker.color, dtype=float)
+    missing = np.isnan(values)
+    if not missing.any():
+        return [trace]
+    xyz = [np.asarray(trace[c]) for c in ("x", "y", "z")]
+    kept = go.Scatter3d(trace)
+    kept.update(
+        x=xyz[0][~missing],
+        y=xyz[1][~missing],
+        z=xyz[2][~missing],
+        marker_color=values[~missing],
+        text=np.asarray(trace.text)[~missing] if trace.text is not None else None,
+    )
+    empty = go.Scatter3d(
+        x=xyz[0][missing],
+        y=xyz[1][missing],
+        z=xyz[2][missing],
+        mode="markers",
+        marker=dict(size=trace.marker.size, color=nan_color),
+        name="No data",
+        hoverinfo="name",
+    )
+    return [kept, empty]
+
+
 class HemisphereVisualizer3D:
     """3D hemisphere visualization using plotly.
 
@@ -62,6 +127,7 @@ class HemisphereVisualizer3D:
         show_colorbar: bool = True,
         width: int = 800,
         height: int = 600,
+        nan_color: str = DEFAULT_NAN_COLOR,
         **kwargs: Any,
     ) -> go.Figure:
         """Create 3D surface plot on hemisphere with actual cell patches.
@@ -88,6 +154,8 @@ class HemisphereVisualizer3D:
             Figure width in pixels
         height : int, default 600
             Figure height in pixels
+        nan_color : str, default 'lightgray'
+            Color of cells without data (NaN); not part of the color scale.
         **kwargs
             Additional plotly trace parameters
 
@@ -144,7 +212,7 @@ class HemisphereVisualizer3D:
                 show_colorbar,
             )
 
-        fig_data = [trace]
+        fig_data = _split_missing(trace, nan_color) if data is not None else [trace]
         if show_wireframe:
             fig_data.append(self._extract_wireframe_lines())
         fig = go.Figure(data=fig_data)
@@ -758,6 +826,7 @@ class HemisphereVisualizer3D:
         show_edges: bool = True,
         width: int = 800,
         height: int = 600,
+        nan_color: str = DEFAULT_NAN_COLOR,
     ) -> go.Figure:
         """Create 3D mesh plot showing cell boundaries.
 
@@ -777,6 +846,8 @@ class HemisphereVisualizer3D:
             Figure width
         height : int, default 600
             Figure height
+        nan_color : str, default 'lightgray'
+            Color of cells without data (NaN); not part of the color scale.
 
         Returns
         -------
@@ -785,10 +856,24 @@ class HemisphereVisualizer3D:
 
         Notes
         -----
-        This method requires grid cells with vertex information.
-        Currently supports HTM and geodesic grids.
+        HTM grids are drawn as one trace per triangle. All other grids are
+        drawn like :meth:`plot_hemisphere_surface` (one mesh of all cells),
+        with ``show_edges`` as its ``show_wireframe``.
 
         """
+        grid_type = self.grid.grid_type.lower()
+        if grid_type != "htm":
+            return self.plot_hemisphere_surface(
+                data=data,
+                title=title or "Hemisphere Mesh 3D",
+                colorscale=colorscale,
+                opacity=opacity,
+                show_wireframe=show_edges,
+                width=width,
+                height=height,
+                nan_color=nan_color,
+            )
+
         traces = []
 
         # Prepare data
@@ -798,10 +883,9 @@ class HemisphereVisualizer3D:
             values = data
 
         grid_df = self.grid.grid
-        grid_type = self.grid.grid_type.lower()
 
         # Check if grid supports mesh rendering
-        if grid_type == "htm" and "htm_vertex_0" in grid_df.columns:
+        if "htm_vertex_0" in grid_df.columns:
             # HTM triangular mesh
             for idx, row in enumerate(grid_df.iter_rows(named=True)):
                 try:
@@ -816,16 +900,21 @@ class HemisphereVisualizer3D:
                     if np.all(z_coords < 0):
                         continue
 
-                    # Normalize color value
-                    color_val = (values[idx] - np.nanmin(values)) / (
-                        np.nanmax(values) - np.nanmin(values)
-                    )
-                    color_rgb = sample_colorscale(colorscale, [color_val])[0]
+                    # Normalize color value; no data gets nan_color
+                    if np.isnan(values[idx]):
+                        color_rgb = nan_color
+                    else:
+                        span = np.nanmax(values) - np.nanmin(values)
+                        color_val = (
+                            (values[idx] - np.nanmin(values)) / span if span else 0.5
+                        )
+                        color_rgb = sample_colorscale(colorscale, [color_val])[0]
 
-                    # Create triangle mesh
+                    # Create triangle mesh; vertices are (north, east, up),
+                    # the plot's x axis is east (as in the other 3D views)
                     trace = go.Mesh3d(
-                        x=vertices[:, 0],
-                        y=vertices[:, 1],
+                        x=vertices[:, 1],
+                        y=vertices[:, 0],
                         z=vertices[:, 2],
                         i=[0],
                         j=[1],
@@ -840,12 +929,13 @@ class HemisphereVisualizer3D:
                 except KeyError, TypeError, ValueError:
                     continue
         else:
-            # Not supported for this grid type
-            raise NotImplementedError(
-                f"Cell mesh rendering not implemented for {grid_type} grids"
+            raise ValueError(
+                "HTM grid has no 'htm_vertex_0' column; cannot draw its "
+                "cells. Build it with create_hemigrid('htm', ...)."
             )
 
-        # Sample colorscale (no longer needed above, but kept for compatibility)
+        if show_edges and traces:
+            traces.append(self._extract_wireframe_lines())
 
         # Add colorbar trace
         if values is not None and len(traces) > 0:
@@ -902,7 +992,8 @@ class HemisphereVisualizer3D:
         fig : plotly.graph_objects.Figure
             Existing 3D figure to add overlays to
         elevation_rings : list of int, optional
-            Elevation angles in degrees. Default: [15, 30, 45, 60, 75, 90]
+            Elevation angles in degrees above the horizon (0 = horizon,
+            90 = zenith). Default: [0, 15, 30, 45, 60, 75]
         meridians_deg : list of int, optional
             Meridian angles in degrees. Default: [0, 45, 90, 135, 180, 225, 270, 315]
         overlay_color : str, default 'lightgray'
@@ -915,15 +1006,27 @@ class HemisphereVisualizer3D:
         fig : plotly.graph_objects.Figure
             Modified figure with overlays
 
+        Raises
+        ------
+        ValueError
+            If an elevation is outside [0, 90] degrees.
+
         """
         if elevation_rings is None:
-            elevation_rings = [15, 30, 45, 60, 75, 90]
+            elevation_rings = [0, 15, 30, 45, 60, 75]
         if meridians_deg is None:
             meridians_deg = list(range(0, 360, 45))
+        outside = [e for e in elevation_rings if not 0 <= e <= 90]
+        if outside:
+            msg = (
+                f"elevation_rings must be elevations in [0, 90] degrees "
+                f"(0 = horizon, 90 = zenith), got {outside}"
+            )
+            raise ValueError(msg)
 
-        # Elevation rings
-        for theta_deg in elevation_rings:
-            theta = np.radians(theta_deg)
+        # Elevation rings: polar angle theta = 90 deg - elevation
+        for elevation_deg in elevation_rings:
+            theta = np.radians(90 - elevation_deg)
             phi = np.linspace(0, 2 * np.pi, 200)
             x = np.sin(theta) * np.sin(phi)
             y = np.sin(theta) * np.cos(phi)

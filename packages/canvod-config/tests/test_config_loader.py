@@ -170,7 +170,107 @@ class TestConfigLoaderDefaults:
         assert config.processing.aux_data.agency == "COD"
         assert config.sids.mode == "preset"
         assert config.sids.preset == "default"
-        assert len(config.sids.get_sids()) == 277
+        assert len(config.sids.get_sids()) == 271
+
+
+class TestPreprocessingSetting:
+    """``processing.preprocessing``: applied only if set, never by default."""
+
+    def _write_settings(self, tmp_path: Path, extra: dict) -> None:
+        processing = {
+            "metadata": {
+                "author": "Test Author",
+                "email": "test@example.com",
+                "institution": "Test University",
+            },
+            "storage": {"stores_root_dir": str(tmp_path / "stores")},
+            **extra,
+        }
+        with open(tmp_path / "canvod-settings.yaml", "w") as f:
+            yaml.dump({"processing": processing}, f)
+
+    def test_not_set_by_default(self, tmp_path):
+        self._write_settings(tmp_path, {})
+        config = ConfigLoader(config_dir=tmp_path).load()
+        assert config.processing.preprocessing is None
+
+    def test_only_the_set_operation(self, tmp_path):
+        self._write_settings(
+            tmp_path,
+            {
+                "preprocessing": {
+                    "temporal_aggregation": {
+                        "freq": "1min",
+                        "method": "median",
+                        "integer_method": "first",
+                    }
+                }
+            },
+        )
+        config = ConfigLoader(config_dir=tmp_path).load()
+        preprocessing = config.processing.preprocessing
+        assert preprocessing.temporal_aggregation.freq == "1min"
+        assert preprocessing.temporal_aggregation.enabled
+        assert preprocessing.grid_assignment is None
+
+    @pytest.mark.parametrize(
+        ("freq", "match"),
+        [
+            ("1T", "whole number followed by"),
+            ("1.5min", "whole number followed by"),
+            ("7min", "does not divide one day"),
+        ],
+    )
+    def test_freq_must_divide_a_day(self, tmp_path, freq, match):
+        self._write_settings(
+            tmp_path,
+            {
+                "preprocessing": {
+                    "temporal_aggregation": {
+                        "freq": freq,
+                        "method": "mean",
+                        "integer_method": "first",
+                    }
+                }
+            },
+        )
+        with pytest.raises(ConfigValidationError, match=match):
+            ConfigLoader(config_dir=tmp_path).load()
+
+    def test_method_is_required(self, tmp_path):
+        self._write_settings(
+            tmp_path, {"preprocessing": {"temporal_aggregation": {"freq": "1min"}}}
+        )
+        with pytest.raises(ConfigValidationError, match="method"):
+            ConfigLoader(config_dir=tmp_path).load()
+
+    def test_integer_method_is_required(self, tmp_path):
+        self._write_settings(
+            tmp_path,
+            {
+                "preprocessing": {
+                    "temporal_aggregation": {"freq": "1min", "method": "mean"}
+                }
+            },
+        )
+        with pytest.raises(ConfigValidationError, match="integer_method"):
+            ConfigLoader(config_dir=tmp_path).load()
+
+    def test_integers_cannot_be_averaged(self, tmp_path):
+        self._write_settings(
+            tmp_path,
+            {
+                "preprocessing": {
+                    "temporal_aggregation": {
+                        "freq": "1min",
+                        "method": "mean",
+                        "integer_method": "mean",
+                    }
+                }
+            },
+        )
+        with pytest.raises(ConfigValidationError, match="integer_method"):
+            ConfigLoader(config_dir=tmp_path).load()
 
 
 class TestConfigLoaderValidationError:

@@ -13,13 +13,20 @@ from canvod.preflight.mapping import (
     VirtualFile,
     _detect_file_type,
 )
+from canvod.utils import testing
 
 # -- Fixtures -----------------------------------------------------------------
 
 
+# Tests of the deprecated mapping and validation API, see test_deprecations.py.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*left over from development:FutureWarning"
+)
+
+
 @pytest.fixture
 def site_naming():
-    return SiteNamingConfig(site_id="ROS", agency="TUW")
+    return SiteNamingConfig(site_id=testing.SITE_ID, agency=testing.AGENCY)
 
 
 @pytest.fixture
@@ -55,7 +62,7 @@ def yyyyddd_tree(tmp_path):
     base = tmp_path / "01_reference"
     d1 = base / "2025001"
     d1.mkdir(parents=True)
-    (d1 / "ROSA00TUW_R_20250010000_01D_05S_MO.rnx").write_bytes(b"data")
+    (d1 / "FANA00INK_R_20250010000_01D_05S_MO.rnx").write_bytes(b"data")
     return base
 
 
@@ -134,15 +141,15 @@ class TestVirtualFile:
         from canvod.preflight.convention import CanVODFilename
 
         cn = CanVODFilename(
-            site="ROS",
+            site=testing.SITE_ID,
             receiver_type=ReceiverType.REFERENCE,
             receiver_number=1,
-            agency="TUW",
+            agency=testing.AGENCY,
             year=2025,
             doy=1,
         )
         vf = VirtualFile(physical_path=p, conventional_name=cn)
-        assert vf.canonical_str == "ROSR01TUW_R_20250010000_01D_05S_AA.rnx"
+        assert vf.canonical_str == "FANR01INK_R_20250010000_01D_05S_AA.rnx"
 
     def test_open(self, tmp_path):
         p = tmp_path / "test.rnx"
@@ -151,10 +158,10 @@ class TestVirtualFile:
         from canvod.preflight.convention import CanVODFilename
 
         cn = CanVODFilename(
-            site="ROS",
+            site=testing.SITE_ID,
             receiver_type=ReceiverType.REFERENCE,
             receiver_number=1,
-            agency="TUW",
+            agency=testing.AGENCY,
             year=2025,
             doy=1,
         )
@@ -177,11 +184,11 @@ class TestFilenameMapperYYDDD:
         vfs = mapper.discover_all()
         assert len(vfs) == 3
         names = [vf.conventional_name.name for vf in vfs]
-        # All should have ROS site, R receiver type, TUW agency
+        # All should have the made-up site, R receiver type and agency
         for vf in vfs:
-            assert vf.conventional_name.site == "ROS"
+            assert vf.conventional_name.site == testing.SITE_ID
             assert vf.conventional_name.receiver_type == ReceiverType.REFERENCE
-            assert vf.conventional_name.agency == "TUW"
+            assert vf.conventional_name.agency == testing.AGENCY
 
     def test_discover_for_date(self, yyddd_tree, site_naming, rx_naming):
         mapper = FilenameMapper(
@@ -283,7 +290,7 @@ class TestMapSingleFile:
         )
         vf = mapper.map_single_file(p)
         cn = vf.conventional_name
-        assert cn.site == "ROS"
+        assert cn.site == testing.SITE_ID
         assert cn.year == 2025
         assert cn.doy == 1
         assert cn.hour == 0
@@ -306,7 +313,7 @@ class TestMapSingleFile:
         assert cn.doy == 1
 
     def test_canvod_filename(self, tmp_path, site_naming, rx_naming):
-        p = tmp_path / "ROSR01TUW_R_20250010000_01D_05S_AA.rnx"
+        p = tmp_path / "FANR01INK_R_20250010000_01D_05S_AA.rnx"
         p.write_bytes(b"data")
 
         mapper = FilenameMapper(
@@ -317,7 +324,7 @@ class TestMapSingleFile:
         )
         vf = mapper.map_single_file(p)
         # Should round-trip perfectly
-        assert vf.canonical_str == "ROSR01TUW_R_20250010000_01D_05S_AA.rnx"
+        assert vf.canonical_str == "FANR01INK_R_20250010000_01D_05S_AA.rnx"
 
     def test_unmatched_raises(self, tmp_path, site_naming, rx_naming):
         p = tmp_path / "random.txt"

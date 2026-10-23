@@ -36,15 +36,27 @@ import numpy as np
 
 from canvod.readers.gnss_specs.constants import FREQ_UNIT
 
+#: Value of an integer variable (e.g. LLI, SSI) where nothing was recorded;
+#: floating-point variables use NaN. This is canvodpy's own marker for a blank
+#: field, not a RINEX value, and lies outside every ``valid_range``.
+INTEGER_FILL_VALUE: Final[int] = -1
+
+# Ranges taken from RINEX cite the spec "RINEX 3.04" (IGS/RTCM, 2018-11-23),
+# https://files.igs.org/pub/data/format/rinex304.pdf. Its PDF page and
+# printed page differ, so citations give both.
+_RINEX304 = "RINEX 3.04 (IGS/RTCM, 2018-11-23)"
+
 # -------------------
 # Observable metadata
 # -------------------
 OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
     "Pseudorange": {
-        "standard_name": "pseudorange",
         "long_name": "GNSS Pseudorange",
+        "coverage_content_type": "physicalMeasurement",
         "units": "meters",
-        "valid_min": 0,
+        # canvodpy's own bound: RINEX 3.04 gives no range. Table A3 (PDF
+        # p.67, printed A13) writes a missing observation as 0.0 or blank.
+        "valid_min": 0.0,
         "description": (
             "The pseudorange is the raw distance measurement between the GNSS "
             "satellite and receiver, including any timing errors due to "
@@ -58,10 +70,10 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "_FillValue": np.nan,
     },
     "Doppler": {
-        "standard_name": "doppler_shift",
         "long_name": "GNSS Doppler Shift",
+        "coverage_content_type": "physicalMeasurement",
         "units": "Hz",
-        "valid_min": -10_000,
+        # No valid_range: RINEX 3.04 gives none for Doppler.
         "description": (
             "The Doppler shift represents the rate of change in the phase of "
             "the GNSS signal due to the relative motion between the satellite "
@@ -76,8 +88,8 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "_FillValue": np.nan,
     },
     "Phase": {
-        "standard_name": "carrier_phase",
         "long_name": "GNSS Carrier Phase",
+        "coverage_content_type": "physicalMeasurement",
         "units": "cycles",
         "description": (
             "The carrier phase is the accumulated phase change of the GNSS "
@@ -93,28 +105,43 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
         "_FillValue": np.nan,
     },
     "LLI": {
-        "standard_name": "loss_of_lock_indicator",
         "long_name": "Loss of Lock Indicator",
+        "coverage_content_type": "qualityInformation",
         "units": "1",
-        "valid_range": [-1, 9],
+        "valid_range": [0, 7],
         "description": (
-            "Indicator representing the loss of lock status of the signal. "
-            "-1 indicates no data, while values 0-9 indicate the indicator "
-            "value."
+            "Loss of lock indicator of the signal's carrier phase, a bit field "
+            "per RINEX 3.04 Table A3: bit 0 = lost lock, cycle slip possible; "
+            "bit 1 = half-cycle ambiguity/slip possible; bit 2 = Galileo "
+            "BOC-tracking of an MBOC-modulated signal. 0 = OK or not known. "
+            "Table A3 defines no further bits, so 7 is the largest defined "
+            "value. -1 (_FillValue) = no indicator recorded; it is canvodpy's "
+            "marker for a blank field, not a RINEX value."
         ),
-        "_FillValue": -1,
+        "references": (
+            f"{_RINEX304}, Table A3, loss of lock indicator, PDF p.67 "
+            "(printed A13); bit 1: sect. 5.4, PDF p.29 (printed 24)."
+        ),
+        "_FillValue": INTEGER_FILL_VALUE,
     },
     "SSI": {
-        "standard_name": "signal_strength_indicator",
         "long_name": "Signal Strength Indicator",
+        "coverage_content_type": "qualityInformation",
         "units": "1",
-        "valid_range": [-1, 9],
+        "valid_range": [0, 9],
         "description": (
-            "Indicator representing the signal strength of the observation. "
-            "-1 indicates no data, while values 0-9 indicate the measured "
-            "signal strength."
+            "Signal strength indicator per RINEX 3.04 Table A3, projected "
+            "into 1-9: 1 = minimum possible signal strength, 5 = average/good "
+            "S/N ratio, 9 = maximum possible signal strength. 0 = not known, "
+            "don't care. -1 (_FillValue) = no indicator recorded; it is "
+            "canvodpy's marker for a blank field, not a RINEX value."
         ),
-        "_FillValue": -1,
+        "references": (
+            f"{_RINEX304}, Table A3, signal strength indicator, PDF p.68 "
+            "(printed A14); mapping from dBHz: sect. 5.7, Table 12, PDF p.30 "
+            "(printed 25)."
+        ),
+        "_FillValue": INTEGER_FILL_VALUE,
     },
 }
 
@@ -122,44 +149,40 @@ OBSERVABLES_METADATA: Final[dict[str, dict[str, Any]]] = {
 # SNR vs C/N0 metadata
 # -------------------
 CN0_METADATA: Final[dict[str, Any]] = {
-    "standard_name": "carrier_to_noise_density_ratio",
     "long_name": "Carrier-to-Noise Density Ratio (C/N0)",
+    "coverage_content_type": "physicalMeasurement",
     "units": "dB-Hz",
-    "valid_min": 0,
-    "resolution": "0.25 dB-Hz (MeasEpoch); 0.03125 dB-Hz with MeasExtra CN0HighRes",
+    # canvodpy's own bound: RINEX 3.04 gives no range. The reader treats a
+    # signal strength of 0 as not observed.
+    "valid_min": 0.0,
     "description": (
-        "Carrier-to-noise density ratio (C/N0) represents the carrier signal "
-        "strength relative to noise power density (per 1 Hz)."
-    ),
-    "comment": (
-        "C/N0 is a standard quality indicator of GNSS tracking performance. "
-        "Sourced from MeasEpoch.MeasEpochChannelType1.CN0 (u1, scale 0.25 dB-Hz/LSB, "
-        "Do-Not-Use 255). Resolution is 0.25 dB-Hz by default. "
-        "GPS L1P (sig 1, RINEX 1W) and GPS L2P (sig 2, RINEX 2W) use semi-codeless "
-        "tracking: formula is C/N0 = raw * 0.25 (no +10 dB-Hz offset). "
-        "All other signals: C/N0 = raw * 0.25 + 10. "
-        "If MeasExtra (Block 4000) is also logged, add cn0_highres_correction "
-        "(from MeasExtraChannelSub.Misc bits 0-2) to extend resolution to 0.03125 dB-Hz."
+        "Carrier-to-noise density ratio (C/N0): carrier power relative to the "
+        "noise power density (per 1 Hz). RINEX 3.04 observation type S "
+        "with the header record SIGNAL STRENGTH UNIT DBHZ (sect. 5.7)."
     ),
     "references": (
-        "Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide, "
-        "MeasEpoch block (Block 4027), MeasEpochChannelType1 sub-block, "
-        "field CN0, p.264; signal type table Section 4.1.10, pp.255-256; "
-        "MeasExtra block (Block 4000), MeasExtraChannelSub, field Misc (CN0HighRes), p.268."
+        f"{_RINEX304}, sect. 5.7, PDF p.30 (printed 25); SIGNAL STRENGTH UNIT: "
+        "Table A2, PDF p.63 (printed A9)."
     ),
     "_FillValue": np.nan,
 }
 
-SNR_METADATA: Final[dict[str, str | float | int]] = {
-    "standard_name": "signal_to_noise_ratio",
+SNR_METADATA: Final[dict[str, Any]] = {
     "long_name": "Signal-to-Noise Ratio (SNR)",
+    "coverage_content_type": "physicalMeasurement",
     "units": "dB",
-    "valid_min": 0,
+    # canvodpy's own bound, as for C/N0.
+    "valid_min": 0.0,
     "description": (
-        "Signal-to-noise ratio (SNR) represents the received signal strength "
-        "relative to the noise floor across the signal bandwidth."
+        "Raw signal strength as given by the receiver (RINEX 3.04 "
+        "observation type S). RINEX 3.04 sect. 5.7 defines only the unit "
+        "DBHZ; without a SIGNAL STRENGTH UNIT DBHZ header record the unit "
+        "is not declared and dB is assumed."
     ),
-    "comment": "SNR is expressed in decibels (dB). Higher values indicate better signal quality.",
+    "references": (
+        f"{_RINEX304}, sect. 5.7, PDF p.30 (printed 25); SIGNAL STRENGTH UNIT: "
+        "Table A2, PDF p.63 (printed A9)."
+    ),
     "_FillValue": np.nan,
 }
 
@@ -177,7 +200,6 @@ COORDS_METADATA: Final[dict[str, dict[str, str]]] = {
         ),
     },
     "sv": {
-        "standard_name": "space_vehicle_identifier",
         "long_name": "GNSS Space Vehicle Identifier",
         "description": (
             "The Space Vehicle (sv) identifier denotes the specific satellite "
@@ -206,22 +228,80 @@ COORDS_METADATA: Final[dict[str, dict[str, str]]] = {
     "freq_center": {
         "description": "Center frequency of the signal band",
         "long_name": "Center Frequency",
-        "standard_name": "center_frequency",
         "units": f"{FREQ_UNIT:~}",
     },
     "freq_min": {
         "description": "Minimum frequency of the signal band",
         "long_name": "Minimum Frequency",
-        "standard_name": "minimum_frequency",
         "units": f"{FREQ_UNIT:~}",
     },
     "freq_max": {
         "description": "Maximum frequency of the signal band",
         "long_name": "Maximum Frequency",
-        "standard_name": "maximum_frequency",
         "units": f"{FREQ_UNIT:~}",
     },
 }
+
+# Time scale of the epoch coordinate, recorded in its "time_system"
+# attribute. Every stored epoch is GPS time, so that all receivers and the
+# orbits and clocks (SP3, CLK) share one time scale. RINEX and SBF are
+# written in GPS time; the NMEA reader converts its UTC times to GPS time.
+# Identifiers follow RINEX 3.04 Table A2 (TIME OF FIRST OBS).
+EPOCH_TIME_SYSTEM: Final = "GPS"
+EPOCH_TIME_SYSTEM_NAME: Final = "GPS time"
+
+
+def require_gps_time(time_system: str, source: str | None = None) -> None:
+    """Refuse epochs that are not in GPS time.
+
+    Parameters
+    ----------
+    time_system : str
+        Time scale of the epochs (RINEX 3.04 Table A2 identifier).
+    source : str, optional
+        The file the epochs come from, named in the error.
+
+    Raises
+    ------
+    ValueError
+        If ``time_system`` is not ``"GPS"``.
+
+    """
+    if time_system != EPOCH_TIME_SYSTEM:
+        where = f"{source}: " if source else ""
+        msg = (
+            f"{where}epochs are in time system {time_system!r}, but canVODpy "
+            "stores every epoch in GPS time ('GPS'), the time scale of the "
+            "orbits and clocks, and does not convert from "
+            f"{time_system!r}. Convert the epochs to GPS time first."
+        )
+        raise ValueError(msg)
+
+
+def epoch_coord_attrs(time_system: str, source: str | None = None) -> dict[str, str]:
+    """Return the epoch coordinate attributes, including its time scale.
+
+    Parameters
+    ----------
+    time_system : str
+        Time scale of the epochs: must be ``"GPS"``. Readers state it, so
+        that epochs in another scale are refused instead of stored.
+    source : str, optional
+        The file the epochs come from, named in the error.
+
+    Raises
+    ------
+    ValueError
+        If ``time_system`` is not GPS time (:func:`require_gps_time`).
+
+    """
+    require_gps_time(time_system, source)
+    return {
+        **COORDS_METADATA["epoch"],
+        "time_system": EPOCH_TIME_SYSTEM,
+        "time_system_name": EPOCH_TIME_SYSTEM_NAME,
+    }
+
 
 # -------------------
 # Encoding definitions
@@ -288,7 +368,6 @@ DATAVARS_TO_BE_FILLED: Final[dict[str, dict[str, Any]]] = {
         "dtype": np.float32,
         "attrs": {
             "long_name": "radial distance",
-            "standard_name": "slant_range",
             "units": "meters",
             "description": "Slant distance from receiver to satellite in ECEF spherical coordinates",
         },
@@ -298,7 +377,6 @@ DATAVARS_TO_BE_FILLED: Final[dict[str, dict[str, Any]]] = {
         "dtype": np.float32,
         "attrs": {
             "long_name": "polar angle",
-            "standard_name": "polar_angle",
             "units": "degrees",
             "description": "Angle from positive Z-axis (zenith)",
         },
@@ -308,7 +386,6 @@ DATAVARS_TO_BE_FILLED: Final[dict[str, dict[str, Any]]] = {
         "dtype": np.float32,
         "attrs": {
             "long_name": "azimuthal angle",
-            "standard_name": "azimuth",
             "units": "degrees",
             "description": "Rotation angle from reference meridian in XY-plane",
         },
@@ -318,7 +395,6 @@ DATAVARS_TO_BE_FILLED: Final[dict[str, dict[str, Any]]] = {
         "dtype": np.float32,
         "attrs": {
             "long_name": "satellite velocity",
-            "standard_name": "platform_velocity",
             "units": "meters per second",
             "description": "Instantaneous satellite velocity relative to receiver",
         },
@@ -328,7 +404,6 @@ DATAVARS_TO_BE_FILLED: Final[dict[str, dict[str, Any]]] = {
         "dtype": np.float32,
         "attrs": {
             "long_name": "satellite acceleration",
-            "standard_name": "platform_acceleration",
             "units": "meters per second squared",
             "description": "Instantaneous satellite acceleration relative to receiver",
         },

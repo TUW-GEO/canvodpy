@@ -145,6 +145,23 @@ class TestAuxDataPipeline:
         assert pipeline.is_loaded("ephemerides") is True
         assert "ephemerides" in pipeline._cache
 
+    @pytest.mark.parametrize("aggregate", [True, False])
+    @patch("canvod.auxiliary.pipeline.prep_aux_ds")
+    def test_load_all_passes_glonass_setting(self, mock_prep, aggregate):
+        """The aux SIDs must use the reader's GLONASS FDMA setting."""
+        pipeline = AuxDataPipeline(
+            _make_mock_matched_dirs(), aggregate_glonass_fdma=aggregate
+        )
+        handler = MagicMock()
+        handler.fpath = "/fake/path"
+        type(handler).data = PropertyMock(return_value=_make_aux_ds())
+        mock_prep.return_value = _make_aux_ds()
+
+        pipeline.register("ephemerides", handler, required=True)
+        pipeline.load_all()
+
+        assert mock_prep.call_args.kwargs["aggregate_glonass_fdma"] is aggregate
+
     @patch("canvod.auxiliary.pipeline.prep_aux_ds")
     def test_load_all_required_failure_raises(self, mock_prep):
         """Required file failure should raise RuntimeError."""
@@ -269,7 +286,7 @@ class TestAuxDataPipeline:
 
 
 class TestCreateStandardFetchClock:
-    """create_standard()'s clock-fetching gate (§28, dev/todo_later.md)."""
+    """create_standard()'s clock-fetching gate."""
 
     @staticmethod
     def _make_config(fetch_clock: bool):

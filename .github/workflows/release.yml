@@ -1,5 +1,7 @@
 # GitHub Release Workflow
-# Automatically creates a draft release when a version tag is pushed
+# Automatically creates a draft release when a canvodpy tag is pushed.
+# Package tags (canvod-store-v1.1.0) get no GitHub release of their own:
+# canvodpy's release lists the package versions it pins.
 # https://docs.github.com/en/actions/using-workflows
 
 name: Release
@@ -7,10 +9,8 @@ name: Release
 on:
   push:
     tags:
-      - "v*.*.*"           # Production: v0.1.0, v1.0.0
-      - "v*.*.*-beta.*"    # Beta: v0.1.0-beta.1
-      - "v*.*.*-alpha.*"   # Alpha: v0.1.0-alpha.1
-      - "v*.*.*-rc.*"      # Release candidate: v0.1.0-rc.1
+      - "v*.*.*"           # canvodpy: v1.0.0, also pre-releases as Python
+                           # writes them (v1.1.0a1, v1.1.0b1, v1.1.0rc1)
 
 permissions: read-all
 
@@ -25,18 +25,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0  # Need full history for changelog
+          fetch-depth: 1  # CHANGELOG.md of the tagged commit
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-
-      - name: Set up Python
-        run: uv python install 3.14
-
-      - name: Generate release notes from git commits
+      - name: Release notes from canvodpy's CHANGELOG section
         run: |
-          uvx git-changelog --release-notes > release-notes.md
-          echo "Generated release notes:"
+          # The section scripts/release.py wrote for this tag: from its
+          # "## <tag> (date)" heading to the next "## " heading.
+          awk -v tag="${GITHUB_REF_NAME}" '
+            $0 ~ "^## " tag " " { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "CHANGELOG.md has no section for ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
           cat release-notes.md
 
       - name: Extract version from tag
@@ -51,7 +54,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Determine if this is a pre-release
-          if echo "${{ github.ref_name }}" | grep -qE '(alpha|beta|rc)'; then
+          if echo "${{ github.ref_name }}" | grep -qE '[0-9](a|b|rc)[0-9]+$'; then
             PRERELEASE="--prerelease"
           else
             PRERELEASE=""

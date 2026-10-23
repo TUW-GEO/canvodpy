@@ -383,6 +383,11 @@ class TestDataFrame:
 
 class TestEnrichDataset:
     def test_enrich_adds_coordinates(self, catalog: SatelliteCatalog):
+        """Regression test: real datasets carry compound sid values
+        ("G01|L1|C"), never bare PRN codes — enrichment must match via the
+        sv coordinate, not sid, or every real dataset silently enriches to
+        empty placeholders.
+        """
         import numpy as np
         import xarray as xr
 
@@ -393,7 +398,8 @@ class TestEnrichDataset:
                     ["2025-01-01", "2025-01-01", "2025-01-01"],
                     dtype="datetime64[ns]",
                 ),
-                "sid": ["G01", "E01"],
+                "sid": ["G01|L1|C", "E01|E1|C"],
+                "sv": ("sid", ["G01", "E01"]),
             },
         )
         ds = catalog.enrich_dataset(ds, on_date=date(2025, 1, 1))
@@ -404,9 +410,9 @@ class TestEnrichDataset:
         assert "plane" in ds.coords
         assert "slot" in ds.coords
 
-        assert ds.coords["svn"].sel(sid="G01").item() == "G080"
-        assert ds.coords["block"].sel(sid="G01").item() == "GPS-IIIA"
-        assert ds.coords["tx_power_watts"].sel(sid="G01").item() == 300.0
+        assert ds.coords["svn"].sel(sid="G01|L1|C").item() == "G080"
+        assert ds.coords["block"].sel(sid="G01|L1|C").item() == "GPS-IIIA"
+        assert ds.coords["tx_power_watts"].sel(sid="G01|L1|C").item() == 300.0
 
     def test_enrich_unknown_sid(self, catalog: SatelliteCatalog):
         import numpy as np
@@ -416,12 +422,70 @@ class TestEnrichDataset:
             {"snr": (("epoch", "sid"), np.ones((1, 1)))},
             coords={
                 "epoch": np.array(["2025-01-01"], dtype="datetime64[ns]"),
-                "sid": ["X99"],
+                "sid": ["X99|L1|C"],
+                "sv": ("sid", ["X99"]),
             },
         )
         ds = catalog.enrich_dataset(ds, on_date=date(2025, 1, 1))
-        assert ds.coords["svn"].sel(sid="X99").item() == ""
-        assert np.isnan(ds.coords["tx_power_watts"].sel(sid="X99").item())
+        assert ds.coords["svn"].sel(sid="X99|L1|C").item() == ""
+        assert np.isnan(ds.coords["tx_power_watts"].sel(sid="X99|L1|C").item())
+
+    def test_enrich_all_unknown_logs_warning(
+        self, catalog: SatelliteCatalog, monkeypatch: pytest.MonkeyPatch
+    ):
+        """0% enrichment must be loud (warning), not an info-level line
+        indistinguishable from a fully successful run.
+        """
+        from unittest.mock import MagicMock
+
+        import numpy as np
+        import xarray as xr
+
+        from canvod.readers.gnss_specs import satellite_catalog as sat_cat_module
+
+        mock_log = MagicMock()
+        monkeypatch.setattr(sat_cat_module, "_log", mock_log)
+
+        ds = xr.Dataset(
+            {"snr": (("epoch", "sid"), np.ones((1, 1)))},
+            coords={
+                "epoch": np.array(["2025-01-01"], dtype="datetime64[ns]"),
+                "sid": ["X99|L1|C"],
+                "sv": ("sid", ["X99"]),
+            },
+        )
+        catalog.enrich_dataset(ds, on_date=date(2025, 1, 1))
+
+        mock_log.warning.assert_called_once()
+        mock_log.info.assert_not_called()
+        assert mock_log.warning.call_args.args[0] == "dataset_enriched_with_catalog"
+
+    def test_enrich_some_known_logs_info(
+        self, catalog: SatelliteCatalog, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Partial or full enrichment stays at info level, not warning."""
+        from unittest.mock import MagicMock
+
+        import numpy as np
+        import xarray as xr
+
+        from canvod.readers.gnss_specs import satellite_catalog as sat_cat_module
+
+        mock_log = MagicMock()
+        monkeypatch.setattr(sat_cat_module, "_log", mock_log)
+
+        ds = xr.Dataset(
+            {"snr": (("epoch", "sid"), np.ones((1, 1)))},
+            coords={
+                "epoch": np.array(["2025-01-01"], dtype="datetime64[ns]"),
+                "sid": ["G01|L1|C"],
+                "sv": ("sid", ["G01"]),
+            },
+        )
+        catalog.enrich_dataset(ds, on_date=date(2025, 1, 1))
+
+        mock_log.info.assert_called_once()
+        mock_log.warning.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

@@ -13,8 +13,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
-
-from canvod.store import create_gnss_store
+from _helpers import new_gnss_store
 
 
 def _make_dataset(start: str, end: str, n_epochs: int = 10) -> xr.Dataset:
@@ -27,7 +26,7 @@ def _make_dataset(start: str, end: str, n_epochs: int = 10) -> xr.Dataset:
     return xr.Dataset(
         {"SNR": (["epoch", "sid"], np.random.rand(n_epochs, 3).astype(np.float32))},
         coords={
-            "epoch": epochs,
+            "epoch": ("epoch", epochs, {"time_system": "GPS"}),
             "sid": ["G01|L1|C", "G02|L1|C", "G03|L1|C"],
         },
         attrs={"File Hash": f"hash_{start}_{end}"},
@@ -36,8 +35,8 @@ def _make_dataset(start: str, end: str, n_epochs: int = 10) -> xr.Dataset:
 
 @pytest.fixture
 def gnss_store(tmp_path: Path):
-    """Create a RINEX store with one 15-min file already ingested."""
-    store = create_gnss_store(tmp_path / "test_rinex")
+    """Create a GNSS store with one 15-min file already ingested."""
+    store = new_gnss_store(tmp_path / "test_rinex")
 
     # Write initial group with a 15-min dataset
     ds = _make_dataset("2025-01-01T00:00:00", "2025-01-01T00:14:55")
@@ -308,15 +307,16 @@ class TestRootAttrs:
     """Test root-level store attributes."""
 
     def test_set_and_get_root_attrs(self, tmp_path: Path) -> None:
-        store = create_gnss_store(tmp_path / "test_attrs")
-        assert store.get_root_attrs() == {}
-        assert store.source_format is None
+        store = new_gnss_store(tmp_path / "test_attrs")
+        assert "version" not in store.get_root_attrs()
 
         store.set_root_attrs({"source_format": "sbf", "version": "1.0"})
-        assert store.get_root_attrs() == {"source_format": "sbf", "version": "1.0"}
+        attrs = store.get_root_attrs()
+        assert attrs["source_format"] == "sbf"
+        assert attrs["version"] == "1.0"
         assert store.source_format == "sbf"
 
     def test_source_format_property(self, tmp_path: Path) -> None:
-        store = create_gnss_store(tmp_path / "test_fmt")
+        store = new_gnss_store(tmp_path / "test_fmt")
         store.set_root_attrs({"source_format": "rinex3"})
         assert store.source_format == "rinex3"

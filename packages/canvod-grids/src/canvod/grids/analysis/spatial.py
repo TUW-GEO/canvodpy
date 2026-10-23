@@ -11,7 +11,7 @@ Classes
 
 Notes
 -----
-* Spatial *visualisation* (hemisphere maps, 3-D projections) is
+* Spatial *visualization* (hemisphere maps, 3-D projections) is
   handled by the ``canvod-viz`` package.  This module is limited to
   the statistical aggregation and lightweight comparison plots that
   do not require a hemisphere renderer.

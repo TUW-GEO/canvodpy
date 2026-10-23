@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T grids, SNR data, and VOD results. It wraps matplotlib (publication-quality polar plots) and plotly (interactive 3D hemispheres) behind a unified API.
+The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T grids, SNR data, and VOD results. It wraps Matplotlib (publication-quality polar plots) and Plotly (interactive 3D hemispheres) behind a unified API.
 
 ---
 
@@ -35,7 +35,7 @@ The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T
 
     ---
 
-    `add_tissot_indicatrix` — overlay angular distortion circles on 2D
+    `add_tissot_indicatrix` overlays angular distortion circles on 2D
     plots to evaluate grid cell shape fidelity.
 
 </div>
@@ -51,7 +51,7 @@ The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T
     from canvod.viz import HemisphereVisualizer
 
     grid = create_hemigrid("equal_area", angular_resolution=10.0)
-    viz  = HemisphereVisualizer(grid)
+    viz = HemisphereVisualizer(grid)
 
     # Publication-quality 2D
     fig_2d, ax_2d = viz.plot_2d(data=vod_data, title="VOD Distribution")
@@ -104,6 +104,17 @@ The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T
     (fig_2d, ax_2d), fig_3d = viz.create_comparison_plot(data=vod_data)
     ```
 
+!!! note "Cells without data"
+    Cells without data (NaN) are not part of the color scale: 2D plots
+    leave them white, the 3D views draw them in `nan_color` (default
+    `"lightgray"`), so they never look like the minimum value.
+    `plot_3d_mesh` draws HTM grids one triangle at a time and every other
+    grid like `plot_3d`.
+
+`add_spherical_overlays(fig, elevation_rings=...)` takes elevation
+angles in degrees (0 = horizon, 90 = zenith); the default draws rings at 0,
+15, 30, 45, 60, and 75 degrees.
+
 ---
 
 ## Styling
@@ -114,12 +125,12 @@ The `canvod-viz` package provides 2D and 3D hemispheric visualization for GNSS-T
 | `create_interactive_style()` | Browser-ready Plotly, dark mode option |
 | `create_rse_style()` | Remote Sensing of Environment journal guidelines |
 
-Both return a `PlotStyle` / `PolarPlotStyle` object passed to `viz.set_style()`.
+Each returns a `PlotStyle`, passed to `viz.set_style()`; `PlotStyle.to_polar_style()` gives the `PolarPlotStyle` the 2D functions take.
 
-### RSE Journal Style
+### RSE journal style
 
-Publication-quality styling matching *Remote Sensing of Environment* guidelines:
-Arial/Helvetica fonts, 300 DPI, inward ticks, colorblind-friendly palette (Wong, 2011).
+Publication-quality styling matching *Remote Sensing of Environment* guidelines,
+with Arial or Helvetica fonts, 300 DPI, inward ticks, colorblind-friendly palette (Wong, 2011).
 
 === "Context manager"
 
@@ -136,6 +147,7 @@ Arial/Helvetica fonts, 300 DPI, inward ticks, colorblind-friendly palette (Wong,
     ```python
     from canvod.viz import rse_style
 
+
     @rse_style
     def make_figure():
         fig, ax = plt.subplots()
@@ -147,55 +159,91 @@ Arial/Helvetica fonts, 300 DPI, inward ticks, colorblind-friendly palette (Wong,
 
     ```python
     from canvod.viz import apply_rse_style
+
     apply_rse_style()  # modifies plt.rcParams globally
     ```
 
 ### Colorscale
 
-Cross-framework colormap conversion between matplotlib, Plotly, and palettable:
+Colormaps converted between Matplotlib and Plotly:
 
 ```python
 from canvod.viz import Colorscale
 
 cs = Colorscale.from_matplotlib("viridis", n_colors=64)
-plotly_cs = cs.to_plotly()     # [(0.0, 'rgb(...)'), ...]
-mpl_cmap  = cs.to_matplotlib() # LinearSegmentedColormap
+plotly_cs = cs.to_plotly()  # [(0.0, 'rgb(...)'), ...]
+mpl_cmap = cs.to_matplotlib()  # LinearSegmentedColormap
 
 cs2 = Colorscale.from_colors(["#0072B2", "#D55E00", "#009E73"])
 ```
 
 ---
 
-## Interactive Grid Exploration
+## Interactive grid exploration
 
-The `demo/15_grid_exploration.py` marimo notebook provides interactive
-exploration of per-cell VOD data on the hemispheric grid:
+The `demo/15_grid_exploration.py` marimo notebook shows interactive
+exploration of per-cell VOD on the hemispheric grid, with synthetic data
+(real per-cell time series come from
+`canvod.store.AnalysisStorage.load_percell_timeseries()`):
 
-- **3D view** — Plotly Scatter3d with click-to-select cells (anywidget)
-- **2D view** — Canvas polar projection with hover tooltips (anywidget)
-- **Reactive stats** — selected cells display in a table with mean, std, count, coverage
-- **Timeseries** — per-cell VOD timeseries plotted for selected cells
+- **3D view**: Plotly Scatter3d with click-to-select cells (anywidget)
+- **2D view**: canvas polar projection with hover tooltips (anywidget)
+- **Reactive stats**: selected cells display in a table with mean, std, count, and coverage
+- **Time series**: per-cell VOD time series plotted for selected cells
 
 ```bash
-uv run marimo edit demo/15_grid_exploration.py
+just open-notebook 15_grid_exploration.py
 ```
+
+---
+
+## Interactive selectors in notebooks
+
+`canvod.viz.widgets` provides two interactive hemisphere selectors for
+marimo (and Jupyter) notebooks, built on anywidget. Click the cells of a
+hemisphere grid to select them; hover a cell for its info. The selectors
+need the optional extra:
+
+```bash
+pip install "canvod-viz[widgets]"
+```
+
+```bash
+uv add "canvod-viz[widgets]"
+```
+
+Example (the 3D selector from `demo/15_grid_exploration.py`):
+
+```python
+import marimo as mo
+from canvod.viz.widgets import HemisphereSelector3D
+
+hemisphere_3d = mo.ui.anywidget(
+    HemisphereSelector3D(
+        cell_centers_x=cell_x.tolist(),
+        cell_centers_y=cell_y.tolist(),
+        cell_centers_z=cell_z.tolist(),
+        cell_values=values.tolist(),
+        cell_labels=labels,
+        colorscale="Viridis",
+        marker_size=6,
+    )
+)
+mo.output.replace(hemisphere_3d)
+```
+
+`HemisphereSelector2D` takes `cell_theta`, `cell_phi`, `cell_values` and
+`cell_labels` instead. Both expose `selected_cell_ids` (the indices of the
+selected cells) and `hovered_cell_id`.
 
 ---
 
 ## Dependencies
 
-!!! info "Optional backends"
+!!! info "Backends"
 
-    - **matplotlib** — required for `HemisphereVisualizer2D` and all 2D functions
-    - **plotly** — required for `HemisphereVisualizer3D` and all 3D functions
-    - **anywidget** — required for interactive hemisphere selectors in marimo notebooks
-    - **canvod-grids** — always required for grid geometry
-
-    Neither backend is a hard dependency of `canvod-viz` itself; import errors are
-    raised only when the corresponding visualizer is instantiated.
-
----
-
-!!! example "Try it"
-    [14 · Visualization](../../notebooks/_build/14_visualization.html){target=_blank}
-    · [view source on molab](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/14_visualization.py)
+    - **Matplotlib** (2D) and **Plotly** (3D), installed with `canvod-viz`
+    - **canvod-grids**: grid geometry, installed with `canvod-viz`
+    - **anywidget**: only for the interactive hemisphere selectors in the
+      marimo notebooks; installed only with the optional extra
+      `widgets` (`pip install "canvod-viz[widgets]"`), not by default

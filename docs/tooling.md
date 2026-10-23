@@ -3,7 +3,7 @@ title: Development Tooling
 description: Tools used in canVODpy development
 ---
 
-# Development Tooling
+# Development tooling
 
 canVODpy uses a modern Python toolchain built almost entirely on the [Astral](https://astral.sh/) ecosystem.
 
@@ -24,7 +24,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ---
 
     Linter + formatter in one tool. Implements 700+ rules from flake8,
-    pylint, black, and isort at 10–100× their speed.
+    pylint, black, and isort at $10\times$ to $100\times$ their speed.
 
     [:octicons-arrow-right-24: astral.sh/ruff](https://docs.astral.sh/ruff/)
 
@@ -42,7 +42,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ---
 
     Task runner with simpler syntax than Make. All common development
-    tasks — test, check, docs, config — are `just <command>` away.
+    tasks (test, check, docs, settings) are `just <command>` away.
 
     [:octicons-arrow-right-24: github.com/casey/just](https://github.com/casey/just)
 
@@ -50,9 +50,9 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 ---
 
-## Core Tools
+## Core tools
 
-=== "uv — Package Manager"
+=== "uv: package manager"
 
     ```bash
     uv sync                  # Install all dependencies (workspace-aware)
@@ -64,7 +64,15 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ```
 
     `uv sync` resolves `uv.lock` and creates or updates the shared workspace
-    `.venv` at the repo root — all 13 packages share a single environment.
+    `.venv` at the repo root; all 12 packages share a single environment.
+
+    The scripts under `scripts/` that need no canvodpy package
+    (`release.py`, `analyze_dependencies.py`, `check_agent_docs.py`,
+    `check_package_imports.py`) declare their Python version and
+    dependencies in a `# /// script` block at the top (inline script
+    metadata, PEP 723). `uv run --script scripts/release.py` runs such a
+    script in its own small environment, without the workspace; the `just`
+    recipes call them that way.
 
     Configuration in `pyproject.toml`:
 
@@ -76,23 +84,23 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     dev = ["pytest>=9.0", "ruff>=0.15", "ty>=0.0.44"]
     ```
 
-=== "uv_build — Build Backend"
+=== "uv_build: build backend"
 
     Builds wheel and sdist with native namespace package support:
 
     ```toml
     # packages/canvod-readers/pyproject.toml
     [build-system]
-    requires      = ["uv_build>=0.9.17,<0.10.0"]
+    requires      = ["uv_build>=0.13.0,<0.14.0"]
     build-backend = "uv_build"
 
     [tool.uv.build-backend]
     module-name = "canvod.readers"   # dot → namespace package
     ```
 
-    All 13 workspace packages use `uv_build` as their build backend.
+    All 12 workspace packages use `uv_build` as their build backend.
 
-=== "ruff — Linter + Formatter"
+=== "ruff: linter + formatter"
 
     ```bash
     ruff check .          # Lint
@@ -100,7 +108,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ruff format .         # Format
     ```
 
-    Configuration (workspace root `pyproject.toml` — inherited by all packages):
+    Configuration (workspace root `pyproject.toml`, inherited by all packages):
 
     ```toml
     [tool.ruff]
@@ -115,9 +123,9 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     scientists over naming or style. Dropped stylistic rules (N, SIM, C4, PIE, PT)
     that add noise without catching bugs.
 
-=== "ty — Type Checker"
+=== "ty: type checker"
 
-    Type annotations are optional labels on function inputs/outputs — `ty`
+    Type annotations are optional labels on function inputs/outputs; `ty`
     checks that they are consistent, catching a class of bugs before you run
     the code.
 
@@ -133,20 +141,21 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     python-version = "3.14"
     ```
 
-    !!! info "Non-blocking in canVODpy"
-        Type checking is **informational and does not block commits or PRs**.
-        `ty` runs in CI with `continue-on-error: true`, and errors are tracked
-        as a budget ratchet (lowered ~10 per PR). Use `just check-types` to
-        view the current diagnostic count.
+    !!! info "Blocking in canVODpy"
+        `ty` runs in the pre-push hook and in CI (the `type_consistency`
+        job of `code_quality.yml`). A type error blocks the push and the
+        pull request. `[tool.ty.src]` in `pyproject.toml` lists the files
+        it leaves out. Run `just check-types` to see the errors.
 
 ---
 
-## Supporting Tools
+## Supporting tools
 
-=== "just — Task Runner"
+=== "just: task runner"
 
-    Recipes are defined in `justfile` at the repo root. Use `just --list` to
-    see all available recipes.
+    Recipes are defined in `Justfile` at the repo root. `just --list` shows
+    all recipes, sorted into groups such as `setup`, `run and settings`,
+    `stores`, `tests` and `docs`.
 
     All common tasks are single commands:
 
@@ -156,12 +165,14 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     just hooks            # Install pre-commit hooks
     just docs             # Preview documentation locally
     just docs-build       # Build static documentation
+    just docs-lint        # Check the language of the docs
+    just docs-links       # Check every link of the built docs
     just config-init      # Scaffold canvod-settings.yaml from template
     just config-validate  # Validate config files
     just --list           # Show all available commands
     ```
 
-=== "pytest — Testing"
+=== "pytest: testing"
 
     ```bash
     uv run pytest                        # All tests
@@ -171,10 +182,10 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     ```
 
     Integration tests are marked `@pytest.mark.integration`. They are **not**
-    excluded by default — pass `-m "not integration"` to skip them for a fast
+    excluded by default; pass `-m "not integration"` to skip them for a fast
     unit-only run.
 
-=== "pre-commit — Git Hooks"
+=== "pre-commit, Git hooks"
 
     ```bash
     just hooks    # Install hooks (run once after clone)
@@ -188,10 +199,10 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
       - repo: local
         hooks:
           - id: ruff-check
-            entry: uv run ruff check --fix
+            entry: uv run --locked ruff check --fix
             stages: [pre-commit]
           - id: ruff-format
-            entry: uv run ruff format
+            entry: uv run --locked ruff format
             stages: [pre-commit]
       - repo: https://github.com/astral-sh/uv-pre-commit
         hooks:
@@ -210,18 +221,16 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
       - repo: local
         hooks:
           - id: ty-check
-            entry: uv run ty check
+            entry: uv run --locked ty check
             stages: [pre-push]
-          - id: update-submodules
-            entry: just update-submodules
-            stages: [post-merge]
     ```
 
     Ruff, uv-lock, and file hygiene hooks run at the `pre-commit` stage and
     block the commit on failure. Commitizen validates the message at `commit-msg`.
     `ty-check` runs at the **`pre-push` stage** (not on every commit), so type
     errors surface before reaching the remote but without slowing down local commits.
-    `update-submodules` runs at `post-merge`.
+    The tools run with `uv run --locked`: they never rewrite `uv.lock`, and
+    fail when it is out of date (run `uv lock`).
 
 === "Conventional Commits"
 
@@ -243,7 +252,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 === "Zensical + beautiful-mermaid"
 
-    Documentation is built with [Zensical](https://zensical.dev/), a
+    Documentation is built with [Zensical](https://zensical.org/), a
     Rust+Python wrapper around MkDocs Material:
 
     ```bash
@@ -251,18 +260,24 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
     just docs-build    # Build static site (wraps uv run zensical build)
     ```
 
-    Mermaid diagram sources live in `docs/diagrams/` as `.mmd` files.
-    Render them to SVG/PNG using beautiful-mermaid:
+    Two checks keep the pages correct:
 
-    ```bash
-    npx beautiful-mermaid render docs/diagrams/<file.mmd>
-    ```
+    - `just docs-lint` checks the language with
+      [Vale](https://vale.sh/) and its Google style package (`.vale.ini`).
+      Project words that are spelled correctly go in
+      `.vale/styles/config/vocabularies/canvodpy/accept.txt`. Pass a path
+      to check a single page: `just docs-lint docs/users/index.md`.
+    - `just docs-links` builds the site and checks every link with
+      [lychee](https://lychee.cli.rs/) (`lychee.toml`): links between
+      pages, anchors, and links to other sites. Install lychee once with
+      `brew install lychee`.
 
-    Do not commit generated images (`*.png`, `*.svg`).
+    Write diagrams as Mermaid code blocks inside the page; the browser
+    renders them. `docs/diagrams/` holds only files that a page embeds.
 
 ---
 
-## Tool Comparison
+## Tool comparison
 
 | Task | Traditional stack | canVODpy |
 |------|------------------|----------|
@@ -278,7 +293,7 @@ canVODpy uses a modern Python toolchain built almost entirely on the [Astral](ht
 
 ---
 
-## Quality & Security
+## Quality & security
 
 canVODpy follows FAIR software principles and OpenSSF best practices:
 
@@ -290,7 +305,7 @@ canVODpy follows FAIR software principles and OpenSSF best practices:
 
     Certified compliance with open source security best practices.
 
-    [:octicons-arrow-right-24: Application Guide](OPENSSF_BADGE_GUIDE.md)
+    [:octicons-arrow-right-24: badge guide](OPENSSF_BADGE_GUIDE.md)
 
 -   :fontawesome-solid-star: &nbsp; **FAIR Software**
 
@@ -308,10 +323,10 @@ canVODpy follows FAIR software principles and OpenSSF best practices:
 
     Automated security monitoring across 18+ best practice checks.
 
-    **Runs:** Weekly + on every push to main
-    **Results:** GitHub Security tab
+    **Runs:** weekly and on every push to main
+    **Results:** the GitHub Security tab
 
-    [:octicons-arrow-right-24: View Scorecard](https://securityscorecards.dev/viewer/?uri=github.com/nfb2021/canvodpy)
+    [:octicons-arrow-right-24: View Scorecard](https://securityscorecards.dev/viewer/?uri=github.com/TUW-GEO/canvodpy)
 
 -   :fontawesome-solid-lock: &nbsp; **Security Policy**
 
@@ -324,19 +339,20 @@ canVODpy follows FAIR software principles and OpenSSF best practices:
 
 </div>
 
-### Continuous Integration
+### Continuous integration
 
 All quality checks run automatically:
 
 | Workflow | Runs On | Purpose |
 |----------|---------|---------|
-| `test_platforms.yml` | Push, PR | Multi-platform tests (Linux/macOS/Windows) |
-| `test_coverage.yml` | Push, PR | Coverage tracking → Coveralls |
-| `code_quality.yml` | Push | Linting, formatting, type checking |
+| `test_platforms.yml` | Push, PR | Multi-platform tests (Linux/macOS on Apple silicon/Windows) |
+| `test_coverage.yml` | Push, PR | Coverage tracking $\rightarrow$ Coveralls |
+| `code_quality.yml` | Push | Linting, formatting, type checking, building every package without the workspace sources (`just check-build`) |
+| `dependency_audit.yml` | PR changing `uv.lock`, a `pyproject.toml`, the `Justfile` or the workflow; manual | Locked dependencies against known vulnerabilities (`just audit`, pip-audit); `publish_pypi.yml` runs it before every upload |
 | `codeql.yml` | Push, PR, Weekly | CodeQL security analysis |
 | `fair-software.yml` | Push, PR | FAIR compliance checks |
 | `scorecard.yml` | Weekly, Push to main | Security best practices |
 
 All workflows must pass before merging to `main`.
 
-**See also:** [Security Policy](SECURITY.md) · [FAIR Compliance](FAIR_IMPLEMENTATION_SUMMARY.md)
+**See also:** [security policy](SECURITY.md) · [FAIR compliance](FAIR_IMPLEMENTATION_SUMMARY.md)

@@ -40,6 +40,8 @@ Unified API::
 
 """
 
+from importlib.metadata import version as _version
+
 from canvod.viz.hemisphere_2d import (
     HemisphereVisualizer2D,
     PolarPlotStyle,
@@ -62,7 +64,7 @@ from canvod.viz.styles import (
 )
 from canvod.viz.visualizer import HemisphereVisualizer
 
-__version__ = "0.1.0"
+__version__ = _version("canvod-viz")
 
 __all__ = [
     "RSE_COLORS",

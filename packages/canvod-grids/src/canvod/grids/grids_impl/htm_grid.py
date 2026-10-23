@@ -28,8 +28,8 @@ class HTMBuilder(BaseGridBuilder):
     * theta ∈ [0, π/2] – polar angle from zenith (0 = straight up,
       π/2 = horizon)
 
-    Cell centres are the 3D Cartesian mean of the three triangle vertices,
-    re-normalised onto the unit sphere.
+    Cell centers are the 3D Cartesian mean of the three triangle vertices,
+    re-normalized onto the unit sphere.
 
     What ``htm_level`` (resolution) means
     --------------------------------------
@@ -60,9 +60,9 @@ class HTMBuilder(BaseGridBuilder):
     2. **Subdivision** – for each triangle [v₀, v₁, v₂], three edge
        midpoints are computed and projected onto the unit sphere::
 
-           m₀ = normalise((v₀ + v₁) / 2)
-           m₁ = normalise((v₁ + v₂) / 2)
-           m₂ = normalise((v₂ + v₀) / 2)
+           m₀ = normalize((v₀ + v₁) / 2)
+           m₁ = normalize((v₁ + v₂) / 2)
+           m₂ = normalize((v₂ + v₀) / 2)
 
        The four children are [v₀, m₀, m₂], [v₁, m₁, m₀], [v₂, m₂, m₁],
        and [m₀, m₁, m₂].  This is repeated ``htm_level`` times.
@@ -73,7 +73,7 @@ class HTMBuilder(BaseGridBuilder):
        triangles that are mostly below the horizon; kept triangles may
        still extend slightly across the horizon since cells are not
        clipped to an exact circle.
-    4. Each leaf triangle becomes one cell; its centre, bounding box, and
+    4. Each leaf triangle becomes one cell; its center, bounding box, and
        three vertex coordinates are stored.
 
     Parameters
@@ -100,7 +100,7 @@ class HTMBuilder(BaseGridBuilder):
     HTM IDs in this implementation use a decimal-digit scheme
     (``parent_id × 10 + child_index``) which diverges from the original
     SDSS HTM binary-coded ID scheme.  This is adequate for indexing but
-    should not be compared with external HTM catalogues.
+    should not be compared with external HTM catalogs.
 
     References
     ----------
@@ -165,7 +165,7 @@ class HTMBuilder(BaseGridBuilder):
         Returns
         -------
         grid : pl.DataFrame
-            One row per triangular cell.  Contains phi, theta (centre),
+            One row per triangular cell.  Contains phi, theta (center),
             bounding-box limits, ``htm_id``, ``htm_level``, and the three
             vertex coordinate columns ``htm_vertex_0/1/2`` (each a list of
             3 floats in Cartesian xyz).

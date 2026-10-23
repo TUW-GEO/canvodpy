@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Test config loader works from any directory."""
 
-import shutil
+import os
 import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -12,19 +13,25 @@ from canvod.config import loader as loader_module
 
 
 def find_monorepo_root(start_path: Path) -> Path:
-    """Find monorepo root by looking for pyproject.toml."""
+    """Find monorepo root by looking for a ``.git`` entry.
+
+    Same rule as ``canvod.config.loader.find_monorepo_root``: a ``.git``
+    directory (clone) or file (worktree/submodule). A ``pyproject.toml``
+    would stop at the first workspace package instead of the repo root.
+    """
     current = start_path
     while current != current.parent:
-        if (current / "pyproject.toml").exists():
+        if (current / ".git").exists():
             return current
         current = current.parent
     raise RuntimeError("Could not find monorepo root")
 
 
-# Find monorepo and check if config exists
+# Find monorepo and check if the checkout has its own config
+# (``canvodpy config init`` writes config/canvod-settings.yaml; gitignored)
 MONOREPO_ROOT = find_monorepo_root(Path(__file__).parent)
 CONFIG_DIR = MONOREPO_ROOT / "config"
-HAS_CONFIG = (CONFIG_DIR / "sites.yaml").exists()
+HAS_CONFIG = (CONFIG_DIR / "canvod-settings.yaml").exists()
 
 # Test directories (relative to monorepo root)
 TEST_DIRS = [
@@ -46,21 +53,28 @@ def test_config_loader_from_directory(test_dir: str):
     if not full_path.exists():
         pytest.skip(f"Directory doesn't exist: {test_dir}")
 
-    # Find python executable (use current interpreter)
-    python_exe = shutil.which("python") or shutil.which("python3")
-    if not python_exe:
-        pytest.skip("Python executable not found")
+    # Sites configured in the checkout's config, as the expected output
+    expected_sites = sorted(
+        loader_module.ConfigLoader(CONFIG_DIR).load().sites.sites.keys()
+    )
 
-    # Test loading config from this directory
+    # Test loading config from this directory, with the current interpreter
+    # and without an env override, so the loader must discover config/ itself
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("CANVOD_CONFIG_DIR", "CANVOD_CONFIG_FILE")
+    }
     result = subprocess.run(
         [
-            python_exe,
+            sys.executable,
             "-c",
             "from canvod.config import load_config; "
             "config = load_config(); "
-            "print(f'Sites: {list(config.sites.sites.keys())}')",
+            "print(f'Sites: {sorted(config.sites.sites.keys())}')",
         ],
         cwd=full_path,
+        env=env,
         capture_output=True,
         text=True,
         timeout=10,
@@ -73,10 +87,26 @@ def test_config_loader_from_directory(test_dir: str):
         f"stderr: {result.stderr}"
     )
 
-    # Verify expected site exists in config
-    assert "rosalia" in result.stdout.lower(), (
-        f"Expected 'rosalia' site in output from {test_dir}\nGot: {result.stdout}"
+    # Verify the checkout's own config was found
+    assert f"Sites: {expected_sites}" in result.stdout, (
+        f"Expected sites {expected_sites} from {test_dir}\nGot: {result.stdout}"
     )
+
+
+class TestFindMonorepoRoot:
+    """The root is found from the working directory only."""
+
+    def test_finds_the_checkout_from_inside_it(self, monkeypatch):
+        monkeypatch.chdir(MONOREPO_ROOT / "packages" / "canvod-config")
+        assert loader_module.find_monorepo_root() == MONOREPO_ROOT
+
+    def test_raises_outside_any_checkout(self, tmp_path, monkeypatch):
+        """No guess from where loader.py is installed (a wheel, another project)."""
+        if any((p / ".git").exists() for p in [tmp_path, *tmp_path.parents]):
+            pytest.skip("the temporary directory lies inside a git checkout")
+        monkeypatch.chdir(tmp_path)
+        with pytest.raises(RuntimeError, match=r"no \.git entry"):
+            loader_module.find_monorepo_root()
 
 
 class TestGetTemplateDir:
@@ -86,7 +116,6 @@ class TestGetTemplateDir:
         template_dir = loader_module.get_template_dir()
         assert template_dir.exists()
         assert (template_dir / "canvod-settings.yaml.example").exists()
-        assert (template_dir / "recipes" / "_template.yaml.example").exists()
 
     def test_template_dir_independent_of_monorepo_lookup(self):
         """Even if monorepo-root discovery fails, templates are still found."""
@@ -96,9 +125,32 @@ class TestGetTemplateDir:
             template_dir = loader_module.get_template_dir()
             assert template_dir.exists()
 
+    def test_settings_template_sets_no_deprecated_storage_key(self):
+        """A config copied from the template must not warn on every run."""
+        import yaml
+
+        text = (
+            loader_module.get_template_dir() / "canvod-settings.yaml.example"
+        ).read_text()
+        storage = yaml.safe_load(text)["processing"]["storage"]
+        assert "vod_store_strategy" not in storage
+
 
 class TestGetDefaultConfigDir:
     """XDG-first default, with dev-checkout convenience when available."""
+
+    @pytest.fixture(autouse=True)
+    def _no_env_override(self, monkeypatch):
+        monkeypatch.delenv("CANVOD_CONFIG_DIR", raising=False)
+
+    def test_env_var_wins_over_the_checkout_config(self, tmp_path, monkeypatch):
+        """CANVOD_CONFIG_DIR (also set by --config-dir) comes first."""
+        fake_root = tmp_path / "checkout"
+        (fake_root / "config").mkdir(parents=True)
+        monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path / "mine"))
+        with patch.object(loader_module, "find_monorepo_root", return_value=fake_root):
+            result = loader_module.get_default_config_dir()
+        assert result == tmp_path / "mine"
 
     def test_falls_back_to_xdg_when_no_monorepo_found(self, tmp_path, monkeypatch):
         monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
@@ -162,8 +214,8 @@ class TestLoadConfigEnvCaching:
     resolving ``CANVOD_CONFIG_DIR``/``CANVOD_CONFIG_FILE`` from the
     environment *inside* the cached body. A bare ``load_config()`` call made
     before those env vars were set (e.g. ``canvodpy.logging.logging_config``'s
-    module-level ``LOGGER = configure_logging()``, which calls it at import
-    time) would cache the pre-overlay config under the no-arg key -- and
+    module-level ``LOGGER = configure_logging()``, which called it at import
+    time until 2026-10) would cache the pre-overlay config under the no-arg key -- and
     every later bare call in the same process, however much later, however
     many env vars had since been set, would silently get that stale config
     back. Confirmed against a real remote chunk-size sweep (dev/
@@ -249,6 +301,35 @@ class TestLoadConfigEnvCaching:
         loader_module.load_config.cache_clear()
         info = loader_module.load_config.cache_info()
         assert info.currsize == 0
+
+
+class TestOverlayLists:
+    """A list in the overlay replaces the main file's list as a whole."""
+
+    def test_overlay_sid_list_replaces_the_main_list(self, tmp_path):
+        import yaml
+
+        config_dir = tmp_path / "config"
+        _write_minimal_config(config_dir, tmp_path / "stores")
+        settings_file = config_dir / "canvod-settings.yaml"
+        settings = yaml.safe_load(settings_file.read_text())
+        settings["sids"] = {
+            "mode": "custom",
+            "custom_sids": ["G01|L1|C", "G02|L1|C", "E01|E1|C"],
+        }
+        settings_file.write_text(yaml.safe_dump(settings))
+        overlay = tmp_path / "overlay.yaml"
+        overlay.write_text(
+            yaml.safe_dump({"sids": {"mode": "custom", "custom_sids": ["R01|G1|C"]}})
+        )
+        loader_module.load_config.cache_clear()
+        try:
+            config = loader_module.load_config(
+                config_dir=config_dir, config_file=overlay
+            )
+        finally:
+            loader_module.load_config.cache_clear()
+        assert config.sids.get_sids() == ["R01|G1|C"]
 
 
 class TestFormatValidationError:

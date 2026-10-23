@@ -1,10 +1,10 @@
-# Contributor Setup
+# Contributor setup
 
 This guide walks you through everything you need, from creating a GitHub account to running your first test, so you can start contributing to canVODpy even if you have never used Git, GitHub, or Python tooling before.
 
 !!! tip "Just want to *use* canVODpy, not contribute?"
 
-    See the [Users guide](../users/index.md) instead.
+    See [Retrieve VOD](../users/index.md) instead.
 
 <div class="grid cards" markdown>
 
@@ -14,11 +14,11 @@ This guide walks you through everything you need, from creating a GitHub account
 
     [GitHub account](#1-create-a-github-account) · [Homebrew](#2-install-homebrew-macos-only) · [Git install](#3-install-git) · [SSH keys](#4-set-up-an-ssh-key-for-github) · [Git identity](#5-configure-your-git-identity)
 
--   :fontawesome-solid-gear: &nbsp; **[Steps 6–9](#6-install-development-tools)** &nbsp; Tools + Repo
+-   :fontawesome-solid-gear: &nbsp; **[Steps 6–9](#6-install-development-tools)** &nbsp; Tools + Repository
 
     ---
 
-    [Install `uv` + `just`](#6-install-development-tools) · [Fork + clone](#7-fork-and-clone-the-repository) · [Submodules](#8-initialize-submodules) · [Dev environment](#9-set-up-the-development-environment)
+    [Install `uv` + `just`](#6-install-development-tools) · [Fork + clone](#7-fork-and-clone-the-repository) · [Submodules](#8-initialize-submodules) · [Development environment](#9-set-up-the-development-environment)
 
 -   :fontawesome-solid-sliders: &nbsp; **[Step 10](#10-configure-and-run)** &nbsp; Configuration + First run
 
@@ -44,13 +44,13 @@ GitHub is a website that hosts code and lets teams collaborate on software proje
 
 ## 2. Install Homebrew (macOS only)
 
-Homebrew is the standard package manager for macOS — it lets you install developer tools with a single command. Open **Terminal** (press ++cmd+space++, type "Terminal", press ++enter++) and run:
+Homebrew is the standard package manager for macOS. It lets you install developer tools with a single command. Open **Terminal** (press ++cmd+space++, type "Terminal" and press ++enter++) and run:
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-Follow the on-screen instructions. When it finishes, it will tell you to run two commands to add Homebrew to your PATH — **copy and run them**. Then verify:
+Follow the on-screen instructions. When it finishes, it tells you to run two commands to add Homebrew to your PATH: **copy and run them**. Then verify:
 
 ```bash
 brew --version
@@ -169,7 +169,7 @@ SSH keys let you securely connect to GitHub without typing your password every t
 
 1. Go to [github.com/settings/keys](https://github.com/settings/keys).
 2. Click **New SSH key**.
-3. Give it a title (e.g. "My Laptop"), paste the key, and click **Add SSH key**.
+3. Give it a title (for example "Laptop"), paste the key, and click **Add SSH key**.
 
 ### Test the connection
 
@@ -198,8 +198,8 @@ Use the same email you registered on GitHub.
 
 canVODpy uses two command-line tools to manage the project:
 
-- **uv** — a fast Python package manager that handles dependencies and virtual environments.
-- **just** — a command runner (like a simplified Makefile) that provides shortcuts for common tasks.
+- **uv**: a fast Python package manager that handles dependencies and virtual environments.
+- **just**: a command runner (like a simplified Makefile) that provides shortcuts for common tasks.
 
 ### Install uv
 
@@ -229,7 +229,7 @@ canVODpy uses two command-line tools to manage the project:
     brew install just
     ```
 
-=== "Linux (any distro)"
+=== "Linux (any distribution)"
 
     This works on all Linux distributions (Ubuntu, Mint, Fedora, etc.):
 
@@ -274,9 +274,9 @@ A **fork** is your own copy of the project on GitHub. You make changes in your f
 
 ### Fork on GitHub
 
-1. Go to [github.com/nfb2021/canvodpy](https://github.com/nfb2021/canvodpy).
+1. Go to [github.com/TUW-GEO/canvodpy](https://github.com/TUW-GEO/canvodpy).
 2. Click the **Fork** button in the top-right corner.
-3. GitHub will create a copy at `github.com/YOUR_USERNAME/canvodpy`.
+3. GitHub creates a copy at `github.com/YOUR_USERNAME/canvodpy`.
 
 ### Clone your fork
 
@@ -292,7 +292,7 @@ Replace `YOUR_USERNAME` with your actual GitHub username.
 This lets you pull in updates from the original repository later:
 
 ```bash
-git remote add upstream git@github.com:nfb2021/canvodpy.git
+git remote add upstream git@github.com:TUW-GEO/canvodpy.git
 ```
 
 Verify your remotes:
@@ -315,10 +315,10 @@ git submodule update --init --recursive
 
 This pulls:
 
-- **`packages/canvod-readers/tests/test_data`** — validation test data (falsified/corrupted RINEX files for testing)
-- **`demo`** — clean real-world data for demos and documentation
+- **`packages/canvod-readers/tests/test_data`**: validation test data (falsified/corrupted RINEX files for testing)
+- **`demo`**: clean real-world data for demos and documentation
 
-If you skip this step, tests that require these datasets will be automatically skipped.
+If you skip this step, tests that require these datasets are skipped.
 
 ---
 
@@ -330,18 +330,19 @@ From inside the `canvodpy` directory, run:
 # Verify required tools are available
 just check-dev-tools
 
-# Install all Python dependencies into a virtual environment
-uv sync
+# Install all Python dependencies and the git hooks (code checks before
+# each commit, code graph rebuild after each commit)
+just sync
 
-# Install pre-commit hooks (automatic code checks before each commit)
-just hooks
+# First build of the code graph (free, local; see "Developing with coding agents")
+just graph
 ```
 
 ---
 
 ## 10. Configure and run
 
-Follow the [Users guide](../users/index.md) to initialize `canvod-settings.yaml`, validate it, and process your first day of GNSS data.
+Follow [Retrieve VOD](../users/index.md) to initialize `canvod-settings.yaml`, validate it, and process your first day of GNSS data.
 
 ---
 
@@ -365,11 +366,11 @@ If both commands complete without errors, your environment is ready.
 
 ## 12. Keeping your fork up to date
 
-The upstream repository (`nfb2021/canvodpy`) receives regular updates. To incorporate these into your fork, you need to **fetch from upstream and merge into your local branch**. This section explains every step.
+The upstream repository (`TUW-GEO/canvodpy`) receives regular updates. To incorporate these into your fork, you need to **fetch from upstream and merge into your local branch**. This section explains every step.
 
 ### Why this is necessary
 
-When you forked the repository, GitHub created a snapshot of `main` at that moment. Any commits pushed to the upstream `main` after your fork was created are **not** automatically reflected in your fork. If you work on a feature branch for several days, the upstream `main` may have moved ahead — your branch will be "behind." Merging upstream changes prevents conflicts from accumulating and ensures you are building on the latest codebase.
+When you forked the repository, GitHub created a snapshot of `main` at that moment. Any commits pushed to the upstream `main` after your fork was created are **not** automatically reflected in your fork. If you work on a feature branch for several days, the upstream `main` may have moved ahead, and your branch falls behind it. Merging upstream changes prevents conflicts from accumulating and ensures you are building on the latest codebase.
 
 ### One-time setup (already done if you followed step 7)
 
@@ -384,14 +385,14 @@ You should see two remotes:
 ```
 origin    git@github.com:YOUR_USERNAME/canvodpy.git (fetch)
 origin    git@github.com:YOUR_USERNAME/canvodpy.git (push)
-upstream  git@github.com:nfb2021/canvodpy.git (fetch)
-upstream  git@github.com:nfb2021/canvodpy.git (push)
+upstream  git@github.com:TUW-GEO/canvodpy.git (fetch)
+upstream  git@github.com:TUW-GEO/canvodpy.git (push)
 ```
 
 If `upstream` is missing, add it:
 
 ```bash
-git remote add upstream git@github.com:nfb2021/canvodpy.git
+git remote add upstream git@github.com:TUW-GEO/canvodpy.git
 ```
 
 ### Update your local `main` branch
@@ -407,7 +408,7 @@ git fetch upstream
 
 # 3. Merge upstream/main into your local main
 #    This is a fast-forward merge (no merge commit) if you have not
-#    committed directly to your local main — which you should not do.
+#    committed directly to your local main, which you should not do.
 git merge upstream/main
 
 # 4. Push the updated main to your fork on GitHub
@@ -428,14 +429,14 @@ git checkout feature/my-feature
 git rebase main
 ```
 
-Rebasing replays your commits on top of the latest `main`, producing a linear history. If Git reports a **merge conflict** during rebase, it will pause and show you which files conflict. Resolve each conflict by editing the file, then:
+Rebasing replays your commits on top of the latest `main`, producing a linear history. If Git reports a **merge conflict** during rebase, it pauses and shows you which files conflict. Resolve each conflict by editing the file, then:
 
 ```bash
 git add <resolved-file>
 git rebase --continue
 ```
 
-If you want to abort the rebase and return to the state before:
+If you want to stop the rebase and return to the state before:
 
 ```bash
 git rebase --abort
@@ -469,7 +470,7 @@ git rebase main
 
 ## 12b. Working in teams
 
-During collaborative sprints, each team works on its own topic (often aligned with a package such as `canvod-grids` or `canvod-readers`). A shared **develop branch** acts as the integration point — no one commits to it directly. Instead, each team gets its own **team branch**.
+During collaborative sprints, each team works on its own topic (often aligned with a package such as `canvod-grids` or `canvod-readers`). A shared **develop branch** acts as the integration point: no one commits to it directly. Instead, each team gets its own **team branch**.
 
 ### Branch structure
 
@@ -502,7 +503,7 @@ git checkout team-grids
 
 From here, choose the workflow that fits your team:
 
-=== "Workflow A: Push to the team branch directly"
+=== "Workflow A, push to the team branch directly"
 
     Best for small teams (2–3 people) or when members work on separate files.
 
@@ -522,7 +523,7 @@ From here, choose the workflow that fits your team:
     git push origin team-grids
     ```
 
-=== "Workflow B: Individual feature branches with PRs"
+=== "Workflow B, feature branches with pull requests"
 
     Best for larger teams or when you want lightweight review within the team.
 
@@ -582,11 +583,11 @@ Commit messages follow the [Conventional Commits](https://www.conventionalcommit
 
 ### Push
 
-Push to your team branch or feature branch (see [Working in teams](#12b-working-in-teams) above).
+Push to your team branch or feature branch (see [Working in teams](#12b-working-in-teams)).
 
 ### Open a pull request
 
-1. Go to your fork on GitHub — you'll see a banner suggesting to open a pull request.
+1. Go to your fork on GitHub. You'll see a banner suggesting to open a pull request.
 2. Click **Compare & pull request**.
 3. Set the **base** branch to your team branch (or the develop branch, depending on your workflow).
 4. Add a title and description, then click **Create pull request**.
@@ -595,7 +596,7 @@ Push to your team branch or feature branch (see [Working in teams](#12b-working-
 
 ## 14. Pre-commit hooks and why your commit may be rejected
 
-When you ran `just hooks` in [step 9](#9-set-up-the-development-environment), a set of **pre-commit hooks** was installed into your local `.git/hooks/` directory. These hooks run automatically every time you execute `git commit`. If any hook fails, **the commit is aborted** — your changes remain staged but no commit is created.
+When you ran `just sync` in [step 9](#9-set-up-the-development-environment), a set of **pre-commit hooks** was installed into your local `.git/hooks/` directory. These hooks run automatically every time you execute `git commit`. If any hook fails, **the commit is aborted**: your changes remain staged but no commit is created.
 
 This is intentional: it prevents code that does not meet the project's quality standards from entering the Git history. The hooks are defined in `.pre-commit-config.yaml` at the repository root.
 
@@ -605,14 +606,28 @@ The following checks execute automatically in sequence. If any one fails, the co
 
 | Hook                        | When it runs                               | What it checks                                                                                                            | Typical failure reason                                                  |
 | --------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| **ruff check**              | `pre-commit` (before commit is created)    | Python linting — unused imports, undefined names, style violations, type annotation issues                                | You have an unused import or a linting rule violation                   |
-| **ruff format**             | `pre-commit`                               | Python formatting — consistent code style (indentation, line length, quote style, trailing commas)                        | Your code is not formatted according to the project style               |
-| **uv-lock**                 | `pre-commit`                               | Lockfile consistency — verifies `uv.lock` matches `pyproject.toml`                                                        | You changed a dependency in `pyproject.toml` but did not run `uv sync`  |
+| **ruff check**              | `pre-commit` (before commit is created)    | Python linting: unused imports, undefined names, style violations, type annotation issues                                | You have an unused import or a linting rule violation                   |
+| **ruff format**             | `pre-commit`                               | Python formatting: consistent code style (indentation, line length, quote style, trailing commas)                        | Your code is not formatted according to the project style               |
+| **uv-lock**                 | `pre-commit`                               | Lockfile consistency: verifies `uv.lock` matches `pyproject.toml`                                                        | You changed a dependency in `pyproject.toml` but did not run `uv sync`  |
 | **trailing-whitespace**     | `pre-commit`                               | Removes trailing whitespace from all files                                                                                | A line ends with invisible spaces or tabs                               |
 | **check-added-large-files** | `pre-commit`                               | Blocks files larger than the threshold from being committed                                                               | You are trying to commit a large binary, dataset, or log file           |
-| **detect-private-key**      | `pre-commit`                               | Scans for accidentally staged private keys (SSH, PGP)                                                                     | You are about to commit a secret — **do not override this**             |
+| **detect-private-key**      | `pre-commit`                               | Scans for accidentally staged private keys (SSH, PGP)                                                                     | You are about to commit a secret: **do not override this**             |
 | **end-of-file-fixer**       | `pre-commit`                               | Ensures every file ends with exactly one newline                                                                          | A file is missing its final newline or has extra blank lines at the end |
+| **check-agent-docs**        | `pre-commit`                               | Every path and `just` recipe named in `AGENTS.md` files and task guides exists                                       | You moved or renamed a file or recipe that an instruction file names    |
 | **commitizen**              | `commit-msg` (after you write the message) | Validates that your commit message follows the [Conventional Commits](https://www.conventionalcommits.org/) specification | Your message does not match the `type(scope): subject` format           |
+| **ty type check**           | `pre-push` (before `git push`)             | Type checking of the whole workspace with ty                                                                              | A type error; the push is aborted                                       |
+
+CI also runs `just check-package-imports` (too slow for a hook, about two
+minutes): it installs each package with only the dependencies its own
+`pyproject.toml` declares and imports every module. It fails when a
+package imports a library it does not declare, which the shared `.venv`
+hides. Run it after you add an import of a new library to a package.
+
+After a commit, merge or checkout, the **code graph** hook rebuilds the
+code graph in the background (`.graphify/`, log in `.graphify/build.log`).
+To move `demo` and the test data to their latest commits, run
+`just update-submodules` on a feature branch; it commits the new pointers
+there, and they reach `main` through a pull request.
 
 ### How to fix a rejected commit
 
@@ -694,7 +709,7 @@ When a hook fails, read the error output carefully. The most common scenarios:
 
 ### Bypassing hooks (emergency only)
 
-In rare situations where you need to commit despite a hook failure (e.g., you are certain the failure is a false positive), you can skip hooks:
+In rare situations where you need to commit despite a hook failure (for example, you are certain the failure is a false positive), you can skip hooks:
 
 ```bash
 git commit --no-verify -m "fix(store): emergency hotfix"
@@ -703,7 +718,7 @@ git commit --no-verify -m "fix(store): emergency hotfix"
 !!! danger "Use `--no-verify` with extreme caution"
 
     Skipping hooks defeats their purpose. The CI pipeline on GitHub runs the
-    same checks — your pull request will fail if the code does not pass ruff,
+    same checks: your pull request will fail if the code does not pass ruff,
     formatting, and commit message validation. Only use `--no-verify` when you
     fully understand why the hook is failing and are certain the failure is not
     a genuine code quality issue.
@@ -718,20 +733,32 @@ Every push to a branch and every pull request triggers automated checks on GitHu
 
 | Workflow               | Trigger                    | What it does                                                                                                                           |
 | ---------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Code Quality**       | Every push                 | Checks lockfile consistency, runs ruff linting, checks formatting, runs type checking with ty                                          |
-| **Test with Coverage** | Push to `main` and all PRs | Runs `just test-coverage` (pytest with coverage measurement), uploads results to Coveralls, posts a coverage summary comment on the PR |
-| **Platform Tests**     | PRs                        | Runs the test suite across multiple operating systems and Python versions                                                              |
-| **Deploy Docs**        | Push to `main`             | Builds and deploys the documentation site                                                                                              |
+| **Code Quality**       | Every push and PR, weekly  | Checks lockfile consistency, runs ruff linting, checks formatting, runs type checking with ty, checks the agent instruction files       |
+| **Test with Coverage** | Push to `main`, all pull requests, weekly | Runs `uv run pytest` (coverage is on by default in `pyproject.toml`), uploads results to Coveralls, posts a coverage summary comment on the PR |
+| **Platform Tests**     | Every push and PR, weekly  | Runs the test suite on Linux, macOS, and Windows with Python 3.14                                                                       |
+| **S3 Tests**           | Every push and PR          | Runs the tests of stores on S3 against an S3 emulator (RustFS) on Linux; elsewhere these tests are skipped                              |
+| **Docs Quality**       | Push to `main`, every pull request, weekly, or started by hand | Checks the language of the docs pages a pull request changes with Vale, and the links of the built site with lychee: links between our pages on every push and pull request, external links too in the weekly run, which opens an issue when one fails |
+| **Deploy Docs**        | A published release, or started by hand | Builds and deploys the documentation site                                                                                |
+
+No CI workflow checks out the test-data submodule
+(`packages/canvod-readers/tests/test_data`): the tests that need it skip
+there, and the S3 Tests leave out the two S3 tests that read it
+(`canvodpy/tests/test_s3_run.py`, `canvodpy/tests/test_s3_two_runs.py`). Run them on your machine before you open a pull
+request that touches the readers, the stores or the pipeline
+(`git submodule update --init packages/canvod-readers/tests/test_data`,
+then `just test`). The end-to-end runs take their settings from
+`config/canvod-settings.yaml.example`, not from your settings file, so
+they run the same on every machine.
 
 ### Test coverage with Coveralls
 
 The project uses [Coveralls](https://coveralls.io/) to track test coverage over time. After each test run in CI:
 
 1. pytest generates a coverage report in LCOV format (`coverage.lcov`)
-2. The report is uploaded to [coveralls.io/github/nfb2021/canvodpy](https://coveralls.io/github/nfb2021/canvodpy)
+2. The report is uploaded to [coveralls.io/github/TUW-GEO/canvodpy](https://coveralls.io/github/TUW-GEO/canvodpy)
 3. A coverage summary is posted as a comment on the pull request, showing which lines are covered and which are not
 
-Coverage is **not** a gate (your PR will not be blocked by low coverage), but it is visible to reviewers. When adding new code, include tests — this is both good scientific practice (every computation should be verifiable) and a courtesy to future contributors who need to understand what the code does.
+Coverage is **not** a gate (low coverage does not block your PR), but it is visible to reviewers. When adding new code, include tests. This is both good scientific practice (every computation should be verifiable) and a courtesy to future contributors who need to understand what the code does.
 
 To measure coverage locally before pushing:
 
@@ -750,13 +777,20 @@ just test-coverage
     | --------------------------------- | ---------------------------------------------- |
     | `just test`                       | Run all tests                                  |
     | `just check`                      | Lint, format, and type-check all code          |
-    | `just hooks`                      | Install pre-commit hooks                       |
+    | `just sync`                       | Install dependencies and git hooks             |
+    | `just hooks`                      | Install the git hooks only                     |
+    | `just graph`                      | Rebuild the code graph (free, local)           |
     | `just check-dev-tools`            | Verify uv, just, and python3 are installed     |
     | `just config-init`                | Scaffold `canvod-settings.yaml` from template           |
     | `just config-validate`            | Validate the current configuration             |
     | `just config-show`                | Show the resolved configuration                |
-    | `canvod-preflight validate <dir>` | Check data files against the naming convention |
+    | `just config-check-data <site>`   | Check a site's data files as a run reads them  |
     | `just docs`                       | Preview documentation locally                  |
+    | `just docs-lint`                  | Check the language of the docs (Vale)          |
+    | `just docs-lint-changed`          | Vale on the pages changed since `origin/main`  |
+    | `just docs-links`                 | Check every link of the built docs (lychee)    |
+    | `just cli-docs`                   | Write the command-line reference from `--help` |
+    | `just cli-docs-check`             | Check that reference against the `--help` texts |
     | `just test-coverage`              | Run tests with coverage report                 |
     | `just clean`                      | Remove build artifacts and caches              |
     | `uv sync`                         | Install/update Python dependencies             |
@@ -775,7 +809,7 @@ just test-coverage
     :   canVODpy requires Python 3.14. Install a supported version with `uv python install 3.14` and try again.
 
     **Pre-commit hook fails on commit**
-    :   Run `just check` — it will auto-fix most linting and formatting issues. Stage the fixed files and commit again.
+    :   Run `just check`. It will auto-fix most linting and formatting issues. Stage the fixed files and commit again.
 
     **"push rejected" or "failed to push"**
     :   Your branch is behind the remote. Pull the latest changes first:
@@ -798,7 +832,7 @@ just test-coverage
         ```
 
         !!! warning
-            Do **not** commit this change — it's specific to your machine. The default path works for most installations and for CI.
+            Do **not** commit this change: it's specific to your machine. The default path works for most installations and for CI.
 
     **Windows: uv install fails with "execution of scripts is disabled"**
     :   PowerShell's default execution policy blocks scripts. Use the bypass flag:
@@ -816,4 +850,4 @@ just test-coverage
 
 ---
 
-**Next in the trail:** [Configuration Guide](configuration.md) · [API Levels](api-levels.md) · [Architecture](../architecture.md) · [AI Development](ai-development.md)
+**Next in the trail:** [configuration](configuration.md) · [API levels](api-levels.md) · [architecture](../architecture.md) · [AI development](ai-development.md)

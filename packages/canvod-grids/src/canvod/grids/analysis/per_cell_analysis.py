@@ -26,7 +26,7 @@ Notes
 * Per-cell datasets are expected to have dimensions
   ``(cell, time)`` and variables ``cell_timeseries``, ``cell_theta``,
   ``cell_phi``, and optionally ``cell_weights`` and ``cell_counts``.
-* Spatial *visualisation* (hemisphere maps) lives in ``canvod-viz``.
+* Spatial *visualization* (hemisphere maps) lives in ``canvod-viz``.
 
 """
 
@@ -640,7 +640,7 @@ def percell_to_grid_data(
     Returns
     -------
     np.ndarray
-        1-D array compatible with grid visualisation.
+        1-D array compatible with grid visualization.
 
     """
     return extract_percell_stats(percell_ds, stat=stat)

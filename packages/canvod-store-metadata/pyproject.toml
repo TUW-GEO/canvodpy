@@ -1,35 +1,57 @@
 [project]
 name = "canvod-store-metadata"
 version = "0.4.0"
-description = "FAIR-compliant metadata management for canVODpy stores"
+description = "Store metadata for canVODpy stores, in DataCite, ACDD, and STAC"
+readme = "README.md"
+requires-python = ">=3.14"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]
 maintainers = [
     {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
 ]
-readme = "README.md"
-requires-python = ">=3.14"
-keywords = ["GNSS", "VOD", "metadata", "icechunk", "zarr", "DataCite", "ACDD", "STAC"]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "VOD",
+    "metadata",
+    "icechunk",
+    "zarr",
+    "DataCite",
+    "ACDD",
+    "STAC",
+    "remote sensing",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
 ]
 
 dependencies = [
     "pydantic>=2.0",
     "icechunk>=2.0.0",
     "zarr>=3.1.2",
+    "numpy>=1.24.0",
     "polars>=1.0.0",
-    "canvod-config>=0.1.0",
+    "canvod-config>=1.0.0,<2",
+    "filelock>=3.15",
+    "structlog>=24.1.0",
+    "zarr-cm>=0.5.0",
+    "canvod-utils>=1.0.0,<2",
+    "pystac>=1.15",
 ]
 
 [dependency-groups]
 dev = [
+    "compliance-checker>=6.1.0",
     "pytest>=8.0",
+    "stac-valid>=4.6",
     "pytest-cov>=5.0",
     "ruff>=0.14",
     "ty>=0.0.9",
@@ -37,15 +59,16 @@ dev = [
 
 [tool.uv.sources]
 canvod-config = { workspace = true }
+canvod-utils = { workspace = true }
 
 [project.urls]
-Homepage = "https://github.com/nfb2021/canvodpy"
+Homepage = "https://github.com/TUW-GEO/canvodpy"
 Documentation = "https://canvodpy.eu/packages/store-metadata/overview/"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues = "https://github.com/nfb2021/canvodpy/issues"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues = "https://github.com/TUW-GEO/canvodpy/issues"
 
 [build-system]
-requires = ["uv_build>=0.9.17,<0.10.0"]
+requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

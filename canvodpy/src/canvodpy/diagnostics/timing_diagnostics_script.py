@@ -1,10 +1,4 @@
-"""Diagnostic script for canvodpy - analogon to gnssvodpy.
-
-timing_diagnostics_script.py.
-
-This script processes RINEX data using the new canvodpy architecture.
-Compare results with gnssvodpy to verify correct implementation.
-"""
+"""Diagnostic script that times processing with the canvodpy pipeline."""
 
 import csv
 import gc
@@ -88,9 +82,6 @@ def diagnose_processing(
 ) -> None:
     """Run diagnostic processing with canvodpy pipeline.
 
-    This is the analogon to gnssvodpy's timing_diagnostics_script.py.
-    Use this to verify that the new implementation produces the same results.
-
     Parameters
     ----------
     start_from : str, optional
@@ -146,10 +137,7 @@ def diagnose_processing(
         site=site,
         dry_run=False,
         n_max_workers=resources["n_workers"],
-        days_per_batch=proc.days_per_batch,
-        max_memory_gb=resources["max_memory_gb"],
-        cpu_affinity=resources["cpu_affinity"],
-        nice_priority=resources["nice_priority"],
+        config=cfg,
     ) as orchestrator:
         for date_key, datasets, receiver_times in orchestrator.process_by_date(
             keep_vars=keep_vars, start_from=start_from, end_at=end_at

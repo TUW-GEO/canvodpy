@@ -117,6 +117,20 @@ class TestStrippedDataset:
         delta = (epochs[1] - epochs[0]).astype("timedelta64[s]")
         assert delta == np.timedelta64(1, "s")
 
+    def test_event_epoch_skipped(self, canopy_file, tmp_path):
+        # A flag-4 header record at the first epoch's timestamp must not
+        # become an extra (duplicate) epoch.
+        lines = canopy_file.read_text().splitlines(keepends=True)
+        eoh = next(i for i, ln in enumerate(lines) if "END OF HEADER" in ln)
+        first_epoch = lines[eoh + 1]
+        event = first_epoch[:31] + "4  1\n" + "COMMENT".rjust(67) + "\n"
+        lines.insert(eoh + 1, event)
+        fpath = tmp_path / canopy_file.name
+        fpath.write_text("".join(lines))
+
+        reader = Rnxv3StrippedObs(fpath=fpath, completeness_mode="off")
+        assert reader.to_ds().sizes["epoch"] == 11
+
     def test_completeness_inferred(self, canopy_file):
         # Default strict mode should *pass* on a clean 10-second / 1-Hz slice.
         reader = Rnxv3StrippedObs(fpath=canopy_file)

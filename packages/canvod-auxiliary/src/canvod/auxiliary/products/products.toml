@@ -1,12 +1,24 @@
 # IGS Product Registry Configuration
 #
-# This file defines available GNSS data products and their FTP locations.
+# Final and rapid SP3/CLK products and the FTP servers that host them.
 # Users can extend this file to add custom products or servers.
 #
-# Based on NASA CDDIS vs ESA comparison (2026-01-14):
-# - NASA CDDIS: 25 products (FTPS required, needs CDDIS_MAIL)
-# - ESA: 18 products (FTP, no auth)
-# - Strategy: ESA primary for rapid/ultrarapid, NASA for final products
+# Checked 2026-10-05 against the directory listings of ESA GSSC and NASA
+# CDDIS for 2025-001 and 2026-244; recheck with `just check-products`.
+#
+# Per product:
+#   sp3_sampling / clk_sampling  every sampling the files have been published
+#                                with, tried in this order (agencies changed
+#                                them over the years); clk_sampling = [] for
+#                                products without clock files
+#   systems                      GNSS in the orbits (SP3 header, 2026-244):
+#                                G GPS, R GLONASS, E Galileo, C BeiDou, J QZSS
+#   ftp_servers                  ESA first (no account), NASA CDDIS second
+#                                (needs the NASA Earthdata e-mail)
+#
+# Not listed: ultra-rapid, real-time and near-real-time products (issued
+# several times a day, file names carry the issue hour), and products not
+# found on either server for both days (WHU, WUM and NGS rapid).
 
 # ============================================================================
 # AGENCIES
@@ -14,748 +26,501 @@
 
 [agencies]
 COD = "Center for Orbit Determination in Europe"
-GFZ = "GeoForschungsZentrum Potsdam"
-ESA = "European Space Agency"
-IGS = "International GNSS Service"
-JPL = "Jet Propulsion Laboratory"
-WHU = "Wuhan University"
-GRG = "Centre National d'Études Spatiales (CNES)"
-SHA = "Shanghai Observatory"
 EMR = "Natural Resources Canada"
-USN = "US Naval Observatory"
-JGX = "JAXA"
-SIO = "Scripps Institution of Oceanography"
-NGS = "National Geodetic Survey"
+ESA = "European Space Agency"
+GFZ = "GeoForschungsZentrum Potsdam"
+GRG = "Centre National d'Études Spatiales (CNES)"
 IAC = "Information-Analytical Centre"
-JAX = "JAXA"
-WUM = "Wuhan University (Multi-GNSS)"
+IGS = "International GNSS Service"
+JAX = "JAXA (multi-GNSS)"
+JGX = "JAXA"
+JPL = "Jet Propulsion Laboratory"
 MIT = "Massachusetts Institute of Technology"
+NGS = "National Geodetic Survey"
+SIO = "Scripps Institution of Oceanography"
+USN = "US Naval Observatory"
 
 # ============================================================================
 # PRODUCTS
 # ============================================================================
-# Pattern: Products on BOTH servers use ESA primary, NASA fallback
-#          Products on NASA-only use NASA only
-
-# ----------------------------------------------------------------------------
-# CODE (Center for Orbit Determination in Europe)
-# ----------------------------------------------------------------------------
-
-[[products]]
-agency = "COD"
-type = "rapid"
-prefix = "COD0OPSRAP"
-sampling = "05M"
-duration = "01D"
-description = "CODE operational rapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-description = "ESA primary"
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-description = "NASA CDDIS fallback"
-requires_auth = true
-
-[[products]]
-agency = "COD"
-type = "ultrarapid"
-prefix = "COD0OPSULT"
-sampling = "05M"
-duration = "02D"
-description = "CODE operational ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
 
 [[products]]
 agency = "COD"
 type = "final"
 prefix = "COD0MGXFIN"
-sampling = "05M"
-duration = "01D"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GRECJ"
 description = "CODE final multi-GNSS"
-formats = ["SP3", "CLK"]
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
-description = "ESA primary"
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
 requires_auth = true
-description = "NASA CDDIS fallback"
-
-# ----------------------------------------------------------------------------
-# GFZ (GeoForschungsZentrum Potsdam)
-# ----------------------------------------------------------------------------
+description = "NASA CDDIS"
 
 [[products]]
-agency = "GFZ"
+agency = "COD"
 type = "rapid"
-prefix = "GFZ0MGXRAP"
-sampling = "05M"
-duration = "01D"
-description = "GFZ multi-GNSS rapid"
-formats = ["SP3", "CLK"]
+prefix = "COD0OPSRAP"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GRE"
+description = "CODE operational rapid"
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
 requires_auth = true
-
-[[products]]
-agency = "GFZ"
-type = "ultrarapid"
-prefix = "GFZ0OPSULT"
-sampling = "05M"
-duration = "02D"
-description = "GFZ operational ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "GFZ"
-type = "final"
-prefix = "GFZ0MGXFIN"
-sampling = "05M"
-duration = "01D"
-description = "GFZ final multi-GNSS (NASA only)"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 1
-requires_auth = true
-
-# ----------------------------------------------------------------------------
-# ESA (European Space Agency)
-# ----------------------------------------------------------------------------
+description = "NASA CDDIS"
 
 [[products]]
 agency = "ESA"
 type = "final"
 prefix = "ESA0OPSFIN"
-sampling = "05M"
-duration = "01D"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GRECJ"
 description = "ESA operational final"
-formats = ["SP3", "CLK"]
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
 requires_auth = true
+description = "NASA CDDIS"
 
 [[products]]
 agency = "ESA"
 type = "rapid"
 prefix = "ESA0OPSRAP"
-sampling = "05M"
-duration = "01D"
+sp3_sampling = ["05M", "15M"]
+clk_sampling = ["30S", "05M"]
+systems = "GR"
 description = "ESA operational rapid"
-formats = ["SP3", "CLK"]
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
 requires_auth = true
+description = "NASA CDDIS"
 
 [[products]]
-agency = "ESA"
-type = "ultrarapid"
-prefix = "ESA0OPSULT"
-sampling = "05M"
-duration = "02D"
-description = "ESA operational ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-# ----------------------------------------------------------------------------
-# IGS (International GNSS Service - Combined)
-# ----------------------------------------------------------------------------
-
-[[products]]
-agency = "IGS"
-type = "rapid"
-prefix = "IGS0OPSRAP"
-sampling = "15M"
-duration = "01D"
-description = "IGS operational rapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "IGS"
-type = "ultrarapid"
-prefix = "IGS0OPSULT"
-sampling = "15M"
-duration = "02D"
-description = "IGS operational ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "IGS"
-type = "real-time"
-prefix = "IGS0OPSRTS"
-sampling = "15M"
-duration = "01D"
-description = "IGS operational real-time"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-# ----------------------------------------------------------------------------
-# JPL (Jet Propulsion Laboratory)
-# ----------------------------------------------------------------------------
-
-[[products]]
-agency = "JPL"
-type = "rapid"
-prefix = "JPL0OPSRAP"
-sampling = "15M"
-duration = "01D"
-description = "JPL operational rapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "JPL"
+agency = "GFZ"
 type = "final"
-prefix = "JPL0MGXFIN"
-sampling = "15M"
-duration = "01D"
-description = "JPL final multi-GNSS (NASA only)"
-formats = ["SP3", "CLK"]
+prefix = "GFZ0OPSFIN"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GRE"
+description = "GFZ operational final"
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
+url = "ftp://gssc.esa.int"
 priority = 1
-requires_auth = true
+description = "ESA GSSC"
 
-# ----------------------------------------------------------------------------
-# WHU (Wuhan University)
-# ----------------------------------------------------------------------------
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
 
 [[products]]
-agency = "WHU"
+agency = "GFZ"
 type = "rapid"
-prefix = "WHU0OPSRAP"
-sampling = "05M"
-duration = "01D"
-description = "WHU operational rapid"
-formats = ["SP3", "CLK"]
+prefix = "GFZ0MGXRAP"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GRECJ"
+description = "GFZ multi-GNSS rapid"
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
 requires_auth = true
-
-[[products]]
-agency = "WHU"
-type = "ultrarapid"
-prefix = "WHU0OPSULT"
-sampling = "05M"
-duration = "02D"
-description = "WHU operational ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-# ----------------------------------------------------------------------------
-# GRG (CNES)
-# ----------------------------------------------------------------------------
-
-[[products]]
-agency = "GRG"
-type = "rapid"
-prefix = "GRG0OPSRAP"
-sampling = "05M"
-duration = "01D"
-description = "CNES operational rapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "GRG"
-type = "ultrarapid"
-prefix = "GRG0OPSULT"
-sampling = "05M"
-duration = "02D"
-description = "CNES operational ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
+description = "NASA CDDIS"
 
 [[products]]
 agency = "GRG"
 type = "final"
 prefix = "GRG0MGXFIN"
-sampling = "05M"
-duration = "01D"
-description = "CNES final multi-GNSS (NASA only)"
-formats = ["SP3", "CLK"]
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GEC"
+description = "CNES final multi-GNSS"
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
+url = "ftp://gssc.esa.int"
 priority = 1
-requires_auth = true
+description = "ESA GSSC"
 
-# ----------------------------------------------------------------------------
-# Additional Agencies (Rapid/Ultrarapid)
-# ----------------------------------------------------------------------------
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
 
 [[products]]
-agency = "EMR"
+agency = "GRG"
 type = "rapid"
-prefix = "EMR0OPSRAP"
-sampling = "05M"
-duration = "01D"
-description = "Natural Resources Canada rapid"
-formats = ["SP3", "CLK"]
+prefix = "GRG0OPSRAP"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GEC"
+description = "CNES operational rapid"
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
 requires_auth = true
-
-[[products]]
-agency = "EMR"
-type = "ultrarapid"
-prefix = "EMR0OPSULT"
-sampling = "05M"
-duration = "02D"
-description = "Natural Resources Canada ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "EMR"
-type = "final"
-prefix = "EMR0MGXFIN"
-sampling = "05M"
-duration = "01D"
-description = "Natural Resources Canada final (NASA only)"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 1
-requires_auth = true
-
-[[products]]
-agency = "SHA"
-type = "ultrarapid"
-prefix = "SHA0MGXULT"
-sampling = "05M"
-duration = "01D"
-description = "Shanghai Observatory multi-GNSS ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "USN"
-type = "rapid"
-prefix = "USN0OPSRAP"
-sampling = "05M"
-duration = "01D"
-description = "US Naval Observatory rapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "USN"
-type = "ultrarapid"
-prefix = "USN0OPSULT"
-sampling = "05M"
-duration = "02D"
-description = "US Naval Observatory ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "JGX"
-type = "rapid"
-prefix = "JGX0OPSRAP"
-sampling = "05M"
-duration = "01D"
-description = "JAXA rapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "JGX"
-type = "ultrarapid"
-prefix = "JGX0OPSULT"
-sampling = "05M"
-duration = "02D"
-description = "JAXA ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "JGX"
-type = "final"
-prefix = "JGX0MGXFIN"
-sampling = "05M"
-duration = "01D"
-description = "JAXA final (NASA only)"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 1
-requires_auth = true
-
-[[products]]
-agency = "SIO"
-type = "rapid"
-prefix = "SIO0OPSRAP"
-sampling = "05M"
-duration = "01D"
-description = "Scripps Institution rapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "SIO"
-type = "ultrarapid"
-prefix = "SIO0OPSULT"
-sampling = "05M"
-duration = "02D"
-description = "Scripps Institution ultrarapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "NGS"
-type = "rapid"
-prefix = "NGS0OPSRAP"
-sampling = "05M"
-duration = "01D"
-description = "National Geodetic Survey rapid"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftp://gssc.esa.int"
-priority = 1
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 2
-requires_auth = true
-
-[[products]]
-agency = "NGS"
-type = "final"
-prefix = "NGS0MGXFIN"
-sampling = "05M"
-duration = "01D"
-description = "National Geodetic Survey final (NASA only)"
-formats = ["SP3", "CLK"]
-ftp_path = "/gnss/products/{gps_week}/{file}"
-
-[[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
-priority = 1
-requires_auth = true
-
-# ----------------------------------------------------------------------------
-# Final-only Products
-# ----------------------------------------------------------------------------
+description = "NASA CDDIS"
 
 [[products]]
 agency = "IAC"
 type = "final"
 prefix = "IAC0MGXFIN"
-sampling = "05M"
-duration = "01D"
-description = "Information-Analytical Centre final"
-formats = ["SP3", "CLK"]
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GRECJ"
+description = "IAC final multi-GNSS"
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
 requires_auth = true
+description = "NASA CDDIS"
 
 [[products]]
 agency = "JAX"
 type = "final"
 prefix = "JAX0MGXFIN"
-sampling = "05M"
-duration = "01D"
-description = "JAXA final"
-formats = ["SP3", "CLK"]
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GRECJ"
+description = "JAXA final multi-GNSS"
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
 requires_auth = true
+description = "NASA CDDIS"
+
+[[products]]
+agency = "JGX"
+type = "final"
+prefix = "JGX0OPSFIN"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GRE"
+description = "JAXA operational final"
+ftp_path = "/gnss/products/{gps_week}/{file}"
+
+[[products.ftp_servers]]
+url = "ftp://gssc.esa.int"
+priority = 1
+description = "ESA GSSC"
+
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
+
+[[products]]
+agency = "JGX"
+type = "rapid"
+prefix = "JGX0OPSRAP"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GRE"
+description = "JAXA operational rapid"
+ftp_path = "/gnss/products/{gps_week}/{file}"
+
+[[products.ftp_servers]]
+url = "ftp://gssc.esa.int"
+priority = 1
+description = "ESA GSSC"
+
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
+
+[[products]]
+agency = "JPL"
+type = "final"
+prefix = "JPL0OPSFIN"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GE"
+description = "JPL operational final"
+ftp_path = "/gnss/products/{gps_week}/{file}"
+
+[[products.ftp_servers]]
+url = "ftp://gssc.esa.int"
+priority = 1
+description = "ESA GSSC"
+
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
+
+[[products]]
+agency = "JPL"
+type = "rapid"
+prefix = "JPL0OPSRAP"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GE"
+description = "JPL operational rapid"
+ftp_path = "/gnss/products/{gps_week}/{file}"
+
+[[products.ftp_servers]]
+url = "ftp://gssc.esa.int"
+priority = 1
+description = "ESA GSSC"
+
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
 
 [[products]]
 agency = "MIT"
 type = "final"
-prefix = "MIT0MGXFIN"
-sampling = "05M"
-duration = "01D"
-description = "MIT final (NASA only)"
-formats = ["SP3", "CLK"]
+prefix = "MIT0OPSFIN"
+sp3_sampling = ["05M"]
+clk_sampling = ["30S"]
+systems = "GE"
+description = "MIT operational final"
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
-url = "ftps://gdc.cddis.eosdis.nasa.gov"
+url = "ftp://gssc.esa.int"
 priority = 1
-requires_auth = true
-description = "NASA CDDIS (MIT exclusive)"
+description = "ESA GSSC"
 
-# ----------------------------------------------------------------------------
-# WUM (Wuhan Multi-GNSS)
-# ----------------------------------------------------------------------------
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
 
 [[products]]
-agency = "WUM"
+agency = "EMR"
+type = "final"
+prefix = "EMR0OPSFIN"
+sp3_sampling = ["05M", "15M"]
+clk_sampling = ["30S"]
+systems = "G"
+description = "Natural Resources Canada operational final"
+ftp_path = "/gnss/products/{gps_week}/{file}"
+
+[[products.ftp_servers]]
+url = "ftp://gssc.esa.int"
+priority = 1
+description = "ESA GSSC"
+
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
+
+[[products]]
+agency = "EMR"
 type = "rapid"
-prefix = "WUM0MGXRAP"
-sampling = "05M"
-duration = "01D"
-description = "Wuhan multi-GNSS rapid"
-formats = ["SP3", "CLK"]
+prefix = "EMR0OPSRAP"
+sp3_sampling = ["05M", "15M"]
+clk_sampling = ["30S", "05M"]
+systems = "GR"
+description = "Natural Resources Canada operational rapid"
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
 requires_auth = true
+description = "NASA CDDIS"
 
 [[products]]
-agency = "WUM"
-type = "near-real-time"
-prefix = "WUM0MGXNRT"
-sampling = "05M"
-duration = "01D"
-description = "Wuhan multi-GNSS near-real-time"
-formats = ["SP3", "CLK"]
+agency = "IGS"
+type = "final"
+prefix = "IGS0OPSFIN"
+sp3_sampling = ["15M"]
+clk_sampling = ["30S", "05M"]
+systems = "G"
+description = "IGS combined final"
+ftp_path = "/gnss/products/{gps_week}/{file}"
+
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 1
+requires_auth = true
+description = "NASA CDDIS"
+
+[[products]]
+agency = "IGS"
+type = "rapid"
+prefix = "IGS0OPSRAP"
+sp3_sampling = ["15M"]
+clk_sampling = ["05M"]
+systems = "G"
+description = "IGS combined rapid"
 ftp_path = "/gnss/products/{gps_week}/{file}"
 
 [[products.ftp_servers]]
 url = "ftp://gssc.esa.int"
 priority = 1
+description = "ESA GSSC"
 
 [[products.ftp_servers]]
 url = "ftps://gdc.cddis.eosdis.nasa.gov"
 priority = 2
 requires_auth = true
+description = "NASA CDDIS"
+
+[[products]]
+agency = "USN"
+type = "rapid"
+prefix = "USN0OPSRAP"
+sp3_sampling = ["05M", "15M"]
+clk_sampling = ["30S", "05M"]
+systems = "G"
+description = "US Naval Observatory rapid"
+ftp_path = "/gnss/products/{gps_week}/{file}"
+
+[[products.ftp_servers]]
+url = "ftp://gssc.esa.int"
+priority = 1
+description = "ESA GSSC"
+
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
+
+[[products]]
+agency = "NGS"
+type = "final"
+prefix = "NGS0OPSFIN"
+sp3_sampling = ["05M", "15M"]
+clk_sampling = []
+systems = "G"
+description = "National Geodetic Survey final (no clocks)"
+ftp_path = "/gnss/products/{gps_week}/{file}"
+
+[[products.ftp_servers]]
+url = "ftp://gssc.esa.int"
+priority = 1
+description = "ESA GSSC"
+
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
+
+[[products]]
+agency = "SIO"
+type = "final"
+prefix = "SIO0OPSFIN"
+sp3_sampling = ["05M", "15M"]
+clk_sampling = []
+systems = "G"
+description = "Scripps Institution final (no clocks)"
+ftp_path = "/gnss/products/{gps_week}/{file}"
+
+[[products.ftp_servers]]
+url = "ftp://gssc.esa.int"
+priority = 1
+description = "ESA GSSC"
+
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
+
+[[products]]
+agency = "SIO"
+type = "rapid"
+prefix = "SIO0OPSRAP"
+sp3_sampling = ["05M", "15M"]
+clk_sampling = []
+systems = "G"
+description = "Scripps Institution rapid (no clocks)"
+ftp_path = "/gnss/products/{gps_week}/{file}"
+
+[[products.ftp_servers]]
+url = "ftp://gssc.esa.int"
+priority = 1
+description = "ESA GSSC"
+
+[[products.ftp_servers]]
+url = "ftps://gdc.cddis.eosdis.nasa.gov"
+priority = 2
+requires_auth = true
+description = "NASA CDDIS"
 
 # ============================================================================
 # USER CUSTOM PRODUCTS
@@ -764,13 +529,13 @@ requires_auth = true
 #
 # Example:
 # [[products]]
-# agency = "CUSTOM"
+# agency = "CUS"
 # type = "final"
-# prefix = "CUSTOM0FIN"
-# sampling = "05M"
-# duration = "01D"
+# prefix = "CUS0OPSFIN"
+# sp3_sampling = ["05M"]
+# clk_sampling = ["30S"]
+# systems = "G"
 # description = "My custom product"
-# formats = ["SP3", "CLK"]
 # ftp_path = "/path/to/{gps_week}/{file}"
 #
 # [[products.ftp_servers]]

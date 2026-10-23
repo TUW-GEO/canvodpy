@@ -26,6 +26,35 @@ OBS_TYPE_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9]?[A-Z0-9]?$")  # e.g., *1C, *5X
 
 
 # ================================================================
+# ------------- RINEX 2 unresolved tracking-code markers -----------
+# ================================================================
+
+# RINEX 2.11 two-character observation codes (``rinex/rinex211.txt``, Table
+# A1) name the carrier band but, by the spec's own admission (section 10.1),
+# cannot express the underlying ranging code or channel. RINEX 3 attributes
+# are therefore only assignable where the v2 code defines them (e.g. GPS C1 =
+# C/A). Everywhere else the ``code`` field of a sid carries one of these
+# markers instead of a guessed RINEX 3 attribute. They are lowercase on
+# purpose: RINEX observation codes are uppercase-only, so a marker can never
+# collide with a real RINEX 3/4 attribute (a guessed "X" would -- it is the
+# real L1C D+P / L2C M+L signal).
+V2_CODE_P_FAMILY = "p"
+"""GPS P1/P2: P-code family; under antispoofing the tracking technique
+(RINEX 3 P/W/Y, and D on L2 only; RINEX 3.04 Table 4) is not recorded in
+RINEX 2 (rinex211.txt Table A1: antispoofing observations are stored as
+P2/L2)."""
+V2_CODE_L2C_FAMILY = "l"
+"""GPS C2: civil-code pseudorange on L2, either C/A or L2C (rinex211.txt
+Table A1: "C: Pseudorange GPS: C/A, L2C"; IS-GPS-200N Sect. 3.2.3: C/A on L2
+selectable by ground command); the RINEX 3 attribute (C, or L2C channel
+S/L/X) is not recorded. The constant name is historical."""
+V2_CODE_UNRESOLVED = "u"
+"""No tracking information beyond the carrier band (v2 phase, Doppler,
+signal strength, and Galileo/L5 pseudoranges)."""
+V2_UNRESOLVED_CODES = (V2_CODE_P_FAMILY, V2_CODE_L2C_FAMILY, V2_CODE_UNRESOLVED)
+
+
+# ================================================================
 # -------------------- Base Class --------------------
 # ================================================================
 class ConstellationBase:
@@ -128,11 +157,12 @@ class GALILEO(ConstellationBase):
         "8": "E5",
     }
     BAND_CODES: ClassVar[dict[str, list[str]]] = {
-        "E1": ["A", "B", "C", "X", "Z"],
-        "E5a": ["I", "Q", "X"],
-        "E5b": ["I", "Q", "X"],
-        "E5": ["I", "Q", "X"],
-        "E6": ["A", "B", "C", "X", "Z"],
+        # Trailing lowercase entries: RINEX 2 markers (see V2_CODE_*).
+        "E1": ["A", "B", "C", "X", "Z", "u"],
+        "E5a": ["I", "Q", "X", "u"],
+        "E5b": ["I", "Q", "X", "u"],
+        "E5": ["I", "Q", "X", "u"],
+        "E6": ["A", "B", "C", "X", "Z", "u"],
     }
     BAND_PROPERTIES: ClassVar[dict[str, dict[str, Any]]] = {
         "E1": {
@@ -194,9 +224,10 @@ class GPS(ConstellationBase):
 
     BANDS: ClassVar[dict[str, str]] = {"1": "L1", "2": "L2", "5": "L5"}
     BAND_CODES: ClassVar[dict[str, list[str]]] = {
-        "L1": ["C", "S", "L", "X", "P", "W", "Y", "M", "N"],
-        "L2": ["C", "D", "S", "L", "X", "P", "W", "Y", "M", "N"],
-        "L5": ["I", "Q", "X"],
+        # Trailing lowercase entries: RINEX 2 markers (see V2_CODE_*).
+        "L1": ["C", "S", "L", "X", "P", "W", "Y", "M", "N", "p", "u"],
+        "L2": ["C", "D", "S", "L", "X", "P", "W", "Y", "M", "N", "l", "p", "u"],
+        "L5": ["I", "Q", "X", "u"],
     }
     BAND_PROPERTIES: ClassVar[dict[str, dict[str, Any]]] = {
         "L1": {
@@ -328,11 +359,18 @@ class GLONASS(ConstellationBase):
 
     References
     ----------
-      - Band numbers, codes, frequencies and FDMA equations from RINEX v3.04
-        Guide: http://acc.igs.org/misc/rinex304.pdf (Table 5).
-      - Bandwidths from GLONASS ICD:
+      - Band numbers, codes and CDMA band (G1a, G2a, G3) center frequencies
+        from RINEX v3.04: http://acc.igs.org/misc/rinex304.pdf (Table 5).
+        Note that Table 5 lists k = -7...+12; the channel range used here
+        is the FDMA ICD's.
+      - FDMA equations, channel range K = -7...+6 ("All GLONASS SVs
+        launched after 2005") and per-channel bandwidth (+/-0.511 MHz, i.e.
+        1.022 MHz) from the GLONASS FDMA ICD, Edition 5.1 (2008):
         https://www.unavco.org/help/glossary/docs/
-        ICD_GLONASS_4.0_(1998)_en.pdf (3.3.1.4 Spurious emissions).
+        ICD_GLONASS_5.1_(2008)_en.pdf (3.3.1.1 Frequency plan, Table 3.1;
+        3.3.1.4 Spurious emissions).
+      - CDMA band bandwidths (7.875 MHz for G1a, G2a, G3): no source found;
+        see the GitHub issue on this value.
       - GLONASS channel assignment from: see included channel file.
 
     G1/G2 is treated as a single band here, although it consists of sub-bands
@@ -396,9 +434,14 @@ class GLONASS(ConstellationBase):
         "1": "G1",
         "2": "G2",
     }
+    # Trailing lowercase entries: RINEX 2 markers (see V2_CODE_*).
     AGGR_BAND_CODES: ClassVar[dict[str, list[str]]] = {
-        "G1": ["C", "P"],
-        "G2": ["C", "P"],
+        "G1": ["C", "P", "u"],
+        "G2": ["C", "P", "u"],
+    }
+    FDMA_BAND_CODES: ClassVar[dict[str, list[str]]] = {
+        "G1_FDMA": ["C", "P", "u"],
+        "G2_FDMA": ["C", "P", "u"],
     }
 
     # n_min=-7, n_max=6 (see Note on G1 & G2 above):
@@ -452,8 +495,7 @@ class GLONASS(ConstellationBase):
             self.__dict__["BANDS"] = {**self.BANDS, "1": "G1_FDMA", "2": "G2_FDMA"}
             self.__dict__["BAND_CODES"] = {
                 **self.BAND_CODES,
-                "G1_FDMA": ["C", "P"],
-                "G2_FDMA": ["C", "P"],
+                **self.FDMA_BAND_CODES,
             }
             # Add placeholder properties (actual freqs are SV-dependent)
             self.__dict__["BAND_PROPERTIES"] = {
@@ -534,14 +576,21 @@ class SBAS(ConstellationBase):
 
     Notes
     -----
-    Uses a static list S01-S36 as PRNs are region-specific.
+    RINEX numbers SBAS satellites ``Snn`` with nn = broadcast PRN - 100
+    (``rinex/rinex211.txt`` section 9.1, RINEX 3.04 section 8.4: PRN 120 ->
+    S20; QZSS SBAS-signal PRNs 183+ -> S83+). The static list therefore
+    spans the full two-digit range S01-S99 the format allows, rather than an
+    assignment table that goes stale: a sid outside it is silently dropped
+    by ``pad_to_global_sid()`` (e.g. EGNOS PRN 148 -> S48).
 
     """
 
     BANDS: ClassVar[dict[str, str]] = {"1": "L1", "5": "L5"}
+    # Trailing lowercase entry: RINEX 2 marker (see V2_CODE_*). L1 needs none:
+    # C/A is its only signal, so every v2 L1 observable resolves to "C".
     BAND_CODES: ClassVar[dict[str, list[str]]] = {
         "L1": ["C"],
-        "L5": ["I", "Q", "X"],
+        "L5": ["I", "Q", "X", "u"],
     }
     BAND_PROPERTIES: ClassVar[dict[str, dict[str, Any]]] = {
         "L1": {
@@ -558,7 +607,7 @@ class SBAS(ConstellationBase):
         """Initialize SBAS constellation."""
         super().__init__(
             constellation="SBAS",
-            static_svs=[f"S{x:02d}" for x in range(1, 37)],
+            static_svs=[f"S{x:02d}" for x in range(1, 100)],
         )
 
 

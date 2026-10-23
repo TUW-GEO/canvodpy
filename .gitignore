@@ -1,11 +1,12 @@
 # ============================================================================
 # Claude Code — track project setup, ignore private state
 # ============================================================================
-# CLAUDE.md files are tracked (project + package instructions)
-# .claude/commands/ is tracked (slash commands ship with the repo)
+# AGENTS.md and CLAUDE.md files are tracked (agent instructions)
+# .claude/skills/ is tracked (task guides ship with the repo)
+# .claude/settings.json is tracked (enables the agent workflow plugin)
 .claude/*
-!.claude/commands/
 !.claude/skills/
+!.claude/settings.json
 
 # ============================================================================
 # Python
@@ -262,9 +263,8 @@ temp/
 # Custom plotting outputs
 .vod_plotly_plots/
 *.html
-!docs/overrides/*.html
+!overrides/**/*.html
 !docs/diagrams/*.html
-!docs/diagrams/poster/*.html
 
 # Documentation builds
 site/
@@ -349,6 +349,8 @@ celerybeat.pid
 
 # User configuration files (NEVER commit!)
 config/*.yaml
+# Naming recipes are user data: <config dir>/recipes/<site>/<name>.yaml
+config/recipes/
 config/backup/processing.yaml
 config/backup/sites.yaml
 config/backup/sids.yaml
@@ -368,3 +370,15 @@ packages/*/config/
 .processing/
 .vscode/
 .icechunk_gridding_claude/
+
+# Code graph (just graph): built locally, never committed
+.graphify/
+
+# Vale packages (downloaded by `vale sync`); our vocabulary is tracked
+.vale/styles/*
+!.vale/styles/config/
+# lychee cache
+.lycheecache
+
+# Report of just reference-check
+reference-check.txt

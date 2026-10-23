@@ -1,22 +1,36 @@
 [project]
 name = "canvod-grids"
 version = "0.4.0"
-description = "Equal-area hemispheric grid operations for GNSS-Transmissometry"
+description = "Hemispheric grids for GNSS-Transmissometry"
 readme = "README.md"
+requires-python = ">=3.14"
 authors = [
     {name = "Nicolas François Bader", email = "support@canvodpy.eu"},
 ]
 maintainers = [
     {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
 ]
-requires-python = ">=3.14"
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.14",
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "VOD",
+    "hemispheric grid",
+    "equal-area grid",
+    "HEALPix",
+    "sky plot",
+    "remote sensing",
 ]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+]
+
 dependencies = [
     "numpy>=1.26.0",
     "xarray>=2024.1.0",
@@ -25,12 +39,10 @@ dependencies = [
     "polars>=1.0.0",
     "loguru>=0.7.0",
     "matplotlib>=3.8.0",
-    "astropy>=6.0.0",
-    "numba>=0.59.0",
     "tqdm>=4.66.0",
     "scipy>=1.11.0",
     "structlog>=24.1.0",
-    "canvod-store>=0.1.0",
+    "canvod-utils>=1.0.0,<2",
 ]
 
 [dependency-groups]
@@ -43,13 +55,13 @@ optional = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nfb2021/canvodpy"
+Homepage = "https://github.com/TUW-GEO/canvodpy"
 Documentation = "https://canvodpy.eu/packages/grids/overview/"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues = "https://github.com/nfb2021/canvodpy/issues"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues = "https://github.com/TUW-GEO/canvodpy/issues"
 
 [build-system]
-requires = ["uv_build>=0.9.17,<0.10.0"]
+requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.ty.src]
@@ -58,7 +70,7 @@ exclude = [
 ]
 
 [tool.uv.sources]
-canvod-store = { workspace = true }
+canvod-utils = { workspace = true }
 
 [tool.uv.build-backend]
 module-name = "canvod.grids"

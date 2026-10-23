@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import os
+import warnings
 from typing import Literal
 
+import psutil
 from pydantic import Field, model_validator
 
 from .base import _StrictModel
@@ -22,7 +24,8 @@ class ProcessingParams(_StrictModel):
         "auto",
         description=(
             "'auto': OS auto-detects workers and memory (local machines). "
-            "'manual': hard caps via n_max_threads, max_memory_gb, etc. (shared servers)."
+            "'manual': hard caps via n_max_threads, cpu_affinity and nice_priority "
+            "(shared servers)."
         ),
     )
     n_max_threads: int | None = Field(
@@ -37,22 +40,38 @@ class ProcessingParams(_StrictModel):
     auto_uncapped: bool = Field(
         False,
         description=(
-            "Remove the automatic CPU core cap in resource_mode='auto'. "
-            "WARNING: enabling this on a shared machine can starve other users' "
-            "processes. Only set True when the machine is exclusively yours."
+            "Remove the automatic CPU core cap of resource_mode 'auto'. On a "
+            "shared machine, this can starve other users' processes: set it to "
+            "true only when the machine is yours alone."
         ),
     )
     keep_gnss_observables: list[str] = Field(
         default_factory=lambda: ["SNR"],
         description="GNSS observables to keep (SNR, Pseudorange, Phase, Doppler)",
     )
+    rinex_v3_parser: Literal["validated", "unvalidated_fast"] = Field(
+        "validated",
+        description=(
+            "How RINEX v3 observation files are parsed. 'validated': every "
+            "epoch is checked (epoch line, satellite IDs, satellite count, "
+            "observation fields); epochs that fail are dropped and logged. "
+            "'unvalidated_fast': DANGEROUS. Parses by fixed columns without "
+            "any check, so corrupted records can enter the store as partial "
+            "or wrong values. On valid files both give the same dataset. "
+            "canVODpy takes no responsibility for results of the unvalidated "
+            "parser; checking the input files is entirely the user's "
+            "responsibility. Every use emits an UnvalidatedParserWarning."
+        ),
+    )
     aggregate_glonass_fdma: bool = Field(
         True,
         description=(
-            "Aggregate GLONASS FDMA sub-bands into effective G1*/G2* bands. "
-            "When False, each satellite keeps its precise frequency — increases "
-            "SID count and changes the store SID axis. Do not change on an "
-            "existing store without understanding append-compatibility implications."
+            "Aggregate GLONASS FDMA sub-bands into effective G1/G2 bands. When "
+            "false, the GLONASS signal IDs name the FDMA bands (G1_FDMA, "
+            "G2_FDMA), for the observations and the orbit data alike. RINEX "
+            "only: the SBF and NMEA readers refuse false. It changes the "
+            "GLONASS signal IDs, so an existing store refuses data written with "
+            "the other value."
         ),
     )
     store_radial_distance: bool = Field(
@@ -69,9 +88,10 @@ class ProcessingParams(_StrictModel):
     store_radial_diff: bool = Field(
         False,
         description=(
-            "Store radial distance difference (r_canopy − r_reference, m) in the "
-            "VOD store. Requires store_radial_distance=true at ingest time so that "
-            "r is available in both receiver datasets."
+            "Store the radial distance difference (r_canopy − r_reference, m) "
+            "in the VOD store. Requires store_radial_distance: true when the "
+            "receivers' files are read, so that r is available in both receiver "
+            "datasets."
         ),
     )
     receiver_position_mode: Literal["shared", "per_receiver"] = Field(
@@ -91,34 +111,37 @@ class ProcessingParams(_StrictModel):
             "'paired': only process dates where both receivers in an analysis pair have data."
         ),
     )
-    days_per_batch: int = Field(
-        1,
+    days_per_batch: int | None = Field(
+        None,
         ge=1,
         le=30,
         description=(
-            "Number of DOYs pooled per loky wave (1 = one day at a time). "
-            "Raising this too high may cause connection issues with the "
-            "ephemeris download server."
+            "Deprecated: a run derives its days per unit from the memory "
+            "budget (ADR 0021). If set, a unit has at most this many days."
         ),
     )
     max_memory_gb: float | None = Field(
         None,
         gt=0,
-        description="Soft RAM limit for processing (None = no limit)",
+        description=(
+            "Memory budget of a run in GB (null = the memory available when "
+            "the run starts). The run sizes the workers and its days per unit "
+            "to fit it, and stops before reading a file if not even one worker "
+            "fits with one day."
+        ),
     )
     cpu_affinity: list[int] | None = Field(
         None,
-        description="Pin workers to specific CPU core IDs (None = no restriction)",
+        description="Pin workers to these CPU core IDs (null = no restriction)",
     )
     nice_priority: int = Field(
         -5,
         ge=-20,
         le=19,
         description=(
-            "Process nice value (-20=highest priority, 0=normal, 19=lowest). "
-            "Negative values raise worker priority above normal but require "
-            "root/CAP_SYS_NICE on Linux -- silently has no effect otherwise "
-            "(canvod.utils.tools.worker._worker_init swallows PermissionError)."
+            "Priority of the worker processes (-20 = highest, 0 = normal, 19 = "
+            "lowest). A negative value needs root or CAP_SYS_NICE on Linux; "
+            "without it, the value has no effect."
         ),
     )
     # TODO: investigate whether threads_per_worker is still needed after the loky /
@@ -129,9 +152,9 @@ class ProcessingParams(_StrictModel):
         ge=1,
         le=8,
         description=(
-            "Threads per worker process. None lets the scheduler decide. "
-            "Values >1 help with numpy/xarray ops and I/O (GIL-releasing) but not "
-            "pure-Python RINEX text parsing."
+            "Threads per worker process; null lets the scheduler decide. More "
+            "than 1 helps array computations and reading and writing, but not "
+            "the parsing of RINEX text."
         ),
     )
     ephemeris_source: Literal["final", "broadcast"] = Field(
@@ -146,14 +169,40 @@ class ProcessingParams(_StrictModel):
     store_sbf_raw_observables: bool = Field(
         True,
         description=(
-            "When reading SBF files, include the pre-correction 'raw' observable "
-            "variables in obs_ds: SNR_raw (before CN0HighRes), "
-            "Pseudorange_unsmoothed (before Hatch filter), "
-            "Pseudorange_raw (before Hatch + multipath filters), and "
-            "Phase_raw (before carrier multipath correction). "
-            "Set to False to reduce dataset size when raw quantities are not needed."
+            "When reading SBF files, also store the observables before the "
+            "receiver's corrections: SNR_raw (before CN0HighRes), "
+            "Pseudorange_unsmoothed (before the Hatch filter), Pseudorange_raw "
+            "(before the Hatch and multipath filters), and Phase_raw (before "
+            "the carrier multipath correction). Set to false to make the stores "
+            "smaller when you don't need them."
         ),
     )
+    store_sbf_metadata: bool = Field(
+        True,
+        description=(
+            "When reading SBF files, store each file's SBF metadata "
+            "(SatVisibility geometry and its almanac or ephemeris source, "
+            "MeasExtra, PVT, DOP, receiver status and quality indicators) under "
+            "{group}/metadata/sbf_obs, in the same commit as the observations. "
+            "Set to false to save space; broadcast geometry (ephemeris_source "
+            "'broadcast') still works, since it uses these data in memory."
+        ),
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_days_per_batch(cls, data: object) -> object:
+        if isinstance(data, dict) and data.get("days_per_batch") is not None:
+            warnings.warn(
+                "The processing setting 'days_per_batch' is left over from "
+                "development and will be removed with the next major version. "
+                "A run derives its days per unit from the memory budget "
+                "(max_memory_gb); until then the setting caps them. Remove it "
+                "from your settings.",
+                FutureWarning,
+                stacklevel=2,
+            )
+        return data
 
     @model_validator(mode="after")
     def validate_resource_mode(self) -> ProcessingParams:
@@ -188,18 +237,23 @@ class ProcessingParams(_StrictModel):
         dict
             Resolved resource values with keys: ``n_workers``,
             ``max_memory_gb``, ``cpu_affinity``, ``nice_priority``.
-            In auto mode with ``auto_uncapped=False``, ``n_workers`` is
-            ``max(1, cpu_count - 2)`` to leave headroom for the OS.
-            With ``auto_uncapped=True``, ``n_workers`` is ``None`` (no cap).
+            In auto mode with ``auto_uncapped=False``, ``n_workers`` is one
+            per physical CPU core, but at most ``cpu_count - 2`` to leave
+            headroom for the OS, and at least 1. A second hardware thread
+            per core (SMT) adds memory, one worker process each, but not
+            speed. With ``auto_uncapped=True``, ``n_workers`` is ``None``
+            (no cap).
         """
         if self.resource_mode == "auto":
             if self.auto_uncapped:
                 n_workers = None
             else:
-                n_workers = max(1, (os.cpu_count() or 2) - 2)
+                logical = os.cpu_count() or 2
+                physical = psutil.cpu_count(logical=False) or logical
+                n_workers = max(1, min(physical, logical - 2))
             return {
                 "n_workers": n_workers,
-                "max_memory_gb": None,
+                "max_memory_gb": self.max_memory_gb,
                 "cpu_affinity": None,
                 "nice_priority": -5,
                 "threads_per_worker": self.threads_per_worker,

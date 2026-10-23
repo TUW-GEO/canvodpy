@@ -1,6 +1,13 @@
 """
 Functional API for VOD workflow.
 
+.. deprecated::
+    Left over from development and removed with the next major version.
+    It is no longer maintained and gives different results than
+    ``canvodpy run``: it reads without the configured observables and
+    signals, and skips the configured VOD output options.
+    Use the terminal command ``canvodpy run`` or ``canvodpy.Site`` instead.
+
 Provides pure functions for Airflow integration and interactive use.
 Two versions of each function:
 - `func()` - Returns data (xr.Dataset)
@@ -32,15 +39,27 @@ Airflow DAG:
 
 from __future__ import annotations
 
+import warnings
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
+import structlog
 import xarray as xr
 
+from canvod.utils.tools import deprecated
 from canvodpy.factories import GridFactory, ReaderFactory, VODFactory
-from canvodpy.logging import get_logger
 
-log = get_logger(__name__)
+log = structlog.get_logger(__name__)
+
+
+@contextmanager
+def _nested_deprecation_silenced() -> Generator[None]:
+    """Warn once per call: the *_to_file versions call deprecated functions."""
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", ".*left over from development", FutureWarning)
+        yield
 
 
 # ============================================================================
@@ -48,6 +67,14 @@ log = get_logger(__name__)
 # ============================================================================
 
 
+@deprecated(
+    "canvodpy.functional.read_rinex() is left over from development and "
+    "will be removed with the next major version. It is no longer "
+    "maintained and gives different results than `canvodpy run`, because it"
+    " reads without the configured observables and signals. Use the "
+    "terminal command `canvodpy run` or "
+    "canvodpy.Site(<site>).pipeline().process_date(<date>) instead."
+)
 def read_rinex(
     path: str | Path,
     reader: str = "rinex3",
@@ -98,6 +125,12 @@ def read_rinex(
     return ds
 
 
+@deprecated(
+    "canvodpy.functional.augment_with_ephemeris() is left over from "
+    "development and will be removed with the next major version. It is no "
+    "longer maintained. Use the terminal command `canvodpy run` or "
+    "canvodpy.Site(<site>).pipeline().process_date(<date>) instead."
+)
 def augment_with_ephemeris(
     ds: xr.Dataset,
     receiver_position: Any,
@@ -120,7 +153,7 @@ def augment_with_ephemeris(
         Ephemeris source: ``"final"`` (SP3/CLK), ``"rapid"``,
         ``"broadcast"`` (SBF only).
     agency : str
-        Analysis centre for SP3/CLK products.
+        Analysis center for SP3/CLK products.
     date : str, optional
         Date in ``YYYYDOY`` format.  Required for ``"final"``/``"rapid"``.
     site_config : optional
@@ -160,6 +193,11 @@ def augment_with_ephemeris(
     raise ValueError(f"Unknown ephemeris source: {source!r}")
 
 
+@deprecated(
+    "canvodpy.functional.create_grid() is left over from development and "
+    "will be removed with the next major version. It is no longer "
+    "maintained. Use canvod.grids.create_hemigrid() instead."
+)
 def create_grid(
     grid_type: str = "equal_area",
     **grid_params: Any,
@@ -210,6 +248,11 @@ def create_grid(
     return grid
 
 
+@deprecated(
+    "canvodpy.functional.assign_grid_cells() is left over from development "
+    "and will be removed with the next major version. It is no longer "
+    "maintained. Use canvod.grids.add_cell_ids_to_ds_fast() instead."
+)
 def assign_grid_cells(
     ds: xr.Dataset,
     grid: Any,  # GridData
@@ -242,7 +285,7 @@ def assign_grid_cells(
     Notes
     -----
     Pure function - no side effects on input.
-    Uses KDTree-based assignment for performance.
+    Each observation gets the cell that contains it.
     """
     log.info("assign_grid_cells")
 
@@ -257,6 +300,14 @@ def assign_grid_cells(
     return ds_with_cells
 
 
+@deprecated(
+    "canvodpy.functional.calculate_vod() is left over from development and "
+    "will be removed with the next major version. It is no longer "
+    "maintained and gives different results than `canvodpy run`, because it"
+    " skips the configured VOD output options. Use the terminal command "
+    "`canvodpy run` or canvodpy.Site(<site>).vod.compute_day(<datasets>, "
+    "<analysis>, write=False) instead."
+)
 def calculate_vod(
     canopy_ds: xr.Dataset,
     sky_ds: xr.Dataset,
@@ -325,6 +376,14 @@ def calculate_vod(
 # ============================================================================
 
 
+@deprecated(
+    "canvodpy.functional.read_rinex_to_file() is left over from development"
+    " and will be removed with the next major version. It is no longer "
+    "maintained and gives different results than `canvodpy run`, because it"
+    " reads without the configured observables and signals. Use the "
+    "terminal command `canvodpy run` or "
+    "canvodpy.Site(<site>).pipeline().process_date(<date>) instead."
+)
 def read_rinex_to_file(
     rinex_path: str | Path,
     output_path: str | Path,
@@ -371,7 +430,8 @@ def read_rinex_to_file(
     log.info("read_rinex_to_file", rinex=str(rinex_path), output=str(output_path))
 
     # Use data-returning version
-    ds = read_rinex(rinex_path, reader, **reader_kwargs)
+    with _nested_deprecation_silenced():
+        ds = read_rinex(rinex_path, reader, **reader_kwargs)
 
     # Save to file
     output_path = Path(output_path)
@@ -382,6 +442,11 @@ def read_rinex_to_file(
     return str(output_path)
 
 
+@deprecated(
+    "canvodpy.functional.create_grid_to_file() is left over from "
+    "development and will be removed with the next major version. It is no "
+    "longer maintained. Use canvod.grids.create_hemigrid() instead."
+)
 def create_grid_to_file(
     output_path: str | Path,
     grid_type: str = "equal_area",
@@ -423,7 +488,8 @@ def create_grid_to_file(
     log.info("create_grid_to_file", output=str(output_path))
 
     # Create grid
-    grid = create_grid(grid_type, **grid_params)
+    with _nested_deprecation_silenced():
+        grid = create_grid(grid_type, **grid_params)
 
     # Save to file
     output_path = Path(output_path)
@@ -439,6 +505,11 @@ def create_grid_to_file(
     return str(output_path)
 
 
+@deprecated(
+    "canvodpy.functional.assign_grid_cells_to_file() is left over from "
+    "development and will be removed with the next major version. It is no "
+    "longer maintained. Use canvod.grids.add_cell_ids_to_ds_fast() instead."
+)
 def assign_grid_cells_to_file(
     data_path: str | Path,
     grid_path: str | Path,
@@ -494,7 +565,8 @@ def assign_grid_cells_to_file(
         grid = pickle.load(f)
 
     # Assign cells
-    ds_with_cells = assign_grid_cells(ds, grid)
+    with _nested_deprecation_silenced():
+        ds_with_cells = assign_grid_cells(ds, grid)
 
     # Save to file
     output_path = Path(output_path)
@@ -505,6 +577,15 @@ def assign_grid_cells_to_file(
     return str(output_path)
 
 
+@deprecated(
+    "canvodpy.functional.calculate_vod_to_file() is left over from "
+    "development and will be removed with the next major version. It is no "
+    "longer maintained and gives different results than `canvodpy run`, "
+    "because it skips the configured VOD output options. Use the terminal "
+    "command `canvodpy run` or "
+    "canvodpy.Site(<site>).vod.compute_day(<datasets>, <analysis>, "
+    "write=False) instead."
+)
 def calculate_vod_to_file(
     canopy_path: str | Path,
     sky_path: str | Path,
@@ -574,7 +655,8 @@ def calculate_vod_to_file(
     sky_ds = xr.open_dataset(sky_path)
 
     # Calculate VOD
-    vod_ds = calculate_vod(canopy_ds, sky_ds, calculator, **calc_kwargs)
+    with _nested_deprecation_silenced():
+        vod_ds = calculate_vod(canopy_ds, sky_ds, calculator, **calc_kwargs)
 
     # Save to file
     output_path = Path(output_path)

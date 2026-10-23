@@ -10,7 +10,7 @@ description: Legal notice and responsible parties for canVODpy
 
 Climate and Environmental Remote Sensing Research Unit (CLIMERS)
 Department of Geodesy and Geoinformation
-TU Wien — Vienna University of Technology
+TU Wien (Vienna University of Technology)
 Wiedner Hauptstraße 8/E120.8
 1040 Wien, Austria
 
@@ -30,7 +30,7 @@ Geoinformation, TU Wien.
 
 ## Liability for content
 
-canVODpy is an open-source community project. Its software and documentation have
+canVODpy is an open source community project. Its software and documentation have
 been prepared with care, but are provided **"as is"** without warranty of any kind,
 express or implied. No warranty or guarantee is given as to the correctness,
 completeness, or timeliness of the information provided.
@@ -40,7 +40,7 @@ liable for damages arising from the use or non-use of the software or informatio
 offered, or from the use of incorrect or incomplete information.
 
 Individual contributors are recorded in the project's
-[Git history](https://github.com/nfb2021/canvodpy) and `NOTICE` file. Each
+[Git history](https://github.com/TUW-GEO/canvodpy) and `NOTICE` file. Each
 contribution is made under the terms of the
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) and carries the
 warranty exclusions stated therein (Sections 7 and 8).
@@ -55,11 +55,11 @@ linked pages is always responsible for their content. The linked pages were chec
 for possible legal violations at the time of linking. Illegal content was not
 apparent at the time of linking. Permanent monitoring of linked pages is
 unreasonable without concrete evidence of a legal violation. Upon notification of
-violations, such links will be removed immediately.
+violations, such links are removed immediately.
 
 ---
 
-## Use of Artificial Intelligence
+## Use of artificial intelligence
 
 Portions of this software and its documentation were developed with the assistance
 of AI-based tools, specifically [Claude Code](https://claude.ai/) by

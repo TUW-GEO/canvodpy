@@ -1,0 +1,232 @@
+"""Writes of day blocks into forks of one session (ADR 0016).
+
+Forks are pickled to worker processes, so these tests use a repository on
+disk: an in-memory repository does not survive pickling.
+"""
+
+from __future__ import annotations
+
+import pickle
+
+import icechunk
+import numpy as np
+import pytest
+import xarray as xr
+
+from canvod.store.day_blocks import (
+    ChunkOwnershipError,
+    add_day_block,
+    day_blocks,
+    load_group,
+    span_chunks,
+    write_file_region,
+)
+
+GROUP = "canopy_01"
+SIDS = ["G01|L1|C", "G02|L1|C"]
+DAY = np.datetime64("2025-01-01", "D")
+
+
+def _file(start_s: float, n: int, cadence_s: float, value: float) -> xr.Dataset:
+    """A made-up file: ``n`` epochs from ``start_s`` seconds into the day."""
+    offsets = start_s + np.arange(n) * cadence_s
+    epochs = DAY.astype("M8[ns]") + (offsets * 1e9).astype("m8[ns]")
+    return xr.Dataset(
+        {"SNR": (("epoch", "sid"), np.full((n, len(SIDS)), value, dtype="f4"))},
+        coords={
+            "epoch": xr.Variable("epoch", epochs, {"time_system": "GPS"}),
+            "sid": SIDS,
+        },
+    )
+
+
+@pytest.fixture
+def repo(tmp_path) -> icechunk.Repository:
+    repo = icechunk.Repository.create(
+        icechunk.local_filesystem_storage(str(tmp_path / "store"))
+    )
+    session = repo.writable_session("main")
+    add_day_block(session, GROUP, DAY, 30, template=_file(0, 1, 30, 0.0))
+    session.commit("a 30 s day block: 2880 slots, 16 chunks of 180")
+    return repo
+
+
+def _in_worker(fork, ds: xr.Dataset, **kwargs):
+    """Write ``ds`` into a pickled copy of ``fork``, as a worker would."""
+    fork = pickle.loads(pickle.dumps(fork))
+    write_file_region(fork, GROUP, ds, **kwargs)
+    return pickle.loads(pickle.dumps(fork))
+
+
+def test_two_forks_writing_one_chunk_lose_data(repo):
+    # The reason a chunk must never be split across forks: Icechunk merges
+    # chunks, not regions, so the later fork's chunk replaces the earlier.
+    session = repo.writable_session("main")
+    first = _in_worker(session.fork(), _file(0, 30, 30, 1.0))
+    second = _in_worker(session.fork(), _file(900, 30, 30, 2.0))
+    session.merge(first, second)
+    session.commit("two 15-minute files of one chunk, in two forks")
+
+    stored = load_group(repo.readonly_session("main").store, GROUP)
+    snr = stored.SNR.isel(epoch=slice(0, 60)).values
+    assert np.isnan(snr[:30]).all()
+    assert (snr[30:] == 2.0).all()
+
+
+def test_forks_writing_their_own_chunks_merge_into_one_commit(repo):
+    session = repo.writable_session("main")
+    one_chunk = 180 * 30
+    first = _in_worker(session.fork(), _file(0, 180, 30, 1.0))
+    second = _in_worker(session.fork(), _file(one_chunk, 180, 30, 2.0))
+    session.merge(first, second)
+    session.commit("two files of different chunks, in two forks")
+
+    stored = load_group(repo.readonly_session("main").store, GROUP, drop_empty=True)
+    assert stored.sizes["epoch"] == 360
+    assert (stored.SNR.values[:180] == 1.0).all()
+    assert (stored.SNR.values[180:] == 2.0).all()
+
+
+def test_a_write_outside_its_chunks_is_refused_and_writes_nothing(repo):
+    session = repo.writable_session("main")
+    # Epochs 170 to 189 of the day: chunks 0 and 1.
+    straddling = _file(170 * 30, 20, 30, 1.0)
+
+    with pytest.raises(ChunkOwnershipError, match="chunks"):
+        write_file_region(session, GROUP, straddling, chunks={0})
+
+    assert not session.has_uncommitted_changes
+
+
+def test_a_write_inside_its_chunks_is_the_same_as_without(repo):
+    session = repo.writable_session("main")
+    blocks = day_blocks(session.store, GROUP)
+    ds = _file(170 * 30, 20, 30, 1.0)
+
+    region = write_file_region(session, GROUP, ds, blocks=blocks, chunks={0, 1})
+
+    assert region.epochs == 20
+    stored = load_group(session.store, GROUP, drop_empty=True)
+    np.testing.assert_array_equal(stored.epoch.values, ds.epoch.values)
+
+
+def _span(first_s: float, last_s: float) -> tuple[np.datetime64, np.datetime64]:
+    """A file's first and last epoch, seconds into the day."""
+    day = DAY.astype("M8[ns]")
+    return day + np.timedelta64(int(first_s), "s"), day + np.timedelta64(
+        int(last_s), "s"
+    )
+
+
+def test_a_file_written_again_with_fewer_epochs_leaves_nothing_of_before(repo):
+    session = repo.writable_session("main")
+    write_file_region(session, GROUP, _file(0, 30, 30, 1.0))
+    write_file_region(session, GROUP, _file(900, 30, 30, 3.0))
+    # Two epochs fewer at the start, eight at the end.
+    shorter = _file(60, 20, 30, 2.0)
+
+    write_file_region(
+        session, GROUP, shorter, earlier=[_span(0, 870)], keep=[_span(900, 1770)]
+    )
+
+    stored = load_group(session.store, GROUP, drop_empty=True)
+    assert stored.sizes["epoch"] == 20 + 30
+    np.testing.assert_array_equal(stored.epoch.values[:20], shorter.epoch.values)
+    assert (stored.SNR.values[:20] == 2.0).all()
+    assert (stored.SNR.values[20:] == 3.0).all()
+
+
+def test_a_first_write_leaves_the_rest_of_its_period_alone(repo):
+    # A receiver restart: the file of 00:10 is stored first, then the file
+    # of 00:00 stops at 00:09:30. Both names give 15-minute periods.
+    session = repo.writable_session("main")
+    write_file_region(session, GROUP, _file(600, 20, 30, 3.0))
+
+    write_file_region(session, GROUP, _file(0, 20, 30, 1.0), keep=[_span(600, 1170)])
+
+    stored = load_group(session.store, GROUP, drop_empty=True)
+    assert stored.sizes["epoch"] == 40
+    assert (stored.SNR.values[:20] == 1.0).all()
+    assert (stored.SNR.values[20:] == 3.0).all()
+
+
+def test_a_file_written_again_keeps_the_slots_of_other_files(repo):
+    # The earlier write reached into a file stored since; its slots stay.
+    session = repo.writable_session("main")
+    write_file_region(session, GROUP, _file(0, 30, 30, 1.0))
+    write_file_region(session, GROUP, _file(600, 20, 30, 3.0))
+
+    write_file_region(
+        session,
+        GROUP,
+        _file(0, 10, 30, 2.0),
+        earlier=[_span(0, 870)],
+        keep=[_span(600, 1170)],
+    )
+
+    stored = load_group(session.store, GROUP, drop_empty=True)
+    assert stored.sizes["epoch"] == 10 + 20
+    assert (stored.SNR.values[:10] == 2.0).all()
+    assert (stored.SNR.values[10:] == 3.0).all()
+
+
+def test_without_earlier_writes_only_the_span_is_written(repo):
+    session = repo.writable_session("main")
+    write_file_region(session, GROUP, _file(0, 30, 30, 1.0))
+
+    write_file_region(session, GROUP, _file(60, 20, 30, 2.0))
+
+    stored = load_group(session.store, GROUP, drop_empty=True)
+    assert stored.sizes["epoch"] == 30
+    assert (stored.SNR.values[[0, 1, 22, 29]] == 1.0).all()
+
+
+def test_an_earlier_write_beyond_its_chunks_is_refused_and_writes_nothing(repo):
+    session = repo.writable_session("main")
+    # Epochs in chunk 0, the earlier write reached into chunk 1 (slot 180 on).
+    inside = _file(170 * 30, 5, 30, 1.0)
+
+    with pytest.raises(ChunkOwnershipError, match="chunks"):
+        write_file_region(
+            session, GROUP, inside, chunks={0}, earlier=[_span(170 * 30, 189 * 30)]
+        )
+
+    assert not session.has_uncommitted_changes
+
+
+def test_an_earlier_write_into_a_day_without_a_block_empties_only_stored_days(
+    repo,
+):
+    session = repo.writable_session("main")
+    write_file_region(session, GROUP, _file(86400 - 900, 30, 30, 1.0))
+
+    write_file_region(
+        session,
+        GROUP,
+        _file(86400 - 900, 10, 30, 2.0),
+        earlier=[_span(86400 - 900, 86400 + 870)],
+    )
+
+    stored = load_group(session.store, GROUP, drop_empty=True)
+    assert stored.sizes["epoch"] == 10
+    assert (stored.SNR.values == 2.0).all()
+
+
+@pytest.mark.parametrize(
+    ("start_s", "last_s", "expected"),
+    [
+        (0, 870, {0}),  # a 15-minute file at 30 s: within chunk 0
+        (5400, 6270, {1}),  # 01:30, the first epoch of chunk 1
+        (5100, 5970, {0, 1}),  # 01:25 to 01:39:30
+        (86370, 86370, {15}),  # the last slot of the day
+    ],
+)
+def test_span_chunks_gives_the_chunks_of_a_span_of_the_day(
+    repo, start_s, last_s, expected
+):
+    block = day_blocks(repo.readonly_session("main").store, GROUP)[DAY]
+    day = DAY.astype("M8[ns]")
+    start = day + np.timedelta64(int(start_s * 1e9), "ns")
+    last = day + np.timedelta64(int(last_s * 1e9), "ns")
+
+    assert span_chunks(block, start, last, epoch_chunk=180) == expected

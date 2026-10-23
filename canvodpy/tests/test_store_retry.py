@@ -1,0 +1,136 @@
+"""Store retries: only errors that can be transient are retried."""
+
+import errno
+import itertools
+
+import icechunk
+import pytest
+import structlog
+from canvodpy.orchestrator import store_retry
+
+
+class _Failing:
+    """Raises ``exc`` on the first ``n`` calls, then returns ``"ok"``."""
+
+    def __init__(self, exc: Exception, n: int) -> None:
+        self.exc, self.n, self.calls = exc, n, 0
+
+    def __call__(self) -> str:
+        self.calls += 1
+        if self.calls <= self.n:
+            raise self.exc
+        return "ok"
+
+
+@pytest.fixture(autouse=True)
+def _no_sleep(monkeypatch):
+    monkeypatch.setattr(store_retry._time, "sleep", lambda _s: None)
+
+
+@pytest.mark.parametrize(
+    "exc", [OSError("os error 103"), icechunk.IcechunkError("connection dropped")]
+)
+def test_transient_errors_are_retried(exc):
+    _assert_retried(exc)
+
+
+def test_a_windows_sharing_violation_is_retried():
+    exc = PermissionError(13, "The process cannot access the file")
+    exc.winerror = 32  # set by Windows only  # ty: ignore[unresolved-attribute]
+    _assert_retried(exc)
+
+
+def _assert_retried(exc):
+    fn = _Failing(exc, 2)
+    log = structlog.get_logger()
+    assert store_retry.call_with_store_retries(fn, logger=log) == "ok"
+    assert fn.calls == 3
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        ValueError("validation failed"),
+        RuntimeError("x"),
+        PermissionError("no permission"),
+        FileNotFoundError("no such file"),
+        OSError(errno.ENOSPC, "No space left on device"),
+    ],
+)
+def test_other_errors_propagate_at_once(exc):
+    fn = _Failing(exc, 1)
+    with pytest.raises(type(exc)):
+        store_retry.call_with_store_retries(fn, logger=structlog.get_logger())
+    assert fn.calls == 1
+
+
+_CONFLICTS = [
+    icechunk.ConflictError("parent snapshot"),
+    icechunk.RebaseFailedError("snapshot", []),
+]
+
+
+@pytest.mark.parametrize("exc", _CONFLICTS)
+def test_a_conflict_is_tried_again_after_a_growing_random_wait(exc, monkeypatch):
+    # Another run's commit moved the branch. Each call opens a new session,
+    # so the next try starts from that commit; the wait keeps two runs from
+    # colliding again at the same moment (#339).
+    sleeps = []
+    monkeypatch.setattr(store_retry._time, "sleep", sleeps.append)
+    fn = _Failing(exc, 4)
+    assert (
+        store_retry.call_with_store_retries(fn, logger=structlog.get_logger()) == "ok"
+    )
+    assert fn.calls == 5
+    assert len(sleeps) == 4
+    assert all(0 < a < b for a, b in itertools.pairwise(sleeps))
+
+
+def test_waits_after_a_conflict_have_a_random_part():
+    waits = {store_retry.wait_after_conflict(1) for _ in range(20)}
+    assert len(waits) > 1
+
+
+@pytest.mark.parametrize("exc", _CONFLICTS)
+def test_the_fifth_conflict_propagates(exc):
+    fn = _Failing(exc, 5)
+    with pytest.raises(icechunk.ConflictError):
+        store_retry.call_with_store_retries(fn, logger=structlog.get_logger())
+    assert fn.calls == 5
+
+
+class _Log:
+    """Records the events logged to it."""
+
+    def __init__(self) -> None:
+        self.events: list[tuple[str, str, dict]] = []
+
+    def __getattr__(self, level: str):
+        return lambda event, **kw: self.events.append((level, event, kw))
+
+
+def test_a_conflict_lost_on_every_try_is_logged_with_its_days():
+    log = _Log()
+    with pytest.raises(icechunk.ConflictError):
+        store_retry.call_with_store_retries(
+            _Failing(icechunk.ConflictError("moved"), 5),
+            logger=log,
+            date="2025001",
+            op="vod_commit",
+        )
+    lost = [(lv, kw) for lv, ev, kw in log.events if ev == "store_conflict_lost"]
+    assert len(lost) == 1
+    level, kw = lost[0]
+    assert level == "error"
+    assert kw["date"] == "2025001"
+    assert kw["op"] == "vod_commit"
+    assert kw["tries"] == 5
+    assert "Running these days again" in kw["hint"]
+
+
+def test_a_conflict_won_on_a_later_try_logs_no_loss():
+    log = _Log()
+    store_retry.call_with_store_retries(
+        _Failing(icechunk.ConflictError("moved"), 4), logger=log
+    )
+    assert "store_conflict_lost" not in [ev for _, ev, _ in log.events]

@@ -7,6 +7,7 @@ in CLK format, integrated with the product registry for multi-agency support.
 from pathlib import Path
 
 import numpy as np
+import structlog
 import xarray as xr
 from canvod.utils.tools import get_gps_week_from_filename
 from pydantic import ConfigDict
@@ -22,6 +23,8 @@ from canvod.auxiliary.interpolation import (
     Interpolator,
 )
 from canvod.auxiliary.products.registry_config import get_product_spec
+
+log = structlog.get_logger(__name__)
 
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
@@ -46,7 +49,7 @@ class ClkFile(AuxFile):
     agency : str
         Analysis center identifier (e.g., "COD", "GFZ").
     product_type : str
-        Product type ("final", "rapid", "ultrarapid").
+        Product type ("final" or "rapid").
     ftp_server : str
         Base URL for file downloads.
     local_dir : Path
@@ -77,36 +80,39 @@ class ClkFile(AuxFile):
         )
         return ClockInterpolationStrategy(config=config)
 
-    def generate_filename_based_on_type(self) -> Path:
-        """Generate standard CLK filename using product registry.
+    def candidate_filenames(self) -> list[str]:
+        """CLK file names, one per sampling the product has been published with.
 
-        Uses product registry to get correct prefix for the agency/product combination.
-        Filename format: {PREFIX}_{YYYYDOY}0000_01D_30S_CLK.CLK
-
-        Returns
-        -------
-        Path
-            Filename according to CLK conventions.
+        Filename format: {PREFIX}_{YYYYDOY}0000_01D_{SAMPLING}_CLK.CLK
 
         Raises
         ------
-        ValueError
+        UnknownProductError
             If agency/product combination not in registry.
+        ValueError
+            If the product publishes no clock files.
         """
-        # Get product spec from registry
         spec = get_product_spec(self.agency, self.product_type)
+        if not spec.has_clock:
+            msg = (
+                f"{self.agency}/{self.product_type} publishes no clock files. "
+                "Set processing.aux_data.fetch_clock to false, or choose a "
+                "product with clocks."
+            )
+            raise ValueError(msg)
+        return spec.clk_filenames(self.date)
 
-        # CLK files use 30S sampling for most products
-        sampling = "30S"  # Could be made configurable via registry
-
-        return Path(f"{spec.prefix}_{self.date}0000_01D_{sampling}_CLK.CLK")
-
-    def download_aux_file(self) -> None:
-        """Download CLK file, trying all servers from the product registry.
+    def download_aux_file(self, filename: str) -> None:
+        """Download one CLK file, trying all servers from the product registry.
 
         Servers are tried in priority order from products.toml. Auth-required
         servers are skipped when no credentials are configured. Warnings are
         printed when falling back to alternate servers.
+
+        Parameters
+        ----------
+        filename : str
+            One of :meth:`candidate_filenames`.
 
         Raises
         ------
@@ -115,7 +121,7 @@ class ClkFile(AuxFile):
         ValueError
             If GPS week calculation fails.
         """
-        clock_file = self.generate_filename_based_on_type()
+        clock_file = Path(filename)
         gps_week = get_gps_week_from_filename(clock_file)
 
         spec = get_product_spec(self.agency, self.product_type)
@@ -132,13 +138,15 @@ class ClkFile(AuxFile):
         }
 
         self.download_with_fallback(ftp_path, destination, file_info, spec)
-        print(f"Downloaded clock file for {self.agency} on date {self.date}")
+        log.info(
+            "aux_file_downloaded", kind="clock", agency=self.agency, date=str(self.date)
+        )
 
     def read_file(self) -> xr.Dataset:
         """Read and parse CLK file into xarray Dataset.
 
         Uses modular parser for data extraction and validator for quality checks.
-        Applies unit conversion from microseconds to seconds.
+        The clock bias is in seconds (RINEX clock 3.04, Table A16).
 
         Returns
         -------
@@ -150,8 +158,7 @@ class ClkFile(AuxFile):
         assert self.fpath is not None, "fpath must be set before calling read_file"
         epochs, satellites, clock_offsets = parse_clk_file(self.fpath)
 
-        # Convert units (microseconds → seconds)
-        clock_offsets = (UREG.microsecond * clock_offsets).to("s")
+        clock_offsets = UREG.second * clock_offsets
 
         if self.dimensionless:
             clock_offsets = clock_offsets.magnitude
@@ -204,7 +211,6 @@ class ClkFile(AuxFile):
         # Add variable attributes
         ds.clock_offset.attrs = {
             "long_name": "Satellite clock offset",
-            "standard_name": "clock_offset",
             "units": "seconds",
             "description": "Clock correction for each satellite",
         }

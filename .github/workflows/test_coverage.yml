@@ -18,6 +18,12 @@ jobs:
             contents: write
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - name: Check out the test data
+              # Only the readers' test data, without its history; the demo
+              # submodule is not needed for the tests. Switched off for now:
+              # remove the `if` to run the tests that need the data.
+              if: false
+              run: git submodule update --init --depth 1 packages/canvod-readers/tests/test_data
             - name: Install uv and set the python version
               uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
               with:
@@ -27,14 +33,12 @@ jobs:
             - name: Set up Python
               run: uv python install
 
-            - name: Update lock file (Dependabot only)
-              if: github.actor == 'dependabot[bot]'
-              run: uv lock
             - name: Install the Project
               # --group optional pulls in healpy (canvod-grids' HEALPix grid
               # builder) so HEALPix-dependent tests actually run in CI
-              # instead of silently skipping.
-              run: uv sync --locked --dev --group optional
+              # instead of silently skipping. --group filemap (canvod-filemap,
+              # from canvodpy-extensions) does the same for the recipe tests.
+              run: uv sync --locked --dev --group optional --group filemap
 
             - name: Run Tests with Coverage
               run: uv run pytest

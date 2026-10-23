@@ -57,8 +57,8 @@ def _fake_self(tmp_path: Path) -> SimpleNamespace:
     aux_pipeline.get.return_value = _synthetic_ephemeris_ds()
     aux_pipeline.is_loaded.return_value = False
 
-    # SBF file whose first epoch is a few seconds into the *previous* UTC
-    # day, matching the real ract001a00.25_ file that triggered the bug.
+    # File whose first epoch is a few seconds into the *previous* day, as
+    # the real ract001a00.25_ file was while SBF epochs were stored in UTC.
     sbf_like_epochs = np.array(
         [
             np.datetime64("2024-12-31T23:59:42"),

@@ -5,24 +5,19 @@ vegetation optical depth (VOD) using the tau-omega model.
 
 Quick Start
 -----------
-Three levels of API to match your needs:
+**Site processing, from the terminal** (production runs, resumable)::
 
-**Level 1: Simple (one-liners)**
-    >>> from canvodpy import process_date, calculate_vod
-    >>> data = process_date("ExampleSite", "2025001")
-    >>> vod = calculate_vod("ExampleSite", "canopy_01", "reference_01", "2025001")
+    canvodpy run
 
-**Level 2: Object-oriented (more control)**
-    >>> from canvodpy import Site, Pipeline
+**Site processing, from Python** (same logic as ``canvodpy run``)
+    >>> from canvodpy import Site
     >>> site = Site("ExampleSite")
-    >>> pipeline = site.pipeline()
-    >>> data = pipeline.process_date("2025001")
-    >>> vod = pipeline.calculate_vod("canopy_01", "reference_01", "2025001")
+    >>> with site.pipeline() as pipeline:
+    ...     units = list(pipeline.run("2025001", "2025001"))  # GNSS, then VOD
 
-**Level 3: Low-level (full control)**
-    >>> from canvod.store import GnssResearchSite
-    >>> from canvod.vod import VODCalculator
-    >>> # Direct access to all internals
+The single-step functions of ``canvodpy.functional`` (``read_rinex`` and
+the others) are deprecated: they are no longer maintained and give different
+results than ``canvodpy run``.
 
 Community Extensions
 --------------------
@@ -44,27 +39,18 @@ Package Structure
 
 Configuration
 -------------
-Site configurations are stored in ``config/sites.yaml``.
+Site configurations are stored in the ``sites:`` section of
+``config/canvod-settings.yaml``.
 Default variables and settings are in `globals.py`.
 
 Examples
 --------
-Process one day of data:
-    >>> from canvodpy import process_date
-    >>> data = process_date("ExampleSite", "2025001")
-
-Process a week:
-    >>> from canvodpy import Pipeline
-    >>> pipeline = Pipeline("ExampleSite")
-    >>> for date, datasets in pipeline.process_range("2025001", "2025007"):
-    ...     print(f"Processed {date}")
-
-Calculate and visualize VOD:
-    >>> from canvodpy import calculate_vod
-    >>> from canvod.viz import HemisphereVisualizer
-    >>> vod = calculate_vod("ExampleSite", "canopy_01", "reference_01", "2025001")
-    >>> viz = HemisphereVisualizer()
-    >>> fig = viz.plot_2d(vod)
+Process a week, then compute VOD for every configured analysis:
+    >>> from canvodpy import Site
+    >>> site = Site("ExampleSite")
+    >>> with site.pipeline() as pipeline:
+    ...     for unit in pipeline.run("2025001", "2025007"):
+    ...         print(sorted(unit.days), unit.vod.written)
 
 """
 
@@ -75,6 +61,7 @@ from canvodpy.api import (
     preview_processing,
     process_date,
 )
+from canvodpy.demo import demo_data
 
 # Factories (for community extensions)
 from canvodpy.factories import (
@@ -82,12 +69,13 @@ from canvodpy.factories import (
     GridFactory,
     ReaderFactory,
     VODFactory,
+    register_plugins,
 )
 
 # Fluent workflow API (deferred execution)
 from canvodpy.fluent import FluentWorkflow
 
-# Functional API (Airflow-compatible)
+# Functional API (deprecated, see canvodpy.functional)
 from canvodpy.functional import (
     assign_grid_cells,
     assign_grid_cells_to_file,
@@ -169,6 +157,8 @@ def __getattr__(name: str):
 # resolve the subpackage names that are lazily loaded via __getattr__ at runtime.
 from typing import TYPE_CHECKING
 
+import structlog
+
 if TYPE_CHECKING:
     import canvod.auxiliary as auxiliary
     import canvod.grids as grids
@@ -202,6 +192,8 @@ __all__ = [  # noqa: RUF022
     "process_date",
     "calculate_vod",
     "preview_processing",
+    # Demo data
+    "demo_data",
     # New workflow API
     "VODWorkflow",
     # Fluent workflow API
@@ -242,16 +234,17 @@ def _register_builtin_components() -> None:
     """
     Register built-in component implementations.
 
-    Called automatically on package import. Registers:
-    - Rnxv3Obs reader (rinex3)
-    - EqualAreaGridBuilder (equal_area)
-    - TauOmegaZerothOrder calculator (tau_omega)
-
-    Notes
-    -----
-    Uses lazy imports to avoid loading heavy dependencies unless needed.
+    Called automatically on package import. Registers the readers
+    ``rinex3``, ``rinex3_stripped``, ``rinex2``, ``sbf`` and ``nmea``, the
+    grid builders ``equal_area``, ``equal_angle``, ``equirectangular``,
+    ``htm``, ``geodesic``, ``healpix`` and ``fibonacci`` (the values of
+    :class:`canvod.grids.GridType`, with the builders of
+    :data:`canvod.grids.GRID_BUILDERS`, which ``create_hemigrid`` also uses)
+    and the VOD calculator ``tau_omega``. All
+    of them come from declared dependencies of canvodpy, so a failed
+    import raises instead of leaving a component unregistered.
     """
-    log = get_logger(__name__)
+    log = structlog.get_logger(__name__)
 
     # Set ABC classes for validation
     ReaderFactory._set_abc_class()
@@ -259,58 +252,26 @@ def _register_builtin_components() -> None:
     VODFactory._set_abc_class()
     AugmentationFactory._set_abc_class()
 
-    try:
-        from canvod.readers import Rnxv3Obs
+    from canvod.grids import GRID_BUILDERS
+    from canvod.readers import Rnxv3Obs
+    from canvod.readers.nmea import NmeaObs
+    from canvod.readers.rinex import Rnxv2Obs, Rnxv3StrippedObs
+    from canvod.readers.sbf import SbfReader
+    from canvod.vod.calculator import TauOmegaZerothOrder
 
-        ReaderFactory.register("rinex3", Rnxv3Obs)
-    except ImportError:
-        log.debug("canvod-readers not available, skipping reader registration")
-
-    try:
-        from canvod.readers.rinex import Rnxv3StrippedObs
-
-        ReaderFactory.register("rinex3_stripped", Rnxv3StrippedObs)
-    except ImportError:
-        log.debug("Rnxv3StrippedObs not available, skipping registration")
-
-    try:
-        from canvod.readers.sbf import SbfReader
-
-        ReaderFactory.register("sbf", SbfReader)
-    except ImportError:
-        log.debug("SbfReader not available, skipping sbf reader registration")
-
-    try:
-        # register rinex2
-        from canvod.readers.rinex import Rnxv2Obs
-
-        ReaderFactory.register("rinex2", Rnxv2Obs)
-    except ImportError:
-        log.debug("Rnxv2Obs reader not available, skipping rinex2 reader registration")
-
-    try:
-        from canvod.readers.nmea import NmeaObs
-
-        ReaderFactory.register("nmea", NmeaObs)
-    except ImportError:
-        log.debug("NmeaObs reader not available, skipping nmea reader registration")
-
-    try:
-        from canvod.grids import EqualAreaBuilder
-
-        GridFactory.register("equal_area", EqualAreaBuilder)
-    except ImportError:
-        log.debug("canvod-grids not available, skipping grid registration")
-
-    try:
-        from canvod.vod.calculator import TauOmegaZerothOrder
-
-        VODFactory.register("tau_omega", TauOmegaZerothOrder)
-    except ImportError:
-        log.debug("canvod-vod not available, skipping VOD registration")
+    ReaderFactory.register("rinex3", Rnxv3Obs)
+    ReaderFactory.register("rinex3_stripped", Rnxv3StrippedObs)
+    ReaderFactory.register("sbf", SbfReader)
+    ReaderFactory.register("rinex2", Rnxv2Obs)
+    ReaderFactory.register("nmea", NmeaObs)
+    # The same builders create_hemigrid uses, under the values of GridType
+    for grid_type, builder in GRID_BUILDERS.items():
+        GridFactory.register(grid_type.value, builder)
+    VODFactory.register("tau_omega", TauOmegaZerothOrder)
 
     log.info("builtin_components_registered")
 
 
-# Auto-register on import
+# Auto-register on import; plugins after the built-ins, so a name clash fails
 _register_builtin_components()
+register_plugins()

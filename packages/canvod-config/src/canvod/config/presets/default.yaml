@@ -1,32 +1,31 @@
-# Default SID preset — curated multi-GNSS list (277 SIDs)
+# Default SID preset — curated multi-GNSS list (271 RINEX 3 SIDs; RINEX 2 SIDs opt-in, see end of file)
 # GPS (G) + Galileo (E) + BeiDou MEO (C) + GLONASS (R)
 #
 # Exclusion rules (hard):
 #   no GEO          — BeiDou C01–C05, C15 (stationary, no hemisphere sampling)
-#   no IGSO         — BeiDou C06–C10, C38–C40 (narrow sky track, poor VOD geometry)
+#   no IGSO         — BeiDou C06–C10, C38–C40 (narrow sky track, poor VOD geometry),
+#                     and C13, C16 (IGSO satellites C017, C019 until 2026-04-18 per the
+#                     IGS satellite metadata; C13 is the MEO satellite C235 from
+#                     2026-04-19 on, which this list therefore leaves out too)
 #   no augmentation — SBAS, IRNSS, QZSS (regional/non-science signals)
-#   no GPS L2W      — semi-codeless cross-correlation, noisier than L2C
+#   no GPS L2W      — semi-codeless tracking: lower SNR precision, elevated and
+#                     more variable VOD (Bader et al. 2026, RSE 345, 115580)
 #
-# See config/sids.yaml for full per-SV rationale.
+# PRNs are reassigned over time (SatelliteCatalog.prn_history): check the
+# list against the IGS satellite metadata for the dates you process.
 
 sids:
 
-  # BeiDou MEO (C) — 32 SVs × up to 3 bands
+  # BeiDou MEO (C) — 30 SVs × up to 3 bands
   - 'C11|B1I|I'
   - 'C11|B2b|I'
   - 'C11|B3I|I'
   - 'C12|B1I|I'
   - 'C12|B2b|I'
   - 'C12|B3I|I'
-  - 'C13|B1I|I'
-  - 'C13|B2b|I'
-  - 'C13|B3I|I'
   - 'C14|B1I|I'
   - 'C14|B2b|I'
   - 'C14|B3I|I'
-  - 'C16|B1I|I'
-  - 'C16|B2b|I'
-  - 'C16|B3I|I'
   - 'C19|B1I|I'
   - 'C19|B3I|I'
   - 'C20|B1I|I'
@@ -296,3 +295,117 @@ sids:
   - 'R23|G2|C'
   - 'R24|G1|C'
   - 'R24|G2|C'
+
+  # RINEX 2.11 band-only SIDs (code 'u') — same SVs as the RINEX 3 L1/G1/E1
+  # entries above. RINEX 2 does not record the code type of carrier phase,
+  # Doppler or signal strength (rinex211.txt Sect. 10.1.1, Table A1), so S1
+  # lands in SV|<band>|u. Included only on the L1-type bands:
+  #   GLONASS G1, Galileo E1: RINEX 3.04 defines codeless and semi-codeless
+  #     attributes (N, D) for GPS only (RINEX 3.04 Sect. 5.1), so no RINEX 3
+  #     code type of these bands denotes codeless or semi-codeless tracking.
+  #   GPS L1: RINEX 3.04 Table 4 also lists P(Y) tracked codelessly (N) or
+  #     by Z-tracking (W) — S1 is ASSUMED not to come from either; RINEX
+  #     2.11 cannot verify this.
+  # GPS L2 'u' is excluded: on satellites without L2C, L2 carries P(Y) or,
+  # if selected by ground command, C/A (IS-GPS-200N Sect. 3.2.3). Civil
+  # receivers track P(Y) only by codeless or semicodeless processing (Betz &
+  # Cerruti 2020, NAVIGATION 67(1), doi:10.1002/navi.347), and RINEX 2
+  # cannot tell these tracking modes from L2C. GLONASS G2 and Galileo
+  # E5a/E5b 'u' are not included (L1-type bands only).
+  # See docs/packages/readers/rinex-v2-format.md.
+
+  # GPS (G) — L1 band-only, RINEX 2.11
+  # - 'G01|L1|u'
+  # - 'G02|L1|u'
+  # - 'G03|L1|u'
+  # - 'G04|L1|u'
+  # - 'G05|L1|u'
+  # - 'G06|L1|u'
+  # - 'G07|L1|u'
+  # - 'G08|L1|u'
+  # - 'G09|L1|u'
+  # - 'G10|L1|u'
+  # - 'G11|L1|u'
+  # - 'G12|L1|u'
+  # - 'G13|L1|u'
+  # - 'G14|L1|u'
+  # - 'G15|L1|u'
+  # - 'G16|L1|u'
+  # - 'G17|L1|u'
+  # - 'G18|L1|u'
+  # - 'G19|L1|u'
+  # - 'G20|L1|u'
+  # - 'G21|L1|u'
+  # - 'G22|L1|u'
+  # - 'G23|L1|u'
+  # - 'G24|L1|u'
+  # - 'G25|L1|u'
+  # - 'G26|L1|u'
+  # - 'G27|L1|u'
+  # - 'G28|L1|u'
+  # - 'G29|L1|u'
+  # - 'G30|L1|u'
+  # - 'G31|L1|u'
+  # - 'G32|L1|u'
+
+  # # GLONASS (R) — G1 band-only, RINEX 2.11
+  # - 'R01|G1|u'
+  # - 'R02|G1|u'
+  # - 'R03|G1|u'
+  # - 'R04|G1|u'
+  # - 'R05|G1|u'
+  # - 'R06|G1|u'
+  # - 'R07|G1|u'
+  # - 'R08|G1|u'
+  # - 'R09|G1|u'
+  # - 'R10|G1|u'
+  # - 'R11|G1|u'
+  # - 'R12|G1|u'
+  # - 'R13|G1|u'
+  # - 'R14|G1|u'
+  # - 'R15|G1|u'
+  # - 'R16|G1|u'
+  # - 'R17|G1|u'
+  # - 'R18|G1|u'
+  # - 'R19|G1|u'
+  # - 'R20|G1|u'
+  # - 'R21|G1|u'
+  # - 'R22|G1|u'
+  # - 'R23|G1|u'
+  # - 'R24|G1|u'
+
+  # # Galileo (E) — E1 band-only, RINEX 2.11
+  # - 'E02|E1|u'
+  # - 'E03|E1|u'
+  # - 'E04|E1|u'
+  # - 'E05|E1|u'
+  # - 'E06|E1|u'
+  # - 'E07|E1|u'
+  # - 'E08|E1|u'
+  # - 'E09|E1|u'
+  # - 'E10|E1|u'
+  # - 'E11|E1|u'
+  # - 'E12|E1|u'
+  # - 'E13|E1|u'
+  # - 'E14|E1|u'
+  # - 'E15|E1|u'
+  # - 'E16|E1|u'
+  # - 'E17|E1|u'
+  # - 'E18|E1|u'
+  # - 'E19|E1|u'
+  # - 'E21|E1|u'
+  # - 'E22|E1|u'
+  # - 'E23|E1|u'
+  # - 'E24|E1|u'
+  # - 'E25|E1|u'
+  # - 'E26|E1|u'
+  # - 'E27|E1|u'
+  # - 'E28|E1|u'
+  # - 'E29|E1|u'
+  # - 'E30|E1|u'
+  # - 'E31|E1|u'
+  # - 'E32|E1|u'
+  # - 'E33|E1|u'
+  # - 'E34|E1|u'
+  # - 'E35|E1|u'
+  # - 'E36|E1|u'

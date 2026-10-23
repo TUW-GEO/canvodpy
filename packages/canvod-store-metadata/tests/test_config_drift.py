@@ -1,21 +1,18 @@
-"""Tests for config-drift detection on repeat ingests (dev/todo_later.md §4).
+"""Each commit records the settings it was made with (ADR 0014).
 
-Exercises the same read -> re-snapshot -> compare -> merge-history pattern
-used by processor.py's STEP 5b, at the canvod-store-metadata level (a full
-orchestrator-level test would need a real pipeline run).
+Settings that change between runs show as different config hashes in the
+commit metadata of successive snapshots; nothing is merged into a history.
 """
 
 from __future__ import annotations
-
-from datetime import UTC, datetime
 
 import icechunk
 import zarr
 
 from canvod.store_metadata import (
     collect_config_snapshot,
+    commit_with_rebase,
     read_metadata,
-    update_metadata,
     write_metadata,
 )
 from canvod.store_metadata.schema import (
@@ -40,7 +37,10 @@ def _create_store(path):
 def _make_metadata(config_snapshot) -> StoreMetadata:
     return StoreMetadata(
         identity=StoreIdentity(
-            id="test/gnss_store",
+            id="test-gnss",
+            uuid="00000000-0000-4000-8000-000000000001",
+            naming_authority="org.middle-earth",
+            stac_link="../../gnss-observations/org.middle-earth.test-gnss/org.middle-earth.test-gnss.json",
             title="Test Store",
             store_type="gnss_store",
             source_format="rinex3",
@@ -54,79 +54,43 @@ def _make_metadata(config_snapshot) -> StoreMetadata:
     )
 
 
-def _simulate_repeat_ingest(store_path, branch, config):
-    """Mirror processor.py's STEP 5b else-branch exactly."""
-    now = datetime.now(UTC).isoformat()
-    existing_meta = read_metadata(store_path, branch=branch)
-    new_snapshot = collect_config_snapshot(config)
-
-    history_entries = [f"{now}: Ingested 1 files for canopy_01"]
-    updates: dict[str, object] = {"temporal.updated": now}
-
-    drifted = new_snapshot.config_hash != existing_meta.config.config_hash
-    if drifted:
-        old_hash = (existing_meta.config.config_hash or "unknown")[:12]
-        new_hash = (new_snapshot.config_hash or "unknown")[:12]
-        history_entries.append(f"{now}: Config changed ({old_hash} -> {new_hash})")
-        updates["config"] = new_snapshot.model_dump(mode="json")
-
-    updates["summaries.history"] = [
-        *existing_meta.summaries.history,
-        *history_entries,
-    ]
-
-    update_metadata(store_path, updates, branch=branch)
-    return drifted
+def _commit_with(store_path, config) -> str:
+    repo = icechunk.Repository.open(icechunk.local_filesystem_storage(str(store_path)))
+    session = repo.writable_session("main")
+    zarr.open_group(session.store, mode="a").require_group("canopy_01")
+    return commit_with_rebase(session, "ingest", store_path=store_path, config=config)
 
 
-class TestConfigDrift:
-    def test_unchanged_config_does_not_touch_config_section(self, tmp_path):
+def _config_hash_of(store_path, snapshot_id) -> str:
+    repo = icechunk.Repository.open(icechunk.local_filesystem_storage(str(store_path)))
+    snapshot = next(iter(repo.ancestry(snapshot_id=snapshot_id)))
+    return snapshot.metadata["config"]["config_hash"]
+
+
+class TestSettingsPerCommit:
+    def test_unchanged_settings_give_the_same_hash(self, tmp_path):
         store_path = _create_store(tmp_path / "store")
         config = {"processing": {"agency": "COD"}}
-        initial_snapshot = collect_config_snapshot(config)
-        write_metadata(store_path, _make_metadata(initial_snapshot), branch="main")
+        write_metadata(store_path, _make_metadata(collect_config_snapshot(config)))
 
-        drifted = _simulate_repeat_ingest(store_path, "main", config)
+        _commit_with(store_path, config)
 
-        assert drifted is False
-        meta = read_metadata(store_path, branch="main")
-        assert meta.config.config_hash == initial_snapshot.config_hash
-        assert len(meta.summaries.history) == 1
-        assert "Ingested" in meta.summaries.history[0]
+        meta = read_metadata(store_path)
+        assert meta.config.config_hash == collect_config_snapshot(config).config_hash
 
-    def test_changed_config_updates_snapshot_and_records_drift(self, tmp_path):
+    def test_changed_settings_show_in_the_next_commit_only(self, tmp_path):
         store_path = _create_store(tmp_path / "store")
         old_config = {"processing": {"agency": "COD"}}
-        write_metadata(
-            store_path,
-            _make_metadata(collect_config_snapshot(old_config)),
-            branch="main",
-        )
+        write_metadata(store_path, _make_metadata(collect_config_snapshot(old_config)))
+        first = _commit_with(store_path, old_config)
 
         new_config = {"processing": {"agency": "GFZ"}}
-        drifted = _simulate_repeat_ingest(store_path, "main", new_config)
+        second = _commit_with(store_path, new_config)
 
-        assert drifted is True
-        meta = read_metadata(store_path, branch="main")
-        assert (
-            meta.config.config_hash == collect_config_snapshot(new_config).config_hash
+        assert _config_hash_of(store_path, first) == (
+            collect_config_snapshot(old_config).config_hash
         )
-        assert meta.config.processing == {"agency": "GFZ"}
-        assert len(meta.summaries.history) == 2
-        assert "Config changed" in meta.summaries.history[1]
-
-    def test_history_accumulates_across_multiple_ingests_not_replaced(self, tmp_path):
-        """Regression test: update_metadata() replaces list fields wholesale —
-        the caller (processor.py, mirrored here) must merge history itself."""
-        store_path = _create_store(tmp_path / "store")
-        config = {"processing": {"agency": "COD"}}
-        write_metadata(
-            store_path, _make_metadata(collect_config_snapshot(config)), branch="main"
+        assert _config_hash_of(store_path, second) == (
+            collect_config_snapshot(new_config).config_hash
         )
-
-        _simulate_repeat_ingest(store_path, "main", config)
-        _simulate_repeat_ingest(store_path, "main", config)
-        _simulate_repeat_ingest(store_path, "main", config)
-
-        meta = read_metadata(store_path, branch="main")
-        assert len(meta.summaries.history) == 3
+        assert read_metadata(store_path).config.processing == {"agency": "GFZ"}

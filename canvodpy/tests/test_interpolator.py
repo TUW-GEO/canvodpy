@@ -1,8 +1,13 @@
-"""Tests for canvodpy.orchestrator.interpolator module."""
+"""Tests for the deprecated canvodpy.orchestrator.interpolator module.
+
+The names there are subclasses of ``canvod.auxiliary.interpolation`` without
+logic of their own; these tests make sure they still work and warn.
+"""
 
 import numpy as np
 import pytest
 import xarray as xr
+from canvodpy.orchestrator import interpolator as orch
 from canvodpy.orchestrator.interpolator import (
     ClockConfig,
     ClockInterpolationStrategy,
@@ -10,6 +15,48 @@ from canvodpy.orchestrator.interpolator import (
     Sp3InterpolationStrategy,
     create_interpolator_from_attrs,
 )
+
+from canvod.auxiliary import interpolation as aux
+
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*left over from development:FutureWarning"
+)
+
+
+@pytest.mark.filterwarnings("default::FutureWarning")
+@pytest.mark.parametrize(
+    "name",
+    [
+        "InterpolatorConfig",
+        "Sp3Config",
+        "ClockConfig",
+        "Sp3InterpolationStrategy",
+        "ClockInterpolationStrategy",
+    ],
+)
+def test_names_are_deprecated_subclasses(name):
+    assert issubclass(getattr(orch, name), getattr(aux, name))
+    kwargs = {}
+    if name.endswith("Strategy"):
+        config = "Sp3Config" if name.startswith("Sp3") else "ClockConfig"
+        kwargs = {"config": getattr(aux, config)()}
+    with pytest.warns(
+        FutureWarning, match=f"Use canvod.auxiliary.interpolation.{name}"
+    ):
+        getattr(orch, name)(**kwargs)
+
+
+@pytest.mark.filterwarnings("default::FutureWarning")
+def test_create_interpolator_from_attrs_is_deprecated():
+    attrs = {
+        "interpolator_config": aux.Sp3InterpolationStrategy(
+            config=aux.Sp3Config()
+        ).to_attrs()
+    }
+    with pytest.warns(FutureWarning, match="left over from development"):
+        interp = create_interpolator_from_attrs(attrs)
+    assert type(interp) is aux.Sp3InterpolationStrategy
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -298,7 +345,7 @@ class TestCreateInterpolatorFromAttrs:
             }
         }
         interp = create_interpolator_from_attrs(attrs)
-        assert isinstance(interp, Sp3InterpolationStrategy)
+        assert isinstance(interp, aux.Sp3InterpolationStrategy)
 
     def test_clock_from_attrs(self):
         attrs = {
@@ -308,7 +355,7 @@ class TestCreateInterpolatorFromAttrs:
             }
         }
         interp = create_interpolator_from_attrs(attrs)
-        assert isinstance(interp, ClockInterpolationStrategy)
+        assert isinstance(interp, aux.ClockInterpolationStrategy)
 
     def test_unknown_type_raises(self):
         attrs = {

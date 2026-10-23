@@ -1,10 +1,13 @@
 # =============================================================================
-# canVODpy Settings — single unified file
+# canVODpy Settings: single unified file
 # =============================================================================
 # Copy this file to config/canvod-settings.yaml and customize for your setup.
-# Run: canvod config init      (scaffolds canvod-settings.yaml from this template)
-#      canvod config validate  (validates the file against Pydantic models)
-#      canvod config show      (prints the fully resolved configuration)
+# Run: canvodpy config init      (scaffolds canvod-settings.yaml from this template)
+#      canvodpy config validate  (validates the file against Pydantic models)
+#      canvodpy config show      (prints the fully resolved configuration)
+#      canvodpy config explain SETTING  (prints what a setting means)
+#
+# The link above each setting leads to its entry in the settings reference.
 #
 # Top-level sections:
 #   processing:  General settings, metadata, storage, parallelism
@@ -27,18 +30,34 @@ processing:
   # Metadata  (written as Zarr root attrs on the GNSS store via canvod-store-metadata)
   # ---------------------------------------------------------------------------
   metadata:
+    # https://canvodpy.eu/guides/settings/#processing-metadata-author
     author: Your Name
+    # https://canvodpy.eu/guides/settings/#processing-metadata-email
     email: your.email@example.com
+    # https://canvodpy.eu/guides/settings/#processing-metadata-orcid
     orcid: null                          # e.g. "0000-0001-2345-6789"
+    # https://canvodpy.eu/guides/settings/#processing-metadata-institution
     institution: Your Institution
+    # https://canvodpy.eu/guides/settings/#processing-metadata-institution_ror
     institution_ror: null                # e.g. "https://ror.org/04d836q62"
+    # https://canvodpy.eu/guides/settings/#processing-metadata-department
     department: null                     # Optional
+    # https://canvodpy.eu/guides/settings/#processing-metadata-research_group
     research_group: null                 # Optional
+    # https://canvodpy.eu/guides/settings/#processing-metadata-website
     website: null                        # Optional
-    license: CC-BY-4.0                   # SPDX identifier
-    publisher: null                      # Optional
+    # https://canvodpy.eu/guides/settings/#processing-metadata-license
+    license: CC-BY-4.0                   # Required to create a store: SPDX identifier, or "other"
+    # https://canvodpy.eu/guides/settings/#processing-metadata-license_uri
+    license_uri: null                    # The license text's URI; required when license is "other"
+    # https://canvodpy.eu/guides/settings/#processing-metadata-publisher
+    publisher: null                      # Required to create a store, e.g. your institution
+    # https://canvodpy.eu/guides/settings/#processing-metadata-publisher_url
     publisher_url: null                  # Optional
-    naming_authority: null               # e.g. "at.ac.tuwien"
+    # https://canvodpy.eu/guides/settings/#processing-metadata-naming_authority
+    naming_authority: null               # Required to create a store, e.g. "org.middle-earth"
+    # https://canvodpy.eu/guides/settings/#processing-metadata-initials
+    initials: null                       # Required to amend or migrate store metadata, e.g. "NFB"
 
   # ---------------------------------------------------------------------------
   # Credentials
@@ -50,16 +69,27 @@ processing:
     # Register at: https://urs.earthdata.nasa.gov/users/new
     # If set: NASA CDDIS primary, ESA fallback
     # If not set: ESA only (no auth required)
+    # https://canvodpy.eu/guides/settings/#processing-credentials-nasa_earthdata_acc_mail
     nasa_earthdata_acc_mail: null
 
   # ---------------------------------------------------------------------------
   # Auxiliary Data
   # ---------------------------------------------------------------------------
   aux_data:
+    # https://canvodpy.eu/guides/settings/#processing-aux_data-agency
     agency: COD              # Analysis center: COD, GFZ, IGS, ESA, etc.
+    # https://canvodpy.eu/guides/settings/#processing-aux_data-product_type
     product_type: final      # final, rapid, ultra-rapid
+    # https://canvodpy.eu/guides/settings/#processing-aux_data-ftp_timeout_s
     # ftp_timeout_s: 30      # FTP connection timeout in seconds
-    # fetch_clock: true      # Set false to skip CLK downloads/interpolation — VOD doesn't use clock corrections
+    # https://canvodpy.eu/guides/settings/#processing-aux_data-fetch_clock
+    # fetch_clock: false     # Set true to also download and interpolate CLK; VOD doesn't use clock corrections
+    # https://canvodpy.eu/guides/settings/#processing-aux_data-zarr_async_concurrency
+    # zarr_async_concurrency: 2   # Cap zarr's concurrent chunk write/read burst
+    #                              # for the aux cache's own writes. Unset by
+    #                              # default (zarr's default of 10 applies).
+    #                              # Separate from processing.icechunk's own
+    #                              # knob: different store, different profile.
 
   # ---------------------------------------------------------------------------
   # Processing Parameters
@@ -69,101 +99,135 @@ processing:
     # GNSS observables to keep
     # Each maps to a GNSS obs code prefix:
     #   SNR         - Signal-to-Noise Ratio (dBHz)   [S-codes: S1C, S2W, ...]
-    #   Pseudorange - Code pseudorange (metres)       [C-codes: C1C, C2W, ...]
+    #   Pseudorange - Code pseudorange (meters)       [C-codes: C1C, C2W, ...]
     #   Phase       - Carrier phase (cycles)          [L-codes: L1C, L2W, ...]
     #   Doppler     - Doppler shift (Hz)              [D-codes: D1C, D2W, ...]
+    # https://canvodpy.eu/guides/settings/#processing-params-keep_gnss_observables
     keep_gnss_observables:
       - SNR
       # - Pseudorange
       # - Phase
       # - Doppler
 
-    # Aggregate GLONASS FDMA sub-bands into effective G1*/G2* bands (recommended).
-    # Set false only if you need per-satellite precise frequencies and understand
-    # that this changes the SID axis (append-incompatible with existing stores).
+    # Aggregate GLONASS FDMA sub-bands into effective G1/G2 bands (recommended).
+    # false: GLONASS signal IDs name the FDMA bands (G1_FDMA, G2_FDMA). RINEX
+    # only; the SBF and NMEA readers refuse false. Changes the GLONASS signal
+    # IDs, so an existing store refuses data written with the other value.
+    # https://canvodpy.eu/guides/settings/#processing-params-aggregate_glonass_fdma
     aggregate_glonass_fdma: true
 
+    # https://canvodpy.eu/guides/settings/#processing-params-store_radial_distance
     store_radial_distance: false   # Store satellite-receiver distance (r)
+    # https://canvodpy.eu/guides/settings/#processing-params-store_delta_snr
     store_delta_snr: false         # Store delta SNR (canopy − reference, dB) in VOD store
+    # https://canvodpy.eu/guides/settings/#processing-params-store_radial_diff
     store_radial_diff: false       # Store r_canopy − r_reference (m); requires store_radial_distance: true
 
-    # 'shared'       — all receivers use canopy position (default, enables 1:1 SNR comparison)
-    # 'per_receiver' — each receiver uses its own RINEX header position
+    # 'shared': all receivers use canopy position (default, enables 1:1 SNR comparison)
+    # 'per_receiver': each receiver uses its own RINEX header position
+    # https://canvodpy.eu/guides/settings/#processing-params-receiver_position_mode
     receiver_position_mode: shared
 
-    # 'complete' — discover files per-receiver independently (all data ingested)
-    # 'paired'   — only process dates where both receivers have data
+    # 'complete': discover files per-receiver independently (all data ingested)
+    # 'paired': only process dates where both receivers have data
+    # https://canvodpy.eu/guides/settings/#processing-params-file_pairing
     file_pairing: complete
 
-    # 'final'     — satellite coords from SP3/CLK agency products (delayed, high accuracy)
-    # 'broadcast' — broadcast ephemerides from SBF SatVisibility (SBF only, same-day)
+    # 'final': satellite coords from SP3/CLK agency products (delayed, high accuracy)
+    # 'broadcast': broadcast ephemerides from SBF SatVisibility (SBF only, same-day)
+    # https://canvodpy.eu/guides/settings/#processing-params-ephemeris_source
     ephemeris_source: final
 
-    # How many calendar days to pool per loky wave (ge=1, le=30)
-    days_per_batch: 1
-
-    # 'auto'   — auto-detects available cores and memory (personal machines)
-    # 'manual' — hard caps below are enforced (shared servers)
+    # 'auto': auto-detects available cores and memory (personal machines)
+    # 'manual': hard caps below are enforced (shared servers)
+    # https://canvodpy.eu/guides/settings/#processing-params-resource_mode
     resource_mode: auto
 
-    # In auto mode, workers are capped at max(1, cpu_count - 2) to leave headroom.
+    # In auto mode, one worker per physical core, at most cpu_count - 2, at least 1.
     # Set auto_uncapped: true ONLY when the machine is exclusively yours.
     # WARNING: uncapped on a shared server can starve other users' processes.
+    # https://canvodpy.eu/guides/settings/#processing-params-auto_uncapped
     # auto_uncapped: false
 
     # Manual-mode caps (ignored when resource_mode: auto)
+    # https://canvodpy.eu/guides/settings/#processing-params-n_max_threads
     # n_max_threads: 8           # Worker processes (≤ your core count)
-    # max_memory_gb: 16          # Total RAM budget (null = no limit)
-    # cpu_affinity: [0, 1, 2, 3] # Pin to CPU core IDs, Linux only
+    # https://canvodpy.eu/guides/settings/#processing-params-cpu_affinity
+    # cpu_affinity: [0, 1, 2, 3] # Pin to CPU core IDs, not on macOS
+    # https://canvodpy.eu/guides/settings/#processing-params-nice_priority
     # nice_priority: -5          # OS priority (-20 = highest, 0 = normal, 19 = lowest;
     #                            # negative needs root/CAP_SYS_NICE on Linux, else no-op)
 
-  # ---------------------------------------------------------------------------
-  # Preprocessing Pipeline
-  # ---------------------------------------------------------------------------
-  # NOTE (2026-07-10): temporal_aggregation and grid_assignment below only feed
-  # canvod-ops's build_default_pipeline()/Pipeline (TemporalAggregate,
-  # GridAssignment ops) — nothing in the live orchestrator (processor.py,
-  # workflows/tasks.py) or the CLI calls that pipeline yet. Grid-cell
-  # assignment for real ingested data currently happens ad hoc downstream
-  # instead (in whatever consumer reads the store), not from this
-  # angular_resolution value. Intent: once wired in, these become the
-  # community-agreed standard grid resolution + temporal aggregation applied
-  # uniformly across all sites, enforced (not just default) in a future
-  # version.
-  preprocessing:
-    temporal_aggregation:
-      enabled: true
-      freq: "1min"           # pandas offset alias: "1min", "30s", "5min", etc.
-      method: "mean"         # "mean" or "median"
+    # Memory budget of a run in GB, in auto and manual mode. The run starts
+    # fewer workers, or fewer days per unit, to fit it, and stops before
+    # reading if one worker doesn't fit. Unset: the memory available at start.
+    # https://canvodpy.eu/guides/settings/#processing-params-max_memory_gb
+    # max_memory_gb: 8
 
-    grid_assignment:
-      enabled: true
-      grid_type: "equal_area"
-      angular_resolution: 2.0  # degrees (0 < value ≤ 90)
+  # ---------------------------------------------------------------------------
+  # Preprocessing (optional; nothing is applied unless set)
+  # ---------------------------------------------------------------------------
+  # `canvodpy run`, the Python API and Airflow apply these operations to each
+  # receiver's files of a day before writing them to the GNSS store: first the
+  # temporal aggregation, then the grid cell assignment. Time bins start at
+  # 00:00 and are labeled with their start; a bin spanning two files is
+  # aggregated from both. Keep the setting for the life of a store: writing
+  # differently preprocessed data into an existing store stops with an error.
+  # preprocessing:
+  #   temporal_aggregation:
+  #     # https://canvodpy.eu/guides/settings/#processing-preprocessing-temporal_aggregation-freq
+  #     freq: "1min"             # whole number + "s", "min" or "h"; divides one day
+  #     # https://canvodpy.eu/guides/settings/#processing-preprocessing-temporal_aggregation-method
+  #     method: "median"         # "mean" or "median" (floating-point variables)
+  #     # https://canvodpy.eu/guides/settings/#processing-preprocessing-temporal_aggregation-integer_method
+  #     integer_method: "first"  # "first", "last" or "middle" (integer flags)
+  #   grid_assignment:
+  #     # https://canvodpy.eu/guides/settings/#processing-preprocessing-grid_assignment-grid_type
+  #     grid_type: "equal_area"
+  #     # https://canvodpy.eu/guides/settings/#processing-preprocessing-grid_assignment-angular_resolution
+  #     angular_resolution: 2.0  # degrees (0 < value <= 90)
 
   # ---------------------------------------------------------------------------
   # NetCDF Compression (used when writing intermediate .nc files)
   # ---------------------------------------------------------------------------
   netcdf_compression:
+    # https://canvodpy.eu/guides/settings/#processing-netcdf_compression-zlib
     zlib: true
+    # https://canvodpy.eu/guides/settings/#processing-netcdf_compression-complevel
     complevel: 5
 
   # ---------------------------------------------------------------------------
   # Icechunk Storage
   # ---------------------------------------------------------------------------
   icechunk:
-    compression_level: 5
+    # https://canvodpy.eu/guides/settings/#processing-icechunk-compression_level
+    compression_level: 3
+    # https://canvodpy.eu/guides/settings/#processing-icechunk-compression_algorithm
     compression_algorithm: zstd  # currently only zstd is supported
+    # https://canvodpy.eu/guides/settings/#processing-icechunk-inline_chunk_threshold_bytes
     inline_chunk_threshold_bytes: 512   # Bytes; chunks ≤ this are inlined into the manifest
+    # https://canvodpy.eu/guides/settings/#processing-icechunk-get_partial_values_concurrency
     get_partial_values_concurrency: 1   # Concurrent partial-value reads (increase for S3/GCS)
+    # https://canvodpy.eu/guides/settings/#processing-icechunk-zarr_async_concurrency
+    # zarr_async_concurrency: 2         # Cap Zarr's concurrent chunk writes, only for
+    #                                    # writes through the store's own write methods:
+    #                                    # not the GNSS store writes of `canvodpy run`,
+    #                                    # not the day-block writes. Unset by default
+    #                                    # (Zarr's own default of 10 applies).
 
+    # A chunk is the piece of an array that is read, compressed and written
+    # as one. A group keeps the chunk size it was created with: a change
+    # here applies to groups created from then on.
     chunk_strategies:
       gnss_store:
-        epoch: 17280  # 24h of 5s data; override to match your site's sampling rate
-        sid: -1       # Don't chunk along sid
+        # https://canvodpy.eu/guides/settings/#processing-icechunk-chunk_strategies-gnss_store-epoch
+        epoch: 180    # epochs per chunk; each day fills whole chunks, padded if needed
+        # https://canvodpy.eu/guides/settings/#processing-icechunk-chunk_strategies-gnss_store-sid
+        sid: -1       # all signals in one chunk
       vod_store:
-        epoch: 17280
+        # https://canvodpy.eu/guides/settings/#processing-icechunk-chunk_strategies-vod_store-epoch
+        epoch: 180    # epochs per chunk; as gnss_store
+        # https://canvodpy.eu/guides/settings/#processing-icechunk-chunk_strategies-vod_store-sid
         sid: -1
 
   # ---------------------------------------------------------------------------
@@ -173,25 +237,53 @@ processing:
     # Root directory for all Icechunk stores.
     # Preferred: set via environment variable:
     #   export CANVOD__PROCESSING__STORAGE__STORES_ROOT_DIR=/path/to/stores
+    # https://canvodpy.eu/guides/settings/#processing-storage-stores_root_dir
     stores_root_dir: /path/to/your/gnss/stores
 
-    # Custom store directory names (defaults: "rinex" and "vod")
-    # gnss_store_name: rinex
+    # Store folders are named by their kind: "gnss" and "vod" (defaults).
+    # For a second store of a kind, add '-' and a suffix, e.g. vod-recompute.
+    # https://canvodpy.eu/guides/settings/#processing-storage-gnss_store_name
+    # gnss_store_name: gnss
+    # https://canvodpy.eu/guides/settings/#processing-storage-vod_store_name
     # vod_store_name: vod
 
     # Directory for downloaded SP3/CLK files and transient Zarr caches.
     # If not set, uses system temp directory.
+    # https://canvodpy.eu/guides/settings/#processing-storage-aux_data_dir
     # aux_data_dir: /path/to/aux_data
 
-    gnss_store_strategy: skip      # skip, overwrite, append
-    vod_store_strategy: overwrite
+    # Network-wide, fingerprint-keyed aux (SP3/CLK Hermite) cache root.
+    # Unset by default: falls back to per-site aux_data_dir, rebuilt every
+    # run. Point every site in a network at the SAME path here to share one
+    # cache entry per (agency, product, date) instead of each site rebuilding
+    # it independently; ephemeris products are satellite-based, not
+    # site-based, so this is safe across sites with different sampling rates.
+    # https://canvodpy.eu/guides/settings/#processing-storage-shared_aux_cache_dir
+    # shared_aux_cache_dir: /path/to/shared/aux_cache
+
+    # What a run does with a file that is already in the GNSS store
+    # (new files are always written):
+    #   skip:          nothing is written (default; a re-run writes nothing)
+    #   overwrite:     the file's slots are replaced (to correct stored
+    #                   data, e.g. after a fix in a reader)
+    #   unsafe_append: kept from versions before day blocks, where it
+    #                   stored the file's epochs twice; it now does what
+    #                   overwrite does.
+    # https://canvodpy.eu/guides/settings/#processing-storage-gnss_store_strategy
+    gnss_store_strategy: skip
 
   # ---------------------------------------------------------------------------
   # Logging
   # ---------------------------------------------------------------------------
   logging:
-    # log_dir: /path/to/logs    # defaults to .logs/ in monorepo root
-    log_file_name: canvodpy.log
+    # Folder of the log files. Required for a processing run.
+    # https://canvodpy.eu/guides/settings/#processing-logging-log_dir
+    log_dir: /path/to/your/gnss/logs
+    # Worker processes write their own log files; delete them after this
+    # many days without a change.
+    # https://canvodpy.eu/guides/settings/#processing-logging-worker_log_retention_days
+    worker_log_retention_days: 30
+    # https://canvodpy.eu/guides/settings/#processing-logging-log_path_depth
     log_path_depth: 6
 
   # ---------------------------------------------------------------------------
@@ -199,12 +291,18 @@ processing:
   # ---------------------------------------------------------------------------
   references:
     publications: []
+      # https://canvodpy.eu/guides/settings/#processing-references-publications-doi
       # - doi: "10.1234/example"
+      #   # https://canvodpy.eu/guides/settings/#processing-references-publications-citation
       #   citation: "Author et al. (2026). Title. Journal."
     funding: []
+      # https://canvodpy.eu/guides/settings/#processing-references-funding-funder
       # - funder: "Austrian Science Fund (FWF)"
+      #   # https://canvodpy.eu/guides/settings/#processing-references-funding-funder_ror
       #   funder_ror: "https://ror.org/013tf3c58"
+      #   # https://canvodpy.eu/guides/settings/#processing-references-funding-grant_number
       #   grant_number: "P12345"
+      #   # https://canvodpy.eu/guides/settings/#processing-references-funding-award_title
       #   award_title: "GNSS-VOD for forest monitoring"
 
 
@@ -212,42 +310,88 @@ processing:
 # Sites
 # =============================================================================
 # Each top-level key is a site name.  Receivers go under each site.
-# Recipe files live in config/recipes/{recipe_name}.yaml.
-# If canvod-virtualiconvname is installed, recipe files map physical filenames
-# to the canVOD naming convention. Without it, files must already conform.
+# Recipe files live in <config dir>/recipes/<site>/<recipe>.yaml; create one
+# with: just naming-init <site> <recipe>. With canvod-filemap installed, a
+# recipe maps physical filenames to the canVOD naming convention. Without a
+# recipe, files must already follow the convention.
 
 sites:
   my_site:
+    # https://canvodpy.eu/guides/settings/#sites-site-gnss_site_data_root
     gnss_site_data_root: /path/to/your/gnss/data/my_site
 
+    # What the site's stores hold; required to create a store
+    # https://canvodpy.eu/guides/settings/#sites-site-store_description
+    store_description: null # e.g. "GNSS-T observations below a beech canopy"
+
     # Site geospatial metadata (used by canvod-store-metadata, all optional)
+    # https://canvodpy.eu/guides/settings/#sites-site-description
     description: null
+    # https://canvodpy.eu/guides/settings/#sites-site-country
     country: null           # ISO 3166-1 alpha-2 country code, e.g. AT
+    # https://canvodpy.eu/guides/settings/#sites-site-latitude
     latitude: null          # WGS84 latitude (decimal degrees)
+    # https://canvodpy.eu/guides/settings/#sites-site-longitude
     longitude: null         # WGS84 longitude (decimal degrees)
-    altitude_m: null        # Altitude above WGS84 ellipsoid (metres)
+    # https://canvodpy.eu/guides/settings/#sites-site-altitude_m
+    altitude_m: null        # Altitude above WGS84 ellipsoid (meters)
 
     receivers:
       reference_01:
+        # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-type
         type: reference
+        # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-directory
         directory: 01_reference
-        reader_format: auto          # 'auto', 'rinex3', or 'sbf'
+        # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-reader_format
+        reader_format: auto          # auto, rinex3, rinex3_stripped, rinex2, sbf, nmea, or a reader plugin
+        # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-paired_canopies
         paired_canopies: all         # 'all' or list of canopy receiver names
+        # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-description
         description: null
-        # recipe: my_site_reference  # → config/recipes/my_site_reference.yaml
-        #                            #   (requires canvod-virtualiconvname)
+        # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-recipe
+        # recipe: my_site_reference  # → <config dir>/recipes/my_site/my_site_reference.yaml
+        #                            #   (requires canvod-filemap)
+        # Optional, for the store metadata; leave out what you don't want
+        # to disclose:
+        # receiver_hardware:
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-receiver_hardware-manufacturer
+        #   manufacturer: null
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-receiver_hardware-model
+        #   model: null
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-receiver_hardware-serial_number
+        #   serial_number: null
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-receiver_hardware-firmware
+        #   firmware: null
+        # antenna:
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-antenna-manufacturer
+        #   manufacturer: null
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-antenna-model
+        #   model: null                # IGS antenna name
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-antenna-radome
+        #   radome: null               # IGS radome name
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-antenna-serial_number
+        #   serial_number: null
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-antenna-height_m
+        #   height_m: null             # antenna height in meters
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-antenna-choke_ring
+        #   choke_ring: null           # true or false
+        #   # https://canvodpy.eu/guides/settings/#sites-site-receivers-receiver-antenna-polarization
+        #   polarization: null         # RHCP (the standard), LHCP or dual-pol
 
       canopy_01:
         type: canopy
         directory: 02_canopy
         reader_format: auto
         description: null
-        # recipe: my_site_canopy     # → config/recipes/my_site_canopy.yaml
+        # recipe: my_site_canopy     # → <config dir>/recipes/my_site/my_site_canopy.yaml
 
     vod_analyses:
       canopy_01_vs_reference_01:
+        # https://canvodpy.eu/guides/settings/#sites-site-vod_analyses-analysis-canopy_receiver
         canopy_receiver: canopy_01
+        # https://canvodpy.eu/guides/settings/#sites-site-vod_analyses-analysis-reference_receiver
         reference_receiver: reference_01
+        # https://canvodpy.eu/guides/settings/#sites-site-vod_analyses-analysis-description
         description: null
 
   # Add more sites as needed:
@@ -271,19 +415,22 @@ sites:
 # Signal IDs (SIDs)
 # =============================================================================
 # SID Format: PRN|Band|Code
-#   PRN  — G=GPS, E=Galileo, R=GLONASS, C=BeiDou, I=IRNSS, S=SBAS, J=QZSS
-#   Band — L1, L2, E1, E5a, E5b, B1I, B2b, B3I, G1, G2, L5
-#   Code — C=C/A, W=P(Y) codeless, L=L2C, Q=pilot, I=I-channel, A=A-channel
+#   PRN: G=GPS, E=Galileo, R=GLONASS, C=BeiDou, I=IRNSS, S=SBAS, J=QZSS
+#   Band: L1, L2, E1, E5a, E5b, B1I, B2b, B3I, G1, G2, L5
+#   Code: C=C/A, W=P(Y) codeless, L=L2C, Q=pilot, I=I-channel, A=A-channel
 #
 # Example: G01|L1|C = GPS PRN01, L1 band, C/A code
 
 sids:
-  # 'all'    — keep every SID in the RINEX/SBF file (no filtering)
-  # 'preset' — use a named preset (see presets/ directory)
-  # 'custom' — keep only the SIDs listed in custom_sids below
+  # 'all': keep every SID in the RINEX/SBF file (no filtering)
+  # 'preset': use a named preset (see presets/ directory)
+  # 'custom': keep only the SIDs listed in custom_sids below
+  # https://canvodpy.eu/guides/settings/#sids-mode
   mode: preset
+  # https://canvodpy.eu/guides/settings/#sids-preset
   preset: default
 
+  # https://canvodpy.eu/guides/settings/#sids-custom_sids
   # custom_sids:
   #   - G01|L1|C
   #   - G02|L1|C

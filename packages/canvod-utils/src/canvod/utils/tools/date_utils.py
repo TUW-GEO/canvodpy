@@ -83,7 +83,7 @@ class YYYYDOY:
     >>> import datetime
     >>> d = YYYYDOY.from_date(datetime.date(2025, 1, 1))
     >>> d.doy
-    '001'
+    1
 
     >>> # From string
     >>> d = YYYYDOY.from_str("2025001")

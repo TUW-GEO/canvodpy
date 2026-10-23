@@ -10,6 +10,11 @@ from canvod.preflight.patterns import (
     resolve_year_from_yy,
 )
 
+# Tests of the deprecated mapping and validation API, see test_deprecations.py.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*left over from development:FutureWarning"
+)
+
 
 class TestHourLetterToInt:
     def test_a_is_zero(self):
@@ -53,7 +58,7 @@ class TestBuiltinPatterns:
 
     def test_canvod_pattern_matches(self):
         pat = BUILTIN_PATTERNS["canvod"]
-        m = pat.regex.match("ROSR01TUW_R_20250010000_01D_05S_AA.rnx")
+        m = pat.regex.match("FANR01INK_R_20250010000_01D_05S_AA.rnx")
         assert m is not None
         assert m.group("year") == "2025"
         assert m.group("doy") == "001"
@@ -64,21 +69,21 @@ class TestBuiltinPatterns:
 
     def test_canvod_pattern_with_compression(self):
         pat = BUILTIN_PATTERNS["canvod"]
-        m = pat.regex.match("HAIA01GFZ_R_20250010000_01D_01S_AA.rnx.zip")
+        m = pat.regex.match("ORTA01MEA_R_20250010000_01D_01S_AA.rnx.zip")
         assert m is not None
 
     def test_rinex_v3_long_matches(self):
         pat = BUILTIN_PATTERNS["rinex_v3_long"]
-        m = pat.regex.match("ROSA00TUW_R_20250010000_01D_05S_MO.rnx")
+        m = pat.regex.match("FANA00INK_R_20250010000_01D_05S_MO.rnx")
         assert m is not None
-        assert m.group("station") == "ROSA"
+        assert m.group("station") == "FANA"
         assert m.group("year") == "2025"
         assert m.group("doy") == "001"
         assert m.group("sampling") == "05S"
 
     def test_rinex_v3_long_with_compression(self):
         pat = BUILTIN_PATTERNS["rinex_v3_long"]
-        m = pat.regex.match("ROSA00TUW_R_20250010000_01D_05S_MO.rnx.gz")
+        m = pat.regex.match("FANA00INK_R_20250010000_01D_05S_MO.rnx.gz")
         assert m is not None
 
     def test_rinex_v2_short_matches(self):
@@ -108,7 +113,7 @@ class TestBuiltinPatterns:
 
 class TestMatchPattern:
     def test_auto_matches_canvod(self):
-        result = match_pattern("ROSR01TUW_R_20250010000_01D_05S_AA.rnx")
+        result = match_pattern("FANR01INK_R_20250010000_01D_05S_AA.rnx")
         assert result is not None
         pat, m = result
         assert pat.name == "canvod"
@@ -146,7 +151,7 @@ class TestMatchPattern:
     def test_rinex_v3_long_auto_match(self):
         # A RINEX v3 long name that is NOT canvod-compliant
         # (different station code pattern: 4-char station + monument + country)
-        result = match_pattern("ROSA00TUW_R_20250010000_01D_05S_MO.rnx")
+        result = match_pattern("FANA00INK_R_20250010000_01D_05S_MO.rnx")
         assert result is not None
         # Should match either canvod or rinex_v3_long (both have overlapping regex)
         assert result[0].name in ("canvod", "rinex_v3_long")

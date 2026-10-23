@@ -1,0 +1,40 @@
+# lychee: link check for the built docs site (just docs-links).
+# Links between our pages and their anchors are checked against site/.
+include_fragments = "full"
+cache = true
+max_cache_age = "1d"
+# External servers (Zenodo, doi.org) are slow at times: wait and retry longer.
+max_retries = 4
+retry_wait_time = 5
+timeout = 40
+# 502 to 504: the server or its gateway is down, not the link (a dead link
+# answers 404). Zenodo answered 504 for a day in October 2026.
+accept = ["200..=299", "429", "502..=504"]
+# site/ and its HTML are git-ignored; lychee skips ignored files otherwise.
+no_ignore = true
+# Pages are folders with an index.html (users/cli/ -> users/cli/index.html).
+index_files = ["index.html"]
+exclude_path = [
+  # Links from the 404 page carry the deployed path prefix (/canvodpy/).
+  "site/404\\.html$",
+]
+exclude = [
+  # The published site itself (canonical links): checked locally instead.
+  "^https://canvodpy\\.eu/",
+  # Answer automated requests with 403 although the pages exist.
+  "^https://coveralls\\.io/",
+  "^https://github\\.com/signup",
+  "^https://www\\.septentrio\\.com/",
+  "^https://doi\\.org/10\\.3233/",
+  "^https://doi\\.org/10\\.7717/",
+  "^https://claude\\.ai/",
+  "^https://opensource\\.org/",
+  # Needs a login; times out for automated requests.
+  "^https://zenodo\\.org/account/",
+  # Often times out for the CI runner (October 2026), while browsers load it.
+  "^https://www\\.gnu\\.org/",
+  "^https://hal\\.science/",
+  # Certificates the CI runner does not trust, although browsers do.
+  "^https://www\\.softwareheritage\\.org/",
+  "^https://customersupport\\.septentrio\\.com/",
+]

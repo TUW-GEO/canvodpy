@@ -11,11 +11,17 @@ from canvod.preflight import (
     ReceiverNamingConfig,
     SiteNamingConfig,
 )
+from canvod.utils import testing
+
+# Tests of the deprecated mapping and validation API, see test_deprecations.py.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*left over from development:FutureWarning"
+)
 
 
 @pytest.fixture
 def site_naming() -> SiteNamingConfig:
-    return SiteNamingConfig(site_id="ROS", agency="TUW")
+    return SiteNamingConfig(site_id=testing.SITE_ID, agency=testing.AGENCY)
 
 
 @pytest.fixture
@@ -42,8 +48,8 @@ class TestValidationPasses:
     def test_valid_canonical_files(
         self, tmp_path, validator, site_naming, receiver_naming
     ):
-        _create_file(tmp_path, "ROSR01TUW_R_20250010000_01D_05S_AA.rnx")
-        _create_file(tmp_path, "ROSR01TUW_R_20250020000_01D_05S_AA.rnx")
+        _create_file(tmp_path, "FANR01INK_R_20250010000_01D_05S_AA.rnx")
+        _create_file(tmp_path, "FANR01INK_R_20250020000_01D_05S_AA.rnx")
         report = validator.validate_receiver(
             site_naming=site_naming,
             receiver_naming=receiver_naming,
@@ -107,7 +113,7 @@ class TestZeroMatchBug:
         files_discovered=0 explicitly conveys this to the caller.
         """
         # File at root level but layout says subdirs → globs look in nonexistent subdirs
-        _create_file(tmp_path, "ROSR01TUW_R_20250010000_01D_05S_AA.rnx")
+        _create_file(tmp_path, "FANR01INK_R_20250010000_01D_05S_AA.rnx")
 
         receiver_naming = ReceiverNamingConfig(
             receiver_number=1,
@@ -130,8 +136,8 @@ class TestPlainLanguageErrors:
     """P6: error messages use physical filenames, not canonical names."""
 
     def test_overlap_error_uses_physical_names(self, tmp_path, validator, site_naming):
-        _create_file(tmp_path, "ROSR01TUW_R_20250010000_01D_05S_AA.rnx")
-        _create_file(tmp_path, "ROSR01TUW_R_20250010000_15M_05S_AA.rnx")
+        _create_file(tmp_path, "FANR01INK_R_20250010000_01D_05S_AA.rnx")
+        _create_file(tmp_path, "FANR01INK_R_20250010000_15M_05S_AA.rnx")
 
         receiver_naming = ReceiverNamingConfig(
             receiver_number=1,
@@ -149,7 +155,7 @@ class TestPlainLanguageErrors:
 
         msg = str(exc_info.value)
         # Physical filename appears in error
-        assert "ROSR01TUW_R_20250010000_01D_05S_AA.rnx" in msg
+        assert "FANR01INK_R_20250010000_01D_05S_AA.rnx" in msg
         # Error is plain language about overlap
         assert "overlap" in msg.lower()
         # Should NOT expose internal canonical name format (long internal string)
@@ -175,8 +181,8 @@ class TestPlainLanguageErrors:
 
 class TestOverlapDetection:
     def test_daily_plus_subdaily_overlap(self, tmp_path, validator, site_naming):
-        _create_file(tmp_path, "ROSR01TUW_R_20250010000_01D_05S_AA.rnx")
-        _create_file(tmp_path, "ROSR01TUW_R_20250010000_15M_05S_AA.rnx")
+        _create_file(tmp_path, "FANR01INK_R_20250010000_01D_05S_AA.rnx")
+        _create_file(tmp_path, "FANR01INK_R_20250010000_15M_05S_AA.rnx")
 
         receiver_naming = ReceiverNamingConfig(
             receiver_number=1,
@@ -193,9 +199,9 @@ class TestOverlapDetection:
             )
 
     def test_non_overlapping_files_pass(self, tmp_path, validator, site_naming):
-        _create_file(tmp_path, "ROSR01TUW_R_20250010000_15M_05S_AA.rnx")
-        _create_file(tmp_path, "ROSR01TUW_R_20250010015_15M_05S_AA.rnx")
-        _create_file(tmp_path, "ROSR01TUW_R_20250010030_15M_05S_AA.rnx")
+        _create_file(tmp_path, "FANR01INK_R_20250010000_15M_05S_AA.rnx")
+        _create_file(tmp_path, "FANR01INK_R_20250010015_15M_05S_AA.rnx")
+        _create_file(tmp_path, "FANR01INK_R_20250010030_15M_05S_AA.rnx")
 
         receiver_naming = ReceiverNamingConfig(
             receiver_number=1,

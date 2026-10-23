@@ -1,4 +1,4 @@
-# canvod.readers API Reference
+# `canvod.readers` API reference
 
 RINEX observation file parsing with validation and GNSS signal specifications.
 
@@ -10,12 +10,12 @@ RINEX observation file parsing with validation and GNSS signal specifications.
         - GNSSDataReader
         - SignalID
         - DatasetBuilder
+        - sid_coords
         - DatasetStructureValidator
         - validate_dataset
+        - validate_vod_dataset
         - Rnxv3Obs
         - SbfReader
-        - DataDirMatcher
-        - PairDataDirMatcher
         - MatchedDirs
         - PairMatchedDirs
 
@@ -23,25 +23,26 @@ RINEX observation file parsing with validation and GNSS signal specifications.
 
 ::: canvod.readers.rinex.v3_04
 
-## Base Reader
+## Base reader
 
 ::: canvod.readers.base
 
-## Dataset Builder
+## Dataset builder
 
 ::: canvod.readers.builder
 
-## GNSS Specifications
+## GNSS specifications
 
 ::: canvod.readers.gnss_specs
     options:
       members:
         - signals
+        - obs_codes
         - bands
         - constellations
         - metadata
         - models
 
-## Directory Matching
+## Directory matching
 
 ::: canvod.readers.matching

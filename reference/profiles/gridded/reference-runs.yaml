@@ -1,0 +1,24 @@
+# Setting profile "gridded" of the reference stores (spec #318, #324): as
+# "default" (final SP3/CLK, all sites, same days and SIDs), plus the optional
+# preprocessing: observations aggregated to 1-minute means and assigned to
+# the cells of a 2-degree equal-area grid. The runs use the settings folder
+# of the base; `settings` is merged into each site's settings file.
+base: default
+settings:
+  processing:
+    preprocessing:
+      temporal_aggregation:
+        freq: 1min
+        method: mean
+        integer_method: first
+      grid_assignment:
+        grid_type: equal_area
+        angular_resolution: 2.0
+sites:
+  # The base's days and SIDs.
+  rosalia_rinex_v3_04: {}
+  moflux_rinex_v2_11: {}
+  examplesite_rinex_v3_05_stripped: {}
+  rosalia_sbf: {}
+  rosalia_nmea: {}
+  hainich_nmea: {}

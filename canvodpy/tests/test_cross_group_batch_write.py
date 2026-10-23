@@ -12,8 +12,9 @@ intra-group use -- these tests target the new orchestration logic on top of
 it: pre-pass reconciliation for new groups, action/metadata bookkeeping, and
 fail-fast merge/commit semantics.
 
-"overwrite" strategy is untouched by this refactor (`_append_to_icechunk`
-still handles it, unmodified) -- no dedicated test needed here.
+The "overwrite" strategy still goes through `_append_to_icechunk`; its
+tests at the end check that the promote to main never drops a commit made
+to main meanwhile.
 
 Note on commit count: a batch that creates brand-new groups costs *two*
 commits (a sequential pre-pass commit, then the fork/merge batch commit),
@@ -28,14 +29,16 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
+import structlog
 import xarray as xr
-from canvodpy.logging import get_logger
 from canvodpy.orchestrator.processor import RinexDataProcessor
 
 from canvod.store import MyIcechunkStore
+from canvod.store_metadata.testing import create_test_store, give_test_metadata
 
 _SIDS = [f"G{i:02d}|L1|C" for i in range(1, 6)]
 
@@ -43,7 +46,7 @@ _SIDS = [f"G{i:02d}|L1|C" for i in range(1, 6)]
 def _make_ds(
     file_id: str, slot: int, n_epochs: int = 10, day: str = "2025-03-28"
 ) -> xr.Dataset:
-    """Small synthetic (epoch, sid) dataset with the required "File Hash" attr.
+    """Small synthetic (epoch, sid) dataset with the attrs a worker sets.
 
     ``slot`` offsets the epoch range so distinct files in a batch don't
     temporally overlap -- the dedup guardrail's temporal-overlap check
@@ -59,9 +62,10 @@ def _make_ds(
     s1c = rng.uniform(30.0, 55.0, (n_epochs, len(_SIDS))).astype(np.float32)
     return xr.Dataset(
         {"S1C": xr.DataArray(s1c, dims=["epoch", "sid"])},
-        coords={"epoch": epochs, "sid": _SIDS},
+        coords={"epoch": ("epoch", epochs, {"time_system": "GPS"}), "sid": _SIDS},
         attrs={
             "File Hash": hashlib.sha256(file_id.encode()).hexdigest()[:16],
+            "Source Format": "rinex3",
             "canonical_name": file_id,
             "physical_path": file_id,
         },
@@ -71,11 +75,15 @@ def _make_ds(
 class _FakeSite:
     def __init__(self, store: MyIcechunkStore) -> None:
         self.gnss_store = store
+        self.gnss_store_path = store.store_path
         self.site_name = "testsite"
 
 
 class _FakeYyyyDoy:
     def __str__(self) -> str:
+        return "2025087"
+
+    def to_str(self) -> str:
         return "2025087"
 
 
@@ -89,19 +97,33 @@ class _TestProcessor(RinexDataProcessor):
     def __init__(self, store: MyIcechunkStore, strategy: str = "skip") -> None:
         self.site = _FakeSite(store)
         self.matched_data_dirs = _FakeMatchedDataDirs()
-        self._logger = get_logger(__name__)
-        self._icechunk_log = get_logger(__name__)
+        self._logger = structlog.get_logger(__name__)
+        self._icechunk_log = structlog.get_logger(__name__)
         self._gnss_store_strategy = strategy
         self._keeper_tags_enabled = False
-        self._config = None  # STEP 8 (rich metadata) no-ops via `except Exception`
+        self._config = SimpleNamespace(sites=SimpleNamespace(sites={}))
         self._reader_name = "rinex3"
+
+    def _writes_day_blocks(self) -> bool:
+        """These tests are about stores written by appending; a new store
+        would get day blocks (``test_day_block_write.py``).
+        """
+        return False
+
+    def _ensure_gnss_store_metadata(self, receivers, reader_format) -> None:
+        """The ``store`` fixture has its metadata: these tests are about the
+        batch writes (metadata first is tested in canvod-store-metadata and
+        end to end).
+        """
 
 
 @pytest.fixture
 def store(tmp_path: Path) -> MyIcechunkStore:
     store_path = tmp_path / "throwaway_store"
     store_path.mkdir()
-    return MyIcechunkStore(store_path)
+    store = MyIcechunkStore(create_test_store(store_path))
+    give_test_metadata(store_path)
+    return store
 
 
 def _group_input(name: str, files: list[tuple[Path, xr.Dataset]]):
@@ -309,3 +331,162 @@ def test_case_c_fail_fast_no_partial_merge(
     assert ref_ds.sizes["epoch"] == 10  # still just the seed -- ref_2 never landed
     can_ds = store.read_group("canopy_01").compute()
     assert can_ds.sizes["epoch"] == 10  # still just the seed -- can_2 never landed
+
+
+class _SbfConfig:
+    """The processing.params.store_sbf_metadata switch, and no site."""
+
+    def __init__(self, store_sbf_metadata: bool) -> None:
+        params = type("P", (), {"store_sbf_metadata": store_sbf_metadata})()
+        dumped = {"params": {"store_sbf_metadata": store_sbf_metadata}}
+        # Commits record the settings as commit metadata, through model_dump.
+        self.processing = type(
+            "C", (), {"params": params, "model_dump": lambda self, mode: dumped}
+        )()
+        self.sites = SimpleNamespace(sites={})
+
+
+def _sbf_obs_for(ds: xr.Dataset) -> xr.Dataset:
+    return xr.Dataset(
+        {"pdop": xr.DataArray(np.ones(ds.sizes["epoch"], np.float32), dims=["epoch"])},
+        coords={"epoch": ("epoch", ds["epoch"].values, {"time_system": "GPS"})},
+    )
+
+
+def test_sbf_obs_lands_with_observations_and_is_not_duplicated(
+    store: MyIcechunkStore,
+) -> None:
+    """sbf_obs is written in the observations' commits, for written files only.
+
+    Day 1 creates the group (pre-pass + fork), day 2 appends; a rerun of
+    day 2 skips its files, so sbf_obs must not grow. Before, sbf_obs was
+    written in a separate commit after the data, and each call replaced
+    the whole dataset with the current day.
+    """
+    proc = _TestProcessor(store)
+    proc._config = _SbfConfig(store_sbf_metadata=True)
+
+    def batch(day: str, ids: list[str]):
+        files = [
+            (Path(f"{i}.sbf"), _make_ds(i, slot=n, day=day)) for n, i in enumerate(ids)
+        ]
+        aux = {fname: {"sbf_obs": _sbf_obs_for(ds)} for fname, ds in files}
+        return [("canopy_01", files, [f for f, _ in files], aux, None, "sbf")]
+
+    proc._write_receiver_batch_forked(batch("2025-03-28", ["d1a", "d1b"]))
+    proc._write_receiver_batch_forked(batch("2025-03-29", ["d2a", "d2b"]))
+    n_snapshots = len(list(store.repo.ancestry(branch="main")))
+    proc._write_receiver_batch_forked(batch("2025-03-29", ["d2a", "d2b"]))
+
+    obs = store.read_group("canopy_01")
+    meta = store.read_metadata_dataset("canopy_01", "sbf_obs").compute()
+    np.testing.assert_array_equal(
+        np.sort(meta["epoch"].values), np.sort(obs["epoch"].values)
+    )
+    assert meta.sizes["epoch"] == 4 * 10
+    # The skipped rerun commits only its log-book rows, no sbf_obs commit
+    assert len(list(store.repo.ancestry(branch="main"))) == n_snapshots + 1
+
+
+def test_store_sbf_metadata_false_skips_sbf_obs(store: MyIcechunkStore) -> None:
+    proc = _TestProcessor(store)
+    proc._config = _SbfConfig(store_sbf_metadata=False)
+    ds = _make_ds("only", slot=0)
+    aux = {Path("only.sbf"): {"sbf_obs": _sbf_obs_for(ds)}}
+    proc._write_receiver_batch_forked(
+        [("canopy_01", [(Path("only.sbf"), ds)], [Path("only.sbf")], aux, None, "sbf")]
+    )
+    assert not store.metadata_dataset_exists("canopy_01", "sbf_obs")
+
+
+def test_overwrite_promotes_temp_branch_to_main(store: MyIcechunkStore) -> None:
+    proc = _TestProcessor(store, strategy="overwrite")
+    files = [(Path("ref_1.rnx"), _make_ds("ref_1", slot=0))]
+
+    proc._append_to_icechunk(files, "reference_01", [f for f, _ in files])
+
+    assert "reference_01" in (store.list_groups() or [])
+    assert store.repo.list_branches() == {"main"}
+
+
+def test_overwrite_keeps_commit_made_to_main_meanwhile(
+    store: MyIcechunkStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Another writer commits to main during an overwrite: it is not lost."""
+    from canvod.store.store import BranchMovedError
+
+    proc = _TestProcessor(store, strategy="overwrite")
+    files = [(Path("ref_1.rnx"), _make_ds("ref_1", slot=0))]
+    promote = store.promote_branch
+
+    def promote_after_other_writer(*args, **kwargs):
+        store.set_root_attrs({"other_writer": "yes"}, branch="main")
+        return promote(*args, **kwargs)
+
+    monkeypatch.setattr(store, "promote_branch", promote_after_other_writer)
+
+    with pytest.raises(BranchMovedError):
+        proc._append_to_icechunk(files, "reference_01", [f for f, _ in files])
+
+    assert store.get_root_attrs()["other_writer"] == "yes"
+    assert "overwrite_reference_01_2025087" in store.repo.list_branches()
+
+
+def _overwrite_after_two_files(
+    store: MyIcechunkStore, store_sbf_metadata: bool
+) -> tuple[xr.Dataset, xr.Dataset]:
+    """Write files a and b with sbf_obs, then overwrite b (same file again).
+
+    Returns the stored sbf_obs of a and b before the overwrite.
+    """
+    files = [(Path(f"{i}.sbf"), _make_ds(i, slot=n)) for n, i in enumerate("ab")]
+    aux = {fname: {"sbf_obs": _sbf_obs_for(ds)} for fname, ds in files}
+    proc = _TestProcessor(store)
+    proc._config = _SbfConfig(store_sbf_metadata=True)
+    proc._append_to_icechunk(files, "canopy_01", [f for f, _ in files], aux)
+
+    proc = _TestProcessor(store, strategy="overwrite")
+    proc._config = _SbfConfig(store_sbf_metadata=store_sbf_metadata)
+    fname, ds = files[1]
+    new_obs = _sbf_obs_for(ds)
+    new_obs["pdop"] = new_obs["pdop"] * 0 + 9.0
+    proc._append_to_icechunk(
+        [(fname, ds)], "canopy_01", [fname], {fname: {"sbf_obs": new_obs}}
+    )
+    return aux[files[0][0]]["sbf_obs"], new_obs
+
+
+def test_overwrite_replaces_sbf_obs_of_rewritten_file(store: MyIcechunkStore) -> None:
+    kept, replaced = _overwrite_after_two_files(store, store_sbf_metadata=True)
+
+    meta = store.read_metadata_dataset("canopy_01", "sbf_obs").compute()
+    expected = xr.concat([kept, replaced], dim="epoch")
+    np.testing.assert_array_equal(meta["epoch"].values, expected["epoch"].values)
+    np.testing.assert_array_equal(meta["pdop"].values, expected["pdop"].values)
+
+
+def test_overwrite_without_sbf_obs_keeps_other_files_sbf_obs(
+    store: MyIcechunkStore,
+) -> None:
+    """A batch without sbf_obs drops only the rewritten file's epochs."""
+    kept, _ = _overwrite_after_two_files(store, store_sbf_metadata=False)
+
+    meta = store.read_metadata_dataset("canopy_01", "sbf_obs").compute()
+    np.testing.assert_array_equal(meta["epoch"].values, kept["epoch"].values)
+
+
+def test_overwrite_keeps_other_metadata_datasets(store: MyIcechunkStore) -> None:
+    files = [(Path(f"{i}.rnx"), _make_ds(i, slot=n)) for n, i in enumerate("ab")]
+    proc = _TestProcessor(store)
+    proc._append_to_icechunk(files, "canopy_01", [f for f, _ in files])
+    other = xr.Dataset({"x": ("station", np.arange(3.0))})
+    with store.writable_session("main") as session:
+        store.write_metadata_parts([other], "canopy_01", "other", session)
+        session.commit("other metadata")
+
+    proc = _TestProcessor(store, strategy="overwrite")
+    proc._append_to_icechunk(files[1:], "canopy_01", [files[1][0]])
+
+    xr.testing.assert_equal(
+        store.read_metadata_dataset("canopy_01", "other").compute(), other
+    )

@@ -5,14 +5,44 @@ from __future__ import annotations
 import os
 import threading
 import time
+import types
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 
 import psutil
+import structlog
 
-from canvodpy.logging import get_logger
-from canvodpy.logging.run_context import get_run_id, set_run_id
+from canvod.utils.logging import get_run_id, set_run_id
+from canvod.utils.tools import deprecated_argument, directory_size_bytes
 
-logger = get_logger(__name__)
+logger = structlog.get_logger(__name__)
+
+_NO_EFFECT_ARGUMENTS = {
+    "cpu_affinity": (
+        "It has no effect: the worker processes take their CPU cores from "
+        "processing.params.cpu_affinity in canvod-settings.yaml. Set it there."
+    ),
+    "nice_priority": (
+        "It has no effect: the worker processes take their priority from "
+        "processing.params.nice_priority in canvod-settings.yaml. Set it there."
+    ),
+}
+
+
+def deprecate_no_effect_arguments[F: Callable[..., object]](func: F) -> F:
+    """Deprecate the resource arguments that have no effect on *func*."""
+    if not isinstance(func, types.FunctionType):
+        msg = f"deprecate_no_effect_arguments decorates functions, not {func!r}"
+        raise TypeError(msg)
+    caller = func.__qualname__.removesuffix(".__init__")
+    for name, reason in _NO_EFFECT_ARGUMENTS.items():
+        func = deprecated_argument(
+            name,
+            f"The {name!r} argument of {caller}() is left over "
+            "from development and will be removed with the next major "
+            f"version. {reason} Remove the argument.",
+        )(func)
+    return func
 
 
 class MemoryMonitor:
@@ -58,6 +88,44 @@ class MemoryMonitor:
         )
 
 
+def run_measured[R](input_bytes: int, func: Callable[..., R], *args: object) -> R:
+    """Run ``func(*args)`` in a worker and log the worker's memory peak.
+
+    The peak is sampled every 20 ms while the task runs. The log event
+    ``worker_memory_peak`` gives the worker's memory before the task, its
+    peak during the task, and the size of the task's input files, so the
+    memory budget (``processing.params.max_memory_gb``) can be tuned.
+    """
+    process = psutil.Process()
+    before = process.memory_info().rss
+    peak = before
+    done = threading.Event()
+
+    def sample() -> None:
+        nonlocal peak
+        while not done.wait(0.02):
+            peak = max(peak, process.memory_info().rss)
+
+    sampler = threading.Thread(target=sample, name="worker-memory", daemon=True)
+    sampler.start()
+    t0 = time.perf_counter()
+    try:
+        return func(*args)
+    finally:
+        done.set()
+        sampler.join()
+        peak = max(peak, process.memory_info().rss)
+        logger.info(
+            "worker_memory_peak",
+            pid=os.getpid(),
+            task=getattr(func, "__name__", repr(func)),
+            input_mb=round(input_bytes / 1024**2, 2),
+            before_gb=round(before / 1024**3, 3),
+            peak_gb=round(peak / 1024**3, 3),
+            seconds=round(time.perf_counter() - t0, 2),
+        )
+
+
 class ResourceSampler:
     """Periodic background sampler for memory/CPU/disk I/O.
 
@@ -66,32 +134,84 @@ class ResourceSampler:
     ``interval_seconds`` for the whole run (including time spent outside
     batch boundaries, e.g. aux data fetch/interpolation), so a wall-clock
     slowdown seen in stage_timing events can be correlated against actual
-    resource pressure instead of assumed (dev/todo_later.md
-    perf-degradation investigation, 2026-07-14).
+    resource pressure instead of assumed. :meth:`stop` takes one last
+    sample, so a run shorter than the interval has one too.
 
     Parameters
     ----------
     interval_seconds : float
         Seconds between samples.
+    disks : iterable of Path or str
+        Folders whose free disk space each sample records.
+    stores : mapping of name to Path, optional
+        Local store folders whose on-disk size each sample measures. A
+        store that is not on the local disk is left out. The measure is a
+        walk of the folder, so it grows with the store; it runs on this
+        background thread, never inside a stage or a commit.
+    on_sample : callable, optional
+        Called with ``cpu_percent``, ``memory_percent`` and ``free_disk``
+        (bytes per folder of *disks*) for every sample; the run history
+        records them this way (``canvodpy.run_history.recorded_run``).
+    on_store_size : callable, optional
+        Called with ``(store, day, bytes, walk_seconds)`` for every store
+        when the store size is measured, so the last size of each data day
+        is kept. ``day`` is the data day the run had finished.
+    get_last_finished_day : callable, optional
+        Called on this thread to get the data day (YYYYDOY) the run has
+        finished furthest, or ``None`` before any day finished. The size is
+        measured when this day changed since the last walk, so at most one
+        walk per sample interval and none while nothing new is stored.
     """
 
-    def __init__(self, interval_seconds: float = 30.0) -> None:
+    def __init__(
+        self,
+        interval_seconds: float = 30.0,
+        *,
+        disks: Iterable[Path | str] = (),
+        stores: Mapping[str, Path] | None = None,
+        on_sample: Callable[..., None] | None = None,
+        on_store_size: Callable[..., None] | None = None,
+        get_last_finished_day: Callable[[], str | None] | None = None,
+    ) -> None:
         self.interval_seconds = interval_seconds
+        self.disks = [str(Path(folder).expanduser()) for folder in disks]
+        self.stores = {
+            name: Path(path).expanduser() for name, path in (stores or {}).items()
+        }
+        self.on_sample = on_sample
+        self.on_store_size = on_store_size
+        self.get_last_finished_day = get_last_finished_day
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._run_id = get_run_id()
+        self._sample_index = 0
+        self._prev_io = None
+        self._last_walked_day: str | None = None
 
     def start(self) -> None:
         """Start sampling in a daemon thread. Safe to call once per run."""
         self._run_id = get_run_id()
         self._stop.clear()
+        self._last_walked_day = None
+        # The first cpu_percent call only starts the measurement.
+        psutil.cpu_percent(interval=None)
+        try:
+            self._prev_io = psutil.disk_io_counters()
+        except Exception:
+            self._prev_io = None
         self._thread = threading.Thread(
             target=self._run_loop, name="resource-sampler", daemon=True
         )
         self._thread.start()
 
     def stop(self, timeout: float = 5.0) -> None:
-        """Signal the sampler thread to stop and wait for it to exit."""
+        """Stop the sampler, leaving the last sample to its thread.
+
+        The signal is set and the thread is joined; the thread takes the
+        last sample and any final store walk itself, so ``stop()`` never
+        walks a store on the caller's thread (that walk would add to the
+        run's wall time and could double-walk a store mid-walk).
+        """
         self._stop.set()
         if self._thread is not None:
             self._thread.join(timeout=timeout)
@@ -103,55 +223,100 @@ class ResourceSampler:
         # for loky workers (pipeline.py).
         if self._run_id:
             set_run_id(self._run_id)
-
-        proc = psutil.Process()
-        try:
-            prev_io = psutil.disk_io_counters()
-        except Exception:
-            prev_io = None
-        sample_index = 0
-
         while not self._stop.wait(self.interval_seconds):
-            sample_index += 1
-            t0 = time.perf_counter()
+            self._sample()
+        # The stop signal was set: the last sample (and any final store
+        # walk) runs on this thread, so stop() never waits on a walk.
+        self._sample(final=True)
+
+    def _sample(self, *, final: bool = False) -> None:
+        self._sample_index += 1
+        t0 = time.perf_counter()
+        try:
+            proc = psutil.Process()
+            mem = psutil.virtual_memory()
+            main_rss_gb = proc.memory_info().rss / (1024**3)
+
+            children_rss_gb = 0.0
             try:
-                mem = psutil.virtual_memory()
-                main_rss_gb = proc.memory_info().rss / (1024**3)
-
-                children_rss_gb = 0.0
-                try:
-                    for child in proc.children(recursive=True):
-                        try:
-                            children_rss_gb += child.memory_info().rss / (1024**3)
-                        except psutil.NoSuchProcess, psutil.AccessDenied:
-                            continue
-                except Exception:
-                    pass
-
-                read_mb = write_mb = None
-                try:
-                    io = psutil.disk_io_counters()
-                    if io is not None and prev_io is not None:
-                        read_mb = (io.read_bytes - prev_io.read_bytes) / (1024**2)
-                        write_mb = (io.write_bytes - prev_io.write_bytes) / (1024**2)
-                    prev_io = io
-                except Exception:
-                    pass
-
-                logger.info(
-                    "resource_sample",
-                    duration_seconds=round(time.perf_counter() - t0, 4),
-                    sample_index=sample_index,
-                    available_gb=round(mem.available / (1024**3), 2),
-                    used_percent=round(mem.percent, 1),
-                    main_rss_gb=round(main_rss_gb, 3),
-                    children_rss_gb=round(children_rss_gb, 3),
-                    cpu_percent=psutil.cpu_percent(interval=None),
-                    disk_read_mb=round(read_mb, 2) if read_mb is not None else None,
-                    disk_write_mb=round(write_mb, 2) if write_mb is not None else None,
-                )
+                for child in proc.children(recursive=True):
+                    try:
+                        children_rss_gb += child.memory_info().rss / (1024**3)
+                    except psutil.NoSuchProcess, psutil.AccessDenied:
+                        continue
             except Exception:
-                logger.debug("resource_sample_failed", exc_info=True)
+                pass
+
+            read_mb = write_mb = None
+            try:
+                io = psutil.disk_io_counters()
+                if io is not None and self._prev_io is not None:
+                    read_mb = (io.read_bytes - self._prev_io.read_bytes) / (1024**2)
+                    write_mb = (io.write_bytes - self._prev_io.write_bytes) / (1024**2)
+                self._prev_io = io
+            except Exception:
+                pass
+
+            cpu_percent = psutil.cpu_percent(interval=None)
+            free_disk = _free_disk(self.disks)
+            logger.info(
+                "resource_sample",
+                duration_seconds=round(time.perf_counter() - t0, 4),
+                sample_index=self._sample_index,
+                available_gb=round(mem.available / (1024**3), 2),
+                used_percent=round(mem.percent, 1),
+                main_rss_gb=round(main_rss_gb, 3),
+                children_rss_gb=round(children_rss_gb, 3),
+                cpu_percent=cpu_percent,
+                disk_read_mb=round(read_mb, 2) if read_mb is not None else None,
+                disk_write_mb=round(write_mb, 2) if write_mb is not None else None,
+                free_disk=free_disk,
+            )
+            if self.on_sample is not None:
+                self.on_sample(
+                    cpu_percent=cpu_percent,
+                    memory_percent=mem.percent,
+                    free_disk=free_disk,
+                )
+            if self.stores and self.on_store_size is not None:
+                self._sample_store_sizes()
+        except Exception:
+            logger.debug("resource_sample_failed", exc_info=True)
+
+    def _sample_store_sizes(self) -> None:
+        """Measure each store, once per data day.
+
+        The measure is keyed by the data day (YYYYDOY) the run has finished
+        furthest: only when it changed since the last walk is any store
+        walked, so at most one walk per sample interval and none while
+        nothing new is stored. The final sample runs here too, so the last
+        day is measured on the sampler thread; no store is walked on the
+        caller's thread.
+        """
+        day = self.get_last_finished_day() if self.get_last_finished_day else None
+        if day is None or self.on_store_size is None:
+            return
+        if day == self._last_walked_day:
+            # A day already measured since the last walk (or on the final
+            # sample, one measured before): nothing new to walk.
+            return
+        for name, path in self.stores.items():
+            started = time.perf_counter()
+            size = directory_size_bytes(path)
+            walk_seconds = round(time.perf_counter() - started, 4)
+            self.on_store_size(name, day, size, walk_seconds)
+        self._last_walked_day = day
+
+
+def _free_disk(folders: Iterable[str]) -> dict[str, int]:
+    """Free bytes of the disk of each folder (or its nearest existing parent)."""
+    free = {}
+    for folder in folders:
+        path = Path(folder)
+        existing = next((p for p in (path, *path.parents) if p.exists()), None)
+        if existing is not None:
+            free[folder] = psutil.disk_usage(str(existing)).free
+    return free
 
 
 # Anchored to the user's home directory, not Path.cwd() -- `canvodpy run`
@@ -164,7 +329,7 @@ class ResourceSampler:
 DEFAULT_RUN_PID_FILE = Path.home() / ".cache" / "canvodpy" / "run.pid"
 
 
-def is_pipeline_running(pid_file: Path = DEFAULT_RUN_PID_FILE) -> bool:
+def is_pipeline_running(pid_file: Path | None = None) -> bool:
     """Check whether a `canvodpy run` process is currently active.
 
     Used by ``canvodpy store maintain-due`` (a cron-safe, non-interactive
@@ -183,14 +348,17 @@ def is_pipeline_running(pid_file: Path = DEFAULT_RUN_PID_FILE) -> bool:
 
     Parameters
     ----------
-    pid_file : Path
-        Location written by :class:`PipelineRunLock`.
+    pid_file : Path, optional
+        Location written by :class:`PipelineRunLock`; ``DEFAULT_RUN_PID_FILE``
+        if not given.
 
     Returns
     -------
     bool
         True if the recorded PID belongs to a live process.
     """
+    # Read the default when called, not when defined, so tests can move it.
+    pid_file = pid_file or DEFAULT_RUN_PID_FILE
     if not pid_file.exists():
         return False
     try:
@@ -211,8 +379,8 @@ class PipelineRunLock:
     itself while a pipeline write is in progress.
     """
 
-    def __init__(self, pid_file: Path = DEFAULT_RUN_PID_FILE) -> None:
-        self.pid_file = pid_file
+    def __init__(self, pid_file: Path | None = None) -> None:
+        self.pid_file = pid_file or DEFAULT_RUN_PID_FILE
 
     def __enter__(self) -> PipelineRunLock:
         self.pid_file.parent.mkdir(parents=True, exist_ok=True)

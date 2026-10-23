@@ -1,5 +1,5 @@
-# Default SID configuration: curated multi-GNSS preset (277 SIDs)
-# Override in config/sids.yaml. Use mode: all to keep every observed SID.
+# Default SID configuration: curated multi-GNSS preset (271 SIDs)
+# Override in the sids: section of config/canvod-settings.yaml. Use mode: all to keep every observed SID.
 
 mode: preset
 preset: default

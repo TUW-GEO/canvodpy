@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+import re
+from unittest import mock
+
 import canvodpy.cli.config as cfg
+import pytest
 import typer
 import yaml
 from typer.testing import CliRunner
+
+from canvod.utils import testing
 
 runner = CliRunner()
 
@@ -27,11 +33,12 @@ class TestInteractiveWizard:
     def test_writes_all_answers_and_validates_cleanly(self, tmp_path):
         config_dir = tmp_path / "config"
         answers = (
-            "Nicolas Bader\n"
-            "nico@example.com\n"
-            "TU Wien\n"
+            f"{testing.PERSON_NAME}\n"
+            f"{testing.PERSON_EMAIL}\n"
+            "University of Oxford\n"
             f"{tmp_path / 'stores'}\n"
-            "Rosalia\n"
+            f"{tmp_path / 'logs'}\n"
+            "Fangorn\n"
             f"{tmp_path / 'data'}\n"
             "custom_canopy\n"
             "custom_reference\n"
@@ -42,11 +49,12 @@ class TestInteractiveWizard:
         assert "Configuration is valid" in result.output
 
         text = (config_dir / "canvod-settings.yaml").read_text()
-        assert "author: Nicolas Bader" in text
-        assert "email: nico@example.com" in text
-        assert "institution: TU Wien" in text
+        assert f"author: {testing.PERSON_NAME}" in text
+        assert f"email: {testing.PERSON_EMAIL}" in text
+        assert "institution: University of Oxford" in text
         assert f"stores_root_dir: {tmp_path / 'stores'}" in text
-        assert "  Rosalia:" in text
+        assert f"log_dir: {tmp_path / 'logs'}" in text
+        assert "  Fangorn:" in text
         assert f"gnss_site_data_root: {tmp_path / 'data'}" in text
         assert "directory: custom_canopy" in text
         assert "directory: custom_reference" in text
@@ -54,7 +62,7 @@ class TestInteractiveWizard:
     def test_preserves_template_comments(self, tmp_path):
         """A full YAML parse/re-dump would strip these — must survive."""
         config_dir = tmp_path / "config"
-        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\nSite\n{tmp_path / 'd'}\n\n\n"
+        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\n{tmp_path / 'l'}\nSite\n{tmp_path / 'd'}\n\n\n"
         _run_wizard(config_dir, answers)
 
         text = (config_dir / "canvod-settings.yaml").read_text()
@@ -67,7 +75,7 @@ class TestInteractiveWizard:
     def test_does_not_touch_commented_example_block(self, tmp_path):
         """The commented-out 'my_second_site' illustration must stay verbatim."""
         config_dir = tmp_path / "config"
-        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\nSite\n{tmp_path / 'd'}\n\n\n"
+        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\n{tmp_path / 'l'}\nSite\n{tmp_path / 'd'}\n\n\n"
         _run_wizard(config_dir, answers)
 
         text = (config_dir / "canvod-settings.yaml").read_text()
@@ -76,7 +84,7 @@ class TestInteractiveWizard:
 
     def test_default_receiver_directories_when_answer_blank(self, tmp_path):
         config_dir = tmp_path / "config"
-        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\nSite\n{tmp_path / 'd'}\n\n\n"
+        answers = f"A\nb@example.com\nC\n{tmp_path / 's'}\n{tmp_path / 'l'}\nSite\n{tmp_path / 'd'}\n\n\n"
         _run_wizard(config_dir, answers)
 
         text = (config_dir / "canvod-settings.yaml").read_text()
@@ -104,6 +112,7 @@ class TestInteractiveWizard:
             "b@example.com\n"
             "C\n"
             f"{tmp_path / 's'}\n"
+            f"{tmp_path / 'l'}\n"
             "Site\n"
             f"{tmp_path / 'd'}\n"
             "\n\n"
@@ -115,6 +124,34 @@ class TestInteractiveWizard:
         assert "metadata.author" in result.output
         assert "Traceback" not in result.output
 
+    def test_a_question_mark_explains_the_setting_and_asks_again(self, tmp_path):
+        config_dir = tmp_path / "config"
+        answers = (
+            "?\n"
+            f"{testing.PERSON_NAME}\n"
+            f"{testing.PERSON_EMAIL}\n"
+            "C\n"
+            "?\n"
+            f"{tmp_path / 's'}\n"
+            f"{tmp_path / 'l'}\n"
+            "Site\n"
+            f"{tmp_path / 'd'}\n"
+            "?\n"
+            "\n\n"
+        )
+        result = _run_wizard(config_dir, answers)
+
+        assert result.exit_code == 0, result.output
+        assert "processing.metadata.author" in result.output
+        assert "processing.storage.stores_root_dir" in result.output
+        assert "sites.<site>.receivers.<receiver>.directory" in result.output
+        text = (config_dir / "canvod-settings.yaml").read_text()
+        assert f"author: {testing.PERSON_NAME}" in text
+        assert f"stores_root_dir: {tmp_path / 's'}" in text
+        assert "directory: 02_canopy" in text
+        # "?" is never written as an answer.
+        assert not re.search(r"^ *(author|stores_root_dir|directory): '?\?", text, re.M)
+
 
 class TestValidateRecipeWithoutFilemap:
     """canvod-filemap is an optional extra, not installed in this test env —
@@ -125,7 +162,7 @@ class TestValidateRecipeWithoutFilemap:
         config_dir.mkdir(parents=True)
         receiver = {"type": "canopy", "directory": "02_canopy"}
         if with_recipe:
-            receiver["recipe"] = "rosalia_canopy"
+            receiver["recipe"] = "fangorn_canopy"
         (config_dir / "canvod-settings.yaml").write_text(
             yaml.safe_dump(
                 {
@@ -151,13 +188,15 @@ class TestValidateRecipeWithoutFilemap:
         config_dir = tmp_path / "config"
         self._write_config(config_dir, tmp_path, with_recipe=True)
 
-        result = runner.invoke(
-            _app(), ["config", "validate", "--config-dir", str(config_dir)]
-        )
+        # Simulate an install without canvod-filemap, whatever this env has
+        with mock.patch.dict("sys.modules", {"canvod.filemap": None}):
+            result = runner.invoke(
+                _app(), ["config", "validate", "--config-dir", str(config_dir)]
+            )
 
         assert result.exit_code == 1
         assert "canopy_01" in result.output
-        assert "uv sync --extra filemap" in result.output
+        assert "uv sync --group filemap" in result.output
 
     def test_no_recipe_does_not_trip_the_filemap_check(self, tmp_path):
         config_dir = tmp_path / "config"
@@ -167,4 +206,293 @@ class TestValidateRecipeWithoutFilemap:
             _app(), ["config", "validate", "--config-dir", str(config_dir)]
         )
 
-        assert "uv sync --extra filemap" not in result.output
+        assert "uv sync --group filemap" not in result.output
+
+
+class TestValidateOverlay:
+    """``config validate`` takes the overlay file after the command too, as
+    ``canvodpy run --config`` does, and still before it."""
+
+    @staticmethod
+    def _write(tmp_path):
+        config_dir = tmp_path / "config"
+        TestValidateRecipeWithoutFilemap()._write_config(
+            config_dir, tmp_path, with_recipe=False
+        )
+        overlay = tmp_path / "overlay.yaml"
+        overlay.write_text(
+            yaml.safe_dump({"processing": {"storage": {"gnss_store_name": "Gnss"}}})
+        )
+        return config_dir, overlay
+
+    @pytest.mark.parametrize("before", [False, True])
+    def test_the_overlay_is_validated(self, tmp_path, before):
+        config_dir, overlay = self._write(tmp_path)
+        overlay_args = ["--config", str(overlay)]
+        args = (
+            ["config", *overlay_args, "validate"]
+            if before
+            else ["config", "validate", *overlay_args]
+        )
+
+        result = runner.invoke(_app(), [*args, "--config-dir", str(config_dir)])
+
+        assert result.exit_code == 1
+        assert "'Gnss' is not allowed" in " ".join(result.output.split())
+
+    def test_without_the_overlay_its_value_is_not_read(self, tmp_path):
+        config_dir, _ = self._write(tmp_path)
+
+        result = runner.invoke(
+            _app(), ["config", "validate", "--config-dir", str(config_dir)]
+        )
+
+        assert "'Gnss'" not in result.output
+
+    def test_a_missing_overlay_file_is_named(self, tmp_path):
+        config_dir, _ = self._write(tmp_path)
+
+        result = runner.invoke(
+            _app(),
+            [
+                "config",
+                "validate",
+                "--config",
+                str(tmp_path / "missing.yaml"),
+                "--config-dir",
+                str(config_dir),
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert "overlay config file not found" in result.output
+
+
+class TestConfigInitFromStore:
+    """``canvodpy config init --from-store`` writes a store's settings."""
+
+    @staticmethod
+    def _make_store(tmp_path):
+        """A GNSS store with content settings at ``<tmp>/root/<site>/gnss``."""
+        from canvod.config import load_config
+        from canvod.config.models import ReceiverConfig
+        from canvod.store_metadata import ensure_store_metadata
+        from canvod.utils import testing
+
+        folder = tmp_path / "settings"
+        testing.write_settings(folder)
+        config = load_config(config_dir=folder).model_copy(deep=True)
+        site = config.sites.sites[testing.SITE_KEY]
+        site.store_description = "GNSS-T observations below an Ent canopy"
+        site.receivers["reference_01"] = ReceiverConfig(
+            type="reference", directory="01_reference", paired_canopies=["canopy_01"]
+        )
+        store = tmp_path / "root" / testing.SITE_KEY / "gnss"
+        ensure_store_metadata(
+            store,
+            config=config,
+            site_name=testing.SITE_KEY,
+            store_type="gnss_store",
+            source_format="rinex3",
+            names=["canopy_01", "reference_01_canopy_01"],
+        )
+        return store
+
+    @staticmethod
+    def _invoke(store, config_dir, *extra, input=None):
+        args = [
+            "config",
+            "init",
+            "--config-dir",
+            str(config_dir),
+            "--from-store",
+            str(store),
+            *extra,
+        ]
+        return runner.invoke(_app(), args, input=input)
+
+    def test_no_interactive_writes_placeholder_values(self, tmp_path):
+        store = self._make_store(tmp_path)
+        config_dir = tmp_path / "config"
+        result = self._invoke(store, config_dir, "--no-interactive")
+
+        assert result.exit_code == 0, result.output
+        text = (config_dir / "canvod-settings.yaml").read_text()
+        assert "gnss_site_data_root: TODO" in text
+        assert "directory: TODO" in text
+        assert "log_dir: TODO" in text
+        assert "author: TODO" in text
+        # The store's root and name, and the site and receivers it records.
+        assert str(tmp_path / "root") in text
+        assert "canopy_01" in text and "reference_01" in text
+
+    def test_interactive_asks_and_writes_answers(self, tmp_path):
+        store = self._make_store(tmp_path)
+        config_dir = tmp_path / "config"
+        answers = (
+            f"{tmp_path / 'data'}\n"
+            f"{tmp_path / 'canopy'}\n"
+            f"{tmp_path / 'ref'}\n"
+            f"{tmp_path / 'aux'}\n"
+            f"{tmp_path / 'cache'}\n"
+            f"{tmp_path / 'logs'}\n"
+            "Tolkien\n"
+            "a@example.com\n"
+            "Oxford\n"
+        )
+        result = self._invoke(store, config_dir, input=answers)
+
+        assert result.exit_code == 0, result.output
+        text = (config_dir / "canvod-settings.yaml").read_text()
+        assert str(tmp_path / "data") in text
+        assert str(tmp_path / "canopy") in text
+        assert str(tmp_path / "ref") in text
+        assert "author: Tolkien" in text
+        assert "email: a@example.com" in text
+
+    def test_refuses_an_existing_file_even_with_force(self, tmp_path):
+        store = self._make_store(tmp_path)
+        config_dir = tmp_path / "config"
+        config_dir.mkdir()
+        existing = config_dir / "canvod-settings.yaml"
+        existing.write_text("# hand-edited, do not touch\n")
+
+        result = self._invoke(store, config_dir, "--no-interactive", "--force")
+
+        assert result.exit_code == 1
+        assert "already exists" in result.output
+        assert existing.read_text() == "# hand-edited, do not touch\n"
+
+    def test_a_store_without_content_settings_names_migrate(self, tmp_path):
+        from canvod.store_metadata.testing import give_test_metadata
+
+        store = give_test_metadata(tmp_path / "old")
+        config_dir = tmp_path / "config"
+        result = self._invoke(store, config_dir, "--no-interactive")
+
+        assert result.exit_code == 1
+        assert "migrate-metadata" in result.output
+
+
+class TestValidateListsPlaceholders:
+    """``config validate`` lists the TODO values of a settings file."""
+
+    def test_lists_placeholders_and_exits_1(self, tmp_path):
+        from canvod.config import load_config
+        from canvod.config.models import ReceiverConfig
+        from canvod.store_metadata import ensure_store_metadata
+        from canvod.utils import testing
+
+        folder = tmp_path / "settings"
+        testing.write_settings(folder)
+        config = load_config(config_dir=folder).model_copy(deep=True)
+        site = config.sites.sites[testing.SITE_KEY]
+        site.store_description = "GNSS-T observations below an Ent canopy"
+        site.receivers["reference_01"] = ReceiverConfig(
+            type="reference", directory="01_reference", paired_canopies=["canopy_01"]
+        )
+        store = tmp_path / "root" / testing.SITE_KEY / "gnss"
+        ensure_store_metadata(
+            store,
+            config=config,
+            site_name=testing.SITE_KEY,
+            store_type="gnss_store",
+            source_format="rinex3",
+            names=["canopy_01", "reference_01_canopy_01"],
+        )
+
+        config_dir = tmp_path / "config"
+        runner.invoke(
+            _app(),
+            [
+                "config",
+                "init",
+                "--config-dir",
+                str(config_dir),
+                "--from-store",
+                str(store),
+                "--no-interactive",
+            ],
+        )
+        result = runner.invoke(
+            _app(), ["config", "validate", "--config-dir", str(config_dir)]
+        )
+
+        assert result.exit_code == 1
+        assert (
+            "f'sites.fangorn.gnss_site_data_root'" in (result.output)
+            or "sites.fangorn.gnss_site_data_root" in result.output
+        )
+        assert "processing.logging.log_dir" in result.output
+        assert "processing.storage.aux_data_dir" in result.output
+
+
+class TestConfigDirOption:
+    def test_selects_the_settings_and_the_recipes(self, tmp_path):
+        pytest.importorskip("canvod.filemap.recipe_files")
+        from canvodpy.orchestrator.discovery import recipe_file
+
+        from canvod.config.loader import get_default_config_dir
+
+        config_dir = tmp_path / "my_config"
+        result = runner.invoke(
+            _app(), ["config", "init", "--config-dir", str(config_dir)]
+        )
+        assert result.exit_code == 0, result.output
+        assert (config_dir / "canvod-settings.yaml").exists()
+
+        # Every later lookup in the same process uses that directory
+        assert get_default_config_dir() == config_dir.resolve()
+        (config_dir / "recipes" / "fangorn").mkdir(parents=True)
+        (config_dir / "recipes" / "fangorn" / "rx.yaml").write_text("")
+        assert recipe_file("fangorn", "rx") == (
+            config_dir.resolve() / "recipes" / "fangorn" / "rx.yaml"
+        )
+
+    def test_every_command_offers_it(self):
+        from canvodpy.cli.app import main_app
+
+        for command in (
+            ["run"],
+            ["vod"],
+            ["vod-reconcile"],
+            ["doctor"],
+            ["store", "list"],
+            ["store", "info"],
+            ["store", "log"],
+            ["store", "maintain"],
+            ["store", "maintain-due"],
+            ["config", "init"],
+            ["config", "validate"],
+            ["config", "show"],
+            ["config", "edit"],
+        ):
+            # Wide help text, ANSI codes removed: on GitHub Actions typer
+            # forces a colored terminal, and the codes split option names.
+            result = runner.invoke(
+                main_app, [*command, "--help"], env={"COLUMNS": "200"}
+            )
+            plain = re.sub(r"\x1b\[[0-9;]*m", "", result.output)
+            assert "--config-dir" in plain, command
+
+
+class TestExplain:
+    def test_prints_the_setting_and_its_link(self):
+        result = runner.invoke(
+            _app(), ["config", "explain", "gnss_store.epoch"], env={"COLUMNS": "60"}
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "processing.icechunk.chunk_strategies.gnss_store.epoch" in result.output
+        assert "Default: 180" in result.output
+        # One line, so a terminal can open it.
+        assert (
+            "https://canvodpy.eu/guides/settings/"
+            "#processing-icechunk-chunk_strategies-gnss_store-epoch\n" in result.output
+        )
+
+    def test_an_unknown_setting_fails_and_names_the_closest(self):
+        result = runner.invoke(_app(), ["config", "explain", "stores_rot_dir"])
+
+        assert result.exit_code == 1
+        assert "processing.storage.stores_root_dir" in result.output

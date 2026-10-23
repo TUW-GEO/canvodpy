@@ -7,7 +7,7 @@ Usage:
 Commands:
     delete-logs             Delete all log files
     delete-aux              Delete downloaded auxiliary data and Zarr caches
-    delete-store            Delete an Icechunk store (rinex or vod)
+    delete-store            Delete an Icechunk store (gnss or vod)
     delete-all-stores       Delete ALL Icechunk stores for a site
 """
 
@@ -24,9 +24,15 @@ from rich.prompt import Prompt
 from rich.table import Table
 from rich.text import Text
 
+from canvod.config.store_names import STORE_KINDS
+
 console = Console()
 
 SKULL = "[bold red]☠[/]"
+
+#: The store kinds (canvod.config.store_names) whose folder the settings
+#: name: StorageConfig.get_<kind>_store_path.
+_SETTINGS_STORES = tuple(kind for kind in STORE_KINDS if kind in ("gnss", "vod"))
 WARNING = "[bold yellow]⚠[/]"
 
 
@@ -166,15 +172,13 @@ def cmd_delete_store(args: argparse.Namespace) -> None:
     site = args.site
     store_type = args.store
 
-    if store_type == "rinex":
-        store_path = storage.get_gnss_store_path(site)
-    elif store_type == "vod":
-        store_path = storage.get_vod_store_path(site)
-    else:
+    if store_type not in _SETTINGS_STORES:
         console.print(
-            f"  [red]Unknown store type: {store_type}. Use 'rinex' or 'vod'.[/]"
+            f"  [red]Unknown store kind: {store_type}. Use "
+            f"{' or '.join(_SETTINGS_STORES)}.[/]"
         )
         sys.exit(1)
+    store_path = Path(getattr(storage, f"get_{store_type}_store_path")(site))
 
     paths = [(f"{store_type.upper()} store ({site})", store_path)]
     _banner(
@@ -198,18 +202,18 @@ def cmd_delete_all_stores(args: argparse.Namespace) -> None:
     storage = config.processing.storage
     site = args.site
 
-    rinex_path = storage.get_gnss_store_path(site)
-    vod_path = storage.get_vod_store_path(site)
-
     paths = [
-        (f"RINEX store ({site})", rinex_path),
-        (f"VOD store ({site})", vod_path),
+        (
+            f"{kind.upper()} store ({site})",
+            Path(getattr(storage, f"get_{kind}_store_path")(site)),
+        )
+        for kind in _SETTINGS_STORES
     ]
     _banner(
         f"DELETE ALL STORES FOR '{site.upper()}'",
         paths,
         f"{WARNING}  This permanently destroys ALL Icechunk stores for site '{site}'.\n"
-        f"  All processed RINEX data and VOD products will be lost.",
+        f"  All stored GNSS observations and VOD will be lost.",
     )
 
     existing = [(label, p) for label, p in paths if p.exists()]
@@ -240,7 +244,7 @@ def main() -> None:
 
     p_store = sub.add_parser("delete-store", help="Delete a specific Icechunk store")
     p_store.add_argument("site", help="Site name (e.g. examplesite)")
-    p_store.add_argument("store", choices=["rinex", "vod"], help="Store type")
+    p_store.add_argument("store", choices=_SETTINGS_STORES, help="Store kind")
 
     p_all = sub.add_parser("delete-all-stores", help="Delete ALL stores for a site")
     p_all.add_argument("site", help="Site name (e.g. examplesite)")

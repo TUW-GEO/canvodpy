@@ -4,13 +4,21 @@ The ``DataDirectoryValidator`` ensures every file entering the pipeline can be
 mapped to a ``CanVODFilename``.  Validation is a hard gate: if any files are
 unmatched or temporal overlaps exist, processing is blocked with a clear
 diagnostic message.
+
+.. deprecated::
+    Left over from development and removed with the next major version.
+    ``canvodpy config validate`` checks a site's data with the file
+    discovery of ``canvodpy run`` (any folder layout, naming recipes).
 """
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
+
+from canvod.utils.tools import deprecated
 
 from .config_models import ReceiverNamingConfig, SiteNamingConfig
 from .convention import FileType
@@ -54,6 +62,10 @@ class ValidationReport:
         return not self.unmatched and not self.overlaps
 
 
+@deprecated(
+    "DataDirectoryValidator is left over from development and will be removed with the next major version. "
+    "Use canvodpy config validate instead."
+)
 class DataDirectoryValidator:
     """Pre-pipeline validation of data directories against naming convention."""
 
@@ -93,12 +105,17 @@ class DataDirectoryValidator:
             If validation fails (unmatched files, overlaps, or files found
             but none parseable).
         """
-        mapper = FilenameMapper(
-            site_naming=site_naming,
-            receiver_naming=receiver_naming,
-            receiver_type=receiver_type,
-            receiver_base_dir=receiver_base_dir,
-        )
+        # Constructing the validator already warned about the deprecation.
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", ".*left over from development", FutureWarning
+            )
+            mapper = FilenameMapper(
+                site_naming=site_naming,
+                receiver_naming=receiver_naming,
+                receiver_type=receiver_type,
+                receiver_base_dir=receiver_base_dir,
+            )
 
         report = ValidationReport()
 
@@ -166,15 +183,15 @@ def _format_validation_error(report: ValidationReport, base_dir: Path) -> str:
         if len(report.unmatched) > 5:
             lines.append(f"    ... and {len(report.unmatched) - 5} more")
         lines.append(
-            "\n  If these ARE your data files, check the 'naming:' section in"
-            " sites.yaml — the source_pattern or directory_layout may not match"
+            "\n  If these ARE your data files, check the 'naming:' section of"
+            " the site in canvod-settings.yaml: the source_pattern or directory_layout may not match"
             " your filenames."
         )
         return "\n".join(lines)
 
     if report.unmatched:
         lines.append(
-            f"\n  {len(report.unmatched)} file(s) could not be recognised as GNSS data:"
+            f"\n  {len(report.unmatched)} file(s) could not be recognized as GNSS data:"
         )
         for p in report.unmatched[:10]:
             lines.append(f"    - {p.name}")

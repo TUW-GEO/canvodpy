@@ -1,30 +1,59 @@
 name: Publish to PyPI
 
-# Manual only -- deliberately not triggered by tag push. Tagging/versioning
-# (cz bump + git push --tags) creates the GitHub tag and draft release
-# (see release.yml) independently of a PyPI release; publishing to PyPI is a
-# separate, explicit decision made at whatever point via this dispatch.
+# Manual only -- deliberately not triggered by tag push. Tagging creates the
+# GitHub tags and the draft release of canvodpy (see release.yml)
+# independently of a PyPI release; publishing to PyPI is a separate,
+# explicit decision made at whatever point via this dispatch. Run it on the
+# canvodpy tag of the release:
+#   gh workflow run publish_pypi.yml --ref v1.1.0
+# It publishes the packages whose release tag points at that commit.
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (e.g., 0.1.0)'
-        required: true
-        type: string
 
-permissions:
-  contents: read
-  id-token: write  # Required for OIDC authentication
+permissions: read-all
 
 jobs:
-  build-and-publish:
-    name: Build and publish to PyPI
+  audit:
+    name: Check the locked dependencies for known vulnerabilities
+    # A release with a known vulnerability stops here, before anything is
+    # built. Its own job: the code pip-audit brings in never runs next to
+    # the distributions or the upload token.
     runs-on: ubuntu-latest
-    environment: pypi  # GitHub environment for protection rules
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: false  # no cache in a publishing workflow (cache poisoning)
+
+      - name: Install just
+        uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        with:
+          tool: just
+
+      - name: Check the locked dependencies for known vulnerabilities
+        run: just audit
+
+  build:
+    name: Build the packages released at this commit
+    needs: audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0  # all tags, to find the packages released here
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -34,36 +63,54 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
-          enable-cache: true
+          enable-cache: false  # no cache in a publishing workflow (cache poisoning)
 
-      - name: Build all packages
+      - name: Build the packages released at this commit
         run: |
+          # Each package has its own version and tag (canvod-store-v1.1.0,
+          # v1.1.0 for canvodpy); build exactly those whose release tag
+          # points at this commit (scripts/release.py tagged).
+          packages="$(uv run --script scripts/release.py tagged)"
           rm -rf dist/
           mkdir -p dist/
-
-          # Build each package, collecting output into root dist/
-          for pkg in \
-            packages/canvod-readers \
-            packages/canvod-auxiliary \
-            packages/canvod-config \
-            packages/canvod-grids \
-            packages/canvod-store \
-            packages/canvod-store-metadata \
-            packages/canvod-utils \
-            packages/canvod-viz \
-            packages/canvod-vod \
-            packages/canvod-ops \
-            packages/canvod-preflight \
-            canvodpy; do
+          for pkg in $packages; do
             echo "Building $pkg..."
-            uv build --package "$(basename $pkg)" --out-dir dist/
+            # --no-sources: build as PyPI users get the package, without the
+            # workspace links of [tool.uv.sources]
+            uv build --package "$pkg" --no-sources --out-dir dist/
           done
 
           echo "Built packages:"
           ls -lh dist/*.whl
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086  # release/v1
+      - name: Upload the distributions
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          verbose: true
-          skip_existing: true
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi  # GitHub environment for protection rules
+    permissions:
+      id-token: write  # PyPI trusted publishing (OIDC)
+
+    steps:
+      - name: Download the distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: false  # no cache in a publishing workflow (cache poisoning)
+
+      - name: Publish to PyPI
+        # --check-url skips files already on PyPI (a re-run after a
+        # partial upload)
+        run: uv publish --trusted-publishing always --check-url https://pypi.org/simple/ dist/*

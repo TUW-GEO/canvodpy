@@ -1,6 +1,6 @@
 """Tests for MyIcechunkStore's retention/maintenance capability.
 
-dev/perf_degradation_findings_2026_07_15.md, Problem B: two bugs fixed
+Two bugs fixed
 before shipping (expire_old_snapshots overriding safe upstream defaults to
 True/True; maintenance() running garbage_collect() twice per call), plus
 a new tag-based keeper scheme (create_keeper_tag). These are regression
@@ -15,8 +15,9 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import zarr
+from canvod.store_metadata.testing import create_test_store
 
-from canvod.store import create_vod_store
+from canvod.store import open_vod_store
 
 
 class TestExpireOldSnapshotsDefaults:
@@ -31,9 +32,10 @@ class TestExpireOldSnapshotsDefaults:
         assert sig.parameters["delete_expired_branches"].default is False
         assert sig.parameters["delete_expired_tags"].default is False
 
-    def test_default_days_is_90(self):
+    def test_default_days_is_90(self, tmp_path: Path):
         """90 days (weeks-to-months cadence), not the aggressive old default."""
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store.repo = Mock()
         store.repo.expire_snapshots.return_value = set()
         store._logger = Mock()
@@ -47,11 +49,12 @@ class TestExpireOldSnapshotsDefaults:
         expected = datetime.now(called_cutoff.tzinfo) - timedelta(days=90)
         assert abs((called_cutoff - expected).total_seconds()) < 5
 
-    def test_does_not_call_garbage_collect(self):
+    def test_does_not_call_garbage_collect(self, tmp_path: Path):
         """expire_old_snapshots must be expire-only; GC ownership moved to
         garbage_collect()/maintenance() so it runs exactly once per
         maintenance() call, not twice (the second bug)."""
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store.repo = Mock()
         store.repo.expire_snapshots.return_value = set()
         store._logger = Mock()
@@ -73,8 +76,9 @@ class TestMaintenanceRunsGcExactlyOnce:
         )
         assert sig.parameters["expire_days"].default == 90
 
-    def test_gc_called_exactly_once(self):
+    def test_gc_called_exactly_once(self, tmp_path: Path):
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store._logger = Mock()
         store.store_type = "gnss_store"
         store.expire_old_snapshots = Mock(return_value=set())
@@ -101,8 +105,9 @@ class TestMaintenanceRunsGcExactlyOnce:
         assert store.garbage_collect.call_args.kwargs["days"] == 30
         assert results["gc_summary"] is not None
 
-    def test_dry_run_gc_passed_through(self):
+    def test_dry_run_gc_passed_through(self, tmp_path: Path):
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store._logger = Mock()
         store.store_type = "gnss_store"
         store.expire_old_snapshots = Mock(return_value=set())
@@ -115,8 +120,9 @@ class TestMaintenanceRunsGcExactlyOnce:
 
         assert store.garbage_collect.call_args.kwargs["dry_run"] is True
 
-    def test_expire_delete_flags_passed_through(self):
+    def test_expire_delete_flags_passed_through(self, tmp_path: Path):
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store._logger = Mock()
         store.store_type = "gnss_store"
         store.expire_old_snapshots = Mock(return_value=set())
@@ -135,8 +141,9 @@ class TestMaintenanceRunsGcExactlyOnce:
 
 
 class TestGarbageCollectWrapper:
-    def test_dry_run_passed_to_repo(self):
+    def test_dry_run_passed_to_repo(self, tmp_path: Path):
         store = Mock()
+        store.store_path = tmp_path  # where commit_lock puts its file
         store._logger = Mock()
         store.repo = Mock()
         store.repo.garbage_collect.return_value = Mock(
@@ -159,7 +166,7 @@ class TestGarbageCollectWrapper:
 class TestCreateKeeperTag:
     def test_creates_tag_on_real_store(self, tmp_path: Path) -> None:
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
@@ -175,7 +182,7 @@ class TestCreateKeeperTag:
 
     def test_duplicate_tag_returns_false_without_raising(self, tmp_path: Path) -> None:
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
 
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
@@ -219,7 +226,7 @@ class TestMaintenanceConfigDefaults:
 
 
 class TestMaintenanceDue:
-    """dev/todo_later.md's icechunk-maintenance-scheduling gap, 2026-07-21:
+    """Icechunk maintenance scheduling:
     nothing ever calls expire_old_snapshots()/garbage_collect() on its own.
     maintenance_due() uses the store's own ops log (Icechunk-written,
     can't drift like a separate marker file) as the source of truth for
@@ -227,7 +234,7 @@ class TestMaintenanceDue:
 
     def test_never_maintained_expire_due_gc_not_due(self, tmp_path: Path) -> None:
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
             root.create_group("canopy")
@@ -248,7 +255,7 @@ class TestMaintenanceDue:
         snapshots are protected) -- so due-checking doesn't need to special
         -case "nothing was actually expired"."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
             root.create_group("canopy")
@@ -265,7 +272,7 @@ class TestMaintenanceDue:
         self, tmp_path: Path
     ) -> None:
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
             root.create_group("canopy")
@@ -284,7 +291,7 @@ class TestMaintenanceDue:
         empirically: garbage_collect(dry_run=True) writes no GCRan entry) --
         only a real GC should clear gc_due."""
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
         with store.writable_session() as session:
             root = zarr.open(session.store, mode="w")
             root.create_group("canopy")
@@ -302,7 +309,7 @@ class TestMaintenanceDue:
 
 
 class TestManifestCompaction:
-    """dev/todo_later.md's manifest-fragmentation gap, 2026-07-21:
+    """Manifest fragmentation:
     canvodpy's one-to_icechunk()-call-per-file write pattern creates one
     new manifest per flush; rewrite_manifests() was documented but never
     invoked anywhere. Unlike expire/GC, due-ness here is measured
@@ -316,7 +323,7 @@ class TestManifestCompaction:
         from icechunk.xarray import to_icechunk
 
         store_path = tmp_path / "test_site" / "vod_store"
-        store = create_vod_store(store_path)
+        store = open_vod_store(create_test_store(store_path))
         with store.writable_session() as session:
             for i in range(n_commits):
                 ds = xr.Dataset(
@@ -387,3 +394,134 @@ class TestManifestCompaction:
         after = store.read_group("canopy")
         assert before["x"].values.tolist() == after["x"].values.tolist()
         assert before["epoch"].values.tolist() == after["epoch"].values.tolist()
+
+
+class TestCompactionRecordsCommitMetadata:
+    """A compaction commit carries commit metadata like every other commit."""
+
+    def _store_with_metadata(self, path: Path):
+        import icechunk
+        import numpy as np
+        import xarray as xr
+        from canvod.config import load_config
+        from canvod.store_metadata import (
+            collect_config_snapshot,
+            commit_with_rebase,
+            write_metadata,
+        )
+        from canvod.store_metadata.schema import (
+            Creator,
+            SiteInfo,
+            SpatialExtent,
+            StoreIdentity,
+            StoreMetadata,
+            TemporalExtent,
+        )
+        from icechunk.xarray import to_icechunk
+
+        from canvod.store import MyIcechunkStore
+
+        settings = load_config()
+        icechunk.Repository.create(icechunk.local_filesystem_storage(str(path)))
+        write_metadata(
+            path,
+            StoreMetadata(
+                identity=StoreIdentity(
+                    id="fangorn-vod",
+                    uuid="00000000-0000-4000-8000-000000000001",
+                    naming_authority="org.middle-earth",
+                    stac_link="../../vod/x/x.json",
+                    title="Fangorn VOD Store",
+                    store_type="vod_store",
+                    source_format="rinex3",
+                ),
+                creator=Creator(name="T", email="t@example.org", institution="U"),
+                temporal=TemporalExtent(created="2026-01-01T00:00:00Z", updated="x"),
+                spatial=SpatialExtent(site=SiteInfo(name="Fangorn")),
+                config=collect_config_snapshot(settings),
+            ),
+        )
+        store = MyIcechunkStore(path, store_type="vod_store", config=settings)
+        for i in range(3):
+            with store.writable_session() as session:
+                ds = xr.Dataset(
+                    {"x": (("epoch",), np.arange(3.0) + i)},
+                    coords={
+                        "epoch": np.datetime64("2025-01-01T00:00:00", "s")
+                        + np.arange(i * 3, i * 3 + 3) * np.timedelta64(5, "s")
+                    },
+                )
+                kwargs = {"mode": "w"} if i == 0 else {"append_dim": "epoch"}
+                to_icechunk(ds, session, group="canopy", **kwargs)
+                commit_with_rebase(
+                    session, f"write {i}", store_path=path, config=settings
+                )
+        return store
+
+    def _tip_metadata(self, store) -> dict:
+        tip = store.repo.lookup_branch("main")
+        return next(iter(store.repo.ancestry(snapshot_id=tip))).metadata
+
+    def test_the_compaction_commit_has_commit_metadata(self, tmp_path: Path):
+        from canvod.store_metadata import read_metadata, validate_all
+
+        store = self._store_with_metadata(tmp_path / "store")
+        before = validate_all(read_metadata(store.store_path), recommended=False)
+
+        store.compact_manifests(branch="main")
+
+        metadata = self._tip_metadata(store)
+        assert {"processing", "environment", "config"} <= metadata.keys()
+        assert "__icechunk" in metadata  # Icechunk's own splitting_config
+        meta = read_metadata(store.store_path)
+        assert meta.processing.software
+        assert meta.config.config_hash
+        assert validate_all(meta, recommended=False) == before
+
+    def test_every_commit_carries_commit_metadata(self, tmp_path: Path):
+        store = self._store_with_metadata(tmp_path / "store")
+        store.compact_manifests(branch="main")
+
+        commits = list(store.repo.ancestry(branch="main"))[:-1]  # not the first
+
+        assert len(commits) == 5  # metadata, 3 writes, compaction
+        for commit in commits:
+            assert "environment" in commit.metadata, commit.message
+
+    def test_a_new_lockfile_is_stored_before_compaction(
+        self, tmp_path: Path, monkeypatch
+    ):
+        from canvod.store_metadata import read_metadata
+
+        store = self._store_with_metadata(tmp_path / "store")
+        project = tmp_path / "fangorn"
+        project.mkdir()
+        (project / "pyproject.toml").write_text('[project]\nname = "fangorn"\n')
+        (project / "uv.lock").write_bytes(b"version = 1\nrevision = 3\n")
+        monkeypatch.chdir(project)
+
+        store.compact_manifests(branch="main")
+
+        meta = read_metadata(store.store_path)
+        assert meta.environment.uv_lock_text == "version = 1\nrevision = 3\n"
+
+
+class TestCleanupStaleBranches:
+    """``cleanup_stale_branches`` deletes stale temp branches on a local
+    store (#357: it must still work as before there; only S3 refuses)."""
+
+    def test_deletes_a_stale_temp_branch_and_keeps_main(self, tmp_path) -> None:
+        store_path = tmp_path / "test_site" / "vod_store"
+        store = open_vod_store(create_test_store(store_path))
+        with store.writable_session() as session:
+            root = zarr.open(session.store, mode="w")
+            root.create_group("canopy")
+            snapshot_id = session.commit("test commit")
+        store.repo.create_branch("_rechunked_temp_abc", snapshot_id)
+
+        deleted = store.cleanup_stale_branches()
+
+        assert "_rechunked_temp_abc" in deleted
+        branches = store.repo.list_branches()
+        assert "_rechunked_temp_abc" not in branches
+        assert "main" in branches

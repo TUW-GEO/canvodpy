@@ -1,7 +1,7 @@
 [project]
 name = "canvod-readers"
 version = "0.4.0"
-description = "Collection of GNSS data readers for GNSS-Transmissometry"
+description = "Readers for GNSS observation files: RINEX, SBF, and NMEA"
 readme = "README.md"
 requires-python = ">=3.14"
 authors = [
@@ -10,15 +10,27 @@ authors = [
 maintainers = [
     {name = "Climate and Environmental Remote Sensing (CLIMERS)", email = "support@canvodpy.eu"},
 ]
-keywords = ["GNSS", "RINEX", "GPS", "geodesy", "remote sensing"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.14",
-    "Topic :: Scientific/Engineering :: GIS",
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+keywords = [
+    "GNSS",
+    "RINEX",
+    "SBF",
+    "NMEA",
+    "GPS",
+    "geodesy",
+    "remote sensing",
 ]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+]
+
 dependencies = [
     "georinex>=1.16.0",
     "matplotlib>=3.7.0",
@@ -30,8 +42,8 @@ dependencies = [
     "xarray>=2023.12.0",
     "sbf-parser>=1.0.3",
     "structlog>=24.1.0",
-    "canvod-utils>=0.1.0",
-    "canvod-config>=0.1.0",
+    "canvod-utils>=1.0.0,<2",
+    "canvod-config>=1.0.0,<2",
     "pymap3d>=3.0.0",
 ]
 
@@ -45,13 +57,13 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nfb2021/canvodpy"
+Homepage = "https://github.com/TUW-GEO/canvodpy"
 Documentation = "https://canvodpy.eu/packages/readers/overview/"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues = "https://github.com/nfb2021/canvodpy/issues"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues = "https://github.com/TUW-GEO/canvodpy/issues"
 
 [build-system]
-requires = ["uv_build>=0.9.17,<0.10.0"]
+requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.ty.src]
@@ -66,3 +78,5 @@ canvod-config = { workspace = true }
 
 [tool.uv.build-backend]
 module-name = "canvod.readers"
+# Specifications and manuals are cited in the code, never shipped (#457).
+source-exclude = ["*.pdf"]

@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import contextlib
 import json
 import os
 import time
-from collections.abc import Generator, Sequence
+import warnings
+from collections import Counter, defaultdict
+from collections.abc import Generator, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass, field
@@ -15,15 +16,17 @@ from datetime import time as dt_time
 from pathlib import Path
 from typing import Any
 
+import icechunk
 import numpy as np
+import pandas as pd
 import polars as pl
 import pydantic_core
+import structlog
 import xarray as xr
 import zarr
 import zarr.errors
-from icechunk.session import ForkSession
+from icechunk.session import ForkSession, Session
 from icechunk.xarray import to_icechunk
-from natsort import natsorted
 from pydantic import ValidationError
 from rich.progress import (
     BarColumn,
@@ -39,28 +42,76 @@ from canvod.auxiliary.cache_fingerprint import (
     CANONICAL_AUX_GRID_SECONDS,
     compute_aux_cache_fingerprint,
 )
+from canvod.auxiliary.interpolation import (
+    aux_epoch_grid,
+    interpolate_aux_day,
+    sampling_interval_from_epochs,
+)
 from canvod.auxiliary.pipeline import AuxDataPipeline
 from canvod.auxiliary.position import (
     ECEFPosition,
     add_spherical_coords_to_dataset,
     compute_spherical_coordinates,
 )
-from canvod.config import load_config
+from canvod.auxiliary.products import check_product
+from canvod.config import CanvodConfig, load_config
+from canvod.config.models import (
+    PREPROCESSING_ATTR,
+    reference_store_group,
+)
+from canvod.ops import preprocess_files
 from canvod.readers import DataDirMatcher, MatchedDirs
+from canvod.readers.gnss_specs.exceptions import NmeaError, RinexError
 from canvod.store import GnssResearchSite, scoped_zarr_concurrency
+from canvod.store.day_blocks import (
+    AGGREGATION_SETTING,
+    CadenceError,
+    DayBlock,
+    add_day_block,
+    day_blocks,
+    span_chunks,
+    stored_epoch_chunk,
+    write_file_region,
+)
+from canvod.store.prepare import prepare_write
+from canvod.store.store import StoredOverlapError, _with_run_id
+from canvod.store.time_encoding import with_time_units
+from canvod.store_metadata.io import commit_lock, commit_with_rebase, store_command
+from canvod.store_metadata.layout import LayoutError, is_day_block_group
+from canvod.store_metadata.location import store_exists
+from canvod.utils.logging import (
+    get_run_id,
+    record_stage_timing,
+    set_run_id,
+    stage_timer,
+)
 from canvod.utils.tools import (
     _worker_init,
+    deprecated,
     get_version_from_pyproject,
     sanitize_directory,
 )
-from canvodpy._deprecation import deprecated
-from canvodpy.logging import get_logger, stage_timer
-from canvodpy.logging.run_context import get_run_id, set_run_id
-from canvodpy.orchestrator.interpolator import (
-    ClockConfig,
-    ClockInterpolationStrategy,
-    Sp3Config,
-    Sp3InterpolationStrategy,
+from canvodpy.logging.logging_config import active_log_dir, configure_logging
+from canvodpy.orchestrator.discovery import (
+    ReceiverDay,
+    canonical_name_for,
+    discover_files,
+    parse_sampling_interval_from_filename,
+    recipe_file,
+)
+from canvodpy.orchestrator.forked_writes import (
+    OVERWRITTEN,
+    SKIPPED,
+    WRITTEN,
+    FileNumbers,
+    ForkedDay,
+    ForkResult,
+    ForkTask,
+    StoredSpan,
+    chunk_groups,
+    rewrite_spans,
+    stored_spans,
+    stored_spans_around,
 )
 
 # ============================================================================
@@ -69,7 +120,10 @@ from canvodpy.orchestrator.interpolator import (
 
 
 def _worker_init_with_run_id(
-    nice: int, affinity: list[int] | None, run_id: str | None
+    nice: int,
+    affinity: list[int] | None,
+    run_id: str | None,
+    log_dir: Path | None,
 ) -> None:
     """Initialize a worker process, then bind the current run_id.
 
@@ -79,8 +133,17 @@ def _worker_init_with_run_id(
     ``ProcessPoolExecutor``/loky pool needs ``run_id`` set explicitly at
     startup for its log records to be correlated with the run that spawned
     it -- see ``logging/run_context.py``.
+
+    Parameters
+    ----------
+    log_dir : Path | None
+        Log folder of the parent process (``active_log_dir()``); the worker
+        writes its own per-PID files there. ``None``: the parent logs to the
+        console only, and so does the worker.
     """
     _worker_init(nice, affinity)
+    if log_dir is not None:
+        configure_logging(log_dir=log_dir)
     if run_id is not None:
         set_run_id(run_id)
 
@@ -99,159 +162,256 @@ def _processing_progress(disable: bool = False) -> Progress:
     )
 
 
-def preprocess_with_hermite_aux(
+def _warn_if_name_disagrees_with_data(
+    log: Any, fname: Path, canonical_name: str, ds: xr.Dataset
+) -> None:
+    """Warn if a file's first epoch lies outside the time span of its name.
+
+    The day a file is processed for comes from its (canonical) name, so a
+    wrong name puts the file on the wrong day. A first epoch up to 60 s
+    before the named start is accepted, because some receivers sample on a
+    grid offset by a few seconds from the start of the file.
+    """
+    from canvod.preflight.convention import CanVODFilename
+
+    if not canonical_name or ds.sizes.get("epoch", 0) == 0:
+        return
+    try:
+        named = CanVODFilename.from_filename(canonical_name)
+    except ValueError:
+        return
+    start = (
+        np.datetime64(f"{named.year:04d}-01-01T00:00", "s")
+        + np.timedelta64(named.doy - 1, "D")
+        + np.timedelta64(named.hour, "h")
+        + np.timedelta64(named.minute, "m")
+    )
+    end = start + np.timedelta64(int(named.batch_duration.total_seconds()), "s")
+    first = np.datetime64(ds.epoch.min().values, "s")
+    if not start - np.timedelta64(60, "s") <= first < end:
+        log.warning(
+            "file_time_differs_from_name",
+            file=str(Path(fname).name),
+            canonical_name=canonical_name,
+            named_start=str(start),
+            first_epoch=str(first),
+            hint=(
+                "The file is processed for the day in its name. Check the "
+                "filename or the naming recipe."
+            ),
+        )
+
+
+def run_reader_options(reader_name: str) -> dict[str, Any]:
+    """Options a run passes to a reader besides the file path.
+
+    The RINEX v3 readers check their number of epochs on construction, but
+    only know the intended file length when told. A run checks every file
+    against the period and sampling interval of its canonical name instead
+    (:func:`_warn_if_epoch_count_differs_from_name`), for all formats, and
+    keeps the epochs a file has, so the readers' own check is off.
+    """
+    if reader_name in ("rinex3", "rinex3_stripped"):
+        return {"completeness_mode": "off"}
+    return {}
+
+
+def _warn_if_epoch_count_differs_from_name(
+    log: Any, fname: Path, canonical_name: str, ds: xr.Dataset
+) -> None:
+    """Warn if a file holds fewer or more epochs than its name implies.
+
+    The canonical name gives the file's period and sampling interval
+    (``15M_05S``: 180 epochs). Fewer epochs mean the receiver stopped
+    logging (e.g. a power loss) or epochs were dropped as invalid while
+    reading; the epochs the file has are kept. Call it on the dataset as
+    read, before any temporal aggregation.
+    """
+    from canvod.preflight.convention import CanVODFilename
+
+    if not canonical_name:
+        return
+    try:
+        named = CanVODFilename.from_filename(canonical_name)
+    except ValueError:
+        return
+    n_expected = round(named.batch_duration / named.sampling_interval)
+    n_found = int(np.unique(ds.epoch.values).size) if "epoch" in ds.dims else 0
+    if n_found != n_expected:
+        log.warning(
+            "epoch_count_differs_from_name",
+            file=str(Path(fname).name),
+            canonical_name=canonical_name,
+            expected_epochs=n_expected,
+            found_epochs=n_found,
+            missing_epochs=max(0, n_expected - n_found),
+            hint=(
+                "Fewer epochs: the receiver stopped logging or epochs were "
+                "dropped as invalid; the file's other epochs are kept. More "
+                "epochs: check the sampling field of the filename or recipe."
+            ),
+        )
+
+
+def _warn_if_aux_grid_coarser(
+    log: Any, rnx_file: Path, ds: xr.Dataset, aux_store: xr.Dataset
+) -> None:
+    """Warn if the ephemeris grid is coarser than the file's sampling.
+
+    The grid interval comes from the sampling field of the filename when it
+    can be parsed. If that field is wrong, each observation epoch is matched
+    to the nearest grid epoch instead of its own, without an error.
+    """
+    if ds.sizes.get("epoch", 0) < 2 or aux_store.sizes.get("epoch", 0) < 2:
+        return
+    data_step = float(np.median(np.diff(ds.epoch.values)) / np.timedelta64(1, "s"))
+    aux_epochs = aux_store.epoch.values[:2]
+    grid_step = float((aux_epochs[1] - aux_epochs[0]) / np.timedelta64(1, "s"))
+    if data_step < grid_step:
+        log.warning(
+            "sampling_mismatch",
+            file=str(rnx_file.name),
+            data_sampling_s=data_step,
+            ephemeris_grid_s=grid_step,
+            hint=(
+                "The file is sampled more finely than the ephemeris grid, so "
+                "satellite positions are taken from the nearest grid epoch. "
+                "Check the sampling field of the filename or naming recipe."
+            ),
+        )
+
+
+def _open_aux_store(aux_zarr_path: Path, group: str | None = None) -> xr.Dataset:
+    """Open the auxiliary store with every variable as stored.
+
+    ``clock_offset`` is a float in seconds (CF ``units: seconds``). xarray
+    would decode it to ``timedelta64[ns]`` with ``decode_timedelta=True``,
+    rounding the clock to the nanosecond and casting its NaN through
+    int64; ``ephemeris/provider.py`` opens the same store the same way.
+    """
+    return xr.open_zarr(
+        aux_zarr_path, group=group, decode_timedelta=False, consolidated=False
+    )
+
+
+def _preprocess_file(
     rnx_file: Path,
     keep_vars: list[str] | None,
     aux_zarr_path: Path,
-    receiver_position: ECEFPosition,
+    receiver_positions: dict[str, ECEFPosition],
     receiver_type: str,
-    keep_sids: list[str] | None = None,
-    reader_name: str = "rinex3",
+    keep_sids: list[str] | None,
+    reader_name: str,
+    store_radial_distance: bool,
+    store_sbf_raw_observables: bool,
+    pad_global_sid: bool,
+    aux_group: str | None,
+    rinex_v3_parser: str,
+    aggregate_glonass_fdma: bool,
     use_sbf_geometry: bool = False,
-    store_radial_distance: bool = False,
-    store_sbf_raw_observables: bool = True,
     broadcast_canopy_file: Path | None = None,
     broadcast_canopy_fmt: str | None = None,
-    pad_global_sid: bool = True,
-    aux_group: str | None = None,
-) -> tuple[Path, xr.Dataset, dict[str, xr.Dataset], dict[str, list[str]]]:
-    """Read RINEX and compute coordinates using Hermite-interpolated aux data from Zarr.
+    date_key: str | None = None,
+) -> tuple[Path, dict[str, xr.Dataset], dict[str, xr.Dataset], dict[str, list[str]]]:
+    """Read one GNSS file once and add the geometry for each receiver position.
 
-    This function runs in separate processes, so it must be at module level.
-    The aux data has already been interpolated using proper Hermite splines.
+    The single implementation behind ``preprocess_with_hermite_aux`` (one
+    position) and ``preprocess_reference_with_hermite_aux_fanout`` (one
+    position per canopy pairing). Reading, the ephemeris join and the SID
+    filter run once; only the geometry step depends on the position.
 
     Parameters
     ----------
-    rnx_file : Path
-        RINEX file path
-    keep_vars : List[str]
-        Variables to keep
-    aux_zarr_path : Path
-        Path to preprocessed aux data Zarr store (with Hermite interpolation)
-    receiver_position : ECEFPosition
-        Receiver position (computed once)
-    receiver_type : str
-        Receiver type
-    keep_sids : list[str] | None, default None
-        List of specific SIDs to keep. If None, keeps all possible SIDs.
+    receiver_positions : dict[str, ECEFPosition]
+        ``{name: position}``; one augmented dataset is returned per entry.
     use_sbf_geometry : bool, default False
-        If True and reader_name is "sbf", skip external orbit/clock downloads
-        and transfer theta/phi directly from SBF SatVisibility blocks.
-    store_radial_distance : bool, default False
-        If True, keep the radial distance variable ``r`` in the output.
-    broadcast_canopy_file : Path | None, default None
-        Path to the matching canopy SBF file. When provided (for reference
-        receivers in shared position mode), its sbf_obs theta/phi override
-        the reference file's own geometry.
-    broadcast_canopy_fmt : str | None, default None
-        Reader format for the canopy file (e.g. "sbf").
-    aux_group : str | None, default None
-        Zarr group within ``aux_zarr_path`` to read this day's aux data
-        from (§44 shared-cache mode). ``None`` reads the store root,
-        matching legacy per-site aux Zarr layout.
+        SBF files only, and only with a single position: take θ/φ from the
+        SBF SatVisibility blocks via ``SbfBroadcastProvider`` instead of the
+        aux data.
+
+    Other parameters are those of ``preprocess_with_hermite_aux``.
 
     Returns
     -------
-    tuple[Path, xr.Dataset, dict[str, xr.Dataset], dict[str, list[str]]]
-        File path, augmented dataset with phi/theta/r, auxiliary datasets dict,
-        and SID issue dict with keys ``not_in_global_space``, ``dropped_by_filter``,
-        ``dropped_no_ephemeris``.
+    tuple[Path, dict[str, xr.Dataset], dict[str, xr.Dataset], dict[str, list[str]]]
+        File path, ``{name: augmented dataset}``, auxiliary datasets dict,
+        and SID issue dict with keys ``not_in_global_space``,
+        ``dropped_by_filter``, ``dropped_no_ephemeris``.
 
     """
-    import re
+    from canvod.readers.preprocessing import (
+        flush_sid_accumulators,
+        reset_sid_accumulators,
+    )
 
-    from canvod.auxiliary.preprocessing import reset_sid_accumulators
+    sbf_geometry = reader_name == "sbf" and use_sbf_geometry
+    if sbf_geometry and len(receiver_positions) != 1:
+        msg = "SBF geometry supports exactly one receiver position per file"
+        raise ValueError(msg)
 
     # Clear any SID-issue accumulation left over from earlier work in this
     # process (e.g. aux/ephemeris padding during Phase 1 never flushes) so
     # this call's sid_issues reflects only its own pad_to_global_sid() calls.
     reset_sid_accumulators()
 
-    log = get_logger(__name__).bind(
+    log = structlog.get_logger(__name__).bind(
         file=str(rnx_file.name), receiver_type=receiver_type
+    )
+    # A shared reference file (fan-out) is timed under the names of all
+    # its pairings; receiver_type is then only a scheduling key.
+    timed_receiver = (
+        receiver_type
+        if receiver_type in receiver_positions
+        else "+".join(sorted(receiver_positions))
     )
 
     with stage_timer(
-        "rinex.process_file", file=str(rnx_file.name), receiver=receiver_type
+        "rinex.process_file", file=str(rnx_file.name), receiver=timed_receiver
     ):
         try:
             t0 = time.perf_counter()
-            log.info("rinex_preprocessing_started")
+            log.info("rinex_preprocessing_started", pairings=len(receiver_positions))
 
             # 1. Read GNSS file (reader selected via factory)
             log.debug("reading_gnss_file", file=str(rnx_file.name), reader=reader_name)
             from canvodpy.factories import ReaderFactory
 
-            rnx = ReaderFactory.create(reader_name, fpath=rnx_file)
+            rnx = ReaderFactory.create(
+                reader_name,
+                fpath=rnx_file,
+                aggregate_glonass_fdma=aggregate_glonass_fdma,
+                **run_reader_options(reader_name),
+            )
             ds, aux_datasets = rnx.to_ds_and_auxiliary(
                 keep_data_vars=keep_vars,
                 write_global_attrs=True,
                 keep_sids=keep_sids,
                 store_raw_observables=store_sbf_raw_observables,
                 pad_global_sid=pad_global_sid,
+                parser=rinex_v3_parser,
             )
             ds.attrs["File Hash"] = rnx.file_hash
+            ds.attrs[SOURCE_FORMAT_ATTR] = rnx.source_format
             t_rinex = time.perf_counter()
 
             # SBF-geometry fast path: use receiver-reported theta/phi, skip ephemeris
-            if reader_name == "sbf" and use_sbf_geometry:
-                # Use canopy file's sbf_obs when provided (reference receiver
-                # in shared position mode), else this file's own sbf_obs
-                if broadcast_canopy_file is not None:
-                    from canvodpy.factories import ReaderFactory
+            if sbf_geometry:
+                from canvod.auxiliary.ephemeris.provider import SbfBroadcastProvider
 
-                    canopy_rnx = ReaderFactory.create(
-                        broadcast_canopy_fmt or "sbf", fpath=broadcast_canopy_file
-                    )
-                    _, canopy_aux = canopy_rnx.to_ds_and_auxiliary(
-                        keep_data_vars=None,
-                        write_global_attrs=False,
-                        keep_sids=keep_sids,
-                    )
-                    meta_ds = canopy_aux.get("sbf_obs")
-                else:
-                    meta_ds = aux_datasets.get("sbf_obs")
-                if (
-                    meta_ds is not None
-                    and "broadcast_theta" in meta_ds
-                    and "broadcast_phi" in meta_ds
-                ):
-                    # Extract broadcast geometry (already in radians from reader)
-                    bt = meta_ds["broadcast_theta"]
-                    bp = meta_ds["broadcast_phi"]
-
-                    # Align to obs epoch space
-                    if "epoch" in bt.dims:
-                        common_epochs = np.intersect1d(ds.epoch.values, bt.epoch.values)
-                        bt = bt.sel(epoch=common_epochs).reindex(
-                            epoch=ds.epoch.values, fill_value=np.nan
-                        )
-                        bp = bp.sel(epoch=common_epochs).reindex(
-                            epoch=ds.epoch.values, fill_value=np.nan
-                        )
-
-                    # Align to obs SID space
-                    common_sids = sorted(set(ds.sid.values) & set(bt.sid.values))
-                    bt = bt.sel(sid=common_sids).reindex(
-                        sid=ds.sid.values, fill_value=np.nan
-                    )
-                    bp = bp.sel(sid=common_sids).reindex(
-                        sid=ds.sid.values, fill_value=np.nan
-                    )
-
-                    from canvod.auxiliary.position.spherical_coords import (
-                        add_broadcast_spherical_coords_to_dataset,
-                    )
-
-                    # .values prevents epoch-level coord leakage (pdop, hdop, …)
-                    ds = add_broadcast_spherical_coords_to_dataset(
-                        ds, bt.values, bp.values
-                    )
-                from canvod.auxiliary.preprocessing import flush_sid_accumulators
-
+                # Reference receiver in shared position mode: the canopy
+                # file's geometry, else this file's own sbf_obs.
+                provider = SbfBroadcastProvider(
+                    canopy_file=broadcast_canopy_file,
+                    canopy_reader_format=broadcast_canopy_fmt or "sbf",
+                    keep_sids=keep_sids,
+                )
+                ((name, receiver_position),) = receiver_positions.items()
+                ds = provider.augment_dataset(
+                    ds, receiver_position, aux_datasets=aux_datasets
+                )
                 sid_issues = flush_sid_accumulators()
                 sid_issues["dropped_no_ephemeris"] = []
-                return rnx_file, ds, aux_datasets, sid_issues
+                return rnx_file, {name: ds}, aux_datasets, sid_issues
             log.debug(
                 "rinex_loaded",
                 dims=dict(ds.sizes),
@@ -268,12 +428,8 @@ def preprocess_with_hermite_aux(
                     ds = ds[available_vars]
 
             # 2. Open preprocessed aux data and select matching epochs
-            aux_store = xr.open_zarr(
-                aux_zarr_path,
-                group=aux_group,
-                decode_timedelta=True,
-                consolidated=False,
-            )
+            aux_store = _open_aux_store(aux_zarr_path, group=aux_group)
+            _warn_if_aux_grid_coarser(log, rnx_file, ds, aux_store)
             aux_slice = aux_store.sel(epoch=ds.epoch, method="nearest")
 
             # Eagerly load aux slice — batches all Zarr reads (X, Y, Z, clock)
@@ -325,15 +481,20 @@ def preprocess_with_hermite_aux(
                     ),
                 )
 
-            # 4. Compute spherical coordinates (phi, theta, r) from ephemerides
+            # 4. Compute spherical coordinates (phi, theta, r) from
+            # ephemerides, once per receiver position: the only step that
+            # depends on the position.
             log.debug("computing_spherical_coordinates")
-            ds_augmented = _compute_spherical_coords_fast(
-                ds,
-                aux_slice,
-                receiver_position,
-            )
-            if not store_radial_distance and "r" in ds_augmented:
-                ds_augmented = ds_augmented.drop_vars("r")
+            ds_augmented: dict[str, xr.Dataset] = {}
+            for name, receiver_position in receiver_positions.items():
+                ds_name = _compute_spherical_coords_fast(
+                    ds,
+                    aux_slice,
+                    receiver_position,
+                )
+                if not store_radial_distance and "r" in ds_name:
+                    ds_name = ds_name.drop_vars("r")
+                ds_augmented[name] = ds_name
             t_coords = time.perf_counter()
 
             log.info(
@@ -343,39 +504,28 @@ def preprocess_with_hermite_aux(
                 aux_load_seconds=round(t_aux - t_rinex, 2),
                 sid_filter_seconds=round(t_sid - t_aux, 4),
                 coords_seconds=round(t_coords - t_sid, 2),
-                dataset_size=dict(ds_augmented.sizes),
+                pairings=len(receiver_positions),
             )
 
-            # Additive stage_timing for the performance dashboard's
-            # per-iteration breakdown (reading/validating/augmenting/
-            # writing) -- reuses the checkpoints already computed above
-            # rather than restructuring this function into nested
-            # stage_timer() context managers.
-            _date_key_match = re.search(r"_R_(\d{7})\d{4}_", rnx_file.name)
-            _date_key = _date_key_match.group(1) if _date_key_match else None
-            _stage_ctx = {"receiver": receiver_type, "date_key": _date_key}
-            log.info(
-                "stage_timing",
-                stage="reading",
-                duration_seconds=round(t_rinex - t0, 2),
-                status="ok",
-                **_stage_ctx,
-            )
-            log.info(
-                "stage_timing",
-                stage="validating",
-                duration_seconds=round(t_sid - t_aux, 4),
-                status="ok",
-                **_stage_ctx,
-            )
-            log.info(
-                "stage_timing",
-                stage="augmenting",
-                duration_seconds=round((t_aux - t_rinex) + (t_coords - t_sid), 2),
-                status="ok",
-                **_stage_ctx,
-            )
-        except (OSError, RuntimeError, ValueError, ValidationError) as e:
+            # The performance dashboard's per-day breakdown
+            # (reading/validating/augmenting/writing), from the checkpoints
+            # above rather than nested stage_timer() blocks.
+            for _stage, _seconds in (
+                ("reading", t_rinex - t0),
+                ("validating", t_sid - t_aux),
+                ("augmenting", (t_aux - t_rinex) + (t_coords - t_sid)),
+            ):
+                record_stage_timing(
+                    _stage, _seconds, receiver=timed_receiver, date_key=date_key
+                )
+        except (
+            OSError,
+            RuntimeError,
+            ValueError,
+            ValidationError,
+            RinexError,
+            NmeaError,
+        ) as e:
             log.error(
                 "rinex_preprocessing_failed",
                 error=str(e),
@@ -385,11 +535,120 @@ def preprocess_with_hermite_aux(
             )
             raise
 
-    from canvod.auxiliary.preprocessing import flush_sid_accumulators
-
     sid_issues = flush_sid_accumulators()
     sid_issues["dropped_no_ephemeris"] = sorted(rinex_only)
     return rnx_file, ds_augmented, aux_datasets, sid_issues
+
+
+def preprocess_with_hermite_aux(
+    rnx_file: Path,
+    keep_vars: list[str] | None,
+    aux_zarr_path: Path,
+    receiver_position: ECEFPosition,
+    receiver_type: str,
+    keep_sids: list[str] | None = None,
+    reader_name: str = "rinex3",
+    use_sbf_geometry: bool = False,
+    store_radial_distance: bool = False,
+    store_sbf_raw_observables: bool = True,
+    broadcast_canopy_file: Path | None = None,
+    broadcast_canopy_fmt: str | None = None,
+    pad_global_sid: bool = True,
+    aux_group: str | None = None,
+    rinex_v3_parser: str = "validated",
+    aggregate_glonass_fdma: bool = True,
+    date_key: str | None = None,
+) -> tuple[Path, xr.Dataset, dict[str, xr.Dataset], dict[str, list[str]]]:
+    """Read RINEX and compute coordinates using Hermite-interpolated aux data from Zarr.
+
+    This function runs in separate processes, so it must be at module level.
+    The aux data has already been interpolated using proper Hermite splines.
+
+    Parameters
+    ----------
+    rnx_file : Path
+        RINEX file path
+    keep_vars : List[str]
+        Variables to keep
+    aux_zarr_path : Path
+        Path to preprocessed aux data Zarr store (with Hermite interpolation)
+    receiver_position : ECEFPosition
+        Receiver position (computed once)
+    receiver_type : str
+        Receiver type
+    keep_sids : list[str] | None, default None
+        List of specific SIDs to keep. If None, keeps all possible SIDs.
+    use_sbf_geometry : bool, default False
+        If True and reader_name is "sbf", skip external orbit/clock downloads
+        and transfer theta/phi directly from SBF SatVisibility blocks via
+        ``SbfBroadcastProvider`` (ephemeris-based angles only; raises if the
+        file has none).
+    store_radial_distance : bool, default False
+        If True, keep the radial distance variable ``r`` in the output.
+    broadcast_canopy_file : Path | None, default None
+        Path to the matching canopy SBF file. When provided (for reference
+        receivers in shared position mode), its sbf_obs theta/phi override
+        the reference file's own geometry.
+    broadcast_canopy_fmt : str | None, default None
+        Reader format for the canopy file (e.g. "sbf").
+    aux_group : str | None, default None
+        Zarr group within ``aux_zarr_path`` to read this day's aux data
+        from (shared-cache mode). ``None`` reads the store root,
+        matching legacy per-site aux Zarr layout.
+    rinex_v3_parser : {"validated", "unvalidated_fast"}, default "validated"
+        Parser of RINEX v3 files (``processing.params.rinex_v3_parser``);
+        ignored by the other readers.
+    aggregate_glonass_fdma : bool, default True
+        Aggregate the GLONASS FDMA channels into one G1 and one G2 band
+        (``processing.params.aggregate_glonass_fdma``). Passed to the reader;
+        the aux data at ``aux_zarr_path`` must use the same setting.
+    date_key : str | None, default None
+        Processing day (``YYYYDOY``) the file belongs to, added to the
+        ``stage_timing`` events. ``None`` leaves the day out.
+
+    Returns
+    -------
+    tuple[Path, xr.Dataset, dict[str, xr.Dataset], dict[str, list[str]]]
+        File path, augmented dataset with phi/theta/r, auxiliary datasets dict,
+        and SID issue dict with keys ``not_in_global_space``, ``dropped_by_filter``,
+        ``dropped_no_ephemeris``.
+
+    """
+    path, by_position, aux_datasets, sid_issues = _preprocess_file(
+        rnx_file,
+        keep_vars,
+        aux_zarr_path,
+        {receiver_type: receiver_position},
+        receiver_type,
+        keep_sids,
+        reader_name,
+        store_radial_distance,
+        store_sbf_raw_observables,
+        pad_global_sid,
+        aux_group,
+        rinex_v3_parser,
+        aggregate_glonass_fdma,
+        use_sbf_geometry=use_sbf_geometry,
+        broadcast_canopy_file=broadcast_canopy_file,
+        broadcast_canopy_fmt=broadcast_canopy_fmt,
+        date_key=date_key,
+    )
+    return path, by_position[receiver_type], aux_datasets, sid_issues
+
+
+def _task_args(func: Any, is_reference_fanout: bool, **kwargs: Any) -> tuple:
+    """Build a positional task tuple for *func* from keyword arguments.
+
+    ``pipeline.py`` splats the tuple (minus the trailing fan-out marker)
+    positionally into *func*. Binding by name against *func*'s signature
+    puts every value in its own parameter slot, so adding or reordering a
+    parameter cannot silently shift the others.
+    """
+    import inspect
+
+    bound = inspect.signature(func).bind(**kwargs)
+    bound.apply_defaults()
+    return (*bound.arguments.values(), is_reference_fanout)
 
 
 def preprocess_reference_with_hermite_aux_fanout(
@@ -404,21 +663,23 @@ def preprocess_reference_with_hermite_aux_fanout(
     store_sbf_raw_observables: bool = True,
     pad_global_sid: bool = True,
     aux_group: str | None = None,
+    rinex_v3_parser: str = "validated",
+    aggregate_glonass_fdma: bool = True,
+    date_key: str | None = None,
 ) -> tuple[Path, dict[str, xr.Dataset], dict[str, xr.Dataset], dict[str, list[str]]]:
     """Read a shared reference file once, then compute geometry per canopy pairing.
 
     A reference receiver paired with N canopies gets read, SID-filtered, and
-    ephemeris-joined identically for every pairing -- only the geometry step
+    ephemeris-joined identically for every pairing; only the geometry step
     (``_compute_spherical_coords_fast``, which substitutes in the paired
-    canopy's position) actually differs per pairing. Doing steps 1-3 once
-    here, inside a single worker call, avoids re-parsing the same file N
-    times (dev/todo_later.md §47) without serializing the parsed
-    intermediate across a process-pool boundary.
+    canopy's position) differs per pairing. Doing the shared steps once,
+    inside a single worker call, avoids re-parsing the same file N times
+    without serializing the parsed intermediate across a process-pool
+    boundary. Each pairing's dataset is identical to what
+    ``preprocess_with_hermite_aux`` returns for that canopy's position.
 
-    This intentionally omits the ``use_sbf_geometry``/broadcast-canopy fast
-    path from ``preprocess_with_hermite_aux`` -- confirmed out of scope,
-    no live deployment pairs ``use_sbf_geometry=True`` with shared position
-    mode.
+    The ``use_sbf_geometry`` path of ``preprocess_with_hermite_aux`` is not
+    available here: it takes θ/φ from one SBF file, not per position.
 
     Parameters
     ----------
@@ -428,7 +689,9 @@ def preprocess_reference_with_hermite_aux_fanout(
         ECEFPosition(...), "reference_01_canopy_02": ECEFPosition(...)}``).
     aux_group : str | None, default None
         Zarr group within ``aux_zarr_path`` to read this day's aux data
-        from (§44 shared-cache mode). ``None`` reads the store root.
+        from (shared-cache mode). ``None`` reads the store root.
+
+    Other parameters are those of ``preprocess_with_hermite_aux``.
 
     Returns
     -------
@@ -437,163 +700,22 @@ def preprocess_reference_with_hermite_aux_fanout(
         ``canopy_positions``, auxiliary datasets dict, and SID issue dict.
 
     """
-    import re
-
-    from canvod.auxiliary.preprocessing import reset_sid_accumulators
-
-    # Clear any SID-issue accumulation left over from earlier work in this
-    # process (e.g. aux/ephemeris padding during Phase 1 never flushes) so
-    # this call's sid_issues reflects only its own pad_to_global_sid() calls.
-    reset_sid_accumulators()
-
-    log = get_logger(__name__).bind(
-        file=str(rnx_file.name), receiver_type=receiver_type
+    return _preprocess_file(
+        rnx_file,
+        keep_vars,
+        aux_zarr_path,
+        canopy_positions,
+        receiver_type,
+        keep_sids,
+        reader_name,
+        store_radial_distance,
+        store_sbf_raw_observables,
+        pad_global_sid,
+        aux_group,
+        rinex_v3_parser,
+        aggregate_glonass_fdma,
+        date_key=date_key,
     )
-
-    with stage_timer(
-        "rinex.process_file", file=str(rnx_file.name), receiver=receiver_type
-    ):
-        try:
-            t0 = time.perf_counter()
-            log.info("rinex_preprocessing_started", pairings=len(canopy_positions))
-
-            # 1. Read GNSS file (reader selected via factory)
-            from canvodpy.factories import ReaderFactory
-
-            rnx = ReaderFactory.create(reader_name, fpath=rnx_file)
-            ds, aux_datasets = rnx.to_ds_and_auxiliary(
-                keep_data_vars=keep_vars,
-                write_global_attrs=True,
-                keep_sids=keep_sids,
-                store_raw_observables=store_sbf_raw_observables,
-                pad_global_sid=pad_global_sid,
-            )
-            ds.attrs["File Hash"] = rnx.file_hash
-            t_rinex = time.perf_counter()
-
-            if keep_vars:
-                available_vars = [var for var in keep_vars if var in ds.data_vars]
-                if available_vars:
-                    ds = ds[available_vars]
-
-            # 2. Open preprocessed aux data and select matching epochs
-            aux_store = xr.open_zarr(
-                aux_zarr_path,
-                group=aux_group,
-                decode_timedelta=True,
-                consolidated=False,
-            )
-            aux_slice = aux_store.sel(epoch=ds.epoch, method="nearest")
-            aux_slice = aux_slice.load()
-            t_aux = time.perf_counter()
-
-            # 3. Find common SIDs between RINEX and aux data (inner join)
-            rinex_sids = set(ds.sid.values)
-            aux_sids = set(aux_slice.sid.values)
-            common_sids = sorted(rinex_sids.intersection(aux_sids))
-
-            if not common_sids:
-                log.error(
-                    "sid_intersection_empty",
-                    rinex_sids=len(rinex_sids),
-                    aux_sids=len(aux_sids),
-                )
-                raise ValueError(
-                    f"No common SIDs found between RINEX ({len(rinex_sids)} sids) "
-                    f"and aux data ({len(aux_sids)} sids)"
-                )
-
-            rinex_only = rinex_sids - aux_sids
-            aux_only = aux_sids - rinex_sids
-            ds = ds.sel(sid=common_sids)
-            aux_slice = aux_slice.sel(sid=common_sids)
-            t_sid = time.perf_counter()
-
-            log.debug(
-                "sid_filtering_complete",
-                rinex_sids=len(rinex_sids),
-                aux_sids=len(aux_sids),
-                common_sids=len(common_sids),
-                rinex_only=len(rinex_only),
-                aux_only=len(aux_only),
-            )
-            if rinex_only:
-                log.warning(
-                    "sids_dropped_no_ephemeris",
-                    file=str(rnx_file.name),
-                    count=len(rinex_only),
-                    sids=sorted(rinex_only),
-                    hint=(
-                        "These SIDs were observed in the file but have no matching "
-                        "entry in the ephemeris/clock aux data and will be absent "
-                        "from the stored dataset."
-                    ),
-                )
-
-            # 4. Compute spherical coordinates (phi, theta, r) once per
-            # pairing -- the only step that depends on which canopy's
-            # position is substituted in.
-            ds_augmented_by_pairing: dict[str, xr.Dataset] = {}
-            for pairing_name, receiver_position in canopy_positions.items():
-                ds_augmented = _compute_spherical_coords_fast(
-                    ds,
-                    aux_slice,
-                    receiver_position,
-                )
-                if not store_radial_distance and "r" in ds_augmented:
-                    ds_augmented = ds_augmented.drop_vars("r")
-                ds_augmented_by_pairing[pairing_name] = ds_augmented
-            t_coords = time.perf_counter()
-
-            log.info(
-                "rinex_preprocessing_complete",
-                total_seconds=round(t_coords - t0, 2),
-                rinex_read_seconds=round(t_rinex - t0, 2),
-                aux_load_seconds=round(t_aux - t_rinex, 2),
-                sid_filter_seconds=round(t_sid - t_aux, 4),
-                coords_seconds=round(t_coords - t_sid, 2),
-                pairings=len(canopy_positions),
-            )
-
-            _date_key_match = re.search(r"_R_(\d{7})\d{4}_", rnx_file.name)
-            _date_key = _date_key_match.group(1) if _date_key_match else None
-            _stage_ctx = {"receiver": receiver_type, "date_key": _date_key}
-            log.info(
-                "stage_timing",
-                stage="reading",
-                duration_seconds=round(t_rinex - t0, 2),
-                status="ok",
-                **_stage_ctx,
-            )
-            log.info(
-                "stage_timing",
-                stage="validating",
-                duration_seconds=round(t_sid - t_aux, 4),
-                status="ok",
-                **_stage_ctx,
-            )
-            log.info(
-                "stage_timing",
-                stage="augmenting",
-                duration_seconds=round((t_aux - t_rinex) + (t_coords - t_sid), 2),
-                status="ok",
-                **_stage_ctx,
-            )
-        except (OSError, RuntimeError, ValueError, ValidationError) as e:
-            log.error(
-                "rinex_preprocessing_failed",
-                error=str(e),
-                exception=type(e).__name__,
-                file=str(rnx_file.name),
-                traceback_available=True,
-            )
-            raise
-
-    from canvod.auxiliary.preprocessing import flush_sid_accumulators
-
-    sid_issues = flush_sid_accumulators()
-    sid_issues["dropped_no_ephemeris"] = sorted(rinex_only)
-    return rnx_file, ds_augmented_by_pairing, aux_datasets, sid_issues
 
 
 def _compute_spherical_coords_fast(
@@ -627,6 +749,121 @@ def _compute_spherical_coords_fast(
 # ============================================================================
 # Coordinated Parallel Writing to Icechunk
 # ============================================================================
+
+
+#: Dataset attribute naming the format of the reader that read the file
+#: (``GNSSDataReader.source_format``); set by the worker, recorded by the
+#: GNSS store as its ``source_format``.
+SOURCE_FORMAT_ATTR = "Source Format"
+
+
+def _source_format_of(
+    datasets: Iterable[xr.Dataset], receivers: Sequence[str]
+) -> str | None:
+    """The format of the reader that read ``datasets``.
+
+    Returns
+    -------
+    str | None
+        The readers' common ``source_format``; ``None`` if there are no
+        datasets.
+
+    Raises
+    ------
+    ValueError
+        If a dataset does not name its reader's format, or the datasets
+        were read by readers of different formats (a GNSS store holds one
+        format).
+    """
+    found = [ds.attrs.get(SOURCE_FORMAT_ATTR) for ds in datasets]
+    formats = {str(fmt) for fmt in found if fmt is not None}
+    names = ", ".join(receivers)
+    if None in found:
+        msg = (
+            f"A file of {names} does not name the format of the reader that "
+            f"read it (dataset attribute {SOURCE_FORMAT_ATTR!r}), so the GNSS "
+            "store cannot record its source_format."
+        )
+        raise ValueError(msg)
+    if len(formats) > 1:
+        msg = (
+            f"The files of {names} were read by readers of different formats "
+            f"({', '.join(sorted(formats))}); a GNSS store holds one format."
+        )
+        raise ValueError(msg)
+    return next(iter(formats), None)
+
+
+def _epoch_range(ds: xr.Dataset) -> tuple[np.datetime64, np.datetime64]:
+    """First and last epoch of a dataset."""
+    return np.datetime64(ds.epoch.min().values), np.datetime64(ds.epoch.max().values)
+
+
+def _second(time: Any) -> np.datetime64:
+    """``time`` to the second, as one form for every time of a message."""
+    return np.datetime64(time, "s")
+
+
+def _stored_overlaps(
+    stored: pl.DataFrame, rinex_hash: str | None, start: Any, end: Any
+) -> pl.DataFrame:
+    """Log-book rows of other files whose data overlap ``[start, end]``.
+
+    Rows of the same file (``rinex_hash``) and of files skipped as already
+    stored are left out: nothing of theirs was written by that row. With
+    ``rinex_hash=None`` no file's rows are left out for being the same file.
+    """
+    stored = stored.with_columns(
+        pl.col("start").cast(pl.Datetime("ns")), pl.col("end").cast(pl.Datetime("ns"))
+    )
+    if "action" in stored.columns:
+        stored = stored.filter(~pl.col("action").is_in(["skip", "skipped"]))
+    overlap = (pl.col("start") <= pl.lit(np.datetime64(end, "ns"))) & (
+        pl.col("end") >= pl.lit(np.datetime64(start, "ns"))
+    )
+    if rinex_hash is not None:
+        overlap &= pl.col("rinex_hash") != rinex_hash
+    return stored.filter(overlap)
+
+
+def _short_hash(rinex_hash: Any) -> str:
+    """The first 12 characters of a file hash: enough to tell two files apart."""
+    return str(rinex_hash)[:12]
+
+
+def _stored_overlap_message(
+    receiver_name: str,
+    files: list[tuple[Path, str, Any, Any]],
+    stored: pl.DataFrame,
+) -> str:
+    """The error of files whose epochs other stored files already filled (#351).
+
+    ``files`` are ``(name, hash, first epoch, last epoch)``. Names each with
+    its hash and time range and the log-book rows of the stored files it
+    overlaps; the hashes tell apart two files of the same name.
+    """
+    lines = []
+    for fname, rinex_hash, start, end in files:
+        rows = _stored_overlaps(stored, rinex_hash, start, end)
+        name_col = "canonical_name" if "canonical_name" in rows.columns else "fname"
+        others = ", ".join(
+            f"{Path(str(row[name_col])).name} (hash {_short_hash(row['rinex_hash'])}, "
+            f"{_second(row['start'])} to {_second(row['end'])})"
+            for row in rows.unique(subset=["rinex_hash"]).iter_rows(named=True)
+        )
+        lines.append(
+            f"  {fname.name} (hash {_short_hash(rinex_hash)}, {_second(start)} to "
+            f"{_second(end)}) overlaps {others}"
+        )
+    return (
+        f"Receiver '{receiver_name}': {len(files)} file(s) cover epochs that "
+        "files with other content already filled in the GNSS store; the run "
+        "stopped and wrote nothing for them:\n"
+        + "\n".join(lines)
+        + "\nTo replace the stored data with these files, run these days with "
+        "processing.storage.gnss_store_strategy: overwrite. Otherwise remove the "
+        "files from the receiver's folder."
+    )
 
 
 def _sanitize_ds_for_write(ds: xr.Dataset) -> xr.Dataset:
@@ -664,7 +901,7 @@ def write_initial_rinex_ds_to_store(
     group: str,
 ) -> ForkSession:
     """Write a new receiver group to the store."""
-    ds = _sanitize_ds_for_write(ds)
+    ds = prepare_write(_sanitize_ds_for_write(ds), fork.store, group, append_dim=None)
     ds.to_zarr(
         fork.store,
         group=group,
@@ -681,7 +918,7 @@ def append_rinex_ds_to_store(
     group: str,
 ) -> ForkSession:
     """Append to an existing receiver group in the store."""
-    ds = _sanitize_ds_for_write(ds)
+    ds = prepare_write(_sanitize_ds_for_write(ds), fork.store, group, append_dim=None)
     ds.to_zarr(
         fork.store,
         region="auto",
@@ -693,9 +930,8 @@ def append_rinex_ds_to_store(
 
 
 @deprecated(
-    "worker_task() is unused by the live pipeline (Phase 2 submits "
-    "preprocess_with_hermite_aux()/preprocess_reference_with_hermite_aux_fanout() "
-    "directly to the loky pool). Kept for reference only."
+    "worker_task() is left over from development and will be removed with the next major version. "
+    "Use preprocess_with_hermite_aux() instead."
 )
 def worker_task(
     rinex_file: Path,
@@ -740,9 +976,8 @@ def worker_task(
 
 
 @deprecated(
-    "worker_task_append_only() is unused by the live pipeline (Phase 2 submits "
-    "preprocess_with_hermite_aux()/preprocess_reference_with_hermite_aux_fanout() "
-    "directly to the loky pool). Kept for reference only."
+    "worker_task_append_only() is left over from development and will be removed with the next major version. "
+    "Use preprocess_with_hermite_aux() instead."
 )
 def worker_task_append_only(
     rinex_file: Path,
@@ -766,7 +1001,12 @@ def worker_task_append_only(
         reader_name,
     )
 
-    ds_clean = _sanitize_ds_for_write(ds_augmented)
+    ds_clean = prepare_write(
+        _sanitize_ds_for_write(ds_augmented),
+        fork.store,
+        receiver_name,
+        append_dim="epoch",
+    )
     ds_clean.to_zarr(
         fork.store,
         group=receiver_name,
@@ -802,7 +1042,9 @@ def worker_task_with_region_auto(
         store_sbf_raw_observables=store_sbf_raw_observables,
     )
 
-    ds_clean = _sanitize_ds_for_write(ds)
+    ds_clean = prepare_write(
+        _sanitize_ds_for_write(ds), fork.store, receiver_name, append_dim=None
+    )
     ds_clean.to_zarr(
         fork.store,
         group=receiver_name,
@@ -814,8 +1056,50 @@ def worker_task_with_region_auto(
     return fork  # Return the modified fork
 
 
+def logged_day_epochs(rows: pl.DataFrame) -> tuple[int, int]:
+    """``(epochs logged, epochs expected)`` of one receiver's day.
+
+    ``rows`` are the log-book rows of the day. Each file counts once, with
+    its last row; skipped files count nothing. A file's epochs come from
+    the ``epochs`` column, or, in rows written before that column existed
+    (``-1``), from its time range and sampling interval. The day is expected
+    to hold 24 h at the finest sampling interval of its files, taken from
+    their canonical names.
+
+    Raises
+    ------
+    ValueError
+        If a row's canonical name gives no sampling interval.
+    """
+    rows = rows.filter(~pl.col("action").is_in(["skip", "skipped"]))
+    rows = rows.sort("written_at").unique(
+        subset=["canonical_name"], keep="last", maintain_order=True
+    )
+    if rows.is_empty():
+        return 0, 0
+    has_counts = "epochs" in rows.columns
+    logged = 0
+    samplings = []
+    for row in rows.iter_rows(named=True):
+        sampling = parse_sampling_interval_from_filename(row["canonical_name"])
+        if sampling is None:
+            msg = (
+                f"No sampling interval in the canonical name "
+                f"{row['canonical_name']!r} of a log-book row, so the epochs "
+                "the day should hold are unknown."
+            )
+            raise ValueError(msg)
+        samplings.append(sampling)
+        if has_counts and row["epochs"] is not None and row["epochs"] >= 0:
+            logged += int(row["epochs"])
+        else:
+            span = (row["end"] - row["start"]).total_seconds()
+            logged += round(span / sampling) + 1
+    return logged, round(24 * 3600 / min(samplings))
+
+
 # ============================================================================
-# Cross-group fork/merge batch writes (dev/cross_group_fork_merge_plan.md)
+# Cross-group fork/merge batch writes
 # ============================================================================
 
 
@@ -861,6 +1145,45 @@ class GroupWriteResult:
     reader_format: str | None = None
     duration_seconds: float = 0.0
     snapshot_id: str | None = None
+    # Files of a forked write that could not be read or written: they get
+    # no log-book row, so the next run tries them again.
+    failed_files: int = 0
+
+
+def logbook_row_of(
+    fname: Path,
+    rinex_hash: str,
+    start: np.datetime64,
+    end: np.datetime64,
+    attrs: dict[str, Any],
+    canonical_name: str,
+    exists: bool,
+    rel_path: str,
+    action: str,
+    epochs: int,
+    write_strategy: str,
+) -> dict[str, Any]:
+    """One log-book row from a file's numbers.
+
+    See :meth:`RinexDataProcessor._logbook_row` for the columns.
+    """
+    return {
+        "fname": fname,
+        "rinex_hash": rinex_hash,
+        "start": start,
+        "end": end,
+        "dataset_attrs": attrs,
+        "exists": exists,
+        "rel_path": rel_path,
+        "canonical_name": canonical_name,
+        "physical_path": attrs.get("physical_path") or str(fname),
+        "action": action,
+        "epochs": epochs,
+        "write_strategy": write_strategy,
+        "run_id": get_run_id() or "",
+        "commit_msg": "",
+        "snapshot_id": "",
+    }
 
 
 # ============================================================================
@@ -902,6 +1225,7 @@ class RinexDataProcessor:
         n_max_workers: int | None = None,
         reader_name: str = "rinex3",
         use_sbf_geometry: bool = False,
+        config: CanvodConfig | None = None,
     ) -> None:
         t_init_start = time.perf_counter()
 
@@ -915,20 +1239,31 @@ class RinexDataProcessor:
         self._reader_name = reader_name  # fallback; prefer per-receiver reader_format
         # use_sbf_geometry: explicit param wins, otherwise read from config
         self._use_sbf_geometry_override = use_sbf_geometry
-        self._logger = get_logger(__name__).bind(
+        self._logger = structlog.get_logger(__name__).bind(
             site=site.site_name,
             workers=self.n_max_workers or os.cpu_count(),
             component="processor",  # Enable component-specific logging
         )
         # Dedicated logger for icechunk store operations
-        self._icechunk_log = get_logger(__name__).bind(
+        self._icechunk_log = structlog.get_logger(__name__).bind(
             site=site.site_name,
             component="icechunk",
         )
 
         t_config_start = time.perf_counter()
-        config = load_config()
-        self._config = config  # cache to avoid re-reading YAML in methods
+        if config is None:
+            warnings.warn(
+                "Creating RinexDataProcessor without config= is left over from development "
+                "and will be removed with the next major version. Pass "
+                "config=canvod.config.load_config() instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            config = load_config()
+        self._config = config
+        # Physical path -> canonical canVOD filename, filled by
+        # _get_rinex_files and read when building log-book rows.
+        self._canonical_names: dict[Path, str] = {}
         self._keeper_tags_enabled: bool = config.processing.storage.keeper_tags
         self.keep_sids = config.sids.get_sids()
 
@@ -944,6 +1279,9 @@ class RinexDataProcessor:
         aux_cfg = config.processing.aux_data
         self._agency = aux_cfg.agency
         self._product_type = aux_cfg.product_type
+        if not self.use_sbf_geometry:
+            # Fail before any file is read, not at the first day's download
+            check_product(aux_cfg.agency, aux_cfg.product_type, aux_cfg.fetch_clock)
         servers = aux_cfg.get_ftp_servers(config.nasa_earthdata_acc_mail)
         self._ftp_server = servers[0][0]
         self._gnss_store_strategy = config.processing.storage.gnss_store_strategy
@@ -1006,24 +1344,29 @@ class RinexDataProcessor:
                 aux_file_path = Path(self.site.site_config["gnss_site_data_root"])
 
         t1 = time.perf_counter()
-        pipeline = AuxDataPipeline.create_standard(
-            matched_dirs=self.matched_data_dirs,
-            aux_file_path=aux_file_path,
-            agency=self._agency,
-            product_type=self._product_type,
-            ftp_server=self._ftp_server,
-            user_email=user_email,
-            keep_sids=self.keep_sids,
-        )
-        t2 = time.perf_counter()
+        # Downloading (or reading the cached) orbit and clock files.
+        with stage_timer(
+            "auxiliary_data", date_key=self.matched_data_dirs.yyyydoy.to_str()
+        ):
+            pipeline = AuxDataPipeline.create_standard(
+                matched_dirs=self.matched_data_dirs,
+                aux_file_path=aux_file_path,
+                agency=self._agency,
+                product_type=self._product_type,
+                ftp_server=self._ftp_server,
+                user_email=user_email,
+                keep_sids=self.keep_sids,
+                aggregate_glonass_fdma=config.processing.params.aggregate_glonass_fdma,
+            )
+            t2 = time.perf_counter()
 
-        self._logger.info(
-            "aux_pipeline_create_standard_complete",
-            duration_seconds=round(t2 - t1, 2),
-        )
+            self._logger.info(
+                "aux_pipeline_create_standard_complete",
+                duration_seconds=round(t2 - t1, 2),
+            )
 
-        # Load all auxiliary files into memory
-        pipeline.load_all()
+            # Load all auxiliary files into memory
+            pipeline.load_all()
         t3 = time.perf_counter()
 
         self._logger.info(
@@ -1051,47 +1394,17 @@ class RinexDataProcessor:
         from canvodpy.factories import ReaderFactory
 
         aggregate = self._config.processing.params.aggregate_glonass_fdma
+        name = reader_format or self._reader_name
         return ReaderFactory.create(
-            reader_format or self._reader_name,
+            name,
             fpath=fpath,
             aggregate_glonass_fdma=aggregate,
+            **run_reader_options(name),
         )
 
-    @staticmethod
-    def _parse_sampling_interval_from_filename(filename: str) -> float | None:
-        """Extract sampling interval from RINEX v3 long filename.
-
-        RINEX v3.04 long filenames encode the data frequency at a fixed
-        position, e.g. ``ROSA01TUW_R_20250020000_01D_05S_AA.rnx`` where
-        ``05S`` means 5-second sampling.
-
-        Parameters
-        ----------
-        filename : str
-            RINEX filename (stem or full name).
-
-        Returns
-        -------
-        float or None
-            Sampling interval in seconds, or None if parsing fails.
-
-        """
-        import re
-
-        # RINEX v3 long filename: XXXXNNXXX_R_YYYYDDDHHMM_DUR_FREQ_AA.rnx
-        # The frequency field is the 5th underscore-separated component
-        parts = Path(filename).stem.split("_")
-        if len(parts) >= 5:
-            freq = parts[4]  # e.g. "05S", "30S", "01Z" (1 Hz)
-            m = re.match(r"^(\d+)([SMHDZC])$", freq)
-            if m:
-                value, unit = int(m.group(1)), m.group(2)
-                multipliers = {"S": 1, "M": 60, "H": 3600, "D": 86400}
-                if unit == "Z":  # Hz -> seconds
-                    return 1.0 / value if value else None
-                if unit in multipliers:
-                    return float(value * multipliers[unit])
-        return None
+    _parse_sampling_interval_from_filename = staticmethod(
+        parse_sampling_interval_from_filename
+    )
 
     def _preprocess_aux_data_with_hermite(
         self,
@@ -1106,11 +1419,11 @@ class RinexDataProcessor:
         Parameters
         ----------
         group : str | None
-            Zarr group to write under (e.g. a §44 shared-cache fingerprint
+            Zarr group to write under (e.g. a shared-cache fingerprint
             path). ``None`` (default) writes to the store root, unchanged
             legacy behavior.
         grid_seconds : float | None
-            When set (§44 shared-cache mode), build the target epoch grid
+            When set (shared-cache mode), build the target epoch grid
             from this fixed interval instead of the detected
             ``sampling_interval`` -- a site-independent grid is required
             for the cache entry to be safely shared across sites with
@@ -1125,7 +1438,7 @@ class RinexDataProcessor:
             interpolation_method="hermite_cubic",
         )
 
-        # 1. Detect sampling interval from filename (fast path)
+        # 1. Sampling interval: from the file name, else from the first file
         sampling_interval = self._parse_sampling_interval_from_filename(
             rinex_files[0].name,
         )
@@ -1154,23 +1467,18 @@ class RinexDataProcessor:
                 write_global_attrs=True,
             )
             t1 = time.perf_counter()
-            time_diff = (first_ds.epoch[1] - first_ds.epoch[0]).values
-            sampling_interval = float(time_diff / np.timedelta64(1, "s"))
-            # day_start stays as derived from the known YYYYDOY (line ~1134)
-            # -- do NOT re-derive it from first_ds.epoch here. SBF files
-            # (the only ones that hit this fallback, since their filenames
-            # never match the RINEX v3 pattern _parse_sampling_interval_
-            # from_filename() expects) sample on a grid offset by a few
-            # seconds from the day boundary, so the very first file of a
-            # day can have its first epoch fall a few seconds into the
-            # *previous* UTC day. Truncating that epoch to a date used to
-            # silently shift the whole day's target_epochs grid back by
-            # 24h, which pushed nearly every real observation epoch outside
-            # the aux data's interpolated range -- .sel(..., method=
-            # "nearest") then clamped every one of them to the grid's last
-            # (wrong-day) point, producing a single constant, usually-wrong
-            # satellite position reused for the entire day (canvodpy
-            # #geometry-augmentation-bug round 2, 2026-08).
+            sampling_interval = sampling_interval_from_epochs(first_ds.epoch.values)
+            # day_start stays as derived from the known YYYYDOY -- do NOT
+            # re-derive it from first_ds.epoch here. A file's first epoch can
+            # fall a few seconds before the day boundary (SBF epochs did, by
+            # the 18 leap seconds, while they were stored in UTC). Truncating
+            # that epoch to a date used to silently shift the whole day's
+            # target_epochs grid back by 24h, which pushed nearly every real
+            # observation epoch outside the aux data's interpolated range --
+            # .sel(..., method="nearest") then clamped every one of them to
+            # the grid's last (wrong-day) point, producing a single constant,
+            # usually-wrong satellite position reused for the entire day
+            # (canvodpy #geometry-augmentation-bug round 2, 2026-08).
             self._logger.info(
                 "sampling_detected",
                 sampling_interval_seconds=sampling_interval,
@@ -1178,31 +1486,21 @@ class RinexDataProcessor:
                 rinex_read_seconds=round(t1 - t0, 2),
             )
 
-        self._logger.debug(
-            "day_boundaries_detected",
-            day_start=str(day_start),
-            sampling_interval=sampling_interval,
-        )
-
         effective_grid_seconds = (
             grid_seconds if grid_seconds is not None else sampling_interval
         )
-        n_epochs = int(24 * 3600 / effective_grid_seconds)
-        target_epochs = day_start + np.arange(n_epochs) * np.timedelta64(
-            int(effective_grid_seconds), "s"
-        )
+        target_epochs = aux_epoch_grid(day_start, effective_grid_seconds)
 
         self._logger.info(
             "epoch_grid_generated",
             n_epochs=len(target_epochs),
+            grid_seconds=effective_grid_seconds,
             day_start=str(target_epochs[0]),
             day_end=str(target_epochs[-1]),
-            coverage_hours=24,
         )
 
-        # 4. Get auxiliary datasets from pipeline
-        t2 = time.perf_counter()
-        self._logger.debug("fetching_auxiliary_datasets")
+        # 2. Interpolate orbits (Hermite) and clocks (piecewise linear,
+        # unless fetch_clock is disabled -- see AuxDataConfig.fetch_clock)
         assert self.aux_pipeline is not None, "aux_pipeline must be initialized"
         ephem_ds = self.aux_pipeline.get("ephemerides")
         clock_ds = (
@@ -1210,80 +1508,16 @@ class RinexDataProcessor:
             if self.aux_pipeline.is_loaded("clock")
             else None
         )
+        t2 = time.perf_counter()
+        aux_processed = interpolate_aux_day(ephem_ds, clock_ds, target_epochs)
         t3 = time.perf_counter()
-        self._logger.debug(
-            "auxiliary_datasets_fetched",
-            duration_seconds=round(t3 - t2, 4),
-            ephemeris_dims=dict(ephem_ds.sizes) if ephem_ds else None,
-            clock_dims=dict(clock_ds.sizes) if clock_ds is not None else None,
-            ephemeris_vars=list(ephem_ds.data_vars.keys()) if ephem_ds else [],
-            clock_vars=list(clock_ds.data_vars.keys()) if clock_ds is not None else [],
-        )
-
-        # 5. Interpolate ephemerides using Hermite splines
         self._logger.info(
-            "ephemeris_interpolation_started",
-            method="hermite_cubic_with_velocities",
-            target_epochs=len(target_epochs),
+            "aux_interpolation_complete",
+            duration_seconds=round(t3 - t2, 2),
+            clock=clock_ds is not None,
+            final_dims=dict(aux_processed.sizes),
+            final_vars=list(aux_processed.data_vars.keys()),
         )
-        sp3_config = Sp3Config(use_velocities=True, fallback_method="linear")
-        sp3_interpolator = Sp3InterpolationStrategy(config=sp3_config)
-
-        t4 = time.perf_counter()
-        ephem_interp = sp3_interpolator.interpolate(ephem_ds, target_epochs)
-        t5 = time.perf_counter()
-
-        self._logger.info(
-            "ephemeris_interpolation_complete",
-            duration_seconds=round(t5 - t4, 2),
-            output_shape=dict(ephem_interp.sizes),
-            sids=len(ephem_interp.sid),
-        )
-
-        # Store interpolation metadata
-        ephem_interp.attrs["interpolator_config"] = sp3_interpolator.to_attrs()
-
-        # 6. Interpolate clock corrections using piecewise linear (unless
-        # fetch_clock is disabled in config — see AuxDataConfig.fetch_clock)
-        t6 = time.perf_counter()
-        if clock_ds is not None:
-            self._logger.info(
-                "clock_interpolation_started",
-                method="piecewise_linear",
-                target_epochs=len(target_epochs),
-            )
-            clock_config = ClockConfig(window_size=9, jump_threshold=1e-6)
-            clock_interpolator = ClockInterpolationStrategy(config=clock_config)
-
-            clock_interp = clock_interpolator.interpolate(clock_ds, target_epochs)
-            t7 = time.perf_counter()
-
-            self._logger.info(
-                "clock_interpolation_complete",
-                duration_seconds=round(t7 - t6, 2),
-                output_shape=dict(clock_interp.sizes),
-            )
-
-            # Store interpolation metadata
-            clock_interp.attrs["interpolator_config"] = clock_interpolator.to_attrs()
-
-            # 7. Merge ephemerides and clock into single dataset
-            self._logger.debug("merging_auxiliary_datasets")
-            aux_processed = xr.merge([ephem_interp, clock_interp])
-            t8 = time.perf_counter()
-            self._logger.debug(
-                "merge_complete",
-                duration_seconds=round(t8 - t7, 4),
-                final_dims=dict(aux_processed.sizes),
-                final_vars=list(aux_processed.data_vars.keys()),
-            )
-        else:
-            self._logger.info(
-                "clock_interpolation_skipped", reason="fetch_clock disabled"
-            )
-            t7 = t6
-            aux_processed = ephem_interp
-            t8 = time.perf_counter()
 
         # 8. Write to Zarr
         self._logger.info(
@@ -1298,169 +1532,152 @@ class RinexDataProcessor:
             aux_processed.to_zarr(
                 output_path, group=group, mode="w", consolidated=False
             )
-        t9 = time.perf_counter()
+        t4 = time.perf_counter()
 
         self._logger.info(
             "aux_preprocessing_complete",
-            total_seconds=round(t9 - t0, 2),
+            total_seconds=round(t4 - t0, 2),
             rinex_read_seconds=round(t1 - t0, 2),
-            aux_fetch_seconds=round(t3 - t2, 4),
-            ephem_interp_seconds=round(t5 - t4, 2),
-            clock_interp_seconds=round(t7 - t6, 2),
-            merge_seconds=round(t8 - t7, 4),
-            zarr_write_seconds=round(t9 - t8, 2),
+            interpolation_seconds=round(t3 - t2, 2),
+            zarr_write_seconds=round(t4 - t3, 2),
             data_size=dict(aux_processed.sizes),
             output_path=str(output_path),
         )
 
         return sampling_interval
 
-    def _get_rinex_files(
-        self, rinex_dir: Path, reader_format: str | None = None
-    ) -> list[Path]:
-        """Get sorted list of GNSS data files from directory.
+    def _as_receiver_day(self, location: ReceiverDay | Path) -> ReceiverDay:
+        """``location`` as a receiver day.
 
-        Uses ``BUILTIN_PATTERNS`` from canvod-filemap when installed.
-        Falls back to canonical canVOD globs (``*.rnx``, ``*.sbf``) otherwise.
-
-        Parameters
-        ----------
-        rinex_dir : Path
-            Directory to search.
-        reader_format : str | None
-            If ``"sbf"``, restrict to SBF glob patterns only.
-            Otherwise discovers all recognized GNSS file types.
-
+        Deprecated entry points still pass a receiver's day folder; its
+        receiver and recipe are looked up in the site configuration.
         """
-        if not rinex_dir.exists():
-            self._logger.warning("Directory does not exist: %s", rinex_dir)
-            return []
-
-        try:
-            from canvod.filemap.patterns import (
-                BUILTIN_PATTERNS,
-                auto_match_order,
-            )
-
-            _has_patterns = True
-        except ImportError:
-            _has_patterns = False
-
-        if _has_patterns:
-            if reader_format == "sbf":
-                globs = set(BUILTIN_PATTERNS["septentrio_sbf"].file_globs)
-                globs.update(
-                    g for g in BUILTIN_PATTERNS["canvod"].file_globs if ".sbf" in g
-                )
-            elif reader_format in ("rinex3", "rinex"):
-                rinex_pattern_names = [
-                    n for n in auto_match_order() if n != "septentrio_sbf"
-                ]
-                globs: set[str] = set()
-                for name in rinex_pattern_names:
-                    globs.update(BUILTIN_PATTERNS[name].file_globs)
-            else:
-                globs: set[str] = set()
-                for name in auto_match_order():
-                    globs.update(BUILTIN_PATTERNS[name].file_globs)
-        else:
-            # Fallback: canonical canVOD names only (*.rnx, *.sbf).
-            # Non-canonical filenames require canvod-filemap + a recipe.
-            if reader_format == "sbf":
-                globs = {"*.sbf", "*.SBF"}
-            elif reader_format in ("rinex3", "rinex"):
-                globs = {"*.rnx", "*.RNX"}
-            else:
-                globs = {"*.rnx", "*.RNX", "*.sbf", "*.SBF"}
-
-        rinex_files: list[Path] = []
-        seen: set[Path] = set()
-        for g in sorted(globs):
-            for path in rinex_dir.glob(g):
-                if path.is_file() and path not in seen:
-                    seen.add(path)
-                    rinex_files.append(path)
-
-        return natsorted(rinex_files)
-
-    def _get_virtual_files(
-        self,
-        receiver_name: str,
-        receiver_base_dir: Path,
-        year: int,
-        doy: int,
-    ) -> list:
-        """Discover and validate files using FilenameMapper.
-
-        Parameters
-        ----------
-        receiver_name : str
-            Receiver name from config.
-        receiver_base_dir : Path
-            Root directory for this receiver's data.
-        year, doy : int
-            Date to discover files for.
-
-        Returns
-        -------
-        list[VirtualFile]
-            Sorted virtual files for the given date.
-
-        Raises
-        ------
-        ValueError
-            If validation fails (unmatched files or overlaps).
-        """
-        try:
-            from canvod.filemap import (
-                FilenameMapper,
-                ReceiverNamingConfig,
-                SiteNamingConfig,
-            )
-        except ImportError as exc:
-            raise ImportError(
-                "canvod-filemap is required for recipe-based filename "
-                "mapping but is not installed. Install it separately or remove "
-                "the 'recipe:' field from your receiver config."
-            ) from exc
-
-        # Resolve site and receiver naming config
+        if isinstance(location, ReceiverDay):
+            return location
+        folder = Path(location)
         site_config = self._get_site_config()
-        receiver_cfg = site_config.receivers[receiver_name]
+        base = site_config.get_base_path()
+        for name, cfg in site_config.receivers.items():
+            if base / cfg.directory in (folder, folder.parent):
+                return ReceiverDay(
+                    name,
+                    folder,
+                    self.matched_data_dirs.yyyydoy.to_str(),
+                    recipe_file(self.site.site_name, cfg.recipe),
+                )
+        return ReceiverDay("", folder, self.matched_data_dirs.yyyydoy.to_str())
 
-        if not site_config.naming or not receiver_cfg.naming:
-            self._logger.warning(
-                "naming_config_missing, falling back to _get_rinex_files",
-                receiver=receiver_name,
-            )
-            return []
+    def _get_rinex_files(
+        self, day: ReceiverDay | Path, reader_format: str | None = None
+    ) -> list[Path]:
+        """Get the sorted GNSS data files a run processes for ``day``.
 
-        site_naming = SiteNamingConfig(**site_config.naming)
-        receiver_naming = ReceiverNamingConfig(**receiver_cfg.naming)
-        receiver_type = receiver_cfg.type
+        Delegates to :func:`canvodpy.orchestrator.discovery.discover_files`
+        (the same selection the dry-run preview reports): the receiver's
+        naming recipe when configured, otherwise canonical canVOD names
+        only, found anywhere below the receiver's directory by the date in
+        their names. Each file's canonical name is cached for the log book
+        (see :meth:`_canonical_name`).
 
-        mapper = FilenameMapper(
-            site_naming=site_naming,
-            receiver_naming=receiver_naming,
-            receiver_type=receiver_type,
-            receiver_base_dir=receiver_base_dir,
+        Parameters
+        ----------
+        day : ReceiverDay | Path
+            Receiver and day to collect files for (a folder path only from
+            deprecated entry points).
+        reader_format : str | None
+            If ``"sbf"``, restrict to SBF files; if ``"rinex3"``/``"rinex"``,
+            to RINEX files. Otherwise discovers both.
+
+        """
+        day = self._as_receiver_day(day)
+        discovered = discover_files(day, reader_format)
+        if not discovered:
+            self._logger.warning("no_files_for_day", day=str(day))
+        for found in discovered:
+            self._canonical_names[found.path] = found.canonical_name
+        return [found.path for found in discovered]
+
+    def _file_start(self, fname: Path) -> datetime | None:
+        """Start time from the canonical name of ``fname`` (``None`` if none)."""
+        from canvod.preflight.convention import CanVODFilename
+
+        canonical = self._canonical_name(fname)
+        if not canonical:
+            return None
+        return CanVODFilename.from_filename(canonical).start
+
+    def _canonical_name(self, fname: Path) -> str:
+        """Canonical canVOD filename for a discovered file (``""`` if none)."""
+        cached = self._canonical_names.get(fname)
+        if cached is not None:
+            return cached
+        return canonical_name_for(fname)
+
+    def _logbook_row(
+        self,
+        fname: Path,
+        ds: xr.Dataset,
+        rinex_hash: str,
+        exists: bool,
+        rel_path: str,
+        action: str,
+        epochs: int = -1,
+    ) -> dict[str, Any]:
+        """Build one ingest log-book row for a GNSS file.
+
+        One row per file encountered, including files skipped as already
+        ingested (``exists=True``), which keeps an audit trail of every run
+        that saw the file. ``commit_msg`` is filled in just before the rows
+        are written, inside the same session as the data they describe;
+        ``snapshot_id`` stays empty because a commit's ID only exists once
+        the commit that contains the row has been made. The row's commit is
+        recovered from the repository ancestry: its message equals
+        ``commit_msg`` and its metadata lists the row's ``rinex_hash``.
+        ``epochs`` counts the file's epochs a day-block write stored (-1 if
+        not counted); the store summary of day-block groups adds them up.
+        """
+        canonical_name = ds.attrs.get("canonical_name") or self._canonical_name(fname)
+        _warn_if_name_disagrees_with_data(self._logger, fname, canonical_name, ds)
+        return self._logbook_row_of(
+            fname,
+            rinex_hash,
+            np.datetime64(ds.epoch.min().values),
+            np.datetime64(ds.epoch.max().values),
+            ds.attrs.copy(),
+            canonical_name,
+            exists,
+            rel_path,
+            action,
+            epochs,
         )
 
-        vfs = mapper.discover_for_date(year, doy)
-
-        # Validate: detect overlaps
-        overlaps = FilenameMapper.detect_overlaps(vfs)
-        if overlaps:
-            overlap_msgs = [
-                f"  {a.canonical_str} <-> {b.canonical_str}" for a, b in overlaps[:10]
-            ]
-            msg = (
-                f"Temporal overlaps detected for {receiver_name} "
-                f"on {year}/{doy:03d}:\n" + "\n".join(overlap_msgs)
-            )
-            raise ValueError(msg)
-
-        return vfs
+    def _logbook_row_of(
+        self,
+        fname: Path,
+        rinex_hash: str,
+        start: np.datetime64,
+        end: np.datetime64,
+        attrs: dict[str, Any],
+        canonical_name: str,
+        exists: bool,
+        rel_path: str,
+        action: str,
+        epochs: int,
+    ) -> dict[str, Any]:
+        """One log-book row from a file's numbers (see :meth:`_logbook_row`)."""
+        return logbook_row_of(
+            fname,
+            rinex_hash,
+            start,
+            end,
+            attrs,
+            canonical_name,
+            exists,
+            rel_path,
+            action,
+            epochs,
+            self._gnss_store_strategy,
+        )
 
     def _get_site_config(self):
         """Get the SiteConfig for the current site."""
@@ -1471,6 +1688,57 @@ class RinexDataProcessor:
                 return site_cfg
         msg = f"Site '{self.site.site_name}' not found in config"
         raise ValueError(msg)
+
+    def _ensure_gnss_store_metadata(
+        self, receivers: Sequence[str], source_format: str | None
+    ) -> None:
+        """Give a new GNSS store its metadata; refuse unlisted receivers.
+
+        Runs before a batch writes data, so the store never holds data
+        without its repository metadata (ADR 0014). Every commit then
+        writes the store's root copy and snapshot summary itself.
+
+        Parameters
+        ----------
+        source_format : str | None
+            The format of the reader that read the batch's files (see
+            :func:`_source_format_of`), which a new store records.
+
+        Raises
+        ------
+        ValueError
+            If the store is new and ``source_format`` is ``None``, the
+            store predates repository metadata (names the migrate
+            command), or a receiver is not listed in it (names the amend
+            command).
+        """
+        from canvod.store_metadata import ensure_store_metadata
+
+        resources = self._config.processing.params.resolve_resources()
+        ensure_store_metadata(
+            self.site.gnss_store_path,
+            config=self._config,
+            site_name=self.site.site_name,
+            store_type="gnss_store",
+            source_format=source_format,
+            names=receivers,
+            dask_workers=resources.get("n_workers"),
+            dask_threads_per_worker=resources.get("threads_per_worker"),
+        )
+
+    def _set_store_source_format(
+        self, source_format: str | None, branch: str = "main"
+    ) -> None:
+        """Record ``source_format`` as the GNSS store's root attribute, once.
+
+        A store that already names its format keeps it; nothing is
+        recorded when no file was read (``source_format`` is ``None``).
+        """
+        store = self.site.gnss_store
+        if source_format is None or store.source_format is not None:
+            return
+        store.set_root_attrs({"source_format": source_format}, branch=branch)
+        self._logger.info("Set store source_format='%s'", source_format)
 
     def _compute_receiver_position(
         self,
@@ -1587,9 +1855,7 @@ class RinexDataProcessor:
                 "not available with SBF geometry"
             )
         # Hoist open_zarr outside the per-file loop (was reopened per file)
-        aux_store = xr.open_zarr(
-            aux_zarr_path, decode_timedelta=True, consolidated=False
-        )
+        aux_store = _open_aux_store(aux_zarr_path)
         augmented_datasets = []
         try:
             for fpath, ds in cached_datasets:
@@ -1646,8 +1912,7 @@ class RinexDataProcessor:
     ) -> tuple[Path, str | None]:
         """Ensure auxiliary data is preprocessed and available.
 
-        When ``StorageConfig.shared_aux_cache_dir`` is set (dev/todo_later.md
-        §44), checks a network-wide, fingerprint-keyed cache before
+        When ``StorageConfig.shared_aux_cache_dir`` is set, checks a network-wide, fingerprint-keyed cache before
         rebuilding -- ephemeris products are satellite-based, not
         site-based, so multiple sites sharing the same agency/product/date
         can reuse one cache entry instead of each rebuilding it. Falls back
@@ -1749,7 +2014,7 @@ class RinexDataProcessor:
         shared_cache_dir: Path,
         reader_format: str | None = None,
     ) -> tuple[Path, str]:
-        """§44 shared-cache lookup/populate, called when the cache is enabled.
+        """Shared-cache lookup/populate, called when the cache is enabled.
 
         On a miss, writes to a per-attempt temp group and renames it into
         place only on success, rather than writing directly to the final
@@ -1776,6 +2041,9 @@ class RinexDataProcessor:
             ephemeris_source=self._config.processing.params.ephemeris_source,
             canonical_grid_seconds=CANONICAL_AUX_GRID_SECONDS,
             source_file_paths=self.aux_pipeline.source_file_paths(),
+            aggregate_glonass_fdma=(
+                self._config.processing.params.aggregate_glonass_fdma
+            ),
         )
         group = f"{fingerprint}/{date_str}"
 
@@ -1878,8 +2146,8 @@ class RinexDataProcessor:
         pool_workers : int | None
             Override for worker count. When None, uses ``self.n_max_workers``.
         aux_group : str | None
-            Zarr group within ``aux_zarr_path`` to read aux data from (§44
-            shared-cache mode). None reads the store root.
+            Zarr group within ``aux_zarr_path`` to read aux data from
+            (shared-cache mode). None reads the store root.
 
         Returns
         -------
@@ -1952,7 +2220,12 @@ class RinexDataProcessor:
         with ProcessPoolExecutor(
             max_workers=workers,
             initializer=_worker_init_with_run_id,
-            initargs=(_res["nice_priority"], _res["cpu_affinity"], get_run_id()),
+            initargs=(
+                _res["nice_priority"],
+                _res["cpu_affinity"],
+                get_run_id(),
+                active_log_dir(),
+            ),
         ) as executor:
             futures = {
                 executor.submit(
@@ -1968,6 +2241,11 @@ class RinexDataProcessor:
                     store_radial_distance,
                     store_sbf_raw_observables,
                     aux_group=aux_group,
+                    rinex_v3_parser=self._config.processing.params.rinex_v3_parser,
+                    aggregate_glonass_fdma=(
+                        self._config.processing.params.aggregate_glonass_fdma
+                    ),
+                    date_key=self.matched_data_dirs.yyyydoy.to_str(),
                 ): rinex_file
                 for rinex_file in rinex_files
             }
@@ -2015,7 +2293,13 @@ class RinexDataProcessor:
                             failed_count=failed_count,
                             hint="worker process likely killed by OOM or segfault",
                         )
-                    except (OSError, RuntimeError, ValueError) as e:
+                    except (
+                        OSError,
+                        RuntimeError,
+                        ValueError,
+                        RinexError,
+                        NmeaError,
+                    ) as e:
                         failed_file = futures[fut].name
                         failed_count += 1
                         self._logger.error(
@@ -2050,7 +2334,7 @@ class RinexDataProcessor:
 
     def _check_store_vars_consistency(
         self,
-        session: ForkSession,
+        session: Session,
         receiver_name: str,
         augmented_datasets: list[tuple[Path, xr.Dataset]],
         append_dim: str = "epoch",
@@ -2121,17 +2405,29 @@ class RinexDataProcessor:
 
     def _prepare_store_for_overwrite(
         self,
-        session: ForkSession,
+        session: Session,
         receiver_name: str,
         augmented_datasets: list[tuple[Path, xr.Dataset]],
         existing_hashes: set[str],
         file_hash_map: dict[Path, str | None],
-    ) -> None:
-        """Remove epochs that will be overwritten and drop stale variables.
+        aux_datasets: dict[Path, dict[str, xr.Dataset]] | None = None,
+    ) -> set[Path]:
+        """Rewrite the group with the batch's files replacing their epoch ranges.
 
-        Reads the existing group, masks out temporal ranges of files being
-        overwritten, drops data_vars not present in the incoming batch,
-        then rewrites the group with mode="w".
+        Reads the existing group, masks out the temporal ranges of files
+        being overwritten, drops data_vars not present in the incoming batch,
+        merges in every hashed file of the batch, sorts by epoch and rewrites
+        the group (``MyIcechunkStore.rewrite_group``). Merging before the
+        rewrite, instead of appending the replacement data afterwards, keeps
+        ``epoch`` monotonic when the replaced range lies before the latest
+        stored data. The log book is kept; ``sbf_obs`` loses the replaced
+        ranges and gains the ``sbf_obs`` of the merged files.
+
+        Returns
+        -------
+        set[Path]
+            Files whose data this rewrite already stored (empty when nothing
+            was overwritten); the caller must not append them again.
         """
         log = self._logger
 
@@ -2143,7 +2439,7 @@ class RinexDataProcessor:
                 scheduler="synchronous"
             )  # synchronous avoids Dask serialization error
         except KeyError, zarr.errors.GroupNotFoundError:
-            return  # New group, nothing to prepare
+            return set()  # New group, nothing to prepare
 
         # 2. Collect epoch ranges to remove (files that exist and will be overwritten)
         epochs_to_remove = []
@@ -2155,7 +2451,7 @@ class RinexDataProcessor:
                 epochs_to_remove.append((start, end))
 
         if not epochs_to_remove:
-            return  # Nothing to overwrite
+            return set()  # Nothing to overwrite
 
         log.info(
             "prepare_overwrite",
@@ -2184,25 +2480,31 @@ class RinexDataProcessor:
                 )
                 ds_filtered = ds_filtered.drop_vars(stale_vars)
 
-        # 5. Backup metadata, rewrite group, restore metadata
-        metadata_backup = self.site.gnss_store.backup_metadata_table(
-            receiver_name, session
+        # 5. Merge the batch into the kept epochs, in epoch order
+        store = self.site.gnss_store
+        merged_fnames = {
+            fname for fname, _ds in augmented_datasets if file_hash_map.get(fname)
+        }
+        incoming = [
+            store._normalize_encodings(store._cleanse_dataset_attrs(ds))
+            for fname, ds in augmented_datasets
+            if fname in merged_fnames
+        ]
+        ds_rewrite = xr.concat(
+            [ds_filtered, *incoming], dim="epoch", combine_attrs="override"
+        ).sortby("epoch")
+
+        # 6. Rewrite the group, keeping its metadata/
+        sbf_parts = self._sbf_obs_parts(aux_datasets, sorted(merged_fnames))
+        store.rewrite_group(
+            session,
+            receiver_name,
+            ds_rewrite,
+            epochs_to_remove,
+            {"sbf_obs": sbf_parts} if sbf_parts else None,
         )
 
-        ds_filtered = self.site.gnss_store._normalize_encodings(ds_filtered)
-
-        if ds_filtered.sizes.get("epoch", 0) > 0:
-            to_icechunk(ds_filtered, session, group=receiver_name, mode="w")
-        else:
-            # No epochs remain — write empty structure from first incoming dataset
-            _, first_ds = augmented_datasets[0]
-            empty = self.site.gnss_store._normalize_encodings(first_ds.isel(epoch=[]))
-            to_icechunk(empty, session, group=receiver_name, mode="w")
-
-        if metadata_backup is not None:
-            self.site.gnss_store.restore_metadata_table(
-                receiver_name, metadata_backup, session
-            )
+        return merged_fnames
 
     def _check_existing_with_temporal_overlap(
         self,
@@ -2213,21 +2515,31 @@ class RinexDataProcessor:
         """Check for existing files by hash AND temporal overlap.
 
         Performs three checks:
-        1. Hash match against store metadata (exact duplicate)
-        2. Temporal overlap against store metadata (e.g. re-run)
+        1. Hash match against store metadata (exact duplicate): skipped,
+           or written again as ``gnss_store_strategy`` says.
+        2. Temporal overlap against store metadata: a file whose epochs a
+           file with another hash already filled stops the run with
+           ``gnss_store_strategy: skip`` (#351); the other strategies write
+           it over the stored data on purpose. Runs after a lost conflict
+           too, against the new tip, so it catches another run's files.
         3. Intra-batch overlap (e.g. daily concat + 15-min sub-files
            in the same batch)
 
         Returns the union of all flagged hashes so the caller can treat
         them as ``exists=True``.
+
+        Raises
+        ------
+        StoredOverlapError
+            If check 2 finds a file with ``gnss_store_strategy: skip``.
         """
         valid_hashes = [h for h in file_hash_map.values() if h]
 
         # Load the metadata table once and share it with both checks below
-        # instead of each doing its own full-table read (dev/todo_later.md
-        # §34 -- confirmed 2026-07-15 that batch_check duration tracks
-        # metadata_rows almost exactly, so halving the reads halves that
-        # cost directly). `None` means fresh store / no metadata yet.
+        # instead of each doing its own full-table read: the time of the
+        # batch check grows with the number of metadata rows, so one read
+        # instead of two halves that cost. `None` means fresh store / no
+        # metadata yet.
         metadata_df = self.site.gnss_store.load_metadata_for_dedup(receiver_name)
         if metadata_df is None:
             existing_hashes: set[str] = set()
@@ -2254,59 +2566,121 @@ class RinexDataProcessor:
                     temporal_overlaps = self.site.gnss_store.check_temporal_overlaps(
                         receiver_name, file_intervals, metadata_df=metadata_df
                     )
+                    if temporal_overlaps and self._gnss_store_strategy == "skip":
+                        raise StoredOverlapError(
+                            _stored_overlap_message(
+                                receiver_name,
+                                [
+                                    (
+                                        fname,
+                                        str(file_hash_map[fname]),
+                                        *_epoch_range(ds),
+                                    )
+                                    for fname, ds in augmented_datasets
+                                    if file_hash_map[fname] in temporal_overlaps
+                                ],
+                                metadata_df,
+                            )
+                        )
                     existing_hashes |= temporal_overlaps
 
-        # Check 3: intra-batch overlap detection
-        # If a file's time range fully contains other files' ranges,
-        # it's a concatenation file — flag it as redundant.
+        # Check 3: intra-batch overlap. Files are taken in order of their
+        # first epoch (on ties, the shorter file first) and a file whose
+        # epochs touch those of a file already taken is skipped, the same
+        # rule check 2 applies against the store. Discovery already rejects
+        # files whose *names* overlap; this catches data that disagrees with
+        # its name.
         intervals = []
         for fname, ds in augmented_datasets:
             h = file_hash_map[fname]
             if h and h not in existing_hashes:
-                intervals.append(
-                    (
-                        h,
-                        np.datetime64(ds.epoch.min().values),
-                        np.datetime64(ds.epoch.max().values),
-                        len(ds.epoch),
-                    )
-                )
+                start = np.datetime64(ds.epoch.min().values)
+                end = np.datetime64(ds.epoch.max().values)
+                intervals.append((start, end, len(intervals), h, fname))
+        intervals.sort()
 
-        if len(intervals) > 1:
-            intra_overlaps: set[str] = set()
-            for i, (h_i, s_i, e_i, n_i) in enumerate(intervals):
-                for j, (h_j, s_j, e_j, n_j) in enumerate(intervals):
-                    if i == j:
-                        continue
-                    # Check if file i fully contains file j
-                    if s_i <= s_j and e_i >= e_j:
-                        # File i contains file j — flag the larger file
-                        # (prefer keeping the smaller sub-files)
-                        intra_overlaps.add(h_i)
-                        self._logger.warning(
-                            "intra_batch_overlap",
-                            container_hash=h_i[:16],
-                            container_epochs=n_i,
-                            contained_hash=h_j[:16],
-                            contained_epochs=n_j,
-                            message="Skipping concatenation file that "
-                            "contains sub-files in same batch",
-                        )
-                        break  # Once flagged, no need to check more
-            existing_hashes |= intra_overlaps
+        kept: tuple[np.datetime64, Path] | None = None
+        for start, end, _, h, fname in intervals:
+            if kept is not None and start <= kept[0]:
+                existing_hashes.add(h)
+                self._logger.warning(
+                    "intra_batch_overlap",
+                    file=Path(fname).name,
+                    overlaps=kept[1].name,
+                    file_range=f"{start} → {end}",
+                    message="Skipping file whose epochs overlap another "
+                    "file of the same batch",
+                )
+                continue
+            kept = (end, Path(fname))
 
         return existing_hashes
 
     # ── Cross-group fork/merge batch writes (skip/unsafe_append only) ──────
     #
-    # dev/cross_group_fork_merge_plan.md. Parallelizes PHASE 3's per-group
+    # Parallelizes PHASE 3's per-group
     # writes across receiver groups (e.g. reference + N canopies) using
     # Icechunk's fork/merge primitive instead of one sequential commit per
     # group. Scope: only the "skip" and "unsafe_append" gnss_store_strategy
-    # values -- "overwrite" keeps using `_append_to_icechunk` unchanged
-    # (temp-branch-create + reset_branch has the same ref-write hazard this
-    # plan sidesteps for the other two strategies, and redesigning it is
-    # separate future work).
+    # values -- "overwrite" keeps using `_append_to_icechunk`, which stages
+    # each receiver on a temp branch and promotes it with
+    # `MyIcechunkStore.promote_branch` (refused if main moved meanwhile).
+
+    def _sbf_obs_parts(
+        self,
+        aux_datasets: dict[Path, dict[str, xr.Dataset]] | None,
+        fnames: Sequence[Path],
+    ) -> list[xr.Dataset]:
+        """The ``sbf_obs`` of *fnames* to store (none with ``store_sbf_metadata: false``)."""
+        if not aux_datasets or not self._config.processing.params.store_sbf_metadata:
+            return []
+        return [
+            aux_datasets[fname]["sbf_obs"]
+            for fname in fnames
+            if "sbf_obs" in aux_datasets.get(fname, {})
+        ]
+
+    def _write_sbf_obs(
+        self,
+        session: Any,
+        receiver_name: str,
+        aux_datasets: dict[Path, dict[str, xr.Dataset]] | None,
+        written_fnames: Sequence[Path],
+    ) -> None:
+        """Add the ``sbf_obs`` of the written files into the observations' session.
+
+        Only files whose observations were written in *session* contribute,
+        so ``sbf_obs`` covers the same files as the observations and lands
+        in the same commit. Skipped with ``store_sbf_metadata: false``.
+        Errors propagate, so the caller does not commit either.
+        """
+        parts = self._sbf_obs_parts(aux_datasets, written_fnames)
+        if not parts:
+            return
+        n_epochs = self.site.gnss_store.write_metadata_parts(
+            parts, receiver_name, "sbf_obs", session
+        )
+        self._logger.info(
+            "sbf_obs_written",
+            receiver=receiver_name,
+            files=len(parts),
+            epochs=n_epochs,
+        )
+
+    def _check_preprocessing(
+        self, receiver_name: str, augmented_datasets: list[tuple[Path, xr.Dataset]]
+    ) -> None:
+        """Refuse files preprocessed differently from ``receiver_name``'s data.
+
+        Checks once per distinct record (each check reads the log book);
+        raises ``PreprocessingMismatchError``, which stops the run.
+        """
+        checked: set[str] = set()
+        for _fname, ds in augmented_datasets:
+            record = str(ds.attrs.get(PREPROCESSING_ATTR, ""))
+            if record not in checked:
+                checked.add(record)
+                self.site.gnss_store.check_preprocessing_matches(receiver_name, ds)
 
     def _prepare_group_write(
         self,
@@ -2324,6 +2698,7 @@ class RinexDataProcessor:
         `batch_check_existing`, `check_temporal_overlaps` all key off
         `receiver_name`), zero cross-group reads, no store write.
         """
+        self._check_preprocessing(receiver_name, augmented_datasets)
         file_hash_map = {
             fname: ds.attrs.get("File Hash") for fname, ds in augmented_datasets
         }
@@ -2372,6 +2747,7 @@ class RinexDataProcessor:
             reader_format=plan.reader_format,
         )
 
+        written_fnames: list[Path] = []
         for idx, (fname, ds) in enumerate(plan.augmented_datasets):
             try:
                 rel_path = self.site.gnss_store.rel_path_for_commit(fname)
@@ -2380,26 +2756,10 @@ class RinexDataProcessor:
                     log.debug("No hash for %s, skipping", fname)
                     continue
 
-                start_epoch = np.datetime64(ds.epoch.min().values)
-                end_epoch = np.datetime64(ds.epoch.max().values)
                 exists = rinex_hash in existing_hashes
 
                 ds_clean = self.site.gnss_store._cleanse_dataset_attrs(ds)
                 ds_clean = self.site.gnss_store._normalize_encodings(ds_clean)
-
-                result.metadata_records.append(
-                    {
-                        "fname": fname,
-                        "rinex_hash": rinex_hash,
-                        "start": start_epoch,
-                        "end": end_epoch,
-                        "dataset_attrs": ds.attrs.copy(),
-                        "exists": exists,
-                        "rel_path": rel_path,
-                        "canonical_name": ds.attrs.get("canonical_name", ""),
-                        "physical_path": ds.attrs.get("physical_path", str(fname)),
-                    }
-                )
 
                 t_file = time.perf_counter()
                 action = "skipped"
@@ -2413,7 +2773,12 @@ class RinexDataProcessor:
                         # epoch-uniqueness check, see StorageConfig.
                         # gnss_store_strategy docstring for the risk.
                         to_icechunk(
-                            ds_clean,
+                            prepare_write(
+                                ds_clean,
+                                fork_session.store,
+                                receiver_name,
+                                append_dim="epoch",
+                            ),
                             fork_session,
                             group=receiver_name,
                             append_dim="epoch",
@@ -2424,7 +2789,12 @@ class RinexDataProcessor:
 
                     case (False, _):
                         to_icechunk(
-                            ds_clean,
+                            prepare_write(
+                                ds_clean,
+                                fork_session.store,
+                                receiver_name,
+                                append_dim="epoch",
+                            ),
                             fork_session,
                             group=receiver_name,
                             append_dim="epoch",
@@ -2441,6 +2811,12 @@ class RinexDataProcessor:
                             rel_path,
                         )
                         action = "unhandled"
+
+                result.metadata_records.append(
+                    self._logbook_row(fname, ds, rinex_hash, exists, rel_path, action)
+                )
+                if action in ("written", "appended"):
+                    written_fnames.append(fname)
 
                 dt_file = time.perf_counter() - t_file
                 result.file_append_seconds.append(dt_file)
@@ -2462,13 +2838,12 @@ class RinexDataProcessor:
             except (OSError, RuntimeError, ValueError):  # fmt: skip
                 log.exception("Failed to process %s", fname.name)
 
-        if result.metadata_records:
-            self.site.gnss_store.append_metadata_bulk(
-                group_name=receiver_name,
-                rows=result.metadata_records,
-                session=fork_session,
-            )
+        self._write_sbf_obs(
+            fork_session, receiver_name, plan.aux_datasets, written_fnames
+        )
 
+        # Log-book rows are written into this fork by the caller once the
+        # batch commit message is known (_write_receiver_batch_forked).
         result.duration_seconds = time.perf_counter() - t_start
         return result
 
@@ -2525,6 +2900,12 @@ class RinexDataProcessor:
         5. One `base_session.merge(*forks)` + one `base_session.commit(...)`
            for the groups written this round via fork.
         """
+        receivers = [name for name, *_ in group_inputs]
+        source_format = _source_format_of(
+            (ds for _, datasets, *_ in group_inputs for _, ds in datasets),
+            receivers,
+        )
+        self._ensure_gnss_store_metadata(receivers, source_format)
         version = get_version_from_pyproject()
         log = self._logger
         yyyydoy = str(self.matched_data_dirs.yyyydoy)
@@ -2603,6 +2984,7 @@ class RinexDataProcessor:
         prepass_snapshot_id: str | None = None
         if new_group_inputs:
             prepass_summary_parts: list[str] = []
+            prepass_rows: dict[str, dict[str, Any]] = {}
             with self.site.gnss_store.writable_session("main") as prepass_session:
                 for (
                     receiver_name,
@@ -2655,31 +3037,30 @@ class RinexDataProcessor:
                     ds_clean = self.site.gnss_store._cleanse_dataset_attrs(first_ds)
                     ds_clean = self.site.gnss_store._normalize_encodings(ds_clean)
                     to_icechunk(
-                        ds_clean,
+                        prepare_write(
+                            ds_clean,
+                            prepass_session.store,
+                            receiver_name,
+                            append_dim=None,
+                        ),
                         prepass_session,
                         group=receiver_name,
-                        encoding=self.site.gnss_store.chunk_encoding_for(ds_clean),
-                    )
-                    start_epoch = np.datetime64(first_ds.epoch.min().values)
-                    end_epoch = np.datetime64(first_ds.epoch.max().values)
-                    row = {
-                        "fname": first_fname,
-                        "rinex_hash": rinex_hash,
-                        "start": start_epoch,
-                        "end": end_epoch,
-                        "dataset_attrs": first_ds.attrs.copy(),
-                        "exists": False,
-                        "rel_path": rel_path,
-                        "canonical_name": first_ds.attrs.get("canonical_name", ""),
-                        "physical_path": first_ds.attrs.get(
-                            "physical_path", str(first_fname)
+                        encoding=with_time_units(
+                            ds_clean, self.site.gnss_store.chunk_encoding_for(ds_clean)
                         ),
-                    }
-                    self.site.gnss_store.append_metadata_bulk(
-                        group_name=receiver_name,
-                        rows=[row],
-                        session=prepass_session,
                     )
+                    self._write_sbf_obs(
+                        prepass_session, receiver_name, aux_datasets, [first_fname]
+                    )
+                    row = self._logbook_row(
+                        first_fname,
+                        first_ds,
+                        str(rinex_hash),
+                        False,
+                        rel_path,
+                        "initial",
+                    )
+                    prepass_rows[receiver_name] = row
                     result.metadata_records.append(row)
                     result.actions["initial"] += 1
                     dt_file = time.perf_counter() - t_file
@@ -2717,12 +3098,24 @@ class RinexDataProcessor:
                     )
 
                 if prepass_summary_parts:
-                    prepass_msg = (
+                    prepass_msg = _with_run_id(
                         f"[v{version}] {yyyydoy}: pre-pass create "
                         f"{len(prepass_summary_parts)} groups: "
                         f"{', '.join(prepass_summary_parts)}"
                     )
-                    prepass_snapshot_id = prepass_session.commit(prepass_msg)
+                    for receiver_name, row in prepass_rows.items():
+                        row["commit_msg"] = prepass_msg
+                        self.site.gnss_store.append_metadata_bulk(
+                            group_name=receiver_name,
+                            rows=[row],
+                            session=prepass_session,
+                        )
+                    prepass_snapshot_id = commit_with_rebase(
+                        prepass_session,
+                        prepass_msg,
+                        store_path=self.site.gnss_store.store_path,
+                        config=self._config,
+                    )
                     log.info(
                         "Committed pre-pass %s (snapshot: %s...)",
                         yyyydoy,
@@ -2771,6 +3164,12 @@ class RinexDataProcessor:
                         )
                         raise
 
+                # This fork's own log-book rows, before pre-pass rows (already
+                # committed with the pre-pass) are merged into the result.
+                fork_rows = {
+                    name: list(res.metadata_records) for name, res in completed.items()
+                }
+
                 # Merge pre-pass results (if any) into fork results.
                 for name, forked_result in completed.items():
                     if name in results:
@@ -2787,15 +3186,23 @@ class RinexDataProcessor:
                         forked_result.duration_seconds += pre.duration_seconds
                     results[name] = forked_result
 
-                base_session.merge(*forks.values())
-
                 summary = ", ".join(
                     f"{name}({', '.join(f'{k}={v}' for k, v in completed[name].actions.items() if v > 0)})"
                     for name in completed
                 )
-                commit_msg = (
+                commit_msg = _with_run_id(
                     f"[v{version}] {yyyydoy}: {len(completed)} groups: {summary}"
                 )
+                for name, rows in fork_rows.items():
+                    if not rows:
+                        continue
+                    for row in rows:
+                        row["commit_msg"] = commit_msg
+                    self.site.gnss_store.append_metadata_bulk(
+                        group_name=name, rows=rows, session=forks[name]
+                    )
+
+                base_session.merge(*forks.values())
 
                 agg_metadata: dict[str, Any] = {
                     "date": yyyydoy,
@@ -2824,8 +3231,12 @@ class RinexDataProcessor:
                     }
                     agg_metadata[f"group__{name}"] = json.dumps(group_meta)
 
-                batch_snapshot_id = base_session.commit(
-                    commit_msg, metadata=agg_metadata
+                batch_snapshot_id = commit_with_rebase(
+                    base_session,
+                    commit_msg,
+                    metadata=agg_metadata,
+                    store_path=self.site.gnss_store.store_path,
+                    config=self._config,
                 )
                 log.info(
                     "Committed batch %s (snapshot: %s...)",
@@ -2891,121 +3302,946 @@ class RinexDataProcessor:
                 ),
             )
 
-        # STEP 7: source_format root attr, once per batch (idempotent).
-        if results and self.site.gnss_store.source_format is None:
-            first_result = next(iter(results.values()))
-            reader_fmt = first_result.reader_format or self._reader_name
-            try:
-                self.site.gnss_store.set_root_attrs(
-                    {"source_format": reader_fmt}, branch="main"
-                )
-                log.info("Set store source_format='%s'", reader_fmt)
-            except Exception:
-                log.warning("Failed to set source_format root attr")
-
-        # STEP 8: rich store metadata, once per batch (real behavior change
-        # vs. today's once-per-group: see dev/cross_group_fork_merge_plan.md
-        # §7 -- was already non-idempotent per-group, this consolidates it
-        # to one history entry per ingest event instead of one per group).
-        try:
-            from canvod.store_metadata import (
-                collect_config_snapshot,
-                collect_metadata,
-                metadata_exists,
-                read_metadata,
-                update_metadata,
-                write_metadata,
-            )
-
-            store_path = self.site.gnss_store.store_path
-            site_name = self.site.site_name
-            sites_cfg = self._config.sites
-            site_cfg = sites_cfg.sites.get(site_name)
-
-            if site_cfg is not None and results:
-                reader_fmt = next(iter(results.values())).reader_format or (
-                    self._reader_name
-                )
-                if not metadata_exists(store_path, branch="main"):
-                    resources = self._config.processing.params.resolve_resources()
-                    meta = collect_metadata(
-                        config=self._config,
-                        site_name=site_name,
-                        site_config=site_cfg,
-                        store_type="gnss_store",
-                        source_format=reader_fmt,
-                        store_path=store_path,
-                        dask_workers=resources.get("n_workers"),
-                        dask_threads_per_worker=resources.get("threads_per_worker"),
-                    )
-                    write_metadata(store_path, meta, branch="main")
-                    log.info("Wrote rich store metadata")
-                else:
-                    now = datetime.now(UTC).isoformat()
-                    existing_meta = read_metadata(store_path, branch="main")
-                    new_snapshot = collect_config_snapshot(self._config)
-
-                    per_receiver = ", ".join(
-                        f"{name}={len(r.metadata_records)}"
-                        for name, r in results.items()
-                    )
-                    history_entries = [f"{now}: Ingested {per_receiver}"]
-                    updates: dict[str, object] = {"temporal.updated": now}
-
-                    drifted = (
-                        new_snapshot.config_hash != existing_meta.config.config_hash
-                    )
-                    if drifted:
-                        old_hash = (existing_meta.config.config_hash or "unknown")[:12]
-                        new_hash = (new_snapshot.config_hash or "unknown")[:12]
-                        history_entries.append(
-                            f"{now}: Config changed ({old_hash} -> {new_hash})"
-                        )
-                        updates["config"] = new_snapshot.model_dump(mode="json")
-
-                    updates["summaries.history"] = [
-                        *existing_meta.summaries.history,
-                        *history_entries,
-                    ]
-
-                    update_metadata(store_path, updates, branch="main")
-                    log.info(
-                        "Updated store metadata%s",
-                        " (config drift detected)" if drifted else "",
-                    )
-        except Exception:
-            log.debug(
-                "canvod-store-metadata not available or write failed",
-                exc_info=True,
-            )
-
-        # STEP 9: SBF metadata datasets (sbf_obs) per receiver, unchanged
-        # from `_append_to_icechunk`'s STEP 6 -- kept per-group since each
-        # group's aux_datasets differ.
-        for name, r in results.items():
-            if not r.aux_datasets:
-                continue
-            sbf_parts = [
-                aux_dict["sbf_obs"]
-                for aux_dict in r.aux_datasets.values()
-                if "sbf_obs" in aux_dict
-            ]
-            if sbf_parts:
-                try:
-                    self.site.gnss_store.append_metadata_datasets(
-                        sbf_parts, name, "sbf_obs", "main"
-                    )
-                    n_epochs = sum(p.sizes.get("epoch", 0) for p in sbf_parts)
-                    log.info(
-                        "Wrote sbf_obs metadata for %s (%d parts, %d epochs)",
-                        name,
-                        len(sbf_parts),
-                        n_epochs,
-                    )
-                except Exception:
-                    log.warning("Failed to write sbf_obs for %s", name, exc_info=True)
+        # STEP 7: source_format root attr, once per store (idempotent).
+        self._set_store_source_format(source_format)
 
         return results
+
+    # ── Day-block writes (ADR 0016) ────────────────────────────────────────
+
+    def _writes_day_blocks(self) -> bool:
+        """Whether this run writes day blocks into the GNSS store.
+
+        A store not created yet, without receiver groups, or whose groups are
+        all made of day blocks, gets day blocks.
+
+        Raises
+        ------
+        LayoutError
+            If a group of the store was written by appending: the store has
+            to be moved to day blocks first (``canvodpy store migrate-layout``).
+        """
+        # Before self.site.gnss_store, which opens the store.
+        if not store_exists(self.site.gnss_store_path):
+            return True
+        store = self.site.gnss_store
+        groups = store.list_groups() or []
+        if not groups:
+            return True
+        with store.readonly_session("main") as session:
+            root = zarr.open_group(session.store, mode="r")
+            appended = [
+                name
+                for name in groups
+                if name in root and not is_day_block_group(root[name].attrs)
+            ]
+        if appended:
+            msg = (
+                f"The GNSS store at {self.site.gnss_store_path} holds groups "
+                f"written by appending ({', '.join(sorted(appended))}); runs "
+                "write day blocks only. Move the store to day blocks first:\n"
+                f"  {store_command('migrate-layout', self.site.site_name, 'gnss_store')}"
+            )
+            raise LayoutError(msg)
+        return True
+
+    def _day_block_cadence_s(
+        self, receiver_name: str, augmented_datasets: list[tuple[Path, xr.Dataset]]
+    ) -> float:
+        """The cadence of a receiver's day blocks, in seconds.
+
+        The bin length of ``processing.preprocessing.temporal_aggregation``
+        when it is set and enabled; otherwise the finest sampling interval
+        the files' canonical names give.
+
+        Raises
+        ------
+        CadenceError
+            If a file has no canonical name to take its sampling from.
+        """
+        return self._cadence_s_from_names(
+            receiver_name,
+            [
+                (fname, ds.attrs.get("canonical_name") or self._canonical_name(fname))
+                for fname, ds in augmented_datasets
+            ],
+        )
+
+    def _cadence_s_from_names(
+        self, receiver_name: str, names: Sequence[tuple[Path, str]]
+    ) -> float:
+        """The cadence of :meth:`_day_block_cadence_s`, from canonical names.
+
+        ``names`` pairs each file with its canonical name (``""`` if none).
+        """
+        from canvod.preflight.convention import CanVODFilename
+
+        preprocessing = self._config.processing.preprocessing
+        aggregation = (
+            None if preprocessing is None else preprocessing.temporal_aggregation
+        )
+        if aggregation is not None and aggregation.enabled:
+            return pd.Timedelta(aggregation.freq).total_seconds()
+        intervals = []
+        for fname, canonical in names:
+            if not canonical:
+                msg = (
+                    f"{fname.name} of receiver '{receiver_name}' has no canonical "
+                    "name, so its sampling interval, which sets the cadence of "
+                    f"the day's slots, is unknown. Name the file by the canVOD "
+                    f"convention or set {AGGREGATION_SETTING}."
+                )
+                raise CadenceError(msg)
+            interval = CanVODFilename.from_filename(canonical).sampling_interval
+            intervals.append(interval.total_seconds())
+        return min(intervals)
+
+    def day_blocks_to_grow(
+        self, receiver_file_map: Sequence[tuple[str, list[Path]]]
+    ) -> dict[str, dict[np.datetime64, float]]:
+        """The day blocks this day needs, for the batch's growth commit.
+
+        For each receiver group of ``receiver_file_map`` that exists and is
+        made of day blocks: this day and its cadence, from the files' names
+        (:meth:`_cadence_s_from_names`), so no file is read. A group not
+        written yet is left out: its first write creates it from a file.
+        Empty if the store does not exist yet or is not written as day
+        blocks.
+
+        Raises
+        ------
+        CadenceError
+            If a file has no canonical name to take its sampling from.
+        """
+        # A store not created yet has no group to grow; opening it would fail.
+        if not store_exists(self.site.gnss_store_path) or not self._writes_day_blocks():
+            return {}
+        existing = set(self.site.gnss_store.list_groups() or [])
+        day = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
+        return {
+            group: {
+                day: self._cadence_s_from_names(
+                    group, [(f, self._canonical_name(f)) for f in files]
+                )
+            }
+            for group, files in receiver_file_map
+            if files and group in existing
+        }
+
+    def _write_day_blocks(
+        self,
+        group_inputs: Sequence[
+            tuple[
+                str,  # receiver_name
+                list[tuple[Path, xr.Dataset]],  # augmented_datasets
+                list[Path],  # rinex_files
+                dict[Path, dict[str, xr.Dataset]] | None,  # aux_datasets
+                dict[str, list[str]] | None,  # sid_issues
+                str | None,  # reader_format
+            ]
+        ],
+    ) -> dict[str, GroupWriteResult]:
+        """Write a batch's receiver groups as day blocks, in one commit.
+
+        One session, the groups one after the other: each day the files
+        touch gets a block (:func:`~canvod.store.day_blocks.add_day_block`),
+        then each file is written into its slots
+        (:func:`~canvod.store.day_blocks.write_file_region`). The data, the
+        ``sbf_obs`` of new files and the log-book rows (with each file's
+        epoch count) go into one commit; no temporary branch is needed,
+        since a file written again goes into the same slots and empties
+        those of its earlier write that it now has no epochs for, but none
+        of another file's
+        (:func:`~canvodpy.orchestrator.forked_writes.rewrite_spans`).
+
+        Files already stored (by hash or by time, see
+        :meth:`_check_existing_with_temporal_overlap`) are skipped with
+        ``gnss_store_strategy: skip`` and written again into their slots
+        otherwise (action ``overwritten``). A file that fails is logged and
+        left out, with no log-book row, so the next run tries it again.
+
+        Raises
+        ------
+        CadenceError, LayoutError
+            A cadence the slots cannot have, or a group written by
+            appending: the run stops.
+        """
+        receivers = [name for name, *_ in group_inputs]
+        source_format = _source_format_of(
+            (ds for _, datasets, *_ in group_inputs for _, ds in datasets),
+            receivers,
+        )
+        self._ensure_gnss_store_metadata(receivers, source_format)
+        log = self._logger
+        version = get_version_from_pyproject()
+        yyyydoy = str(self.matched_data_dirs.yyyydoy)
+        store = self.site.gnss_store
+        epoch_chunk = int((store.chunk_strategy or {}).get("epoch", 180))
+        results: dict[str, GroupWriteResult] = {}
+        rows_by_group: dict[str, list[dict[str, Any]]] = {}
+
+        with store.writable_session("main") as session:
+            for (
+                receiver_name,
+                augmented_datasets,
+                _rinex_files,
+                aux_datasets,
+                _sid_issues,
+                reader_format,
+            ) in group_inputs:
+                t_start = time.perf_counter()
+                result = GroupWriteResult(
+                    receiver_name=receiver_name,
+                    fork=None,
+                    aux_datasets=aux_datasets,
+                    reader_format=reader_format,
+                )
+                result.actions["overwritten"] = 0
+                results[receiver_name] = result
+                hashed = [
+                    (fname, ds)
+                    for fname, ds in augmented_datasets
+                    if ds.attrs.get("File Hash")
+                ]
+                if not hashed:
+                    continue
+
+                self._check_preprocessing(receiver_name, hashed)
+                file_hash_map = {
+                    fname: ds.attrs.get("File Hash") for fname, ds in hashed
+                }
+                existing_hashes = self._check_existing_with_temporal_overlap(
+                    receiver_name, hashed, file_hash_map
+                )
+                result.existing_hashes = existing_hashes
+                is_new_group = receiver_name not in (store.list_groups() or [])
+
+                to_write = [
+                    (fname, ds)
+                    for fname, ds in hashed
+                    if file_hash_map[fname] not in existing_hashes
+                    or self._gnss_store_strategy != "skip"
+                ]
+                blocks = None
+                if to_write:
+                    cadence_s = self._day_block_cadence_s(receiver_name, to_write)
+                    template = store._normalize_encodings(
+                        store._cleanse_dataset_attrs(to_write[0][1])
+                    )
+                    days = np.unique(
+                        np.concatenate(
+                            [ds.epoch.values.astype("M8[D]") for _, ds in to_write]
+                        )
+                    )
+                    for day in days:
+                        add_day_block(
+                            session,
+                            receiver_name,
+                            day,
+                            cadence_s,
+                            template,
+                            epoch_chunk=epoch_chunk,
+                            dim_chunks=store.chunk_strategy,
+                        )
+                    # Read once: reading them reads the group's whole epoch
+                    # axis, and writing a file keeps them as they are.
+                    blocks = day_blocks(session.store, receiver_name)
+
+                # The log book before this batch: a file written again
+                # empties the slots of its earlier write, none of another's.
+                stored = self._stored_rows(session, receiver_name)
+                new_fnames: list[Path] = []
+                for idx, (fname, ds) in enumerate(hashed):
+                    rinex_hash = str(file_hash_map[fname])
+                    exists = rinex_hash in existing_hashes
+                    rel_path = store.rel_path_for_commit(fname)
+                    t_file = time.perf_counter()
+                    n_epochs = -1
+                    if exists and self._gnss_store_strategy == "skip":
+                        action = "skipped"
+                        log.debug("Skipped: %s", rel_path)
+                    else:
+                        earlier, others = rewrite_spans(
+                            stored,
+                            ds.attrs.get("canonical_name")
+                            or self._canonical_name(fname),
+                            rinex_hash,
+                        )
+                        try:
+                            region = write_file_region(
+                                session,
+                                receiver_name,
+                                store._normalize_encodings(
+                                    store._cleanse_dataset_attrs(ds)
+                                ),
+                                blocks=blocks,
+                                earlier=earlier,
+                                keep=others,
+                            )
+                        except (OSError, RuntimeError, ValueError):  # fmt: skip
+                            log.exception("Failed to write %s", fname.name)
+                            continue
+                        n_epochs = region.epochs
+                        if exists:
+                            action = "overwritten"
+                        elif is_new_group and not new_fnames:
+                            action = "initial"
+                        else:
+                            action = "written"
+                        if not exists:
+                            new_fnames.append(fname)
+                        log.debug("%s: %s", action.capitalize(), rel_path)
+                    result.actions[action] += 1
+                    rows_by_group.setdefault(receiver_name, []).append(
+                        self._logbook_row(
+                            fname, ds, rinex_hash, exists, rel_path, action, n_epochs
+                        )
+                    )
+                    dt_file = time.perf_counter() - t_file
+                    result.file_append_seconds.append(dt_file)
+                    result.total_epochs += max(n_epochs, 0)
+                    result.total_nbytes += int(ds.nbytes)
+                    self._icechunk_log.info(
+                        "icechunk.file_append",
+                        duration_seconds=round(dt_file, 4),
+                        receiver=receiver_name,
+                        date=yyyydoy,
+                        file=fname.name,
+                        file_index=idx,
+                        action=action,
+                        n_epochs=n_epochs,
+                        n_sids=int(ds.sizes.get("sid", 0)),
+                    )
+
+                # The sbf_obs of files written again stay as first stored.
+                self._write_sbf_obs(session, receiver_name, aux_datasets, new_fnames)
+                result.metadata_records = rows_by_group.get(receiver_name, [])
+                result.duration_seconds = time.perf_counter() - t_start
+
+            written = {name: r for name, r in results.items() if r.metadata_records}
+            if not written:
+                return results
+            summary = ", ".join(
+                f"{name}({', '.join(f'{k}={v}' for k, v in r.actions.items() if v)})"
+                for name, r in written.items()
+            )
+            commit_msg = _with_run_id(
+                f"[v{version}] {yyyydoy}: {len(written)} groups: {summary}"
+            )
+            agg_metadata: dict[str, Any] = {
+                "date": yyyydoy,
+                "receivers": ",".join(written),
+                "total_files": str(
+                    sum(len(r.metadata_records) for r in written.values())
+                ),
+            }
+            for name, r in written.items():
+                for row in r.metadata_records:
+                    row["commit_msg"] = commit_msg
+                # No commit without the log-book rows: a file stored without
+                # its row is not recognized as stored by the next run.
+                store.append_metadata_bulk(
+                    group_name=name, rows=r.metadata_records, session=session
+                )
+                agg_metadata[f"group__{name}"] = json.dumps(
+                    {
+                        "receiver": name,
+                        "start": str(min(rec["start"] for rec in r.metadata_records)),
+                        "end": str(max(rec["end"] for rec in r.metadata_records)),
+                        "rinex_hashes": ",".join(
+                            str(rec["rinex_hash"]) for rec in r.metadata_records
+                        ),
+                        "canonical_names": ",".join(
+                            str(rec["canonical_name"])
+                            for rec in r.metadata_records
+                            if rec.get("canonical_name")
+                        ),
+                    }
+                )
+            snapshot_id = commit_with_rebase(
+                session,
+                commit_msg,
+                metadata=agg_metadata,
+                store_path=store.store_path,
+                config=self._config,
+            )
+            log.info(
+                "Committed day blocks %s (snapshot: %s...)", yyyydoy, snapshot_id[:8]
+            )
+            for r in written.values():
+                r.snapshot_id = snapshot_id
+
+        for name, r in written.items():
+            if self._keeper_tags_enabled:
+                store.create_keeper_tag(name, yyyydoy, str(r.snapshot_id))
+            record_stage_timing(
+                "writing", r.duration_seconds, receiver=name, date_key=yyyydoy
+            )
+            self._icechunk_log.info(
+                "batch_write_complete",
+                receiver=name,
+                date=yyyydoy,
+                snapshot_id=str(r.snapshot_id)[:12],
+                total_files=len(r.metadata_records),
+                total_epochs=r.total_epochs,
+                total_nbytes=r.total_nbytes,
+                duration_seconds=round(r.duration_seconds, 2),
+                actions=r.actions,
+            )
+
+        self._set_store_source_format(source_format)
+
+        return results
+
+    # ── Forked writes of day blocks (ADR 0016) ─────────────────────────────
+
+    def plan_forked_day(
+        self,
+        task_descriptors: Sequence[tuple],
+        session: icechunk.Session | None = None,
+    ) -> ForkedDay | None:
+        """Plan this day's files as tasks that write into forks of one session.
+
+        Each task takes the files of one receiver (or of one reference file's
+        pairings) that share an epoch chunk, so no chunk is written by two
+        forks (see :mod:`canvodpy.orchestrator.forked_writes`). The chunks
+        come from the files' canonical names and the day's blocks, so no
+        file is read. With ``processing.preprocessing`` set, the chunks are
+        those of the aggregated epochs; a time bin is one of their slots, so
+        the files of a bin share a chunk and go to one task.
+
+        ``None`` when the day is written in one session instead
+        (:meth:`_write_day_blocks`): the store does not exist yet, is not
+        made of day blocks, or a group of the day does not exist yet or has
+        no block for the day, so the first file must create it.
+
+        Parameters
+        ----------
+        task_descriptors
+            The day's tasks from :meth:`prepare_batch_tasks`.
+        session
+            The writable session the forks come from; the days of a unit
+            share one, so they are committed once (ADR 0021). ``None``: a
+            session of the day's own.
+
+        Raises
+        ------
+        CadenceError
+            If a file has no canonical name to take its place from.
+        """
+        if not task_descriptors or not store_exists(self.site.gnss_store_path):
+            return None
+        if not self._writes_day_blocks():
+            return None
+        store = self.site.gnss_store
+        lanes: dict[tuple[str, ...], list[tuple]] = {}
+        for desc in task_descriptors:
+            groups = tuple(desc[3]) if desc[-1] else (str(desc[4]),)
+            lanes.setdefault(groups, []).append(desc)
+        all_groups = {g for groups in lanes for g in groups}
+        if not all_groups or not all_groups <= set(store.list_groups() or []):
+            return None
+
+        date_obj = self.matched_data_dirs.yyyydoy.date
+        if date_obj is None:
+            msg = (
+                f"Day {self.matched_data_dirs.yyyydoy.to_str()} has no calendar "
+                "date, so its files have no place in the day's blocks."
+            )
+            raise ValueError(msg)
+        day = np.datetime64(date_obj, "D")
+        if session is None:
+            session = store.repo.writable_session("main")
+        blocks: dict[str, dict[np.datetime64, DayBlock]] = {}
+        # The chunks each group has, not the settings: a group keeps the
+        # chunks it was created with.
+        epoch_chunks: dict[str, int] = {}
+        for group in all_groups:
+            epoch_chunks[group] = stored_epoch_chunk(session.store, group)
+            group_blocks = day_blocks(session.store, group)
+            if day not in group_blocks:
+                return None
+            blocks[group] = {
+                d: b
+                for d, b in group_blocks.items()
+                if d in (day, day + np.timedelta64(1, "D"))
+            }
+        stored = {g: self._stored_rows_around(g, day) for g in all_groups}
+        params = self._config.processing.params
+        preprocessing = self._config.processing.preprocessing
+
+        planned = ForkedDay(
+            date_key=self.matched_data_dirs.yyyydoy.to_str(),
+            date=date_obj,
+            session=session,
+            tasks=[],
+        )
+        for groups, descs in lanes.items():
+            names = {Path(d[0]): self._canonical_name(Path(d[0])) for d in descs}
+            chunks_of = [
+                (
+                    desc,
+                    self._file_chunks(
+                        Path(desc[0]),
+                        names[Path(desc[0])],
+                        groups,
+                        blocks,
+                        epoch_chunks,
+                    ),
+                )
+                for desc in descs
+            ]
+            for members, chunks in chunk_groups(chunks_of):
+                task = ForkTask(
+                    date_key=planned.date_key,
+                    file_tasks=tuple(members),
+                    groups=groups,
+                    chunks={
+                        g: frozenset(c for owner, c in chunks if owner == g)
+                        for g in groups
+                    },
+                    blocks={g: blocks[g] for g in groups},
+                    stored_hashes={
+                        g: frozenset(h for _, h, _, _ in stored[g] if h) for g in groups
+                    },
+                    stored_spans={g: stored[g] for g in groups},
+                    strategy=self._gnss_store_strategy,
+                    preprocessing=preprocessing,
+                    canonical_names={Path(m[0]): names[Path(m[0])] for m in members},
+                    keep_sbf_obs=bool(params.store_sbf_metadata),
+                )
+                planned.tasks.append((task, session.fork()))
+        self._logger.info(
+            "forked_day_planned",
+            date=planned.date_key,
+            groups=sorted(all_groups),
+            tasks=len(planned.tasks),
+            files=sum(len(t.file_tasks) for t, _ in planned.tasks),
+        )
+        return planned
+
+    def _file_chunks(
+        self,
+        fname: Path,
+        canonical: str,
+        groups: Sequence[str],
+        blocks: Mapping[str, Mapping[np.datetime64, DayBlock]],
+        epoch_chunks: Mapping[str, int],
+    ) -> set[tuple[str, int]]:
+        """The ``(group, chunk)`` pairs a file's name puts it into.
+
+        From the first to the last epoch its name gives (start, and end
+        minus one sampling interval), within the block of its first day;
+        epochs of another day, or beyond the name, are written by the
+        writer thread (see :mod:`canvodpy.orchestrator.forked_writes`).
+        Without aggregation an epoch goes to its nearest slot; with it, to
+        its time bin, the slot at or before it. Two files with epochs in one
+        bin thus share its chunk.
+        """
+        from canvod.preflight.convention import CanVODFilename
+
+        if not canonical:
+            msg = (
+                f"{fname.name} has no canonical name, so its place in the "
+                "day's slots is unknown. Name the file by the canVOD "
+                f"convention or set {AGGREGATION_SETTING}."
+            )
+            raise CadenceError(msg)
+        named = CanVODFilename.from_filename(canonical)
+        preprocessing = self._config.processing.preprocessing
+        aggregation = (
+            None if preprocessing is None else preprocessing.temporal_aggregation
+        )
+        aggregated = aggregation is not None and aggregation.enabled
+        start = np.datetime64(named.start, "ns")
+        last = np.datetime64(named.end - named.sampling_interval, "ns")
+        chunks: set[tuple[str, int]] = set()
+        for group in groups:
+            block = blocks[group].get(start.astype("M8[D]"))
+            if block is None:
+                continue
+            day_end = (block.day + np.timedelta64(1, "D")).astype(
+                "M8[ns]"
+            ) - np.timedelta64(1, "ns")
+            first, final = start, min(last, day_end)
+            if aggregated:
+                # span_chunks takes the nearest slot; half a slot earlier,
+                # that is the slot at or before the epoch.
+                half = np.timedelta64(block.cadence_ns // 2, "ns")
+                day_start = block.day.astype("M8[ns]")
+                first, final = (
+                    max(first - half, day_start),
+                    max(final - half, day_start),
+                )
+            span = span_chunks(block, first, final, epoch_chunks[group])
+            chunks |= {(group, chunk) for chunk in span}
+        return chunks
+
+    def _stored_rows_around(
+        self, group: str, day: np.datetime64
+    ) -> tuple[StoredSpan, ...]:
+        """``group``'s log-book rows from the day before to the day after.
+
+        A file has one time span, so a file of ``day`` is in the log book
+        only with a row near it; the rest of the log book is not sent to
+        the workers (:func:`~canvodpy.orchestrator.forked_writes.stored_spans`).
+        """
+        return stored_spans_around(
+            self.site.gnss_store.load_metadata_for_dedup(group), day
+        )
+
+    def _check_stored_overlaps(
+        self, session: icechunk.Session, numbers: Sequence[FileNumbers]
+    ) -> None:
+        """Stop if a new file's epochs fall on epochs another stored file filled.
+
+        Runs at the tip, after the rebase, so the log book holds the files
+        of runs that committed since the day was planned (#351). With a
+        ``gnss_store_strategy`` other than ``skip`` the run writes over the
+        stored data on purpose; such a file's log-book row says
+        ``overwritten``. The log book comes from the run's copy, which
+        reads only the rows committed since it last looked (ADR 0021).
+
+        Raises
+        ------
+        StoredOverlapError
+            With ``gnss_store_strategy: skip``, naming each such file and the
+            stored files it overlaps.
+        """
+        for group in sorted({n.group for n in numbers if n.action == WRITTEN}):
+            stored = self.site.gnss_store.log_books.rows(session, group)
+            if stored is None:
+                continue
+            written = [n for n in numbers if n.group == group and n.action == WRITTEN]
+            # Each file is checked against the rows around its unit only: a
+            # check against the whole log book costs files times rows.
+            stored = _stored_overlaps(
+                stored,
+                None,
+                min(n.start for n in written),
+                max(n.end for n in written),
+            )
+            overlapping = [
+                n
+                for n in written
+                if not _stored_overlaps(stored, n.rinex_hash, n.start, n.end).is_empty()
+            ]
+            if not overlapping:
+                continue
+            if self._gnss_store_strategy == "skip":
+                raise StoredOverlapError(
+                    _stored_overlap_message(
+                        group,
+                        [(n.fname, n.rinex_hash, n.start, n.end) for n in overlapping],
+                        stored,
+                    )
+                )
+            for n in overlapping:
+                n.action = OVERWRITTEN
+
+    def _commit_forked_day(
+        self, day: ForkedDay, results: Sequence[ForkResult]
+    ) -> dict[str, GroupWriteResult]:
+        """Merge a day's forks and commit them once: a unit of this one day.
+
+        See :meth:`_commit_forked_unit`.
+        """
+        return self._commit_forked_unit([(self, day, results)])[day.date_key]
+
+    def _commit_forked_unit(
+        self,
+        days: Sequence[tuple[RinexDataProcessor, ForkedDay, Sequence[ForkResult]]],
+    ) -> dict[str, dict[str, GroupWriteResult]]:
+        """Merge the forks of a unit's days and commit them once (ADR 0021).
+
+        ``days`` pairs each day's processor with its plan, whose forks all
+        come from one session, and the results of its fork jobs. Under the
+        store's commit lock: merge the forks, rebase onto commits made since
+        the session was opened (other runs), write the files the workers
+        left to this thread, the ``sbf_obs`` of new files and a log-book row
+        for every file (also skipped ones), and commit. The commit writes
+        the snapshot summary from the log book and the coordinates
+        (ADR 0014); no data are read back. A file that fails gets no
+        log-book row, so the next run tries it again; the other files and
+        days are committed.
+
+        Returns
+        -------
+        dict[str, dict[str, GroupWriteResult]]
+            Per day (``YYYYDOY``), per store group, what was written.
+
+        Raises
+        ------
+        icechunk.RebaseFailedError, icechunk.ConflictError
+            If another run wrote the same chunks first; nothing is
+            committed, and the caller tries the unit again (up to
+            :data:`~canvod.store_metadata.io.CONFLICT_TRIES` tries in all).
+        PreprocessingMismatchError
+            If a group holds data preprocessed differently.
+        StoredOverlapError
+            If a new file's epochs fall on epochs that a file with another
+            hash already filled at the tip (#351).
+        """
+        store = self.site.gnss_store
+        log = self._logger
+        version = get_version_from_pyproject()
+        session = days[0][1].session
+        if any(day.session is not session for _, day, _ in days):
+            msg = "The days of a unit must be planned on one session."
+            raise ValueError(msg)
+
+        out: dict[str, dict[str, GroupWriteResult]] = {}
+        numbers: dict[str, list[FileNumbers]] = {}
+        checked: set[tuple[str, str]] = set()
+        for _proc, day, results in days:
+            numbers[day.date_key] = [n for r in results for n in r.files]
+            groups = sorted({g for task, _ in day.tasks for g in task.groups})
+            out[day.date_key] = day_out = {}
+            for group in groups:
+                day_out[group] = GroupWriteResult(receiver_name=group, fork=None)
+                day_out[group].actions["overwritten"] = 0
+            for r in results:
+                for group, fname, error in r.failed:
+                    day_out[group].failed_files += 1
+                    log.error(
+                        "file_not_written",
+                        date=day.date_key,
+                        group=group,
+                        file=fname,
+                        error=error,
+                    )
+            for n in numbers[day.date_key]:
+                key = (n.group, str(n.attrs.get(PREPROCESSING_ATTR, "")))
+                if n.action != SKIPPED and key not in checked:
+                    checked.add(key)
+                    store.check_preprocessing_matches(
+                        n.group, xr.Dataset(attrs=n.attrs)
+                    )
+
+        t_start = time.perf_counter()
+        with commit_lock(store.store_path):
+            # A fork that wrote nothing (all files skipped, deferred or
+            # failed) has nothing to merge.
+            forks = [
+                r.fork
+                for _, _, results in days
+                for r in results
+                if any(n.action != SKIPPED and n.deferred is None for n in r.files)
+            ]
+            if forks:
+                session.merge(*forks)
+            if store.repo.lookup_branch("main") != session.snapshot_id:
+                session.rebase(icechunk.ConflictDetector())
+            all_numbers = [n for day_numbers in numbers.values() for n in day_numbers]
+            self._check_stored_overlaps(session, all_numbers)
+
+            # Rows per group, in the order of the days.
+            rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
+            # The stored rows at the tip, read once per group for the unit.
+            tip_rows: dict[str, tuple[StoredSpan, ...]] = {}
+            for proc, day, _results in days:
+                day_out = out[day.date_key]
+                kept: list[FileNumbers] = []
+                for n in numbers[day.date_key]:
+                    if n.deferred is not None:
+                        if n.group not in tip_rows:
+                            tip_rows[n.group] = self._stored_rows(session, n.group)
+                        try:
+                            n.epochs = proc._write_deferred(
+                                session, n, tip_rows[n.group]
+                            )
+                        except (OSError, RuntimeError, ValueError):  # fmt: skip
+                            log.exception(
+                                "file_write_failed", file=n.fname.name, group=n.group
+                            )
+                            day_out[n.group].failed_files += 1
+                            continue
+                        n.deferred = None
+                    kept.append(n)
+
+                for group in day_out:
+                    # Files not stored before, also those written over
+                    # another file's epochs (#351).
+                    new = [
+                        n
+                        for n in kept
+                        if n.group == group and n.action != SKIPPED and not n.exists
+                    ]
+                    proc._write_sbf_obs(
+                        session,
+                        group,
+                        {
+                            n.fname: {"sbf_obs": n.sbf_obs}
+                            for n in new
+                            if n.sbf_obs is not None
+                        },
+                        [n.fname for n in new],
+                    )
+
+                for n in kept:
+                    result = day_out[n.group]
+                    result.actions[n.action] += 1
+                    result.metadata_records.append(
+                        proc._logbook_row_of(
+                            n.fname,
+                            n.rinex_hash,
+                            n.start,
+                            n.end,
+                            n.attrs,
+                            n.canonical_name,
+                            n.exists,
+                            store.rel_path_for_commit(n.fname),
+                            n.action,
+                            n.epochs,
+                        )
+                    )
+                    result.file_append_seconds.append(n.seconds)
+                    result.total_epochs += max(n.epochs, 0)
+                    if n.action != SKIPPED:
+                        result.total_nbytes += n.nbytes
+                    if n.exists:
+                        result.existing_hashes.add(n.rinex_hash)
+                for group, result in day_out.items():
+                    if result.metadata_records:
+                        rows[group].extend(result.metadata_records)
+
+            if not rows:
+                return out
+            date_keys = [day.date_key for _, day, _ in days]
+            written_days = [
+                d for d in date_keys if any(r.metadata_records for r in out[d].values())
+            ]
+            actions: dict[str, Counter[str]] = defaultdict(Counter)
+            for date_key in written_days:
+                for group, result in out[date_key].items():
+                    actions[group].update(result.actions)
+            summary = ", ".join(
+                f"{g}({', '.join(f'{k}={v}' for k, v in c.items() if v)})"
+                for g, c in sorted(actions.items())
+                if rows.get(g)
+            )
+            span = (
+                written_days[0]
+                if len(written_days) == 1
+                else f"{written_days[0]}..{written_days[-1]} ({len(written_days)} days)"
+            )
+            commit_msg = _with_run_id(
+                f"[v{version}] {span}: {len(rows)} groups: {summary}"
+            )
+            agg_metadata: dict[str, Any] = {
+                "date": ",".join(written_days),
+                "receivers": ",".join(sorted(rows)),
+                "total_files": str(
+                    sum(len(group_rows) for group_rows in rows.values())
+                ),
+            }
+            for group in sorted(rows):
+                group_rows = rows[group]
+                for row in group_rows:
+                    row["commit_msg"] = commit_msg
+                store.append_metadata_bulk(
+                    group_name=group, rows=group_rows, session=session
+                )
+                agg_metadata[f"group__{group}"] = json.dumps(
+                    {
+                        "receiver": group,
+                        "start": str(min(rec["start"] for rec in group_rows)),
+                        "end": str(max(rec["end"] for rec in group_rows)),
+                        "rinex_hashes": ",".join(
+                            str(rec["rinex_hash"]) for rec in group_rows
+                        ),
+                        "canonical_names": ",".join(
+                            str(rec["canonical_name"])
+                            for rec in group_rows
+                            if rec.get("canonical_name")
+                        ),
+                    }
+                )
+            snapshot_id = commit_with_rebase(
+                session,
+                commit_msg,
+                metadata=agg_metadata,
+                store_path=store.store_path,
+                config=self._config,
+            )
+        duration = time.perf_counter() - t_start
+        log.info("Committed forked unit %s (snapshot: %s...)", span, snapshot_id[:8])
+        # One commit wrote every receiver of every day: one record, so the
+        # run's stages add up to its wall time (#423).
+        record_stage_timing(
+            "writing",
+            duration,
+            receivers=",".join(sorted(rows)),
+            date_key=",".join(written_days),
+            days=len(written_days),
+        )
+        for date_key in written_days:
+            for group, r in out[date_key].items():
+                if not r.metadata_records:
+                    continue
+                r.snapshot_id = snapshot_id
+                r.duration_seconds = duration
+                if self._keeper_tags_enabled:
+                    store.create_keeper_tag(group, date_key, snapshot_id)
+                self._icechunk_log.info(
+                    "batch_write_complete",
+                    receiver=group,
+                    date=date_key,
+                    snapshot_id=snapshot_id[:12],
+                    total_files=len(r.metadata_records),
+                    total_epochs=r.total_epochs,
+                    total_nbytes=r.total_nbytes,
+                    duration_seconds=round(duration, 2),
+                    actions=r.actions,
+                    unit_days=len(written_days),
+                )
+        return out
+
+    def _stored_rows(self, session: Session, group: str) -> tuple[StoredSpan, ...]:
+        """``group``'s log-book rows in ``session``; none without a log book.
+
+        From the run's copy of the log book (ADR 0021).
+        """
+        return stored_spans(self.site.gnss_store.log_books.rows(session, group))
+
+    def _write_deferred(
+        self, session: Session, n: FileNumbers, stored: Sequence[StoredSpan]
+    ) -> int:
+        """Write a file a worker left to the writer thread; its epochs written.
+
+        A day of the file without a block gets one at the cadence of the
+        processing day's block. ``stored`` are the group's log-book rows: the
+        file empties the slots of its earlier write, none of another file's
+        (:func:`~canvodpy.orchestrator.forked_writes.rewrite_spans`).
+        """
+        if n.deferred is None:
+            msg = f"{n.fname.name} has no data left for the writer thread to write."
+            raise ValueError(msg)
+        store = self.site.gnss_store
+        epoch_chunk = int((store.chunk_strategy or {}).get("epoch", 180))
+        blocks = day_blocks(session.store, n.group)
+        day = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
+        cadence_s = blocks[day].cadence_s
+        missing = [
+            file_day
+            for file_day in np.unique(n.deferred.epoch.values.astype("M8[D]"))
+            if file_day not in blocks
+        ]
+        for file_day in missing:
+            add_day_block(
+                session, n.group, file_day, cadence_s, None, epoch_chunk=epoch_chunk
+            )
+        if missing:
+            blocks = day_blocks(session.store, n.group)
+        earlier, others = rewrite_spans(stored, n.canonical_name, n.rinex_hash)
+        return write_file_region(
+            session,
+            n.group,
+            n.deferred,
+            blocks=blocks,
+            earlier=earlier,
+            keep=others,
+        ).epochs
 
     def _append_to_icechunk(
         self,
@@ -3027,11 +4263,33 @@ class RinexDataProcessor:
         1. Opens ONE session for all data writes
         2. Uses only to_icechunk() within the session (no nested sessions)
         3. Makes ONE commit for all data
-        4. Writes metadata separately after commit succeeds
+        4. Gives a new store its metadata first; the commit writes the
+           root copy and snapshot summary (ADR 0014)
         5. Writes any auxiliary datasets (e.g. SBF metadata) after commit
+
+        A new store, or one made of day blocks (ADR 0016), is written by
+        :meth:`_write_day_blocks` instead, with the same return value.
         """
+        if self._writes_day_blocks():
+            results = self._write_day_blocks(
+                [
+                    (
+                        receiver_name,
+                        augmented_datasets,
+                        rinex_files,
+                        aux_datasets,
+                        sid_issues,
+                        reader_format,
+                    )
+                ]
+            )
+            return results[receiver_name].existing_hashes
         _ = rinex_files
         log = self._logger
+        source_format = _source_format_of(
+            (ds for _, ds in augmented_datasets), [receiver_name]
+        )
+        self._ensure_gnss_store_metadata([receiver_name], source_format)
         version = get_version_from_pyproject()
 
         t_start = time.time()
@@ -3053,6 +4311,8 @@ class RinexDataProcessor:
             files=len(augmented_datasets),
         )
 
+        self._check_preprocessing(receiver_name, augmented_datasets)
+
         file_hash_map = {
             fname: ds.attrs.get("File Hash") for fname, ds in augmented_datasets
         }
@@ -3070,8 +4330,7 @@ class RinexDataProcessor:
             total=len(augmented_datasets),
             # Metadata-table row count at check time -- lets a future run
             # correlate batch_check duration against store growth directly
-            # instead of assuming O(rows) scaling (dev/todo_later.md
-            # perf-degradation investigation, 2026-07-14).
+            # instead of assuming O(rows) scaling.
             metadata_rows=self.site.gnss_store.metadata_row_count(receiver_name),
         )
         log.info(
@@ -3084,9 +4343,9 @@ class RinexDataProcessor:
         # STEP 2: Branch-stage-promote for overwrite; direct main for others
         is_overwrite = self._gnss_store_strategy == "overwrite"
         temp_branch = None
+        current_snapshot = ""
 
-        # Timing for perf-degradation investigation (dev/perf_degradation_
-        # findings_2026_07_15.md follow-up, 2026-07-18): batch_write_complete's
+        # Timing for the write-performance investigation: batch_write_complete's
         # `timings` dict left several calls unaccounted for, so its residual
         # (duration_seconds - sum(timings)) grew 12x over a 63-min local-store
         # run and correlated r=0.95 with manifest/snapshot count without
@@ -3098,15 +4357,16 @@ class RinexDataProcessor:
             _t_branch0 = time.perf_counter()
             yyyydoy = self.matched_data_dirs.yyyydoy.to_str()
             temp_branch = f"overwrite_{receiver_name}_{yyyydoy}"
-            current_snapshot = next(
-                self.site.gnss_store.repo.ancestry(branch="main")
-            ).id
-            try:
-                self.site.gnss_store.repo.create_branch(temp_branch, current_snapshot)
-            except Exception:
-                # Branch may exist from a failed previous run; delete and recreate
+            current_snapshot = self.site.gnss_store.repo.lookup_branch("main")
+            if temp_branch in self.site.gnss_store.repo.list_branches():
+                # Left by an earlier overwrite of this receiver and day that
+                # failed or could not be promoted; this run redoes its work.
+                log.warning(
+                    "Replacing temp branch '%s' left by an earlier overwrite",
+                    temp_branch,
+                )
                 self.site.gnss_store.repo.delete_branch(temp_branch)
-                self.site.gnss_store.repo.create_branch(temp_branch, current_snapshot)
+            self.site.gnss_store.repo.create_branch(temp_branch, current_snapshot)
             log.info(
                 "Created temp branch '%s' for overwrite (snapshot: %s...)",
                 temp_branch,
@@ -3135,16 +4395,19 @@ class RinexDataProcessor:
                 )
                 t_vars_consistency = time.perf_counter() - _t_vars0
 
-            # Prepare store for overwrite (remove old epochs, drop stale vars)
+            # Prepare store for overwrite (rewrite the group with this batch
+            # merged in epoch order; those files are not appended again)
             t_overwrite_prep = 0.0
+            rewritten_fnames: set[Path] = set()
             if is_overwrite and receiver_name in groups:
                 _t_ovr0 = time.perf_counter()
-                self._prepare_store_for_overwrite(
+                rewritten_fnames = self._prepare_store_for_overwrite(
                     session,
                     receiver_name,
                     augmented_datasets,
                     existing_hashes,
                     file_hash_map,
+                    aux_datasets,
                 )
                 t_overwrite_prep = time.perf_counter() - _t_ovr0
 
@@ -3156,6 +4419,7 @@ class RinexDataProcessor:
                 "overwritten": 0,
             }
             metadata_records = []  # Collect metadata to write before commit
+            written_fnames: list[Path] = []  # files whose observations are stored
 
             try:
                 # STEP 3: Process all datasets using ONLY to_icechunk()
@@ -3188,10 +4452,6 @@ class RinexDataProcessor:
                             log.debug("No hash for %s, skipping", fname)
                             continue
 
-                        # Get time range for metadata
-                        start_epoch = np.datetime64(ds.epoch.min().values)
-                        end_epoch = np.datetime64(ds.epoch.max().values)
-
                         # Fast hash check
                         exists = rinex_hash in existing_hashes
 
@@ -3203,27 +4463,16 @@ class RinexDataProcessor:
                             ds_clean,
                         )
 
-                        # Collect metadata for ALL files (write later)
-                        metadata_records.append(
-                            {
-                                "fname": fname,
-                                "rinex_hash": rinex_hash,
-                                "start": start_epoch,
-                                "end": end_epoch,
-                                "dataset_attrs": ds.attrs.copy(),
-                                "exists": exists,
-                                "rel_path": rel_path,
-                                "canonical_name": ds.attrs.get("canonical_name", ""),
-                                "physical_path": ds.attrs.get(
-                                    "physical_path", str(fname)
-                                ),
-                            }
-                        )
-
                         # Handle data writes using ONLY to_icechunk() with our session
                         t_file = time.perf_counter()
                         action = "skipped"
                         match (exists, self._gnss_store_strategy):
+                            case _ if fname in rewritten_fnames:
+                                # Already stored by the overwrite rewrite
+                                action = "overwritten" if exists else "written"
+                                actions[action] += 1
+                                log.debug("Rewritten (overwrite): %s", rel_path)
+
                             case (False, _) if receiver_name not in groups:
                                 # Initial group creation (first non-skipped file).
                                 # encoding= fixes physical chunk shape to match
@@ -3234,11 +4483,19 @@ class RinexDataProcessor:
                                 # chunk_encoding_for docstring for the full
                                 # investigation).
                                 to_icechunk(
-                                    ds_clean,
+                                    prepare_write(
+                                        ds_clean,
+                                        session.store,
+                                        receiver_name,
+                                        append_dim=None,
+                                    ),
                                     session,
                                     group=receiver_name,
-                                    encoding=self.site.gnss_store.chunk_encoding_for(
-                                        ds_clean
+                                    encoding=with_time_units(
+                                        ds_clean,
+                                        self.site.gnss_store.chunk_encoding_for(
+                                            ds_clean
+                                        ),
                                     ),
                                 )
                                 groups.append(receiver_name)
@@ -3256,7 +4513,12 @@ class RinexDataProcessor:
                                 # epoch-uniqueness check, see StorageConfig.
                                 # gnss_store_strategy docstring for the risk.
                                 to_icechunk(
-                                    ds_clean,
+                                    prepare_write(
+                                        ds_clean,
+                                        session.store,
+                                        receiver_name,
+                                        append_dim="epoch",
+                                    ),
                                     session,
                                     group=receiver_name,
                                     append_dim="epoch",
@@ -3268,7 +4530,12 @@ class RinexDataProcessor:
                             case (False, _):
                                 # New file, write it
                                 to_icechunk(
-                                    ds_clean,
+                                    prepare_write(
+                                        ds_clean,
+                                        session.store,
+                                        receiver_name,
+                                        append_dim="epoch",
+                                    ),
                                     session,
                                     group=receiver_name,
                                     append_dim="epoch",
@@ -3278,9 +4545,15 @@ class RinexDataProcessor:
                                 log.debug("Wrote: %s", rel_path)
 
                             case (True, "overwrite"):
-                                # Old data already removed by _prepare_store_for_overwrite
+                                # Only reached when the rewrite had nothing to
+                                # replace; the old data is already gone
                                 to_icechunk(
-                                    ds_clean,
+                                    prepare_write(
+                                        ds_clean,
+                                        session.store,
+                                        receiver_name,
+                                        append_dim="epoch",
+                                    ),
                                     session,
                                     group=receiver_name,
                                     append_dim="epoch",
@@ -3298,8 +4571,17 @@ class RinexDataProcessor:
                                 )
                                 action = "unhandled"
 
-                        # Per-file append timing (dev/todo_later.md perf-degradation
-                        # investigation, 2026-07-14): breaks open the "process_data"
+                        # Log-book row for ALL files, skipped ones included
+                        # (written with the data, below)
+                        metadata_records.append(
+                            self._logbook_row(
+                                fname, ds, rinex_hash, exists, rel_path, action
+                            )
+                        )
+                        if action in ("initial", "written", "appended", "overwritten"):
+                            written_fnames.append(fname)
+
+                        # Per-file append timing: breaks open the "process_data"
                         # aggregate below into per-file numbers so a future run can
                         # tell whether cost grows uniformly within a batch (session/
                         # manifest state) or is concentrated in specific files.
@@ -3326,26 +4608,35 @@ class RinexDataProcessor:
                 t6 = time.time()
                 log.info("Dataset processing complete in %.2fs", t6 - t5)
 
-                # STEP 4: Write metadata, then single commit for data + metadata
+                # STEP 4: Write sbf_obs and the log book, then a single commit
+                # for data + metadata. The sbf_obs of files an overwrite
+                # rewrote is already in the rewritten group.
+                self._write_sbf_obs(
+                    session,
+                    receiver_name,
+                    aux_datasets,
+                    [f for f in written_fnames if f not in rewritten_fnames],
+                )
                 summary = ", ".join(f"{k}={v}" for k, v in actions.items() if v > 0)
-                commit_msg = (
+                commit_msg = _with_run_id(
                     f"[v{version}] {receiver_name} "
                     f"{self.matched_data_dirs.yyyydoy}: {summary}"
                 )
+                for record in metadata_records:
+                    record["commit_msg"] = commit_msg
 
                 log.info(
                     "Writing metadata for %s files...",
                     len(metadata_records),
                 )
                 t9 = time.time()
-                try:
-                    self.site.gnss_store.append_metadata_bulk(
-                        group_name=receiver_name,
-                        rows=metadata_records,
-                        session=session,
-                    )
-                except (OSError, RuntimeError, ValueError):  # fmt: skip
-                    log.warning("Metadata write failed, committing data only")
+                # No commit without the log-book rows: a file stored without
+                # its row is not recognized as stored by the next run.
+                self.site.gnss_store.append_metadata_bulk(
+                    group_name=receiver_name,
+                    rows=metadata_records,
+                    session=session,
+                )
                 t10 = time.time()
                 log.info("Metadata write complete in %.2fs", t10 - t9)
 
@@ -3357,16 +4648,10 @@ class RinexDataProcessor:
                     "files": str(len(metadata_records)),
                 }
                 if metadata_records:
-                    # metadata_records is an untyped list[dict] merged from
-                    # several call sites with different value types per key
-                    # (Path/str/datetime64/...); "start"/"end" are always
-                    # np.datetime64 at runtime and comparable.
                     _commit_meta["start"] = str(
-                        min(r["start"] for r in metadata_records)  # ty: ignore[invalid-argument-type]
+                        min(r["start"] for r in metadata_records)
                     )
-                    _commit_meta["end"] = str(
-                        max(r["end"] for r in metadata_records)  # ty: ignore[invalid-argument-type]
-                    )
+                    _commit_meta["end"] = str(max(r["end"] for r in metadata_records))
                     _commit_meta["rinex_hashes"] = ",".join(
                         str(r["rinex_hash"])
                         for r in metadata_records
@@ -3377,7 +4662,13 @@ class RinexDataProcessor:
                         for r in metadata_records
                         if r.get("canonical_name")
                     )
-                snapshot_id = session.commit(commit_msg, metadata=_commit_meta)
+                snapshot_id = commit_with_rebase(
+                    session,
+                    commit_msg,
+                    metadata=_commit_meta,
+                    store_path=self.site.gnss_store.store_path,
+                    config=self._config,
+                )
                 t8 = time.time()
                 log.info(
                     "Commit complete in %.2fs (snapshot: %s...)",
@@ -3385,8 +4676,7 @@ class RinexDataProcessor:
                     snapshot_id[:8],
                 )
 
-                # Retention keeper tag (dev/perf_degradation_findings_2026_
-                # 07_15.md, Problem B) -- additive, inert, off by default.
+                # Retention keeper tag -- additive, inert, off by default.
                 # Never fails the write: create_keeper_tag() swallows tag
                 # name collisions itself.
                 t_keeper_tag = 0.0
@@ -3403,8 +4693,7 @@ class RinexDataProcessor:
                 # transaction directory entry counts) sampled once per
                 # batch -- a directional proxy for Icechunk-internal growth,
                 # to test whether the write-side slowdown tracks manifest
-                # count (dev/todo_later.md perf-degradation investigation,
-                # 2026-07-14). Deliberately skips chunks/ (unbounded).
+                # count. Deliberately skips chunks/ (unbounded).
                 t_stats = time.perf_counter()
                 dir_counts = self.site.gnss_store.dir_entry_counts()
                 t_store_stats = time.perf_counter() - t_stats
@@ -3487,153 +4776,20 @@ class RinexDataProcessor:
                 raise
 
         # STEP 5: Set source_format root attr (once, idempotent)
-        if self.site.gnss_store.source_format is None:
-            reader_fmt = reader_format or self._reader_name
-            try:
-                self.site.gnss_store.set_root_attrs(
-                    {"source_format": reader_fmt}, branch=branch
-                )
-                log.info("Set store source_format='%s'", reader_fmt)
-            except Exception:
-                log.warning("Failed to set source_format root attr")
+        self._set_store_source_format(source_format, branch=branch)
 
-        # STEP 5b: Write rich store metadata (once, on first ingest); on
-        # subsequent ingests, re-snapshot the config and record any drift —
-        # otherwise a store's config section silently freezes at whatever
-        # was true on the very first ingest, forever (dev/todo_later.md §4).
-        try:
-            from canvod.store_metadata import (
-                collect_config_snapshot,
-                collect_metadata,
-                metadata_exists,
-                read_metadata,
-                update_metadata,
-                write_metadata,
-            )
-
-            store_path = self.site.gnss_store.store_path
-            site_name = self.site.site_name
-
-            # Find site config from CanvodConfig
-            sites_cfg = self._config.sites
-            site_cfg = None
-            for sn, sc in sites_cfg.sites.items():
-                if sn == site_name:
-                    site_cfg = sc
-                    break
-
-            if site_cfg is not None:
-                reader_fmt = reader_format or self._reader_name
-                if not metadata_exists(store_path, branch=branch):
-                    resources = self._config.processing.params.resolve_resources()
-                    meta = collect_metadata(
-                        config=self._config,
-                        site_name=site_name,
-                        site_config=site_cfg,
-                        store_type="gnss_store",
-                        source_format=reader_fmt,
-                        store_path=store_path,
-                        dask_workers=resources.get("n_workers"),
-                        dask_threads_per_worker=resources.get("threads_per_worker"),
-                    )
-                    write_metadata(store_path, meta, branch=branch)
-                    log.info("Wrote rich store metadata")
-                else:
-                    now = datetime.now(UTC).isoformat()
-                    existing_meta = read_metadata(store_path, branch=branch)
-                    new_snapshot = collect_config_snapshot(self._config)
-
-                    history_entries = [
-                        f"{now}: Ingested {len(augmented_datasets)}"
-                        f" files for {receiver_name}"
-                    ]
-                    updates: dict[str, object] = {"temporal.updated": now}
-
-                    drifted = (
-                        new_snapshot.config_hash != existing_meta.config.config_hash
-                    )
-                    if drifted:
-                        old_hash = (existing_meta.config.config_hash or "unknown")[:12]
-                        new_hash = (new_snapshot.config_hash or "unknown")[:12]
-                        history_entries.append(
-                            f"{now}: Config changed ({old_hash} -> {new_hash})"
-                        )
-                        updates["config"] = new_snapshot.model_dump(mode="json")
-
-                    # update_metadata() replaces (doesn't append to) list
-                    # fields, so merge history here rather than in io.py —
-                    # keeps that generic dotted-update helper's semantics
-                    # unchanged for its other callers.
-                    updates["summaries.history"] = [
-                        *existing_meta.summaries.history,
-                        *history_entries,
-                    ]
-
-                    update_metadata(store_path, updates, branch=branch)
-                    log.info(
-                        "Updated store metadata%s",
-                        " (config drift detected)" if drifted else "",
-                    )
-        except Exception:
-            log.debug(
-                "canvod-store-metadata not available or write failed",
-                exc_info=True,
-            )
-
-        # STEP 6: Write SBF metadata datasets (sbf_obs) per receiver
-        # Each file produces its own sbf_obs dataset.  We write them
-        # incrementally to the store (first=overwrite, rest=append) to
-        # avoid an expensive xr.concat in memory.
-        if aux_datasets:
-            sbf_parts = [
-                aux_dict["sbf_obs"]
-                for aux_dict in aux_datasets.values()
-                if "sbf_obs" in aux_dict
-            ]
-            if sbf_parts:
-                try:
-                    self.site.gnss_store.append_metadata_datasets(
-                        sbf_parts, receiver_name, "sbf_obs", branch
-                    )
-                    n_epochs = sum(p.sizes.get("epoch", 0) for p in sbf_parts)
-                    log.info(
-                        "Wrote sbf_obs metadata for %s (%d parts, %d epochs)",
-                        receiver_name,
-                        len(sbf_parts),
-                        n_epochs,
-                    )
-                except Exception:
-                    log.warning(
-                        "Failed to write sbf_obs for %s",
-                        receiver_name,
-                        exc_info=True,
-                    )
-
-        # Promote temp branch to main after successful commit
+        # Promote temp branch to main after successful commit. Refused with
+        # BranchMovedError if main moved since the temp branch was created
+        # (the new commits would be dropped); the temp branch is then kept.
         if is_overwrite and temp_branch:
-            try:
-                new_tip = next(
-                    self.site.gnss_store.repo.ancestry(branch=temp_branch)
-                ).id
-                self.site.gnss_store.repo.reset_branch("main", new_tip)
-                log.info(
-                    "Promoted %s to main (snapshot: %s...)",
-                    temp_branch,
-                    new_tip[:8],
-                )
-            finally:
-                with contextlib.suppress(Exception):
-                    self.site.gnss_store.repo.delete_branch(temp_branch)
+            self.site.gnss_store.promote_branch(temp_branch, "main", current_snapshot)
+            self.site.gnss_store.repo.delete_branch(temp_branch)
 
-        # Additive stage_timing for the performance dashboard's per-iteration
-        # breakdown (reading/validating/augmenting/writing) -- reuses the
-        # already-computed t_start rather than restructuring this function's
-        # control flow into a stage_timer() context manager.
-        log.info(
-            "stage_timing",
-            stage="writing",
-            duration_seconds=round(time.time() - t_start, 2),
-            status="ok",
+        # The "writing" step of the performance dashboard's per-day
+        # breakdown, from t_start rather than a stage_timer() block.
+        record_stage_timing(
+            "writing",
+            time.time() - t_start,
             receiver=receiver_name,
             date_key=self.matched_data_dirs.yyyydoy.to_str(),
         )
@@ -3672,9 +4828,8 @@ class RinexDataProcessor:
         return rinex_dir, receiver_name
 
     @deprecated(
-        "parsed_rinex_data_gen_2_receivers() has no callers in the live pipeline "
-        "(PipelineOrchestrator._process_multi_day_batches() is the primary path). "
-        "Kept for reference only."
+        "parsed_rinex_data_gen_2_receivers() is left over from development and will be removed with the next major version. "
+        "Use canvodpy.Site(<site>).pipeline() instead."
     )
     def parsed_rinex_data_gen_2_receivers(
         self,
@@ -3710,7 +4865,7 @@ class RinexDataProcessor:
             receiver_types = ["canopy", "reference"]
 
         if keep_vars is None:
-            keep_vars = load_config().processing.params.keep_gnss_observables
+            keep_vars = self._config.processing.params.keep_gnss_observables
 
         self._logger.info(
             "Starting RINEX processing pipeline for: %s",
@@ -3726,8 +4881,7 @@ class RinexDataProcessor:
 
         # ====================================================================
         # STEP 1: Preprocess aux data ONCE per day with Hermite splines
-        # (routes through _ensure_aux_data_preprocessed, dev/todo_later.md
-        # §44 -- this call site used to duplicate the rmtree+rebuild logic
+        # (routes through _ensure_aux_data_preprocessed -- this call site used to duplicate the rmtree+rebuild logic
         # inline, bypassing the shared-cache lookup entirely)
         # ====================================================================
         self._logger.info("Preprocessing aux data with Hermite splines (once per day)")
@@ -3842,7 +4996,7 @@ class RinexDataProcessor:
     def prepare_batch_tasks(
         self,
         keep_vars: list[str] | None,
-        receiver_configs: list[tuple[str, str, Path, Path | None, str]],
+        receiver_configs: list[tuple[str, str, ReceiverDay, ReceiverDay | None, str]],
     ) -> tuple[list[tuple], list[tuple[str, list[Path]]]]:
         """Prepare aux Zarr and task descriptors for flat loky submission.
 
@@ -3854,7 +5008,7 @@ class RinexDataProcessor:
         ----------
         keep_vars : list[str] | None
             Variables to keep in datasets.
-        receiver_configs : list[tuple[str, str, Path, Path | None, str]]
+        receiver_configs : list[tuple[str, str, ReceiverDay, ReceiverDay | None, str]]
             ``(receiver_name, receiver_type, data_dir, position_data_dir, reader_format)``
             tuples.
 
@@ -3867,8 +5021,8 @@ class RinexDataProcessor:
             ``preprocess_reference_with_hermite_aux_fanout`` args -- one per
             physical reference file, bundling every paired canopy's position
             into a single ``canopy_positions`` dict so the file is only
-            parsed once regardless of how many canopies it's paired against
-            (dev/todo_later.md §47). Element 4 is always a lane key (either
+            parsed once regardless of how many canopies it's paired against.
+            Element 4 is always a lane key (either
             the receiver/pairing name or a per-reference-file lane key) for
             ``_interleave_by_receiver``.
         receiver_file_map : list[tuple[str, list[Path]]]
@@ -3914,42 +5068,49 @@ class RinexDataProcessor:
 
         task_descriptors: list[tuple] = []
         receiver_file_map: list[tuple[str, list[Path]]] = []
+        store_radial_distance = self._config.processing.params.store_radial_distance
+        store_sbf_raw_observables = (
+            self._config.processing.params.store_sbf_raw_observables
+        )
+        rinex_v3_parser = self._config.processing.params.rinex_v3_parser
+        aggregate_glonass_fdma = self._config.processing.params.aggregate_glonass_fdma
 
-        # In broadcast + shared position mode, build a mapping from
-        # timestamp suffix → canopy file path so reference tasks can
-        # read the matching canopy file's sbf_obs on the fly
-        canopy_file_by_timestamp: dict[str, Path] | None = None
-        canopy_reader_fmt: str | None = None
+        # In broadcast + shared position mode, a reference file takes the
+        # satellite geometry of the file of its paired canopy (its
+        # position_data_dir) that starts at the same time. Index the files
+        # of every canopy, by receiver name, by the start time of their
+        # canonical names.
+        canopy_files_by_start: dict[str, tuple[dict[datetime, Path], str]] = {}
         position_mode = self._config.processing.params.receiver_position_mode
         if self.use_sbf_geometry and position_mode == "shared":
             for rc_name, rc_type, rc_dir, _, rc_fmt in receiver_configs:
-                if rc_type == "canopy":
-                    canopy_files = self._get_rinex_files(rc_dir, rc_fmt)
-                    if canopy_files:
-                        import re
-
-                        canopy_file_by_timestamp = {}
-                        canopy_reader_fmt = rc_fmt or self._reader_name
-                        for cf in canopy_files:
-                            # Extract timestamp: last chars before extension
-                            # e.g. "ract001a15.25_" → "a15"
-                            m = re.search(r"([a-x]\d{2})\.\d{2}_$", cf.name)
-                            if m:
-                                canopy_file_by_timestamp[m.group(1)] = cf
-                        self._logger.info(
-                            "canopy_broadcast_file_index_built",
-                            canopy_files=len(canopy_file_by_timestamp),
-                        )
-                    break
+                if rc_type != "canopy":
+                    continue
+                by_start = {}
+                for cf in self._get_rinex_files(rc_dir, rc_fmt):
+                    start = self._file_start(cf)
+                    if start is not None:
+                        by_start[start] = cf
+                canopy_files_by_start[rc_dir.receiver] = (
+                    by_start,
+                    rc_fmt or self._reader_name,
+                )
+                self._logger.info(
+                    "canopy_broadcast_file_index_built",
+                    canopy=rc_name,
+                    canopy_files=len(by_start),
+                )
 
         # Reference receivers paired against multiple canopies share the same
         # physical file set (same data_dir/reader_format) -- group them so
         # each file gets one fan-out task instead of one task per (file,
-        # pairing) below (dev/todo_later.md §47). Only applies to the
+        # pairing) below. Only applies to the
         # Hermite-aux path: use_sbf_geometry pairs a reference with its own
         # SBF geometry per canopy via broadcast_canopy_file, a separate
         # mechanism left untouched.
-        reference_groups: dict[tuple[Path, str], list[tuple[str, Path | None]]] = {}
+        reference_groups: dict[
+            tuple[ReceiverDay, str], list[tuple[str, ReceiverDay | None]]
+        ] = {}
         if not self.use_sbf_geometry:
             for (
                 receiver_name,
@@ -4019,49 +5180,50 @@ class RinexDataProcessor:
 
             effective_reader = reader_format or self._reader_name
             for rnx_file in rinex_files:
-                # For reference receivers in broadcast + shared mode,
-                # find matching canopy file by timestamp suffix
+                # For reference receivers in broadcast + shared mode, the
+                # file of the paired canopy that starts at the same time
                 broadcast_canopy_file = None
-                if (
-                    _receiver_type == "reference"
-                    and canopy_file_by_timestamp is not None
-                ):
-                    import re
-
-                    m = re.search(r"([a-x]\d{2})\.\d{2}_$", rnx_file.name)
-                    if m:
-                        broadcast_canopy_file = canopy_file_by_timestamp.get(m.group(1))
+                canopy_reader_fmt = None
+                canopy_index = (
+                    canopy_files_by_start.get(position_data_dir.receiver)
+                    if _receiver_type == "reference" and position_data_dir
+                    else None
+                )
+                if canopy_index is not None:
+                    by_start, canopy_reader_fmt = canopy_index
+                    start = self._file_start(rnx_file)
+                    broadcast_canopy_file = (
+                        by_start.get(start) if start is not None else None
+                    )
+                    if broadcast_canopy_file is None:
+                        self._logger.warning(
+                            "no_canopy_file_for_reference_geometry",
+                            receiver=receiver_name,
+                            file=rnx_file.name,
+                            reason="the reference file's own broadcast "
+                            "geometry is used",
+                        )
 
                 task_descriptors.append(
-                    (
-                        rnx_file,
-                        keep_vars,
-                        aux_zarr_path,
-                        receiver_position,
-                        receiver_name,
-                        self.keep_sids,
-                        effective_reader,
-                        self.use_sbf_geometry,
-                        False,  # store_radial_distance
-                        broadcast_canopy_file,
-                        canopy_reader_fmt,
-                        # NOTE: broadcast_canopy_file/canopy_reader_fmt above
-                        # are already positionally misaligned against
-                        # preprocess_with_hermite_aux's store_sbf_raw_
-                        # observables/broadcast_canopy_file params (a
-                        # pre-existing, dormant bug outside use_sbf_geometry=
-                        # True + shared-position-mode -- confirmed, not
-                        # fixed here). The two explicit values below exist
-                        # only to preserve that exact pre-existing (buggy)
-                        # positional mapping unchanged while correctly
-                        # placing aux_group in ITS real parameter slot --
-                        # without them aux_group silently lands on
-                        # broadcast_canopy_fmt's slot instead and never
-                        # reaches the function at all.
-                        None,  # broadcast_canopy_fmt (preserves prior default)
-                        True,  # pad_global_sid (preserves prior default)
-                        aux_group,
-                        False,  # is_reference_fanout
+                    _task_args(
+                        preprocess_with_hermite_aux,
+                        is_reference_fanout=False,
+                        rnx_file=rnx_file,
+                        keep_vars=keep_vars,
+                        aux_zarr_path=aux_zarr_path,
+                        receiver_position=receiver_position,
+                        receiver_type=receiver_name,
+                        keep_sids=self.keep_sids,
+                        reader_name=effective_reader,
+                        use_sbf_geometry=self.use_sbf_geometry,
+                        store_radial_distance=store_radial_distance,
+                        store_sbf_raw_observables=store_sbf_raw_observables,
+                        broadcast_canopy_file=broadcast_canopy_file,
+                        broadcast_canopy_fmt=canopy_reader_fmt,
+                        aux_group=aux_group,
+                        rinex_v3_parser=rinex_v3_parser,
+                        aggregate_glonass_fdma=aggregate_glonass_fdma,
+                        date_key=self.matched_data_dirs.yyyydoy.to_str(),
                     )
                 )
 
@@ -4113,22 +5275,25 @@ class RinexDataProcessor:
                 continue
 
             effective_reader = reader_format or self._reader_name
-            reference_lane_key = f"reference:{data_dir.name}"
+            reference_lane_key = f"reference:{data_dir.yyyydoy}"
             for rnx_file in rinex_files:
                 task_descriptors.append(
-                    (
-                        rnx_file,
-                        keep_vars,
-                        aux_zarr_path,
-                        canopy_positions,
-                        reference_lane_key,
-                        self.keep_sids,
-                        effective_reader,
-                        False,  # store_radial_distance (matches non-fanout path)
-                        True,  # store_sbf_raw_observables
-                        True,  # pad_global_sid
-                        aux_group,
-                        True,  # is_reference_fanout
+                    _task_args(
+                        preprocess_reference_with_hermite_aux_fanout,
+                        is_reference_fanout=True,
+                        rnx_file=rnx_file,
+                        keep_vars=keep_vars,
+                        aux_zarr_path=aux_zarr_path,
+                        canopy_positions=canopy_positions,
+                        receiver_type=reference_lane_key,
+                        keep_sids=self.keep_sids,
+                        reader_name=effective_reader,
+                        store_radial_distance=store_radial_distance,
+                        store_sbf_raw_observables=store_sbf_raw_observables,
+                        aux_group=aux_group,
+                        rinex_v3_parser=rinex_v3_parser,
+                        aggregate_glonass_fdma=aggregate_glonass_fdma,
+                        date_key=self.matched_data_dirs.yyyydoy.to_str(),
                     )
                 )
 
@@ -4146,9 +5311,9 @@ class RinexDataProcessor:
     def parsed_rinex_data_gen(
         self,
         keep_vars: list[str] | None = None,
-        receiver_configs: list[tuple[str, str, Path]]
-        | list[tuple[str, str, Path, Path | None]]
-        | list[tuple[str, str, Path, Path | None, str]]
+        receiver_configs: list[tuple[str, str, ReceiverDay]]
+        | list[tuple[str, str, ReceiverDay, ReceiverDay | None]]
+        | list[tuple[str, str, ReceiverDay, ReceiverDay | None, str]]
         | None = None,
     ) -> Generator[tuple[str, xr.Dataset, float]]:
         """Generate datasets from RINEX files and append to Icechunk stores.
@@ -4184,7 +5349,9 @@ class RinexDataProcessor:
             receiver_configs = self._get_default_receiver_configs()
 
         # Normalize to 5-tuples
-        normalized_configs: list[tuple[str, str, Path, Path | None, str]] = []
+        normalized_configs: list[
+            tuple[str, str, ReceiverDay, ReceiverDay | None, str]
+        ] = []
         for cfg in receiver_configs:
             if len(cfg) == 3:
                 normalized_configs.append((*cfg, None, self._reader_name))
@@ -4194,7 +5361,7 @@ class RinexDataProcessor:
                 normalized_configs.append(cfg)
 
         if keep_vars is None:
-            keep_vars = load_config().processing.params.keep_gnss_observables
+            keep_vars = self._config.processing.params.keep_gnss_observables
 
         pipeline_start = time.perf_counter()
         self._logger.info(
@@ -4417,14 +5584,35 @@ class RinexDataProcessor:
                             )
                             skipped.add(name)
 
+        # processing.preprocessing (if set) on each receiver-day, after the
+        # SCS recompute above (which needs the unprocessed observations);
+        # the receiver's `metadata` setting goes into each file's attributes
+        preprocessing = self._config.processing.preprocessing
+        for name, (aug, aux_ds, sid_iss) in per_receiver_results.items():
+            for fname, ds in aug:
+                _warn_if_epoch_count_differs_from_name(
+                    self._logger, fname, self._canonical_name(fname), ds
+                )
+            aug = [
+                (fname, self.site.add_receiver_metadata(ds, name)) for fname, ds in aug
+            ]
+            per_receiver_results[name] = (
+                preprocess_files(aug, preprocessing),
+                aux_ds,
+                sid_iss,
+            )
+
         # ====================================================================
         # PHASE 3 — writes + yields
         # ====================================================================
-        # "overwrite" keeps today's exact sequential per-group loop
-        # (temp-branch-create + reset_branch has the same LocalFileSystem
-        # ref-write hazard the forked path below sidesteps for the other two
-        # strategies -- redesigning it is separate future work, see
-        # dev/cross_group_fork_merge_plan.md). "skip"/"unsafe_append" go
+        # A new store, or one made of day blocks (ADR 0016), gets all groups
+        # written as day blocks in one session and one commit, whatever the
+        # strategy (`_write_day_blocks`). A store written by appending keeps
+        # appending:
+        # "overwrite" keeps the sequential per-group loop: each receiver is
+        # staged on a temp branch and promoted with
+        # `MyIcechunkStore.promote_branch` (refused if main moved meanwhile).
+        # "skip"/"unsafe_append" go
         # through the cross-group fork/merge batch write instead: one
         # ThreadPoolExecutor dispatch + one shared commit for the whole
         # batch, rather than one sequential commit per group.
@@ -4435,8 +5623,9 @@ class RinexDataProcessor:
         time_range = (start_time, end_time)
 
         n_written = 0
+        day_blocks = self._writes_day_blocks()
 
-        if self._gnss_store_strategy == "overwrite":
+        if self._gnss_store_strategy == "overwrite" and not day_blocks:
             for name, rtype, data_dir, _pos, fmt in normalized_configs:
                 if name in skipped:
                     continue
@@ -4481,7 +5670,7 @@ class RinexDataProcessor:
                 n_written += 1
                 yield name, daily_dataset, total_s
 
-        else:  # "skip" or "unsafe_append"
+        else:  # day blocks, or appending with "skip" or "unsafe_append"
             group_inputs = []
             rinex_files_by_name: dict[str, list[Path]] = {}
             for name, rtype, data_dir, _pos, fmt in normalized_configs:
@@ -4496,7 +5685,9 @@ class RinexDataProcessor:
 
             t_batch_start = time.perf_counter()
             results: dict[str, GroupWriteResult] = {}
-            if group_inputs:
+            if group_inputs and day_blocks:
+                results = self._write_day_blocks(group_inputs)
+            elif group_inputs:
                 results = self._write_receiver_batch_forked(group_inputs)
             t_batch_end = time.perf_counter()
             self._logger.info(
@@ -4543,48 +5734,53 @@ class RinexDataProcessor:
 
     def _get_default_receiver_configs(
         self,
-    ) -> list[tuple[str, str, Path, Path | None]]:
-        """Get default receiver configs from matched_data_dirs.
+    ) -> list[tuple[str, str, ReceiverDay, ReceiverDay | None]]:
+        """Get default receiver configs for the day of matched_data_dirs.
 
-        Returns a list of (store_group_name, receiver_type, data_dir,
-        position_data_dir) tuples. For canopy receivers, position_data_dir
-        is None (use own files). For reference receivers, one entry is
-        created per canopy in scs_from, with position_data_dir pointing
-        to the canopy's RINEX directory.
+        Returns a list of (store_group_name, receiver_type, day,
+        position_day) tuples. For canopy receivers, position_day is None
+        (use own files). For reference receivers, one entry is created per
+        paired canopy, with position_day the canopy's same day.
 
         Returns
         -------
-        list[tuple[str, str, Path, Path | None]]
+        list[tuple[str, str, ReceiverDay, ReceiverDay | None]]
             Receiver processing configurations.
         """
-        configs: list[tuple[str, str, Path, Path | None]] = []
+        configs: list[tuple[str, str, ReceiverDay, ReceiverDay | None]] = []
         site_config = self.site._site_config
-
-        # Collect canopy data dirs for resolving position sources
-        canopy_data_dirs: dict[str, Path] = {}
         base_path = site_config.get_base_path()
+        date_key = self.matched_data_dirs.yyyydoy.to_str()
 
-        _yydoy = self.matched_data_dirs.yyyydoy.yydoy
-        assert _yydoy is not None, "yyyydoy.yydoy must not be None"
-        for name, cfg in site_config.receivers.items():
-            if cfg.type == "canopy":
-                canopy_data_dirs[name] = base_path / cfg.directory / _yydoy
+        def _day(name: str) -> ReceiverDay:
+            cfg = site_config.receivers[name]
+            return ReceiverDay(
+                name,
+                base_path / cfg.directory,
+                date_key,
+                recipe_file(self.site.site_name, cfg.recipe),
+            )
+
+        canopy_days = {
+            name: _day(name)
+            for name, cfg in site_config.receivers.items()
+            if cfg.type == "canopy"
+        }
 
         # Add all canopy receivers (each uses own position)
-        for name, cfg in site_config.receivers.items():
-            if cfg.type == "canopy" and name in canopy_data_dirs:
-                configs.append((name, "canopy", canopy_data_dirs[name], None))
+        for name, day in canopy_days.items():
+            configs.append((name, "canopy", day, None))
 
         # Add reference receivers — one entry per canopy in paired_canopies
         for name, cfg in site_config.receivers.items():
             if cfg.type != "reference":
                 continue
-            ref_data_dir = base_path / cfg.directory / _yydoy
-            canopy_names = site_config.resolve_paired_canopies(name)
-            for canopy_name in canopy_names:
-                store_group = f"{name}_{canopy_name}"
-                position_dir = canopy_data_dirs.get(canopy_name)
-                configs.append((store_group, "reference", ref_data_dir, position_dir))
+            ref_day = _day(name)
+            for canopy_name in site_config.resolve_paired_canopies(name):
+                store_group = reference_store_group(name, canopy_name)
+                configs.append(
+                    (store_group, "reference", ref_day, canopy_days.get(canopy_name))
+                )
 
         return configs
 
@@ -4595,12 +5791,15 @@ class RinexDataProcessor:
     ) -> tuple[bool, dict]:
         """Check if this day should be skipped based on existing data coverage.
 
+        The epochs of the day come from the log book (see
+        :func:`logged_day_epochs`), at the sampling interval of the files.
+
         Parameters
         ----------
         receiver_types : list[str], optional
             Receiver types to check. Defaults to ['canopy', 'reference']
         completeness_threshold : float
-            Fraction of expected epochs (default 0.95 = 95%)
+            Fraction of expected epochs (default 1 = 100%)
 
         Returns
         -------
@@ -4608,17 +5807,19 @@ class RinexDataProcessor:
             (should_skip, coverage_info) where coverage_info contains details
             per receiver.
 
+        Raises
+        ------
+        ValueError
+            If the matched day has no date.
         """
         if receiver_types is None:
             receiver_types = ["canopy", "reference"]
 
-        # Expected epochs for 24h at 30s sampling
-        expected_epochs = int(24 * 3600 / 30)  # 2880
-        required_epochs = int(expected_epochs * completeness_threshold)
-
         # Get datetime objects from YYYYDOY.date
         yyyydoy_date = self.matched_data_dirs.yyyydoy.date
-        assert yyyydoy_date is not None, "yyyydoy.date must not be None"
+        if yyyydoy_date is None:
+            msg = "The matched day has no date (yyyydoy.date is None)."
+            raise ValueError(msg)
         day_start = np.datetime64(
             datetime.combine(yyyydoy_date, dt_time.min),
             "ns",
@@ -4666,8 +5867,9 @@ class RinexDataProcessor:
                 day_rows = df.filter(
                     (pl.col("start") >= day_start) & (pl.col("end") <= day_end)  # ty: ignore[invalid-argument-type]
                 )
+                total_epochs, expected_epochs = logged_day_epochs(day_rows)
 
-                if day_rows.is_empty():
+                if total_epochs == 0:
                     coverage_info[receiver_type] = {
                         "exists": False,
                         "epochs": 0,
@@ -4676,16 +5878,7 @@ class RinexDataProcessor:
                     }
                     return False, coverage_info
 
-                # Calculate total epochs
-                day_rows = day_rows.with_columns(
-                    [
-                        (
-                            (pl.col("end") - pl.col("start")).dt.total_seconds() / 30
-                        ).alias("n_epochs")
-                    ]
-                )
-
-                total_epochs = int(day_rows["n_epochs"].sum())
+                required_epochs = int(expected_epochs * completeness_threshold)
                 percent = total_epochs / expected_epochs * 100
 
                 coverage_info[receiver_type] = {
@@ -4704,7 +5897,7 @@ class RinexDataProcessor:
                     "exists": False,
                     "reason": str(e),
                     "epochs": 0,
-                    "expected": expected_epochs,
+                    "expected": None,
                     "percent": 0.0,
                 }
                 return False, coverage_info
@@ -4722,9 +5915,8 @@ class RinexDataProcessor:
 
 
 @deprecated(
-    "DistributedRinexDataProcessor is never instantiated by the live pipeline "
-    "and is unfinished (own docstring: 'Under development. Use with caution.'). "
-    "Use PipelineOrchestrator/RinexDataProcessor instead."
+    "DistributedRinexDataProcessor is left over from development and will be removed with the next major version. "
+    "It was never finished. Use canvodpy.Site(<site>).pipeline() instead."
 )
 class DistributedRinexDataProcessor(RinexDataProcessor):
     """Under development. Use with caution.
@@ -4802,13 +5994,26 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             self._reader_name,
             store_sbf_raw_observables=store_raw,
         )
+        self._ensure_gnss_store_metadata(
+            [receiver_name], _source_format_of([first_ds], [receiver_name])
+        )
 
         # Initialize with full epoch dimension
         empty_ds = first_ds.isel(epoch=[]).expand_dims({"epoch": len(all_epochs)})
         empty_ds = empty_ds.assign_coords({"epoch": np.sort(all_epochs)})
 
-        to_icechunk(empty_ds, session, group=receiver_name, mode="w")
-        session.commit(f"Initialize {receiver_name} structure")
+        to_icechunk(
+            prepare_write(empty_ds, session.store, receiver_name, append_dim=None),
+            session,
+            group=receiver_name,
+            mode="w",
+        )
+        commit_with_rebase(
+            session,
+            _with_run_id(f"Initialize {receiver_name} structure"),
+            store_path=self.site.gnss_store.store_path,
+            config=self._config,
+        )
 
         # STEP 2: Now do cooperative distributed writes
         session = repo.writable_session("main")
@@ -4825,7 +6030,12 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
         with ProcessPoolExecutor(
             max_workers=self.n_max_workers,
             initializer=_worker_init_with_run_id,
-            initargs=(_res2["nice_priority"], _res2["cpu_affinity"], get_run_id()),
+            initargs=(
+                _res2["nice_priority"],
+                _res2["cpu_affinity"],
+                get_run_id(),
+                active_log_dir(),
+            ),
         ) as ex:
             futures = [
                 ex.submit(
@@ -4872,12 +6082,19 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
 
         # Merge all remote sessions
         session.merge(*remote_sessions)
-        _snapshot_id = session.commit(
-            f"[v{version}] Cooperative write for {receiver_name}"
+        _snapshot_id = commit_with_rebase(
+            session,
+            _with_run_id(f"[v{version}] Cooperative write for {receiver_name}"),
+            store_path=self.site.gnss_store.store_path,
+            config=self._config,
         )
 
         return [f.name for f in rinex_files_sorted]  # ty: ignore[invalid-return-type]
 
+    @deprecated(
+        "parsed_rinex_data_gen_parallel() is left over from development and will be removed with the next major version. "
+        "Use canvodpy.Site(<site>).pipeline() instead."
+    )
     def parsed_rinex_data_gen_parallel(
         self,
         keep_vars: list[str] | None = None,
@@ -4912,7 +6129,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
             receiver_types = ["canopy", "reference"]
 
         if keep_vars is None:
-            keep_vars = load_config().processing.params.keep_gnss_observables
+            keep_vars = self._config.processing.params.keep_gnss_observables
 
         self._logger.info(
             "Starting RINEX processing pipeline for: %s",
@@ -4931,7 +6148,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
         # ====================================================================
         import shutil as _shutil
 
-        _aux_base_dir = load_config().processing.storage.get_aux_data_dir()
+        _aux_base_dir = self._config.processing.storage.get_aux_data_dir()
         aux_zarr_path = _aux_base_dir / (
             f"aux_{self.matched_data_dirs.yyyydoy.to_str()}.zarr"
         )
@@ -5043,6 +6260,7 @@ class DistributedRinexDataProcessor(RinexDataProcessor):
 
 if __name__ == "__main__":
     print(f"stared main block at {datetime.now(UTC)}")
+    cfg = load_config()
 
     matcher = DataDirMatcher(
         root=Path("."),
@@ -5064,7 +6282,7 @@ if __name__ == "__main__":
             print(f"instantiating processor for {yyyydoy_str}: {datetime.now(UTC)}")
             # Create processor first to check completeness
             processor = RinexDataProcessor(
-                matched_data_dirs=md, site=site, n_max_workers=12
+                matched_data_dirs=md, site=site, n_max_workers=12, config=cfg
             )
 
             # Check if should skip

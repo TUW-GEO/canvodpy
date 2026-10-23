@@ -11,11 +11,12 @@ class EqualAngleBuilder(BaseGridBuilder):
     """Equal angular spacing in both theta and phi (NOT equal area).
 
     Every cell is a rectangle of the same angular size Δθ × Δφ in the
-    (theta, phi) parameter space.  Because solid angle depends on cos(theta),
-    cells near the zenith subtend *more* solid angle than cells near the
-    horizon.  This makes the grid biased toward the zenith for any
-    solid-angle-weighted statistic.  **Not recommended for scientific
-    analysis** – use ``EqualAreaBuilder`` instead.
+    (theta, phi) parameter space.  A cell's solid angle is
+    Δφ · (cos θ_min − cos θ_max) ≈ Δφ · Δθ · sin θ, so cells near the zenith
+    subtend *less* solid angle than cells near the horizon.  A statistic
+    that weights every cell equally therefore gives the sky near the zenith
+    more weight than its share of the hemisphere.  **Not recommended for
+    scientific analysis** – use ``EqualAreaBuilder`` instead.
 
     Coordinate convention (physics / GNSS)
     ---------------------------------------
@@ -25,27 +26,30 @@ class EqualAngleBuilder(BaseGridBuilder):
     What ``angular_resolution`` means
     ----------------------------------
     ``angular_resolution`` (degrees) is used as **both** the theta-band width
-    and the phi-sector width.  The number of phi divisions is constant across
-    all bands::
+    and the phi-sector width.  The number of phi divisions is the same in
+    every band but the zenith cap::
 
-        n_phi = round(2π / Δθ)
+        n_phi = floor(2π / Δθ)
 
-    and does not change with latitude.
+    so the sectors are wider than Δθ when Δθ does not divide 360°.
 
     Mathematical construction
     -------------------------
     1. A zenith cap cell covers [0, Δθ/2] × [0, 2π).
-    2. Theta band edges are placed at Δθ/2, 3Δθ/2, … up to π/2.
+    2. Theta band edges are placed at Δθ/2, 3Δθ/2, … and a last edge at
+       π/2 − cutoff_theta, so the grid reaches the horizon (or the cutoff);
+       the last band is usually narrower than Δθ.
     3. Within every band, the full azimuth is split into ``n_phi`` sectors of
        equal width Δφ = 2π / n_phi.
-    4. Cell centres are at the midpoint of each (phi, theta) rectangle.
+    4. Cell centers are at the midpoint of each (phi, theta) rectangle.
 
     Parameters
     ----------
     angular_resolution : float
         Angular spacing in degrees, applied identically in both theta and phi.
     cutoff_theta : float
-        Elevation mask angle in degrees (bands below this are omitted).
+        Elevation mask angle in degrees.  The last band ends at
+        θ = 90° − cutoff_theta; the sky below that elevation gets no cells.
     phi_rotation : float
         Rigid azimuthal rotation applied after construction, in degrees.
 
@@ -85,6 +89,11 @@ class EqualAngleBuilder(BaseGridBuilder):
             max_theta - self.cutoff_theta_rad,
             self.angular_resolution_rad,
         )
+        # The last band ends at the outer edge of the grid (the horizon, or
+        # 90° - cutoff_theta); it is narrower when the band width does not
+        # divide the remaining range.
+        if not np.isclose(theta_edges[-1], max_theta - self.cutoff_theta_rad):
+            theta_edges = np.append(theta_edges, max_theta - self.cutoff_theta_rad)
 
         n_phi_divisions = int(2 * np.pi / self.angular_resolution_rad)
 

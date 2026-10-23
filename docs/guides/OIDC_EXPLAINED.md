@@ -1,397 +1,249 @@
 ---
 title: OIDC Trusted Publishing Explained
-description: Deep dive into how OIDC authentication works for PyPI publishing
+description: How OIDC trusted publishing to PyPI works
 ---
 
-# OIDC Trusted Publishing: How It Works
+# How OIDC trusted publishing works
 
-!!! abstract "TL;DR"
-    OIDC lets GitHub Actions publish to PyPI **without passwords or long-lived tokens**.
-    It uses cryptographic JWT proofs that expire in 10 minutes — no stored secrets.
+!!! abstract "Summary"
+    OIDC lets GitHub Actions publish to PyPI **without passwords or stored
+    tokens**. The workflow proves its identity with a signed token from
+    GitHub, and PyPI answers with an API token that is valid for 15 minutes.
 
 ---
 
-## Traditional vs OIDC
+## Stored API tokens versus OIDC
 
 <div class="grid" markdown>
 
-!!! failure "API Tokens (old way)"
-    - Long-lived tokens (months/years)
-    - If GitHub is breached, token leaks
-    - Broad permissions (all packages)
-    - Need manual rotation
-    - Can be accidentally committed to git
+!!! failure "Stored API token"
+    - Long-lived: valid until someone revokes it
+    - Kept in GitHub secrets, from where it can leak
+    - Rotated by hand
 
-!!! success "OIDC (2026 standard)"
-    - Short-lived JWT proof (10 minutes)
-    - No stored secrets anywhere
-    - Scoped to a specific repo + workflow
-    - Zero rotation overhead
-    - Cryptographically verified identity
+!!! success "Trusted publishing (OIDC)"
+    - No secret stored anywhere
+    - The API token PyPI issues expires after 15 minutes
+    - Bound to one repository, workflow file, and environment
 
 </div>
 
----
-
-## The Traditional Way (API Tokens)
-
-```
-You → Generate API token on PyPI → Store in GitHub Secrets → Workflow uses token
-```
-
-**Problems:**
-- Long-lived tokens (months/years)
-- If GitHub is compromised, token leaks
-- Token has broad permissions (all packages)
-- Need manual rotation
-- Can be accidentally committed to git
+In the words of the [PyPI docs](https://docs.pypi.org/trusted-publishers/),
+"PyPI's normal API tokens are long-lived." "Trusted Publishing avoids this
+problem because the tokens minted expire automatically."
 
 ---
 
-## The OIDC Way (2026 Standard)
+## The flow
 
-### Overview
-
-OIDC (OpenID Connect) is an authentication protocol built on OAuth 2.0. Instead of storing long-lived tokens, it uses **short-lived cryptographic proofs** (JWT tokens).
-
-### The Flow
+OIDC (OpenID Connect) is an identity layer on OAuth 2.0. GitHub issues a
+signed token (a JWT) that says which repository, workflow, and environment
+a job runs in; PyPI checks it against the trusted publishers registered for
+a project.
 
 ```
-┌─────────────┐
-│ Developer   │
-│ git push    │
-│ --tags      │
-└──────┬──────┘
+┌──────────────────────┐
+│ Maintainer           │
+│ gh workflow run      │
+│ publish_pypi.yml     │
+│ --ref v1.0.0         │
+└──────┬───────────────┘
        │
        ▼
 ┌─────────────────────────────────────────────────────────┐
-│ GitHub Actions Workflow                                 │
+│ GitHub Actions workflow                                 │
 │                                                         │
-│ 1. Builds packages                                      │
-│ 2. Requests JWT from GitHub OIDC provider              │
-│ 3. GitHub generates signed JWT with workflow identity  │
-│ 4. Sends JWT + packages to PyPI                        │
+│ 1. Builds the packages                                  │
+│ 2. Requests a JWT from GitHub's OIDC provider           │
+│ 3. Sends the JWT to PyPI                                │
 └──────┬──────────────────────────────────────────────────┘
        │
        ▼
 ┌─────────────────────────────────────────────────────────┐
-│ PyPI Validation                                         │
+│ PyPI                                                    │
 │                                                         │
-│ For each package:                                       │
-│   ✓ Verify JWT signature (GitHub's public key)         │
-│   ✓ Check JWT not expired (~10 min TTL)                │
-│   ✓ Validate claims:                                    │
-│     • repository: nfb2021/canvodpy ✓                    │
-│     • workflow: publish_testpypi.yml ✓                  │
-│     • environment: testpypi ✓                          │
-│     • package name: canvod-readers ✓                    │
-│                                                         │
-│ All match? → PUBLISH                                    │
-│ Mismatch?   → REJECT                                    │
+│ ✓ Verifies the JWT signature (GitHub's public key)      │
+│ ✓ Matches the claims against the trusted publishers:    │
+│     • repository: TUW-GEO/canvodpy                      │
+│     • workflow file: publish_pypi.yml                   │
+│     • environment: pypi                                 │
+│ → Issues an API token (15 minutes) for every project    │
+│   with a matching publisher                             │
+└──────┬──────────────────────────────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────┐
+│ The workflow uploads the packages with that API token   │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Step-by-Step Breakdown
+## Step by step
 
-### 1. Registration Phase (One-Time Setup)
+### 1. Registration (one-time setup)
 
-You register a **trust relationship** on PyPI:
+You register a **trusted publisher** for each project on PyPI. It says,
+in effect, that GitHub Actions in repository `TUW-GEO/canvodpy`, workflow
+`publish_pypi.yml`, environment `pypi`, may publish `canvod-readers`.
 
-> "I trust GitHub Actions from repository `nfb2021/canvodpy`,
-> specifically the workflow `publish_testpypi.yml` running in
-> environment `testpypi`, to publish package `canvod-readers`"
+**No secrets are exchanged.** This only tells PyPI what to expect.
 
-**No secrets exchanged!** This just tells PyPI what to expect.
+### 2. Workflow run
 
-### 2. Workflow Execution
-
-When you push a tag (`v0.1.0-beta.1`), the workflow runs:
+A maintainer starts the workflow on a release tag
+(`gh workflow run publish_pypi.yml --ref v1.0.0`). Its publish job has:
 
 ```yaml
 permissions:
-  id-token: write  # ← Request OIDC JWT capability
+  id-token: write  # ← may request an OIDC token
 ```
 
-### 3. JWT Token Generation
+### 3. The token GitHub issues
 
-GitHub's OIDC provider generates a JWT containing:
+GitHub's OIDC provider issues a JWT with claims like these (shortened):
 
 ```json
 {
   "iss": "https://token.actions.githubusercontent.com",
-  "sub": "repo:nfb2021/canvodpy:environment:testpypi",
-  "aud": "https://test.pypi.org",
-  "repository": "nfb2021/canvodpy",
-  "repository_owner": "nfb2021",
-  "repository_owner_id": "93122788",
-  "workflow": "publish_testpypi.yml",
-  "workflow_ref": "nfb2021/canvodpy/.github/workflows/publish_testpypi.yml@refs/tags/v0.1.0-beta.1",
-  "environment": "testpypi",
-  "ref": "refs/tags/v0.1.0-beta.1",
-  "iat": 1738677600,  // Issued at
-  "exp": 1738678200   // Expires at (10 minutes later)
+  "sub": "repo:TUW-GEO/canvodpy:environment:pypi",
+  "aud": "pypi",
+  "repository": "TUW-GEO/canvodpy",
+  "repository_owner": "TUW-GEO",
+  "repository_owner_id": "<numeric owner id>",
+  "workflow": "Publish to PyPI",
+  "job_workflow_ref": "TUW-GEO/canvodpy/.github/workflows/publish_pypi.yml@refs/tags/v1.0.0",
+  "environment": "pypi",
+  "ref": "refs/tags/v1.0.0"
 }
 ```
 
-**Cryptographically signed** with GitHub's private key.
+GitHub signs it with its private key. Anyone can verify the signature with
+GitHub's public keys at
+`https://token.actions.githubusercontent.com/.well-known/jwks`.
 
-### 4. Publish Action
+### 4. Exchange and upload
 
-The `pypa/gh-action-pypi-publish` action:
-1. Retrieves the JWT from GitHub's OIDC provider
-2. Bundles it with the package files
-3. Sends to PyPI/TestPyPI upload endpoint
+`uv publish --trusted-publishing always`:
 
-### 5. PyPI Validation
+1. Gets the JWT from GitHub's OIDC provider
+2. Sends it to PyPI, which verifies it and returns a short-lived API token
+3. Uploads the packages with that token
 
-PyPI receives the request and validates:
+### 5. What PyPI checks
 
-**1. Signature Verification**
-```
-✓ JWT signed by GitHub? (verify with GitHub's public key)
-```
+From [PyPI's internals page](https://docs.pypi.org/trusted-publishers/internals/):
 
-**2. Expiration Check**
-```
-✓ Current time < exp claim?
-✓ iat claim reasonable?
-```
+- The signature, "to ensure that it's actually coming from the expected
+  provider"
+- The claims against the registered publishers: repository, workflow file,
+  and environment
+- The `repository_owner_id` claim, which PyPI always checks for GitHub
+  publishers
 
-**3. Claims Validation**
-```
-✓ repository == "nfb2021/canvodpy"?
-✓ workflow == "publish_testpypi.yml"?
-✓ environment == "testpypi"?
-✓ Package name == "canvod-readers"? (matches upload)
-```
-
-**4. Trust Relationship Lookup**
-```
-✓ Is there a registered publisher matching these claims?
-✓ Does the publisher have permission for this package?
-```
-
-**All pass?** → Package published.
-**Any fail?** → `403 Forbidden` with detailed error
+If the claims match, PyPI issues "a short-lived (15 minute) PyPI API
+token," which "is scoped to every project with a matching Trusted
+Publisher." If nothing matches, the upload is refused.
 
 ---
 
-## Security Properties
+## Scope of a publisher
 
-### No Long-Lived Secrets
-
-**Traditional tokens:**
-- Valid for months/years
-- If leaked, usable until manually revoked
-- Broad permissions
-
-**OIDC JWTs:**
-- Valid for ~10 minutes
-- Automatically expire
-- Scoped to specific workflow + environment + package
-
-### Cryptographic Verification
-
-**How JWT signatures work:**
-
-1. GitHub has a **private key** (secret, never shared)
-2. GitHub publishes a **public key** at `https://token.actions.githubusercontent.com/.well-known/jwks`
-3. JWT is signed with private key
-4. PyPI verifies signature with public key
-
-**Why it's secure:**
-- Only GitHub can create valid JWTs (has private key)
-- Anyone can verify JWTs (public key is public)
-- Forging a JWT requires private key (mathematically infeasible)
-
-### Scoped Permissions
-
-Each trust relationship is scoped to:
+Each trusted publisher is bound to:
 
 | Scope | Example | Purpose |
 |-------|---------|---------|
-| Repository | `nfb2021/canvodpy` | Only this repo can publish |
-| Workflow | `publish_testpypi.yml` | Only this workflow file |
-| Environment | `testpypi` | Only this environment |
-| Package | `canvod-readers` | Only this PyPI package |
+| Repository | `TUW-GEO/canvodpy` | Only this repository can publish |
+| Workflow | `publish_pypi.yml` | Only this workflow file |
+| Environment | `pypi` | Only this environment |
+| Package | `canvod-readers` | Only this PyPI project |
 
-**Example attack prevention:**
-
-- Can't use JWT from different repo
-- Can't use JWT from different workflow
-- Can't use JWT from different environment
-- Can't publish to different package
-- Can't replay expired JWT
-- Can't modify JWT claims (signature breaks)
-
-### Audit Trail
-
-GitHub records:
-- Who triggered the workflow
-- What tag/branch/commit
-- When it ran
-- What environment was used
-
-PyPI records:
-- Which JWT claims were used
-- When publish occurred
-- Which files were uploaded
-
-**Full traceability:** "v0.1.0 was published by workflow X triggered by user Y at time Z"
+So a JWT from another repository, workflow file, or environment gets no
+token, and the token a run gets works only for the projects whose
+publishers match.
 
 ---
 
-## Why Multiple Publishers?
+## Why several publishers?
 
-Each package needs its own trust relationship:
+The publisher belongs to the project, so every package needs its own:
 
 ```
-PyPI Trust Registry:
-┌──────────────────┬─────────────────┬──────────────────────┬─────────┐
-│ Package          │ Repository      │ Workflow             │ Env     │
-├──────────────────┼─────────────────┼──────────────────────┼─────────┤
-│ canvod-readers   │ nfb2021/canvodpy│ publish_testpypi.yml │ testpypi│
-│ canvod-auxiliary       │ nfb2021/canvodpy│ publish_testpypi.yml │ testpypi│
-│ canvod-grids     │ nfb2021/canvodpy│ publish_testpypi.yml │ testpypi│
-│ ...              │ ...             │ ...                  │ ...     │
-└──────────────────┴─────────────────┴──────────────────────┴─────────┘
+PyPI trusted publishers:
+┌──────────────────┬──────────────────┬──────────────────┬──────┐
+│ Package          │ Repository       │ Workflow         │ Env  │
+├──────────────────┼──────────────────┼──────────────────┼──────┤
+│ canvod-readers   │ TUW-GEO/canvodpy │ publish_pypi.yml │ pypi │
+│ canvod-auxiliary │ TUW-GEO/canvodpy │ publish_pypi.yml │ pypi │
+│ canvod-grids     │ TUW-GEO/canvodpy │ publish_pypi.yml │ pypi │
+│ ...              │ ...              │ ...              │ ...  │
+└──────────────────┴──────────────────┴──────────────────┴──────┘
 ```
-
-**Why?** PyPI validates per-package:
-
-> "Does this JWT have permission to publish THIS specific package?"
 
 If you only register `canvodpy`, the workflow can't publish `canvod-readers`.
 
 ---
 
-## GitHub Environments
+## Deployment environment
 
 ```yaml
-environment: testpypi  # ← Why this matters
+environment: pypi  # ← Why this matters
 ```
 
-### Security Benefits
-
-**1. Protection Rules**
-- Require manual approval before publish
-- Limit to specific branches
-- Add reviewers
-
-**2. Secrets Scoping**
-- Environment-specific secrets (if needed)
-- Separate test vs production
-
-**3. Audit & History**
-- See all deployments to this environment
-- Track who approved what
-- Deployment logs
-
-**4. OIDC Scoping**
-- JWT includes environment name in claims
-- Different environments = different publishers
-- Example: `testpypi` environment → test.pypi.org
-           `pypi` environment → pypi.org
+- **Protection rules:** the environment can require a reviewer's approval
+  before the job runs, and limit which branches or tags may deploy to it.
+- **History:** the repository lists every deployment to the environment and who
+  approved it.
+- **OIDC scope:** the JWT names the environment, so a publisher registered
+  for environment `pypi` matches no run in any other environment.
 
 ---
 
-## Common Misconfigurations
+## Common configuration mistakes
 
-### 1. Mismatched Environment Name
+### 1. Mismatched environment name
 
 **Workflow says:**
 ```yaml
-environment: testpypi
+environment: pypi
 ```
 
 **PyPI registered with:**
 ```
-Environment: test-pypi  # ← Note the dash!
+Environment: py-pi  # ← Note the dash!
 ```
 
-**Result:** JWT validation fails (environment claim doesn't match)
+**Result:** no publisher matches, and the upload is refused.
 
-### 2. Mismatched Workflow Filename
+### 2. Mismatched workflow file
 
 **Workflow filename:**
 ```
-.github/workflows/publish-testpypi.yml  # ← Note the dash!
+.github/workflows/publish-pypi.yml  # ← Note the dash!
 ```
 
 **PyPI registered with:**
 ```
-Workflow: publish_testpypi.yml  # ← Note the underscore!
+Workflow: publish_pypi.yml  # ← Note the underscore!
 ```
 
-**Result:** JWT validation fails
+**Result:** no publisher matches, and the upload is refused.
 
-### 3. Wrong Repository Owner
+### 3. Package not registered
 
-**Your GitHub username:** `nfb2021`
-**PyPI registered with:** `NFB2021` (different case!)
+You set up a publisher for `canvodpy` but forgot `canvod-readers`.
 
-**Result:** JWT validation fails (case-sensitive!)
-
-### 4. Forgot to Register Package
-
-You set up OIDC for `canvodpy` but forgot `canvod-readers`.
-
-**Result:** `canvodpy` publishes successfully, `canvod-readers` fails
+**Result:** `canvodpy` publishes, `canvod-readers` fails.
 
 ---
 
-## Advantages Over Other Methods
+## Further reading
 
-### vs. Username/Password
-
-| Method | OIDC | Username/Password |
-|--------|------|-------------------|
-| Security | Cryptographic | Password-based |
-| Lifetime | 10 minutes | Forever (until changed) |
-| Revocation | Automatic expiry | Manual change |
-| MFA Compatible | Always | Sometimes |
-| Audit Trail | Built-in | Manual logging |
-
-### vs. API Tokens
-
-| Method | OIDC | API Token |
-|--------|------|-----------|
-| Storage | None needed | GitHub Secrets |
-| Rotation | Not needed | Manual (quarterly?) |
-| Scope | Per-package | Account-wide |
-| Leak Risk | Low (expires fast) | High (long-lived) |
-| Setup | One-time registration | Generate + store |
+- [PyPI trusted publishers documentation](https://docs.pypi.org/trusted-publishers/)
+- [OpenID Connect](https://openid.net/connect/)
+- [GitHub OIDC documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
+- [GitHub JWKS endpoint](https://token.actions.githubusercontent.com/.well-known/jwks)
 
 ---
 
-## Real-World Analogy
-
-**API Tokens = House Key**
-- You give someone a key
-- They can use it anytime
-- If lost, anyone can use it
-- Must change locks to revoke
-
-**OIDC = Hotel Key Card**
-- Hotel validates your identity (JWT)
-- Issues temporary card (expires checkout time)
-- Card only works for your room (scoped)
-- Card automatically deactivates (expiration)
-- Can't duplicate card (cryptographic signature)
-- Full audit trail (who, when, what room)
-
----
-
-## Further Reading
-
-- [PyPI Trusted Publishers Documentation](https://docs.pypi.org/trusted-publishers/)
-- [OIDC Specification](https://openid.net/connect/)
-- [GitHub OIDC Documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
-- [JWT.io - Debug JWTs](https://jwt.io/)
-- [GitHub JWKS Endpoint](https://token.actions.githubusercontent.com/.well-known/jwks)
-
----
-
-**Questions?** Open an issue or discussion!
+**Questions?** Open an issue or a discussion.

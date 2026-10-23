@@ -6,19 +6,22 @@ from collections.abc import Generator
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
-from typing import Any, cast
 
 import numpy as np
+import structlog
 import xarray as xr
-from canvod.auxiliary.preprocessing import prep_aux_ds
 from canvod.config import load_config
 from canvod.readers import MatchedDirs, Rnxv3Obs
-from canvod.utils.tools import _worker_init, get_version_from_pyproject
-from canvodpy.logging import get_logger
+from canvod.utils.tools import _worker_init, deprecated, get_version_from_pyproject
 from natsort import natsorted
 from tqdm import tqdm
 
 from canvod.store.manager import GnssResearchSite
+
+_REPLACEMENT = (
+    "Use `canvodpy run` or `canvodpy.Site(<site>).pipeline().process_date(<date>)` "
+    "instead."
+)
 
 
 # Module-level function for ProcessPoolExecutor (must be pickleable).
@@ -42,7 +45,7 @@ def _process_single_rinex(
         The input file path and the processed dataset.
     """
 
-    log = get_logger(__name__).bind(file=str(rnx_file))
+    log = structlog.get_logger(__name__).bind(file=str(rnx_file))
     log.info("rinex_processing_started")
 
     try:
@@ -87,7 +90,7 @@ def preprocess_rnx(
     tuple[Path, xr.Dataset]
         The input file path and the processed dataset.
     """
-    log = get_logger(__name__).bind(file=str(rnx_file))
+    log = structlog.get_logger(__name__).bind(file=str(rnx_file))
     log.info("preprocessing_started")
 
     try:
@@ -114,12 +117,19 @@ def preprocess_rnx(
         raise
 
 
+@deprecated(
+    "`IcechunkDataReader` is left over from development and will be removed "
+    f"with the next major version. {_REPLACEMENT}"
+)
 class IcechunkDataReader:
     """
-    Replacement for RinexFilesParser that reads from Icechunk stores.
+    Read RINEX v3 files of one day and append them to the site's GNSS store.
 
-    This class provides a similar interface to the old parser but reads
-    pre-processed data from Icechunk stores instead of processing RINEX files.
+    .. deprecated::
+        Left over from development, removed with the next major version.
+        Use ``canvodpy run`` or
+        ``canvodpy.Site(<site>).pipeline().process_date(<date>)``, which
+        read all supported formats and add the satellite geometry.
 
     Parameters
     ----------
@@ -163,7 +173,7 @@ class IcechunkDataReader:
             _sites = config.sites.sites
             if not _sites:
                 raise ValueError(
-                    "No sites configured — create canvod-settings.yaml "
+                    "No sites configured: create canvod-settings.yaml "
                     "or pass site_name explicitly."
                 )
             site_name = next(iter(_sites))
@@ -177,7 +187,7 @@ class IcechunkDataReader:
         self.enable_gc = enable_gc
         self.gc_delay = gc_delay
 
-        self._logger = get_logger(__name__).bind(
+        self._logger = structlog.get_logger(__name__).bind(
             site=site_name,
             date=matched_dirs.yyyydoy.to_str(),
         )
@@ -254,209 +264,37 @@ class IcechunkDataReader:
             if self.gc_delay > 0:
                 time.sleep(self.gc_delay)
 
+    @deprecated(
+        "`IcechunkDataReader.parsed_rinex_data_gen_v2()` is left over from "
+        "development, does not run with the current `RinexDataProcessor` and "
+        f"will be removed with the next major version. {_REPLACEMENT}"
+    )
     def parsed_rinex_data_gen_v2(
         self,
         keep_vars: list[str] | None = None,
         receiver_types: list[str] | None = None,
     ) -> Generator[xr.Dataset]:
+        """Raise an error: this generator does not run any more.
+
+        It was written for an earlier ``RinexDataProcessor``, whose
+        constructor and methods it calls no longer exist.
+
+        Raises
+        ------
+        RuntimeError
+            Always, naming the replacement.
         """
-        Generator that processes RINEX files, augments them (φ, θ, r),
-        and appends to Icechunk stores on-the-fly.
-
-        Yields enriched daily datasets (already augmented).
-        """
-
-        if receiver_types is None:
-            receiver_types = ["canopy", "reference"]
-
-        self._logger.info(
-            f"Starting RINEX processing and ingestion for types: {receiver_types}"
+        msg = (
+            "`IcechunkDataReader.parsed_rinex_data_gen_v2()` does not run with "
+            f"the current `RinexDataProcessor`. {_REPLACEMENT}"
         )
+        raise RuntimeError(msg)
 
-        # --- 1) Cache auxiliaries once per day ---
-        from canvodpy.orchestrator import RinexDataProcessor
-
-        processor_cls = cast(Any, RinexDataProcessor)
-        processor: Any = processor_cls(
-            matched_data_dirs=self.matched_dirs, icechunk_reader=self
-        )
-
-        ephem_ds = prep_aux_ds(processor.get_ephemeride_ds())
-        clk_ds = prep_aux_ds(processor.get_clk_ds())
-
-        aux_ds_dict = {"ephem": ephem_ds, "clk": clk_ds}
-        approx_pos = None  # computed on first canopy dataset
-
-        for receiver_type in receiver_types:
-            # --- resolve dirs and names ---
-            if receiver_type == "canopy":
-                rinex_dir = self.matched_dirs.canopy_data_dir
-                receiver_name = self._get_receiver_name_for_type("canopy")
-                store_group = "canopy"
-            elif receiver_type == "reference":
-                rinex_dir = self.matched_dirs.reference_data_dir
-                receiver_name = self._get_receiver_name_for_type("reference")
-                store_group = "reference"
-            else:
-                self._logger.warning(f"Unknown receiver type: {receiver_type}")
-                continue
-
-            if not receiver_name:
-                self._logger.warning(f"No configured receiver for type {receiver_type}")
-                continue
-
-            rinex_files = self._get_rinex_files(rinex_dir)
-            if not rinex_files:
-                self._logger.warning(f"No RINEX files found in {rinex_dir}")
-                continue
-
-            self._logger.info(
-                f"Processing {len(rinex_files)} RINEX files for {receiver_type}"
-            )
-
-            # --- parallel preprocessing ---
-            futures = {
-                self._pool.submit(preprocess_rnx, f, keep_vars): f for f in rinex_files
-            }
-            results: list[tuple[Path, xr.Dataset]] = []
-
-            for fut in tqdm(
-                as_completed(futures),
-                total=len(futures),
-                desc=f"Processing {receiver_type}",
-            ):
-                try:
-                    fname, ds = fut.result()
-                    results.append((fname, ds))
-                except Exception as e:
-                    self._logger.error(f"Failed preprocessing: {e}")
-
-            results.sort(key=lambda x: x[0].name)  # chronological order
-
-            # --- per-file commit ---
-            for idx, (fname, ds) in enumerate(results):
-                log = self._logger.bind(file=str(fname))
-                try:
-                    rel_path = self._site.gnss_store.rel_path_for_commit(fname)
-                    version = get_version_from_pyproject()
-
-                    rinex_hash = ds.attrs.get("File Hash")
-                    if not rinex_hash:
-                        log.warning("Dataset missing hash → skipping")
-                        continue
-
-                    start_epoch = np.datetime64(ds.epoch.min().values)
-                    end_epoch = np.datetime64(ds.epoch.max().values)
-
-                    exists, matches = self._site.gnss_store.metadata_row_exists(
-                        store_group, rinex_hash, start_epoch, end_epoch
-                    )
-
-                    ds = self._site.gnss_store._cleanse_dataset_attrs(ds)
-
-                    # --- 2) Compute approx_pos once from first canopy file ---
-                    if receiver_type == "canopy" and approx_pos is None:
-                        approx_pos = processor.get_approx_position(ds)
-
-                    # --- 3) Augment with φ, θ, r ---
-                    matched = processor.match_datasets(ds, **aux_ds_dict)
-                    ephem_matched = matched["ephem"]
-                    if approx_pos is None:
-                        msg = (
-                            "Approximate receiver position is required before "
-                            "azimuth/elevation augmentation."
-                        )
-                        raise RuntimeError(msg)
-                    ds = processor.add_azi_ele(
-                        rnx_obs_ds=ds,
-                        ephem_ds=ephem_matched,
-                        rx_x=approx_pos.x,
-                        rx_y=approx_pos.y,
-                        rx_z=approx_pos.z,
-                    )
-
-                    # --- 3b) Preprocessing pipeline ---
-                    from canvod.ops import build_default_pipeline
-
-                    preprocessing_config = load_config().processing.preprocessing
-                    pipeline = build_default_pipeline(preprocessing_config)
-                    ds, pipeline_result = pipeline(ds)
-                    ds.attrs.update(pipeline_result.to_metadata_dict())
-
-                    # --- 4) Store to Icechunk ---
-                    existing_groups = self._site.gnss_store.list_groups()
-                    if not exists and store_group not in existing_groups and idx == 0:
-                        msg = (
-                            f"[v{version}] Initial commit {rel_path} "
-                            f"(hash={rinex_hash}, epoch={start_epoch}→{end_epoch})"
-                        )
-                        self._site.gnss_store.write_initial_group(
-                            dataset=ds, group_name=store_group, commit_message=msg
-                        )
-                        log.info(msg)
-                        continue
-
-                    match (exists, self._site.gnss_store._gnss_store_strategy):
-                        case (True, "skip"):
-                            log.info(f"[v{version}] Skipped {rel_path}")
-                            # just metadata row
-                            self._site.gnss_store.append_metadata(
-                                group_name=store_group,
-                                rinex_hash=rinex_hash,
-                                start=start_epoch,
-                                end=end_epoch,
-                                snapshot_id="none",
-                                action="skip",
-                                commit_msg="skip",
-                                dataset_attrs=ds.attrs,
-                            )
-
-                        case (True, "overwrite"):
-                            msg = f"[v{version}] Overwrote {rel_path}"
-                            self._site.gnss_store.overwrite_file_in_group(
-                                dataset=ds,
-                                group_name=store_group,
-                                rinex_hash=rinex_hash,
-                                start=start_epoch,
-                                end=end_epoch,
-                                commit_message=msg,
-                            )
-
-                        case (True, "unsafe_append"):
-                            msg = f"[v{version}] Appended {rel_path}"
-                            self._site.gnss_store.append_to_group(
-                                dataset=ds,
-                                group_name=store_group,
-                                append_dim="epoch",
-                                action="append",
-                                commit_message=msg,
-                            )
-
-                        case (False, _):
-                            msg = f"[v{version}] Wrote {rel_path}"
-                            self._site.gnss_store.append_to_group(
-                                dataset=ds,
-                                group_name=store_group,
-                                append_dim="epoch",
-                                action="write",
-                                commit_message=msg,
-                            )
-                except Exception as e:
-                    log.exception("file_commit_failed", error=str(e))
-                    raise
-
-                self._memory_cleanup()
-
-            # --- 5) Yield full daily dataset (already enriched) ---
-            final_ds = self._site.read_receiver_data(store_group, self._time_range)
-            self._logger.info(
-                f"Yielding {receiver_type} dataset: {dict(final_ds.sizes)}"
-            )
-            yield final_ds
-            self._memory_cleanup()
-
-        self._logger.info("RINEX processing and ingestion completed")
-
+    @deprecated(
+        "`IcechunkDataReader.parsed_rinex_data_gen()` is left over from "
+        "development and will be removed with the next major version. "
+        f"{_REPLACEMENT}"
+    )
     def parsed_rinex_data_gen(
         self,
         keep_vars: list[str] | None = None,
@@ -508,6 +346,7 @@ class IcechunkDataReader:
             if not rinex_files:
                 self._logger.warning(f"No RINEX files found in {rinex_dir}")
                 continue
+            self._site.ensure_store_metadata("gnss_store", [store_group], "rinex3")
 
             self._logger.info(
                 f"Processing {len(rinex_files)} RINEX files for {receiver_type}"
@@ -690,10 +529,6 @@ class IcechunkDataReader:
         receiver_type: str,
     ) -> None:
         """Append dataset to the appropriate Icechunk store."""
-        from gnssvodpy.utils.tools import (
-            get_version_from_pyproject,  # type: ignore[unresolved-import]
-        )
-
         try:
             version = get_version_from_pyproject()
             date_str = self.matched_dirs.yyyydoy.to_str()

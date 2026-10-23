@@ -1,0 +1,203 @@
+# Setting profile "default" of the reference stores (spec #318).
+#
+# Final SP3/CLK from the test data, no preprocessing, 15 SIDs per system.
+# `just reference-stores` and `just reference-check` run it with
+# `canvodpy run --config-dir reference/profiles/default` from the root of
+# the repository; they add the output folders (stores, auxiliary files,
+# logs) with a settings file passed as --config. The data paths below are
+# relative to the root of the repository.
+processing:
+  # The made-up identity of the tests (canvod.utils.testing): the
+  # reference stores name no real person.
+  metadata:
+    author: John Ronald Reuel Tolkien
+    email: j.r.r.tolkien@the.inklings.org
+    institution: University of Oxford
+    license: Apache-2.0
+    publisher: The Inklings
+    naming_authority: org.middle-earth
+    # The stores are published: their commits don't record this computer.
+    record_machine: false
+  aux_data:
+    agency: COD
+    product_type: final
+  params:
+    keep_gnss_observables:
+      - SNR
+    aggregate_glonass_fdma: true
+    receiver_position_mode: shared
+    file_pairing: complete
+    ephemeris_source: final
+    resource_mode: auto
+  storage:
+    gnss_store_strategy: skip
+sites:
+  rosalia_rinex_v3_04:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/rinex_v3_04/01_Rosalia
+    store_description: Reference store of the RINEX v3.04 test data of Rosalia, 2025-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference/01_GNSS/01_raw
+        reader_format: rinex3
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 02_canopy/01_GNSS/01_raw
+        reader_format: rinex3
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+  moflux_rinex_v2_11:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/rinex_v2_11/02_Moflux
+    store_description: Reference store of the RINEX v2.11 test data of MOFLUX, 2025-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference
+        reader_format: rinex2
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 02_canopy
+        reader_format: rinex2
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+  examplesite_rinex_v3_05_stripped:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/rinex_v3_05_stripped/01_ExampleSite
+    store_description: Reference store of the stripped RINEX v3.05 test data of ExampleSite, 2025-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference
+        reader_format: rinex3_stripped
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 01_canopy
+        reader_format: rinex3_stripped
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+  rosalia_sbf:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/sbf/01_Rosalia
+    store_description: Reference store of the SBF test data of Rosalia, 2025-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference
+        reader_format: sbf
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 02_canopy
+        reader_format: sbf
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+  rosalia_nmea:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/nmea/01_Rosalia
+    store_description: Reference store of the NMEA test data of Rosalia, 2025-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference
+        reader_format: nmea
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 02_canopy
+        reader_format: nmea
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+  hainich_nmea:
+    gnss_site_data_root: packages/canvod-readers/tests/test_data/valid/nmea/02_Hainich
+    store_description: Reference store of the NMEA test data of Hainich, 2026-01-01.
+    receivers:
+      reference_01:
+        type: reference
+        directory: 01_reference
+        reader_format: nmea
+        paired_canopies: all
+      canopy_01:
+        type: canopy
+        directory: 02_canopy
+        reader_format: nmea
+    vod_analyses:
+      canopy_01_vs_reference_01:
+        canopy_receiver: canopy_01
+        reference_receiver: reference_01
+# The SIDs of a run without an overlay: 15 SIDs per system, per system the
+# SIDs both Rosalia receivers recorded SNR for the longest on 2025-01-01
+# (RINEX v3.04 test data). The build replaces this list for each site with
+# the site's own list in reference-runs.yaml.
+sids:
+  mode: custom
+  custom_sids:
+    - G05|L1|C
+    - G06|L1|C
+    - G07|L1|C
+    - G10|L1|C
+    - G11|L1|C
+    - G11|L2|L
+    - G14|L1|C
+    - G14|L2|L
+    - G17|L1|C
+    - G19|L1|C
+    - G23|L1|C
+    - G23|L2|L
+    - G31|L1|C
+    - G32|L1|C
+    - G32|L2|L
+    - R04|G1|C
+    - R04|G2|C
+    - R05|G1|C
+    - R05|G2|C
+    - R09|G2|C
+    - R11|G1|C
+    - R12|G1|C
+    - R12|G2|C
+    - R16|G1|C
+    - R16|G2|C
+    - R20|G2|C
+    - R21|G1|C
+    - R21|G2|C
+    - R22|G1|C
+    - R22|G2|C
+    - E08|E1|C
+    - E08|E5a|Q
+    - E08|E5b|Q
+    - E13|E1|C
+    - E13|E5a|Q
+    - E13|E5b|Q
+    - E15|E1|C
+    - E15|E5a|Q
+    - E15|E5b|Q
+    - E30|E1|C
+    - E30|E5a|Q
+    - E30|E5b|Q
+    - E34|E1|C
+    - E34|E5a|Q
+    - E34|E5b|Q
+    - C12|B1I|I
+    - C12|B2b|I
+    - C12|B3I|I
+    - C14|B1I|I
+    - C14|B2b|I
+    - C14|B3I|I
+    - C21|B1I|I
+    - C33|B1I|I
+    - C33|B3I|I
+    - C35|B1I|I
+    - C35|B3I|I
+    - C42|B1I|I
+    - C42|B3I|I
+    - C44|B1I|I
+    - C44|B3I|I

@@ -1,52 +1,62 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_dark_mode.svg">
+    <img alt="canVODpy" src="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_bright_mode.svg" width="260">
+  </picture>
+</p>
+
 # canvod-ops
 
-Composable preprocessing operations pipeline for GNSS-Transmissometry.
+[![PyPI](https://img.shields.io/pypi/v/canvod-ops.svg)](https://pypi.org/project/canvod-ops/)
+[![Python](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18496233-blue)](https://doi.org/10.5281/zenodo.18496233)
 
-Part of the [canVODpy](https://github.com/nfb2021/canvodpy) ecosystem.
+**Preprocessing of GNSS observations: temporal aggregation and grid cell assignment.** `canvod-ops` is a package of
+[canVODpy](https://canvodpy.eu/), an open Python ecosystem for
+GNSS-Transmissometry canopy VOD retrievals.
 
-## Overview
+## What it does
 
-`canvod-ops` provides a modular `Op`-based pipeline for applying preprocessing
-steps to GNSS datasets. Operations are composable and chainable via `Pipeline`.
+- Applies operations to an observation dataset as a chain: temporal aggregation and grid cell assignment.
+- Records what each operation did, for the log book of the store.
+- `canvodpy run` applies it only if the `processing.preprocessing` setting is set; without it, the store keeps the observations at the receiver's sampling interval.
 
-## Key components
-
-| Component | Purpose |
-|---|---|
-| `Op` | Abstract base class for all operations |
-| `GridAssignment` | Assigns satellite observations to equal-area grid cells |
-| `Pipeline` | Chains operations and returns `PipelineResult` |
-
-## Installation
+## Install
 
 ```bash
-uv pip install canvod-ops
+uv add canvod-ops
 ```
 
-## Configuration (optional)
+Most users install [canvodpy](https://pypi.org/project/canvodpy/), which
+includes this package, the command line, and the processing pipeline.
+canVODpy requires Python 3.14.
 
-`build_default_pipeline()` falls back to `PreprocessingConfig()` defaults when
-no config is found — `canvod-config`'s `load_config()` is only consulted if
-available. In a standalone install outside a canvodpy monorepo checkout,
-point it at a settings file with:
-
-- `CANVOD_CONFIG_DIR` — directory containing `canvod-settings.yaml`
-- `CANVOD_CONFIG_FILE` — an overlay YAML file merged on top
-
-## Quick Start
+## Example
 
 ```python
-from canvod.ops import Pipeline, GridAssignment
+from canvod.readers import Rnxv3Obs
+from canvod.ops import Pipeline, TemporalAggregate
 
-grid = create_hemigrid(grid_type="equal_area", resolution=2.0)
-pipeline = Pipeline([GridAssignment(grid)])
-result = pipeline.run(ds)
+ds = Rnxv3Obs(fpath="ROSA01TUW_R_20250011330_15M_05S_AA.rnx").to_ds()
+pipeline = Pipeline(
+    [TemporalAggregate(freq="1min", method="mean", integer_method="first")]
+)
+ds_1min, result = pipeline(ds)
 ```
 
 ## Documentation
 
-[Full documentation](https://canvodpy.eu/packages/ops/overview/)
+- [canvod-ops in the canVODpy documentation](https://canvodpy.eu/packages/ops/overview/)
+- [Start here](https://canvodpy.eu/users/): from installation to the first VOD
+
+## How to cite
+
+If you use canVODpy, please cite it with its DOI,
+[`10.5281/zenodo.18496233`](https://doi.org/10.5281/zenodo.18496233), which always leads to the newest
+version. [CITATION.cff](https://github.com/TUW-GEO/canvodpy/blob/main/CITATION.cff) has the full
+citation.
 
 ## License
 
-Apache License 2.0
+[Apache License 2.0](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE)

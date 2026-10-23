@@ -1,19 +1,26 @@
-"""``canvodpy vod`` — compute VOD in bulk from an existing RINEX store.
+"""``canvodpy vod`` and ``canvodpy vod-reconcile``: VOD from an existing GNSS store.
 
-Thin wrapper around ``VodComputer.compute_bulk()``: reads canopy/reference
-data directly from the site's RINEX Icechunk store (rather than inline
-during a pipeline run) and writes the result under
-``{calculator}/{analysis_name}`` in the VOD store. For backfill/reprocessing
-outside of ``canvodpy run`` — see dev/todo_later.md §29.
+Both commands call ``VodComputer.compute_days()``, the VOD phase run alone
+(ADR 0021): one task per day in the worker pool reads the day's canopy and
+reference observations from the GNSS store of the site and writes its VOD to
+``{calculator}/{analysis_name}`` in the VOD store, one commit per unit of
+days. Use them to compute VOD again, or for days that ``canvodpy run`` left
+without VOD.
 """
 
 from __future__ import annotations
 
 import datetime
-from typing import Annotated
+from pathlib import Path
+from typing import TYPE_CHECKING, Annotated, Any
 
 import typer
 from rich.console import Console
+
+from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
+
+if TYPE_CHECKING:
+    from canvodpy.orchestrator.vod_phase import VodUnitReport
 
 console = Console()
 
@@ -30,7 +37,11 @@ def _to_datetime(yyyydoy: str, *, end_of_day: bool) -> datetime.datetime:
 
 def vod(
     site: Annotated[
-        str, typer.Option("--site", help="Site name, as defined in sites.yaml")
+        str,
+        typer.Option(
+            "--site",
+            help="Site name, as defined under sites: in canvod-settings.yaml",
+        ),
     ],
     analysis: Annotated[
         str,
@@ -40,18 +51,37 @@ def vod(
     ],
     start: Annotated[
         str | None,
-        typer.Option("--start", help="Start date in YYYYDOY format (e.g. 2025001)."),
+        typer.Option(
+            "--start",
+            help=(
+                "First day in YYYYDOY format, for example 2025001. Default: the "
+                "first day of the GNSS store."
+            ),
+        ),
     ] = None,
     end: Annotated[
         str | None,
-        typer.Option("--end", help="End date in YYYYDOY format (e.g. 2025007)."),
+        typer.Option(
+            "--end",
+            help=(
+                "Last day in YYYYDOY format, for example 2025007. Default: the "
+                "last day of the GNSS store."
+            ),
+        ),
     ] = None,
     calculator: Annotated[
-        str,
+        VodCalculatorChoice,  # ty: ignore[invalid-type-form]
         typer.Option("--calculator", help="VOD calculator to use."),
-    ] = "tau_omega",
+    ] = VodCalculatorChoice["tau_omega"],
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Compute VOD in bulk from an existing RINEX store and write the result."""
+    """Compute the VOD of a range of days from an existing GNSS store and write it.
+
+    Without --start and --end, every day of the GNSS store. A day whose VOD
+    the store holds from the same GNSS files is not computed again; a day
+    without data in the canopy or the reference group is skipped and
+    listed.
+    """
     from canvodpy.api import Site
     from canvodpy.vod_computer import VodComputer
 
@@ -66,23 +96,42 @@ def vod(
 
     vod_computer = VodComputer(site_obj, calculator=calculator)
 
+    days = vod_computer.gnss_days(analysis, start=start_dt, end=end_dt)
+    if not days:
+        console.print(f"[yellow]No GNSS data for {analysis} in this range.[/yellow]")
+        raise typer.Exit(1)
     console.print(
-        f"Computing VOD for [bold]{site}[/bold]/{analysis} (calculator={calculator})..."
+        f"Computing VOD for [bold]{site}[/bold]/{analysis} (calculator={calculator}), "
+        f"{len(days)} day(s)..."
     )
-    vod_ds = vod_computer.compute_bulk(analysis, start=start_dt, end=end_dt)
+    _print_report(vod_computer.compute_days(days, [analysis]), analysis, calculator)
 
-    n_valid = int((~vod_ds["VOD"].isnull()).sum()) if "VOD" in vod_ds else 0
-    n_total = vod_ds["VOD"].size if "VOD" in vod_ds else 0
-    pct = 100 * n_valid / n_total if n_total else 0
+
+def _print_report(report: VodUnitReport, analysis: str, calculator: str) -> None:
+    """Say which days were written, stored before, and missing."""
+    written = report.written.get(analysis, [])
+    stored = report.stored.get(analysis, [])
     console.print(
-        f"[green]✓[/green] {n_valid}/{n_total} valid VOD values ({pct:.0f}%) "
-        f"written to '{calculator}/{analysis}'"
+        f"[green]✓[/green] {len(written)} day(s) written to '{calculator}/{analysis}'"
+        + (f", {len(stored)} already stored from the same GNSS files" if stored else "")
     )
+    for day, reason in report.missing.get(analysis, []):
+        console.print(f"[yellow]  {_yyyydoy(day)}: no VOD, {reason}[/yellow]")
+
+
+def _yyyydoy(day: Any) -> str:
+    from canvod.utils.tools import YYYYDOY
+
+    return YYYYDOY.from_date(day.astype(datetime.date)).to_str()
 
 
 def vod_reconcile(
     site: Annotated[
-        str, typer.Option("--site", help="Site name, as defined in sites.yaml")
+        str,
+        typer.Option(
+            "--site",
+            help="Site name, as defined under sites: in canvod-settings.yaml",
+        ),
     ],
     analysis: Annotated[
         str,
@@ -91,27 +140,26 @@ def vod_reconcile(
         ),
     ],
     calculator: Annotated[
-        str,
+        VodCalculatorChoice,  # ty: ignore[invalid-type-form]
         typer.Option("--calculator", help="VOD calculator to use."),
-    ] = "tau_omega",
+    ] = VodCalculatorChoice["tau_omega"],
     execute: Annotated[
         bool,
         typer.Option(
             "--execute",
-            help="Backfill the gaps found. Default is a dry-run report only.",
+            help="Compute the VOD of the dates found. Without this flag, the command only reports them.",
         ),
     ] = False,
+    config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
-    """Find (and optionally backfill) RINEX-ingested-but-VOD-missing dates.
+    """List the dates that have observations but no VOD, and compute it with --execute.
 
-    ``canvodpy run`` only resumes from the RINEX store's latest date, so a
-    date that got RINEX-ingested but never got its VOD computed (e.g. a
-    run that crashed on the VOD-store write after RINEX ingestion already
-    succeeded — dev/todo_later.md §43) is silently never revisited. This
-    finds that gap and, with ``--execute``, backfills it via
-    ``VodComputer.compute_bulk()`` — the same mechanism ``canvodpy vod``
-    uses. Dry-run by default: never writes anything unless ``--execute``
-    is passed.
+    canvodpy run continues after the last date in the GNSS store. A date
+    whose observations reached the GNSS store but whose VOD was never
+    written, for example because a run stopped while it wrote the VOD
+    store, is therefore never processed again. This command lists those
+    dates. With --execute, it computes their VOD the same way as
+    canvodpy vod. Without --execute, it only reports and writes nothing.
     """
     from canvodpy.api import Site
     from canvodpy.orchestrator.vod_reconcile import (
@@ -142,17 +190,12 @@ def vod_reconcile(
     )
 
     if not execute:
-        console.print("Dry run — pass --execute to backfill.")
+        console.print("Dry run: pass --execute to backfill.")
         return
 
     vod_computer = VodComputer(site_obj, calculator=calculator)
-    for start_str, end_str in ranges:
-        start_dt = _to_datetime(start_str, end_of_day=False)
-        end_dt = _to_datetime(end_str, end_of_day=True)
-        console.print(f"Backfilling {start_str}-{end_str}...")
-        vod_computer.compute_bulk(analysis, start=start_dt, end=end_dt)
-
-    console.print(f"[green]✓[/green] Backfill complete for {len(ranges)} range(s).")
+    days = [_to_datetime(day, end_of_day=False).date() for day in gaps]
+    _print_report(vod_computer.compute_days(days, [analysis]), analysis, calculator)
 
 
 if __name__ == "__main__":

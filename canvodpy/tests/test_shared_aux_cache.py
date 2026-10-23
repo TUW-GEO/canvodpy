@@ -28,6 +28,7 @@ FINGERPRINT = compute_aux_cache_fingerprint(
     ephemeris_source="final",
     canonical_grid_seconds=CANONICAL_AUX_GRID_SECONDS,
     source_file_paths={},
+    aggregate_glonass_fdma=True,
 )
 
 
@@ -39,6 +40,7 @@ def _fake_self(tmp_path: Path) -> SimpleNamespace:
     config.processing.aux_data.agency = "COD"
     config.processing.aux_data.product_type = "final"
     config.processing.params.ephemeris_source = "final"
+    config.processing.params.aggregate_glonass_fdma = True
     return SimpleNamespace(
         _logger=logger,
         aux_pipeline=aux_pipeline,

@@ -12,9 +12,11 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import pytest
 import xarray as xr
+from canvod.store_metadata.testing import create_test_store
 
-from canvod.store import create_vod_store
+from canvod.store import MyIcechunkStore, open_vod_store
 
 
 def _ds(n_epoch: int, n_sid: int) -> xr.Dataset:
@@ -33,9 +35,14 @@ def _ds(n_epoch: int, n_sid: int) -> xr.Dataset:
 
 
 def test_no_chunk_strategy_configured_returns_empty(tmp_path: Path) -> None:
-    store = create_vod_store(tmp_path / "site" / "vod_store")
+    store = open_vod_store(create_test_store(tmp_path / "site" / "vod_store"))
     store.chunk_strategy = {}
     assert store.chunk_encoding_for(_ds(10, 5)) == {}
+
+
+def test_unknown_store_type_refused(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="Unknown store_type 'vod'"):
+        MyIcechunkStore(tmp_path / "site" / "vod_store", store_type="vod")
 
 
 def test_configured_dim_uses_config_size_not_write_size(tmp_path: Path) -> None:
@@ -43,28 +50,28 @@ def test_configured_dim_uses_config_size_not_write_size(tmp_path: Path) -> None:
     # gets the FULL configured chunk size (17280) -- Zarr supports writing
     # less than one chunk and filling the rest on later appends, which is
     # exactly how a receiver's first (partial-day) file should behave.
-    store = create_vod_store(tmp_path / "site" / "vod_store")
+    store = open_vod_store(create_test_store(tmp_path / "site" / "vod_store"))
     store.chunk_strategy = {"epoch": 17280, "sid": -1}
     encoding = store.chunk_encoding_for(_ds(n_epoch=100, n_sid=5))
     assert encoding["VOD"]["chunks"] == (17280, 5)
 
 
 def test_unspecified_dim_chunk_size_matches_current_dim_size(tmp_path: Path) -> None:
-    store = create_vod_store(tmp_path / "site" / "vod_store")
+    store = open_vod_store(create_test_store(tmp_path / "site" / "vod_store"))
     store.chunk_strategy = {"epoch": 17280}  # no "sid" entry at all
     encoding = store.chunk_encoding_for(_ds(n_epoch=100, n_sid=7))
     assert encoding["VOD"]["chunks"] == (17280, 7)
 
 
 def test_minus_one_means_one_chunk_spanning_current_size(tmp_path: Path) -> None:
-    store = create_vod_store(tmp_path / "site" / "vod_store")
+    store = open_vod_store(create_test_store(tmp_path / "site" / "vod_store"))
     store.chunk_strategy = {"epoch": 17280, "sid": -1}
     encoding = store.chunk_encoding_for(_ds(n_epoch=17280, n_sid=321))
     assert encoding["VOD"]["chunks"] == (17280, 321)
 
 
 def test_applies_to_coordinates_sharing_a_configured_dim(tmp_path: Path) -> None:
-    store = create_vod_store(tmp_path / "site" / "vod_store")
+    store = open_vod_store(create_test_store(tmp_path / "site" / "vod_store"))
     store.chunk_strategy = {"epoch": 17280, "sid": -1}
     encoding = store.chunk_encoding_for(_ds(n_epoch=100, n_sid=5))
     assert "epoch" in encoding
@@ -72,7 +79,7 @@ def test_applies_to_coordinates_sharing_a_configured_dim(tmp_path: Path) -> None
 
 
 def test_scalar_variable_is_skipped_not_crashed(tmp_path: Path) -> None:
-    store = create_vod_store(tmp_path / "site" / "vod_store")
+    store = open_vod_store(create_test_store(tmp_path / "site" / "vod_store"))
     store.chunk_strategy = {"epoch": 17280, "sid": -1}
     ds = _ds(10, 5)
     ds["scalar_attr"] = 42  # 0-d variable, no dims

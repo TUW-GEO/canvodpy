@@ -1,7 +1,7 @@
 version = 1
 SPDX-PackageName = "canvodpy"
 SPDX-PackageSupplier = "Nicolas François Bader <support@canvodpy.eu>"
-SPDX-PackageDownloadLocation = "https://github.com/nfb2021/canvodpy"
+SPDX-PackageDownloadLocation = "https://github.com/TUW-GEO/canvodpy"
 
 [[annotations]]
 path = "**"

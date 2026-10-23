@@ -2,24 +2,29 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
+from canvod.utils.tools import deprecated
+
+from ..store_names import check_settings_store_name
 from .base import _StrictModel
+
+#: ``scheme://rest`` of a URL in ``stores_root_dir``.
+_URL = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*)://(.*)$")
 
 
 class MaintenanceConfig(_StrictModel):
     """Scheduled Icechunk maintenance (expiration + garbage collection).
 
-    Completes the retention scheme from dev/perf_degradation_findings_
-    2026_07_15.md (Problem B): expire_old_snapshots()/garbage_collect()
-    already exist on MyIcechunkStore and work correctly, but nothing has
-    ever triggered them automatically -- this is the config surface for
-    `canvodpy store maintain-due`, a non-interactive, cron-safe entry
-    point (the existing `canvodpy store maintain` command requires an
-    interactive typer.confirm, so it cannot itself run unattended).
+    Settings for `canvodpy store maintain-due`, which expires old
+    snapshots, collects garbage and compacts manifests when they are due.
+    It asks nothing, so a scheduled job (for example cron) can run it.
+    `canvodpy store maintain` does the same work but asks for confirmation
+    before it deletes anything, so it can't run unattended.
 
     Notes
     -----
@@ -29,81 +34,59 @@ class MaintenanceConfig(_StrictModel):
     enabled: bool = Field(
         False,
         description=(
-            "Master switch for `canvodpy store maintain-due`. Off by "
-            "default -- mirrors keeper_tags' precedent of shipping inert "
-            "until validated against a real store (see "
-            "dev/perf_degradation_findings_2026_07_15.md, open question 4: "
-            "garbage_collect(dry_run=True) should be checked against the "
-            "real store before this is ever enabled for real)."
+            "Turn on canvodpy store maintain-due. Off by default. Before you "
+            "turn it on, run garbage_collect(dry_run=True) against your store "
+            "and check what it would delete."
         ),
     )
     dry_run_until_confirmed: bool = Field(
         True,
         description=(
-            "Force every `maintain-due` invocation to dry-run only, "
-            "regardless of due-ness, until explicitly set False per "
-            "deployment. The interactive CLI's `maintain --execute` "
-            "requires a typer.confirm a cron job can't answer; this is "
-            "the config-level equivalent gate for the unattended path."
+            "Make every run of canvodpy store maintain-due a dry run until you "
+            "set this to false. An unattended job can't answer the question "
+            "that maintain --execute asks; this setting is that answer."
         ),
     )
     retention_days: int = Field(
         90,
         ge=7,
         description=(
-            "Snapshot retention window passed to expire_old_snapshots()/ "
-            "garbage_collect() by the scheduled job (weeks-to-months, a "
-            "generous margin past any realistic write-session duration). "
-            "Mirrors MyIcechunkStore.maintenance()'s own default; kept "
-            "separate so a human running `maintain --expire-days` "
-            "interactively is unaffected by this value."
+            "Days of snapshots the scheduled clean-up keeps; older snapshots "
+            "are expired and their data collected as garbage. canvodpy store "
+            "maintain --expire-days, run by hand, doesn't use it."
         ),
     )
     expire_interval_days: int = Field(
         45,
         ge=1,
         description=(
-            "How often (wall-clock days since the most recent "
-            "ExpirationRan entry in the store's own ops log) the "
-            "scheduled job re-runs expiration. Skill-doc guidance: every "
-            "1-2 months."
+            "Days from one expiration by the scheduled clean-up to the next, "
+            "counted from the last expiration in the store's operations log."
         ),
     )
     gc_delay_days: int = Field(
         20,
         ge=1,
         description=(
-            "Extra days to wait after the most recent expiration before "
-            "running garbage_collect(), so physical deletion always lags "
-            "the (reversible-in-effect) soft-delete by a safety buffer. "
-            "Skill-doc guidance: GC every 15-30 days, offset from expire."
+            "Days the scheduled clean-up waits after the last expiration before "
+            "it collects garbage, so it deletes data only some time after their "
+            "snapshots expired."
         ),
     )
     manifests_enabled: bool = Field(
         False,
         description=(
-            "Enable scheduled manifest compaction (rewrite_manifests()) "
-            "under maintain-due, independent of `enabled`'s expire/GC "
-            "gate -- rewrite_manifests() is an ordinary commit (no "
-            "history rewrite or physical deletion), a different risk "
-            "profile than expire/GC, safe to validate and enable "
-            "separately. Off by default until confirmed against the "
-            "real store (see maintain-due's dry-run path)."
+            "Let canvodpy store maintain-due rewrite the manifests, whatever "
+            "'enabled' says. A rewrite is an ordinary commit: it changes no "
+            "history and deletes nothing."
         ),
     )
     manifest_count_threshold: int = Field(
         3000,
         ge=1,
         description=(
-            "Trigger rewrite_manifests() when the store's on-disk "
-            "manifest count (MyIcechunkStore.dir_entry_counts()) reaches "
-            "this. A direct fragmentation measurement, not a time "
-            "interval -- rewrite_manifests() has no distinguishing "
-            "ops-log entry (it logs as an ordinary NewCommit, "
-            "indistinguishable from any data-ingest commit), so "
-            "'how fragmented is the store right now' is the available "
-            "and more meaningful signal here, unlike expire/GC's "
-            "ExpirationRan/GCRan-based due-check."
+            "Number of manifest files in the store at which canvodpy store "
+            "maintain-due rewrites the manifests."
         ),
     )
 
@@ -116,21 +99,31 @@ class StorageConfig(_StrictModel):
     This is a Pydantic model for configuration validation.
     """
 
-    stores_root_dir: Path = Field(
+    stores_root_dir: Path | str = Field(
         ...,
         description=(
-            "Directory where canvodpy writes all processed results "
-            "(Icechunk/Zarr stores). Must exist and be writable. "
-            "Wizard prompt: 'Where should processed results be stored?'"
+            "Folder of the stores: each site's GNSS store and VOD store are "
+            "under it. A local folder (must exist and be writable) or "
+            "s3://bucket/prefix (experimental); credentials, region and "
+            "endpoint of S3 come "
+            "from the environment."
         ),
     )
     gnss_store_name: str = Field(
-        "rinex",
-        description="Name of the GNSS observation Icechunk store directory",
+        "gnss",
+        description=(
+            "Folder of the site's GNSS store: 'gnss', or 'gnss-' and a suffix "
+            "for a second GNSS store, for example 'gnss-test'. Lowercase letters "
+            "and digits, with single '_' or '-' between them."
+        ),
     )
     vod_store_name: str = Field(
         "vod",
-        description="Name of the VOD Icechunk store directory",
+        description=(
+            "Folder of the site's VOD store: 'vod', or 'vod-' and a suffix "
+            "for a second VOD store, for example 'vod-recompute'. Lowercase letters "
+            "and digits, with single '_' or '-' between them."
+        ),
     )
     statistics_store_name: str = Field(
         "statistics",
@@ -151,77 +144,110 @@ class StorageConfig(_StrictModel):
     shared_aux_cache_dir: Path | None = Field(
         None,
         description=(
-            "Network-wide, fingerprint-keyed aux (SP3/CLK Hermite) cache "
-            "root (dev/todo_later.md §44). None (default) = disabled, falls "
-            "back to per-site aux_data_dir/aux_{date}.zarr, rebuilt every "
-            "run. Ephemeris products are satellite-based, not site-based, "
-            "so pointing multiple sites at the same path lets them share "
-            "one cache entry per (agency, product, date) instead of each "
-            "rebuilding it independently."
+            "Folder of an orbit and clock cache that several sites share (SP3 "
+            "and CLK, interpolated). null (default): no shared cache; each "
+            "site's cache is in aux_data_dir and rebuilt every run. Orbit and "
+            "clock products are the same for every site, so sites that point at "
+            "the same folder share one cache entry per agency, product and date "
+            "instead of each building its own."
         ),
     )
     gnss_store_strategy: Literal["skip", "overwrite", "unsafe_append"] = Field(
         "skip",
         description=(
-            "How to handle a file whose hash/time-range already exists in "
-            "the GNSS store (new files are always written regardless of "
-            "this setting). 'skip' (default, recommended): do nothing -- "
-            "the normal case, since a re-run over already-ingested files "
-            "should be a no-op, not a rewrite. 'overwrite': delete the old "
-            "epochs for that file's range first, then write the new "
-            "version -- for correcting already-ingested data after a "
-            "pipeline bug fix (reader logic, ephemeris source, etc.), not "
-            "because the raw GNSS file itself changed. 'unsafe_append': "
-            "write the file's data again on top of what's already there, "
-            "with NO epoch-level uniqueness check. This produces duplicate "
-            "epoch coordinate values in the Zarr array, and xarray does not "
-            "enforce unique index values. The two built-in pipeline read "
-            "paths already guard against it -- GnssResearchSite."
-            "read_receiver_data() routes through read_group_deduplicated() "
-            "whenever this strategy is set (manager.py), and VodComputer."
-            "compute_bulk() unconditionally deduplicates every read via "
-            "_dedup_sort() regardless of strategy -- but MyIcechunkStore."
-            "read_group() itself (the low-level API used directly by "
-            "custom scripts/notebooks, and by the deprecated L1 "
-            "Pipeline.calculate_vod()) has no such guard: `.sel()` on a "
-            "duplicated label can raise or return multiple matches, and "
-            "aligning two duplicated datasets (e.g. canopy vs. reference) "
-            "produces a cartesian product at the duplicated epochs. The "
-            "duplication is also physical, not just a read-time artifact -- "
-            "Icechunk stores the extra chunks permanently; dedup-on-read "
-            "does not undo that. Avoid 'unsafe_append' unless you have a "
-            "specific reason, and be aware any read path outside the two "
-            "guarded ones above is unprotected."
+            "What a run does with a file that is already in the GNSS store; new "
+            "files are always written. 'skip' (default): nothing is written. "
+            "'overwrite': the run replaces the file's slots. "
+            "'unsafe_append': kept from versions before day blocks, where it "
+            "stored the file's epochs twice; it now does what 'overwrite' does."
         ),
     )
-    vod_store_strategy: Literal["skip", "overwrite", "unsafe_append"] = "overwrite"
+    vod_store_strategy: Literal["skip", "overwrite", "unsafe_append"] | None = Field(
+        None,
+        description=(
+            "Deprecated, has no effect. A VOD write skips a result from the "
+            "same GNSS files as a stored one. Another result replaces the "
+            "stored VOD of its day. To recompute VOD from the "
+            "same GNSS files, write to a new VOD store: set vod_store_name "
+            "to the kind plus a suffix, for example 'vod-recompute'."
+        ),
+    )
     keeper_tags: bool = Field(
         False,
         description=(
-            "Tag every (receiver, date) Icechunk commit as "
-            "keep/{receiver}/{yyyydoy} so a future retention job can expire "
-            "everything else. Default off until create_tag() cost at scale "
-            "is confirmed (dev/perf_degradation_findings_2026_07_15.md, "
-            "open question 8)."
+            "Tag every commit of a receiver and day as "
+            "keep/{receiver}/{yyyydoy}, so a later clean-up can expire "
+            "everything else. Off by default: the cost of tagging a large store "
+            "hasn't been measured yet."
         ),
     )
-    maintenance: MaintenanceConfig = Field(default_factory=MaintenanceConfig)
+    maintenance: MaintenanceConfig = Field(
+        default_factory=MaintenanceConfig,
+        description="Scheduled clean-up of old snapshots (canvodpy store maintain-due)",
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_vod_store_strategy(cls, data: object) -> object:
+        if isinstance(data, dict) and data.get("vod_store_strategy") is not None:
+            import warnings
+
+            warnings.warn(
+                "The storage setting 'vod_store_strategy' is left over from development and will be removed with the next major version. "
+                "It has no effect: VOD writes skip results from GNSS files already in the store. "
+                "Remove it from your settings; to recompute VOD, write to a new VOD store (set 'vod_store_name' to e.g. 'vod-recompute').",
+                FutureWarning,
+                stacklevel=2,
+            )
+        return data
+
+    @field_validator("gnss_store_name")
+    @classmethod
+    def _check_gnss_store_name(cls, v: str) -> str:
+        return check_settings_store_name(v, "gnss")
+
+    @field_validator("vod_store_name")
+    @classmethod
+    def _check_vod_store_name(cls, v: str) -> str:
+        return check_settings_store_name(v, "vod")
 
     @field_validator("stores_root_dir", mode="before")
     @classmethod
     def validate_stores_dir(cls, v: object) -> object:
-        """Expand ~ and reject placeholder values in stores_root_dir."""
+        """Expand ~, keep an S3 URL, reject placeholders and other URLs.
+
+        Checked before the value becomes a ``Path``, which would turn
+        ``s3://bucket/prefix`` into the local path ``s3:/bucket/prefix``.
+        An S3 URL stays a string, as ``s3://bucket/prefix`` without a
+        trailing slash (#350).
+        """
         if isinstance(v, str):
+            match = _URL.match(v.strip())
+            if match is not None:
+                scheme, rest = match.groups()
+                bucket = rest.partition("/")[0]
+                if scheme.lower() != "s3" or not bucket:
+                    raise ValueError(
+                        f"stores_root_dir is set to {v!r}: give a local "
+                        "directory or s3://bucket/prefix in canvod-settings.yaml."
+                    )
+                return f"s3://{rest.strip('/')}"
             if v.strip() in {"/path/to/stores", "/path/to/your/stores"}:
                 raise ValueError(
-                    f"stores_root_dir is set to placeholder {v!r} — "
+                    f"stores_root_dir is set to placeholder {v!r}: "
                     "set a real directory path in canvod-settings.yaml"
                 )
             return Path(v).expanduser()
         return v
 
-    def get_gnss_store_path(self, site_name: str) -> Path:
-        """Get the GNSS observation store path for a site.
+    def _site_store(self, site_name: str, store_name: str) -> Path | str:
+        """The store ``store_name`` of ``site_name`` below ``stores_root_dir``."""
+        if isinstance(self.stores_root_dir, str):
+            return f"{self.stores_root_dir}/{site_name}/{store_name}"
+        return self.stores_root_dir / site_name / store_name
+
+    def get_gnss_store_path(self, site_name: str) -> Path | str:
+        """Get the GNSS store path for a site.
 
         Parameters
         ----------
@@ -230,23 +256,21 @@ class StorageConfig(_StrictModel):
 
         Returns
         -------
-        Path
-            Path to the site's GNSS observation store.
+        Path | str
+            Path to the site's GNSS store, or its ``s3://`` URL when
+            ``stores_root_dir`` is one.
         """
-        return self.stores_root_dir / site_name / self.gnss_store_name
+        return self._site_store(site_name, self.gnss_store_name)
 
-    def get_rinex_store_path(self, site_name: str) -> Path:
+    @deprecated(
+        "StorageConfig.get_rinex_store_path() is left over from development and will be removed with the next major version. "
+        "Use StorageConfig.get_gnss_store_path() instead."
+    )
+    def get_rinex_store_path(self, site_name: str) -> Path | str:
         """Deprecated: use get_gnss_store_path instead."""
-        import warnings
-
-        warnings.warn(
-            "StorageConfig.get_rinex_store_path is deprecated; use get_gnss_store_path",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.get_gnss_store_path(site_name)
 
-    def get_vod_store_path(self, site_name: str) -> Path:
+    def get_vod_store_path(self, site_name: str) -> Path | str:
         """Get the VOD store path for a site.
 
         Parameters
@@ -256,12 +280,13 @@ class StorageConfig(_StrictModel):
 
         Returns
         -------
-        Path
-            Path to the site's VOD store.
+        Path | str
+            Path to the site's VOD store, or its ``s3://`` URL when
+            ``stores_root_dir`` is one.
         """
-        return self.stores_root_dir / site_name / self.vod_store_name
+        return self._site_store(site_name, self.vod_store_name)
 
-    def get_statistics_store_path(self, site_name: str) -> Path:
+    def get_statistics_store_path(self, site_name: str) -> Path | str:
         """Get the statistics store path for a site.
 
         Parameters
@@ -271,12 +296,13 @@ class StorageConfig(_StrictModel):
 
         Returns
         -------
-        Path
-            Path to the site's statistics store.
+        Path | str
+            Path to the site's statistics store, or its ``s3://`` URL when
+            ``stores_root_dir`` is one.
         """
-        return self.stores_root_dir / site_name / self.statistics_store_name
+        return self._site_store(site_name, self.statistics_store_name)
 
-    def get_rollup_store_path(self, site_name: str) -> Path:
+    def get_rollup_store_path(self, site_name: str) -> Path | str:
         """Get the hemigrid rollup store path for a site.
 
         Parameters
@@ -286,10 +312,11 @@ class StorageConfig(_StrictModel):
 
         Returns
         -------
-        Path
-            Path to the site's hemigrid rollup store.
+        Path | str
+            Path to the site's hemigrid rollup store, or its ``s3://`` URL when
+            ``stores_root_dir`` is one.
         """
-        return self.stores_root_dir / site_name / self.rollup_store_name
+        return self._site_store(site_name, self.rollup_store_name)
 
     def get_aux_data_dir(self) -> Path:
         """Get the directory for auxiliary data files.

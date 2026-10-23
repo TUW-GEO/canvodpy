@@ -1,7 +1,6 @@
 """Configuration loader for canvodpy."""
 
 import functools
-import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -9,9 +8,10 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from .models import CanvodConfig, ProcessingConfig, SidsConfig, SitesConfig
+from canvod.utils.remote_file import is_url
 
-logger = logging.getLogger("canvod.config")
+from .models import CanvodConfig
+from .remote import resolve_config_dir
 
 
 class ConfigValidationError(ValueError):
@@ -87,20 +87,6 @@ def find_monorepo_root() -> Path:
         if git_path.exists():
             return parent
 
-    # Fallback: if this file is in
-    # packages/canvod-config/src/canvod/config/loader.py then monorepo root
-    # is 6 levels up.
-    try:
-        loader_file = Path(__file__).resolve()
-        # loader.py -> config -> canvod -> src -> canvod-config ->
-        # packages -> root.
-        monorepo_root = loader_file.parent.parent.parent.parent.parent.parent
-        git_path = monorepo_root / ".git"
-        if git_path.exists():
-            return monorepo_root
-    except Exception:
-        pass
-
     raise RuntimeError("Cannot find monorepo root (no .git entry found)")
 
 
@@ -119,16 +105,23 @@ def get_template_dir() -> Path:
     Returns
     -------
     Path
-        Directory containing ``canvod-settings.yaml.example`` and
-        ``recipes/*.yaml.example``.
+        Directory containing ``canvod-settings.yaml.example``.
     """
     return Path(__file__).parent / "templates"
 
 
 def get_default_config_dir() -> Path:
-    """Resolve the default configuration directory.
+    """Resolve the configuration directory.
+
+    This is the only lookup of the configuration directory: the settings
+    file (``canvod-settings.yaml``) and the naming recipes (``recipes/``)
+    are both read from the directory it returns.
 
     Priority:
+    0. ``CANVOD_CONFIG_DIR``, which the ``--config-dir`` option of every
+       ``canvodpy`` command sets. A URL of a settings file gives the
+       configuration folder made from it
+       (:func:`canvod.config.remote.resolve_config_dir`).
     1. Dev-mode convenience: if running from within a canvodpy monorepo
        checkout that already has a ``config/`` directory, use
        ``{monorepo_root}/config`` — preserves the existing contributor
@@ -141,7 +134,7 @@ def get_default_config_dir() -> Path:
     This is the single shared implementation of what used to be three
     separate "find monorepo root, else cwd()/config" copies (here, in
     ``canvodpy/cli/config.py``'s module-level default, and in that same
-    file's ``init`` command) — none of which defaulted to a user-level
+    file's ``init`` command): none of which defaulted to a user-level
     location, so a globally-installed CLI invoked from an arbitrary
     directory always ended up looking for ``./config`` right there.
 
@@ -150,6 +143,11 @@ def get_default_config_dir() -> Path:
     Path
         Default configuration directory.
     """
+    env_dir = os.environ.get("CANVOD_CONFIG_DIR")
+    if env_dir:
+        if is_url(env_dir):
+            return resolve_config_dir(env_dir)
+        return Path(env_dir)
     try:
         monorepo_root = find_monorepo_root()
         monorepo_config = monorepo_root / "config"
@@ -270,11 +268,13 @@ class ConfigLoader:
         if sites_raw_overlay:
             sites_raw = self._deep_merge(sites_raw, sites_raw_overlay)
 
+        # Plain dicts, not models: pydantic-settings merges a CANVOD__
+        # variable into a dict, but a model it replaces as a whole.
         try:
             return CanvodConfig(
-                processing=ProcessingConfig(**proc_data),
-                sites=SitesConfig(sites=sites_raw),
-                sids=SidsConfig(**sids_data),
+                processing=proc_data,
+                sites={"sites": sites_raw},
+                sids=sids_data,
             )
         except ValidationError as e:
             raise ConfigValidationError(e, self.config_dir) from e
@@ -373,8 +373,8 @@ def load_config(
     the env vars inside the cached function itself (as this used to do)
     made the cache key blind to them: whichever call happened first in a
     process -- e.g. ``canvodpy.logging.logging_config``'s module-level
-    ``LOGGER = configure_logging()``, which calls ``load_config()`` bare at
-    import time, before a CLI's ``--config``/``CANVOD_CONFIG_FILE`` is ever
+    ``LOGGER = configure_logging()``, which called ``load_config()`` bare at
+    import time until 2026-10, before a CLI's ``--config``/``CANVOD_CONFIG_FILE`` is ever
     set -- would cache the config under the no-arg key, and every later
     bare ``load_config()`` call in that process (e.g. store-path/chunk-
     strategy resolution deep in ``canvod-store``) would silently get that
@@ -391,9 +391,7 @@ def load_config(
     >>> print(config.processing.aux_data.agency)
     """
     if config_dir is None:
-        env_dir = os.environ.get("CANVOD_CONFIG_DIR")
-        if env_dir:
-            config_dir = Path(env_dir)
+        config_dir = get_default_config_dir()
     if config_file is None:
         env_file = os.environ.get("CANVOD_CONFIG_FILE")
         if env_file:

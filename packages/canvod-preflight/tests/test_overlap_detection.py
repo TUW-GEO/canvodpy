@@ -4,8 +4,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from canvod.preflight import CanVODFilename, FilenameMapper
+import pytest
+
+from canvod.preflight import CanVODFilename, FilenameMapper, find_overlaps
 from canvod.preflight.mapping import VirtualFile
+from canvod.utils import testing
+
+# Tests of the deprecated mapping and validation API, see test_deprecations.py.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*left over from development:FutureWarning"
+)
 
 
 def _vf(
@@ -17,10 +25,10 @@ def _vf(
 ) -> VirtualFile:
     """Create a VirtualFile with the given parameters."""
     cn = CanVODFilename(
-        site="ROS",
+        site=testing.SITE_ID,
         receiver_type="R",
         receiver_number=1,
-        agency="TUW",
+        agency=testing.AGENCY,
         year=year,
         doy=doy,
         hour=hour,
@@ -99,3 +107,55 @@ class TestOverlapDetection:
         ]
         overlaps = FilenameMapper.detect_overlaps(vfs)
         assert len(overlaps) == 0
+
+
+def _cn(name: str) -> CanVODFilename:
+    return CanVODFilename.from_filename(name)
+
+
+class TestFindOverlaps:
+    """Test find_overlaps, the one overlap check on canonical names."""
+
+    def test_named_span(self):
+        cn = _cn("FANR01INK_R_20250012345_15M_05S_AA.rnx")
+        assert (cn.start.isoformat(), cn.end.isoformat()) == (
+            "2025-01-01T23:45:00",
+            "2025-01-02T00:00:00",
+        )
+
+    def test_equal_spans_overlap(self):
+        a = _cn("FANR01INK_R_20250010000_15M_05S_AA.rnx")
+        b = _cn("FANR01INK_R_20250010000_15M_01S_AA.rnx")
+        assert find_overlaps([a, b]) == [(a, b)]
+
+    def test_partial_overlap(self):
+        a = _cn("FANR01INK_R_20250010000_01H_05S_AA.rnx")
+        b = _cn("FANR01INK_R_20250010030_01H_05S_AA.rnx")
+        assert find_overlaps([b, a]) == [(a, b)]
+
+    def test_span_past_midnight_overlaps_next_day(self):
+        a = _cn("FANR01INK_R_20250011200_01D_05S_AA.rnx")
+        b = _cn("FANR01INK_R_20250020000_15M_05S_AA.rnx")
+        assert find_overlaps([a, b]) == [(a, b)]
+
+    def test_file_types_and_receivers_are_separate(self):
+        names = [
+            "FANR01INK_R_20250010000_01D_05S_AA.rnx",
+            "FANR01INK_R_20250010000_01D_05S_AA.sbf",
+            "FANA01INK_R_20250010000_01D_05S_AA.rnx",
+        ]
+        assert find_overlaps([_cn(n) for n in names]) == []
+
+    def test_key_maps_items_to_names(self):
+        names = [
+            "FANR01INK_R_20250010000_01D_05S_AA.rnx",
+            "FANR01INK_R_20250010600_15M_05S_AA.rnx",
+        ]
+        assert find_overlaps(names, key=_cn) == [tuple(names)]
+
+    def test_item_without_canonical_name_raises(self):
+        name = "FANR01INK_R_20250010000_01D_05S_AA.rnx"
+        with pytest.raises(TypeError, match=r"item 0 .*gives a str"):
+            find_overlaps([name])
+        with pytest.raises(TypeError, match="not a CanVODFilename"):
+            find_overlaps([name], key=lambda n: n.upper())

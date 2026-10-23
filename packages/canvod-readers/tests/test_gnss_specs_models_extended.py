@@ -285,6 +285,7 @@ class TestRnxv3ObsEpochRecord:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.filterwarnings("ignore::FutureWarning")
 class TestVodDataValidator:
     """Tests for VodDataValidator."""
 

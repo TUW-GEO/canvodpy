@@ -52,9 +52,16 @@ class Sp3Parser:
         current_epoch_idx: int = -1
 
         with open(self.fpath) as f:
-            # Skip header until first epoch marker
+            # Header up to the first epoch marker: check the time system
+            version = ""
+            time_system = None
             for line in f:
-                if line.startswith("*"):
+                if line.startswith("#") and not version:
+                    version = line[1:2]
+                elif line.startswith("%c") and time_system is None:
+                    time_system = line[9:12]
+                elif line.startswith("*"):
+                    self._require_gps_time(version, time_system)
                     current_epoch = self._parse_epoch_line(line)
                     epochs.append(current_epoch)
                     current_epoch_idx += 1
@@ -133,6 +140,23 @@ class Sp3Parser:
 
         return ds
 
+    def _require_gps_time(self, version: str, time_system: str | None) -> None:
+        """Refuse an SP3 file whose epochs are not GPS time.
+
+        SP3-a and -b are GPS time; SP3-c and -d give the time system in
+        columns 10-12 of the first ``%c`` line. Observation epochs are GPS
+        time, so orbits in another time scale would be off by its offset.
+        """
+        if version in ("a", "b"):
+            return
+        if time_system != "GPS":
+            msg = (
+                f"{self.fpath.name}: SP3 time system is {time_system!r}, but "
+                "canVODpy needs orbits in GPS time ('GPS'), the time scale of "
+                "the stored observation epochs. Use a product in GPS time."
+            )
+            raise ValueError(msg)
+
     def _parse_epoch_line(self, line: str) -> datetime.datetime:
         """Parse epoch marker line.
 
@@ -201,7 +225,6 @@ class Sp3Parser:
         return {
             "X": {
                 "long_name": "x-coordinate in ECEF",
-                "standard_name": r"x_{ECEF}",
                 "short_name": "x",
                 "units": "m",
                 "axis": "x",
@@ -209,7 +232,6 @@ class Sp3Parser:
             },
             "Y": {
                 "long_name": "y-coordinate in ECEF",
-                "standard_name": r"y_{ECEF}",
                 "short_name": "y",
                 "units": "m",
                 "axis": "y",
@@ -217,7 +239,6 @@ class Sp3Parser:
             },
             "Z": {
                 "long_name": "z-coordinate in ECEF",
-                "standard_name": r"z_{ECEF}",
                 "short_name": "z",
                 "units": "m",
                 "axis": "z",

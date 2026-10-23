@@ -94,7 +94,7 @@ class SpatialMask:
 
         phi = self._grid_df["phi"].to_numpy()
 
-        # Normalise to [0, 2π)
+        # Normalize to [0, 2π)
         phi = np.mod(phi, 2 * np.pi)
         phi_min = np.mod(phi_min, 2 * np.pi)
         phi_max = np.mod(phi_max, 2 * np.pi)
@@ -371,7 +371,7 @@ class SpatialMask:
         Parameters
         ----------
         center_phi : float
-            Centre azimuth of sector.
+            Center azimuth of sector.
         sector_width : float
             Full angular width of sector.
         theta_min : float
@@ -539,7 +539,7 @@ def create_hemisphere_mask(grid: GridData, hemisphere: str = "north") -> np.ndar
     Raises
     ------
     ValueError
-        If *hemisphere* is not recognised.
+        If *hemisphere* is not recognized.
 
     """
     _RANGES = {

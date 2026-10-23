@@ -1,70 +1,58 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_dark_mode.svg">
+    <img alt="canVODpy" src="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_bright_mode.svg" width="260">
+  </picture>
+</p>
+
 # canvod-grids
 
-Equal-area hemisphere grid operations for GNSS-Transmissometry.
+[![PyPI](https://img.shields.io/pypi/v/canvod-grids.svg)](https://pypi.org/project/canvod-grids/)
+[![Python](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18496233-blue)](https://doi.org/10.5281/zenodo.18496233)
 
-Part of the [canVODpy](https://github.com/nfb2021/canvodpy) ecosystem.
+**Hemispheric grids for GNSS-Transmissometry.** `canvod-grids` is a package of
+[canVODpy](https://canvodpy.eu/), an open Python ecosystem for
+GNSS-Transmissometry canopy VOD retrievals.
 
-## Overview
+## What it does
 
-`canvod-grids` provides the spatial discretization layer for GNSS-T. Satellite
-signal paths are assigned to equal-area grid cells on the hemisphere above the
-receiver based on their polar angle (θ) and azimuth (φ). The primary grid type
-for GNSS-T is the **equal-area** grid, where each 2° band is divided into cells
-of equal solid angle.
+- Divides the sky hemisphere of a receiver into cells: equal-area, equal-angle, equirectangular, HTM, geodesic, HEALPix, and Fibonacci grids.
+- Assigns observations and VOD values to grid cells.
+- Gives the solid angle and the vertices of every cell.
 
-Seven grid types are available: `equal_area`, `equal_angle`, `equirectangular`,
-`htm`, `geodesic`, `fibonacci`, and `healpix`. All seven pass a dedicated
-correctness test suite (solid-angle sum, no below-horizon cells, no seam
-artifacts, structural invariants) — but `equal_area` remains the only type
-recommended for production VOD analysis; `equal_angle`/`equirectangular` are
-zenith-biased by design, and the others trade strict equal-area for other
-properties (see the [package docs](https://canvodpy.eu/packages/grids/overview/)
-for the per-type tradeoffs).
-
-## Installation
+## Install
 
 ```bash
-uv pip install canvod-grids
+uv add canvod-grids
 ```
 
-`healpix` additionally requires [`healpy`](https://healpy.readthedocs.io/),
-which is **not** installed by the above (no Windows wheels on PyPI, so it
-isn't a hard dependency of this package): `pip install healpy` /
-`uv pip install healpy` separately. `create_hemigrid("healpix", ...)` raises
-`ImportError` with the same instructions if it's missing.
+Most users install [canvodpy](https://pypi.org/project/canvodpy/), which
+includes this package, the command line, and the processing pipeline.
+canVODpy requires Python 3.14.
 
-## Quick Start
+## Example
 
 ```python
-from canvod.grids import create_hemigrid, GridType
+from canvod.grids import create_hemigrid
 
-# Create a 2° equal-area hemisphere grid
-grid = create_hemigrid(grid_type=GridType.EQUAL_AREA, resolution=2.0)
-print(grid.ncells)  # number of grid cells
-
-# Assign satellite observations to cells
-from canvod.grids import CellAggregator
-agg = CellAggregator(grid)
-per_cell = agg.aggregate(ds, variable="vod", method="median")
+grid = create_hemigrid("equal_area", angular_resolution=2.0)
+print(grid.ncells)  # 6563
 ```
 
 ## Documentation
 
-[Full documentation](https://canvodpy.eu/packages/grids/overview/)
+- [canvod-grids in the canVODpy documentation](https://canvodpy.eu/packages/grids/overview/)
+- [Start here](https://canvodpy.eu/users/): from installation to the first VOD
 
-## Development
+## How to cite
 
-See the [main repository](https://github.com/nfb2021/canvodpy) for workspace development setup.
+If you use canVODpy, please cite it with its DOI,
+[`10.5281/zenodo.18496233`](https://doi.org/10.5281/zenodo.18496233), which always leads to the newest
+version. [CITATION.cff](https://github.com/TUW-GEO/canvodpy/blob/main/CITATION.cff) has the full
+citation.
 
 ## License
 
-Apache License 2.0
-
-## Author & Affiliation
-
-**Nicolas François Bader**
-Climate and Environmental Remote Sensing Research Unit (CLIMERS)
-Department of Geodesy and Geoinformation
-TU Wien (Vienna University of Technology)
-Email: support@canvodpy.eu
-[https://www.tuwien.at/en/mg/geo/climers](https://www.tuwien.at/en/mg/geo/climers)
+[Apache License 2.0](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE)

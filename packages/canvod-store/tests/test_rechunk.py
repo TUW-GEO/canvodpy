@@ -14,15 +14,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import xarray as xr
-from _helpers import _array_checksum, make_synthetic_dataset
+from _helpers import _array_checksum, make_synthetic_dataset, new_gnss_store
 
 
 @pytest.fixture
 def store_with_data(tmp_path):
     """A tmp_store with 4 appended 15-min datasets under one group, plus root attrs."""
-    from canvod.store import MyIcechunkStore
 
-    store = MyIcechunkStore(tmp_path / "rechunk_test_store")
+    store = new_gnss_store(tmp_path / "rechunk_test_store")
     group = "canopy_01"
 
     datasets = [make_synthetic_dataset(slot=i) for i in range(4)]
@@ -68,11 +67,15 @@ class TestRechunkGroup:
     def test_root_attrs_survive_rechunk(self, store_with_data) -> None:
         store, group, _ = store_with_data
 
+        # Every commit writes its own modification date and snapshot summary.
+        per_commit = {"date_modified", "canvod:snapshot_summary"}
         before_attrs = store.get_root_attrs()
         store.rechunk_group(group, chunks={"epoch": 360, "sid": -1})
         after_attrs = store.get_root_attrs()
 
-        assert before_attrs == after_attrs, "root attrs changed after rechunk"
+        assert {k: v for k, v in before_attrs.items() if k not in per_commit} == {
+            k: v for k, v in after_attrs.items() if k not in per_commit
+        }, "root attrs changed after rechunk"
 
     def test_data_values_identical_after_rechunk(self, store_with_data) -> None:
         store, group, _ = store_with_data
@@ -123,9 +126,8 @@ class TestRechunkGroup:
 
     def test_other_groups_untouched_by_rechunk(self, tmp_path) -> None:
         """rechunk_group() on one group must not affect a sibling group."""
-        from canvod.store import MyIcechunkStore
 
-        store = MyIcechunkStore(tmp_path / "rechunk_multi_group_store")
+        store = new_gnss_store(tmp_path / "rechunk_multi_group_store")
         ds_a = make_synthetic_dataset(slot=0)
         ds_b = make_synthetic_dataset(slot=0, seed=99, day="2025-01-02")
         for key in list(ds_a.data_vars) + list(ds_a.coords):
@@ -177,3 +179,149 @@ class TestRechunkGroup:
             "main branch chunking changed despite promote_to_main=False"
         )
         assert f"{group}_rechunked_temp" in store.repo.list_branches()
+
+
+class TestPromoteBranch:
+    """promote_branch() never drops commits made to the target meanwhile."""
+
+    def test_moves_target_when_unchanged(self, store_with_data) -> None:
+        store, _, _ = store_with_data
+        tip = store.repo.lookup_branch("main")
+        store.repo.create_branch("staged", tip)
+        staged_tip = store.set_root_attrs({"staged": "yes"}, branch="staged")
+
+        assert store.promote_branch("staged", "main", tip) == staged_tip
+        assert store.repo.lookup_branch("main") == staged_tip
+
+    def test_refuses_when_target_moved(self, store_with_data) -> None:
+        from canvod.store.store import BranchMovedError
+
+        store, _, _ = store_with_data
+        tip = store.repo.lookup_branch("main")
+        store.repo.create_branch("staged", tip)
+        store.set_root_attrs({"staged": "yes"}, branch="staged")
+        moved_tip = store.set_root_attrs({"other_writer": "yes"}, branch="main")
+
+        with pytest.raises(BranchMovedError, match="moved"):
+            store.promote_branch("staged", "main", tip)
+
+        assert store.repo.lookup_branch("main") == moved_tip
+        assert "staged" in store.repo.list_branches()
+
+    def test_rechunk_keeps_concurrent_commit(
+        self, store_with_data, monkeypatch
+    ) -> None:
+        """A commit to main during a rechunk survives; the rechunk is refused."""
+        from canvod.store.store import BranchMovedError
+
+        store, group, _ = store_with_data
+        write = store._to_icechunk_throttled
+
+        def write_after_other_writer(*args, **kwargs):
+            store.set_root_attrs({"other_writer": "yes"}, branch="main")
+            return write(*args, **kwargs)
+
+        monkeypatch.setattr(store, "_to_icechunk_throttled", write_after_other_writer)
+
+        with pytest.raises(BranchMovedError):
+            store.rechunk_group(group, chunks={"epoch": 360, "sid": -1})
+
+        assert store.get_root_attrs()["other_writer"] == "yes"
+        assert f"{group}_rechunked_temp" in store.repo.list_branches()
+
+    def test_rechunk_refuses_existing_temp_branch(self, store_with_data) -> None:
+        store, group, _ = store_with_data
+        store.repo.create_branch(
+            f"{group}_rechunked_temp", store.repo.lookup_branch("main")
+        )
+
+        with pytest.raises(ValueError, match="already exists"):
+            store.rechunk_group(group, chunks={"epoch": 360, "sid": -1})
+
+
+class TestRechunkDayBlocks:
+    """A group of day blocks keeps its layout and missing values."""
+
+    @pytest.fixture
+    def day_block_store(self, tmp_path):
+        from canvod.store_metadata.io import commit_with_rebase
+
+        from canvod.store.day_blocks import add_day_block, write_file_region
+
+        store = new_gnss_store(tmp_path / "day_block_store")
+        day = np.datetime64("2025-01-01", "D")
+        epochs = day.astype("M8[ns]") + np.arange(10) * np.timedelta64(30, "s")
+        ds = xr.Dataset(
+            {
+                "SNR": (("epoch", "sid"), np.full((10, 2), 40.0, dtype="f4")),
+                "LLI": (("epoch", "sid"), np.ones((10, 2), dtype="i1")),
+            },
+            coords={
+                "epoch": ("epoch", epochs, {"time_system": "GPS"}),
+                "sid": ["G01|L1|C", "G02|L1|C"],
+            },
+        )
+        with store.writable_session("main") as session:
+            add_day_block(session, "canopy_01", day, 30, template=ds)
+            region = write_file_region(session, "canopy_01", ds)
+            row = {
+                "fname": "/data/a.rnx",
+                "rinex_hash": "a",
+                "start": region.start,
+                "end": region.end,
+                "epochs": region.epochs,
+                "dataset_attrs": "{}",
+                "exists": False,
+                "rel_path": "data/a.rnx",
+                "canonical_name": "",
+                "physical_path": "/data/a.rnx",
+                "action": "initial",
+                "write_strategy": "skip",
+                "run_id": "run-1",
+                "commit_msg": "day",
+                "snapshot_id": "",
+            }
+            store.append_metadata_bulk("canopy_01", [row], session=session)
+            commit_with_rebase(
+                session, "day", store_path=store.store_path, config=store.settings
+            )
+        return store
+
+    def _raw(self, store, name):
+        import zarr
+
+        with store.readonly_session() as session:
+            array = zarr.open_group(session.store, mode="r", path="canopy_01")[name]
+            return array, array[:]
+
+    def test_rechunk_keeps_integer_variables_and_their_fill(
+        self, day_block_store
+    ) -> None:
+        lli_before, values_before = self._raw(day_block_store, "LLI")
+
+        day_block_store.rechunk_group("canopy_01", chunks={"epoch": 360, "sid": -1})
+
+        lli_after, values_after = self._raw(day_block_store, "LLI")
+        assert lli_after.chunks[0] == 360
+        assert lli_after.dtype == lli_before.dtype
+        assert lli_after.fill_value == lli_before.fill_value
+        np.testing.assert_array_equal(values_after, values_before)
+
+    def test_rechunk_keeps_the_day_blocks(self, day_block_store) -> None:
+        from canvod.store.day_blocks import day_blocks
+
+        with day_block_store.readonly_session() as session:
+            before = day_blocks(session.store, "canopy_01")
+
+        day_block_store.rechunk_group("canopy_01", chunks={"epoch": 360, "sid": -1})
+
+        with day_block_store.readonly_session() as session:
+            assert day_blocks(session.store, "canopy_01") == before
+
+    @pytest.mark.parametrize("epoch", [7, -1, None])
+    def test_chunks_that_split_a_day_are_refused(self, day_block_store, epoch):
+        chunks = {"sid": -1} if epoch is None else {"epoch": epoch, "sid": -1}
+        with pytest.raises(ValueError):
+            day_block_store.rechunk_group("canopy_01", chunks=chunks)
+        # Refused before anything is staged.
+        assert "canopy_01_rechunked_temp" not in day_block_store.repo.list_branches()

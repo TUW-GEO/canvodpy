@@ -8,21 +8,27 @@ from canvod.preflight.config_models import (
     ReceiverNamingConfig,
     SiteNamingConfig,
 )
+from canvod.utils import testing
+
+# Tests of the deprecated mapping and validation API, see test_deprecations.py.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*left over from development:FutureWarning"
+)
 
 
 class TestSiteNamingConfig:
     def test_minimal(self):
-        cfg = SiteNamingConfig(site_id="ROS", agency="TUW")
-        assert cfg.site_id == "ROS"
-        assert cfg.agency == "TUW"
+        cfg = SiteNamingConfig(site_id=testing.SITE_ID, agency=testing.AGENCY)
+        assert cfg.site_id == testing.SITE_ID
+        assert cfg.agency == testing.AGENCY
         assert cfg.default_sampling == "05S"
         assert cfg.default_period == "01D"
         assert cfg.default_content == "AA"
 
     def test_custom_defaults(self):
         cfg = SiteNamingConfig(
-            site_id="HAI",
-            agency="GFZ",
+            site_id=testing.OTHER_SITE_ID,
+            agency=testing.OTHER_AGENCY,
             default_sampling="01S",
             default_period="15M",
             default_content="MO",
@@ -33,20 +39,26 @@ class TestSiteNamingConfig:
 
     def test_invalid_site_id(self):
         with pytest.raises(ValidationError):
-            SiteNamingConfig(site_id="ROSX", agency="TUW")
+            SiteNamingConfig(site_id="FANX", agency=testing.AGENCY)
 
     def test_invalid_agency(self):
         with pytest.raises(ValidationError):
-            SiteNamingConfig(site_id="ROS", agency="TU")
+            SiteNamingConfig(site_id=testing.SITE_ID, agency="TU")
 
     def test_invalid_sampling(self):
         with pytest.raises(ValidationError):
-            SiteNamingConfig(site_id="ROS", agency="TUW", default_sampling="XY")
+            SiteNamingConfig(
+                site_id=testing.SITE_ID, agency=testing.AGENCY, default_sampling="XY"
+            )
 
     def test_from_dict(self):
-        d = {"site_id": "ROS", "agency": "TUW", "default_sampling": "05S"}
+        d = {
+            "site_id": testing.SITE_ID,
+            "agency": testing.AGENCY,
+            "default_sampling": "05S",
+        }
         cfg = SiteNamingConfig.model_validate(d)
-        assert cfg.site_id == "ROS"
+        assert cfg.site_id == testing.SITE_ID
 
 
 class TestReceiverNamingConfig:
@@ -63,7 +75,7 @@ class TestReceiverNamingConfig:
             receiver_number=2,
             source_pattern="septentrio_sbf",
             directory_layout=DirectoryLayout.FLAT,
-            agency="GFZ",
+            agency=testing.OTHER_AGENCY,
             sampling="01S",
             period="15M",
             content="MO",

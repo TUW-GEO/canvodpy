@@ -30,8 +30,8 @@ class TestSiteAPI:
         mock_gnss_site.active_vod_analyses = {}
 
         with patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site):
-            site = Site("Rosalia")
-            assert site.name == "Rosalia"
+            site = Site("Fangorn")
+            assert site.name == "Fangorn"
 
     def test_site_has_receivers(self):
         """Site should have receivers property."""
@@ -41,7 +41,7 @@ class TestSiteAPI:
         mock_gnss_site.receivers = {"canopy_01": {"active": True}}
 
         with patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site):
-            site = Site("Rosalia")
+            site = Site("Fangorn")
             assert hasattr(site, "receivers")
             assert isinstance(site.receivers, dict)
 
@@ -53,7 +53,7 @@ class TestSiteAPI:
         mock_gnss_site.active_receivers = {"canopy_01": {"active": True}}
 
         with patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site):
-            site = Site("Rosalia")
+            site = Site("Fangorn")
             assert hasattr(site, "active_receivers")
 
 
@@ -66,7 +66,7 @@ class TestPipelineAPI:
 
         assert Pipeline is not None
 
-    def test_pipeline_creation_from_site(self):
+    def test_pipeline_creation_from_site(self, tmp_path):
         """Should create Pipeline from Site."""
         from canvodpy import Pipeline, Site
 
@@ -92,13 +92,16 @@ class TestPipelineAPI:
                 "threads_per_worker": 1,
             }
             mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.logging.get_log_dir.return_value = (
+                tmp_path  # the run history of the pipeline
+            )
             mock_config.return_value.processing.aux_data.agency = "COD"
 
-            site = Site("Rosalia")
+            site = Site("Fangorn")
             pipeline = Pipeline(site)
-            assert pipeline.site.name == "Rosalia"
+            assert pipeline.site.name == "Fangorn"
 
-    def test_pipeline_creation_from_string(self):
+    def test_pipeline_creation_from_string(self, tmp_path):
         """Should create Pipeline from site name."""
         from canvodpy import Pipeline
 
@@ -120,12 +123,15 @@ class TestPipelineAPI:
                 "threads_per_worker": 1,
             }
             mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.logging.get_log_dir.return_value = (
+                tmp_path  # the run history of the pipeline
+            )
             mock_config.return_value.processing.aux_data.agency = "COD"
 
-            pipeline = Pipeline("Rosalia")
-            assert pipeline.site.name == "Rosalia"
+            pipeline = Pipeline("Fangorn")
+            assert pipeline.site.name == "Fangorn"
 
-    def test_pipeline_has_process_date(self):
+    def test_pipeline_has_process_date(self, tmp_path):
         """Pipeline should have process_date method."""
         from canvodpy import Pipeline
 
@@ -147,11 +153,131 @@ class TestPipelineAPI:
                 "threads_per_worker": 1,
             }
             mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.logging.get_log_dir.return_value = (
+                tmp_path  # the run history of the pipeline
+            )
             mock_config.return_value.processing.aux_data.agency = "COD"
 
-            pipeline = Pipeline("Rosalia")
+            pipeline = Pipeline("Fangorn")
             assert hasattr(pipeline, "process_date")
             assert callable(pipeline.process_date)
+
+
+class TestNoEffectResourceArguments:
+    """The resource arguments that have no effect are deprecated."""
+
+    @pytest.fixture
+    def mocked_pipeline_setup(self, tmp_path):
+        mock_gnss_site = MagicMock()
+        with (
+            patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site),
+            patch("canvod.config.load_config") as mock_config,
+            patch("canvodpy.orchestrator.PipelineOrchestrator") as mock_orch,
+        ):
+            mock_proc = MagicMock()
+            mock_proc.keep_gnss_observables = ["SNR"]
+            mock_proc.days_per_batch = 1
+            mock_proc.resolve_resources.return_value = {
+                "n_workers": 2,
+                "threads_per_worker": 1,
+            }
+            mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.logging.get_log_dir.return_value = (
+                tmp_path  # the run history of the pipeline
+            )
+            mock_config.return_value.processing.aux_data.agency = "COD"
+            yield mock_orch
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [("cpu_affinity", [0, 1]), ("nice_priority", 10)],
+    )
+    def test_pipeline_argument_warns(self, mocked_pipeline_setup, name, value):
+        from canvodpy import Pipeline
+
+        with pytest.warns(FutureWarning, match=rf"'{name}' argument of Pipeline\(\)"):
+            Pipeline("Fangorn", **{name: value})
+        kwargs = mocked_pipeline_setup.call_args.kwargs
+        assert name not in kwargs
+
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [("cpu_affinity", [0, 1]), ("nice_priority", 10)],
+    )
+    def test_site_pipeline_argument_warns_once(
+        self, mocked_pipeline_setup, name, value
+    ):
+        import warnings
+
+        from canvodpy import Site
+
+        site = Site("Fangorn")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            site.pipeline(**{name: value})
+        messages = [
+            str(w.message) for w in caught if issubclass(w.category, FutureWarning)
+        ]
+        assert len(messages) == 1
+        assert f"'{name}' argument of Site.pipeline()" in messages[0]
+
+    def test_days_per_batch_warns_and_still_caps_the_unit(self, mocked_pipeline_setup):
+        from canvodpy import Pipeline
+
+        with pytest.warns(
+            FutureWarning, match=r"'days_per_batch' argument of Pipeline\(\)"
+        ):
+            Pipeline("Fangorn", days_per_batch=3)
+        assert mocked_pipeline_setup.call_args.kwargs["days_per_batch"] == 3
+
+    def test_site_pipeline_days_per_batch_warns_once(self, mocked_pipeline_setup):
+        import warnings
+
+        from canvodpy import Site
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            Site("Fangorn").pipeline(days_per_batch=3)
+        messages = [
+            str(w.message) for w in caught if issubclass(w.category, FutureWarning)
+        ]
+        assert len(messages) == 1
+        assert "'days_per_batch' argument of Site.pipeline()" in messages[0]
+        assert mocked_pipeline_setup.call_args.kwargs["days_per_batch"] == 3
+
+    def test_pipeline_without_them_does_not_warn(self, mocked_pipeline_setup):
+        import warnings
+
+        from canvodpy import Pipeline
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            Pipeline("Fangorn", n_workers=2)
+
+    def test_pipeline_passes_the_memory_budget(self, mocked_pipeline_setup):
+        import warnings
+
+        from canvodpy import Pipeline
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            Pipeline("Fangorn", n_workers=2, max_memory_gb=16.0)
+        assert mocked_pipeline_setup.call_args.kwargs["max_memory_gb"] == 16.0
+
+    def test_orchestrator_argument_warns(self):
+        from canvodpy.orchestrator.pipeline import PipelineOrchestrator
+
+        site = MagicMock()
+        with (
+            patch("canvodpy.orchestrator.pipeline.ensure_file_logging"),
+            patch("canvodpy.orchestrator.pipeline.clear_discovery_cache"),
+            patch("canvodpy.orchestrator.pipeline.check_receivers"),
+            pytest.warns(
+                FutureWarning,
+                match=r"'nice_priority' argument of PipelineOrchestrator\(\)",
+            ),
+        ):
+            PipelineOrchestrator(site, nice_priority=10).close()
 
 
 class TestConvenienceFunctions:
@@ -179,6 +305,72 @@ class TestConvenienceFunctions:
         assert callable(preview_processing)
 
 
+class TestDeprecatedVodForDay:
+    """Pipeline.calculate_vod and canvodpy.calculate_vod delegate to site.vod."""
+
+    @staticmethod
+    def _site():
+        from types import SimpleNamespace
+
+        site = MagicMock()
+        site.vod_analyses = {
+            "canopy_01_vs_reference_01": SimpleNamespace(
+                canopy_receiver="canopy_01", reference_receiver="reference_01"
+            )
+        }
+        return site
+
+    def test_pipeline_calculate_vod_delegates_to_compute_bulk(self):
+        from datetime import datetime
+        from types import SimpleNamespace
+
+        from canvodpy import Pipeline
+
+        site = self._site()
+        with pytest.warns(FutureWarning, match="Site\\(<site>\\).vod.compute_bulk"):
+            result = Pipeline.calculate_vod(
+                SimpleNamespace(site=site), "canopy_01", "reference_01", "2025001"
+            )
+
+        site.vod.compute_bulk.assert_called_once()
+        args, kwargs = site.vod.compute_bulk.call_args
+        assert args == ("canopy_01_vs_reference_01",)
+        assert kwargs["start"] == datetime(2025, 1, 1)
+        assert kwargs["end"] == datetime(2025, 1, 1, 23, 59, 59, 999999)
+        assert kwargs["write"] is True
+        assert result is site.vod.compute_bulk.return_value
+
+    def test_unconfigured_pair_raises(self):
+        from types import SimpleNamespace
+
+        from canvodpy import Pipeline
+
+        site = self._site()
+        with (
+            pytest.warns(FutureWarning),
+            pytest.raises(ValueError, match="No VOD analysis configured"),
+        ):
+            Pipeline.calculate_vod(
+                SimpleNamespace(site=site), "canopy_01", "reference_02", "2025001"
+            )
+        site.vod.compute_bulk.assert_not_called()
+
+    def test_top_level_calculate_vod_delegates(self):
+        import canvodpy
+
+        site = self._site()
+        with (
+            patch("canvodpy.api.Site", return_value=site),
+            pytest.warns(FutureWarning) as record,
+        ):
+            canvodpy.calculate_vod(
+                "Fangorn", "canopy_01", "reference_01", "2025001", write_to_store=False
+            )
+
+        assert len(record) == 1
+        assert site.vod.compute_bulk.call_args.kwargs["write"] is False
+
+
 class TestAPICoexistence:
     """Test that all API tiers can coexist."""
 
@@ -199,11 +391,11 @@ class TestAPICoexistence:
         mock_gnss_site.active_vod_analyses = {}
 
         with patch("canvod.store.GnssResearchSite", return_value=mock_gnss_site):
-            site = Site("Rosalia")
+            site = Site("Fangorn")
             workflow = VODWorkflow(site=site, keep_vars=["SNR"])
             assert site.name == workflow.site.name
 
-    def test_pipeline_uses_factories(self):
+    def test_pipeline_uses_factories(self, tmp_path):
         """Pipeline should use factory components."""
         from canvodpy import Pipeline
 
@@ -225,9 +417,12 @@ class TestAPICoexistence:
                 "threads_per_worker": 1,
             }
             mock_config.return_value.processing.params = mock_proc
+            mock_config.return_value.processing.logging.get_log_dir.return_value = (
+                tmp_path  # the run history of the pipeline
+            )
             mock_config.return_value.processing.aux_data.agency = "COD"
 
-            pipeline = Pipeline("Rosalia")
+            pipeline = Pipeline("Fangorn")
             assert pipeline is not None
 
 

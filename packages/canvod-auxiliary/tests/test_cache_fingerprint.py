@@ -1,4 +1,4 @@
-"""Tests for the network-wide aux cache fingerprint (dev/todo_later.md §44)."""
+"""Tests for the network-wide aux cache fingerprint."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ def _fp(**overrides) -> str:
         "ephemeris_source": "final",
         "canonical_grid_seconds": CANONICAL_AUX_GRID_SECONDS,
         "source_file_paths": {"ephemerides": None, "clock": None},
+        "aggregate_glonass_fdma": True,
     }
     defaults.update(overrides)
     return compute_aux_cache_fingerprint(**defaults)
@@ -40,6 +41,10 @@ def test_sensitive_to_ephemeris_source() -> None:
 
 def test_sensitive_to_canonical_grid_seconds() -> None:
     assert _fp(canonical_grid_seconds=1.0) != _fp(canonical_grid_seconds=0.5)
+
+
+def test_sensitive_to_aggregate_glonass_fdma() -> None:
+    assert _fp(aggregate_glonass_fdma=True) != _fp(aggregate_glonass_fdma=False)
 
 
 def test_source_file_key_order_does_not_matter() -> None:
@@ -69,3 +74,15 @@ def test_missing_source_file_treated_as_none(tmp_path: Path) -> None:
     a = _fp(source_file_paths={"ephemerides": missing})
     b = _fp(source_file_paths={"ephemerides": None})
     assert a == b
+
+
+def test_sensitive_to_format_version(monkeypatch) -> None:
+    from canvod.auxiliary import cache_fingerprint
+
+    before = _fp()
+    monkeypatch.setattr(
+        cache_fingerprint,
+        "AUX_CACHE_FORMAT_VERSION",
+        cache_fingerprint.AUX_CACHE_FORMAT_VERSION + 1,
+    )
+    assert _fp() != before

@@ -3,11 +3,15 @@
 All expected values are derived from the Septentrio AsteRx SB3 ProBase
 Firmware v4.14.0 Reference Guide (RefGuide-4.14.0).
 
-These are pure-function tests — no test data files required.
+These are pure-function tests — no test data files required. The functions
+take scalars or arrays and return float arrays, NaN where Do-Not-Use.
 """
 
 from __future__ import annotations
 
+import math
+
+import numpy as np
 import pytest
 
 from canvod.readers.gnss_specs.constants import SPEEDOFLIGHT, UREG
@@ -20,6 +24,7 @@ from canvod.readers.sbf._scaling import (
     doppler2_hz,
     doppler_hz,
     glonass_freq_hz,
+    glonass_freq_nr,
     phase_cycles,
     pr2_m,
     pseudorange_m,
@@ -70,6 +75,36 @@ class TestDecodeSignalNum:
     def test_decode_signal_num(self, type_byte, obs_info, expected):
         assert decode_signal_num(type_byte, obs_info) == expected
 
+    def test_array_input(self):
+        """Arrays are decoded element-wise."""
+        np.testing.assert_array_equal(
+            decode_signal_num([0, 31, 17], [0, 0b00010_000, 0]), [0, 34, 17]
+        )
+
+
+# ===================================================================
+# glonass_freq_nr — RefGuide-4.14.0, MeasEpochChannelType1.ObsInfo, p.262
+# For GLONASS FDMA signals (SigIdxLo 8-11), ObsInfo bits 3-7 hold the
+# frequency number with an offset of 8. -1 for all other signals.
+# ===================================================================
+
+
+class TestGlonassFreqNr:
+    """GLONASS frequency number from Type/ObsInfo."""
+
+    @pytest.mark.parametrize(
+        "type_byte,obs_info,expected",
+        [
+            (8, 0b01001_000, 9),  # GLONASS L1CA, FreqNr 9 (k=+1)
+            (11, 0b00001_000, 1),  # GLONASS L2CA, FreqNr 1 (k=-7)
+            (0b11100000 | 9, 0b10101_111, 21),  # antenna bits, low bits set
+            (0, 0b01001_000, -1),  # GPS L1CA: not FDMA
+            (31, 0b00010_000, -1),  # extended signal: bits 3-7 are not FreqNr
+        ],
+    )
+    def test_glonass_freq_nr(self, type_byte, obs_info, expected):
+        assert glonass_freq_nr(type_byte, obs_info) == expected
+
 
 # ===================================================================
 # cn0_dbhz — RefGuide-4.14.0, p.261
@@ -82,10 +117,10 @@ class TestDecodeSignalNum:
 class TestCn0Dbhz:
     """CN0 byte → C/N0 in dB-Hz."""
 
-    def test_dnu_returns_none(self):
+    def test_dnu_returns_nan(self):
         """Do-Not-Use sentinel: raw == 255 (u1 max, field not available)."""
-        assert cn0_dbhz(255, 0) is None
-        assert cn0_dbhz(255, 17) is None
+        assert math.isnan(cn0_dbhz(255, 0))
+        assert math.isnan(cn0_dbhz(255, 17))
 
     @pytest.mark.parametrize(
         "raw,sig_num,expected_dbhz",
@@ -105,20 +140,13 @@ class TestCn0Dbhz:
         ],
     )
     def test_cn0_scaling(self, raw, sig_num, expected_dbhz):
-        result = cn0_dbhz(raw, sig_num)
-        assert result is not None
-        assert abs(result.magnitude - expected_dbhz) < 1e-10
-        assert str(result.units) == "dBHz"
+        assert abs(cn0_dbhz(raw, sig_num) - expected_dbhz) < 1e-10
 
-    def test_cn0_returns_pint_quantity(self):
-        result = cn0_dbhz(100, 0)
-        assert hasattr(result, "magnitude")
-        assert hasattr(result, "units")
-
-    def test_cn0_typical_gnss_range(self):
-        """A realistic raw value of 120 on GPS L1CA should give ~40 dB-Hz."""
-        result = cn0_dbhz(120, 0)
-        assert 30 < result.magnitude < 50
+    def test_array_input(self):
+        """Element-wise, with the offset chosen per signal."""
+        np.testing.assert_allclose(
+            cn0_dbhz([100, 100, 255], [0, 1, 0]), [35.0, 25.0, np.nan]
+        )
 
 
 # ===================================================================
@@ -132,44 +160,35 @@ class TestCn0Dbhz:
 class TestPseudorangeM:
     """Type1 pseudorange scaling."""
 
-    def test_dnu_returns_none(self):
+    def test_dnu_returns_nan(self):
         """Do-Not-Use: CodeMSB==0 and CodeLSB==0."""
-        assert pseudorange_m(misc=0, code_lsb=0) is None
+        assert math.isnan(pseudorange_m(misc=0, code_lsb=0))
 
     def test_dnu_misc_has_upper_bits(self):
         """Upper nibble of Misc doesn't affect CodeMSB; DNU still triggers."""
-        assert pseudorange_m(misc=0xF0, code_lsb=0) is None
+        assert math.isnan(pseudorange_m(misc=0xF0, code_lsb=0))
 
     def test_basic_scaling(self):
         """CodeMSB=0, CodeLSB=20_000_000 → 20_000 m."""
-        result = pseudorange_m(misc=0, code_lsb=20_000_000)
-        assert result is not None
-        assert abs(result.magnitude - 20_000.0) < 1e-6
+        assert abs(pseudorange_m(misc=0, code_lsb=20_000_000) - 20_000.0) < 1e-6
 
     def test_code_msb_contribution(self):
         """CodeMSB=1, CodeLSB=0 → 1 * 4294967296 * 0.001 = 4_294_967.296 m."""
-        result = pseudorange_m(misc=1, code_lsb=0)
-        expected = 4_294_967.296
-        assert abs(result.magnitude - expected) < 1e-3
+        assert abs(pseudorange_m(misc=1, code_lsb=0) - 4_294_967.296) < 1e-3
 
     def test_gps_typical_pseudorange(self):
         """GPS MEO pseudorange ~20,000–26,000 km.
 
-        CodeMSB=0, CodeLSB=22_000_000_000 → 22_000_000 m = 22,000 km.
+        CodeMSB=5, CodeLSB=0 → 5 * 4294967.296 m ≈ 21,475 km.
         """
-        result = pseudorange_m(misc=0, code_lsb=22_000_000_000)
-        pr_km = result.magnitude / 1000
+        pr_km = pseudorange_m(misc=5, code_lsb=0) / 1000
         assert 19_000 < pr_km < 30_000
 
     def test_misc_upper_nibble_ignored(self):
         """Bits 4-7 of Misc are reserved; only bits 0-3 (CodeMSB) matter."""
-        result_clean = pseudorange_m(misc=0x01, code_lsb=1_000_000)
-        result_dirty = pseudorange_m(misc=0xF1, code_lsb=1_000_000)
-        assert result_clean.magnitude == result_dirty.magnitude
-
-    def test_returns_meters(self):
-        result = pseudorange_m(misc=0, code_lsb=1)
-        assert str(result.units) == "meter"
+        assert pseudorange_m(misc=0x01, code_lsb=1_000_000) == pseudorange_m(
+            misc=0xF1, code_lsb=1_000_000
+        )
 
 
 # ===================================================================
@@ -182,14 +201,12 @@ class TestPseudorangeM:
 class TestDopplerHz:
     """Type1 Doppler scaling."""
 
-    def test_dnu_returns_none(self):
-        assert doppler_hz(_DOPPLER_DNU) is None
-        assert doppler_hz(-(1 << 31)) is None
+    def test_dnu_returns_nan(self):
+        assert math.isnan(doppler_hz(_DOPPLER_DNU))
+        assert math.isnan(doppler_hz(-(1 << 31)))
 
     def test_zero_doppler(self):
-        result = doppler_hz(0)
-        assert result is not None
-        assert result.magnitude == 0.0
+        assert doppler_hz(0) == 0.0
 
     @pytest.mark.parametrize(
         "raw,expected_hz",
@@ -201,12 +218,7 @@ class TestDopplerHz:
         ],
     )
     def test_doppler_scaling(self, raw, expected_hz):
-        result = doppler_hz(raw)
-        assert abs(result.magnitude - expected_hz) < 1e-10
-
-    def test_returns_hz_unit(self):
-        result = doppler_hz(1)
-        assert str(result.units) == "hertz"
+        assert abs(doppler_hz(raw) - expected_hz) < 1e-10
 
 
 # ===================================================================
@@ -216,23 +228,25 @@ class TestDopplerHz:
 # DNU: CarrierMSB == -128 AND CarrierLSB == 0
 # ===================================================================
 
+_PR_M = 22_000_000.0
+_L1_HZ = 1575.42e6
+
 
 class TestPhaseCycles:
     """Type1 carrier phase scaling."""
 
-    def test_dnu_returns_none(self):
+    def test_dnu_returns_nan(self):
         """Do-Not-Use: CarrierMSB==-128 and CarrierLSB==0."""
-        pr = 22_000_000.0 * UREG.meter
-        freq = 1575.42 * UREG.MHz
-        result = phase_cycles(pr, carrier_msb=-128, carrier_lsb=0, freq=freq)
-        assert result is None
+        assert math.isnan(phase_cycles(_PR_M, -128, 0, _L1_HZ))
 
     def test_not_dnu_when_carrier_msb_minus128_lsb_nonzero(self):
         """If CarrierLSB != 0, this is NOT DNU even with CarrierMSB == -128."""
-        pr = 22_000_000.0 * UREG.meter
-        freq = 1575.42 * UREG.MHz
-        result = phase_cycles(pr, carrier_msb=-128, carrier_lsb=1, freq=freq)
-        assert result is not None
+        assert not math.isnan(phase_cycles(_PR_M, -128, 1, _L1_HZ))
+
+    def test_nan_pseudorange_or_frequency(self):
+        """Unknown pseudorange or frequency gives NaN."""
+        assert math.isnan(phase_cycles(np.nan, 0, 0, _L1_HZ))
+        assert math.isnan(phase_cycles(_PR_M, 0, 0, np.nan))
 
     def test_hand_calculation_gps_l1(self):
         """Manual calculation for GPS L1 (1575.42 MHz).
@@ -242,35 +256,21 @@ class TestPhaseCycles:
         CarrierMSB = 0, CarrierLSB = 0
         L = PR / λ + 0 = 22_000_000 / 0.190293673 ≈ 115,610,321.5 cycles
         """
-        pr = 22_000_000.0 * UREG.meter
-        freq = 1575.42 * UREG.MHz
-        result = phase_cycles(pr, carrier_msb=0, carrier_lsb=0, freq=freq)
-
-        lambda_m = _C / 1575.42e6
-        expected = 22_000_000.0 / lambda_m
-        assert abs(result - expected) < 1.0  # within 1 cycle
+        expected = _PR_M / (_C / _L1_HZ)
+        assert abs(phase_cycles(_PR_M, 0, 0, _L1_HZ) - expected) < 1.0
 
     def test_carrier_offset_contribution(self):
         """Verify the (CarrierMSB * 65536 + CarrierLSB) * 0.001 term."""
-        pr = 22_000_000.0 * UREG.meter
-        freq = 1575.42 * UREG.MHz
-
-        base = phase_cycles(pr, carrier_msb=0, carrier_lsb=0, freq=freq)
-        with_offset = phase_cycles(pr, carrier_msb=1, carrier_lsb=1000, freq=freq)
-
+        base = phase_cycles(_PR_M, 0, 0, _L1_HZ)
+        with_offset = phase_cycles(_PR_M, 1, 1000, _L1_HZ)
         offset_cycles = (1 * 65536 + 1000) * 0.001
         assert abs((with_offset - base) - offset_cycles) < 1e-6
 
     def test_negative_carrier_msb(self):
         """Negative CarrierMSB produces a negative offset."""
-        pr = 22_000_000.0 * UREG.meter
-        freq = 1575.42 * UREG.MHz
-
-        base = phase_cycles(pr, carrier_msb=0, carrier_lsb=0, freq=freq)
-        neg = phase_cycles(pr, carrier_msb=-1, carrier_lsb=0, freq=freq)
-
-        expected_offset = -1 * 65536 * 0.001
-        assert abs((neg - base) - expected_offset) < 1e-6
+        base = phase_cycles(_PR_M, 0, 0, _L1_HZ)
+        neg = phase_cycles(_PR_M, -1, 0, _L1_HZ)
+        assert abs((neg - base) - (-1 * 65536 * 0.001)) < 1e-6
 
 
 # ===================================================================
@@ -367,34 +367,23 @@ class TestDecodeOffsetsMsb:
 class TestPr2M:
     """Type2 pseudorange from Type1 base + offset."""
 
-    def test_dnu_returns_none(self):
-        pr1 = 22_000_000.0 * UREG.meter
-        assert pr2_m(pr1, code_offset_msb=-4, code_offset_lsb=0) is None
+    def test_dnu_returns_nan(self):
+        assert math.isnan(pr2_m(_PR_M, code_offset_msb=-4, code_offset_lsb=0))
 
     def test_not_dnu_when_lsb_nonzero(self):
-        pr1 = 22_000_000.0 * UREG.meter
-        result = pr2_m(pr1, code_offset_msb=-4, code_offset_lsb=1)
-        assert result is not None
+        assert not math.isnan(pr2_m(_PR_M, code_offset_msb=-4, code_offset_lsb=1))
 
     def test_zero_offset(self):
         """Zero offset means Type2 == Type1."""
-        pr1 = 22_000_000.0 * UREG.meter
-        result = pr2_m(pr1, code_offset_msb=0, code_offset_lsb=0)
-        assert abs(result.magnitude - 22_000_000.0) < 1e-6
+        assert abs(pr2_m(_PR_M, 0, 0) - _PR_M) < 1e-6
 
     def test_positive_offset(self):
         """CodeOffsetMSB=1, CodeOffsetLSB=0 → offset = 65536 * 0.001 = 65.536 m."""
-        pr1 = 22_000_000.0 * UREG.meter
-        result = pr2_m(pr1, code_offset_msb=1, code_offset_lsb=0)
-        expected = 22_000_000.0 + 65.536
-        assert abs(result.magnitude - expected) < 1e-3
+        assert abs(pr2_m(_PR_M, 1, 0) - (_PR_M + 65.536)) < 1e-3
 
     def test_negative_offset(self):
         """CodeOffsetMSB=-1, CodeOffsetLSB=0 → offset = -65.536 m."""
-        pr1 = 22_000_000.0 * UREG.meter
-        result = pr2_m(pr1, code_offset_msb=-1, code_offset_lsb=0)
-        expected = 22_000_000.0 - 65.536
-        assert abs(result.magnitude - expected) < 1e-3
+        assert abs(pr2_m(_PR_M, -1, 0) - (_PR_M - 65.536)) < 1e-3
 
 
 # ===================================================================
@@ -404,29 +393,21 @@ class TestPr2M:
 # DNU: DopplerOffsetMSB == -16 AND DopplerOffsetLSB == 0
 # ===================================================================
 
+_L2_HZ = 1227.60e6
+
 
 class TestDoppler2Hz:
     """Type2 Doppler from Type1 base and differential offset."""
 
-    def test_dnu_returns_none(self):
-        d1 = 1000.0 * UREG.Hz
-        f1 = 1575.42 * UREG.MHz
-        f2 = 1227.60 * UREG.MHz
-        assert doppler2_hz(d1, -16, 0, f2, f1) is None
+    def test_dnu_returns_nan(self):
+        assert math.isnan(doppler2_hz(1000.0, -16, 0, _L2_HZ, _L1_HZ))
 
     def test_not_dnu_when_lsb_nonzero(self):
-        d1 = 1000.0 * UREG.Hz
-        f1 = 1575.42 * UREG.MHz
-        f2 = 1227.60 * UREG.MHz
-        result = doppler2_hz(d1, -16, 1, f2, f1)
-        assert result is not None
+        assert not math.isnan(doppler2_hz(1000.0, -16, 1, _L2_HZ, _L1_HZ))
 
     def test_same_frequency_zero_offset(self):
         """Same freq, zero offset → D_type2 == D_type1."""
-        d1 = 1500.0 * UREG.Hz
-        f = 1575.42 * UREG.MHz
-        result = doppler2_hz(d1, 0, 0, f, f)
-        assert abs(result.magnitude - 1500.0) < 1e-6
+        assert abs(doppler2_hz(1500.0, 0, 0, _L1_HZ, _L1_HZ) - 1500.0) < 1e-6
 
     def test_frequency_ratio_scaling(self):
         """L2/L1 frequency ratio should scale the Doppler.
@@ -434,70 +415,41 @@ class TestDoppler2Hz:
         alpha = 1227.60 / 1575.42 ≈ 0.7792
         D_type2 = 1000 * 0.7792 + 0 = 779.2 Hz (approx)
         """
-        d1 = 1000.0 * UREG.Hz
-        f1 = 1575.42 * UREG.MHz
-        f2 = 1227.60 * UREG.MHz
-        result = doppler2_hz(d1, 0, 0, f2, f1)
         expected = 1000.0 * (1227.60 / 1575.42)
-        assert abs(result.magnitude - expected) < 0.01
+        assert abs(doppler2_hz(1000.0, 0, 0, _L2_HZ, _L1_HZ) - expected) < 0.01
 
 
 # ===================================================================
 # glonass_freq_hz — RefGuide-4.14.0, Table 4.1.10, p.256
 # G1 [MHz] = 1602.000 + (FreqNr - 8) * 9/16
 # G2 [MHz] = 1246.000 + (FreqNr - 8) * 7/16
-# FreqNr = GLONASS slot + 8; valid range 1..21 (slot -7..+13)
+# FreqNr = GLONASS frequency number + 8; valid range 1..21 (-7..+13)
 # ===================================================================
 
 
 class TestGlonassFreqHz:
-    """GLONASS FDMA carrier frequency computation."""
+    """GLONASS FDMA carrier frequency computation, in Hz."""
 
-    def test_g1_slot_zero(self):
-        """Slot 0 (FreqNr=8): G1 = 1602.000 + 0 = 1602.000 MHz."""
-        result = glonass_freq_hz(signal_num=8, freq_nr=8)
-        assert abs(result.magnitude - 1602.000) < 1e-6
+    @pytest.mark.parametrize(
+        "sig_num,freq_nr,expected_mhz",
+        [
+            (8, 8, 1602.000),
+            (8, 1, 1602.000 - 7 * 9 / 16),  # 1598.0625
+            (8, 21, 1602.000 + 13 * 9 / 16),  # 1609.3125
+            (9, 8, 1602.000),  # L1P: G1 band too
+            (10, 8, 1246.000),
+            (10, 1, 1246.000 - 7 * 7 / 16),  # 1242.9375
+            (10, 21, 1246.000 + 13 * 7 / 16),  # 1251.6875
+            (11, 8, 1246.000),  # L2CA: G2 band too
+        ],
+    )
+    def test_frequency(self, sig_num, freq_nr, expected_mhz):
+        assert abs(glonass_freq_hz(sig_num, freq_nr) - expected_mhz * 1e6) < 1e-3
 
-    def test_g1_slot_minus7(self):
-        """Slot -7 (FreqNr=1): G1 = 1602.000 + (-7) * 9/16 = 1598.0625 MHz."""
-        result = glonass_freq_hz(signal_num=8, freq_nr=1)
-        expected = 1602.000 + (-7) * (9 / 16)
-        assert abs(result.magnitude - expected) < 1e-6
-
-    def test_g1_slot_plus13(self):
-        """Slot +13 (FreqNr=21): G1 = 1602.000 + 13 * 9/16 = 1609.3125 MHz."""
-        result = glonass_freq_hz(signal_num=8, freq_nr=21)
-        expected = 1602.000 + 13 * (9 / 16)
-        assert abs(result.magnitude - expected) < 1e-6
-
-    def test_g2_slot_zero(self):
-        """Slot 0 (FreqNr=8): G2 = 1246.000 + 0 = 1246.000 MHz."""
-        result = glonass_freq_hz(signal_num=10, freq_nr=8)
-        assert abs(result.magnitude - 1246.000) < 1e-6
-
-    def test_g2_slot_minus7(self):
-        """Slot -7 (FreqNr=1): G2 = 1246.000 + (-7) * 7/16 = 1242.9375 MHz."""
-        result = glonass_freq_hz(signal_num=10, freq_nr=1)
-        expected = 1246.000 + (-7) * (7 / 16)
-        assert abs(result.magnitude - expected) < 1e-6
-
-    def test_g2_slot_plus13(self):
-        """Slot +13 (FreqNr=21): G2 = 1246.000 + 13 * 7/16 = 1251.6875 MHz."""
-        result = glonass_freq_hz(signal_num=10, freq_nr=21)
-        expected = 1246.000 + 13 * (7 / 16)
-        assert abs(result.magnitude - expected) < 1e-6
-
-    @pytest.mark.parametrize("sig_num", [8, 9])
-    def test_g1_band_signals(self, sig_num):
-        """Signal numbers 8 (L1CA) and 9 (L1P) both use G1 band formula."""
-        result = glonass_freq_hz(sig_num, freq_nr=8)
-        assert abs(result.magnitude - 1602.000) < 1e-6
-
-    @pytest.mark.parametrize("sig_num", [10, 11])
-    def test_g2_band_signals(self, sig_num):
-        """Signal numbers 10 (L2P) and 11 (L2CA) both use G2 band formula."""
-        result = glonass_freq_hz(sig_num, freq_nr=8)
-        assert abs(result.magnitude - 1246.000) < 1e-6
+    def test_array_input(self):
+        np.testing.assert_allclose(
+            glonass_freq_hz([8, 10], [9, 9]), [1602.5625e6, 1246.4375e6]
+        )
 
     def test_non_fdma_raises(self):
         """Non-FDMA signal numbers (0-7, 12+) must raise ValueError."""
@@ -508,7 +460,3 @@ class TestGlonassFreqHz:
         """GLONASS L3 CDMA (signal 12) is not FDMA — must raise."""
         with pytest.raises(ValueError, match="not a GLONASS FDMA signal"):
             glonass_freq_hz(signal_num=12, freq_nr=8)
-
-    def test_returns_mhz_unit(self):
-        result = glonass_freq_hz(8, freq_nr=8)
-        assert str(result.units) == "megahertz"

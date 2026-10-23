@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  <link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: light)"
+        href="{{ 'assets/logo/canvodpy_favicon_bright_mode.svg' | url }}">
+  <link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: dark)"
+        href="{{ 'assets/logo/canvodpy_favicon_dark_mode.svg' | url }}">
+{% endblock %}
+
+{% block announce %}
+  canVODpy v1.0.0 is out:
+  <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}#new-in-v100">see what's new</a>
+{% endblock %}
+
+{% block libs %}
+  <script>
+    // Patch mermaid to use "base" theme instead of "default" (blue).
+    // Material dynamically imports mermaid and calls initialize() —
+    // we intercept the import to patch the module before Material uses it.
+    (function() {
+      var _origImport = window.__import__ || null;
+
+      // Material uses dynamic import() for mermaid. We can't intercept
+      // native import(), but we CAN define a getter on window.mermaid
+      // that patches initialize() the moment it's assigned.
+      var _mermaid = undefined;
+      var _patched = false;
+      Object.defineProperty(window, "mermaid", {
+        configurable: true,
+        enumerable: true,
+        get: function() { return _mermaid; },
+        set: function(val) {
+          _mermaid = val;
+          if (val && val.initialize && !_patched) {
+            _patched = true;
+            var _origInit = val.initialize.bind(val);
+            val.initialize = function(config) {
+              var isDark = document.body && document.body.getAttribute("data-md-color-scheme") === "slate";
+            config = Object.assign({}, config, {
+              theme: "base",
+              themeVariables: isDark
+                ? { primaryColor: "#2a2a2a", primaryTextColor: "#E1E6B9", primaryBorderColor: "#555",
+                    lineColor: "#666", secondaryColor: "#1a1a1a", tertiaryColor: "#1e1e1e",
+                    mainBkg: "#2a2a2a", nodeBorder: "#555", clusterBkg: "#1a1a1a", clusterBorder: "#444",
+                    titleColor: "#E1E6B9", edgeLabelBackground: "#0d0d0d", nodeTextColor: "#E1E6B9",
+                    textColor: "#E1E6B9", fontFamily: '"Space Grotesk", system-ui, sans-serif' }
+                : { primaryColor: "#C4D7A4", primaryTextColor: "#183128", primaryBorderColor: "#5D7D5B",
+                    lineColor: "#5D7D5B", secondaryColor: "#E1E6B9", tertiaryColor: "#ABC8A4",
+                    mainBkg: "#C4D7A4", nodeBorder: "#5D7D5B", clusterBkg: "#E1E6B9", clusterBorder: "#6B8B69",
+                    titleColor: "#183128", edgeLabelBackground: "#E1E6B9", nodeTextColor: "#183128",
+                    textColor: "#183128", fontFamily: '"Space Grotesk", system-ui, sans-serif' }
+            });
+              return _origInit(config);
+            };
+          }
+        }
+      });
+    })();
+  </script>
+  {{ super() }}
+{% endblock %}

@@ -176,9 +176,13 @@ class TestSBAS:
         assert sbas.constellation == "SBAS"
 
     def test_static_svs(self):
+        # Snn = PRN - 100 over the full two-digit range (RINEX 2.11 9.1,
+        # RINEX 3.04 8.4), so real GEOs like EGNOS PRN 148 (S48) are kept.
         sbas = SBAS()
         assert sbas.svs[0] == "S01"
-        assert len(sbas.svs) == 36
+        assert sbas.svs[-1] == "S99"
+        assert len(sbas.svs) == 99
+        assert "S48" in sbas.svs
 
     def test_bands(self):
         assert SBAS.BANDS["1"] == "L1"

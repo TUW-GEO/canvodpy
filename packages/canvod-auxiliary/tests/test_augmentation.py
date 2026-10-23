@@ -15,6 +15,12 @@ from canvod.auxiliary.augmentation import (
 )
 from canvod.auxiliary.position import ECEFPosition
 
+# The augmentation framework is deprecated; the tests below keep it working
+# until it is removed, TestDeprecation checks the warnings.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:.*left over from development:FutureWarning"
+)
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -183,8 +189,7 @@ class TestClockCorrectionAugmentation:
 
     def test_required_aux_files(self):
         """Empty on purpose: clock is optional (fetch_clock config flag),
-        and augment() already handles its absence gracefully — see §28,
-        dev/todo_later.md."""
+        and augment() already handles its absence gracefully."""
         step = ClockCorrectionAugmentation()
         assert step.get_required_aux_files() == []
 
@@ -280,3 +285,33 @@ class TestAugmentationStepABC:
         step = Dummy("dummy")
         assert step.name == "dummy"
         assert repr(step) == "Dummy(name='dummy')"
+
+
+class TestDeprecation:
+    """Every part of the augmentation framework warns and names a replacement."""
+
+    @pytest.mark.parametrize(
+        ("make", "replacement"),
+        [
+            (lambda: AugmentationContext(), "canvod.ops.Op"),
+            (lambda: AuxDataAugmenter(MagicMock()), "add_spherical_coords"),
+            (SphericalCoordinateAugmentation, "add_spherical_coords"),
+            (ClockCorrectionAugmentation, "drop it"),
+        ],
+    )
+    @pytest.mark.filterwarnings("default::FutureWarning")
+    def test_warns(self, make, replacement) -> None:
+        with pytest.warns(FutureWarning, match=replacement):
+            make()
+
+    @pytest.mark.filterwarnings("default::FutureWarning")
+    def test_step_subclass_warns(self) -> None:
+        class _Step(AugmentationStep):
+            def augment(self, ds, aux_pipeline, context):
+                return ds
+
+            def get_required_aux_files(self):
+                return []
+
+        with pytest.warns(FutureWarning, match="`AugmentationStep` is left over"):
+            _Step(name="x")

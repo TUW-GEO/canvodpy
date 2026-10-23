@@ -45,7 +45,7 @@ class SolarPositionCalculator:
     lon : float
         Observer longitude in degrees (positive = East).
     elevation : float
-        Elevation above sea level in metres (default: 0).
+        Elevation above sea level in meters (default: 0).
     use_pvlib : bool
         If ``True``, use *pvlib* when available (more accurate).
         Falls back to built-in formulas automatically.
@@ -75,7 +75,7 @@ class SolarPositionCalculator:
         lon : float
             Observer longitude in degrees.
         elevation : float, default 0.0
-            Elevation above sea level in metres.
+            Elevation above sea level in meters.
         use_pvlib : bool, default True
             Whether to use pvlib if available.
 
@@ -95,7 +95,7 @@ class SolarPositionCalculator:
             except ImportError:
                 logger.warning(
                     "pvlib not available, falling back to built-in formulas. "
-                    "Install pvlib for higher accuracy: pip install pvlib"
+                    "Install pvlib for higher accuracy: uv add pvlib"
                 )
                 self.use_pvlib = False
 
@@ -167,7 +167,7 @@ class SolarPositionCalculator:
         # Eccentricity of Earth's orbit
         eccent = 0.016708634 - jc * (0.000042037 + 0.0000001267 * jc)
 
-        # Sun equation of centre
+        # Sun equation of center
         sun_eq_ctr = (
             np.sin(np.radians(geom_mean_anom))
             * (1.914602 - jc * (0.004817 + 0.000014 * jc))
@@ -335,14 +335,14 @@ class SolarPositionCalculator:
         method : str
             Correction method:
 
-            * ``'normalize'``      – normalise by cos(zenith) relative to
+            * ``'normalize'``      – normalize by cos(zenith) relative to
               *reference_zenith*.
             * ``'residual'``       – subtract a 4th-order polynomial fitted
               to the diurnal pattern (1-D data only; falls back to
               ``'normalize'`` for multi-dimensional data).
             * ``'cos_correction'`` – simple cosine correction.
         reference_zenith : float
-            Reference polar angle for normalisation (degrees).
+            Reference polar angle for normalization (degrees).
 
         Returns
         -------

@@ -1,41 +1,57 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_dark_mode.svg">
+    <img alt="canVODpy" src="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_bright_mode.svg" width="260">
+  </picture>
+</p>
+
 # canvod-utils
 
-Shared utilities for canvodpy.
+[![PyPI](https://img.shields.io/pypi/v/canvod-utils.svg)](https://pypi.org/project/canvod-utils/)
+[![Python](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18496233-blue)](https://doi.org/10.5281/zenodo.18496233)
 
-## Features
+**Shared utilities of the canVODpy packages.** `canvod-utils` is a package of
+[canVODpy](https://canvodpy.eu/), an open Python ecosystem for
+GNSS-Transmissometry canopy VOD retrievals.
 
-- **Date/time tools**: `YYYYDOY`/`YYDOY` GNSS date handling, GPS week helpers
-- **Validation and hashing**: `isfloat`, `file_hash`
+## What it does
 
-Performance tracing lives in `canvodpy.utils.telemetry` (OpenTelemetry-based),
-not here — this package's old `diagnostics` module (timing/memory/dataset/
-Airflow tracking, SQLite-backed) was removed 2026-07-14 as a fully dead
-chain with zero real callers anywhere in the pipeline.
+- Dates as year and day of year, and GPS weeks.
+- File hashes, which the store uses to recognize files it already holds.
+- The plugin loader, the run identifier, the timing of processing stages, and the decorators that mark code left over from development.
 
-## Installation
+## Install
 
 ```bash
-uv pip install -e packages/canvod-utils
+uv add canvod-utils
 ```
 
-## Quick Start
+Most users install [canvodpy](https://pypi.org/project/canvodpy/), which
+includes this package, the command line, and the processing pipeline.
+canVODpy requires Python 3.14.
+
+## Example
 
 ```python
-from canvod.utils.tools import YYYYDOY, get_version_from_pyproject, file_hash
+from canvod.utils.tools import YYYYDOY
 
-date = YYYYDOY.from_str("2025024")
-print(date.to_datetime())
+print(YYYYDOY.from_str("2025032").date)  # 2025-02-01
 ```
 
 ## Documentation
 
-[Full documentation](https://canvodpy.eu/packages/utils/overview/)
+- [canvod-utils in the canVODpy documentation](https://canvodpy.eu/packages/utils/overview/)
+- [Start here](https://canvodpy.eu/users/): from installation to the first VOD
 
-## Development
+## How to cite
 
-```bash
-# From repo root
-uv sync
-uv run pytest packages/canvod-utils/tests
-just check
-```
+If you use canVODpy, please cite it with its DOI,
+[`10.5281/zenodo.18496233`](https://doi.org/10.5281/zenodo.18496233), which always leads to the newest
+version. [CITATION.cff](https://github.com/TUW-GEO/canvodpy/blob/main/CITATION.cff) has the full
+citation.
+
+## License
+
+[Apache License 2.0](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE)

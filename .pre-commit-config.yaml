@@ -4,26 +4,21 @@ repos:
       # Use uv-managed ruff so local hooks and CI always use the same version
       - id: ruff-check
         name: ruff lint
-        # --frozen: use uv.lock exactly as committed, never re-resolve/write
-        # it as a side effect of `uv run`. Without this, any yanked/stale
-        # package upstream (e.g. a yanked PyPI release) makes plain `uv run`
-        # silently rewrite uv.lock on every hook invocation -- pre-commit
-        # then sees uv.lock "modified by this hook" (misattributed to ruff,
-        # which never touched it) and aborts the commit.
-        entry: uv run --frozen ruff check --fix
+        # --locked: never write uv.lock, and fail loudly when it is out of
+        # date ("run `uv lock`"). A plain `uv run` would rewrite it as a side
+        # effect, and pre-commit would abort with uv.lock "modified by this
+        # hook"; --frozen would lint silently with a stale lock.
+        entry: uv run --locked ruff check --fix
         language: system
         types: [python]
         stages: [pre-commit]
       - id: ruff-format
         name: ruff format
-        # --exclude "*.md": harmless here since `types: [python]` already
-        # keeps pre-commit from passing markdown files to this hook -- kept
-        # for symmetry with the justfile/CI invocation, which does need it
-        # (see pyproject.toml's [tool.ruff] exclude comment for why the
-        # root config's `exclude` can't do this instead).
-        entry: uv run --frozen ruff format --exclude "*.md"
+        # Markdown too: ruff formats the fenced Python code blocks in it, so
+        # the examples in the docs look like the code.
+        entry: uv run --locked ruff format
         language: system
-        types: [python]
+        types_or: [python, markdown]
         stages: [pre-commit]
 
   - repo: https://github.com/astral-sh/uv-pre-commit
@@ -53,15 +48,27 @@ repos:
 
   - repo: local
     hooks:
+      # Paths and just recipes named in AGENTS.md files and skills must exist;
+      # runs on every commit, since renaming code can break them too
+      - id: check-agent-docs
+        name: agent docs
+        entry: uv run --script scripts/check_agent_docs.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+      # Keep the code graph (`just graph`, free, no LLM) in step with the code;
+      # runs in the background, output in .graphify/build.log
+      - id: code-graph
+        name: code graph
+        entry: bash -c 'mkdir -p .graphify && (just graph > .graphify/build.log 2>&1 &)'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [post-commit, post-merge, post-checkout]
       - id: ty-check
         name: ty type check
-        entry: uv run ty check
+        entry: uv run --locked ty check
         language: system
         pass_filenames: false
         stages: [pre-push]
-      - id: update-submodules
-        name: update submodules
-        entry: just update-submodules
-        language: system
-        pass_filenames: false
-        stages: [post-merge]

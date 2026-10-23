@@ -9,6 +9,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from canvod.utils import testing
 
 _TEST_DATA = (
     Path(__file__).resolve().parents[3]
@@ -92,6 +93,11 @@ def _build_store_and_metadata(
     meta = StoreMetadata(
         identity=StoreIdentity(
             id=store_id,
+            uuid="00000000-0000-4000-8000-000000000001",
+            stac_link=(
+                f"../../gnss-observations/org.middle-earth.{store_id}/"
+                f"org.middle-earth.{store_id}.json"
+            ),
             title=title,
             description=(f"1-hour subset of GNSS observations ({source_format})"),
             store_type=store_type,
@@ -99,20 +105,19 @@ def _build_store_and_metadata(
             keywords=[
                 "GNSS",
                 "VOD",
-                "Rosalia",
+                "Fangorn",
                 source_format.upper(),
                 "test",
             ],
-            naming_authority="at.ac.tuwien",
+            naming_authority="org.middle-earth",
         ),
         creator=Creator(
-            name="Nicolas François Bader",
-            email="support@canvodpy.eu",
-            institution="TU Wien",
-            institution_ror="https://ror.org/04d836q62",
-            department="Geodesy and Geoinformation",
-            research_group="CLIMERS",
-            website="https://www.tuwien.at/en/mg/geo/climers",
+            name=testing.PERSON_NAME,
+            email=testing.PERSON_EMAIL,
+            institution=testing.INSTITUTION,
+            department=testing.DEPARTMENT,
+            research_group=testing.RESEARCH_GROUP,
+            website=testing.WEBSITE,
         ),
         temporal=TemporalExtent(
             created="2026-03-07T00:00:00Z",
@@ -122,14 +127,19 @@ def _build_store_and_metadata(
         ),
         spatial=SpatialExtent(
             site=SiteInfo(
-                name="Rosalia",
+                name="Fangorn",
                 description="Mixed forest research site",
                 country="AT",
             ),
-            geospatial_lat=47.7,
-            geospatial_lon=16.3,
-            geospatial_alt_m=680.0,
-            bbox=[16.3, 47.7, 16.3, 47.7],
+            geospatial_lat=testing.LATITUDE,
+            geospatial_lon=testing.LONGITUDE,
+            geospatial_alt_m=testing.ALTITUDE_M,
+            bbox=[
+                testing.LONGITUDE,
+                testing.LATITUDE,
+                testing.LONGITUDE,
+                testing.LATITUDE,
+            ],
             extent_temporal_interval=[[time_start, time_end]],
         ),
         processing=collect_processing_provenance(
@@ -226,8 +236,8 @@ class TestOneDayStore:
         _build_store_and_metadata(
             gnss_store_path,
             datasets,
-            store_id="Rosalia/gnss_store",
-            title="Rosalia Rinex Store (1-day test)",
+            store_id="fangorn-gnss",
+            title="Fangorn GNSS Store (1-day test)",
             store_type="gnss_store",
             source_format="rinex3",
             file_count=len(obs_files),
@@ -248,9 +258,9 @@ class TestOneDayStore:
         _build_store_and_metadata(
             sbf_store_path,
             datasets,
-            store_id="Rosalia/sbf_store",
-            title="Rosalia SBF Store (1-day test)",
-            store_type="sbf_store",
+            store_id="fangorn-gnss",
+            title="Fangorn SBF Store (1-day test)",
+            store_type="gnss_store",
             source_format="sbf",
             file_count=len(sbf_files),
         )

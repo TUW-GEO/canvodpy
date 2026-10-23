@@ -1,0 +1,106 @@
+name: S3 Tests
+
+# Stores on S3 against an S3 emulator (#303): created, opened, metadata
+# written and read, and conflicting commits refused
+# (packages/canvod-store-metadata/tests/test_s3_store.py), producing a
+# settings file from a store (`canvodpy/tests/test_config_from_store_s3.py`,
+# #356), and maintenance on a store on S3 being a dry run only (#357: the
+# store tests refuse every mutating action,
+# `packages/canvod-store/tests/test_s3_maintenance.py`, and the CLI reports
+# a dry run, `canvodpy/tests/test_s3_maintenance_cli.py`). Without an S3
+# service these tests skip, so the platform tests don't run them.
+#
+# The S3 tests that read the test data (`canvodpy/tests/test_s3_run.py`,
+# `canvodpy/tests/test_s3_two_runs.py`, #358) run locally only: CI never
+# checks out the test data (`docs/guides/contributor-setup.md`).
+#
+# The emulator is RustFS (Apache-2.0), the one Icechunk's own CI tests
+# against, at the tag Icechunk's compose.yaml uses at the version in
+# uv.lock (icechunk v2.3.0: rustfs/rustfs:1.0.0-rc.6). When uv.lock moves
+# to a new Icechunk, take the tag from that version's compose.yaml.
+# MinIO is not used: its community edition is no longer maintained.
+# The emulator is for tests only, not a recommendation for production.
+
+on:
+    push:
+    pull_request:
+
+permissions: read-all
+
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    RUSTFS_IMAGE: rustfs/rustfs:1.0.0-rc.6@sha256:97171b3d72cd47dc81000f92ea84de25608bfc35a94c965501afaeb5d99f6035
+    BUCKET: canvod-test
+
+jobs:
+    s3:
+        name: Tests • S3 emulator
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+
+        defaults:
+            run:
+                shell: bash
+
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            - name: Make throwaway credentials
+              # New for every run and masked in the logs: nothing secret is
+              # in the repository.
+              run: |
+                  key_id="$(openssl rand -hex 12)"
+                  secret="$(openssl rand -hex 24)"
+                  echo "::add-mask::${key_id}"
+                  echo "::add-mask::${secret}"
+                  {
+                      echo "AWS_ACCESS_KEY_ID=${key_id}"
+                      echo "AWS_SECRET_ACCESS_KEY=${secret}"
+                  } >> "$GITHUB_ENV"
+            - name: Start the S3 emulator
+              # A folder under /data is a bucket to RustFS.
+              run: |
+                  docker run --detach --name rustfs --publish 9000:9000 \
+                      --env AWS_ACCESS_KEY_ID --env AWS_SECRET_ACCESS_KEY \
+                      --entrypoint /bin/sh "$RUSTFS_IMAGE" -c \
+                      "mkdir -p /data/$BUCKET && exec rustfs --access-key \"\$AWS_ACCESS_KEY_ID\" --secret-key \"\$AWS_SECRET_ACCESS_KEY\" /data"
+            - name: Install uv and set the python version
+              uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+              with:
+                  python-version: '3.14'
+                  enable-cache: true
+            - name: Set up Python
+              run: uv python install
+            - name: Install the Project
+              run: uv sync --locked --dev
+            - name: Wait for the S3 emulator
+              run: |
+                  for _ in $(seq 1 60); do
+                      if curl --silent --fail http://127.0.0.1:9000/health > /dev/null; then
+                          exit 0
+                      fi
+                      sleep 1
+                  done
+                  docker logs rustfs
+                  exit 1
+            - name: Run the S3 tests
+              env:
+                  CANVOD_TEST_S3_URL: s3://${{ env.BUCKET }}/ci-${{ github.run_id }}-${{ github.run_attempt }}
+                  AWS_ENDPOINT_URL: http://127.0.0.1:9000
+                  AWS_REGION: us-east-1
+                  AWS_EC2_METADATA_DISABLED: "true"
+                  CANVOD_S3_PATH_STYLE: "1"
+              # A skipped test here means the setup above broke: fail.
+              run: |
+                  set -o pipefail
+                  uv run pytest packages/canvod-store-metadata/tests/test_s3_store.py \
+                      canvodpy/tests/test_config_from_store_s3.py \
+                      packages/canvod-store/tests/test_s3_maintenance.py \
+                      canvodpy/tests/test_s3_maintenance_cli.py \
+                      --verbose --color=no -rs | tee pytest.log
+                  if grep -q SKIPPED pytest.log; then
+                      echo "::error::S3 tests were skipped; the emulator setup is broken."
+                      exit 1
+                  fi
+            - name: Emulator log
+              if: failure()
+              run: docker logs rustfs

@@ -8,6 +8,7 @@ import xarray as xr
 from pydantic import ValidationError
 
 from canvod.vod import TauOmegaZerothOrder
+from canvod.vod.calculator import DELTA_SNR_ATTRS, VOD_ATTRS
 
 
 class TestVODCalculatorValidation:
@@ -136,6 +137,31 @@ class TestTauOmegaZerothOrder:
         assert "VOD" in vod_ds.data_vars
         assert vod_ds["VOD"].shape == (20, 8)
 
+    def test_calculate_vod_keeps_cell_ids(self):
+        """Grid cells assigned before the store write reach the VOD."""
+        canopy_ds, sky_ds = self.create_test_datasets(n_epoch=20, n_sid=8)
+        cells = np.arange(160.0).reshape(20, 8)
+        canopy_ds["cell_id_equal_area_2.0deg"] = (("epoch", "sid"), cells)
+        calculator = TauOmegaZerothOrder(canopy_ds=canopy_ds, sky_ds=sky_ds)
+
+        vod_ds = calculator.calculate_vod()
+
+        np.testing.assert_array_equal(vod_ds["cell_id_equal_area_2.0deg"].values, cells)
+
+    def test_calculate_vod_describes_its_variables(self):
+        """VOD and delta_snr carry their own attributes, none of the inputs'."""
+        canopy_ds, sky_ds = self.create_test_datasets()
+        for ds in (canopy_ds, sky_ds):
+            ds["SNR"].attrs = {"long_name": "SNR", "units": "dB-Hz"}
+            ds["theta"].attrs = {"long_name": "Polar angle", "valid_range": [0, 1.6]}
+        calculator = TauOmegaZerothOrder(canopy_ds=canopy_ds, sky_ds=sky_ds)
+
+        vod_ds = calculator.calculate_vod()
+
+        assert vod_ds["VOD"].attrs == VOD_ATTRS
+        assert vod_ds["delta_snr"].attrs == DELTA_SNR_ATTRS
+        assert vod_ds["VOD"].attrs["coverage_content_type"] == "modelResult"
+
     def test_calculate_vod_coords(self):
         """Test that VOD output preserves coordinates."""
         canopy_ds, sky_ds = self.create_test_datasets()
@@ -203,6 +229,38 @@ class TestTauOmegaZerothOrder:
 
         with pytest.raises(ValueError, match="All delta_snr values are NaN"):
             calculator.calculate_vod()
+
+    def test_calculate_vod_all_nan_lazy(self):
+        """All-NaN delta_snr also raises for dask-backed (store-read) inputs."""
+        ds = xr.Dataset(
+            {
+                "SNR": (["epoch", "sid"], np.full((10, 5), np.nan)),
+                "phi": (["epoch", "sid"], np.zeros((10, 5))),
+                "theta": (["epoch", "sid"], np.zeros((10, 5))),
+            }
+        ).chunk({"epoch": 5})
+
+        calculator = TauOmegaZerothOrder(canopy_ds=ds, sky_ds=ds.copy())
+
+        with pytest.raises(ValueError, match="All delta_snr values are NaN"):
+            calculator.calculate_vod()
+
+    def test_calculate_vod_lazy_result_stays_lazy(self):
+        """The input checks do not compute the VOD result itself."""
+        ds = xr.Dataset(
+            {
+                "SNR": (["epoch", "sid"], np.full((10, 5), 40.0)),
+                "phi": (["epoch", "sid"], np.zeros((10, 5))),
+                "theta": (["epoch", "sid"], np.full((10, 5), np.pi / 4)),
+            }
+        ).chunk({"epoch": 5})
+        sky = ds.copy()
+        sky["SNR"] = sky["SNR"] + 3.0
+
+        vod_ds = TauOmegaZerothOrder(canopy_ds=ds, sky_ds=sky).calculate_vod()
+
+        assert vod_ds["VOD"].chunks is not None
+        assert np.isfinite(vod_ds["VOD"].values).all()
 
     def test_calculate_vod_negative_transmissivity_warning(self):
         """Test warning when transmissivity <= 0."""
@@ -272,15 +330,28 @@ class TestTauOmegaZerothOrder:
     def test_from_icechunkstore_import_error(self):
         """Test ImportError with helpful message when canvod-store not installed."""
         with unittest.mock.patch.dict("sys.modules", {"canvod.store": None}):
-            with pytest.raises(ImportError, match="canvod-store"):
-                TauOmegaZerothOrder.from_icechunkstore("/fake/path")
+            with (
+                pytest.warns(FutureWarning, match="compute_bulk"),
+                pytest.raises(ImportError, match="canvod-store"),
+            ):
+                TauOmegaZerothOrder.from_icechunkstore(
+                    "/fake/path", "canopy_01", "reference_01_canopy_01"
+                )
+
+    def test_from_icechunkstore_requires_groups(self):
+        """No default groups: the old sky_group default named no stored group."""
+        with (
+            pytest.warns(FutureWarning, match="compute_bulk"),
+            pytest.raises(TypeError, match="sky_group"),
+        ):
+            TauOmegaZerothOrder.from_icechunkstore("/fake/path", "canopy_01")
 
 
 class TestFromDatasets:
     """Test from_datasets classmethod."""
 
-    def test_from_datasets_no_align(self):
-        """Test from_datasets without alignment."""
+    def test_from_datasets_align_argument_deprecated(self):
+        """The ignored ``align`` argument warns."""
         canopy_ds = xr.Dataset(
             {
                 "SNR": (["epoch", "sid"], np.full((10, 5), 10.0)),
@@ -296,9 +367,10 @@ class TestFromDatasets:
             }
         )
 
-        vod_ds = TauOmegaZerothOrder.from_datasets(
-            canopy_ds=canopy_ds, sky_ds=sky_ds, align=False
-        )
+        with pytest.warns(FutureWarning, match="next major version"):
+            vod_ds = TauOmegaZerothOrder.from_datasets(
+                canopy_ds=canopy_ds, sky_ds=sky_ds, align=False
+            )
 
         assert isinstance(vod_ds, xr.Dataset)
         assert "VOD" in vod_ds.data_vars
@@ -324,14 +396,40 @@ class TestFromDatasets:
             coords={"epoch": range(2, 14), "sid": range(1, 7)},
         )
 
-        vod_ds = TauOmegaZerothOrder.from_datasets(
-            canopy_ds=canopy_ds, sky_ds=sky_ds, align=True
-        )
+        vod_ds = TauOmegaZerothOrder.from_datasets(canopy_ds=canopy_ds, sky_ds=sky_ds)
 
         assert isinstance(vod_ds, xr.Dataset)
         assert "VOD" in vod_ds.data_vars
         # After inner join: epochs 2-9 (8 epochs), sids 1-4 (4 sids)
         assert vod_ds["VOD"].shape == (8, 4)
+
+    def test_constructor_aligns(self):
+        """Direct construction (as VODFactory does) aligns too.
+
+        Without it the output kept every canopy epoch and signal, with NaN
+        VOD where the reference had no data.
+        """
+        canopy_ds = xr.Dataset(
+            {
+                "SNR": (["epoch", "sid"], np.full((10, 5), 10.0)),
+                "phi": (["epoch", "sid"], np.zeros((10, 5))),
+                "theta": (["epoch", "sid"], np.full((10, 5), np.pi / 4)),
+            },
+            coords={"epoch": range(10), "sid": range(5)},
+        )
+        sky_ds = xr.Dataset(
+            {
+                "SNR": (["epoch", "sid"], np.full((12, 6), 20.0)),
+                "phi": (["epoch", "sid"], np.zeros((12, 6))),
+                "theta": (["epoch", "sid"], np.full((12, 6), np.pi / 4)),
+            },
+            coords={"epoch": range(2, 14), "sid": range(1, 7)},
+        )
+
+        vod_ds = TauOmegaZerothOrder(canopy_ds=canopy_ds, sky_ds=sky_ds).calculate_vod()
+
+        assert dict(vod_ds.sizes) == {"epoch": 8, "sid": 4}
+        assert not vod_ds["VOD"].isnull().any()
 
 
 class TestEdgeCases:

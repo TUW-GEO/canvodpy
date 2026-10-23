@@ -1,4 +1,4 @@
-# OpenSSF Best Practices Badge Application Guide
+# OpenSSF best practices badge application guide
 
 ## Overview
 
@@ -6,21 +6,21 @@ The OpenSSF Best Practices Badge (formerly CII Best Practices) is a certificatio
 
 **Application URL:** https://bestpractices.coreinfrastructure.org/
 
-## Badge Levels
+## Badge levels
 
 1. **Passing** (60%+ criteria) - Basic best practices
 2. **Silver** (100% passing + additional criteria) - Advanced practices
 3. **Gold** (100% silver + highest standards) - Exemplary practices
 
-## How to Apply
+## How to apply
 
-### Step 1: Create Account
+### Step 1: Create account
 1. Go to https://bestpractices.coreinfrastructure.org/
 2. Sign in with GitHub
 3. Click "Add Project"
-4. Enter: `https://github.com/nfb2021/canvodpy`
+4. Enter: `https://github.com/TUW-GEO/canvodpy`
 
-### Step 2: Complete Questionnaire
+### Step 2: Complete questionnaire
 
 The badge requires filling out criteria in these categories:
 
@@ -32,7 +32,7 @@ The badge requires filling out criteria in these categories:
 - [x] Bug reporting process (GitHub Issues)
 - [x] Security reporting process (SECURITY.md)
 
-#### Change Control (11 criteria)
+#### Change control (11 criteria)
 - [x] Public version control (GitHub)
 - [x] Unique version numbering (semantic versioning)
 - [x] Release notes (CHANGELOG.md)
@@ -40,29 +40,29 @@ The badge requires filling out criteria in these categories:
 
 #### Quality (17 criteria)
 - [x] Coding standards (ruff, PEP 8)
-- [x] Automated test suite (pytest, 8 workflows)
+- [x] Automated test suite (pytest on Linux, macOS and Windows)
 - [x] Code coverage (test_coverage.yml workflow)
 - [x] Build reproducibility (uv.lock, pinned dependencies)
-- [x] Continuous integration (8 GitHub Actions workflows)
+- [x] Continuous integration (GitHub Actions, `.github/workflows/`)
 
 #### Security (21 criteria)
-- [x] Security policy (SECURITY.md) ✨ Just added!
+- [x] Security policy (SECURITY.md) ✨ newly added
 - [x] Vulnerability disclosure process (SECURITY.md)
 - [ ] Secure development knowledge (document that developers know secure coding)
-- [x] Static analysis (ruff, audit.yml)
+- [x] Static analysis (ruff in `code_quality.yml`, CodeQL in `codeql.yml`)
 - [x] Dynamic analysis (pytest, integration tests)
-- [x] Dependency management (uv, Dependabot)
+- [x] Dependency management (uv, Dependabot, pip-audit in `dependency_audit.yml`)
 
 #### Analysis (6 criteria)
 - [x] Static analysis enabled (ruff in CI)
 - [x] Memory safety language (Python)
 - [ ] Address sanitizers (not applicable for Python)
 
-## Current Status Estimate
+## Current status estimate
 
 Based on canvodpy's current state:
 
-### ✅ Already Passing (Estimated: ~70%)
+### ✅ Already passing (estimated: ~70%)
 
 **Basics:**
 - ✅ Website with basic project info
@@ -81,20 +81,20 @@ Based on canvodpy's current state:
 **Quality:**
 - ✅ Coding standards (ruff with 50+ rule sets, PEP 8 compliant)
 - ✅ Type checking (ty with type budget enforcement)
-- ✅ Test suite (pytest with 8 test workflows)
+- ✅ Test suite (pytest on Linux, macOS and Windows, with coverage)
 - ✅ Test coverage (test_coverage.yml)
-- ✅ CI/CD (8 workflows: tests, coverage, code quality, audit, FAIR, releases)
+- ✅ CI/CD (GitHub Actions: tests, coverage, code quality, CodeQL, docs quality, FAIR, releases)
 - ✅ Reproducible builds (uv.lock with pinned dependencies)
 - ✅ Pre-commit hooks (ruff, ty, conventional commits)
 
 **Security:**
-- ✅ Vulnerability disclosure (SECURITY.md) ✨ New!
+- ✅ Vulnerability disclosure (SECURITY.md) ✨ New
 - ✅ Dependency updates (Dependabot + uv.lock)
-- ✅ Static analysis (ruff linting + audit.yml)
+- ✅ Static analysis (ruff linting, CodeQL)
 - ✅ Type safety (ty type checker)
-- ✅ OpenSSF Scorecard (scorecard.yml) ✨ New!
+- ✅ OpenSSF Scorecard (scorecard.yml) ✨ New
 
-### 📝 Needs Documentation
+### 📝 Needs documentation
 
 **Basics:**
 - [ ] Document how to obtain help (add to CONTRIBUTING.md)
@@ -117,9 +117,9 @@ Based on canvodpy's current state:
 - [ ] Two-factor authentication for all committers
 - [ ] Signed releases (GPG/Sigstore)
 
-## Quick Wins (Do These First)
+## Quick wins (do these first)
 
-### 1. Enable GitHub Security Features
+### 1. Enable GitHub security features
 ```bash
 # In GitHub repo settings:
 Settings → Security → Enable:
@@ -129,7 +129,7 @@ Settings → Security → Enable:
   - Secret scanning
 ```
 
-### 2. Add Security Documentation to CONTRIBUTING.md
+### 2. Add security documentation to CONTRIBUTING.md
 Add a section referencing SECURITY.md and secure coding practices.
 
 ### 3. Create SECURITY_PRACTICES.md
@@ -139,17 +139,16 @@ Document that developers follow secure coding practices:
 - Dependency management
 - Code review process
 
-### 4. Verify REUSE Compliance
+### 4. Verify REUSE compliance
 ```bash
-cd /Users/work/Developer/GNSS/canvodpy
-uv run reuse lint
+just check-reuse
 ```
 
-### 5. Add Release Verification
+### 5. Add release verification
 - Generate checksums for releases (SHA256)
 - Consider signing releases with GPG or Sigstore
 
-## Application Process Timeline
+## Application process timeline
 
 1. **Week 1:** Fill out questionnaire (~2-3 hours)
 2. **Week 2:** Address gaps (documentation, process improvements)
@@ -157,7 +156,7 @@ uv run reuse lint
 4. **Week 4:** Respond to reviewer feedback
 5. **Week 5:** Receive badge 🎉
 
-## Maintaining the Badge
+## Maintaining the badge
 
 Once obtained, you must:
 - Update badge status annually
@@ -170,7 +169,7 @@ Once obtained, you must:
 - **Getting Started Guide:** https://bestpractices.coreinfrastructure.org/en/projects/1
 - **Examples:** Search GitHub for "best practices badge" to see other projects
 
-## Next Steps
+## Next steps
 
 1. **Create account** at bestpractices.coreinfrastructure.org
 2. **Add canvodpy project**
@@ -179,7 +178,7 @@ Once obtained, you must:
 5. **Request review** once you're at 100%
 6. **Add badge to README** once approved
 
-## Badge Markdown (Add After Approval)
+## Badge markdown (add after approval)
 
 ```markdown
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/XXXXX/badge)](https://bestpractices.coreinfrastructure.org/projects/XXXXX)
@@ -189,4 +188,4 @@ Replace `XXXXX` with your project ID from the badge system.
 
 ---
 
-**Note:** With the SECURITY.md and scorecard.yml we just added, canvodpy is now much closer to meeting all criteria!
+**Note:** With SECURITY.md and scorecard.yml added, canvodpy is now much closer to meeting all the criteria.

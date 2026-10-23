@@ -5,9 +5,38 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
+
+from canvod.utils.tools import deprecated
 
 from .base import _StrictModel
+
+
+class ReceiverHardwareConfig(_StrictModel):
+    """The GNSS receiver itself, for the store metadata. All optional."""
+
+    manufacturer: str | None = Field(None, description="Receiver manufacturer")
+    model: str | None = Field(None, description="Receiver model")
+    serial_number: str | None = Field(None, description="Receiver serial number")
+    firmware: str | None = Field(None, description="Firmware version")
+
+
+class AntennaConfig(_StrictModel):
+    """The receiver's antenna, for the store metadata. All optional."""
+
+    manufacturer: str | None = Field(None, description="Antenna manufacturer")
+    model: str | None = Field(None, description="Antenna model, as its IGS name")
+    radome: str | None = Field(None, description="Radome, as its IGS name")
+    serial_number: str | None = Field(None, description="Antenna serial number")
+    height_m: float | None = Field(None, description="Antenna height in meters")
+    choke_ring: bool | None = Field(None, description="Whether a choke ring is used")
+    polarization: Literal["RHCP", "LHCP", "dual-pol"] | None = Field(
+        None,
+        description=(
+            "Polarization the antenna receives: 'RHCP' (the standard), 'LHCP' "
+            "or 'dual-pol'"
+        ),
+    )
 
 
 class ReceiverConfig(_StrictModel):
@@ -17,17 +46,16 @@ class ReceiverConfig(_StrictModel):
         ...,
         description=(
             "Receiver role: 'canopy' = placed under the vegetation canopy; "
-            "'reference' = open-sky baseline above or outside the canopy. "
-            "Wizard prompt: 'Is this receiver under the canopy or in the open sky?'"
+            "'reference' = open-sky baseline above or outside the canopy"
         ),
     )
     directory: str = Field(..., description="Subdirectory for receiver data")
     paired_canopies: str | list[str] | None = Field(
         None,
         description=(
-            "Which canopy receiver(s) to pair with this reference. "
-            "Required for reference receivers: 'all' or a list of canopy names. "
-            "Must not be set for canopy receivers."
+            "The canopy receivers to pair with this reference: 'all' or a list "
+            "of canopy names. Required for reference receivers; must not be set "
+            "for canopy receivers."
         ),
     )
     description: str | None = Field(
@@ -36,28 +64,71 @@ class ReceiverConfig(_StrictModel):
     )
     naming: dict | None = Field(
         None,
-        description="Naming configuration (validated by canvod-filemap package)",
+        description=(
+            "Deprecated, not used for file discovery. Set 'recipe' for "
+            "non-canonical filenames instead."
+        ),
     )
     metadata: dict[str, str | int | float | bool] | None = Field(
         None,
         description=(
-            "Freeform receiver metadata written to dataset global attrs. "
-            "Example keys: site_url, antenna_height, species."
+            "Your own receiver metadata, added to the attributes of every "
+            "file of the receiver that is written to the GNSS store: the log "
+            "book keeps them per file, and a new group also takes them from "
+            "its first file. Attributes a file already has are kept. Example "
+            "keys: site_url, antenna_height, species."
+        ),
+    )
+    receiver_hardware: ReceiverHardwareConfig | None = Field(
+        None,
+        description=(
+            "Optional: the receiver's manufacturer, model, serial number and "
+            "firmware, copied into the GNSS store's metadata."
+        ),
+    )
+    antenna: AntennaConfig | None = Field(
+        None,
+        description=(
+            "Optional: the antenna's manufacturer, model and radome (IGS "
+            "names), serial number and height, copied into the GNSS store's "
+            "metadata."
         ),
     )
     reader_format: str = Field(
         "auto",
         description=(
-            "GNSS data reader format: 'auto', 'rinex3', 'sbf'. "
-            "When 'auto', detected from files at pipeline start."
+            "Reader for the receiver's files: 'rinex3' (RINEX 3), "
+            "'rinex3_stripped' (RINEX 3 with signal strengths only, faster), "
+            "'rinex2' (RINEX 2.11), 'sbf' (Septentrio binary), 'nmea', or the "
+            "name of an installed reader plugin. "
+            "'auto': detected per day from the files (SBF and NMEA by file "
+            "type, RINEX 2 or 3 from the header; never a plugin); a day whose "
+            "files need different readers is an error."
         ),
     )
+
+    @field_validator("reader_format")
+    @classmethod
+    def _known_reader_format(cls, v: str) -> str:
+        known = reader_formats()
+        if v not in known:
+            raise ValueError(
+                f"Unknown reader_format {v!r}. Known: {', '.join(known)}. A "
+                "reader plugin is known once its package is installed."
+            )
+        return v
+
     recipe: str | None = Field(
         None,
         description=(
-            "Name of a naming recipe (e.g. 'examplesite_reference'). "
-            "Resolved from config/recipes/{recipe}.yaml. "
-            "When set, replaces the 'naming' block for file discovery."
+            "Naming recipe: a name (for example 'examplesite_reference'), "
+            "read from <config dir>/recipes/<site>/{recipe}.yaml, or a raw "
+            "GitHub URL, fetched by every run "
+            "('https://raw.githubusercontent.com/<account>/<repo>/<commit, "
+            "tag or branch>/.../{name}.yaml'); stores record only its file "
+            "name. A recipe in a private "
+            "repository needs a token in GH_TOKEN or GITHUB_TOKEN. Without a "
+            "recipe, only files with canonical canVOD names are processed."
         ),
     )
 
@@ -68,12 +139,27 @@ class ReceiverConfig(_StrictModel):
             import warnings
 
             warnings.warn(
-                "ReceiverConfig: 'scs_from' is deprecated; use 'paired_canopies' instead",
-                DeprecationWarning,
+                "The receiver setting 'scs_from' is left over from development and will be removed with the next major version. "
+                "Rename it to 'paired_canopies' in your site configuration.",
+                FutureWarning,
                 stacklevel=2,
             )
             data = dict(data)
             data["paired_canopies"] = data.pop("scs_from")
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_naming(cls, data: object) -> object:
+        if isinstance(data, dict) and data.get("naming") is not None:
+            import warnings
+
+            warnings.warn(
+                "The receiver setting 'naming' is left over from development and will be removed with the next major version. "
+                "Use 'recipe' instead (create one with: just naming-init <site> <recipe>).",
+                FutureWarning,
+                stacklevel=2,
+            )
         return data
 
     @model_validator(mode="after")
@@ -87,30 +173,99 @@ class ReceiverConfig(_StrictModel):
             raise ValueError(msg)
         return self
 
-    @model_validator(mode="after")
-    def validate_naming_recipe_exclusive(self) -> ReceiverConfig:
-        """Reject a receiver configuring both recipe and naming.
 
-        recipe's own description says it "replaces the naming block for
-        file discovery" — but nothing enforced that until now, so both
-        could be set with no indication of which one actually takes effect.
-        """
-        if self.recipe is not None and self.naming is not None:
-            msg = (
-                "recipe and naming are mutually exclusive on a receiver — "
-                "recipe replaces the naming block for file discovery, so "
-                "having both set is ambiguous. Remove one."
-            )
-            raise ValueError(msg)
-        return self
+def reference_store_group(reference_receiver: str, canopy_receiver: str) -> str:
+    """Icechunk store group name holding a reference receiver's paired data.
+
+    Reference receiver data is always written to the GNSS store under this
+    paired name (see ``PipelineOrchestrator._group_by_date_and_receiver``),
+    never under the bare receiver name -- one reference can be paired with
+    several canopies, each getting its own group. This is the single place
+    that derives that name; every reader of the store should call this (or
+    ``VodAnalysisConfig.reference_store_group``) instead of formatting the
+    f-string locally.
+
+    Parameters
+    ----------
+    reference_receiver : str
+        Bare reference receiver name (matches a ``receivers`` config key).
+    canopy_receiver : str
+        Bare canopy receiver name it is paired with.
+
+    Returns
+    -------
+    str
+        Store group name, e.g. ``"reference_01_canopy_01"``.
+    """
+    return f"{reference_receiver}_{canopy_receiver}"
+
+
+#: File format read by each reader format; ``rinex3_stripped`` reads RINEX 3.
+_FILE_FORMAT: dict[str, str] = {"rinex3_stripped": "rinex3"}
+
+#: Reader formats of canvodpy itself; plugins add more (:func:`reader_formats`).
+BUILT_IN_READER_FORMATS = ("auto", "rinex3", "rinex3_stripped", "rinex2", "sbf", "nmea")
+
+
+def reader_formats() -> list[str]:
+    """Values ``reader_format`` accepts: the built-in formats and plugins.
+
+    Plugin names come from the entry point group ``canvodpy.readers`` of
+    the installed packages, without importing them.
+    """
+    from canvod.utils.plugins import READER_GROUP, plugin_names
+
+    return [*BUILT_IN_READER_FORMATS, *plugin_names(READER_GROUP)]
+
+
+def mixed_format_error(
+    canopy: str, canopy_format: str, reference: str, reference_format: str
+) -> str | None:
+    """Error message if a canopy and its reference record different file formats.
+
+    A canopy receiver and its reference receiver must record the same file
+    format (e.g. both SBF): the reference's position is read from the
+    canopy's files with the reference's reader, and both receivers' epochs
+    must be in the same time scale. ``"auto"`` is not checked here; check
+    again once the format is detected from the files.
+
+    Returns
+    -------
+    str | None
+        The message, or ``None`` if the formats agree or one is ``"auto"``.
+    """
+    if "auto" in (canopy_format, reference_format):
+        return None
+    if _FILE_FORMAT.get(canopy_format, canopy_format) == _FILE_FORMAT.get(
+        reference_format, reference_format
+    ):
+        return None
+    return (
+        f"Canopy receiver '{canopy}' records {canopy_format!r} files, its "
+        f"reference receiver '{reference}' records {reference_format!r} files. "
+        "A canopy and its reference must record the same file format; "
+        "mixed formats are not supported."
+    )
 
 
 class VodAnalysisConfig(_StrictModel):
     """VOD analysis pair configuration."""
 
     canopy_receiver: str = Field(..., description="Canopy receiver name")
-    reference_receiver: str = Field(..., description="Reference receiver name")
+    reference_receiver: str = Field(
+        ...,
+        description=("Reference receiver name, as named under 'receivers'"),
+    )
     description: str | None = Field(None, description="Analysis description")
+
+    @property
+    def reference_store_group(self) -> str:
+        """Icechunk store group name for this analysis's reference data.
+
+        See :func:`reference_store_group` (module-level) for why this is
+        distinct from ``reference_receiver``.
+        """
+        return reference_store_group(self.reference_receiver, self.canopy_receiver)
 
 
 class SiteConfig(_StrictModel):
@@ -120,19 +275,49 @@ class SiteConfig(_StrictModel):
         ..., description="Root directory for site GNSS data"
     )
     description: str | None = Field(None, description="Site description")
+    store_description: str | None = Field(
+        None,
+        description=(
+            "What the site's stores hold (for example 'GNSS-T observations below "
+            "a beech canopy'): written to StoreIdentity.description. "
+            "Required when a store of the site is created."
+        ),
+    )
     country: str | None = Field(None, description="Country code (ISO 3166-1)")
     latitude: float | None = Field(None, description="WGS84 latitude")
     longitude: float | None = Field(None, description="WGS84 longitude")
     altitude_m: float | None = Field(None, description="Altitude in meters")
-    receivers: dict[str, ReceiverConfig] = Field(..., description="Site receivers")
+    receivers: dict[str, ReceiverConfig] = Field(
+        ..., description="The site's receivers, each named by its key"
+    )
     vod_analyses: dict[str, VodAnalysisConfig] | None = Field(
         None,
-        description="VOD analysis pairs",
+        description=(
+            "The site's VOD analyses, each named by its key: a canopy receiver "
+            "and its reference receiver"
+        ),
     )
     naming: dict | None = Field(
         None,
-        description="Naming configuration (validated by canvod-filemap package)",
+        description=(
+            "Deprecated, not used for file discovery. Set 'recipe' on each "
+            "receiver with non-canonical filenames instead."
+        ),
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_naming(cls, data: object) -> object:
+        if isinstance(data, dict) and data.get("naming") is not None:
+            import warnings
+
+            warnings.warn(
+                "The site setting 'naming' is left over from development and will be removed with the next major version. "
+                "Use 'recipe' on each receiver instead (create one with: just naming-init <site> <recipe>).",
+                FutureWarning,
+                stacklevel=2,
+            )
+        return data
 
     @model_validator(mode="after")
     def validate_paired_canopies_targets(self) -> SiteConfig:
@@ -178,6 +363,30 @@ class SiteConfig(_StrictModel):
         """
         return [name for name, cfg in self.receivers.items() if cfg.type == "canopy"]
 
+    def receiver_of_group(self, group: str) -> str | None:
+        """The receiver whose data a GNSS store group holds.
+
+        A canopy receiver's group is its name; a reference receiver has one
+        group per paired canopy (:func:`reference_store_group`).
+
+        Parameters
+        ----------
+        group : str
+            Group name in the GNSS store, e.g. ``"reference_01_canopy_01"``.
+
+        Returns
+        -------
+        str or None
+            The receiver's name in ``receivers``, or None for a group no
+            receiver writes.
+        """
+        if group in self.receivers and self.receivers[group].type == "canopy":
+            return group
+        for reference, canopy in self.get_reference_canopy_pairs():
+            if reference_store_group(reference, canopy) == group:
+                return reference
+        return None
+
     def resolve_paired_canopies(self, receiver_name: str) -> list[str]:
         """Resolve paired_canopies for a reference receiver to a list of canopy names.
 
@@ -205,15 +414,12 @@ class SiteConfig(_StrictModel):
             raise ValueError(msg)
         return [cfg.paired_canopies]
 
+    @deprecated(
+        "SiteConfig.resolve_scs_from() is left over from development and will be removed with the next major version. "
+        "Use SiteConfig.resolve_paired_canopies() instead."
+    )
     def resolve_scs_from(self, receiver_name: str) -> list[str]:
         """Deprecated: use resolve_paired_canopies instead."""
-        import warnings
-
-        warnings.warn(
-            "SiteConfig.resolve_scs_from is deprecated; use resolve_paired_canopies instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
         return self.resolve_paired_canopies(receiver_name)
 
     @model_validator(mode="after")
@@ -231,6 +437,27 @@ class SiteConfig(_StrictModel):
             )
             for ref, canopy in pairs
         }
+        return self
+
+    @model_validator(mode="after")
+    def validate_same_file_format(self) -> SiteConfig:
+        """Reject a canopy and reference that record different file formats."""
+        pairs = set(self.get_reference_canopy_pairs())
+        pairs |= {
+            (a.reference_receiver, a.canopy_receiver)
+            for a in (self.vod_analyses or {}).values()
+        }
+        for ref, canopy in sorted(pairs):
+            if ref not in self.receivers or canopy not in self.receivers:
+                continue
+            msg = mixed_format_error(
+                canopy,
+                self.receivers[canopy].reader_format,
+                ref,
+                self.receivers[ref].reader_format,
+            )
+            if msg:
+                raise ValueError(msg)
         return self
 
     def get_reference_canopy_pairs(self) -> list[tuple[str, str]]:
@@ -262,4 +489,10 @@ class SitesConfig(_StrictModel):
     a ``KeyError`` listing available sites there.
     """
 
-    sites: dict[str, SiteConfig]
+    sites: dict[str, SiteConfig] = Field(
+        ...,
+        description=(
+            "A research site, named by its key: its data folder, receivers, and "
+            "VOD analyses"
+        ),
+    )

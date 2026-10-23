@@ -449,7 +449,7 @@ def fix_figure_for_dark_mode(fig, axes=None):
 
 @dataclass
 class Colorscale:
-    """Unified colorscale that converts between Plotly, matplotlib, and palettable.
+    """Unified colorscale that converts between Plotly and matplotlib.
 
     Parameters
     ----------

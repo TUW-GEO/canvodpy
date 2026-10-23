@@ -1,12 +1,12 @@
 """Tests for cell assignment operations.
 
-Tests the core functionality of assigning VOD observations to grid cells
-using KDTree-based nearest-neighbor lookups.
+Each observation is assigned to the grid cell that contains it.
 
 Tests cover:
-- add_cell_ids_to_vod_fast() - KDTree-based assignment
-- add_cell_ids_to_ds_fast() - Dask variant
-- KDTree construction and functionality
+- add_cell_ids_to_ds_fast() - eager and dask
+- the deprecated add_cell_ids_to_vod_fast() / add_cell_ids_to_vod()
+- containment for every grid type, also where the nearest cell center
+  belongs to another cell
 - Edge case coordinates (zenith, horizon, wrapping)
 """
 
@@ -17,9 +17,10 @@ import pytest
 import xarray as xr
 
 from canvod.grids import create_hemigrid
+from canvod.grids._internal.cell_lookup import cell_lookup
 from canvod.grids.operations import (
-    _build_kdtree,
     add_cell_ids_to_ds_fast,
+    add_cell_ids_to_vod,
     add_cell_ids_to_vod_fast,
 )
 
@@ -59,8 +60,8 @@ class TestCellAssignmentBasic:
     """Test basic cell assignment functionality."""
 
     def test_add_cell_ids_to_vod_fast(self, sample_grid, sample_vod_dataset) -> None:
-        """Test KDTree-based cell assignment."""
-        result = add_cell_ids_to_vod_fast(sample_vod_dataset, sample_grid, "test_grid")
+        """Test cell assignment."""
+        result = add_cell_ids_to_ds_fast(sample_vod_dataset, sample_grid, "test_grid")
 
         # Should return Dataset with cell_id variable
         assert isinstance(result, xr.Dataset)
@@ -75,11 +76,20 @@ class TestCellAssignmentBasic:
         assert np.all(valid_ids >= 0)
         assert np.all(valid_ids < sample_grid.ncells)
 
+    def test_cell_ids_are_described(self, sample_grid, sample_vod_dataset) -> None:
+        """The cell ids say which grid they index (ACDD 1.3)."""
+        result = add_cell_ids_to_ds_fast(sample_vod_dataset, sample_grid, "test_grid")
+
+        assert result["cell_id_test_grid"].attrs == {
+            "long_name": "Cell of the test_grid grid",
+            "coverage_content_type": "referenceInformation",
+        }
+
     def test_cell_assignment_preserves_original_data(
         self, sample_grid, sample_vod_dataset
     ) -> None:
         """Verify original data is preserved."""
-        result = add_cell_ids_to_vod_fast(sample_vod_dataset, sample_grid, "test_grid")
+        result = add_cell_ids_to_ds_fast(sample_vod_dataset, sample_grid, "test_grid")
 
         # Original variables should be present
         assert "VOD" in result.variables
@@ -92,27 +102,126 @@ class TestCellAssignmentBasic:
         )
 
 
-class TestKDTreeBuild:
-    """Test KDTree construction."""
+def _hemisphere_points(n: int = 20000) -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(0)
+    return rng.uniform(0, 2 * np.pi, n), np.arccos(rng.uniform(0, 1, n))
 
-    def test_kdtree_build(self, sample_grid) -> None:
-        """Test KDTree construction from grid."""
-        tree = _build_kdtree(sample_grid)
 
-        # Tree should have correct number of points
-        assert tree.n == sample_grid.ncells
+def _xyz(phi: np.ndarray, theta: np.ndarray) -> np.ndarray:
+    return np.column_stack(
+        [np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)]
+    )
 
-    def test_kdtree_query(self, sample_grid) -> None:
-        """Test KDTree query functionality."""
-        tree = _build_kdtree(sample_grid)
 
-        # Query point at zenith
-        query_point = np.array([[0.0, 0.0, 1.0]])  # North pole
-        dist, idx = tree.query(query_point)
+class TestContainment:
+    """The assigned cell contains the observation."""
 
-        assert len(dist) == 1
-        assert len(idx) == 1
-        assert 0 <= idx[0] < sample_grid.ncells
+    @pytest.mark.parametrize(
+        "grid_type", ["equal_area", "equal_angle", "equirectangular"]
+    )
+    @pytest.mark.parametrize("phi_rotation", [0.0, 37.0])
+    def test_ring_grids_use_cell_bounds(self, grid_type, phi_rotation) -> None:
+        grid = create_hemigrid(
+            grid_type, angular_resolution=5.0, phi_rotation=phi_rotation
+        )
+        phi, theta = _hemisphere_points()
+        ids = cell_lookup(grid)(phi, theta)
+        assert np.all(np.isfinite(ids)), "the grid covers the whole hemisphere"
+        cells = grid.grid[ids.astype(int)]
+        assert np.all(theta >= cells["theta_min"].to_numpy())
+        assert np.all(theta <= cells["theta_max"].to_numpy())
+        width = (cells["phi_max"] - cells["phi_min"]).to_numpy()
+        assert np.all((phi - cells["phi_min"].to_numpy()) % (2 * np.pi) < width)
+
+    def test_nearest_center_of_another_cell(self) -> None:
+        """Near a cell corner the nearest center can belong to another cell."""
+        grid = create_hemigrid("equal_area", angular_resolution=10.0)
+        # Zenith cap [0°, 5°]; the first band [5°, 15°] starts with the
+        # sector phi [0°, 60°] (cell 1, center theta 10°, phi 30°). A point
+        # at theta 5.1°, phi 1° lies in cell 1 but is 5.1° from the cap
+        # center and more than 5.1° from the center of cell 1.
+        center = grid.grid.row(1, named=True)
+        point = (np.deg2rad(1.0), np.deg2rad(5.1))
+        assert (
+            np.arccos(_xyz(np.array([point[0]]), np.array([point[1]])) @ [0, 0, 1])[0]
+            < np.arccos(
+                _xyz(np.array([point[0]]), np.array([point[1]]))
+                @ _xyz(np.array([center["phi"]]), np.array([center["theta"]]))[0]
+            )[0]
+        )
+        ids = cell_lookup(grid)(np.array([point[0]]), np.array([point[1]]))
+        assert ids[0] == 1
+
+    @pytest.mark.parametrize("grid_type", ["htm", "geodesic"])
+    @pytest.mark.parametrize("phi_rotation", [0.0, 37.0])
+    def test_triangle_grids_use_triangles(self, grid_type, phi_rotation) -> None:
+        grid = create_hemigrid(
+            grid_type, angular_resolution=10.0, phi_rotation=phi_rotation
+        )
+        phi, theta = _hemisphere_points()
+        ids = cell_lookup(grid)(phi, theta)
+        assert np.all(np.isfinite(ids))
+        if grid_type == "htm":
+            vertices = np.stack(
+                [
+                    np.asarray(grid.grid[c].to_list())
+                    for c in ("htm_vertex_0", "htm_vertex_1", "htm_vertex_2")
+                ],
+                axis=1,
+            )
+        else:
+            index = np.asarray(grid.grid["geodesic_vertices"].to_list())
+            vertices = np.asarray(grid.vertices)[index]
+        # The vertices are not rotated; rotate the observations back.
+        p = _xyz(phi - np.deg2rad(phi_rotation), theta)
+        v = vertices[ids.astype(int)]
+        v0, v1, v2 = v[:, 0], v[:, 1], v[:, 2]
+        side = np.sign(np.einsum("ij,ij->i", np.cross(v0, v1), v2))
+        for a, b in ((v0, v1), (v1, v2), (v2, v0)):
+            assert np.all(side * np.einsum("ij,ij->i", np.cross(a, b), p) >= -1e-12)
+
+    def test_fibonacci_uses_voronoi_cells(self) -> None:
+        from scipy.spatial import cKDTree
+
+        grid = create_hemigrid("fibonacci", angular_resolution=10.0)
+        phi, theta = _hemisphere_points()
+        ids = cell_lookup(grid)(phi, theta)
+        sites = np.asarray(grid.voronoi.points)
+        nearest_site = cKDTree(sites).query(_xyz(phi, theta))[1]
+        inside = np.isfinite(ids)
+        cell_sites = np.asarray(grid.points_xyz)[ids[inside].astype(int)]
+        np.testing.assert_allclose(sites[nearest_site[inside]], cell_sites)
+        # Outside: the nearest site lies below the horizon, so no cell.
+        assert np.all(sites[nearest_site[~inside], 2] < 0)
+
+    def test_healpix_uses_pixels(self) -> None:
+        hp = pytest.importorskip("healpy")
+        grid = create_hemigrid("healpix", angular_resolution=10.0, nside=8)
+        phi, theta = _hemisphere_points()
+        ids = cell_lookup(grid)(phi, theta)
+        assert np.all(np.isfinite(ids))
+        pixels = grid.grid["healpix_ipix"].to_numpy()[ids.astype(int)]
+        np.testing.assert_array_equal(pixels, hp.ang2pix(8, theta, phi))
+
+    def test_outside_the_cutoff_is_nan(self) -> None:
+        grid = create_hemigrid("equal_area", angular_resolution=5.0, cutoff_theta=10)
+        ids = cell_lookup(grid)(np.zeros(2), np.deg2rad([79.9, 80.1]))
+        assert np.isfinite(ids[0])
+        assert np.isnan(ids[1])
+
+    def test_loaded_triangle_grid_without_geometry_raises(self) -> None:
+        from canvod.grids.core import GridData
+
+        grid = create_hemigrid("geodesic", angular_resolution=10.0)
+        stripped = GridData(
+            grid=grid.grid,
+            theta_lims=grid.theta_lims,
+            phi_lims=grid.phi_lims,
+            cell_ids=grid.cell_ids,
+            grid_type="geodesic",
+        )
+        with pytest.raises(ValueError, match="create_hemigrid"):
+            cell_lookup(stripped)
 
 
 class TestAddCellIdsToDsFast:
@@ -142,7 +251,7 @@ class TestAddCellIdsToDsFast:
             },
         )
 
-        result = add_cell_ids_to_ds_fast(ds, sample_grid, "test_grid", data_var="vod")
+        result = add_cell_ids_to_ds_fast(ds, sample_grid, "test_grid")
 
         # Should have cell_id variable
         assert "cell_id_test_grid" in result.variables
@@ -175,7 +284,7 @@ class TestEdgeCaseCoordinates:
             },
         )
 
-        result = add_cell_ids_to_vod_fast(zenith_ds, sample_grid, "test")
+        result = add_cell_ids_to_ds_fast(zenith_ds, sample_grid, "test")
 
         # Should be assigned to valid cell
         cell_id = result["cell_id_test"].values[0, 0]
@@ -197,7 +306,7 @@ class TestEdgeCaseCoordinates:
             },
         )
 
-        result = add_cell_ids_to_vod_fast(horizon_ds, sample_grid, "test")
+        result = add_cell_ids_to_ds_fast(horizon_ds, sample_grid, "test")
 
         # All should be assigned
         cell_ids = result["cell_id_test"].values[0, :]
@@ -220,7 +329,7 @@ class TestEdgeCaseCoordinates:
             },
         )
 
-        result = add_cell_ids_to_vod_fast(wrap_ds, sample_grid, "test")
+        result = add_cell_ids_to_ds_fast(wrap_ds, sample_grid, "test")
 
         # Should handle wrapping correctly
         cell_ids = result["cell_id_test"].values[0, :]
@@ -243,7 +352,7 @@ class TestEdgeCaseCoordinates:
             },
         )
 
-        result = add_cell_ids_to_vod_fast(nan_ds, sample_grid, "test")
+        result = add_cell_ids_to_ds_fast(nan_ds, sample_grid, "test")
 
         cell_ids = result["cell_id_test"].values[0, :]
 
@@ -251,3 +360,49 @@ class TestEdgeCaseCoordinates:
         assert np.isfinite(cell_ids[0])
         assert np.isnan(cell_ids[1])
         assert np.isnan(cell_ids[2])
+
+
+class TestSingleImplementation:
+    """One implementation: dtype, dimension order, deprecated names."""
+
+    def test_float64(self, sample_grid, sample_vod_dataset) -> None:
+        result = add_cell_ids_to_ds_fast(sample_vod_dataset, sample_grid, "g")
+        assert result["cell_id_g"].dtype == np.float64
+
+    def test_data_variables_and_sid_epoch_order(
+        self, sample_grid, sample_vod_dataset
+    ) -> None:
+        expected = add_cell_ids_to_ds_fast(sample_vod_dataset.copy(), sample_grid, "g")[
+            "cell_id_g"
+        ]
+        as_vars = sample_vod_dataset.reset_coords(["phi", "theta"])
+        as_vars["phi"] = as_vars["phi"].transpose("sid", "epoch")
+        result = add_cell_ids_to_ds_fast(as_vars, sample_grid, "g")["cell_id_g"]
+        assert result.dims == ("epoch", "sid")
+        np.testing.assert_array_equal(result.values, expected.values)
+
+    def test_dask_matches_eager(self, sample_grid, sample_vod_dataset) -> None:
+        expected = add_cell_ids_to_ds_fast(sample_vod_dataset.copy(), sample_grid, "g")[
+            "cell_id_g"
+        ]
+        lazy = sample_vod_dataset.chunk({"epoch": 3})
+        result = add_cell_ids_to_ds_fast(lazy, sample_grid, "g")["cell_id_g"]
+        assert result.chunks is not None
+        np.testing.assert_array_equal(result.values, expected.values)
+
+    def test_data_var_argument_deprecated(
+        self, sample_grid, sample_vod_dataset
+    ) -> None:
+        with pytest.warns(FutureWarning, match="data_var"):
+            add_cell_ids_to_ds_fast(sample_vod_dataset, sample_grid, "g", "VOD")
+
+    @pytest.mark.parametrize("func", [add_cell_ids_to_vod_fast, add_cell_ids_to_vod])
+    def test_deprecated_names_delegate(
+        self, func, sample_grid, sample_vod_dataset
+    ) -> None:
+        expected = add_cell_ids_to_ds_fast(sample_vod_dataset.copy(), sample_grid, "g")[
+            "cell_id_g"
+        ]
+        with pytest.warns(FutureWarning, match="add_cell_ids_to_ds_fast"):
+            result = func(sample_vod_dataset.copy(), sample_grid, "g")
+        np.testing.assert_array_equal(result["cell_id_g"].values, expected.values)

@@ -2,7 +2,7 @@
 
 Extracted from MyIcechunkStore's icechunk-only throttle so the aux
 (SP3/CLK Hermite) cache's plain-Zarr write path can share the exact same
-mechanism (dev/todo_later.md §44). MyIcechunkStore's own behavior is
+mechanism. MyIcechunkStore's own behavior is
 covered by test_write_concurrency_cap.py and is unaffected by this
 extraction (verified there, unmodified).
 """

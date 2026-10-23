@@ -1,8 +1,10 @@
 """Utility functions for RINEX readers."""
 
-import hashlib
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
+
+from canvod.utils import tools
+from canvod.utils.tools import deprecated
 
 
 def get_version_from_pyproject(pyproject_path: Path | None = None) -> str:
@@ -26,11 +28,13 @@ def get_version_from_pyproject(pyproject_path: Path | None = None) -> str:
         return "unknown"
 
 
+@deprecated(
+    "`canvod.readers.gnss_specs.utils.file_hash` is left over from development "
+    "and will be removed with the next major version. Use "
+    "`canvod.utils.tools.file_hash` instead."
+)
 def file_hash(path: Path, chunk_size: int = 8192) -> str:
-    """Compute SHA256 hash of a GNSS data file's content.
-
-    Used by MyIcechunkStore for deduplication - ensures same file
-    isn't ingested multiple times.
+    """Compute the file hash (first 16 hex digits of its SHA-256).
 
     Parameters
     ----------
@@ -44,24 +48,15 @@ def file_hash(path: Path, chunk_size: int = 8192) -> str:
     str
         First 16 characters of SHA256 hex digest.
 
-    Examples
-    --------
-    >>> from pathlib import Path
-    >>> hash1 = file_hash(Path("station.24o"))
-    >>> hash2 = file_hash(Path("station.24o"))
-    >>> hash1 == hash2
-    True
-
     """
-    h = hashlib.sha256()
-
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(chunk_size), b""):
-            h.update(chunk)
-
-    return h.hexdigest()[:16]
+    return tools.file_hash(path, chunk_size)
 
 
+@deprecated(
+    "`canvod.readers.gnss_specs.utils.isfloat` is left over from development "
+    "and will be removed with the next major version. Use "
+    "`canvod.utils.tools.isfloat` instead."
+)
 def isfloat(value: str) -> bool:
     """Check if a string value can be converted to float.
 
@@ -75,18 +70,5 @@ def isfloat(value: str) -> bool:
     bool
         True if convertible to float, False otherwise.
 
-    Examples
-    --------
-    >>> isfloat("3.14")
-    True
-    >>> isfloat("not_a_number")
-    False
-    >>> isfloat("-2.5")
-    True
-
     """
-    try:
-        float(value)
-        return True
-    except ValueError:
-        return False
+    return tools.isfloat(value)

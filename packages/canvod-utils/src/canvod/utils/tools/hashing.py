@@ -1,7 +1,44 @@
-"""Hashing utilities for canVODpy."""
+"""Hashing utilities for canVODpy.
+
+The file hash identifies a file's content in the stores (deduplication,
+log book). Every reader computes it here, so stored hashes stay
+comparable across readers and versions.
+"""
 
 import hashlib
 from pathlib import Path
+
+#: Length of the hash: the first 16 hex digits of the SHA-256 digest.
+HASH_LENGTH = 16
+
+
+def _short(hexdigest: str) -> str:
+    return hexdigest[:HASH_LENGTH]
+
+
+def bytes_hash(data: bytes) -> str:
+    """
+    Compute the file hash of content already read into memory.
+
+    Gives the same value as :func:`file_hash` on a file with this content;
+    use it when a reader has the file's bytes anyway.
+
+    Parameters
+    ----------
+    data : bytes
+        The file's complete content.
+
+    Returns
+    -------
+    str
+        First 16 characters of the SHA-256 hex digest.
+
+    Examples
+    --------
+    >>> bytes_hash(b"")
+    'e3b0c44298fc1c14'
+    """
+    return _short(hashlib.sha256(data).hexdigest())
 
 
 def file_hash(path: Path, chunk_size: int = 8192) -> str:
@@ -33,5 +70,4 @@ def file_hash(path: Path, chunk_size: int = 8192) -> str:
     with path.open("rb") as f:
         for chunk in iter(lambda: f.read(chunk_size), b""):
             h.update(chunk)
-    digest = h.hexdigest()[:16]
-    return digest
+    return _short(h.hexdigest())

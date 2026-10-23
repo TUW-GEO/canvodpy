@@ -17,7 +17,7 @@ Terminology
 
 from typing import Any
 
-from canvodpy.logging import get_logger
+import structlog
 
 
 class FileRegistryManager:
@@ -30,6 +30,6 @@ class FileRegistryManager:
     """
 
     def __init__(self, logger: Any | None = None) -> None:
-        self._logger = logger or get_logger(__name__)
+        self._logger = logger or structlog.get_logger(__name__)
 
     # TODO: Future refactor — extract metadata table methods from MyIcechunkStore.
