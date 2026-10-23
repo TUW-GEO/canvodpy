@@ -69,6 +69,7 @@ The authoritative standard is **FAIR4RS Principles v1.0** (RDA, 2022; [doi:10.10
 - [x] Apache-2.0 LICENSE
 - [x] `CITATION.cff` with DOI and ORCID
 - [x] Zenodo DOI (10.5281/zenodo.18496233)
+- [x] Published on PyPI: `uv add canvodpy`, or any `canvod-*` package on its own
 - [x] `CHANGELOG.md`, `CONTRIBUTING.md`
 - [x] `pyproject.toml` with versioned dependencies
 - [x] Semantic versioning
@@ -81,7 +82,6 @@ The authoritative standard is **FAIR4RS Principles v1.0** (RDA, 2022; [doi:10.10
 |-----|---------------|--------|
 | ~~`codemeta.json`~~ | ~~F2, F4~~ | Done — `codemeta.json` exists at repo root |
 | Software Heritage archival | F1, A2 | Submit via [archive.softwareheritage.org/save](https://archive.softwareheritage.org/save/) to get a SWHID |
-| PyPI publication | F4 | Publish so `pip install canvodpy` works |
 | `howfairis` badge | All | Run `howfairis` on the repo, add badge to README |
 | `.zenodo.json` | F2 | Control communities, grants, related identifiers beyond CITATION.cff |
 | Output data provenance | R1.2, I2 | Embed in netCDF outputs: software name, version, DOI, processing date, input references |
