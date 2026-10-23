@@ -16,7 +16,7 @@ exclude = ["packages/canvod-filemap"]
 [tool.uv.sources]
 # Extensions main after PR #83 (recipe links fetched in every run, #78)
 # until the canvod-filemap-v1.0.0 tag exists.
-canvod-filemap = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", rev = "124ff82471164c108540290be7cb3f389b171335" }
+canvod-filemap = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", rev = "08ab0fa6cdbbbc98498b39acc6f1f0efa484d002" }
 canvod-adapters = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-adapters", tag = "v0.1.0" }
 # The extensions repo takes canvod-preflight and canvod-utils from this repo
 # on GitHub until canvodpy 1.0.0 is on PyPI. The override makes
