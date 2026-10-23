@@ -276,51 +276,34 @@ def test_recipe_drives_discovery(
     assert found[0].canonical_name == "FANR01INK_R_20250010015_15M_05S_AA.rnx"
 
 
-def test_recipe_url_must_be_pinned(
+def test_a_recipe_url_on_another_host_is_refused(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     pytest.importorskip("canvod.filemap.remote")
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
-    url = "https://raw.githubusercontent.com/acc/recipes/main/fangorn/ref.yaml"
-    with pytest.raises(DiscoveryError, match="pinned to a full commit hash or a tag"):
+    url = "https://example.org/acc/recipes/main/fangorn/ros_ref.yaml"
+    with pytest.raises(DiscoveryError, match=r"raw\.githubusercontent\.com"):
         recipe_file("fangorn", url)
 
 
+@pytest.mark.parametrize("ref", [testing.COMMIT, "refs/heads/main"])
 def test_recipe_url_is_fetched_and_drives_discovery(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, ref: str
 ) -> None:
-    """A pinned URL gives the cached recipe file, which discovery reads."""
-    remote = pytest.importorskip("canvod.filemap.remote")
-    import http.server
-    import tempfile
-    import threading
+    """A recipe link, at a commit or a branch, gives the file discovery reads."""
+    pytest.importorskip("canvod.filemap.remote")
+    from canvod.utils import remote_file
 
     body = _FANGORN_RECIPE.encode()
-
-    class Handler(http.server.BaseHTTPRequestHandler):
-        def do_GET(self) -> None:
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(body)
-
-        def log_message(self, *args: object) -> None:
-            pass
-
-    server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    monkeypatch.setattr(
-        remote, "_DOWNLOAD_ORIGIN", f"http://127.0.0.1:{server.server_port}"
-    )
-    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    url = f"https://raw.githubusercontent.com/acc/recipes/{ref}/fangorn/ros_ref.yaml"
+    server = testing.RemoteFileServer()
+    monkeypatch.setattr(remote_file, "_DOWNLOAD_ORIGIN", server.origin)
+    server.serve(url, body)
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
-    url = (
-        f"https://raw.githubusercontent.com/acc/recipes/{'a' * 40}/fangorn/ros_ref.yaml"
-    )
     try:
         recipe = recipe_file("fangorn", url)
     finally:
-        server.shutdown()
-        server.server_close()
+        server.close()
     assert recipe is not None
     assert recipe.read_bytes() == body
 

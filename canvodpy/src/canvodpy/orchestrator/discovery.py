@@ -184,7 +184,8 @@ def recipe_file(site: str, recipe: str | None) -> Path | None:
     Recipes are read from ``<config dir>/recipes/<site>/<recipe>.yaml``, in
     the configuration directory the settings file is read from
     (:func:`canvod.config.loader.get_default_config_dir`), or, if
-    ``recipe`` is a URL, fetched into canvod-filemap's cache. The lookup
+    ``recipe`` is a URL, fetched once per run into the run folder
+    (:func:`canvod.utils.remote_file.fetch_remote`). The lookup
     itself is :func:`canvod.filemap.find_recipe`. Fields of the recipe
     that canvod-filemap does not know are logged once as a warning
     (:func:`recipe_fields_note`).
@@ -205,7 +206,7 @@ def recipe_file(site: str, recipe: str | None) -> Path | None:
     ------
     DiscoveryError
         If canvod-filemap is not installed, the recipe file does not exist,
-        or a recipe URL is not pinned or cannot be fetched.
+        or a recipe URL is refused or cannot be fetched.
     """
     if not recipe:
         return None
