@@ -38,63 +38,101 @@ with an unobstructed view of the sky.
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-cloud: &nbsp; **Stores on S3**
+-   :fontawesome-solid-terminal: &nbsp; **A complete command line**
 
-    Runs write the GNSS and VOD stores to S3-compatible object storage.
+    ---
 
-    [:octicons-arrow-right-24: Stores on S3](guides/s3.md)
+    - `canvodpy run`, `vod` and `vod-reconcile` process data and compute VOD
+    - `canvodpy config` creates, checks, shows and explains the settings
+    - `canvodpy store` lists, inspects, maintains, migrates and amends stores
+    - `canvodpy stac`, `doctor` and `dashboard`
 
--   :fontawesome-solid-link: &nbsp; **Settings from a link**
+    [:octicons-arrow-right-24: Command line](api/cli.md)
 
-    Give a GitHub link as the settings folder; naming recipes are read
-    from the same repository.
+-   :fontawesome-solid-play: &nbsp; **Runs**
 
-    [:octicons-arrow-right-24: Settings from GitHub](guides/configuration.md#settings-from-a-github-repository)
+    ---
 
--   :fontawesome-solid-forward: &nbsp; **Update to the latest files**
+    - One site per run; `--update-to-latest` for scheduled runs
+    - A memory budget sizes the workers and the units of days a run
+      commits at once; the next unit is read while VOD is computed
+    - Each file's day comes from its name, in any folder layout
+    - Warnings about files a run doesn't process and incomplete
+      receiver-days
+    - Airflow tasks run the same code as `canvodpy run`
 
-    `canvodpy run --update-to-latest` processes the days with new files,
-    for scheduled runs.
+    [:octicons-arrow-right-24: Command line and Python](guides/api-levels.md)
 
-    [:octicons-arrow-right-24: Which days a run processes](guides/api-levels.md#update-to-the-latest-files)
+-   :fontawesome-solid-database: &nbsp; **Stores**
 
--   :fontawesome-solid-memory: &nbsp; **Memory budget**
+    ---
 
-    One setting sizes the workers and the units of days a run commits at
-    once.
+    - Day blocks: a day processed again replaces its data, and nothing else
+    - Content settings fixed when a store is created; runs with other
+      settings are refused
+    - Compare two stores within fixed tolerances
+    - Migrate the stores of a 0.x site with one command
+    - Stores on S3 (experimental)
 
-    [:octicons-arrow-right-24: Parallel processing](guides/parallel-processing.md)
+    [:octicons-arrow-right-24: Storage](packages/store/overview.md)
 
--   :fontawesome-solid-calendar-day: &nbsp; **Day blocks**
+-   :fontawesome-solid-fingerprint: &nbsp; **Metadata and catalogs**
 
-    A day processed again replaces its data in the store, and nothing
-    else.
+    ---
 
-    [:octicons-arrow-right-24: Day blocks](packages/store/overview.md#day-blocks)
+    - Store metadata after DataCite and ACDD, checked against the
+      standards
+    - A STAC catalog of all stores; releases tag every store
+    - Read any snapshot as it was; amend a description, with a reason
+    - `record_machine: false` keeps the computer out of published stores
 
--   :fontawesome-solid-copy: &nbsp; **Join or reproduce a store**
+    [:octicons-arrow-right-24: Store metadata](packages/store-metadata/overview.md)
 
-    `canvodpy config init --from-store` writes the settings file of a
-    store.
+-   :fontawesome-solid-sliders: &nbsp; **Settings**
 
-    [:octicons-arrow-right-24: Join or reproduce a store](guides/configuration.md#join-or-reproduce-a-store)
+    ---
+
+    - Settings and naming recipes from a GitHub link
+    - `canvodpy config init --from-store` writes the settings of a store
+    - `canvodpy config validate` also checks the receiver data
+    - `canvodpy config explain` says what a setting means
+    - Preprocessing is applied when set, and recorded in the store
+
+    [:octicons-arrow-right-24: Configuration](guides/configuration.md)
 
 -   :fontawesome-solid-chart-line: &nbsp; **Run history and dashboard**
 
-    Every run records itself, its stage timings and its resource use.
+    ---
 
-    [:octicons-arrow-right-24: Diagnostics](guides/diagnostics.md)
+    - Every run records itself, its stage timings and its resource use
+    - A dashboard shows each run, the sites, and compares runs
 
--   :fontawesome-solid-plug: &nbsp; **Plugins**
+    [:octicons-arrow-right-24: Diagnostics](guides/diagnostics.md#the-run-history)
 
-    Your own readers and VOD calculators, from installed packages.
+-   :fontawesome-solid-plug: &nbsp; **Extending canVODpy**
+
+    ---
+
+    - Your own readers and VOD calculators, from installed packages
+    - Interactive hemisphere selectors for notebooks
+    - A public mapping between RINEX observation codes and signal IDs
 
     [:octicons-arrow-right-24: Plugins](guides/plugins.md)
 
+-   :fontawesome-solid-download: &nbsp; **Demo data**
+
+    ---
+
+    - `canvodpy.demo_data()` downloads the demo day, or its stores, checked
+      by sha256
+    - Notebooks that run in the browser
+
+    [:octicons-arrow-right-24: Notebooks](https://canvodpy.eu/notebooks/)
+
 </div>
 
-All changes: [Upgrading to v1.0.0](guides/upgrading.md#new-in-v100) and the
-[changelog](https://github.com/TUW-GEO/canvodpy/blob/main/CHANGELOG.md).
+The full list is in [Upgrading to v1.0.0](guides/upgrading.md#new-in-v100)
+and the [changelog](https://github.com/TUW-GEO/canvodpy/blob/main/CHANGELOG.md).
 
 !!! warning "Upgrading from 0.x?"
 
