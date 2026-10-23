@@ -40,7 +40,9 @@ class TestRunStopsOnPreprocessingMismatch:
             raise PreprocessingMismatchError("Group 'canopy_01' holds data with ...")
 
         monkeypatch.setattr(run_module, "_main_impl", refuse)
-        result = runner.invoke(main_app, ["run", "--site", "fangorn"])
+        result = runner.invoke(
+            main_app, ["run", "--site", "fangorn", "--start", "2025001"]
+        )
 
         assert result.exit_code == 1
         assert "Group 'canopy_01' holds data with" in result.output
@@ -57,7 +59,9 @@ class TestRunStopsOnPreprocessingMismatch:
             raise MemoryBudgetError("The run needs at least 2.1 GB of memory")
 
         monkeypatch.setattr(run_module, "_main_impl", refuse)
-        result = runner.invoke(main_app, ["run", "--site", "fangorn"])
+        result = runner.invoke(
+            main_app, ["run", "--site", "fangorn", "--start", "2025001"]
+        )
 
         assert result.exit_code == 1
         assert "The run needs at least 2.1 GB of memory" in result.output

@@ -57,6 +57,7 @@ def _new_run(monkeypatch: pytest.MonkeyPatch) -> None:
     # Set (empty) through monkeypatch, so run_folder()'s value is undone.
     monkeypatch.setenv("CANVODPY_RUN_FOLDER", "")
     monkeypatch.setattr(remote_file, "_FOLDER", None)
+    monkeypatch.setattr(remote_file, "_MADE_HERE", False)
     monkeypatch.setattr(remote, "_FOLDERS", {})
 
 
@@ -197,6 +198,10 @@ def test_a_second_run_in_the_same_process_fetches_again(server, tmp_path):
     recipe = folder / "recipes" / testing.SITE_KEY / f"{testing.SITE_KEY}_canopy.yaml"
     assert recipe.read_bytes() == changed
     assert settings_url(folder) == BRANCH_URL
+    # The earlier run's folder is removed, and with it what was known of it.
+    assert not first.exists()
+    assert settings_url(first) is None
+    assert list(remote._FOLDERS.values()) == [folder]
 
 
 def test_a_run_without_network_names_the_url(tmp_path, monkeypatch):

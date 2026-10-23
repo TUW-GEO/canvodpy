@@ -10,9 +10,11 @@ The user is responsible for what the link points to. Each run fetches
 the file again; there is no cache. A run fetches a link once, into a
 folder of the run (:func:`run_folder`) that only its owner can read; the
 run's worker processes read the same file, so every part of a run sees
-the same content. The run folders of a process are removed when the
-process ends (the command, the notebook kernel, the Airflow worker), not
-at the next run: an earlier run's files may still be in use.
+the same content. A run folder is removed when the next run of the same
+process starts (:func:`new_run`), or when the process ends (the command,
+the notebook kernel, the Airflow worker). A run is one site; start the
+next one when the earlier one is done, since its fetched files are gone
+then.
 
 A file in a private repository needs a GitHub token in the environment
 variable ``GH_TOKEN`` or ``GITHUB_TOKEN``. canvodpy stores no secrets
@@ -67,8 +69,10 @@ _URL_IN_TEXT = re.compile(r"https?://[^\s'\"<>()]+", re.IGNORECASE)
 # Names the run folder for the worker processes of a run.
 _RUN_FOLDER_VARIABLE = "CANVODPY_RUN_FOLDER"
 
-# The run folder of this process.
+# The run folder of this process, and whether this process made it (a
+# worker process uses the folder of its run and leaves it alone).
 _FOLDER: Path | None = None
+_MADE_HERE = False
 _LOCK = threading.Lock()
 
 
@@ -281,15 +285,15 @@ def run_folder() -> Path:
     Path
         The folder.
     """
-    global _FOLDER
+    global _FOLDER, _MADE_HERE
     with _LOCK:
         if _FOLDER is not None and _FOLDER.is_dir():
             return _FOLDER
         inherited = os.environ.get(_RUN_FOLDER_VARIABLE)
         if inherited and Path(inherited).is_dir():
-            _FOLDER = Path(inherited)
+            _FOLDER, _MADE_HERE = Path(inherited), False
             return _FOLDER
-        _FOLDER = _new_folder()
+        _FOLDER, _MADE_HERE = _new_folder(), True
         return _FOLDER
 
 
@@ -298,18 +302,35 @@ def new_run() -> Path:
 
     A process that runs more than once (a notebook, a long-lived worker)
     calls this at the start of each run, so no run reads the files of an
-    earlier one. ``canvodpy.Site`` and the Airflow tasks call it. The
-    earlier folders are removed when the process ends.
+    earlier one. ``canvodpy.Site`` and the Airflow tasks call it.
+
+    The previous run folder of this process is removed, unless the
+    configuration folder in use (``CANVOD_CONFIG_DIR``) is inside it: the
+    settings of a URL given with ``--config-dir`` stay readable for the
+    whole command. A folder this process did not make (a worker process
+    uses its run's folder) is left alone. Any other folder is removed when
+    the process ends.
 
     Returns
     -------
     Path
         The new run folder.
     """
-    global _FOLDER
+    global _FOLDER, _MADE_HERE
     with _LOCK:
-        _FOLDER = _new_folder()
-        return _FOLDER
+        previous = _FOLDER if _MADE_HERE else None
+        _FOLDER, _MADE_HERE = _new_folder(), True
+    if previous is not None and not _holds_config_dir(previous):
+        shutil.rmtree(previous, ignore_errors=True)
+    return _FOLDER
+
+
+def _holds_config_dir(folder: Path) -> bool:
+    """Whether ``CANVOD_CONFIG_DIR`` names ``folder`` or a folder inside it."""
+    config_dir = os.environ.get("CANVOD_CONFIG_DIR", "")
+    if not config_dir or is_url(config_dir):
+        return False
+    return Path(config_dir).resolve().is_relative_to(folder.resolve())
 
 
 def _new_folder() -> Path:

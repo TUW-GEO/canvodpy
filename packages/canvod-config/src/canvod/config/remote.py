@@ -39,7 +39,8 @@ from canvod.utils.remote_file import (
 
 SETTINGS_FILE = "canvod-settings.yaml"
 
-# The configuration folder of each run folder and settings URL.
+# The configuration folder of each run folder and settings URL. The entries
+# of a run folder that is gone (removed by new_run) are dropped.
 _FOLDERS: dict[tuple[Path, str], Path] = {}
 _LOCK = threading.Lock()
 
@@ -52,7 +53,7 @@ def resolve_config_dir(url: str) -> Path:
     configuration folder does: ``canvod-settings.yaml`` and
     ``recipes/<site>/<name>.yaml``. A run fetches them once
     (:func:`canvod.utils.remote_file.new_run` starts a new run); the folder
-    is removed when the process ends.
+    is removed with its run folder.
 
     Parameters
     ----------
@@ -75,6 +76,7 @@ def resolve_config_dir(url: str) -> Path:
     """
     key = (run_folder(), url)
     with _LOCK:
+        _drop_removed()
         folder = _FOLDERS.get(key)
     if folder is not None and folder.is_dir():
         return folder
@@ -120,10 +122,17 @@ def settings_url(config_dir: Path) -> str | None:
     """
     config_dir = Path(config_dir).resolve()
     with _LOCK:
+        _drop_removed()
         for (_, url), folder in _FOLDERS.items():
             if folder.resolve() == config_dir:
                 return url
     return None
+
+
+def _drop_removed() -> None:
+    """Drop the entries whose run folder is gone; call with ``_LOCK`` held."""
+    for key in [key for key in _FOLDERS if not key[0].is_dir()]:
+        del _FOLDERS[key]
 
 
 def _settings_check(url: str):

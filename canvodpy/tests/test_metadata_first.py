@@ -201,20 +201,16 @@ class TestFirstRun:
             assert find_vod_backfill_gaps(site, analysis_name, "tau_omega") == []
         assert not site.gnss_store_path.exists()
 
-    def test_a_run_without_a_start_date_scans_all_data(self, site_settings):
-        from types import SimpleNamespace
-
-        from canvodpy.cli.run import _resolve_date_range
+    def test_an_update_without_a_gnss_store_creates_none(self, site_settings):
+        from canvodpy.orchestrator.run_dates import NothingStoredError
 
         from canvodpy import Site
 
         site = Site(testing.SITE_KEY)
 
-        start, end, new_files_only = _resolve_date_range(
-            SimpleNamespace(start=None, end="2025002"), site
-        )
-
-        assert (start, end, new_files_only) == ("2000001", "2025002", False)
+        with site.pipeline(dry_run=True) as pipeline:
+            with pytest.raises(NothingStoredError):
+                pipeline.update_range()
         assert not site.gnss_store_path.exists()
 
     def test_the_pipeline_content_settings_check_passes_without_a_gnss_store(

@@ -139,13 +139,12 @@ Other errors stop the run:
 - **`run_crashed`**: `canvodpy run` logs this event when an error ends
   the processing of a site. It names the step the run was in (`stage`,
   for example `pipeline_process` or `vod_store`) and the last day that
-  was processed completely (`last_good_date_key`). Then the run stops;
-  sites after it in the same command aren't processed.
+  was processed completely (`last_good_date_key`). Then the run stops.
 - **`uncaught_exception`**: any error that would end Python is logged
   with its traceback before Python ends, in `canvodpy run` and in your
   own scripts once file logging has started.
 
-After each site, also after a crash, `canvodpy run` logs a `run_summary`
+At the end of a run, also after a crash, `canvodpy run` logs a `run_summary`
 event with the number of days processed (`days`), the VOD results
 written (`vod_results`), and per step the number of times it ran, its
 total time, and its errors (`stages`). `stages` covers the steps of the
@@ -219,7 +218,7 @@ The worker processes write to their own files, so search
 
 ## The run ID
 
-`canvodpy run` gives each site it processes a run ID: the site name, the
+`canvodpy run` gives each run, which is one site, a run ID: the site name, the
 start time in UTC and six random characters, for example
 `ExampleSite-20261010-030000-3f9a1c`. The random part keeps the run IDs
 of two machines apart when both start a run in the same second. In

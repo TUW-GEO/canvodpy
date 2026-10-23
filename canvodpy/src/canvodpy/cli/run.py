@@ -5,33 +5,35 @@ Usage
     # Process a specific range
     uv run canvodpy run --site ExampleSite --start 2025001 --end 2025007
 
-    # Process new data only (auto-detect start from store, end = today)
-    uv run canvodpy run --site ExampleSite
+    # Process the days from the last stored day up to the latest files
+    uv run canvodpy run --site ExampleSite --update-to-latest
 
-    # Multiple sites in one invocation (processed sequentially) — repeat the flag
-    uv run canvodpy run --site ExampleSite --site OtherSite
+    # One site per run; several sites in a shell loop
+    for site in ExampleSite OtherSite; do
+        uv run canvodpy run --site "$site" --update-to-latest
+    done
 
-    # Cron: run daily, picks up new data automatically
-    # 0 3 * * * cd /path/to/canvodpy && uv run canvodpy run --site ExampleSite
+    # Cron: run daily, picks up new data
+    # 0 3 * * * cd /path/to/canvodpy && uv run canvodpy run --site ExampleSite --update-to-latest
 
     # Observation ingestion only, no VOD
-    uv run canvodpy run --site ExampleSite --no-vod
+    uv run canvodpy run --site ExampleSite --start 2025001 --no-vod
 
     # Preview what would be processed
-    uv run canvodpy run --site ExampleSite --dry-run
+    uv run canvodpy run --site ExampleSite --update-to-latest --dry-run
 
     # Write the STAC catalog of the data root once the run's data is committed
-    uv run canvodpy run --site ExampleSite --write-catalog
+    uv run canvodpy run --site ExampleSite --update-to-latest --write-catalog
 
     # Launch the performance dashboard alongside the run (reachable at
     # http://<host>:<port>; its own marimo startup output is redirected to
     # <log_dir>/machine/dashboard.log so it doesn't clutter run's progress)
-    uv run canvodpy run --site ExampleSite --dashboard --dashboard-host 0.0.0.0
+    uv run canvodpy run --site ExampleSite --update-to-latest --dashboard --dashboard-host 0.0.0.0
 
 Exit codes
 ----------
-    0  every receiver-day was written or skipped
-    1  the run stopped: an error in the settings, or a crash
+    0  every receiver-day was written or skipped, or nothing was new
+    1  the run stopped: an error in the options or the settings, or a crash
     3  the run finished, but at least one receiver-day failed
 """
 
@@ -44,7 +46,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
@@ -70,11 +72,6 @@ from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
 from canvodpy.logging import emit_run_summary
 
 log = structlog.get_logger(__name__)
-
-# A run without dates looks at this many days before the end for files the
-# GNSS store doesn't hold yet (#386): late files and receivers whose files
-# arrive days after the others. Older gaps need --start/--end.
-RESUME_WINDOW_DAYS = 30
 
 
 def _pick_free_port(host: str) -> int:
@@ -156,49 +153,35 @@ def _site_groups(site) -> list[str]:
     return canopy_names + pair_names
 
 
-def _store_has_data(site) -> bool:
-    """Whether the site's GNSS store exists and holds a receiver group."""
-    if not store_exists(site.gnss_store_path):
-        return False
-    return bool(site.gnss_store.list_groups())
+def _resolve_date_range(
+    args, site, emit: Callable[[str], None]
+) -> tuple[str, str] | None:
+    """The run's first and last day (``YYYYDOY``); None when nothing is new.
 
+    With ``--start`` the dates are given (``--end`` defaults to today).
+    With ``--update-to-latest`` the run finds them
+    (:meth:`canvodpy.api.Pipeline.update_range`) and says through ``emit``
+    which it chose, or that no receiver has new files.
 
-def _resolve_date_range(args, site) -> tuple[str, str, bool]:
-    """The run's first and last day (``YYYYDOY``), and whether only new files count.
-
-    Explicit dates process every day in the range. Without ``--start`` a
-    run resumes: it looks at the last :data:`RESUME_WINDOW_DAYS` days up to
-    the end and processes only the receiver-days with a file the GNSS store
-    doesn't hold (#386). A first run on an empty store starts from the
-    oldest data.
+    Raises
+    ------
+    NothingStoredError
+        With ``--update-to-latest``, if nothing is stored for the site yet.
     """
-    end = args.end or _today_yyyydoy()
-    if args.start:
-        return args.start, end, False
-    if not _store_has_data(site):
-        print("  empty store, scanning all available data")
-        return "2000001", end, False
-    last = datetime.strptime(end, "%Y%j") - timedelta(days=RESUME_WINDOW_DAYS)
-    return last.strftime("%Y%j"), end, True
-
-
-def _print_resume_line(
-    emit: Callable[[str], None],
-    start: str,
-    end: str,
-    receiver_days: list[tuple[str, str]],
-) -> None:
-    """Say through ``emit`` which receiver-days a run without dates resumes.
-
-    ``receiver_days`` are ``(YYYYDOY, receiver)`` pairs with a file the
-    GNSS store doesn't hold.
-    """
-    if not receiver_days:
-        emit(f"  resuming: no receiver-days with new files from {start} to {end}")
-        return
-    shown = _first_ten([f"{day} {receiver}" for day, receiver in receiver_days])
-    noun = "receiver-day" if len(receiver_days) == 1 else "receiver-days"
-    emit(f"  resuming: {len(receiver_days)} {noun} with new files ({shown})")
+    if not args.update_to_latest:
+        return args.start, args.end or _today_yyyydoy()
+    on_discovery_start, on_discovery_end = _discovery_callbacks(emit)
+    with site.pipeline(
+        dry_run=True,
+        on_discovery_start=on_discovery_start,
+        on_discovery_end=on_discovery_end,
+    ) as pipeline:
+        dates = pipeline.update_range()
+    if dates is None:
+        emit("update: no receiver has new files")
+        return None
+    emit(f"update: {dates[0]} to {dates[1]}")
+    return dates
 
 
 def _first_ten(items: list[str]) -> str:
@@ -329,30 +312,28 @@ def _main_impl(args: SimpleNamespace) -> int:
     from canvodpy.api import Site, _passed
     from canvodpy.vod_computer import VodComputer
 
-    site_names: list[str] = args.site
+    site_name: str = args.site
+    site = Site(site_name)
+    dates = _resolve_date_range(args, site, print)
+    if dates is None:
+        return 0
+    start, end = dates
 
     if args.dry_run:
-        for site_name in site_names:
-            site = Site(site_name)
-            start, end, new_files_only = _resolve_date_range(args, site)
-
-            on_discovery_start, on_discovery_end = _discovery_callbacks(print)
-            with site.pipeline(
-                n_workers=args.workers,
-                **_passed(days_per_batch=args.days_per_batch),
-                dry_run=True,
-                on_discovery_start=on_discovery_start,
-                on_discovery_end=on_discovery_end,
-                on_new_files=partial(_print_resume_line, print, start, end),
-                on_incomplete_day=partial(_print_incomplete_day, print),
-                on_days_without_vod=partial(_print_days_without_vod, print),
-            ) as pipeline:
-                plan = pipeline.preview(
-                    start=start, end=end, new_files_only=new_files_only
-                )
-                print(f"Dry-run plan for {site_name}:")
-                for k, v in plan.items():
-                    print(f"  {k}: {v}")
+        on_discovery_start, on_discovery_end = _discovery_callbacks(print)
+        with site.pipeline(
+            n_workers=args.workers,
+            **_passed(days_per_batch=args.days_per_batch),
+            dry_run=True,
+            on_discovery_start=on_discovery_start,
+            on_discovery_end=on_discovery_end,
+            on_incomplete_day=partial(_print_incomplete_day, print),
+            on_days_without_vod=partial(_print_days_without_vod, print),
+        ) as pipeline:
+            plan = pipeline.preview(start=start, end=end)
+            print(f"Dry-run plan for {site_name}:")
+            for k, v in plan.items():
+                print(f"  {k}: {v}")
         return 0
 
     if args.dashboard:
@@ -364,17 +345,8 @@ def _main_impl(args: SimpleNamespace) -> int:
 
     from canvodpy.cli.dashboard import day_count, make_reporter
 
-    # Resolve every site upfront: date range + receiver-group rows, so a
-    # multi-site run shows the full picture from the start.
-    site_infos: list[tuple[str, Site, str, str, bool]] = []
-    rows: list[tuple[str, str, int]] = []
-    for site_name in site_names:
-        site = Site(site_name)
-        start, end, new_files_only = _resolve_date_range(args, site)
-        total = day_count(start, end)
-        for group in _site_groups(site):
-            rows.append((site_name, group, total))
-        site_infos.append((site_name, site, start, end, new_files_only))
+    total = day_count(start, end)
+    rows = [(site_name, group, total) for group in _site_groups(site)]
 
     total_days = 0
     total_vod = 0
@@ -390,151 +362,144 @@ def _main_impl(args: SimpleNamespace) -> int:
     # instead of racing an in-progress write. Same-host only; see
     # PipelineRunLock's docstring for the network-mounted-store caveat.
     with PipelineRunLock(), make_reporter(rows) as reporter:
-        for site_name, site, start, end, new_files_only in site_infos:
-            # One run_id per site: failures are site-scoped, and this keeps
-            # correlation with Icechunk commits (also per-site-store) clean.
-            run_id = new_run_id(site_name)
-            run_id_token = set_run_id(run_id)
-            last_good_date_key: str | None = None
-            stage = "site_init"
-            site_days = 0
-            site_vod = 0
+        # One run_id per run, which is one site: this keeps correlation
+        # with Icechunk commits (per-site store) clean.
+        run_id = new_run_id(site_name)
+        run_id_token = set_run_id(run_id)
+        last_good_date_key: str | None = None
+        stage = "site_init"
+        site_days = 0
+        site_vod = 0
 
-            try:
-                reporter.set_current_site(site_name, start, end)
-                reporter.print_header(site_name, start, end, config, args)
-                # First-run/remote-machine visibility: worker-pool startup,
-                # the satellite catalog, and store opening all happen here,
-                # silently, before the first per-day progress line -- without
-                # this it looks hung.
-                reporter.log(
-                    "  Initializing (worker pool, satellite catalog, store) "
-                    "-- may take a while on a cold cache or first run..."
+        try:
+            reporter.set_current_site(site_name, start, end)
+            reporter.print_header(site_name, start, end, config, args)
+            # First-run/remote-machine visibility: worker-pool startup,
+            # the satellite catalog, and store opening all happen here,
+            # silently, before the first per-day progress line -- without
+            # this it looks hung.
+            reporter.log(
+                "  Initializing (worker pool, satellite catalog, store) "
+                "-- may take a while on a cold cache or first run..."
+            )
+
+            # Resolve VOD analysis pairs for this site
+            vod_analyses = site.vod_analyses if not args.no_vod else {}
+
+            # A first run whose new VOD store is missing settings is
+            # refused before processing; the write would refuse every
+            # day at the end. With --no-vod the VOD store is not checked.
+            _refuse_new_vod_store_missing_settings(site, config, vod_analyses)
+
+            if vod_analyses:
+                reporter.log(f"  VOD analyses: {list(vod_analyses.keys())}")
+
+                # Loud, read-only, non-blocking gap check: a prior run's RINEX ingestion can
+                # complete cleanly while its VOD-store write fails
+                # afterward, and resume logic only looks at the RINEX
+                # store, so that gap is otherwise silently permanent.
+                # Reports here so a human notices; does NOT
+                # auto-backfill -- auto-retrying inside every future
+                # run would silently re-absorb a persistent failure
+                # instead of stopping loudly. Run `canvodpy
+                # vod-reconcile --execute` explicitly to backfill.
+                from canvodpy.orchestrator.vod_reconcile import (
+                    find_vod_backfill_gaps,
                 )
 
-                # Resolve VOD analysis pairs for this site
-                vod_analyses = site.vod_analyses if not args.no_vod else {}
+                for analysis_name in vod_analyses:
+                    try:
+                        gaps = find_vod_backfill_gaps(
+                            site, analysis_name, args.vod_calculator
+                        )
+                    except Exception:
+                        log.warning(
+                            "vod_gap_check_failed",
+                            site=site_name,
+                            analysis=analysis_name,
+                            exc_info=True,
+                        )
+                        continue
+                    if gaps:
+                        reporter.log(
+                            f"  ⚠ {len(gaps)} date(s) have RINEX data "
+                            f"but no VOD for '{analysis_name}' "
+                            f"({gaps[0]}..{gaps[-1]}) -- run 'canvodpy "
+                            f"vod-reconcile --site {site_name} --analysis "
+                            f"{analysis_name} --execute' to backfill"
+                        )
 
-                # A first run whose new VOD store is missing settings is
-                # refused before processing; the write would refuse every
-                # day at the end. With --no-vod the VOD store is not checked.
-                _refuse_new_vod_store_missing_settings(site, config, vod_analyses)
+            vod_computer = VodComputer(site, calculator=args.vod_calculator)
+            # Before any processing: a VOD group fed by data preprocessed
+            # differently would refuse every day at the write.
+            stage = "preprocessing_check"
+            vod_computer.check_gnss_hash()
 
-                if vod_analyses:
-                    reporter.log(f"  VOD analyses: {list(vod_analyses.keys())}")
+            def _on_group_written(group_name: str, _site_name: str = site_name) -> None:
+                reporter.advance(_site_name, group_name)
 
-                    # Loud, read-only, non-blocking gap check: a prior run's RINEX ingestion can
-                    # complete cleanly while its VOD-store write fails
-                    # afterward, and resume logic only looks at the RINEX
-                    # store, so that gap is otherwise silently permanent.
-                    # Reports here so a human notices; does NOT
-                    # auto-backfill -- auto-retrying inside every future
-                    # run would silently re-absorb a persistent failure
-                    # instead of stopping loudly. Run `canvodpy
-                    # vod-reconcile --execute` explicitly to backfill.
-                    from canvodpy.orchestrator.vod_reconcile import (
-                        find_vod_backfill_gaps,
-                    )
+            # Say what the warm-up is doing: before a receiver's files are
+            # found and after. A network drive can make this the slowest
+            # quiet part of a run, so the user sees it is working.
+            on_discovery_start, on_discovery_end = _discovery_callbacks(reporter.log)
+            stage = "pipeline_process"
+            with site.pipeline(
+                n_workers=args.workers,
+                **_passed(days_per_batch=args.days_per_batch),
+                dry_run=False,
+                on_group_written=_on_group_written,
+                label=args.label,
+                on_discovery_start=on_discovery_start,
+                on_discovery_end=on_discovery_end,
+                on_incomplete_day=partial(_print_incomplete_day, reporter.log),
+                on_days_without_vod=partial(_print_days_without_vod, reporter.log),
+            ) as pipeline:
+                # The GNSS phase stores a unit of days, then the VOD
+                # phase computes their VOD in the same worker pool
+                # (ADR 0021); nothing is read back for VOD.
+                for unit in pipeline.run(
+                    start,
+                    end,
+                    vod_analyses=list(vod_analyses),
+                    calculator=args.vod_calculator,
+                ):
+                    for date_key, groups in unit.days.items():
+                        total_days += 1
+                        site_days += 1
+                        reporter.on_day_start(date_key)
+                        reporter.on_groups(groups)
+                        last_good_date_key = date_key
+                    if vod_analyses:
+                        site_vod += _report_vod_unit(unit, reporter)
+                    reporter.on_timing(unit.gnss_seconds, unit.vod_seconds)
+                total_vod += site_vod
 
-                    for analysis_name in vod_analyses:
-                        try:
-                            gaps = find_vod_backfill_gaps(
-                                site, analysis_name, args.vod_calculator
-                            )
-                        except Exception:
-                            log.warning(
-                                "vod_gap_check_failed",
-                                site=site_name,
-                                analysis=analysis_name,
-                                exc_info=True,
-                            )
-                            continue
-                        if gaps:
-                            reporter.log(
-                                f"  ⚠ {len(gaps)} date(s) have RINEX data "
-                                f"but no VOD for '{analysis_name}' "
-                                f"({gaps[0]}..{gaps[-1]}) -- run 'canvodpy "
-                                f"vod-reconcile --site {site_name} --analysis "
-                                f"{analysis_name} --execute' to backfill"
-                            )
-
-                vod_computer = VodComputer(site, calculator=args.vod_calculator)
-                # Before any processing: a VOD group fed by data preprocessed
-                # differently would refuse every day at the write.
-                stage = "preprocessing_check"
-                vod_computer.check_gnss_hash()
-
-                def _on_group_written(
-                    group_name: str, _site_name: str = site_name
-                ) -> None:
-                    reporter.advance(_site_name, group_name)
-
-                # Say what the warm-up is doing: before a receiver's files are
-                # found and after. A network drive can make this the slowest
-                # quiet part of a run, so the user sees it is working.
-                on_discovery_start, on_discovery_end = _discovery_callbacks(
-                    reporter.log
-                )
-                stage = "pipeline_process"
-                with site.pipeline(
-                    n_workers=args.workers,
-                    **_passed(days_per_batch=args.days_per_batch),
-                    dry_run=False,
-                    on_group_written=_on_group_written,
-                    label=args.label,
-                    on_discovery_start=on_discovery_start,
-                    on_discovery_end=on_discovery_end,
-                    on_new_files=partial(_print_resume_line, reporter.log, start, end),
-                    on_incomplete_day=partial(_print_incomplete_day, reporter.log),
-                    on_days_without_vod=partial(_print_days_without_vod, reporter.log),
-                ) as pipeline:
-                    # The GNSS phase stores a unit of days, then the VOD
-                    # phase computes their VOD in the same worker pool
-                    # (ADR 0021); nothing is read back for VOD.
-                    for unit in pipeline.run(
-                        start,
-                        end,
-                        new_files_only=new_files_only,
-                        vod_analyses=list(vod_analyses),
-                        calculator=args.vod_calculator,
-                    ):
-                        for date_key, groups in unit.days.items():
-                            total_days += 1
-                            site_days += 1
-                            reporter.on_day_start(date_key)
-                            reporter.on_groups(groups)
-                            last_good_date_key = date_key
-                        if vod_analyses:
-                            site_vod += _report_vod_unit(unit, reporter)
-                        reporter.on_timing(unit.gnss_seconds, unit.vod_seconds)
-                    total_vod += site_vod
-
-                failed_days.extend(
-                    (site_name, receiver, day)
-                    for receiver, day in pipeline.failed_receiver_days
-                )
-                emit_run_summary(site=site_name, days=site_days, vod_results=site_vod)
-            except Exception:
-                # See module docstring / logging/run_context.py: this runs
-                # unattended on remote machines, so the log at the moment of
-                # failure is the only forensic evidence that will exist.
-                log.error(
-                    "run_crashed",
-                    site=site_name,
-                    stage=stage,
-                    last_good_date_key=last_good_date_key,
-                    exc_info=True,
-                )
-                emit_run_summary(
-                    site=site_name,
-                    days=site_days,
-                    vod_results=site_vod,
-                    crashed=True,
-                )
-                raise
-            finally:
-                reset_run_stats(run_id)
-                reset_run_id(run_id_token)
+            failed_days.extend(
+                (site_name, receiver, day)
+                for receiver, day in pipeline.failed_receiver_days
+            )
+            emit_run_summary(site=site_name, days=site_days, vod_results=site_vod)
+        except Exception:
+            # See module docstring / logging/run_context.py: this runs
+            # unattended on remote machines, so the log at the moment of
+            # failure is the only forensic evidence that will exist.
+            log.error(
+                "run_crashed",
+                site=site_name,
+                stage=stage,
+                last_good_date_key=last_good_date_key,
+                exc_info=True,
+            )
+            emit_run_summary(
+                site=site_name,
+                days=site_days,
+                vod_results=site_vod,
+                crashed=True,
+            )
+            raise
+        finally:
+            reset_run_stats(run_id)
+            reset_run_id(run_id_token)
 
         dt_total = time.perf_counter() - t_total
         reporter.on_done(total_days, total_vod, dt_total)
@@ -579,8 +544,9 @@ def run(
             "--site",
             help=(
                 "Site name, as defined under sites: in canvod-settings.yaml, "
-                "for example ExampleSite. Repeat the option for several "
-                "sites, which run one after the other."
+                "for example ExampleSite. One site per run: for several "
+                "sites, run canvodpy once per site, for example in a shell "
+                "loop."
             ),
         ),
     ],
@@ -589,9 +555,8 @@ def run(
         typer.Option(
             "--start",
             help=(
-                "Start date in YYYYDOY format, for example 2025001. If omitted, "
-                "processes the days of the last 30 with files the GNSS store "
-                "doesn't hold yet (all days if the store is empty)."
+                "Start date in YYYYDOY format, for example 2025001. Needed "
+                "unless --update-to-latest is given."
             ),
         ),
     ] = None,
@@ -602,6 +567,19 @@ def run(
             help="End date in YYYYDOY format, for example 2025007. If omitted, processes up to today.",
         ),
     ] = None,
+    update_to_latest: Annotated[
+        bool,
+        typer.Option(
+            "--update-to-latest",
+            help=(
+                "Process the days from the last stored day up to the latest "
+                "day with files, instead of --start and --end. Starts on the "
+                "earliest last stored day among the receivers with new files "
+                "(after that day, or on it but not stored yet), so a retired "
+                "receiver doesn't hold it back."
+            ),
+        ),
+    ] = False,
     no_vod: Annotated[
         bool,
         typer.Option(
@@ -710,10 +688,27 @@ def run(
     run finished but a receiver-day failed (the log says why), and 1 when
     the run stopped.
     """
+    if len(site) > 1:
+        print(
+            "Error: one site per run, got "
+            f"{', '.join(site)}. Run canvodpy once per site, for example: "
+            f'for site in {" ".join(site)}; do canvodpy run --site "$site" '
+            "...; done",
+            file=sys.stderr,
+        )
+        raise typer.Exit(code=1)
+    from canvodpy.orchestrator.run_dates import NothingStoredError, check_run_dates
+
+    try:
+        check_run_dates(start, end, update_to_latest=update_to_latest)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        raise typer.Exit(code=1) from None
     args = SimpleNamespace(
-        site=site,
+        site=site[0],
         start=start,
         end=end,
+        update_to_latest=update_to_latest,
         no_vod=no_vod,
         label=label,
         dry_run=dry_run,
@@ -754,6 +749,10 @@ def run(
     ) as e:
         # Every later day would be refused the same way: stop, and say
         # what to change.
+        print(f"Error: {e}", file=sys.stderr)
+        code = 1
+    except NothingStoredError as e:
+        # --update-to-latest needs a stored day to start after.
         print(f"Error: {e}", file=sys.stderr)
         code = 1
     except MemoryBudgetError as e:

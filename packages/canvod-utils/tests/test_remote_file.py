@@ -55,6 +55,7 @@ def fresh_run(monkeypatch: pytest.MonkeyPatch) -> None:
     run_folder() writes is undone after the test.
     """
     monkeypatch.setattr(remote_file, "_FOLDER", None)
+    monkeypatch.setattr(remote_file, "_MADE_HERE", False)
     monkeypatch.setenv("CANVODPY_RUN_FOLDER", "")
 
 
@@ -283,8 +284,33 @@ def test_a_new_run_in_the_same_process_fetches_again(
     second = fetch(BRANCH_URL)
     assert second.read_bytes() == changed
     assert folder in second.parents
-    assert first.read_bytes() == BODY  # removed when the process ends
+    assert not first.exists()  # the earlier run's folder is removed
     assert len(server.requests) == 2
+
+
+def test_a_new_run_keeps_the_folder_of_the_settings_in_use(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # canvodpy -c URL: the settings fetched at the start of the command are
+    # the configuration folder for the whole command.
+    previous = run_folder()
+    config_dir = previous / "config" / "fetched"
+    config_dir.mkdir(parents=True)
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(config_dir))
+    new_run()
+    assert config_dir.is_dir()
+
+
+def test_a_new_run_leaves_a_folder_of_another_process(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # A worker process uses its run's folder; the run removes it.
+    runs = tmp_path / "canvodpy-of-the-run"
+    runs.mkdir()
+    monkeypatch.setenv("CANVODPY_RUN_FOLDER", str(runs))
+    assert run_folder() == runs
+    new_run()
+    assert runs.is_dir()
 
 
 def test_no_network_names_the_url(

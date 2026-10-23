@@ -180,7 +180,7 @@ def test_run_with_write_catalog_writes_the_catalog_after_the_run(tmp_path, monke
 
     result = runner.invoke(
         main_app,
-        ["run", "--site", testing.SITE_KEY, "--write-catalog"],
+        ["run", "--site", testing.SITE_KEY, "--start", "2025001", "--write-catalog"],
         env={"CANVOD_CONFIG_DIR": str(config_dir)},
     )
 
@@ -198,7 +198,7 @@ def test_run_without_write_catalog_writes_no_catalog(tmp_path, monkeypatch):
 
     result = runner.invoke(
         main_app,
-        ["run", "--site", testing.SITE_KEY],
+        ["run", "--site", testing.SITE_KEY, "--start", "2025001"],
         env={"CANVOD_CONFIG_DIR": str(config_dir)},
     )
 
@@ -214,7 +214,15 @@ def test_run_dry_run_writes_no_catalog(tmp_path, monkeypatch):
 
     result = runner.invoke(
         main_app,
-        ["run", "--site", testing.SITE_KEY, "--dry-run", "--write-catalog"],
+        [
+            "run",
+            "--site",
+            testing.SITE_KEY,
+            "--start",
+            "2025001",
+            "--dry-run",
+            "--write-catalog",
+        ],
         env={"CANVOD_CONFIG_DIR": str(config_dir)},
     )
 
@@ -232,7 +240,7 @@ def test_run_failing_writes_no_catalog(tmp_path, monkeypatch):
 
     result = runner.invoke(
         main_app,
-        ["run", "--site", testing.SITE_KEY, "--write-catalog"],
+        ["run", "--site", testing.SITE_KEY, "--start", "2025001", "--write-catalog"],
         env={"CANVOD_CONFIG_DIR": str(config_dir)},
     )
 
@@ -253,7 +261,7 @@ def test_run_with_failed_days_still_writes_the_catalog_and_exits_3(
 
     result = runner.invoke(
         main_app,
-        ["run", "--site", testing.SITE_KEY, "--write-catalog"],
+        ["run", "--site", testing.SITE_KEY, "--start", "2025001", "--write-catalog"],
         env={"CANVOD_CONFIG_DIR": str(config_dir)},
     )
 
@@ -271,7 +279,7 @@ def test_run_with_a_refused_catalog_keeps_the_data_and_exits_1(tmp_path, monkeyp
 
     result = runner.invoke(
         main_app,
-        ["run", "--site", testing.SITE_KEY, "--write-catalog"],
+        ["run", "--site", testing.SITE_KEY, "--start", "2025001", "--write-catalog"],
         env={"CANVOD_CONFIG_DIR": str(config_dir)},
     )
 
