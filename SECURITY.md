@@ -78,7 +78,7 @@ we do not guarantee specific response or fix timelines.
   - `pip-audit`, run through uv, which does the same check:
 
     ```bash
-    uv export --format requirements-txt --no-emit-project -o requirements.txt
+    uv export --format requirements-txt --no-emit-workspace -o requirements.txt
     uvx pip-audit --disable-pip -r requirements.txt
     ```
 
