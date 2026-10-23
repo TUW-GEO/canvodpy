@@ -71,9 +71,10 @@ we do not guarantee specific response or fix timelines.
 
 - Keep canvodpy and its dependencies up to date
 - Monitor security advisories:
-  - GitHub Dependabot alerts (enabled for this repository)
+  - GitHub Dependabot alerts
   - PyPI security notifications
-  - `pip-audit` or `safety` for your environment
+  - `uv audit` in your project, which checks the locked dependencies
+    against known vulnerabilities (experimental in uv)
 
 ### Credential Management
 
