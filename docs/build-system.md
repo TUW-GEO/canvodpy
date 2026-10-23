@@ -79,7 +79,7 @@ requires-python = ">=3.14"
 keywords        = ["gnss", "rinex", "geodesy", "vod"]
 
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.14",
