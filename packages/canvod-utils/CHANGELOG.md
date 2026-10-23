@@ -22,7 +22,7 @@
 ### Fix
 
 - **utils**: a new Site or Airflow task is a new run; other links record their host (4913f39d)
-- **utils**: one fetch per run across processes; no link of any form recorded (01305cf1)
+- **utils**: one fetch per run across processes; a link is recorded only as the file name of a raw file link or as its host, never in full (01305cf1)
 - **utils**: walk a folder's size without failing on files that vanish (c7a6a396)
 - **utils**: add a random part to run IDs, so runs on two machines differ (#377) (4d501d4b)
 - **types**: clear the type checker findings in code, scripts and tests (238e7368)

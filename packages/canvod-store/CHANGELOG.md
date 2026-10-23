@@ -26,7 +26,6 @@
 - **store**: runs write stores on S3 (#350) (#369) (01f244db)
 - **store**: read_vod_analysis leaves out empty slots by default (#276) (71ccaa02)
 - **store**: summarize VOD day blocks, one day per write (#276) (f4a2919c)
-- **store**: VOD store in day blocks, one commit per day (#276) (0a307031)
 - **config**: canvodpy config explain, setup help, settings reference and a chunks page (#337) (a9f0ccb0)
 - **orchestrator**: write a day's files in parallel forks (6aebd055)
 - **store**: compare two stores within fixed, science-based tolerances (a87d0fb2)

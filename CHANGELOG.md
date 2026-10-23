@@ -63,7 +63,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **dashboard**: total the comparison by run wall time (954a9256)
 - **dashboard**: compare runs by label (47b70308)
 - **dashboard**: add interactive charts to the run page (97313b87)
-- **store**: VOD store in day blocks, one commit per day (#276) (0a307031)
 - **dashboard**: keep the chosen run across refreshes and label UTC (d6e6f11f)
 - **dashboard**: read the run history and show a site overview and run page (77e8a58d)
 - **config**: canvodpy config explain, setup help, settings reference and a chunks page (#337) (a9f0ccb0)
@@ -121,7 +120,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **release**: refuse up front when the release branch exists (7a8c8d2a)
 - **cli**: --update-to-latest starts on the earliest last stored day (0ba39ce8)
 - **utils**: a new Site or Airflow task is a new run; other links record their host (4913f39d)
-- **utils**: one fetch per run across processes; no link of any form recorded (01305cf1)
+- **utils**: one fetch per run across processes; a link is recorded only as the file name of a raw file link or as its host, never in full (01305cf1)
 - **cli**: name the --config-dir values <path|url> and <path> (24d6e685)
 - **demo**: the demo stores in a folder of their own, apart from the check's (e6e90bed)
 - **dashboard**: made-up core counts, memory and disks for the example run history (cace5247)
@@ -161,7 +160,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - **store**: a write empties only its own earlier slots, never another file's (f1c95d1d)
 - **cli**: migrate-metadata takes the store location of an S3 store (#370) (900c3662)
 - **store**: a GNSS file written again keeps nothing of its earlier write (8acfae8b)
-- **cli**: migrate-metadata takes the store location of an S3 store (23b18cd3)
 - **dashboard**: sort time per stage by time and label time per day (7edff18c)
 - **vod**: check preprocessing for every day before the store metadata (#276) (fef73e54)
 - **dashboard**: pass --no-sandbox to marimo (3d4dc840)
@@ -343,17 +341,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Packages
 
-- canvod-auxiliary ==1.0.0 (new)
-- canvod-config ==1.0.0 (new)
-- canvod-grids ==1.0.0 (new)
-- canvod-ops ==1.0.0 (new)
-- canvod-preflight ==1.0.0 (new)
-- canvod-readers ==1.0.0 (new)
-- canvod-store ==1.0.0 (new)
-- canvod-store-metadata ==1.0.0 (new)
-- canvod-utils ==1.0.0 (new)
-- canvod-viz ==1.0.0 (new)
-- canvod-vod ==1.0.0 (new)
+- canvod-auxiliary ==1.0.0
+- canvod-config ==1.0.0
+- canvod-grids ==1.0.0
+- canvod-ops ==1.0.0
+- canvod-preflight ==1.0.0
+- canvod-readers ==1.0.0
+- canvod-store ==1.0.0
+- canvod-store-metadata ==1.0.0
+- canvod-utils ==1.0.0
+- canvod-viz ==1.0.0
+- canvod-vod ==1.0.0
 
 ## v0.4.0 (2026-09-02, never published)
 

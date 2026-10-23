@@ -57,7 +57,7 @@
 
 ### Fix
 
-- **utils**: one fetch per run across processes; no link of any form recorded (01305cf1)
+- **utils**: one fetch per run across processes; a link is recorded only as the file name of a raw file link or as its host, never in full (01305cf1)
 - **store-metadata**: record only the Python version and implementation (64e68820)
 - **store-metadata**: record only the uv version number (263eac0b)
 - **store**: refuse to add a receiver whose recipe is not found; show the recipe sha256 (cffc8143)

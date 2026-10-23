@@ -43,7 +43,7 @@
 ### Fix
 
 - **utils**: a new Site or Airflow task is a new run; other links record their host (4913f39d)
-- **utils**: one fetch per run across processes; no link of any form recorded (01305cf1)
+- **utils**: one fetch per run across processes; a link is recorded only as the file name of a raw file link or as its host, never in full (01305cf1)
 - **config**: a CANVOD__ variable changes only the setting it names (90e886d9)
 - **cli**: --update-recipe refuses a receiver the store lacks and the VOD store (6f71cee6)
 - **config**: an old custom store name in the settings names store migrate --rename (cf24b1ff)
