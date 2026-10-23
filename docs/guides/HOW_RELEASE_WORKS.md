@@ -32,7 +32,7 @@ the versions are in [Versioning](../VERSIONING.md).
     The canvodpy tag starts a workflow that drafts a GitHub release from
     canvodpy's `CHANGELOG.md` section and waits for the maintainer.
 
-    [:octicons-arrow-right-24: Details](#3-github-releases)
+    [:octicons-arrow-right-24: Details](#3-draft-releases)
 
 -   :fontawesome-solid-box-open: &nbsp; **PyPI Publishing**
 
@@ -122,7 +122,7 @@ a pre-release is `1.1.0rc1`, tagged `v1.1.0rc1`.
 
 ---
 
-## 3. GitHub releases
+## 3. Draft releases
 
 `.github/workflows/release.yml` runs when a canvodpy tag (`v*.*.*`) is
 pushed. Package tags (`canvod-store-v1.1.0`) do not match and get no
@@ -177,12 +177,15 @@ stored API tokens:
 
 1. GitHub issues the workflow run a short-lived token (JWT) saying which
    repository, workflow, and environment it is.
-2. The workflow sends it to PyPI with the upload
-   (`uv publish`, permission `id-token: write`, given only to the
-   publish job; the build job has no upload permission).
+2. The publish job sends it to PyPI (`uv publish`, permission
+   `id-token: write`, given only to the publish job; the build job has no
+   upload permission).
 3. PyPI checks the signature and that repository, workflow, and environment
-   match a trusted publisher configured for the project, then accepts the
-   upload.
+   match a trusted publisher configured for the project. It then returns a
+   PyPI API token that is valid for 15 minutes and only for the projects
+   with a matching publisher.
+4. `uv publish` uploads the packages with that token
+   ([OIDC trusted publishing explained](OIDC_EXPLAINED.md)).
 
 Each project on PyPI (every package is its own project) needs the trusted
 publisher once:
@@ -198,14 +201,16 @@ The GitHub environment `pypi` (Settings $\rightarrow$ Environments) can
 require a reviewer and a wait timer before the upload runs.
 
 **New package:** a package that isn't on PyPI yet has no project to add the
-publisher to. Add a *pending* publisher instead (PyPI: Your account
-$\rightarrow$ Publishing), with the package name and the four fields above.
+publisher to. Add a *pending* publisher instead, under Publishing in your PyPI account
+settings. It takes the package name and the four fields of the preceding
+block.
 The first upload creates the project and turns the pending publisher into a
 normal one. PyPI can refuse a second pending publisher while one is pending;
 then upload that package first.
 
-**Why OIDC:** no secret to store or rotate, the token is valid for minutes
-and only for this repository and workflow.
+**Why OIDC:** no secret to store or rotate; the PyPI token is valid for 15
+minutes and only for the projects whose publisher matches this repository,
+workflow, and environment.
 
 ---
 
