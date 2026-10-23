@@ -84,7 +84,7 @@ with an unobstructed view of the sky.
     - Store metadata after DataCite and ACDD, checked against the
       standards
     - A STAC catalog of all stores; releases tag every store
-    - Read any snapshot as it was; amend a description, with a reason
+    - Amend a store's description, with a reason
     - `record_machine: false` keeps the computer out of published stores
 
     [:octicons-arrow-right-24: Store metadata](packages/store-metadata/overview.md)

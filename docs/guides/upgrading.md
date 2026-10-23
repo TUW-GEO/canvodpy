@@ -268,7 +268,7 @@ All of these are replaced by one entry point: `canvodpy run`, or
 ## New in v1.0.0
 
 - **Stores on S3, experimental**: runs write GNSS and VOD stores to
-  S3-compatible object storage, tested against S3 emulators only ([Stores on S3](../packages/store-metadata/overview.md#stores-on-s3)).
+  S3-compatible object storage, tested against S3 emulators only ([Stores on S3](s3.md)).
 - **Store metadata** after DataCite and ACDD, checked against the
   standards, and a **STAC catalog** of all stores
   (`canvodpy run --write-catalog`; [Store metadata](../packages/store-metadata/overview.md)).
