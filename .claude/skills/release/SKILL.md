@@ -44,6 +44,8 @@ to PyPI.
    date in the citation files (Zenodo takes the version from them) and
    `uv.lock`, and commits
    them on the new branch `release/vX.Y.Z` (canvodpy's version); no tag.
+   It refuses when that branch exists already: the user deletes the old
+   one first (for v1.0.0, the integration branch after #262 is merged).
    Push that branch and open a PR. The user merges it; an agent never
    merges (`CODING_STANDARDS.md`, Git and GitHub).
 3. On the merged `main`, the user runs `just tag-release` and pushes the

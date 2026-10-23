@@ -80,8 +80,10 @@ This command:
 2. Refuses the release, and says why, when canvodpy is missing, a version
    does not go up or is tagged already, canvodpy's increment is smaller
    than a package's, a package's range on another excludes the new
-   version, a citation file lacks its version or date field, or a release
-   file has uncommitted changes
+   version (or the current version of a package left out of the release),
+   a citation file lacks its version or date field, a release
+   file has uncommitted changes, or the branch `release/v1.1.0` exists
+   already (locally, or on the remote as of your last `git fetch`)
 3. Writes the new versions, canvodpy's `==` pins, a section in each
    released package's `CHANGELOG.md` (from the commits that touched its
    folder; canvodpy's lists the pinned versions), canvodpy's version and
@@ -129,7 +131,7 @@ git push origin v1.1.0 canvod-store-v1.1.0 canvod-grids-v1.0.1
 `just tag-release` creates an annotated tag for every package version that
 has no tag yet, and prints the push command; it does not push.
 
-### 7. Publish GitHub release
+### 7. Publish the draft release
 
 The `.github/workflows/release.yml` workflow detects the canvodpy tag
 (`v1.1.0`) and creates a **draft** release whose notes are canvodpy's
@@ -179,8 +181,15 @@ tag existing is not a promise that PyPI has it.
     - *canvod-grids requires canvod-store<2,>=1.0.0, which excludes
       canvod-store 2.0.0*: check canvod-grids against the new major version,
       widen its range in its own pull request, then release both.
+    - *canvod-store requires canvod-utils<2,>=1.0.0, which excludes the
+      current canvod-utils 0.4.0*: canvod-utils is left out of the release,
+      but the new canvod-store needs a newer one. Add `canvod-utils=X.Y.Z`.
     - *Release files have uncommitted changes*: commit them in their own
       pull request, or discard them.
+    - *The branch release/v1.1.0 exists already*: a branch of that name is
+      left from earlier work (for v1.0.0, the integration branch
+      `release/v1.0.0`). Delete it once it is merged, locally and on
+      GitHub, then run `just release` again.
 
 ??? failure "Version is not a version"
     Use `NAME=X.Y.Z` with an explicit version (no `v` prefix):

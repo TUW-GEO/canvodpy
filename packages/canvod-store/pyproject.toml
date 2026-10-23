@@ -31,13 +31,13 @@ classifiers = [
 ]
 
 dependencies = [
-    "canvod-utils>=0.4.0,<2",
-    "canvod-config>=0.4.0,<2",
-    "canvod-store-metadata>=0.4.0,<2",
-    "canvod-vod>=0.4.0,<2",
-    "canvod-auxiliary>=0.4.0,<2",
-    "canvod-readers>=0.4.0,<2",
-    "canvod-grids>=0.4.0,<2",
+    "canvod-utils>=1.0.0,<2",
+    "canvod-config>=1.0.0,<2",
+    "canvod-store-metadata>=1.0.0,<2",
+    "canvod-vod>=1.0.0,<2",
+    "canvod-auxiliary>=1.0.0,<2",
+    "canvod-readers>=1.0.0,<2",
+    "canvod-grids>=1.0.0,<2",
     "icechunk>=2.0.0",
     "zarr>=3.1.2",
     "xarray>=2023.12.0",

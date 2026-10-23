@@ -42,8 +42,8 @@ dependencies = [
     "xarray>=2023.12.0",
     "sbf-parser>=1.0.3",
     "structlog>=24.1.0",
-    "canvod-utils>=0.4.0,<2",
-    "canvod-config>=0.4.0,<2",
+    "canvod-utils>=1.0.0,<2",
+    "canvod-config>=1.0.0,<2",
     "pymap3d>=3.0.0",
 ]
 

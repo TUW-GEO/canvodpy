@@ -2,11 +2,14 @@
 
 ## Supported Versions
 
-canvodpy is currently in **beta** (pre-1.0 release). Security updates are provided for:
+Security fixes go into the latest 1.x release of each package. Releases
+before 1.0.0 get no fixes; upgrade with the
+[upgrading guide](https://canvodpy.eu/guides/upgrading/).
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.x.x   | :white_check_mark: |
+| 1.x.x   | :white_check_mark: |
+| < 1.0.0 | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -68,9 +71,18 @@ we do not guarantee specific response or fix timelines.
 
 - Keep canvodpy and its dependencies up to date
 - Monitor security advisories:
-  - GitHub Dependabot alerts (enabled for this repository)
+  - GitHub Dependabot alerts
   - PyPI security notifications
-  - `pip-audit` or `safety` for your environment
+  - `uv audit` in your project, which checks the locked dependencies
+    against known vulnerabilities (experimental in uv)
+  - `pip-audit`, run through uv, which does the same check:
+
+    ```bash
+    uv export --format requirements-txt --no-emit-workspace -o requirements.txt
+    uvx pip-audit --disable-pip -r requirements.txt
+    ```
+
+<!-- Drop the pip-audit item once `uv audit` is no longer experimental. -->
 
 ### Credential Management
 
