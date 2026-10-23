@@ -272,6 +272,10 @@ All of these are replaced by one entry point: `canvodpy run`, or
 - **Store metadata** after DataCite and ACDD, checked against the
   standards, and a **STAC catalog** of all stores
   (`canvodpy run --write-catalog`; [Store metadata](../packages/store-metadata/overview.md)).
+- **Settings from a link**: `--config-dir` and `CANVOD_CONFIG_DIR` take
+  the raw GitHub link of a settings file; naming recipes are read from
+  the same repository
+  ([Settings from a GitHub repository](configuration.md#settings-from-a-github-repository)).
 - **Join or reproduce a store**: `canvodpy config init --from-store`
   writes the settings file of a store ([Settings file](configuration.md#join-or-reproduce-a-store)).
 - **Run history and dashboard**: every run records itself, its stage

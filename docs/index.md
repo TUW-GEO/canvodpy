@@ -34,6 +34,68 @@ with an unobstructed view of the sky.
 
 </div>
 
+## New in v1.0.0
+
+<div class="grid cards" markdown>
+
+-   :fontawesome-solid-cloud: &nbsp; **Stores on S3**
+
+    Runs write the GNSS and VOD stores to S3-compatible object storage.
+
+    [:octicons-arrow-right-24: Stores on S3](guides/s3.md)
+
+-   :fontawesome-solid-link: &nbsp; **Settings from a link**
+
+    Give a GitHub link as the settings folder; naming recipes are read
+    from the same repository.
+
+    [:octicons-arrow-right-24: Settings from GitHub](guides/configuration.md#settings-from-a-github-repository)
+
+-   :fontawesome-solid-forward: &nbsp; **Update to the latest files**
+
+    `canvodpy run --update-to-latest` processes the days with new files,
+    for scheduled runs.
+
+    [:octicons-arrow-right-24: Which days a run processes](guides/api-levels.md#update-to-the-latest-files)
+
+-   :fontawesome-solid-memory: &nbsp; **Memory budget**
+
+    One setting sizes the workers and the units of days a run commits at
+    once.
+
+    [:octicons-arrow-right-24: Parallel processing](guides/parallel-processing.md)
+
+-   :fontawesome-solid-calendar-day: &nbsp; **Day blocks**
+
+    A day processed again replaces its data in the store, and nothing
+    else.
+
+    [:octicons-arrow-right-24: Day blocks](packages/store/overview.md#day-blocks)
+
+-   :fontawesome-solid-copy: &nbsp; **Join or reproduce a store**
+
+    `canvodpy config init --from-store` writes the settings file of a
+    store.
+
+    [:octicons-arrow-right-24: Join or reproduce a store](guides/configuration.md#join-or-reproduce-a-store)
+
+-   :fontawesome-solid-chart-line: &nbsp; **Run history and dashboard**
+
+    Every run records itself, its stage timings and its resource use.
+
+    [:octicons-arrow-right-24: Diagnostics](guides/diagnostics.md)
+
+-   :fontawesome-solid-plug: &nbsp; **Plugins**
+
+    Your own readers and VOD calculators, from installed packages.
+
+    [:octicons-arrow-right-24: Plugins](guides/plugins.md)
+
+</div>
+
+All changes: [Upgrading to v1.0.0](guides/upgrading.md#new-in-v100) and the
+[changelog](https://github.com/TUW-GEO/canvodpy/blob/main/CHANGELOG.md).
+
 !!! warning "Upgrading from 0.x?"
 
     Stores written with canVODpy 0.x must be migrated before a v1.0.0 run
