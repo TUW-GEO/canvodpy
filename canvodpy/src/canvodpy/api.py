@@ -40,6 +40,7 @@ from typing import TYPE_CHECKING
 
 from canvod.utils.tools import deprecated, deprecated_argument
 from canvodpy.orchestrator.resources import deprecate_no_effect_arguments
+from canvodpy.orchestrator.run_dates import check_run_dates
 
 # Lazy imports to avoid circular dependencies
 
@@ -200,7 +201,6 @@ class Site:
         label: str | None = None,
         on_discovery_start: Callable[[str, Path], None] | None = None,
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
-        on_new_files: Callable[[list[tuple[str, str]]], None] | None = None,
         on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
         on_days_without_vod: Callable[[str, list[str]], None] | None = None,
     ) -> Pipeline:
@@ -245,10 +245,6 @@ class Site:
             Called with the receiver name, the number of files found, the
             number of days and the elapsed seconds when the run has found
             them.
-        on_new_files : Callable[[list[tuple[str, str]]], None], optional
-            With ``new_files_only``, called with the ``(YYYYDOY, receiver)``
-            pairs that have a file the GNSS store doesn't hold, before they
-            are processed.
         on_incomplete_day : Callable[[str, str, int, int], None], optional
             Called with ``(receiver, YYYYDOY, files_found, files_expected)``
             for each receiver-day to process that has fewer files than its
@@ -284,7 +280,6 @@ class Site:
                 **_passed(days_per_batch=days_per_batch),
                 on_discovery_start=on_discovery_start,
                 on_discovery_end=on_discovery_end,
-                on_new_files=on_new_files,
                 on_incomplete_day=on_incomplete_day,
                 on_days_without_vod=on_days_without_vod,
             )
@@ -371,10 +366,6 @@ class Pipeline:
     on_discovery_end : Callable[[str, int, int, float], None], optional
         Called with the receiver name, the number of files found, the number
         of days and the elapsed seconds when the run has found them.
-    on_new_files : Callable[[list[tuple[str, str]]], None], optional
-        With ``new_files_only``, called with the ``(YYYYDOY, receiver)``
-        pairs that have a file the GNSS store doesn't hold, before they are
-        processed.
     on_incomplete_day : Callable[[str, str, int, int], None], optional
         Called with ``(receiver, YYYYDOY, files_found, files_expected)`` for
         each receiver-day to process that has fewer files than its file
@@ -431,7 +422,6 @@ class Pipeline:
         label: str | None = None,
         on_discovery_start: Callable[[str, Path], None] | None = None,
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
-        on_new_files: Callable[[list[tuple[str, str]]], None] | None = None,
         on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
         on_days_without_vod: Callable[[str, list[str]], None] | None = None,
     ) -> None:
@@ -527,7 +517,6 @@ class Pipeline:
                     on_group_written=on_group_written,
                     on_discovery_start=on_discovery_start,
                     on_discovery_end=on_discovery_end,
-                    on_new_files=on_new_files,
                     on_incomplete_day=on_incomplete_day,
                     on_days_without_vod=on_days_without_vod,
                     config=config,
@@ -634,8 +623,6 @@ class Pipeline:
         self,
         start: str,
         end: str,
-        *,
-        new_files_only: bool = False,
     ) -> Generator[tuple[str, dict[str, xr.Dataset]]]:
         """Process RINEX data for a date range.
 
@@ -645,10 +632,6 @@ class Pipeline:
             Start date (YYYYDOY)
         end : str
             End date (YYYYDOY)
-        new_files_only : bool, default False
-            Process only the dates on which a receiver has a file the GNSS
-            store doesn't hold (by canonical file name); a run without
-            dates uses this (#386).
 
         Yields
         ------
@@ -671,7 +654,6 @@ class Pipeline:
                 keep_vars=self.keep_vars,
                 start_from=start,
                 end_at=end,
-                new_files_only=new_files_only,
             ):
                 yield date_key, datasets
         except Exception:
@@ -683,7 +665,7 @@ class Pipeline:
         start: str | None = None,
         end: str | None = None,
         *,
-        new_files_only: bool = False,
+        update_to_latest: bool = False,
         vod_analyses: Sequence[str] | None = None,
         calculator: str = "tau_omega",
     ) -> Generator[RunUnit]:
@@ -699,9 +681,13 @@ class Pipeline:
         Parameters
         ----------
         start, end : str, optional
-            First and last day (YYYYDOY). ``None`` runs every day with files.
-        new_files_only : bool, default False
-            As :meth:`process_range`.
+            First and last day (YYYYDOY). ``start`` is needed unless
+            ``update_to_latest``; without ``end`` the run goes to the last
+            day with files.
+        update_to_latest : bool, default False
+            Process the days since the last stored day instead of
+            ``start``/``end`` (:meth:`update_range`); with nothing new, the
+            run yields nothing.
         vod_analyses : sequence of str, optional
             The VOD analyses to compute; all the site's by default. An
             empty sequence computes no VOD.
@@ -715,6 +701,14 @@ class Pipeline:
             the VOD phase did. A failing VOD phase is logged and reported
             in ``RunUnit.vod_error``; the run goes on.
 
+        Raises
+        ------
+        ValueError
+            If neither ``start`` nor ``update_to_latest`` is given, or
+            ``update_to_latest`` comes with ``start`` or ``end``.
+        NothingStoredError
+            With ``update_to_latest``, if nothing is stored for the site yet.
+
         Examples
         --------
         >>> with Site("ExampleSite").pipeline() as pipeline:
@@ -724,14 +718,18 @@ class Pipeline:
         from canvod.utils.tools import YYYYDOY
         from canvodpy.vod_computer import VodComputer
 
+        check_run_dates(start, end, update_to_latest=update_to_latest)
+        if update_to_latest:
+            dates = self.update_range()
+            if dates is None:
+                return
+            start, end = dates
         analyses = list(
             self.site.vod_analyses if vod_analyses is None else vod_analyses
         )
         vod_computer = VodComputer(self.site, calculator=calculator)
         try:
-            units = self._orchestrator.store_by_unit(
-                start_from=start, end_at=end, new_files_only=new_files_only
-            )
+            units = self._orchestrator.store_by_unit(start_from=start, end_at=end)
             while True:
                 t_gnss = time.perf_counter()
                 days = next(units, None)
@@ -800,7 +798,7 @@ class Pipeline:
         start: str | None = None,
         end: str | None = None,
         *,
-        new_files_only: bool = False,
+        update_to_latest: bool = False,
     ) -> dict:
         """Preview processing plan without execution.
 
@@ -812,14 +810,21 @@ class Pipeline:
         end : str, optional
             YYYYDOY string to end at (inclusive). ``None`` previews every
             available date.
-        new_files_only : bool, default False
-            Preview only the dates on which a receiver has a file the GNSS
-            store doesn't hold, as :meth:`process_range`.
+        update_to_latest : bool, default False
+            Preview the days a run with ``update_to_latest`` processes
+            (:meth:`update_range`); with nothing new, the plan has no dates.
 
         Returns
         -------
         dict
             Summary of dates, receivers, and files
+
+        Raises
+        ------
+        ValueError
+            If ``update_to_latest`` comes with ``start`` or ``end``.
+        NothingStoredError
+            With ``update_to_latest``, if nothing is stored for the site yet.
 
         Examples
         --------
@@ -828,9 +833,45 @@ class Pipeline:
         >>> print(f"Total files: {plan['total_files']}")
 
         """
-        return self._orchestrator.preview_processing_plan(
-            start, end, new_files_only=new_files_only
-        )
+        if update_to_latest:
+            check_run_dates(start, end, update_to_latest=True)
+            dates = self.update_range()
+            if dates is None:
+                return {
+                    "site": self.site.name,
+                    "dates": [],
+                    "total_receivers": 0,
+                    "total_files": 0,
+                }
+            start, end = dates
+        return self._orchestrator.preview_processing_plan(start, end)
+
+    def update_range(self) -> tuple[str, str] | None:
+        """The days a run with ``update_to_latest`` processes.
+
+        It starts on the day after the earliest last stored day in the
+        site's GNSS store, counting only the receivers with files after
+        their own last stored day, so a retired receiver doesn't hold it
+        back. It ends on the latest day with files.
+
+        Returns
+        -------
+        tuple[str, str] | None
+            The first and last day (YYYYDOY); None if no receiver has files
+            after its last stored day.
+
+        Raises
+        ------
+        NothingStoredError
+            If nothing is stored for the site yet.
+
+        Examples
+        --------
+        >>> with Site("ExampleSite").pipeline(dry_run=True) as pipeline:
+        ...     pipeline.update_range()
+        ('2026293', '2026298')
+        """
+        return self._orchestrator.update_range()
 
     def __repr__(self) -> str:
         return (

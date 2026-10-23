@@ -381,14 +381,16 @@ Files that are already in the store are skipped.
     canvodpy run --site ExampleSite --start 2025001 --end 2025031
     ```
 
-    Leave out `--start` and the run processes the days of the last 30
-    with files that are not in the store yet. Leave out `--end` and it
-    processes up to today. So this command picks up the new files, also
-    a file that arrived late for an earlier day:
+    Leave out `--end` and the run processes up to today. Once the store
+    holds data, `--update-to-latest` instead of the dates processes the
+    days since the last stored day, up to the latest files:
 
     ```bash
-    canvodpy run --site ExampleSite
+    canvodpy run --site ExampleSite --update-to-latest
     ```
+
+    A run processes one site; for several, run it once per site
+    ([Several sites](../guides/api-levels.md#several-sites)).
 
 By default, canVODpy uses all but two of the machine's CPU cores. To set
 limits, see [Parallel processing](../guides/parallel-processing.md).

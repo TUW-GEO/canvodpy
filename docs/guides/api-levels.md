@@ -40,11 +40,12 @@ Dates are `YYYYDDD`: the year and the day of year, for example
 
 | Command line | Python | Meaning |
 |---|---|---|
-| `--site ExampleSite` | `Site("ExampleSite")` | Site name under `sites:` in `canvod-settings.yaml`. Repeat `--site` to process several sites, one after the other. |
+| `--site ExampleSite` | `Site("ExampleSite")` | Site name under `sites:` in `canvod-settings.yaml`. One site per run; see [Several sites](#several-sites). |
 | `--start`, `--end` | `run(start, end)` | First and last day, both included; see [Which days a run processes](#which-days-a-run-processes). |
+| `--update-to-latest` | `run(update_to_latest=True)` | Instead of `--start` and `--end`: the days since the last stored day, up to the latest day with files; see [Update to the latest files](#update-to-the-latest-files). |
 | `--no-vod` | `run(start, end, vod_analyses=())` | Write the observations to the GNSS store and compute no VOD. |
 | `--vod-calculator` | `run(start, end, calculator=...)` | The VOD calculator, `tau_omega` by default. |
-| `--dry-run` | `pipeline.preview(start, end)` | List the days, receivers and files a run would process, without processing them. |
+| `--dry-run` | `pipeline.preview(start, end)` or `pipeline.preview(update_to_latest=True)` | List the days, receivers and files a run would process, without processing them. |
 | `--write-catalog` | `write_catalog(stores_root_dir)` after the run | After a successful run, write the [STAC catalog](../packages/store-metadata/overview.md#write-the-stac-catalog) of every store under the data root. Without it, a run writes no catalog. |
 | `--label` | `site.pipeline(label=...)` | Free-text label stored with the run in the [run history](diagnostics.md#the-run-history), for example to group the repetitions of a benchmark. |
 | `--workers` | `site.pipeline(n_workers=...)` | Number of worker processes. |
@@ -67,8 +68,8 @@ os.environ["CANVOD_CONFIG_DIR"] = "/path/to/config"
 `canvodpy run --help` lists every option.
 
 `canvodpy run` exits with code 0 when every receiver-day is written or
-skipped, and with 1 when it stops, for example on an error in the
-settings. When it finishes but a receiver-day failed, it names the
+skipped, or when `--update-to-latest` finds nothing new, and with 1 when
+it stops, for example on an error in the options or the settings. When it finishes but a receiver-day failed, it names the
 failed receiver-days and exits with 3;
 [What the run does when something fails](diagnostics.md#what-the-run-does-when-something-fails)
 lists the reasons. A receiver-day that is written though some of its
@@ -83,32 +84,64 @@ files failed counts as written. In Python,
 
 ## Which days a run processes
 
-In Python, you name the days: `process_date` processes one,
-`process_range` the days from `start` to `end`.
+A run processes the days you give it. There is no default: a run
+without `--start` or `--update-to-latest` stops with an error, and so
+does a run with `--update-to-latest` and `--start` or `--end`.
 
-On the command line, `--start` and `--end` are optional:
+- `--start` and `--end` give the first and last day. Without `--end`,
+  the run ends today. The run processes every day in the range. With the
+  default `gnss_store_strategy: skip`, files that are already in the
+  store are skipped, so running a day twice doesn't duplicate data, and
+  a file that arrived late for a stored day is added.
+- `--update-to-latest` processes the days since the last stored day; see
+  below.
 
-- Without `--end`, the run ends today.
-- Without `--start`, the run looks at the last 30 days up to the end and
-  processes only the days on which a receiver has a file that the site's
-  GNSS store doesn't hold yet. It compares file names with the store's
-  log book, so it reads no file to find them. If the store is empty, the
-  run processes every day it finds data for.
+In Python, `run(start, end)` and `run(update_to_latest=True)` work the
+same way and raise a `ValueError` for the same mistakes.
+`process_date` processes one day, `process_range` the days from `start`
+to `end`.
 
-So `canvodpy run --site ExampleSite` picks up the new files of the last
-30 days: the days since the last run, a file that arrived late for an
-earlier day, and the days of a receiver whose files arrive a few days
-after the others. It prints them first, for example
-`resuming: 2 receiver-days with new files (2026285 canopy_01, 2026286 canopy_01)`.
-A day with no files in the archive is not looked at again. For new files
-older than 30 days, give `--start` and `--end`: with explicit dates the
-run processes every day in the range. With the default
-`gnss_store_strategy: skip`, files that are already in the store are
-skipped, so running a day twice doesn't duplicate data.
+### Update to the latest files
 
-In Python, `process_range(start, end, new_files_only=True)` does the
-same for any range, and `site.pipeline(on_new_files=...)` receives the
-`(day, receiver)` pairs it found.
+```bash
+canvodpy run --site ExampleSite --update-to-latest
+```
+
+The run chooses the dates and then runs as a run with `--start` and
+`--end` does:
+
+- **Start**: the day after the earliest last stored day in the site's
+  GNSS store, counting only the receivers that have files after their
+  own last stored day. A receiver that sends no more files, for example
+  one that was retired, doesn't hold the start back. A receiver with
+  nothing stored yet counts from its first day with files.
+- **End**: the latest day on which a receiver has files.
+
+It prints the dates it chose, for example `update: 2026293 to 2026298`.
+If no receiver has files after its last stored day, it says so and
+exits with code 0. If the site's GNSS store holds nothing yet, it stops
+and asks for `--start`: the first run of a site names its first day.
+
+A receiver whose files arrive a few days after the others sets the
+start, so its days are processed when they arrive. A file that arrives
+late for a day that every receiver has stored is not in the range;
+process that day again with `--start` and `--end`.
+
+In Python, `pipeline.update_range()` returns the dates `run(update_to_latest=True)`
+would process, or `None` if nothing is new.
+
+### Several sites
+
+A run processes one site. For several sites, run `canvodpy run` once per
+site, for example in a shell loop:
+
+```bash
+for site in ExampleSite OtherSite; do
+    canvodpy run --site "$site" --update-to-latest
+done
+```
+
+In Python, create one `Site` per site and run its pipeline.
 
 ---
 
@@ -143,10 +176,11 @@ GNSS store. Use it in a `with` block, which closes it at the end.
 
 | Method | What it does |
 |---|---|
-| `run(start, end, new_files_only=False, vod_analyses=None, calculator="tau_omega")` | What `canvodpy run` does: stores the days from `start` to `end` in [units of days](parallel-processing.md), then computes the VOD of each unit's days from the GNSS store. Yields one `RunUnit` per unit: `days` (each day stored, with the groups that stored it), `vod` (the days with VOD written, already stored, or missing and why, per analysis) and `vod_error` (why the VOD of the unit failed, if it did). `vod_analyses=()` computes no VOD. |
+| `run(start, end=None, update_to_latest=False, vod_analyses=None, calculator="tau_omega")` | What `canvodpy run` does: stores the days from `start` to `end` (or, with `update_to_latest=True`, the days of [Update to the latest files](#update-to-the-latest-files)) in [units of days](parallel-processing.md), then computes the VOD of each unit's days from the GNSS store. Yields one `RunUnit` per unit: `days` (each day stored, with the groups that stored it), `vod` (the days with VOD written, already stored, or missing and why, per analysis) and `vod_error` (why the VOD of the unit failed, if it did). `vod_analyses=()` computes no VOD. |
 | `process_date(date)` | Processes one day and reads it back from the GNSS store. Returns one dataset per receiver. |
-| `process_range(start, end, new_files_only=False)` | Processes the days from `start` to `end` and reads each one back. Yields `(date, datasets)` for one day at a time. With `new_files_only=True`, only the days on which a receiver has a file the GNSS store doesn't hold. Use it to work with the data in Python; `run` reads nothing back and is faster. |
-| `preview(start=None, end=None, new_files_only=False)` | Returns the days, receivers and files a run would process. Without dates, it covers every day it finds data for. |
+| `process_range(start, end)` | Processes the days from `start` to `end` and reads each one back. Yields `(date, datasets)` for one day at a time. Use it to work with the data in Python; `run` reads nothing back and is faster. |
+| `preview(start=None, end=None, update_to_latest=False)` | Returns the days, receivers and files a run would process. Without dates, it covers every day it finds data for. |
+| `update_range()` | The first and last day a run with `update_to_latest=True` processes, or `None` if no receiver has new files. |
 | `failed_receiver_days` | The receiver-days of this pipeline that failed, as `(receiver, date)` pairs. Empty when every one is written or skipped. |
 | `close()` | Ends the pipeline. The `with` block calls it for you. The worker processes stay for reuse; see [Parallel processing](parallel-processing.md#the-worker-processes). |
 
@@ -265,7 +299,7 @@ model and its output.
 
 `canvodpy run` adds a few steps around `Site.pipeline()`:
 
-- It chooses the days when you leave out `--start` or `--end`; see
+- It ends on today when you leave out `--end`; see
   [Which days a run processes](#which-days-a-run-processes).
 - Before processing, it stops if a VOD store group holds VOD computed
   from data with other [preprocessing settings](configuration.md).
@@ -275,18 +309,21 @@ model and its output.
 - If the VOD of a unit of days fails, it says which days are left
   without VOD and continues. `pipeline.run()` does the same and reports
   the error in `RunUnit.vod_error`.
-- It shows the progress per site and receiver.
+- It shows the progress per receiver.
 
 ---
 
 ## Scheduled runs
 
-To process new data every day, schedule `canvodpy run` without
-`--start` and `--end`, for example with cron at 03:00:
+To process new data every day, schedule `canvodpy run` with
+`--update-to-latest`, for example with cron at 03:00:
 
 ```bash
-0 3 * * * /path/to/canvodpy run --site ExampleSite --config-dir /path/to/config
+0 3 * * * /path/to/canvodpy run --site ExampleSite --update-to-latest --config-dir /path/to/config
 ```
+
+For several sites, add one line per site, or call a script with the
+loop of [Several sites](#several-sites).
 
 Cron runs with a minimal environment, so give the full path to
 `canvodpy` (`which canvodpy` prints it) and to the settings folder.

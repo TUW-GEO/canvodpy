@@ -22,7 +22,7 @@ from concurrent.futures import (
 )
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import partial
 from itertools import zip_longest
 from pathlib import Path
@@ -40,6 +40,7 @@ from loky import get_reusable_executor as _loky_reusable
 from canvod.config import CanvodConfig, load_config
 from canvod.config.models import mixed_format_error, reference_store_group
 from canvod.ops import preprocess_files
+from canvod.preflight import CanVODFilename
 from canvod.readers import MatchedDirs
 from canvod.store import GnssResearchSite
 from canvod.store.store import _with_run_id
@@ -115,6 +116,7 @@ from canvodpy.orchestrator.resources import (
     deprecate_no_effect_arguments,
     run_measured,
 )
+from canvodpy.orchestrator.run_dates import NothingStoredError
 from canvodpy.orchestrator.store_retry import (
     CONFLICT_TRIES,
     RETRYABLE_STORE_ERRORS,
@@ -363,6 +365,21 @@ def _build_ordered_tasks(
     return all_tasks
 
 
+def _next_day(yyyydoy: str) -> str:
+    """The day after ``yyyydoy``."""
+    day = datetime.strptime(yyyydoy, "%Y%j") + timedelta(days=1)
+    return day.strftime("%Y%j")
+
+
+def _stored_day(canonical_name: str, start: np.datetime64) -> str:
+    """The day (YYYYDOY) of a stored file: from its name, else its first epoch."""
+    try:
+        name = CanVODFilename.from_filename(canonical_name)
+    except ValueError:
+        return pd.Timestamp(start).strftime("%Y%j")
+    return f"{name.year}{name.doy:03d}"
+
+
 class PipelineOrchestrator:
     """Orchestrate RINEX processing pipeline for all receiver pairs at a site.
 
@@ -410,10 +427,6 @@ class PipelineOrchestrator:
         Called with the receiver name, the number of files found, the number
         of days and the elapsed seconds when the run has found them. Default
         None (no-op) for standalone/programmatic use.
-    on_new_files : Callable[[list[tuple[str, str]]], None] | None
-        With ``new_files_only``, called with the ``(YYYYDOY, receiver)``
-        pairs that have a file the GNSS store doesn't hold, before they are
-        processed. Default None (no-op).
     on_incomplete_day : Callable[[str, str, int, int], None] | None
         Called with ``(receiver, YYYYDOY, files_found, files_expected)`` for
         each receiver-day to process with missing files
@@ -446,7 +459,6 @@ class PipelineOrchestrator:
         on_group_written: Callable[[str], None] | None = None,
         on_discovery_start: Callable[[str, Path], None] | None = None,
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
-        on_new_files: Callable[[list[tuple[str, str]]], None] | None = None,
         on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
         on_days_without_vod: Callable[[str, list[str]], None] | None = None,
         config: CanvodConfig | None = None,
@@ -466,7 +478,6 @@ class PipelineOrchestrator:
         self._on_group_written = on_group_written
         self._on_discovery_start = on_discovery_start
         self._on_discovery_end = on_discovery_end
-        self._on_new_files = on_new_files
         self._on_incomplete_day = on_incomplete_day
         self._on_days_without_vod = on_days_without_vod
         self._days_without_pair: dict[str, set[str]] = {}
@@ -782,8 +793,6 @@ class PipelineOrchestrator:
         self,
         start: str | None = None,
         end: str | None = None,
-        *,
-        new_files_only: bool = False,
     ) -> dict:
         """Preview what would be processed without executing.
 
@@ -795,10 +804,6 @@ class PipelineOrchestrator:
         end : str, optional
             YYYYDOY string to end at (inclusive). ``None`` previews every
             available date, matching legacy behavior.
-        new_files_only : bool, default False
-            Only the dates on which a receiver has a file the GNSS store
-            doesn't hold (:meth:`_dates_with_new_files`).
-
         Returns
         -------
         dict
@@ -807,8 +812,6 @@ class PipelineOrchestrator:
         """
         grouped = self._group_by_date_and_receiver(start, end)
         dates = self._filter_dates(grouped, start, end)
-        if new_files_only:
-            dates = self._dates_with_new_files(dates)
         self._warn_days_without_vod(start, end)
         self._warn_incomplete_days(dates)
 
@@ -843,15 +846,9 @@ class PipelineOrchestrator:
 
         return plan
 
-    def print_preview(
-        self,
-        start: str | None = None,
-        end: str | None = None,
-        *,
-        new_files_only: bool = False,
-    ) -> None:
+    def print_preview(self, start: str | None = None, end: str | None = None) -> None:
         """Print a formatted preview of the processing plan."""
-        plan = self.preview_processing_plan(start, end, new_files_only=new_files_only)
+        plan = self.preview_processing_plan(start, end)
 
         print(f"\n{'=' * 70}")
         print(f"PROCESSING PLAN FOR SITE: {plan['site']}")
@@ -916,44 +913,93 @@ class PipelineOrchestrator:
             filtered.append((date_key, receivers))
         return filtered
 
-    def _dates_with_new_files(
-        self,
-        dates: list[
-            tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]
-        ],
-    ) -> list[tuple[str, dict[str, tuple[ReceiverDay, str, ReceiverDay | None, str]]]]:
-        """The dates on which a receiver has a file the GNSS store doesn't hold.
+    def update_range(self) -> tuple[str, str] | None:
+        """The days a run with ``--update-to-latest`` processes.
 
-        A file counts as held when its canonical name is in the log book of
-        its store group, so finding new files reads no file. A date is kept
-        with all its receivers: the VOD of the day needs the data of both,
-        and the files already held are not written again. Reports the
-        ``(YYYYDOY, receiver)`` pairs with new files through
-        ``on_new_files`` (#386).
+        Per store group of the site's VOD analyses, its last stored day is
+        the day of the last file its log book records as written. The run
+        starts on the day after the earliest last stored day, counting only
+        the groups with files after their own last stored day: a receiver
+        that sends no more files (retired, or not delivering) doesn't hold
+        the start back. A group with nothing stored yet starts on its first
+        day with files. A reference's group of a canopy counts only the
+        days on which that canopy has files too. The run ends on the latest
+        day on which a receiver has files.
+
+        Only the folders of the days from the earliest last stored day on
+        are listed again; the older days come from the file index (ADR
+        0020).
+
+        Returns
+        -------
+        tuple[str, str] | None
+            The first and last day (YYYYDOY), or None if no group has files
+            after its last stored day.
+
+        Raises
+        ------
+        NothingStoredError
+            If the site's GNSS store holds nothing of these groups yet.
         """
-        held = self._held_file_names({group for _, groups in dates for group in groups})
-        kept = []
-        new_receiver_days: list[tuple[str, str]] = []
-        for date_key, groups in dates:
-            receivers = sorted(
-                {
-                    day.receiver
-                    for group, (day, _type, _position, fmt) in groups.items()
-                    if {f.canonical_name for f in discover_files(day, fmt)}
-                    - held.get(group, set())
-                }
+        canopy_of = self._analysis_groups()
+        last = self._last_stored_days(canopy_of)
+        stored = sorted(day for day in last.values() if day is not None)
+        if not stored:
+            raise NothingStoredError(self.site.site_name)
+        # A group with nothing stored needs all its days.
+        lowest = None if None in last.values() else stored[0]
+        grouped = self._group_by_date_and_receiver(lowest, None)
+        starts = []
+        for group, last_day in last.items():
+            days = sorted(
+                date_key
+                for date_key, groups in grouped.items()
+                if group in groups
+                and canopy_of[group] in groups
+                and (last_day is None or date_key > last_day)
             )
-            if receivers:
-                kept.append((date_key, groups))
-                new_receiver_days.extend((date_key, r) for r in receivers)
-        self._logger.info(
-            "receiver_days_with_new_files",
-            n_receiver_days=len(new_receiver_days),
-            n_dates=len(kept),
-        )
-        if self._on_new_files is not None:
-            self._on_new_files(new_receiver_days)
-        return kept
+            if days:
+                starts.append(days[0] if last_day is None else _next_day(last_day))
+        if not starts:
+            self._logger.info("update_nothing_new", last_stored=last)
+            return None
+        days_with_files = set(grouped).union(*self._days_without_pair.values())
+        start, end = min(starts), max(days_with_files)
+        self._logger.info("update_range", start=start, end=end, last_stored=last)
+        return start, end
+
+    def _analysis_groups(self) -> dict[str, str]:
+        """The store groups of the site's VOD analyses, each with its canopy."""
+        canopy_of: dict[str, str] = {}
+        for analysis in self.site.vod_analyses.values():
+            cfg = analysis.model_dump() if hasattr(analysis, "model_dump") else analysis
+            canopy, reference = cfg["canopy_receiver"], cfg["reference_receiver"]
+            canopy_of[canopy] = canopy
+            canopy_of[reference_store_group(reference, canopy)] = canopy
+        return canopy_of
+
+    def _last_stored_days(self, groups: Iterable[str]) -> dict[str, str | None]:
+        """The last stored day (YYYYDOY) of each of ``groups``.
+
+        ``None`` for a group the GNSS store doesn't hold; every group is
+        ``None`` without a store.
+        """
+        last: dict[str, str | None] = dict.fromkeys(sorted(groups))
+        if not store_exists(self.site.gnss_store_path):
+            return last
+        store = self.site.gnss_store
+        held = set(store.list_groups())
+        for group in last:
+            if group not in held:
+                continue
+            days = [
+                _stored_day(name, start)
+                for name, _hash, start, _end in stored_spans(
+                    store.load_metadata_for_dedup(group)
+                )
+            ]
+            last[group] = max(days, default=None)
+        return last
 
     def _warn_incomplete_days(
         self,
@@ -1211,17 +1257,6 @@ class PipelineOrchestrator:
             files=int(metadata["total_files"]),
             snapshot_id=snapshot_id[:12],
         )
-
-    def _held_file_names(self, groups: set[str]) -> dict[str, set[str]]:
-        """The canonical names in each group's log book; none without a store."""
-        if not store_exists(self.site.gnss_store_path):
-            return {}
-        store = self.site.gnss_store
-        held = {}
-        for group in groups:
-            rows = stored_spans(store.load_metadata_for_dedup(group))
-            held[group] = {name for name, *_ in rows if name}
-        return held
 
     @staticmethod
     def _build_receiver_configs(
@@ -2668,7 +2703,6 @@ class PipelineOrchestrator:
         keep_vars: list[str] | None = None,
         start_from: str | None = None,
         end_at: str | None = None,
-        new_files_only: bool = False,
     ) -> Generator[tuple[str, dict[str, xr.Dataset], dict[str, float]]]:
         """Process all receivers grouped by date; yield each day read back.
 
@@ -2686,10 +2720,6 @@ class PipelineOrchestrator:
             YYYYDOY string to start from
         end_at : str, optional
             YYYYDOY string to end at
-        new_files_only : bool, default False
-            Only the dates on which a receiver has a file the GNSS store
-            doesn't hold (:meth:`_dates_with_new_files`); a run without
-            dates uses this (#386).
 
         Yields
         ------
@@ -2697,9 +2727,7 @@ class PipelineOrchestrator:
             Date string, dict of {receiver_name: dataset}, and timings
 
         """
-        for unit in self._units_stored(
-            keep_vars, start_from, end_at, new_files_only, read_back=True
-        ):
+        for unit in self._units_stored(keep_vars, start_from, end_at, read_back=True):
             for date_key, datasets, timings in unit:
                 yield date_key, cast("dict[str, xr.Dataset]", datasets), timings
 
@@ -2707,7 +2735,6 @@ class PipelineOrchestrator:
         self,
         start_from: str | None = None,
         end_at: str | None = None,
-        new_files_only: bool = False,
     ) -> Generator[dict[str, tuple[str, ...]]]:
         """Store the days in units of days and read nothing back (ADR 0021).
 
@@ -2717,7 +2744,7 @@ class PipelineOrchestrator:
 
         Parameters
         ----------
-        start_from, end_at, new_files_only
+        start_from, end_at
             As :meth:`process_by_date`.
 
         Yields
@@ -2727,9 +2754,7 @@ class PipelineOrchestrator:
             the groups that stored it, in date order. A day of which no
             group was stored is left out.
         """
-        for unit in self._units_stored(
-            None, start_from, end_at, new_files_only, read_back=False
-        ):
+        for unit in self._units_stored(None, start_from, end_at, read_back=False):
             yield {date_key: tuple(sorted(datasets)) for date_key, datasets, _ in unit}
 
     def _units_stored(
@@ -2737,7 +2762,6 @@ class PipelineOrchestrator:
         keep_vars: list[str] | None,
         start_from: str | None,
         end_at: str | None,
-        new_files_only: bool,
         *,
         read_back: bool,
     ) -> Generator[list[tuple[str, dict[str, xr.Dataset | None], dict[str, float]]]]:
@@ -2746,7 +2770,7 @@ class PipelineOrchestrator:
             self._logger.info(
                 "dry_run_mode", message="Simulating processing without execution"
             )
-            self.print_preview(start_from, end_at, new_files_only=new_files_only)
+            self.print_preview(start_from, end_at)
             return
 
         # A first run whose new store is missing settings is refused before
@@ -2757,8 +2781,6 @@ class PipelineOrchestrator:
 
         grouped = self._group_by_date_and_receiver(start_from, end_at)
         filtered_dates = self._filter_dates(grouped, start_from, end_at)
-        if new_files_only:
-            filtered_dates = self._dates_with_new_files(filtered_dates)
         self._warn_days_without_vod(start_from, end_at)
         self._warn_incomplete_days(filtered_dates)
 

@@ -99,8 +99,8 @@ A run lists
 
 Every other folder comes from the index, without asking the drive. A run
 therefore finds every file of the days it processes, also a file added
-to an old folder since the previous run. A run without `--start` starts
-where the stores end, so a daily run lists only a few folders.
+to an old folder since the previous run. A run with `--update-to-latest`
+starts where the stores end, so a daily run lists only a few folders.
 
 One case is not seen: a file for a day the run processes, put into a
 folder that held only other days. Say the folder `25001` held only files

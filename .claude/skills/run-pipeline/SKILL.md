@@ -29,9 +29,10 @@ uv run canvodpy run --site <site> --start <YYYYDOY> --end <YYYYDOY> --dry-run
 just run <site> <YYYYDOY> <YYYYDOY>
 ```
 
-The recipe and the `canvodpy run` command are the same code. Without
-`--start`, `canvodpy run` processes the receiver-days of the last 30 days
-with files the store doesn't hold (older gaps need `--start`); other
+The recipe and the `canvodpy run` command are the same code. A run needs
+`--start` or `--update-to-latest` (the days since the last stored day of
+the receivers with new files, up to the latest files; it refuses an empty
+store), and takes one `--site`: loop in the shell for several sites. Other
 options (`--no-vod`, `--workers`, `--ephemeris-source`, `--config`,
 `--write-catalog`, `--label`) are in
 `docs/guides/api-levels.md`. A settings folder other than the default:
