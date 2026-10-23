@@ -42,7 +42,7 @@ Dates are `YYYYDDD`: the year and the day of year, for example
 |---|---|---|
 | `--site ExampleSite` | `Site("ExampleSite")` | Site name under `sites:` in `canvod-settings.yaml`. One site per run; see [Several sites](#several-sites). |
 | `--start`, `--end` | `run(start, end)` | First and last day, both included; see [Which days a run processes](#which-days-a-run-processes). |
-| `--update-to-latest` | `run(update_to_latest=True)` | Instead of `--start` and `--end`: the days since the last stored day, up to the latest day with files; see [Update to the latest files](#update-to-the-latest-files). |
+| `--update-to-latest` | `run(update_to_latest=True)` | Instead of `--start` and `--end`: the days from the last stored day up to the latest day with files; see [Update to the latest files](#update-to-the-latest-files). |
 | `--no-vod` | `run(start, end, vod_analyses=())` | Write the observations to the GNSS store and compute no VOD. |
 | `--vod-calculator` | `run(start, end, calculator=...)` | The VOD calculator, `tau_omega` by default. |
 | `--dry-run` | `pipeline.preview(start, end)` or `pipeline.preview(update_to_latest=True)` | List the days, receivers and files a run would process, without processing them. |
@@ -89,12 +89,13 @@ without `--start` or `--update-to-latest` stops with an error, and so
 does a run with `--update-to-latest` and `--start` or `--end`.
 
 - `--start` and `--end` give the first and last day. Without `--end`,
-  the run ends today. The run processes every day in the range. With the
+  the run ends today; in Python, `run(start)` without `end` ends on the
+  last day with files. The run processes every day in the range. With the
   default `gnss_store_strategy: skip`, files that are already in the
   store are skipped, so running a day twice doesn't duplicate data, and
   a file that arrived late for a stored day is added.
-- `--update-to-latest` processes the days since the last stored day; see
-  below.
+- `--update-to-latest` processes the days from the last stored day on;
+  see below.
 
 In Python, `run(start, end)` and `run(update_to_latest=True)` work the
 same way and raise a `ValueError` for the same mistakes.
@@ -110,21 +111,24 @@ canvodpy run --site ExampleSite --update-to-latest
 The run chooses the dates and then runs as a run with `--start` and
 `--end` does:
 
-- **Start**: the day after the earliest last stored day in the site's
-  GNSS store, counting only the receivers that have files after their
-  own last stored day. A receiver that sends no more files, for example
-  one that was retired, doesn't hold the start back. A receiver with
-  nothing stored yet counts from its first day with files.
+- **Start**: the earliest last stored day in the site's GNSS store,
+  counting only the receivers with new files: files after their own
+  last stored day, or files on that day that the store's log book
+  doesn't hold. So a day stored while its files were still arriving, for
+  example by a run at 03:00, gets the rest of its files on the next run;
+  the files already stored are skipped. A receiver whose last day is
+  completely stored and that sends no more files, for example one that
+  was retired, doesn't hold the start back. A receiver with nothing
+  stored yet counts from its first day with files.
 - **End**: the latest day on which a receiver has files.
 
 It prints the dates it chose, for example `update: 2026293 to 2026298`.
-If no receiver has files after its last stored day, it says so and
-exits with code 0. If the site's GNSS store holds nothing yet, it stops
+If no receiver has new files, it says so and exits with code 0. If the site's GNSS store holds nothing yet, it stops
 and asks for `--start`: the first run of a site names its first day.
 
 A receiver whose files arrive a few days after the others sets the
 start, so its days are processed when they arrive. A file that arrives
-late for a day that every receiver has stored is not in the range;
+late for a day before a receiver's last stored day is not in the range;
 process that day again with `--start` and `--end`.
 
 In Python, `pipeline.update_range()` returns the dates `run(update_to_latest=True)`

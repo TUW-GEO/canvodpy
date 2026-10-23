@@ -30,9 +30,9 @@ just run <site> <YYYYDOY> <YYYYDOY>
 ```
 
 The recipe and the `canvodpy run` command are the same code. A run needs
-`--start` or `--update-to-latest` (the days since the last stored day of
-the receivers with new files, up to the latest files; it refuses an empty
-store), and takes one `--site`: loop in the shell for several sites. Other
+`--start` or `--update-to-latest` (the days from the earliest last stored
+day of the receivers with new files, up to the latest files; it refuses an
+empty store), and takes one `--site`: loop in the shell for several sites. Other
 options (`--no-vod`, `--workers`, `--ephemeris-source`, `--config`,
 `--write-catalog`, `--label`) are in
 `docs/guides/api-levels.md`. A settings folder other than the default:

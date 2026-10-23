@@ -1,9 +1,9 @@
 """A run is given its dates, or ``--update-to-latest`` (one site per run).
 
-``--update-to-latest`` starts on the day after the earliest last stored day,
-counting only the store groups with files after their own last stored
-day, and ends on the latest day with files. Without dates or the option a
-run stops, as it does with both.
+``--update-to-latest`` starts on the earliest last stored day, counting
+only the store groups with new files: after their own last stored day, or
+on it but not in their log book. It ends on the latest day with files.
+Without dates or the option a run stops, as it does with both.
 """
 
 from __future__ import annotations
@@ -44,8 +44,8 @@ def _day(days_ago: int) -> str:
     return (datetime.now().date() - timedelta(days=days_ago)).strftime("%Y%j")
 
 
-def _name(station: str, day: str) -> str:
-    return f"{station}_R_{day}0000_15M_05S_AA.sbf"
+def _name(station: str, day: str, time: str = "0000") -> str:
+    return f"{station}_R_{day}{time}_15M_05S_AA.sbf"
 
 
 def _site(tmp_path: Path, monkeypatch, days: list[str]) -> Path:
@@ -130,10 +130,30 @@ def test_a_lagging_receiver_sets_the_start(tmp_path, monkeypatch):
 
     output = _update()
 
-    assert f"update: {_day(3)} to {_day(2)}" in output
-    assert f"'date': '{_day(3)}'" in output
+    # The reference's last stored day is run again: its stored files are
+    # skipped by their hash.
+    assert f"update: {_day(4)} to {_day(2)}" in output
+    assert f"'date': '{_day(4)}'" in output
     assert f"'date': '{_day(2)}'" in output
-    assert f"'date': '{_day(4)}'" not in output
+    assert f"'date': '{_day(5)}'" not in output
+
+
+def test_a_partly_stored_last_day_gets_its_remaining_files(tmp_path, monkeypatch):
+    # A run at 03:00 stored the first files of the day; the rest arrived.
+    day = _day(2)
+    data = _site(tmp_path, monkeypatch, [day])
+    for station, folder in (("FANA01INK", "02_canopy"), ("FANR01INK", "01_reference")):
+        (data / folder / _name(station, day, "0015")).write_text("")
+    _store(
+        {
+            "canopy_01": [_name("FANA01INK", day)],
+            REFERENCE_GROUP: [_name("FANR01INK", day)],
+        }
+    )
+
+    output = _update()
+
+    assert f"update: {day} to {day}" in output
 
 
 def test_a_retired_receiver_does_not_hold_the_start_back(tmp_path, monkeypatch):
@@ -153,7 +173,7 @@ def test_a_retired_receiver_does_not_hold_the_start_back(tmp_path, monkeypatch):
 
     output = _update()
 
-    assert f"update: {_day(3)} to {_day(2)}" in output
+    assert f"update: {_day(4)} to {_day(2)}" in output
 
 
 def test_a_receiver_with_nothing_stored_starts_at_its_first_file(tmp_path, monkeypatch):
@@ -185,7 +205,7 @@ def test_nothing_new_is_said_and_is_no_error(tmp_path, monkeypatch):
 
     output = _update()
 
-    assert "update: no receiver has files after its last stored day" in output
+    assert "update: no receiver has new files" in output
     assert "Dry-run plan" not in output
 
 
@@ -285,4 +305,4 @@ class TestPythonApi:
             }
         )
         with Site(SITE_KEY).pipeline(dry_run=True) as pipeline:
-            assert pipeline.update_range() == (days[1], days[2])
+            assert pipeline.update_range() == (days[0], days[2])

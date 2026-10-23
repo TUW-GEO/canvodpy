@@ -383,7 +383,7 @@ Files that are already in the store are skipped.
 
     Leave out `--end` and the run processes up to today. Once the store
     holds data, `--update-to-latest` instead of the dates processes the
-    days since the last stored day, up to the latest files:
+    days from the last stored day up to the latest files:
 
     ```bash
     canvodpy run --site ExampleSite --update-to-latest

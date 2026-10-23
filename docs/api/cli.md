@@ -58,7 +58,7 @@ $ canvodpy run [OPTIONS]
 * `--site <str>`: Site name, as defined under sites: in canvod-settings.yaml, for example ExampleSite. One site per run: for several sites, run canvodpy once per site, for example in a shell loop.  [required]
 * `--start <str>`: Start date in YYYYDOY format, for example 2025001. Needed unless --update-to-latest is given.
 * `--end <str>`: End date in YYYYDOY format, for example 2025007. If omitted, processes up to today.
-* `--update-to-latest`: Process the days since the last stored day, up to the latest day with files, instead of --start and --end. Starts on the day after the earliest last stored day among the receivers with newer files, so a retired receiver doesn't hold it back.
+* `--update-to-latest`: Process the days from the last stored day up to the latest day with files, instead of --start and --end. Starts on the earliest last stored day among the receivers with new files (after that day, or on it but not stored yet), so a retired receiver doesn't hold it back.
 * `--no-vod / --vod`: Skip the VOD calculation: only write the observations to the GNSS store.  [default: vod]
 * `--label <str>`: Free-text label of the run, stored in the run history, for example to group the repetitions of a benchmark.
 * `--dry-run / --no-dry-run`: Preview processing plan without executing.  [default: no-dry-run]

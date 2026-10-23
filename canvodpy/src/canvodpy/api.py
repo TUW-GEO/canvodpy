@@ -685,7 +685,7 @@ class Pipeline:
             ``update_to_latest``; without ``end`` the run goes to the last
             day with files.
         update_to_latest : bool, default False
-            Process the days since the last stored day instead of
+            Process the days from the last stored day on instead of
             ``start``/``end`` (:meth:`update_range`); with nothing new, the
             run yields nothing.
         vod_analyses : sequence of str, optional
@@ -849,16 +849,18 @@ class Pipeline:
     def update_range(self) -> tuple[str, str] | None:
         """The days a run with ``update_to_latest`` processes.
 
-        It starts on the day after the earliest last stored day in the
-        site's GNSS store, counting only the receivers with files after
-        their own last stored day, so a retired receiver doesn't hold it
-        back. It ends on the latest day with files.
+        It starts on the earliest last stored day in the site's GNSS store,
+        counting only the receivers with new files: after their own last
+        stored day, or on it but not in the store's log book. A day stored
+        while its files were still arriving thus gets the rest, and a
+        retired receiver doesn't hold the start back. It ends on the latest
+        day with files.
 
         Returns
         -------
         tuple[str, str] | None
-            The first and last day (YYYYDOY); None if no receiver has files
-            after its last stored day.
+            The first and last day (YYYYDOY); None if no receiver has new
+            files.
 
         Raises
         ------

@@ -46,7 +46,7 @@ def check_run_dates(
     if not update_to_latest and not start:
         msg = (
             "Give the first day with --start, or --update-to-latest to process "
-            "the days since the last stored day (start= or update_to_latest=True "
-            "in Python)."
+            "the days from the last stored day on (start= or "
+            "update_to_latest=True in Python)."
         )
         raise ValueError(msg)

@@ -5,7 +5,7 @@ Usage
     # Process a specific range
     uv run canvodpy run --site ExampleSite --start 2025001 --end 2025007
 
-    # Process the days since the last stored day, up to the latest files
+    # Process the days from the last stored day up to the latest files
     uv run canvodpy run --site ExampleSite --update-to-latest
 
     # One site per run; several sites in a shell loop
@@ -178,7 +178,7 @@ def _resolve_date_range(
     ) as pipeline:
         dates = pipeline.update_range()
     if dates is None:
-        emit("update: no receiver has files after its last stored day")
+        emit("update: no receiver has new files")
         return None
     emit(f"update: {dates[0]} to {dates[1]}")
     return dates
@@ -572,10 +572,11 @@ def run(
         typer.Option(
             "--update-to-latest",
             help=(
-                "Process the days since the last stored day, up to the latest "
+                "Process the days from the last stored day up to the latest "
                 "day with files, instead of --start and --end. Starts on the "
-                "day after the earliest last stored day among the receivers "
-                "with newer files, so a retired receiver doesn't hold it back."
+                "earliest last stored day among the receivers with new files "
+                "(after that day, or on it but not stored yet), so a retired "
+                "receiver doesn't hold it back."
             ),
         ),
     ] = False,

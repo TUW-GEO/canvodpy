@@ -22,7 +22,7 @@ from concurrent.futures import (
 )
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import partial
 from itertools import zip_longest
 from pathlib import Path
@@ -363,12 +363,6 @@ def _build_ordered_tasks(
         for task_args in _interleave_by_receiver(task_descriptors):
             all_tasks.append((date_key, task_args))
     return all_tasks
-
-
-def _next_day(yyyydoy: str) -> str:
-    """The day after ``yyyydoy``."""
-    day = datetime.strptime(yyyydoy, "%Y%j") + timedelta(days=1)
-    return day.strftime("%Y%j")
 
 
 def _stored_day(canonical_name: str, start: np.datetime64) -> str:
@@ -917,14 +911,17 @@ class PipelineOrchestrator:
         """The days a run with ``--update-to-latest`` processes.
 
         Per store group of the site's VOD analyses, its last stored day is
-        the day of the last file its log book records as written. The run
-        starts on the day after the earliest last stored day, counting only
-        the groups with files after their own last stored day: a receiver
-        that sends no more files (retired, or not delivering) doesn't hold
-        the start back. A group with nothing stored yet starts on its first
-        day with files. A reference's group of a canopy counts only the
-        days on which that canopy has files too. The run ends on the latest
-        day on which a receiver has files.
+        the day of the last file its log book records as written. A group
+        counts if it has files after its last stored day, or files on that
+        day that its log book doesn't hold (by canonical name, so no file
+        is read): a day stored while its files were still arriving gets
+        its remaining files. A receiver whose last day is completely
+        stored and that sends no more files (retired, or not delivering)
+        doesn't count. The run starts on the earliest last stored day of
+        the groups that count; a group with nothing stored yet counts from
+        its first day with files. A reference's group of a canopy counts
+        only the days on which that canopy has files too. The run ends on
+        the latest day on which a receiver has files.
 
         Only the folders of the days from the earliest last stored day on
         are listed again; the older days come from the file index (ADR
@@ -933,8 +930,8 @@ class PipelineOrchestrator:
         Returns
         -------
         tuple[str, str] | None
-            The first and last day (YYYYDOY), or None if no group has files
-            after its last stored day.
+            The first and last day (YYYYDOY), or None if no group has new
+            files.
 
         Raises
         ------
@@ -942,24 +939,32 @@ class PipelineOrchestrator:
             If the site's GNSS store holds nothing of these groups yet.
         """
         canopy_of = self._analysis_groups()
-        last = self._last_stored_days(canopy_of)
-        stored = sorted(day for day in last.values() if day is not None)
-        if not stored:
+        stored = self._stored_files(canopy_of)
+        last = {group: day for group, (day, _names) in stored.items()}
+        known = sorted(day for day in last.values() if day is not None)
+        if not known:
             raise NothingStoredError(self.site.site_name)
         # A group with nothing stored needs all its days.
-        lowest = None if None in last.values() else stored[0]
+        lowest = None if None in last.values() else known[0]
         grouped = self._group_by_date_and_receiver(lowest, None)
+
+        def has_files(group: str, date_key: str) -> bool:
+            groups = grouped.get(date_key, {})
+            return group in groups and canopy_of[group] in groups
+
         starts = []
-        for group, last_day in last.items():
-            days = sorted(
-                date_key
-                for date_key, groups in grouped.items()
-                if group in groups
-                and canopy_of[group] in groups
-                and (last_day is None or date_key > last_day)
-            )
-            if days:
-                starts.append(days[0] if last_day is None else _next_day(last_day))
+        for group, (last_day, names) in stored.items():
+            if last_day is None:
+                days = sorted(d for d in grouped if has_files(group, d))
+                if days:
+                    starts.append(days[0])
+                continue
+            later = any(d > last_day and has_files(group, d) for d in grouped)
+            if later or (
+                has_files(group, last_day)
+                and self._new_names(grouped[last_day][group], names)
+            ):
+                starts.append(last_day)
         if not starts:
             self._logger.info("update_nothing_new", last_stored=last)
             return None
@@ -967,6 +972,15 @@ class PipelineOrchestrator:
         start, end = min(starts), max(days_with_files)
         self._logger.info("update_range", start=start, end=end, last_stored=last)
         return start, end
+
+    @staticmethod
+    def _new_names(
+        receiver_day: tuple[ReceiverDay, str, ReceiverDay | None, str],
+        held: set[str],
+    ) -> bool:
+        """Whether a receiver-day has a file whose canonical name isn't held."""
+        day, _type, _position, fmt = receiver_day
+        return any(f.canonical_name not in held for f in discover_files(day, fmt))
 
     def _analysis_groups(self) -> dict[str, str]:
         """The store groups of the site's VOD analyses, each with its canopy."""
@@ -978,28 +992,29 @@ class PipelineOrchestrator:
             canopy_of[reference_store_group(reference, canopy)] = canopy
         return canopy_of
 
-    def _last_stored_days(self, groups: Iterable[str]) -> dict[str, str | None]:
-        """The last stored day (YYYYDOY) of each of ``groups``.
+    def _stored_files(
+        self, groups: Iterable[str]
+    ) -> dict[str, tuple[str | None, set[str]]]:
+        """Per group, its last stored day (YYYYDOY) and the canonical names held.
 
-        ``None`` for a group the GNSS store doesn't hold; every group is
-        ``None`` without a store.
+        ``(None, set())`` for a group the GNSS store doesn't hold, and for
+        every group without a store.
         """
-        last: dict[str, str | None] = dict.fromkeys(sorted(groups))
+        stored: dict[str, tuple[str | None, set[str]]] = {
+            group: (None, set()) for group in sorted(groups)
+        }
         if not store_exists(self.site.gnss_store_path):
-            return last
+            return stored
         store = self.site.gnss_store
         held = set(store.list_groups())
-        for group in last:
+        for group in stored:
             if group not in held:
                 continue
-            days = [
-                _stored_day(name, start)
-                for name, _hash, start, _end in stored_spans(
-                    store.load_metadata_for_dedup(group)
-                )
-            ]
-            last[group] = max(days, default=None)
-        return last
+            spans = stored_spans(store.load_metadata_for_dedup(group))
+            days = [_stored_day(name, start) for name, _hash, start, _end in spans]
+            names = {name for name, *_ in spans if name}
+            stored[group] = (max(days, default=None), names)
+        return stored
 
     def _warn_incomplete_days(
         self,
