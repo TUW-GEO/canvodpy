@@ -98,19 +98,6 @@ Issues     = "https://github.com/TUW-GEO/canvodpy/issues"
 
 ## Publishing
 
-=== "TestPyPI (test first)"
-
-    ```bash
-    cd packages/canvod-readers
-    uv build
-    uv publish --repository testpypi
-
-    # Verify installation (dependencies come from PyPI)
-    uv run --isolated --no-project --with canvod-readers \
-      --index https://test.pypi.org/simple/ --index-strategy unsafe-best-match \
-      python -c "import canvod.readers"
-    ```
-
 === "Production PyPI"
 
     ```bash
