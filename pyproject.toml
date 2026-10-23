@@ -14,21 +14,24 @@ exclude = ["packages/canvod-filemap"]
 # to a release tag (<package>-v<version>); a local sibling-path source would
 # break `uv sync` on any machine without that repo cloned alongside canvodpy.
 [tool.uv.sources]
-# Extensions main after PR #81 (naming recipes from a pinned URL, #78)
+# Extensions main after PR #83 (recipe links fetched in every run, #78)
 # until the canvod-filemap-v1.0.0 tag exists.
-canvod-filemap = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", rev = "306d30de2d1fbd5c715df133de6288e214915faa" }
+canvod-filemap = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", rev = "08ab0fa6cdbbbc98498b39acc6f1f0efa484d002" }
 canvod-adapters = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-adapters", tag = "v0.1.0" }
-# The extensions repo takes canvod-preflight from this repo on GitHub until
-# canvodpy 1.0.0 is on PyPI. The override makes canvod-filemap use the local
-# workspace package instead, so the lock has one canvod-preflight (A8).
-# Drop it, and the source line above, once both sides take it from PyPI.
+# The extensions repo takes canvod-preflight and canvod-utils from this repo
+# on GitHub until canvodpy 1.0.0 is on PyPI. The override makes
+# canvod-filemap use the local workspace packages instead, so the lock has
+# one of each (A8).
+# Drop the override, and the two source lines below, once both sides take them
+# from PyPI.
 canvod-preflight = { workspace = true }
+canvod-utils = { workspace = true }
 
 [tool.uv]
 # Everyone, CI included, uses the same uv minor version, so uv.lock is
 # written the same way everywhere. setup-uv reads this range.
 required-version = ">=0.13.0,<0.14"
-override-dependencies = ["canvod-preflight"]
+override-dependencies = ["canvod-preflight", "canvod-utils"]
 
 # ============================================================================
 # Development Dependencies (Workspace-wide)
