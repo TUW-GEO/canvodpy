@@ -7,6 +7,11 @@
         href="{{ 'assets/logo/canvodpy_favicon_dark_mode.svg' | url }}">
 {% endblock %}
 
+{% block announce %}
+  canVODpy v1.0.0 is out:
+  <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}#new-in-v100">see what's new</a>
+{% endblock %}
+
 {% block libs %}
   <script>
     // Patch mermaid to use "base" theme instead of "default" (blue).

@@ -104,7 +104,8 @@ class StorageConfig(_StrictModel):
         description=(
             "Folder of the stores: each site's GNSS store and VOD store are "
             "under it. A local folder (must exist and be writable) or "
-            "s3://bucket/prefix; credentials, region and endpoint of S3 come "
+            "s3://bucket/prefix (experimental); credentials, region and "
+            "endpoint of S3 come "
             "from the environment."
         ),
     )

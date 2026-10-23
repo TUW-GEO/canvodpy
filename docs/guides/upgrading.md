@@ -267,11 +267,15 @@ All of these are replaced by one entry point: `canvodpy run`, or
 
 ## New in v1.0.0
 
-- **Stores on S3**: runs write GNSS and VOD stores to S3-compatible object
-  storage ([Stores on S3](../packages/store-metadata/overview.md#stores-on-s3)).
+- **Stores on S3, experimental**: runs write GNSS and VOD stores to
+  S3-compatible object storage, tested against S3 emulators only ([Stores on S3](s3.md)).
 - **Store metadata** after DataCite and ACDD, checked against the
   standards, and a **STAC catalog** of all stores
   (`canvodpy run --write-catalog`; [Store metadata](../packages/store-metadata/overview.md)).
+- **Settings from a link**: `--config-dir` and `CANVOD_CONFIG_DIR` take
+  the raw GitHub link of a settings file; naming recipes are read from
+  the same repository
+  ([Settings from a GitHub repository](configuration.md#settings-from-a-github-repository)).
 - **Join or reproduce a store**: `canvodpy config init --from-store`
   writes the settings file of a store ([Settings file](configuration.md#join-or-reproduce-a-store)).
 - **Run history and dashboard**: every run records itself, its stage
@@ -283,6 +287,9 @@ All of these are replaced by one entry point: `canvodpy run`, or
   and the units of days a run commits at once, and a run reads the next
   unit while it computes VOD
   ([Parallel processing](parallel-processing.md)).
+- **A complete command line**: `canvodpy run`, `vod`, `vod-reconcile`,
+  `config`, `store`, `stac`, `doctor` and `dashboard`
+  ([Command line](../api/cli.md)).
 - **Plugins**: your own readers and VOD calculators from installed
   packages ([Your own readers and VOD calculators](plugins.md)).
 - **Comparing stores** within fixed tolerances, and `canvodpy config explain`.

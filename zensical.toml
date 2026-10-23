@@ -221,6 +221,7 @@ favicon = "assets/logo/canvodpy_favicon_bright_mode.svg"
 custom_dir = "overrides"
 
 features = [
+  "announce.dismiss",
   "content.code.copy",
   "content.code.annotate",
   "content.footnote.tooltips",
