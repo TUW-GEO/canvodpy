@@ -1,6 +1,6 @@
 [project]
 name = "canvod-ops"
-version = "0.4.0"
+version = "1.0.0"
 description = "Preprocessing of GNSS observations: temporal aggregation and grid cell assignment"
 readme = "README.md"
 requires-python = ">=3.14"

@@ -37,8 +37,8 @@ keywords:
   - L-band
   - biomass
 license: Apache-2.0
-version: 0.2.2
-date-released: "2026-04-06"
+version: 1.0.0
+date-released: "2026-10-24"
 doi: "10.5281/zenodo.18496233"
 references:
   - type: software

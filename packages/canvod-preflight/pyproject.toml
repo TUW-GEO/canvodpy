@@ -1,6 +1,6 @@
 [project]
 name = "canvod-preflight"
-version = "0.4.0"
+version = "1.0.0"
 description = "The canVOD file name convention for GNSS-T receiver files"
 readme = "README.md"
 requires-python = ">=3.14"
