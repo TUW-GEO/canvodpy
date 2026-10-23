@@ -383,8 +383,9 @@ def _push_commands(tags: list[str]) -> list[str]:
     pushed at once, so a canvodpy tag pushed with the package tags never
     starts the workflow that drafts its GitHub release.
     """
-    umbrella = [name for name in tags if name.startswith("v")]
-    others = [name for name in tags if not name.startswith("v")]
+    # canvodpy's tags are "v<version>", the packages' "<name>-v<version>".
+    umbrella = [name for name in tags if name[:1] == "v" and name[1:2].isdigit()]
+    others = [name for name in tags if name not in umbrella]
     return [
         f"git push origin {' '.join(group)}" for group in (umbrella, others) if group
     ]

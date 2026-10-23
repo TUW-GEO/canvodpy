@@ -56,3 +56,10 @@ def test_package_tags_alone_are_one_push() -> None:
 
 def test_the_canvodpy_tag_alone_is_one_push() -> None:
     assert release._push_commands(["v1.0.1"]) == ["git push origin v1.0.1"]
+
+
+def test_a_package_whose_name_starts_with_v_is_a_package_tag() -> None:
+    assert release._push_commands(["v1.2.0", "vortex-v1.0.0"]) == [
+        "git push origin v1.2.0",
+        "git push origin vortex-v1.0.0",
+    ]

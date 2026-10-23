@@ -136,7 +136,8 @@ Push the canvodpy tag on its own, before the package tags. GitHub starts no
 workflow for tags when
 [more than three tags are pushed at once](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push),
 so a canvodpy tag pushed together with the package tags gets no draft
-release.
+release. The package tags start no workflow, so they can go in one push,
+however many there are.
 
 ### 7. Publish the draft release
 
