@@ -158,6 +158,7 @@ just docs                             # preview the docs site
 just docs-lint                        # language check of the docs (Vale)
 just docs-lint-changed                # Vale on the pages changed since origin/main
 just docs-links                       # link check of the built docs (lychee)
+just audit                            # locked dependencies against known vulnerabilities
 just doctor                           # version, environment, settings found
 just config-validate                  # check the settings file
 ```
@@ -168,8 +169,12 @@ the agent docs check and the package build without workspace sources
 (`just check-build`; `.github/workflows/code_quality.yml`), Vale on the
 changed docs pages and the link check of the built site
 (`.github/workflows/docs_quality.yml`), and the tests on Linux, macOS and
-Windows (`.github/workflows/test_platforms.yml`). A pull request that
-changes behavior without docs to match is declined (`CODING_STANDARDS.md`).
+Windows (`.github/workflows/test_platforms.yml`). When `uv.lock` or a
+`pyproject.toml` changes, CI checks the locked dependencies against known
+vulnerabilities (`just audit`; `.github/workflows/dependency_audit.yml`);
+`.github/workflows/publish_pypi.yml` runs the same check before every
+upload. A pull request that changes behavior without docs to match is
+declined (`CODING_STANDARDS.md`).
 
 ## Finding code: the code graph
 

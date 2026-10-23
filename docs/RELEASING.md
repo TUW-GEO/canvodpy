@@ -153,7 +153,9 @@ the
 gh workflow run publish_pypi.yml --ref v1.1.0
 ```
 
-It builds and uploads exactly the packages whose release tag points at that
+It first checks the locked dependencies against known vulnerabilities
+(`just audit`) and stops if it finds one. Then it builds and uploads exactly
+the packages whose release tag points at that
 commit (`scripts/release.py tagged`), here canvodpy, canvod-store and
 canvod-grids. You can create several releases before ever running this: a
 tag existing is not a promise that PyPI has it.
@@ -214,6 +216,14 @@ tag existing is not a promise that PyPI has it.
     canvodpy tags. Run `publish_pypi.yml` on the canvodpy tag, never on a
     package tag such as `canvod-store-v1.1.0`: it publishes every package
     tagged on that commit.
+
+??? failure "The dependency check finds a vulnerability"
+    `just audit` names the package, the vulnerability and the version that
+    fixes it. Raise the version in `uv.lock` (`uv lock --upgrade-package
+    NAME`) in a pull request, and tag the release on the new commit. If no
+    fixed version exists and the vulnerability doesn't affect canVODpy, add
+    `--ignore-vuln ID` to the `just audit` call of both workflows, with a
+    comment saying why, and remove it once a fix is out.
 
 ??? failure "A new package fails its first upload"
     A package that is not on PyPI yet needs a pending publisher on PyPI

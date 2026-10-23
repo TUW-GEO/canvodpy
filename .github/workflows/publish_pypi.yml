@@ -13,8 +13,37 @@ on:
 permissions: read-all
 
 jobs:
+  audit:
+    name: Check the locked dependencies for known vulnerabilities
+    # A release with a known vulnerability stops here, before anything is
+    # built. Its own job: the code pip-audit brings in never runs next to
+    # the distributions or the upload token.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: false  # no cache in a publishing workflow (cache poisoning)
+
+      - name: Install just
+        uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        with:
+          tool: just
+
+      - name: Check the locked dependencies for known vulnerabilities
+        run: just audit
+
   build:
     name: Build the packages released at this commit
+    needs: audit
     runs-on: ubuntu-latest
     permissions:
       contents: read

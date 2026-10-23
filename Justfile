@@ -91,6 +91,19 @@ agent-skills:
 check-lock:
     uv lock --check
 
+# check the locked dependencies against known vulnerabilities (pip-audit); `just audit --ignore-vuln ID` skips one
+[group('code quality')]
+audit *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    req="$(mktemp)"
+    trap 'rm -f "$req"' EXIT
+    # pip-audit checks a requirements file with hashes. The filemap group is
+    # left out: canvod-filemap comes from git, without a hash.
+    uv export --frozen --format requirements-txt --no-emit-workspace \
+        --all-extras --all-groups --no-group filemap --quiet --output-file "$req"
+    uvx pip-audit@2.10.1 --disable-pip --requirement "$req" {{args}}
+
 # check that every package builds without the workspace sources, as the release workflow builds them for PyPI
 [group('build and release')]
 check-build:
