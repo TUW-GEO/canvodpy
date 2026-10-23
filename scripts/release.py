@@ -129,6 +129,24 @@ def _git(*args: str) -> str:
     return result.stdout.strip()
 
 
+def _branch_taken(branch: str, root: Path = ROOT) -> bool:
+    """Whether ``branch`` exists locally or as a remote-tracking branch."""
+    refs = subprocess.run(
+        [
+            "git",
+            "for-each-ref",
+            "--format=%(refname)",
+            f"refs/heads/{branch}",
+            f"refs/remotes/*/{branch}",
+        ],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    return bool(refs.strip())
+
+
 def _last_tag(pkg: Package) -> str | None:
     """The package's newest release tag reachable from HEAD.
 
@@ -373,6 +391,12 @@ def prepare(packages: dict[str, Package], args: list[str]) -> int:
                     f"{pkg.name} requires {req}, which excludes {req.name} {chosen[req.name]}: "
                     f"check {pkg.name} against the new version and widen its range by hand."
                 )
+    if UMBRELLA in chosen and _branch_taken(f"release/v{chosen[UMBRELLA]}"):
+        problems.append(
+            f"The branch release/v{chosen[UMBRELLA]} exists already (locally or on a "
+            "remote); the release commit goes on a new branch of that name. Delete "
+            "the old branch first."
+        )
     problems += [
         f"{problem} Zenodo reads the version from it; add it before releasing."
         for problem in _missing_citation_fields()
