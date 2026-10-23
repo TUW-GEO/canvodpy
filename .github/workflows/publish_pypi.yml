@@ -36,6 +36,16 @@ jobs:
         with:
           enable-cache: false  # no cache in a publishing workflow (cache poisoning)
 
+      - name: Install just
+        uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        with:
+          tool: just
+
+      - name: Check the locked dependencies for known vulnerabilities
+        # A release with a known vulnerability stops here, before anything
+        # is built or uploaded. This job has no upload token.
+        run: just audit
+
       - name: Build the packages released at this commit
         run: |
           # Each package has its own version and tag (canvod-store-v1.1.0,

@@ -1,0 +1,35 @@
+name: Dependency Audit
+
+# Checks the locked dependencies against known vulnerabilities (just audit,
+# pip-audit). It runs when the dependencies change; publish_pypi.yml runs the
+# same check before every upload. Dependabot covers new advisories weekly.
+on:
+    pull_request:
+        paths:
+            - 'uv.lock'
+            - '**/pyproject.toml'
+            - 'Justfile'
+            - '.github/workflows/dependency_audit.yml'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+    audit:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - name: Install uv
+              uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+            - name: Install just
+              uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+              with:
+                  tool: just
+            - name: Check the locked dependencies for known vulnerabilities
+              run: just audit

@@ -51,7 +51,7 @@ The badge requires filling out criteria in these categories:
 - [ ] Secure development knowledge (document that developers know secure coding)
 - [x] Static analysis (ruff in `code_quality.yml`, CodeQL in `codeql.yml`)
 - [x] Dynamic analysis (pytest, integration tests)
-- [x] Dependency management (uv, Dependabot)
+- [x] Dependency management (uv, Dependabot, pip-audit in `dependency_audit.yml`)
 
 #### Analysis (6 criteria)
 - [x] Static analysis enabled (ruff in CI)
