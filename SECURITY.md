@@ -75,6 +75,14 @@ we do not guarantee specific response or fix timelines.
   - PyPI security notifications
   - `uv audit` in your project, which checks the locked dependencies
     against known vulnerabilities (experimental in uv)
+  - `pip-audit`, run through uv, which does the same check:
+
+    ```bash
+    uv export --format requirements-txt --no-emit-project -o requirements.txt
+    uvx pip-audit --disable-pip -r requirements.txt
+    ```
+
+<!-- Drop the pip-audit item once `uv audit` is no longer experimental. -->
 
 ### Credential Management
 
