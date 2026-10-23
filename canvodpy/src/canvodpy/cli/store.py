@@ -1113,11 +1113,13 @@ def _amend_changes(
 
 
 def _refuse_missing_recipe(site: str, receiver: str, recipe: str) -> None:
+    from canvodpy.orchestrator.discovery import FILEMAP_INSTALL_HINT
+
     console.print(
         f"[red]❌ Found no naming recipe {recipe!r} of receiver {receiver!r}, "
-        "so its sha256 can't be recorded. Install canvod-filemap (uv sync "
-        f"--group filemap) and check that `canvodpy config validate --site "
-        f"{site}` finds the recipe.[/red]"
+        f"so its sha256 can't be recorded. If canvod-filemap is missing: "
+        f"{FILEMAP_INSTALL_HINT} Then check that `canvodpy config validate "
+        f"--site {site}` finds the recipe.[/red]"
     )
     raise typer.Exit(1)
 

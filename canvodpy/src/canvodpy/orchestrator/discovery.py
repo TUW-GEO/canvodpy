@@ -158,9 +158,8 @@ class DiscoveryError(ValueError):
 
 
 FILEMAP_INSTALL_HINT = (
-    "Install it in the canvodpy repository with: uv sync --group filemap; "
-    "elsewhere from GitHub, see "
-    "https://extensions.canvodpy.eu/packages/filemap/overview/"
+    "Install it with: uv add canvod-filemap (in a clone of the canvodpy "
+    "repository: uv sync --group filemap)."
 )
 
 

@@ -72,7 +72,7 @@ for the recipe format and mapping API,
 [canvod-airflow's overview](https://extensions.canvodpy.eu/packages/airflow/overview/)
 for DAG structure, deployment, and configuration (`canvod-airflow` depends
 on `canvodpy`, not the other way around), and
-[canvod-adapters's overview](https://extensions.canvodpy.eu/packages/adapters/overview/)
+[canvod-adapters' overview](https://extensions.canvodpy.eu/packages/adapters/overview/)
 for the gnssvod conversion, including how merged VOD bands are imported.
 
 ## What happens if an extension isn't installed

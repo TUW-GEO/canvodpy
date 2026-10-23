@@ -409,6 +409,7 @@ def test_recipe_without_filemap_is_an_error(tmp_path: Path) -> None:
         check_receivers(receivers, tmp_path, "fangorn")
     assert "canopy_01" in str(exc_info.value)
     assert "reference_01" not in str(exc_info.value)
+    assert "uv add canvod-filemap" in str(exc_info.value)
 
 
 def test_missing_recipe_file_is_an_error(

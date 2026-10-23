@@ -4,7 +4,6 @@
 
 [tool.uv.workspace]
 members = ["packages/*", "canvodpy"]
-exclude = ["packages/canvod-filemap"]
 
 [tool.uv]
 # Everyone, CI included, uses the same uv minor version, so uv.lock is
