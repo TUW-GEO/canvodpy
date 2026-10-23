@@ -15,33 +15,34 @@
         <link rel="canonical" href="https://canvodpy.eu/guides/DEVELOPMENT/">
       
       
+      
         <link rel="prev" href="../contributor-setup/">
       
       
-        <link rel="next" href="../architecture-design/">
+        <link rel="next" href="../reference-stores/">
       
       
         
       
       
       <link rel="icon" href="../../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
-        <title>Development Guide - canVODpy</title>
+        <title>Development guide - canVODpy</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="../.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -168,11 +190,12 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Development Guide
+              Development guide
             
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -286,12 +303,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -300,7 +311,7 @@
         <a href="../../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../impressum/" class="md-tabs__link">
+        <a href="../../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -523,12 +518,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -553,7 +542,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -575,7 +564,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -589,14 +578,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../users/cli/" class="md-nav__link">
+      <a href="../upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -615,26 +604,62 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -650,7 +675,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -670,14 +695,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../extensions/" class="md-nav__link">
+      <a href="../settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -689,6 +714,159 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -704,7 +882,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -731,7 +909,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -758,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -778,14 +956,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../notebooks/" class="md-nav__link">
+      <a href="../../packages/ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -793,6 +971,42 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -829,69 +1043,6 @@
       
         
       
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Packages
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
         
       
         
@@ -911,17 +1062,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-readers
+  How it works
 
     
   </span>
@@ -932,12 +1083,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_1">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-readers
+  How it works
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -956,88 +1107,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  RINEX v3.04 Format
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Reader
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Field Decoding
+  Reading GNSS files
 
     
   </span>
@@ -1064,7 +1134,7 @@
   <span class="md-ellipsis">
     
   
-  Ephemeris Sources
+  Ephemeris sources
 
     
   </span>
@@ -1076,159 +1146,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1244,7 +1161,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Orbits and clocks
 
     
   </span>
@@ -1271,7 +1188,7 @@
   <span class="md-ellipsis">
     
   
-  Preprocessing Pipeline
+  Orbit and clock preparation
 
     
   </span>
@@ -1298,7 +1215,7 @@
   <span class="md-ellipsis">
     
   
-  Interpolation Methods
+  Interpolation
 
     
   </span>
@@ -1325,7 +1242,7 @@
   <span class="md-ellipsis">
     
   
-  Coordinate Systems
+  Coordinate systems
 
     
   </span>
@@ -1337,97 +1254,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/auxiliary/products/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1443,7 +1269,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Hemispheric grids
 
     
   </span>
@@ -1455,70 +1281,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1534,7 +1296,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  VOD retrieval
 
     
   </span>
@@ -1546,74 +1308,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1629,7 +1323,34 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
 
     
   </span>
@@ -1656,7 +1377,7 @@
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Versioning with Icechunk
 
     
   </span>
@@ -1683,7 +1404,7 @@
   <span class="md-ellipsis">
     
   
-  Storage Strategies
+  Write strategies
 
     
   </span>
@@ -1695,70 +1416,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1774,7 +1431,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Store metadata
 
     
   </span>
@@ -1786,70 +1443,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1865,7 +1458,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Visualization
 
     
   </span>
@@ -1898,6 +1491,16 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -1911,17 +1514,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-config
+  Data formats
 
     
   </span>
@@ -1932,12 +1535,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-config
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -1949,14 +1552,149 @@
   
   
     <li class="md-nav__item">
-      <a href="../../packages/config/overview/" class="md-nav__link">
+      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/rinex-v2-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v2.11
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF field decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite catalog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product registry
 
     
   </span>
@@ -1989,6 +1727,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2002,17 +1744,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-utils
+  Extend
 
     
   </span>
@@ -2023,15 +1765,69 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-utils
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your own readers and VOD calculators
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/building-a-reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -2047,189 +1843,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2258,26 +1872,19 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
       
         
       
@@ -2327,7 +1934,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2343,7 +1950,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2389,7 +1996,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2425,7 +2032,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2442,7 +2049,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2471,7 +2078,7 @@
   <a href="#initial-setup" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Initial Setup
+        Initial setup
       </span>
     </span>
   </a>
@@ -2493,7 +2100,7 @@
   <a href="#configuration-management" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Configuration Management
+        Configuration management
       </span>
     </span>
   </a>
@@ -2543,7 +2150,7 @@
   <a href="#logging-add-it-generously" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Logging — add it generously
+        Logging: add it generously
       </span>
     </span>
   </a>
@@ -2554,7 +2161,7 @@
   <a href="#keeping-your-fork-in-sync" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Keeping Your Fork in Sync
+        Keeping your fork in sync
       </span>
     </span>
   </a>
@@ -2565,12 +2172,12 @@
   <a href="#pre-commit-hooks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Pre-Commit Hooks
+        Pre-commit hooks
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Pre-Commit Hooks">
+    <nav class="md-nav" aria-label="Pre-commit hooks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2604,19 +2211,19 @@
   <a href="#contributing-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Contributing Workflow
+        Contributing workflow
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Contributing Workflow">
+    <nav class="md-nav" aria-label="Contributing workflow">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#conventional-commit-scopes" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Conventional Commit Scopes
+        Conventional commit scopes
       </span>
     </span>
   </a>
@@ -2643,12 +2250,12 @@
   <a href="#private-or-local-add-on-packages" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Private or Local Add-on Packages
+        Private or local add-on packages
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Private or Local Add-on Packages">
+    <nav class="md-nav" aria-label="Private or local add-on packages">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2693,7 +2300,7 @@
   <a href="#all-just-commands" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        All Just Commands
+        All just commands
       </span>
     </span>
   </a>
@@ -2727,14 +2334,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-design/" class="md-nav__link">
+      <a href="../reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2746,6 +2353,70 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2761,7 +2432,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2781,14 +2452,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../build-system/" class="md-nav__link">
+      <a href="../../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2808,14 +2479,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tooling/" class="md-nav__link">
+      <a href="../../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2835,14 +2506,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../principles/" class="md-nav__link">
+      <a href="../../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2850,6 +2521,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2886,10 +2566,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="">
             
   
   
@@ -2907,8 +2587,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -2931,7 +2611,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -2958,7 +2638,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -2985,7 +2665,733 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -3026,8 +3432,6 @@
       
         
       
-        
-      
     
     
     
@@ -3044,17 +3448,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -3065,12 +3469,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3116,34 +3520,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -3197,7 +3574,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -3224,7 +3601,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -3279,17 +3656,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3300,12 +3677,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3324,7 +3701,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3351,7 +3728,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3378,7 +3755,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3398,14 +3775,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../SECURITY.md" class="md-nav__link">
+      <a href="../../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3443,6 +3820,8 @@
   
     
     
+      
+        
       
         
       
@@ -3489,7 +3868,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3505,10 +3884,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -3815,96 +4221,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -3949,7 +4265,7 @@
   <a href="#initial-setup" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Initial Setup
+        Initial setup
       </span>
     </span>
   </a>
@@ -3971,7 +4287,7 @@
   <a href="#configuration-management" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Configuration Management
+        Configuration management
       </span>
     </span>
   </a>
@@ -4021,7 +4337,7 @@
   <a href="#logging-add-it-generously" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Logging — add it generously
+        Logging: add it generously
       </span>
     </span>
   </a>
@@ -4032,7 +4348,7 @@
   <a href="#keeping-your-fork-in-sync" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Keeping Your Fork in Sync
+        Keeping your fork in sync
       </span>
     </span>
   </a>
@@ -4043,12 +4359,12 @@
   <a href="#pre-commit-hooks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Pre-Commit Hooks
+        Pre-commit hooks
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Pre-Commit Hooks">
+    <nav class="md-nav" aria-label="Pre-commit hooks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4082,19 +4398,19 @@
   <a href="#contributing-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Contributing Workflow
+        Contributing workflow
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Contributing Workflow">
+    <nav class="md-nav" aria-label="Contributing workflow">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#conventional-commit-scopes" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Conventional Commit Scopes
+        Conventional commit scopes
       </span>
     </span>
   </a>
@@ -4121,12 +4437,12 @@
   <a href="#private-or-local-add-on-packages" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Private or Local Add-on Packages
+        Private or local add-on packages
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Private or Local Add-on Packages">
+    <nav class="md-nav" aria-label="Private or local add-on packages">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4171,7 +4487,7 @@
   <a href="#all-just-commands" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        All Just Commands
+        All just commands
       </span>
     </span>
   </a>
@@ -4255,6 +4571,8 @@
       
         
       
+        
+      
     
     
     
@@ -4264,7 +4582,7 @@
           
   
   <span class="md-ellipsis">
-    Development
+    Contribute
   </span>
 
         </a>
@@ -4286,11 +4604,11 @@
   
 
 
-<h1 id="development-guide">Development Guide<a class="headerlink" href="#development-guide" title="Permanent link">&para;</a></h1>
+<h1 id="development-guide">Development guide<a class="headerlink" href="#development-guide" title="Permanent link">&para;</a></h1>
 <p>Quick reference for day-to-day canVODpy development.</p>
 <hr />
-<h2 id="initial-setup">Initial Setup<a class="headerlink" href="#initial-setup" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/nfb2021/canvodpy.git
+<h2 id="initial-setup">Initial setup<a class="headerlink" href="#initial-setup" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/TUW-GEO/canvodpy.git
 <span class="nb">cd</span><span class="w"> </span>canvodpy
 git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>--recursive<span class="w">   </span><span class="c1"># test data + demo data</span>
 uv<span class="w"> </span>sync<span class="w">                                    </span><span class="c1"># install all packages (editable)</span>
@@ -4301,10 +4619,10 @@ just<span class="w"> </span><span class="nb">test</span><span class="w">        
 <p class="admonition-title">Submodules</p>
 <p>Two data repositories are pulled as submodules:</p>
 <ul>
-<li><strong><code>packages/canvod-readers/tests/test_data</code></strong> — falsified/corrupted <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files for validation tests</li>
-<li><strong><code>demo</code></strong> — clean real-world data for demos and documentation</li>
+<li><strong><code>packages/canvod-readers/tests/test_data</code></strong>: falsified/corrupted <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files for validation tests</li>
+<li><strong><code>demo</code></strong>: clean real-world data for demos and documentation</li>
 </ul>
-<p>Tests that depend on these datasets are automatically skipped if submodules are not initialised.</p>
+<p>Tests that depend on these datasets are automatically skipped if submodules are not initialized.</p>
 </div>
 <hr />
 <h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
@@ -4334,7 +4652,7 @@ just<span class="w"> </span><span class="nb">test</span><span class="w">        
 </code></pre></div>
 <p><a href="../contributor-setup/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Full installation guide</a></p>
 <hr />
-<h2 id="configuration-management">Configuration Management<a class="headerlink" href="#configuration-management" title="Permanent link">&para;</a></h2>
+<h2 id="configuration-management">Configuration management<a class="headerlink" href="#configuration-management" title="Permanent link">&para;</a></h2>
 <p>canVODpy uses three YAML files in <code>config/</code>:</p>
 <table>
 <thead>
@@ -4346,7 +4664,7 @@ just<span class="w"> </span><span class="nb">test</span><span class="w">        
 <tbody>
 <tr>
 <td><code>processing:</code></td>
-<td>Processing parameters, NASA Earthdata credentials, storage strategies, <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> config</td>
+<td>Processing parameters, NASA Earthdata credentials, storage strategies, <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> settings</td>
 </tr>
 <tr>
 <td><code>sites:</code></td>
@@ -4354,11 +4672,11 @@ just<span class="w"> </span><span class="nb">test</span><span class="w">        
 </tr>
 <tr>
 <td><code>sids:</code></td>
-<td>Signal ID filtering — <code>all</code>, a named <code>preset</code>, or <code>custom</code> list</td>
+<td>Signal ID filtering: <code>all</code>, a named <code>preset</code>, or a <code>custom</code> list</td>
 </tr>
 </tbody>
 </table>
-<p>All three sections live in a single <code>config/canvod-settings.yaml</code>. Template: <code>config/canvod-settings.yaml.example</code>.</p>
+<p>All three sections live in a single <code>config/canvod-settings.yaml</code>. Template: <code>config/canvod-settings.yaml.example</code>, a copy of the template the package ships (<code>packages/canvod-config/src/canvod/config/templates/</code>); edit that one and copy it.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">First-time setup</label><label for="__tabbed_1_2">Daily use</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -4371,7 +4689,7 @@ canvodpy<span class="w"> </span>config<span class="w"> </span>show<span class="w
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>just<span class="w"> </span>config-validate<span class="w">    </span><span class="c1"># after editing</span>
 just<span class="w"> </span>config-show<span class="w">        </span><span class="c1"># inspect current values</span>
-canvodpy<span class="w"> </span>doctor<span class="w">         </span><span class="c1"># environment + config diagnostics when something&#39;s off</span>
+canvodpy<span class="w"> </span>doctor<span class="w">         </span><span class="c1"># environment + config diagnostics when something's off</span>
 </code></pre></div>
 </div>
 </div>
@@ -4413,74 +4731,73 @@ just<span class="w"> </span>check-format<span class="w">   </span><span class="c
 </tbody>
 </table>
 <h3 id="type-checking-ty">Type checking (ty)<a class="headerlink" href="#type-checking-ty" title="Permanent link">&para;</a></h3>
-<p><code>ty check</code> must pass with zero diagnostics — it blocks <code>git push</code> (local
+<p><code>ty check</code> must pass with zero diagnostics. It blocks <code>git push</code> (local
 pre-push hook) and runs again in <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> (<code>type_consistency</code> job). There's no
 budget or ratchet; if you introduce a diagnostic, fix it before pushing.</p>
-<p>Most real diagnostics mean the annotation is actually wrong — fix the
+<p>Most real diagnostics mean the annotation is actually wrong: fix the
 annotation, not the checker. Suppress with a targeted comment only when the
-code is correct and ty's limitation is the real issue (e.g. a runtime-built
+code is correct and a limitation of ty is the real issue (for example, a runtime-built
 <code>enum.StrEnum</code>, a deliberately dynamic attribute set on a function object, a
 third-party stub that's too strict for a legitimately partial dict):</p>
 <div class="highlight"><pre><span></span><code><span class="n">_excepthook</span><span class="o">.</span><span class="n">_logger_holder</span> <span class="o">=</span> <span class="n">logger_holder</span>  <span class="c1"># ty: ignore[unresolved-attribute]</span>
 </code></pre></div>
 <p>Always include the specific rule name in brackets (<code>uv run ty check</code> prints
-it in the diagnostic, e.g. <code>error[invalid-return-type]</code>) — a bare <code># type:
+it in the diagnostic, for example <code>error[invalid-return-type]</code>). A bare <code># type:
 ignore</code> (mypy syntax) does not suppress ty diagnostics, since ty matches on
 its own rule codes.</p>
 <hr />
-<h2 id="logging-add-it-generously">Logging — add it generously<a class="headerlink" href="#logging-add-it-generously" title="Permanent link">&para;</a></h2>
+<h2 id="logging-add-it-generously">Logging: add it generously<a class="headerlink" href="#logging-add-it-generously" title="Permanent link">&para;</a></h2>
 <p>canvodpy runs unattended on remote machines. When something goes wrong
-there, whatever you logged is the <em>only</em> evidence that will ever exist —
+there, whatever you logged is the <em>only</em> evidence there is:
 there's no attaching a debugger to a cron job after the fact. Log more than
 feels necessary, especially around: file I/O, external calls (downloads,
 <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> writes), anything with a fallback/degraded path, and any place a
 silent skip could hide data loss. See <code>docs/guides/diagnostics.md</code> for the
-full picture (two-track logging, <code>run_id</code>, crash handling, <code>stage_timer</code>,
-the performance dashboard) — this section is the short "how do I add a log
-line" version.</p>
-<p><strong>Which logger to use:</strong></p>
-<div class="highlight"><pre><span></span><code><span class="c1"># Inside the canvodpy package itself:</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
-<span class="n">log</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+full picture (the log files, <code>run_id</code>, the failure events, <code>stage_timer</code>,
+the performance dashboard). This section is the short version: how to add a log
+line.</p>
+<p><strong>Which logger to use:</strong> every module, in every package, gets its logger
+directly from structlog:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">structlog</span>
 
-<span class="c1"># Inside a lower-level package that must not depend on canvodpy</span>
-<span class="c1"># (canvod-vod, canvod-grids, canvod-ops, ...):</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">structlog</span>
 <span class="n">log</span> <span class="o">=</span> <span class="n">structlog</span><span class="o">.</span><span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 </code></pre></div>
-<p>Both are equivalent at runtime — <code>canvodpy.logging.get_logger</code> is a
-one-line passthrough to <code>structlog.get_logger</code>, kept only as the documented
-entry point for canvodpy's own code. <code>configure_logging()</code> installs
+<p>Only canvodpy configures
+logging; the canvod-* packages never do. <code>configure_logging()</code> installs
 structlog's processor chain <em>globally</em>, so <strong>any</strong> <code>structlog.get_logger()</code>
-call anywhere in the process — regardless of which package it's in —
+call anywhere in the process, regardless of which package it's in,
 automatically gets routed through the two-track logging setup (human/agent
 files) with <code>run_id</code> injected, with zero per-call-site wiring. Never
-reach for <code>print()</code> or stdlib <code>logging</code> directly.</p>
-<p><strong>Event style:</strong> first positional arg is a short <code>snake_case</code> event name,
+reach for <code>print()</code> or the standard library <code>logging</code> directly.</p>
+<p><strong>Event style:</strong> first positional argument is a short <code>snake_case</code> event name,
 everything else is a structured keyword, not string interpolation:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Good</span>
-<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;rinex_preprocessing_started&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">rnx_file</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">site</span><span class="o">=</span><span class="n">site_name</span><span class="p">)</span>
-<span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;sids_dropped_no_ephemeris&quot;</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">dropped</span><span class="p">),</span> <span class="n">sids</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">dropped</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"rinex_preprocessing_started"</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">rnx_file</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="n">site</span><span class="o">=</span><span class="n">site_name</span><span class="p">)</span>
+<span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"sids_dropped_no_ephemeris"</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">dropped</span><span class="p">),</span> <span class="n">sids</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">dropped</span><span class="p">))</span>
 
-<span class="c1"># Avoid — loses structure, can&#39;t be grepped/filtered on a field</span>
-<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Started preprocessing </span><span class="si">{</span><span class="n">rnx_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">site_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Avoid: loses structure, can't be grepped/filtered on a field</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Started preprocessing </span><span class="si">{</span><span class="n">rnx_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">site_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
-<p><strong>Timing:</strong> use <code>stage_timer()</code>/<code>timed_stage()</code> from <code>canvodpy.logging</code>
-rather than hand-rolling <code>t0 = time.perf_counter(); ...; duration = ...</code> —
+<p><strong>Timing:</strong> use <code>stage_timer()</code>/<code>timed_stage()</code> from <code>canvod.utils.logging</code>
+rather than hand-rolling <code>t0 = time.perf_counter(); ...; duration = ...</code>:
 it emits the canonical <code>stage_timing</code> event the performance dashboard
 reads, and still emits (with <code>status="error"</code>) if the block raises.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">stage_timer</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.utils.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">stage_timer</span>
 
-<span class="k">with</span> <span class="n">stage_timer</span><span class="p">(</span><span class="s2">&quot;icechunk.write&quot;</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group_name</span><span class="p">,</span> <span class="n">size_mb</span><span class="o">=</span><span class="n">size_mb</span><span class="p">):</span>
+<span class="k">with</span> <span class="n">stage_timer</span><span class="p">(</span><span class="s2">"icechunk.write"</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group_name</span><span class="p">,</span> <span class="n">size_mb</span><span class="o">=</span><span class="n">size_mb</span><span class="p">):</span>
     <span class="n">to_icechunk</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group_name</span><span class="p">)</span>
 </code></pre></div>
-<p>Only reach for a manual timing pattern when a block already has several
-distinct sequential checkpoints worth logging individually with their own
-rich context (see <code>_preprocess_aux_data_with_hermite</code> in <code>processor.py</code> for
-an example) — those specific, well-named events are more useful than
-forcing everything through one generic name.</p>
+<p>When one block has several sequential checkpoints, each a dashboard stage
+of its own, measure them yourself and emit each with
+<code>record_stage_timing(stage, seconds, ...)</code> (see <code>_preprocess_file</code> in
+<code>processor.py</code>). Checkpoints that are not dashboard stages belong in one
+specific, well-named event with their own rich context (see
+<code>_preprocess_aux_data_with_hermite</code> in <code>processor.py</code>), which is more useful
+than forcing everything through one generic name.</p>
+<p>Only the main process adds stages to the <code>run_summary</code>; stages timed in a
+worker process reach the log and the dashboard only.</p>
 <hr />
-<h2 id="keeping-your-fork-in-sync">Keeping Your Fork in Sync<a class="headerlink" href="#keeping-your-fork-in-sync" title="Permanent link">&para;</a></h2>
+<h2 id="keeping-your-fork-in-sync">Keeping your fork in sync<a class="headerlink" href="#keeping-your-fork-in-sync" title="Permanent link">&para;</a></h2>
 <p>If you are working from a fork (rather than a direct clone), periodically pull updates from the upstream repository:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>checkout<span class="w"> </span>main
 git<span class="w"> </span>fetch<span class="w"> </span>upstream
@@ -4492,12 +4809,12 @@ git<span class="w"> </span>checkout<span class="w"> </span>feature/my-feature
 git<span class="w"> </span>rebase<span class="w"> </span>main
 </code></pre></div>
 <p>If <code>upstream</code> is not configured, add it once:</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>git@github.com:nfb2021/canvodpy.git
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>git@github.com:TUW-GEO/canvodpy.git
 </code></pre></div>
 <p><a href="../contributor-setup/#12-keeping-your-fork-up-to-date"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Detailed fork sync guide</a></p>
 <hr />
-<h2 id="pre-commit-hooks">Pre-Commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Permanent link">&para;</a></h2>
-<p><code>just hooks</code> installs Git hooks that run <strong>automatically on every commit</strong>. If any hook fails, the commit is rejected — your changes stay staged but no commit is created.</p>
+<h2 id="pre-commit-hooks">Pre-commit hooks<a class="headerlink" href="#pre-commit-hooks" title="Permanent link">&para;</a></h2>
+<p><code>just hooks</code> installs Git hooks that run <strong>automatically on every commit</strong>. If any hook fails, the commit is rejected: your changes stay staged but no commit is created.</p>
 <h3 id="what-runs">What runs<a class="headerlink" href="#what-runs" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -4552,29 +4869,29 @@ git<span class="w"> </span>rebase<span class="w"> </span>main
 </table>
 <h3 id="when-your-commit-is-rejected">When your commit is rejected<a class="headerlink" href="#when-your-commit-is-rejected" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Most common: ruff auto-fixed your code. Stage the fixes and retry:</span>
-git<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): your message&quot;</span>
+git<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(readers): your message"</span>
 
 <span class="c1"># If commitizen rejects your message, use the correct format:</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;type(scope): description&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"type(scope): description"</span>
 <span class="c1"># types: feat, fix, docs, refactor, test, chore, perf, ci</span>
 <span class="c1"># scopes: readers, aux, grids, vod, store, viz, utils, naming, ops, docs, ci, deps</span>
 
 <span class="c1"># If uv-lock is out of date:</span>
-uv<span class="w"> </span>sync<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>add<span class="w"> </span>uv.lock<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): your message&quot;</span>
+uv<span class="w"> </span>sync<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>add<span class="w"> </span>uv.lock<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(readers): your message"</span>
 </code></pre></div>
 <p><a href="../contributor-setup/#14-pre-commit-hooks-and-why-your-commit-may-be-rejected"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Full troubleshooting guide</a></p>
 <hr />
-<h2 id="contributing-workflow">Contributing Workflow<a class="headerlink" href="#contributing-workflow" title="Permanent link">&para;</a></h2>
+<h2 id="contributing-workflow">Contributing workflow<a class="headerlink" href="#contributing-workflow" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/my-feature
 <span class="c1"># … make changes in packages/&lt;pkg&gt;/src/ …</span>
 <span class="c1"># … add tests in packages/&lt;pkg&gt;/tests/ …</span>
 just<span class="w"> </span>check<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>just<span class="w"> </span><span class="nb">test</span>
 git<span class="w"> </span>add<span class="w"> </span>packages/&lt;pkg&gt;/src/...<span class="w"> </span>packages/&lt;pkg&gt;/tests/...
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): add RINEX 4.0 support&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(readers): add RINEX 4.0 support"</span>
 git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>feature/my-feature
 <span class="c1"># → open pull request on GitHub</span>
 </code></pre></div>
-<h3 id="conventional-commit-scopes">Conventional Commit Scopes<a class="headerlink" href="#conventional-commit-scopes" title="Permanent link">&para;</a></h3>
+<h3 id="conventional-commit-scopes">Conventional commit scopes<a class="headerlink" href="#conventional-commit-scopes" title="Permanent link">&para;</a></h3>
 <p><code>readers</code> · <code>aux</code> · <code>grids</code> · <code>vod</code> · <code>store</code> · <code>viz</code> · <code>utils</code> · <code>naming</code> · <code>ops</code> · <code>docs</code> · <code>ci</code> · <code>deps</code></p>
 <hr />
 <h2 id="continuous-integration">Continuous Integration<a class="headerlink" href="#continuous-integration" title="Permanent link">&para;</a></h2>
@@ -4593,7 +4910,7 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 </tr>
 <tr>
 <td><strong>Test with Coverage</strong></td>
-<td>pytest → coverage.lcov → <a href="https://coveralls.io/github/nfb2021/canvodpy">Coveralls</a></td>
+<td>pytest <span class="arithmatex">\(\rightarrow\)</span> coverage.lcov <span class="arithmatex">\(\rightarrow\)</span> <a href="https://coveralls.io/github/TUW-GEO/canvodpy">Coveralls</a></td>
 </tr>
 <tr>
 <td><strong>Platform Tests</strong></td>
@@ -4605,9 +4922,9 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 <div class="highlight"><pre><span></span><code>just<span class="w"> </span>test-coverage<span class="w">    </span><span class="c1"># generates HTML report</span>
 </code></pre></div>
 <hr />
-<h2 id="private-or-local-add-on-packages">Private or Local Add-on Packages<a class="headerlink" href="#private-or-local-add-on-packages" title="Permanent link">&para;</a></h2>
+<h2 id="private-or-local-add-on-packages">Private or local add-on packages<a class="headerlink" href="#private-or-local-add-on-packages" title="Permanent link">&para;</a></h2>
 <p>You may want to develop an add-on package alongside canVODpy that is not part
-of the public repository — for example, a private algorithm, a site-specific
+of the public repository, for example a private algorithm, a site-specific
 extension, or an experimental module you are not yet ready to publish.</p>
 <p>The recommended pattern keeps the public workspace and lock file clean while
 letting you use the package locally without friction.</p>
@@ -4624,16 +4941,16 @@ letting you use the package locally without friction.</p>
 </code></pre></div>
 <p><strong>3. Exclude it from the <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> workspace</strong> in the root <code>pyproject.toml</code></p>
 <div class="highlight"><pre><span></span><code><span class="k">[tool.uv.workspace]</span>
-<span class="n">members</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;packages/*&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;canvodpy&quot;</span><span class="p">]</span>
-<span class="n">exclude</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;packages/canvod-myprivatepackage&quot;</span><span class="p">]</span>
+<span class="n">members</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"packages/*"</span><span class="p">,</span><span class="w"> </span><span class="s2">"canvodpy"</span><span class="p">]</span>
+<span class="n">exclude</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"packages/canvod-myprivatepackage"</span><span class="p">]</span>
 </code></pre></div>
 <p>This keeps <code>uv.lock</code> identical for everyone else.
-<abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> will never see the directory, so it resolves the same 240 packages with or
+<abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> never sees the directory, so it resolves the same 240 packages with or
 without your local copy.</p>
 <p><strong>4. Install locally with <code>uv pip install</code></strong></p>
 <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>packages/canvod-myprivatepackage/
 </code></pre></div>
-<p><code>uv pip install</code> is a direct venv install — it does <strong>not</strong> modify
+<p><code>uv pip install</code> installs directly into the virtual environment. It does <strong>not</strong> modify
 <code>pyproject.toml</code> or <code>uv.lock</code>.
 After a fresh <code>uv sync</code>, re-run the command to restore your local install.</p>
 <h3 id="upgrade-path">Upgrade path<a class="headerlink" href="#upgrade-path" title="Permanent link">&para;</a></h3>
@@ -4646,13 +4963,13 @@ After a fresh <code>uv sync</code>, re-run the command to restore your local ins
 <p>It becomes a first-class workspace member and appears in the lock for everyone.</p>
 <h3 id="why-not-git-submodules">Why not git submodules?<a class="headerlink" href="#why-not-git-submodules" title="Permanent link">&para;</a></h3>
 <p>You could also host the private package in its own repository and add it as a
-git submodule.  <code>actions/checkout@v4</code> does not initialise submodules by
-default, so <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> would still see an empty directory.  The trade-off is that the
-<code>uv.lock</code> would diverge between users who have initialised the submodule and
+git submodule. <code>actions/checkout@v4</code> does not initialize submodules by
+default, so <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> would still see an empty directory. The trade-off is that the
+<code>uv.lock</code> would diverge between users who have initialized the submodule and
 those who have not, requiring everyone to keep the <code>exclude</code> in place anyway.
-For a single-developer private add-on the simpler approach above is preferred.</p>
+For a single-developer private add-on the simpler approach is preferred.</p>
 <hr />
-<h2 id="all-just-commands">All Just Commands<a class="headerlink" href="#all-just-commands" title="Permanent link">&para;</a></h2>
+<h2 id="all-just-commands">All just commands<a class="headerlink" href="#all-just-commands" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>just<span class="w">                     </span><span class="c1"># list all commands</span>
 just<span class="w"> </span>check<span class="w">               </span><span class="c1"># lint + format + type-check</span>
 just<span class="w"> </span><span class="nb">test</span><span class="w">                </span><span class="c1"># run all tests</span>
@@ -4664,13 +4981,17 @@ just<span class="w"> </span>config-init-interactive<span class="w">  </span><spa
 just<span class="w"> </span>config-validate<span class="w">     </span><span class="c1"># validate configuration</span>
 just<span class="w"> </span>config-show<span class="w">         </span><span class="c1"># view resolved configuration</span>
 just<span class="w"> </span>doctor<span class="w">              </span><span class="c1"># environment + config diagnostics</span>
-just<span class="w"> </span>store-list<span class="w">          </span><span class="c1"># list every site&#39;s gnss/vod stores + status</span>
-just<span class="w"> </span>store-info<span class="w"> </span>SITE<span class="w">     </span><span class="c1"># branches/groups/stats for one site&#39;s store</span>
-just<span class="w"> </span>store-log<span class="w"> </span>SITE<span class="w">      </span><span class="c1"># commit history graph for one site&#39;s store</span>
-just<span class="w"> </span>docs<span class="w">                </span><span class="c1"># preview documentation (localhost:3000)</span>
+just<span class="w"> </span>store-list<span class="w">          </span><span class="c1"># list every site's gnss/vod stores + status</span>
+just<span class="w"> </span>store-info<span class="w"> </span>SITE<span class="w">     </span><span class="c1"># branches/groups/stats for one site's store</span>
+just<span class="w"> </span>store-log<span class="w"> </span>SITE<span class="w">      </span><span class="c1"># commit history graph for one site's store</span>
+just<span class="w"> </span>store-migrate-metadata<span class="w"> </span>SITE<span class="w">  </span><span class="c1"># move an older store to repository metadata</span>
+just<span class="w"> </span>store-migrate-layout<span class="w"> </span>SITE<span class="w">    </span><span class="c1"># move a store written by appending to day blocks</span>
+just<span class="w"> </span>docs<span class="w">                </span><span class="c1"># preview documentation (opens the browser)</span>
+just<span class="w"> </span>docs-lint<span class="w">           </span><span class="c1"># language check of the docs (Vale, Google style)</span>
+just<span class="w"> </span>docs-links<span class="w">          </span><span class="c1"># link check of the built docs (lychee)</span>
 just<span class="w"> </span>build-all<span class="w">           </span><span class="c1"># build all packages</span>
 just<span class="w"> </span>deps-report<span class="w">         </span><span class="c1"># dependency metrics report</span>
-just<span class="w"> </span>deps-graph<span class="w">          </span><span class="c1"># mermaid dependency graph</span>
+just<span class="w"> </span>deps-mermaid<span class="w">        </span><span class="c1"># mermaid dependency graph</span>
 </code></pre></div>
 <hr />
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
@@ -4688,16 +5009,16 @@ just<span class="w"> </span>deps-graph<span class="w">          </span><span cla
 </code></pre></div>
 </details>
 <details class="failure">
-<summary><code>uv.lock</code> needs to be updated — <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> fails but local works</summary>
+<summary><code>uv.lock</code> needs to be updated; <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> fails but local works</summary>
 <p>An untracked directory inside <code>packages/</code> is being picked up by the
-<code>packages/*</code> workspace glob and included in the lock.  <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> does not have
+<code>packages/*</code> workspace glob and included in the lock. <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> does not have
 the directory and therefore resolves fewer packages, causing a mismatch.</p>
 <p>Identify the culprit:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>ls-tree<span class="w"> </span>HEAD<span class="w"> </span>packages/<span class="w">   </span><span class="c1"># shows only committed packages</span>
 ls<span class="w"> </span>packages/<span class="w">                 </span><span class="c1"># shows all local packages (including untracked)</span>
 </code></pre></div>
 <p>Any directory present locally but absent from the <code>git ls-tree</code> output is
-the source of the divergence.  Follow the
+the source of the divergence. Follow the
 <a href="#private-or-local-add-on-packages">Private or Local Add-on Packages</a>
 pattern to exclude it and regenerate the lock.</p>
 </details>
@@ -4752,7 +5073,7 @@ pattern to exclude it and regenerate the lock.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../contributor-setup/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Contributor Setup">
+          <a href="../contributor-setup/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Contributor setup">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4762,20 +5083,20 @@ pattern to exclude it and regenerate the lock.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Contributor Setup
+                Contributor setup
               </div>
             </div>
           </a>
         
         
           
-          <a href="../architecture-design/" class="md-footer__link md-footer__link--next" aria-label="Next: Architecture &amp; Design Patterns">
+          <a href="../reference-stores/" class="md-footer__link md-footer__link--next" aria-label="Next: Reference stores">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Architecture & Design Patterns
+                Reference stores
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -4795,8 +5116,9 @@ pattern to exclude it and regenerate the lock.</p>
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -4813,7 +5135,7 @@ pattern to exclude it and regenerate the lock.</p>
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -4850,10 +5172,10 @@ pattern to exclude it and regenerate the lock.</p>
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../../assets/mermaid-init.js"></script>
       

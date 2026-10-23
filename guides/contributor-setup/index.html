@@ -15,6 +15,7 @@
         <link rel="canonical" href="https://canvodpy.eu/guides/contributor-setup/">
       
       
+      
         <link rel="prev" href="../../CONTRIBUTING/">
       
       
@@ -25,23 +26,23 @@
       
       
       <link rel="icon" href="../../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
-        <title>Contributor Setup - canVODpy</title>
+        <title>Contributor setup - canVODpy</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="../.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -168,11 +190,12 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Contributor Setup
+              Contributor setup
             
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -286,12 +303,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -300,7 +311,7 @@
         <a href="../../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../impressum/" class="md-tabs__link">
+        <a href="../../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -523,12 +518,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -553,7 +542,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -575,7 +564,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -589,14 +578,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../users/cli/" class="md-nav__link">
+      <a href="../upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -615,26 +604,62 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -650,7 +675,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -670,14 +695,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../extensions/" class="md-nav__link">
+      <a href="../settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -689,6 +714,159 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -704,7 +882,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -731,7 +909,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -758,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -778,14 +956,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../notebooks/" class="md-nav__link">
+      <a href="../../packages/ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -793,6 +971,42 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -829,69 +1043,6 @@
       
         
       
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Packages
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
         
       
         
@@ -911,17 +1062,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-readers
+  How it works
 
     
   </span>
@@ -932,12 +1083,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_1">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-readers
+  How it works
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -956,88 +1107,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  RINEX v3.04 Format
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Reader
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Field Decoding
+  Reading GNSS files
 
     
   </span>
@@ -1064,7 +1134,7 @@
   <span class="md-ellipsis">
     
   
-  Ephemeris Sources
+  Ephemeris sources
 
     
   </span>
@@ -1076,159 +1146,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1244,7 +1161,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Orbits and clocks
 
     
   </span>
@@ -1271,7 +1188,7 @@
   <span class="md-ellipsis">
     
   
-  Preprocessing Pipeline
+  Orbit and clock preparation
 
     
   </span>
@@ -1298,7 +1215,7 @@
   <span class="md-ellipsis">
     
   
-  Interpolation Methods
+  Interpolation
 
     
   </span>
@@ -1325,7 +1242,7 @@
   <span class="md-ellipsis">
     
   
-  Coordinate Systems
+  Coordinate systems
 
     
   </span>
@@ -1337,97 +1254,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/auxiliary/products/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1443,7 +1269,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Hemispheric grids
 
     
   </span>
@@ -1455,70 +1281,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1534,7 +1296,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  VOD retrieval
 
     
   </span>
@@ -1546,74 +1308,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1629,7 +1323,34 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
 
     
   </span>
@@ -1656,7 +1377,7 @@
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Versioning with Icechunk
 
     
   </span>
@@ -1683,7 +1404,7 @@
   <span class="md-ellipsis">
     
   
-  Storage Strategies
+  Write strategies
 
     
   </span>
@@ -1695,70 +1416,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1774,7 +1431,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Store metadata
 
     
   </span>
@@ -1786,70 +1443,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1865,7 +1458,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Visualization
 
     
   </span>
@@ -1898,6 +1491,16 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -1911,17 +1514,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-config
+  Data formats
 
     
   </span>
@@ -1932,12 +1535,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-config
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -1949,14 +1552,149 @@
   
   
     <li class="md-nav__item">
-      <a href="../../packages/config/overview/" class="md-nav__link">
+      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/rinex-v2-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v2.11
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF field decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite catalog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product registry
 
     
   </span>
@@ -1989,6 +1727,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2002,17 +1744,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-utils
+  Extend
 
     
   </span>
@@ -2023,15 +1765,69 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-utils
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your own readers and VOD calculators
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/building-a-reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -2047,189 +1843,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2258,26 +1872,19 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
       
         
       
@@ -2327,7 +1934,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2343,7 +1950,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2398,7 +2005,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2415,7 +2022,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -3017,7 +2624,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -3037,14 +2644,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-design/" class="md-nav__link">
+      <a href="../reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -3056,6 +2663,70 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -3071,7 +2742,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -3091,14 +2762,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../build-system/" class="md-nav__link">
+      <a href="../../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -3118,14 +2789,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tooling/" class="md-nav__link">
+      <a href="../../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -3145,14 +2816,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../principles/" class="md-nav__link">
+      <a href="../../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -3160,6 +2831,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -3196,10 +2876,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="">
             
   
   
@@ -3217,8 +2897,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -3241,7 +2921,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -3268,7 +2948,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -3295,7 +2975,733 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -3336,8 +3742,6 @@
       
         
       
-        
-      
     
     
     
@@ -3354,17 +3758,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -3375,12 +3779,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3426,34 +3830,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -3507,7 +3884,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -3534,7 +3911,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -3589,17 +3966,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3610,12 +3987,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3634,7 +4011,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3661,7 +4038,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3688,7 +4065,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3708,14 +4085,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../SECURITY.md" class="md-nav__link">
+      <a href="../../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3753,6 +4130,8 @@
   
     
     
+      
+        
       
         
       
@@ -3799,7 +4178,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3815,10 +4194,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -4105,96 +4511,6 @@
     
   
   canvod.ops
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
 
     
   </span>
@@ -4875,6 +5191,8 @@
       
         
       
+        
+      
     
     
     
@@ -4884,7 +5202,7 @@
           
   
   <span class="md-ellipsis">
-    Development
+    Contribute
   </span>
 
         </a>
@@ -4906,11 +5224,11 @@
   
 
 
-<h1 id="contributor-setup">Contributor Setup<a class="headerlink" href="#contributor-setup" title="Permanent link">&para;</a></h1>
+<h1 id="contributor-setup">Contributor setup<a class="headerlink" href="#contributor-setup" title="Permanent link">&para;</a></h1>
 <p>This guide walks you through everything you need, from creating a GitHub account to running your first test, so you can start contributing to canVODpy even if you have never used Git, GitHub, or Python tooling before.</p>
 <div class="admonition tip">
 <p class="admonition-title">Just want to <em>use</em> canVODpy, not contribute?</p>
-<p>See the <a href="../../users/">Users guide</a> instead.</p>
+<p>See <a href="../../users/">Retrieve <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr></a> instead.</p>
 </div>
 <div class="grid cards">
 <ul>
@@ -4920,9 +5238,9 @@
 <p><a href="#1-create-a-github-account">GitHub account</a> · <a href="#2-install-homebrew-macos-only">Homebrew</a> · <a href="#3-install-git">Git install</a> · <a href="#4-set-up-an-ssh-key-for-github">SSH keys</a> · <a href="#5-configure-your-git-identity">Git identity</a></p>
 </li>
 <li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M195.1 9.5c3-14.8 16.1-25.5 31.3-25.5h59.8c15.2 0 28.3 10.7 31.3 25.5l14.5 70c14.1 6 27.3 13.7 39.3 22.8l67.8-22.5c14.4-4.8 30.2 1.2 37.8 14.4l29.9 51.8c7.6 13.2 4.9 29.8-6.5 39.9L447 233.3c.9 7.4 1.3 15 1.3 22.7s-.5 15.3-1.3 22.7l53.4 47.5c11.4 10.1 14 26.8 6.5 39.9L477 417.9c-7.6 13.1-23.4 19.2-37.8 14.4l-67.8-22.5c-12.1 9.1-25.3 16.7-39.3 22.8l-14.4 69.9c-3.1 14.9-16.2 25.5-31.3 25.5h-59.8c-15.2 0-28.3-10.7-31.3-25.5l-14.4-69.9c-14.1-6-27.2-13.7-39.3-22.8l-68.1 22.5c-14.4 4.8-30.2-1.2-37.8-14.4L5.8 366.1c-7.6-13.2-4.9-29.8 6.5-39.9l53.4-47.5c-.9-7.4-1.3-15-1.3-22.7s.5-15.3 1.3-22.7l-53.4-47.5C.9 175.7-1.7 159 5.8 145.9l29.9-51.8c7.6-13.2 23.4-19.2 37.8-14.4l67.8 22.5c12.1-9.1 25.3-16.7 39.3-22.8zM256.3 336a80 80 0 1 0-.6-160 80 80 0 1 0 .6 160"/></svg></span> &nbsp; <strong><a href="#6-install-development-tools">Steps 6–9</a></strong> &nbsp; Tools + Repo</p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M195.1 9.5c3-14.8 16.1-25.5 31.3-25.5h59.8c15.2 0 28.3 10.7 31.3 25.5l14.5 70c14.1 6 27.3 13.7 39.3 22.8l67.8-22.5c14.4-4.8 30.2 1.2 37.8 14.4l29.9 51.8c7.6 13.2 4.9 29.8-6.5 39.9L447 233.3c.9 7.4 1.3 15 1.3 22.7s-.5 15.3-1.3 22.7l53.4 47.5c11.4 10.1 14 26.8 6.5 39.9L477 417.9c-7.6 13.1-23.4 19.2-37.8 14.4l-67.8-22.5c-12.1 9.1-25.3 16.7-39.3 22.8l-14.4 69.9c-3.1 14.9-16.2 25.5-31.3 25.5h-59.8c-15.2 0-28.3-10.7-31.3-25.5l-14.4-69.9c-14.1-6-27.2-13.7-39.3-22.8l-68.1 22.5c-14.4 4.8-30.2-1.2-37.8-14.4L5.8 366.1c-7.6-13.2-4.9-29.8 6.5-39.9l53.4-47.5c-.9-7.4-1.3-15-1.3-22.7s.5-15.3 1.3-22.7l-53.4-47.5C.9 175.7-1.7 159 5.8 145.9l29.9-51.8c7.6-13.2 23.4-19.2 37.8-14.4l67.8 22.5c12.1-9.1 25.3-16.7 39.3-22.8zM256.3 336a80 80 0 1 0-.6-160 80 80 0 1 0 .6 160"/></svg></span> &nbsp; <strong><a href="#6-install-development-tools">Steps 6–9</a></strong> &nbsp; Tools + Repository</p>
 <hr />
-<p><a href="#6-install-development-tools">Install <code>uv</code> + <code>just</code></a> · <a href="#7-fork-and-clone-the-repository">Fork + clone</a> · <a href="#8-initialize-submodules">Submodules</a> · <a href="#9-set-up-the-development-environment">Dev environment</a></p>
+<p><a href="#6-install-development-tools">Install <code>uv</code> + <code>just</code></a> · <a href="#7-fork-and-clone-the-repository">Fork + clone</a> · <a href="#8-initialize-submodules">Submodules</a> · <a href="#9-set-up-the-development-environment">Development environment</a></p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M32 64C14.3 64 0 78.3 0 96s14.3 32 32 32h86.7c12.3 28.3 40.5 48 73.3 48s61-19.7 73.3-48H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H265.3C253 35.7 224.8 16 192 16s-61 19.7-73.3 48zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32h246.7c12.3 28.3 40.5 48 73.3 48s61-19.7 73.3-48H480c17.7 0 32-14.3 32-32s-14.3-32-32-32h-54.7c-12.3-28.3-40.5-48-73.3-48s-61 19.7-73.3 48zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32h54.7c12.3 28.3 40.5 48 73.3 48s61-19.7 73.3-48H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H233.3c-12.3-28.3-40.5-48-73.3-48s-61 19.7-73.3 48z"/></svg></span> &nbsp; <strong><a href="#10-configure-and-run">Step 10</a></strong> &nbsp; Configuration + First run</p>
@@ -4941,10 +5259,10 @@
 <p>GitHub is a website that hosts code and lets teams collaborate on software projects. If you don't already have an account, sign up at <a href="https://github.com/signup">github.com/signup</a>.</p>
 <hr />
 <h2 id="2-install-homebrew-macos-only">2. Install Homebrew (macOS only)<a class="headerlink" href="#2-install-homebrew-macos-only" title="Permanent link">&para;</a></h2>
-<p>Homebrew is the standard package manager for macOS — it lets you install developer tools with a single command. Open <strong>Terminal</strong> (press <span class="keys"><kbd class="key-command">Cmd</kbd><span>+</span><kbd class="key-space">Space</kbd></span>, type "Terminal", press <span class="keys"><kbd class="key-enter">Enter</kbd></span>) and run:</p>
-<div class="highlight"><pre><span></span><code>/bin/bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh<span class="k">)</span><span class="s2">&quot;</span>
+<p>Homebrew is the standard package manager for macOS. It lets you install developer tools with a single command. Open <strong>Terminal</strong> (press <span class="keys"><kbd class="key-command">Cmd</kbd><span>+</span><kbd class="key-space">Space</kbd></span>, type "Terminal" and press <span class="keys"><kbd class="key-enter">Enter</kbd></span>) and run:</p>
+<div class="highlight"><pre><span></span><code>/bin/bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span><span class="k">$(</span>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh<span class="k">)</span><span class="s2">"</span>
 </code></pre></div>
-<p>Follow the on-screen instructions. When it finishes, it will tell you to run two commands to add Homebrew to your PATH — <strong>copy and run them</strong>. Then verify:</p>
+<p>Follow the on-screen instructions. When it finishes, it tells you to run two commands to add Homebrew to your PATH: <strong>copy and run them</strong>. Then verify:</p>
 <div class="highlight"><pre><span></span><code>brew<span class="w"> </span>--version
 </code></pre></div>
 <div class="admonition note">
@@ -4985,12 +5303,12 @@ Accept the default options during installation. Afterwards, open <strong>Git Bas
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">macOS / Linux</label><label for="__tabbed_2_2">Windows (Git Bash)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-C<span class="w"> </span><span class="s2">&quot;your_email@example.com&quot;</span>
+<div class="highlight"><pre><span></span><code>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-C<span class="w"> </span><span class="s2">"your_email@example.com"</span>
 </code></pre></div>
 <p>Press <span class="keys"><kbd class="key-enter">Enter</kbd></span> three times to accept the defaults (default file location, no passphrase).</p>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-C<span class="w"> </span><span class="s2">&quot;your_email@example.com&quot;</span>
+<div class="highlight"><pre><span></span><code>ssh-keygen<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-C<span class="w"> </span><span class="s2">"your_email@example.com"</span>
 </code></pre></div>
 <p>Press <span class="keys"><kbd class="key-enter">Enter</kbd></span> three times to accept the defaults.</p>
 </div>
@@ -5000,17 +5318,17 @@ Accept the default options during installation. Afterwards, open <strong>Git Bas
 <div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">macOS</label><label for="__tabbed_3_2">Linux</label><label for="__tabbed_3_3">Windows (Git Bash)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="nb">eval</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>ssh-agent<span class="w"> </span>-s<span class="k">)</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="nb">eval</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>ssh-agent<span class="w"> </span>-s<span class="k">)</span><span class="s2">"</span>
 ssh-add<span class="w"> </span>~/.ssh/id_ed25519
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="nb">eval</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>ssh-agent<span class="w"> </span>-s<span class="k">)</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="nb">eval</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>ssh-agent<span class="w"> </span>-s<span class="k">)</span><span class="s2">"</span>
 ssh-add<span class="w"> </span>~/.ssh/id_ed25519
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="nb">eval</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>ssh-agent<span class="w"> </span>-s<span class="k">)</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="nb">eval</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>ssh-agent<span class="w"> </span>-s<span class="k">)</span><span class="s2">"</span>
 ssh-add<span class="w"> </span>~/.ssh/id_ed25519
 </code></pre></div>
 </div>
@@ -5038,7 +5356,7 @@ ssh-add<span class="w"> </span>~/.ssh/id_ed25519
 <ol>
 <li>Go to <a href="https://github.com/settings/keys">github.com/settings/keys</a>.</li>
 <li>Click <strong>New SSH key</strong>.</li>
-<li>Give it a title (e.g. "My Laptop"), paste the key, and click <strong>Add SSH key</strong>.</li>
+<li>Give it a title (for example "Laptop"), paste the key, and click <strong>Add SSH key</strong>.</li>
 </ol>
 <h3 id="test-the-connection">Test the connection<a class="headerlink" href="#test-the-connection" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>ssh<span class="w"> </span>-T<span class="w"> </span>git@github.com
@@ -5047,16 +5365,16 @@ ssh-add<span class="w"> </span>~/.ssh/id_ed25519
 <hr />
 <h2 id="5-configure-your-git-identity">5. Configure your Git identity<a class="headerlink" href="#5-configure-your-git-identity" title="Permanent link">&para;</a></h2>
 <p>Tell Git who you are (this information appears in your commits):</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.name<span class="w"> </span><span class="s2">&quot;Your Name&quot;</span>
-git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.email<span class="w"> </span><span class="s2">&quot;your_email@example.com&quot;</span>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.name<span class="w"> </span><span class="s2">"Your Name"</span>
+git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.email<span class="w"> </span><span class="s2">"your_email@example.com"</span>
 </code></pre></div>
 <p>Use the same email you registered on GitHub.</p>
 <hr />
 <h2 id="6-install-development-tools">6. Install development tools<a class="headerlink" href="#6-install-development-tools" title="Permanent link">&para;</a></h2>
 <p>canVODpy uses two command-line tools to manage the project:</p>
 <ul>
-<li><strong><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr></strong> — a fast Python package manager that handles dependencies and virtual environments.</li>
-<li><strong>just</strong> — a command runner (like a simplified Makefile) that provides shortcuts for common tasks.</li>
+<li><strong><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr></strong>: a fast Python package manager that handles dependencies and virtual environments.</li>
+<li><strong>just</strong>: a command runner (like a simplified Makefile) that provides shortcuts for common tasks.</li>
 </ul>
 <h3 id="install-uv">Install <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr><a class="headerlink" href="#install-uv" title="Permanent link">&para;</a></h3>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">macOS</label><label for="__tabbed_5_2">Linux</label><label for="__tabbed_5_3">Windows</label></div>
@@ -5070,13 +5388,13 @@ git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="n">powershell</span> <span class="n">-ExecutionPolicy</span> <span class="n">ByPass</span> <span class="n">-c</span> <span class="s2">&quot;irm https://astral.sh/uv/install.ps1 | iex&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="n">powershell</span> <span class="n">-ExecutionPolicy</span> <span class="n">ByPass</span> <span class="n">-c</span> <span class="s2">"irm https://astral.sh/uv/install.ps1 | iex"</span>
 </code></pre></div>
 </div>
 </div>
 </div>
 <h3 id="install-just">Install just<a class="headerlink" href="#install-just" title="Permanent link">&para;</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:4"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><input id="__tabbed_6_4" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">macOS</label><label for="__tabbed_6_2">Linux (any distro)</label><label for="__tabbed_6_3">Linux (Ubuntu 23.04+ / Debian 13+)</label><label for="__tabbed_6_4">Windows</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:4"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><input id="__tabbed_6_4" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">macOS</label><label for="__tabbed_6_2">Linux (any distribution)</label><label for="__tabbed_6_3">Linux (Ubuntu 23.04+ / Debian 13+)</label><label for="__tabbed_6_4">Windows</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code>brew<span class="w"> </span>install<span class="w"> </span>just
@@ -5084,10 +5402,10 @@ git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"
 </div>
 <div class="tabbed-block">
 <p>This works on all Linux distributions (Ubuntu, Mint, Fedora, etc.):</p>
-<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>--proto<span class="w"> </span><span class="s1">&#39;=https&#39;</span><span class="w"> </span>--tlsv1.2<span class="w"> </span>-sSf<span class="w"> </span>https://just.systems/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash<span class="w"> </span>-s<span class="w"> </span>--<span class="w"> </span>--to<span class="w"> </span>~/.local/bin
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>--proto<span class="w"> </span><span class="s1">'=https'</span><span class="w"> </span>--tlsv1.2<span class="w"> </span>-sSf<span class="w"> </span>https://just.systems/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash<span class="w"> </span>-s<span class="w"> </span>--<span class="w"> </span>--to<span class="w"> </span>~/.local/bin
 </code></pre></div>
 <p>Make sure <code>~/.local/bin</code> is on your PATH. Add this to your <code>~/.bashrc</code> or <code>~/.zshrc</code> if needed:</p>
-<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.local/bin:</span><span class="nv">$PATH</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/.local/bin:</span><span class="nv">$PATH</span><span class="s2">"</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -5114,9 +5432,9 @@ just<span class="w"> </span>--version
 <p>A <strong>fork</strong> is your own copy of the project on GitHub. You make changes in your fork and then propose them back to the original project via a "pull request."</p>
 <h3 id="fork-on-github">Fork on GitHub<a class="headerlink" href="#fork-on-github" title="Permanent link">&para;</a></h3>
 <ol>
-<li>Go to <a href="https://github.com/nfb2021/canvodpy">github.com/nfb2021/canvodpy</a>.</li>
+<li>Go to <a href="https://github.com/TUW-GEO/canvodpy">github.com/TUW-GEO/canvodpy</a>.</li>
 <li>Click the <strong>Fork</strong> button in the top-right corner.</li>
-<li>GitHub will create a copy at <code>github.com/YOUR_USERNAME/canvodpy</code>.</li>
+<li>GitHub creates a copy at <code>github.com/YOUR_USERNAME/canvodpy</code>.</li>
 </ol>
 <h3 id="clone-your-fork">Clone your fork<a class="headerlink" href="#clone-your-fork" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:YOUR_USERNAME/canvodpy.git
@@ -5125,7 +5443,7 @@ just<span class="w"> </span>--version
 <p>Replace <code>YOUR_USERNAME</code> with your actual GitHub username.</p>
 <h3 id="add-the-upstream-remote">Add the upstream remote<a class="headerlink" href="#add-the-upstream-remote" title="Permanent link">&para;</a></h3>
 <p>This lets you pull in updates from the original repository later:</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>git@github.com:nfb2021/canvodpy.git
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>git@github.com:TUW-GEO/canvodpy.git
 </code></pre></div>
 <p>Verify your remotes:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>remote<span class="w"> </span>-v
@@ -5138,25 +5456,26 @@ just<span class="w"> </span>--version
 </code></pre></div>
 <p>This pulls:</p>
 <ul>
-<li><strong><code>packages/canvod-readers/tests/test_data</code></strong> — validation test data (falsified/corrupted <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files for testing)</li>
-<li><strong><code>demo</code></strong> — clean real-world data for demos and documentation</li>
+<li><strong><code>packages/canvod-readers/tests/test_data</code></strong>: validation test data (falsified/corrupted <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files for testing)</li>
+<li><strong><code>demo</code></strong>: clean real-world data for demos and documentation</li>
 </ul>
-<p>If you skip this step, tests that require these datasets will be automatically skipped.</p>
+<p>If you skip this step, tests that require these datasets are skipped.</p>
 <hr />
 <h2 id="9-set-up-the-development-environment">9. Set up the development environment<a class="headerlink" href="#9-set-up-the-development-environment" title="Permanent link">&para;</a></h2>
 <p>From inside the <code>canvodpy</code> directory, run:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Verify required tools are available</span>
 just<span class="w"> </span>check-dev-tools
 
-<span class="c1"># Install all Python dependencies into a virtual environment</span>
-uv<span class="w"> </span>sync
+<span class="c1"># Install all Python dependencies and the git hooks (code checks before</span>
+<span class="c1"># each commit, code graph rebuild after each commit)</span>
+just<span class="w"> </span>sync
 
-<span class="c1"># Install pre-commit hooks (automatic code checks before each commit)</span>
-just<span class="w"> </span>hooks
+<span class="c1"># First build of the code graph (free, local; see "Developing with coding agents")</span>
+just<span class="w"> </span>graph
 </code></pre></div>
 <hr />
 <h2 id="10-configure-and-run">10. Configure and run<a class="headerlink" href="#10-configure-and-run" title="Permanent link">&para;</a></h2>
-<p>Follow the <a href="../../users/">Users guide</a> to initialize <code>canvod-settings.yaml</code>, validate it, and process your first day of <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> data.</p>
+<p>Follow <a href="../../users/">Retrieve <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr></a> to initialize <code>canvod-settings.yaml</code>, validate it, and process your first day of <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> data.</p>
 <hr />
 <h2 id="11-verify-everything-works">11. Verify everything works<a class="headerlink" href="#11-verify-everything-works" title="Permanent link">&para;</a></h2>
 <p>Run the test suite:</p>
@@ -5168,9 +5487,9 @@ just<span class="w"> </span>hooks
 <p>If both commands complete without errors, your environment is ready.</p>
 <hr />
 <h2 id="12-keeping-your-fork-up-to-date">12. Keeping your fork up to date<a class="headerlink" href="#12-keeping-your-fork-up-to-date" title="Permanent link">&para;</a></h2>
-<p>The upstream repository (<code>nfb2021/canvodpy</code>) receives regular updates. To incorporate these into your fork, you need to <strong>fetch from upstream and merge into your local branch</strong>. This section explains every step.</p>
+<p>The upstream repository (<code>TUW-GEO/canvodpy</code>) receives regular updates. To incorporate these into your fork, you need to <strong>fetch from upstream and merge into your local branch</strong>. This section explains every step.</p>
 <h3 id="why-this-is-necessary">Why this is necessary<a class="headerlink" href="#why-this-is-necessary" title="Permanent link">&para;</a></h3>
-<p>When you forked the repository, GitHub created a snapshot of <code>main</code> at that moment. Any commits pushed to the upstream <code>main</code> after your fork was created are <strong>not</strong> automatically reflected in your fork. If you work on a feature branch for several days, the upstream <code>main</code> may have moved ahead — your branch will be "behind." Merging upstream changes prevents conflicts from accumulating and ensures you are building on the latest codebase.</p>
+<p>When you forked the repository, GitHub created a snapshot of <code>main</code> at that moment. Any commits pushed to the upstream <code>main</code> after your fork was created are <strong>not</strong> automatically reflected in your fork. If you work on a feature branch for several days, the upstream <code>main</code> may have moved ahead, and your branch falls behind it. Merging upstream changes prevents conflicts from accumulating and ensures you are building on the latest codebase.</p>
 <h3 id="one-time-setup-already-done-if-you-followed-step-7">One-time setup (already done if you followed step 7)<a class="headerlink" href="#one-time-setup-already-done-if-you-followed-step-7" title="Permanent link">&para;</a></h3>
 <p>Verify that you have the <code>upstream</code> remote configured:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>remote<span class="w"> </span>-v
@@ -5178,11 +5497,11 @@ just<span class="w"> </span>hooks
 <p>You should see two remotes:</p>
 <div class="highlight"><pre><span></span><code>origin    git@github.com:YOUR_USERNAME/canvodpy.git (fetch)
 origin    git@github.com:YOUR_USERNAME/canvodpy.git (push)
-upstream  git@github.com:nfb2021/canvodpy.git (fetch)
-upstream  git@github.com:nfb2021/canvodpy.git (push)
+upstream  git@github.com:TUW-GEO/canvodpy.git (fetch)
+upstream  git@github.com:TUW-GEO/canvodpy.git (push)
 </code></pre></div>
 <p>If <code>upstream</code> is missing, add it:</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>git@github.com:nfb2021/canvodpy.git
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>git@github.com:TUW-GEO/canvodpy.git
 </code></pre></div>
 <h3 id="update-your-local-main-branch">Update your local <code>main</code> branch<a class="headerlink" href="#update-your-local-main-branch" title="Permanent link">&para;</a></h3>
 <p>Every time you want to sync with the latest upstream changes:</p>
@@ -5194,7 +5513,7 @@ git<span class="w"> </span>fetch<span class="w"> </span>upstream
 
 <span class="c1"># 3. Merge upstream/main into your local main</span>
 <span class="c1">#    This is a fast-forward merge (no merge commit) if you have not</span>
-<span class="c1">#    committed directly to your local main — which you should not do.</span>
+<span class="c1">#    committed directly to your local main, which you should not do.</span>
 git<span class="w"> </span>merge<span class="w"> </span>upstream/main
 
 <span class="c1"># 4. Push the updated main to your fork on GitHub</span>
@@ -5209,11 +5528,11 @@ git<span class="w"> </span>checkout<span class="w"> </span>feature/my-feature
 <span class="c1"># Rebase your feature branch onto the updated main</span>
 git<span class="w"> </span>rebase<span class="w"> </span>main
 </code></pre></div>
-<p>Rebasing replays your commits on top of the latest <code>main</code>, producing a linear history. If Git reports a <strong>merge conflict</strong> during rebase, it will pause and show you which files conflict. Resolve each conflict by editing the file, then:</p>
+<p>Rebasing replays your commits on top of the latest <code>main</code>, producing a linear history. If Git reports a <strong>merge conflict</strong> during rebase, it pauses and shows you which files conflict. Resolve each conflict by editing the file, then:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>&lt;resolved-file&gt;
 git<span class="w"> </span>rebase<span class="w"> </span>--continue
 </code></pre></div>
-<p>If you want to abort the rebase and return to the state before:</p>
+<p>If you want to stop the rebase and return to the state before:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>rebase<span class="w"> </span>--abort
 </code></pre></div>
 <div class="admonition warning">
@@ -5236,7 +5555,7 @@ git<span class="w"> </span>rebase<span class="w"> </span>main
 </code></pre></div>
 <hr />
 <h2 id="12b-working-in-teams">12b. Working in teams<a class="headerlink" href="#12b-working-in-teams" title="Permanent link">&para;</a></h2>
-<p>During collaborative sprints, each team works on its own topic (often aligned with a package such as <code>canvod-grids</code> or <code>canvod-readers</code>). A shared <strong>develop branch</strong> acts as the integration point — no one commits to it directly. Instead, each team gets its own <strong>team branch</strong>.</p>
+<p>During collaborative sprints, each team works on its own topic (often aligned with a package such as <code>canvod-grids</code> or <code>canvod-readers</code>). A shared <strong>develop branch</strong> acts as the integration point: no one commits to it directly. Instead, each team gets its own <strong>team branch</strong>.</p>
 <h3 id="branch-structure">Branch structure<a class="headerlink" href="#branch-structure" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>main
 └── develop/sprint-2026              ← integration branch (shared by all teams)
@@ -5257,14 +5576,14 @@ git<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span
 git<span class="w"> </span>checkout<span class="w"> </span>team-grids
 </code></pre></div>
 <p>From here, choose the workflow that fits your team:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Workflow A: Push to the team branch directly</label><label for="__tabbed_7_2">Workflow B: Individual feature branches with PRs</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Workflow A, push to the team branch directly</label><label for="__tabbed_7_2">Workflow B, feature branches with pull requests</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <p>Best for small teams (2–3 people) or when members work on separate files.</p>
 <p>Everyone commits and pushes to the team branch:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Make your changes, then:</span>
 git<span class="w"> </span>add<span class="w"> </span>&lt;files<span class="w"> </span>you<span class="w"> </span>changed&gt;
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(grids): add new grid type&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(grids): add new grid type"</span>
 git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>team-grids
 </code></pre></div>
 <p>If someone else pushed before you, pull first:</p>
@@ -5280,7 +5599,7 @@ git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </
 </code></pre></div>
 <p>Work, commit, and push your feature branch:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>&lt;files<span class="w"> </span>you<span class="w"> </span>changed&gt;
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(grids): add new grid tessellation&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(grids): add new grid tessellation"</span>
 git<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>team-grids/add-new-grid
 </code></pre></div>
 <p>Then open a pull request on GitHub targeting <code>team-grids</code>.</p>
@@ -5305,21 +5624,21 @@ just<span class="w"> </span>check
 </code></pre></div>
 <h3 id="stage-and-commit">Stage and commit<a class="headerlink" href="#stage-and-commit" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>&lt;files<span class="w"> </span>you<span class="w"> </span>changed&gt;
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(grids): add new grid type&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(grids): add new grid type"</span>
 </code></pre></div>
 <p>Commit messages follow the <a href="https://www.conventionalcommits.org/">Conventional Commits</a> format: <code>type(scope): description</code>. Common types: <code>feat</code>, <code>fix</code>, <code>docs</code>, <code>test</code>, <code>refactor</code>.</p>
 <h3 id="push">Push<a class="headerlink" href="#push" title="Permanent link">&para;</a></h3>
-<p>Push to your team branch or feature branch (see <a href="#12b-working-in-teams">Working in teams</a> above).</p>
+<p>Push to your team branch or feature branch (see <a href="#12b-working-in-teams">Working in teams</a>).</p>
 <h3 id="open-a-pull-request">Open a pull request<a class="headerlink" href="#open-a-pull-request" title="Permanent link">&para;</a></h3>
 <ol>
-<li>Go to your fork on GitHub — you'll see a banner suggesting to open a pull request.</li>
+<li>Go to your fork on GitHub. You'll see a banner suggesting to open a pull request.</li>
 <li>Click <strong>Compare &amp; pull request</strong>.</li>
 <li>Set the <strong>base</strong> branch to your team branch (or the develop branch, depending on your workflow).</li>
 <li>Add a title and description, then click <strong>Create pull request</strong>.</li>
 </ol>
 <hr />
 <h2 id="14-pre-commit-hooks-and-why-your-commit-may-be-rejected">14. Pre-commit hooks and why your commit may be rejected<a class="headerlink" href="#14-pre-commit-hooks-and-why-your-commit-may-be-rejected" title="Permanent link">&para;</a></h2>
-<p>When you ran <code>just hooks</code> in <a href="#9-set-up-the-development-environment">step 9</a>, a set of <strong>pre-commit hooks</strong> was installed into your local <code>.git/hooks/</code> directory. These hooks run automatically every time you execute <code>git commit</code>. If any hook fails, <strong>the commit is aborted</strong> — your changes remain staged but no commit is created.</p>
+<p>When you ran <code>just sync</code> in <a href="#9-set-up-the-development-environment">step 9</a>, a set of <strong>pre-commit hooks</strong> was installed into your local <code>.git/hooks/</code> directory. These hooks run automatically every time you execute <code>git commit</code>. If any hook fails, <strong>the commit is aborted</strong>: your changes remain staged but no commit is created.</p>
 <p>This is intentional: it prevents code that does not meet the project's quality standards from entering the Git history. The hooks are defined in <code>.pre-commit-config.yaml</code> at the repository root.</p>
 <h3 id="what-runs-on-every-commit">What runs on every commit<a class="headerlink" href="#what-runs-on-every-commit" title="Permanent link">&para;</a></h3>
 <p>The following checks execute automatically in sequence. If any one fails, the commit is rejected.</p>
@@ -5336,19 +5655,19 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 <tr>
 <td><strong><abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> check</strong></td>
 <td><code>pre-commit</code> (before commit is created)</td>
-<td>Python linting — unused imports, undefined names, style violations, type annotation issues</td>
+<td>Python linting: unused imports, undefined names, style violations, type annotation issues</td>
 <td>You have an unused import or a linting rule violation</td>
 </tr>
 <tr>
 <td><strong><abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> format</strong></td>
 <td><code>pre-commit</code></td>
-<td>Python formatting — consistent code style (indentation, line length, quote style, trailing commas)</td>
+<td>Python formatting: consistent code style (indentation, line length, quote style, trailing commas)</td>
 <td>Your code is not formatted according to the project style</td>
 </tr>
 <tr>
 <td><strong><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>-lock</strong></td>
 <td><code>pre-commit</code></td>
-<td>Lockfile consistency — verifies <code>uv.lock</code> matches <code>pyproject.toml</code></td>
+<td>Lockfile consistency: verifies <code>uv.lock</code> matches <code>pyproject.toml</code></td>
 <td>You changed a dependency in <code>pyproject.toml</code> but did not run <code>uv sync</code></td>
 </tr>
 <tr>
@@ -5367,7 +5686,7 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 <td><strong>detect-private-key</strong></td>
 <td><code>pre-commit</code></td>
 <td>Scans for accidentally staged private keys (SSH, PGP)</td>
-<td>You are about to commit a secret — <strong>do not override this</strong></td>
+<td>You are about to commit a secret: <strong>do not override this</strong></td>
 </tr>
 <tr>
 <td><strong>end-of-file-fixer</strong></td>
@@ -5376,13 +5695,35 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 <td>A file is missing its final newline or has extra blank lines at the end</td>
 </tr>
 <tr>
+<td><strong>check-agent-docs</strong></td>
+<td><code>pre-commit</code></td>
+<td>Every path and <code>just</code> recipe named in <code>AGENTS.md</code> files and task guides exists</td>
+<td>You moved or renamed a file or recipe that an instruction file names</td>
+</tr>
+<tr>
 <td><strong>commitizen</strong></td>
 <td><code>commit-msg</code> (after you write the message)</td>
 <td>Validates that your commit message follows the <a href="https://www.conventionalcommits.org/">Conventional Commits</a> specification</td>
 <td>Your message does not match the <code>type(scope): subject</code> format</td>
 </tr>
+<tr>
+<td><strong>ty type check</strong></td>
+<td><code>pre-push</code> (before <code>git push</code>)</td>
+<td>Type checking of the whole workspace with ty</td>
+<td>A type error; the push is aborted</td>
+</tr>
 </tbody>
 </table>
+<p><abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> also runs <code>just check-package-imports</code> (too slow for a hook, about two
+minutes): it installs each package with only the dependencies its own
+<code>pyproject.toml</code> declares and imports every module. It fails when a
+package imports a library it does not declare, which the shared <code>.venv</code>
+hides. Run it after you add an import of a new library to a package.</p>
+<p>After a commit, merge or checkout, the <strong>code graph</strong> hook rebuilds the
+code graph in the background (<code>.graphify/</code>, log in <code>.graphify/build.log</code>).
+To move <code>demo</code> and the test data to their latest commits, run
+<code>just update-submodules</code> on a feature branch; it commits the new pointers
+there, and they reach <code>main</code> through a pull request.</p>
 <h3 id="how-to-fix-a-rejected-commit">How to fix a rejected commit<a class="headerlink" href="#how-to-fix-a-rejected-commit" title="Permanent link">&para;</a></h3>
 <p>When a hook fails, read the error output carefully. The most common scenarios:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="8:4"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><input id="__tabbed_8_3" name="__tabbed_8" type="radio" /><input id="__tabbed_8_4" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1"><abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> linting or formatting failure</label><label for="__tabbed_8_2">commitizen message validation failure</label><label for="__tabbed_8_3"><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>-lock mismatch</label><label for="__tabbed_8_4">Large file blocked</label></div>
@@ -5395,7 +5736,7 @@ git<span class="w"> </span>diff
 
 <span class="c1"># If the changes look correct, stage them and commit again:</span>
 git<span class="w"> </span>add<span class="w"> </span>-u
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): your original message&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(readers): your original message"</span>
 </code></pre></div>
 <p>If <abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> cannot auto-fix (e.g., an undefined variable), you must edit the code manually, then stage and commit again.</p>
 </div>
@@ -5410,43 +5751,43 @@ please enter a commit message in the commitizen format.
 <p>Where <code>type</code> is one of: <code>feat</code>, <code>fix</code>, <code>docs</code>, <code>refactor</code>, <code>test</code>, <code>chore</code>, <code>perf</code>, <code>ci</code>, <code>build</code>, <code>style</code></p>
 <p>And <code>scope</code> is one of: <code>readers</code>, <code>aux</code>, <code>grids</code>, <code>vod</code>, <code>store</code>, <code>viz</code>, <code>utils</code>, <code>naming</code>, <code>ops</code>, <code>docs</code>, <code>ci</code>, <code>deps</code></p>
 <p>Examples of <strong>valid</strong> messages:</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): add RINEX 4.0 parser&quot;</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(store): handle empty epoch arrays&quot;</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs: update installation guide&quot;</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;test(vod): add tau-omega edge cases&quot;</span>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(readers): add RINEX 4.0 parser"</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(store): handle empty epoch arrays"</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs: update installation guide"</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"test(vod): add tau-omega edge cases"</span>
 </code></pre></div>
 <p>Examples of <strong>invalid</strong> messages (will be rejected):</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;added new feature&quot;</span><span class="w">           </span><span class="c1"># no type prefix</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add stuff&quot;</span><span class="w">              </span><span class="c1"># too vague (but technically valid)</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;FEAT(readers): add parser&quot;</span><span class="w">    </span><span class="c1"># type must be lowercase</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers) add parser&quot;</span><span class="w">     </span><span class="c1"># missing colon after scope</span>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"added new feature"</span><span class="w">           </span><span class="c1"># no type prefix</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat: add stuff"</span><span class="w">              </span><span class="c1"># too vague (but technically valid)</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"FEAT(readers): add parser"</span><span class="w">    </span><span class="c1"># type must be lowercase</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(readers) add parser"</span><span class="w">     </span><span class="c1"># missing colon after scope</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <p>You modified a <code>pyproject.toml</code> (added or changed a dependency) but the lockfile is out of date:</p>
 <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w">          </span><span class="c1"># regenerates uv.lock</span>
 git<span class="w"> </span>add<span class="w"> </span>uv.lock
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): your original message&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(readers): your original message"</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <p>You are trying to commit a file that exceeds the size threshold (typically data files, <code>.zarr</code> stores, or log files). These should not be in the Git repository. Remove the file from staging:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>reset<span class="w"> </span>HEAD<span class="w"> </span>&lt;large-file&gt;
-<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&lt;large-file&gt;&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>.gitignore
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"&lt;large-file&gt;"</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>.gitignore
 git<span class="w"> </span>add<span class="w"> </span>.gitignore
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore: update gitignore&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"chore: update gitignore"</span>
 </code></pre></div>
 </div>
 </div>
 </div>
 <h3 id="bypassing-hooks-emergency-only">Bypassing hooks (emergency only)<a class="headerlink" href="#bypassing-hooks-emergency-only" title="Permanent link">&para;</a></h3>
-<p>In rare situations where you need to commit despite a hook failure (e.g., you are certain the failure is a false positive), you can skip hooks:</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>--no-verify<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(store): emergency hotfix&quot;</span>
+<p>In rare situations where you need to commit despite a hook failure (for example, you are certain the failure is a false positive), you can skip hooks:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>--no-verify<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(store): emergency hotfix"</span>
 </code></pre></div>
 <div class="admonition danger">
 <p class="admonition-title">Use <code>--no-verify</code> with extreme caution</p>
 <p>Skipping hooks defeats their purpose. The <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> pipeline on GitHub runs the
-same checks — your pull request will fail if the code does not pass <abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr>,
+same checks: your pull request will fail if the code does not pass <abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr>,
 formatting, and commit message validation. Only use <code>--no-verify</code> when you
 fully understand why the hook is failing and are certain the failure is not
 a genuine code quality issue.</p>
@@ -5466,34 +5807,53 @@ a genuine code quality issue.</p>
 <tbody>
 <tr>
 <td><strong>Code Quality</strong></td>
-<td>Every push</td>
-<td>Checks lockfile consistency, runs <abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> linting, checks formatting, runs type checking with ty</td>
+<td>Every push and PR, weekly</td>
+<td>Checks lockfile consistency, runs <abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> linting, checks formatting, runs type checking with ty, checks the agent instruction files</td>
 </tr>
 <tr>
 <td><strong>Test with Coverage</strong></td>
-<td>Push to <code>main</code> and all PRs</td>
-<td>Runs <code>just test-coverage</code> (pytest with coverage measurement), uploads results to Coveralls, posts a coverage summary comment on the PR</td>
+<td>Push to <code>main</code>, all pull requests, weekly</td>
+<td>Runs <code>uv run pytest</code> (coverage is on by default in <code>pyproject.toml</code>), uploads results to Coveralls, posts a coverage summary comment on the PR</td>
 </tr>
 <tr>
 <td><strong>Platform Tests</strong></td>
-<td>PRs</td>
-<td>Runs the test suite across multiple operating systems and Python versions</td>
+<td>Every push and PR, weekly</td>
+<td>Runs the test suite on Linux, macOS, and Windows with Python 3.14</td>
+</tr>
+<tr>
+<td><strong>S3 Tests</strong></td>
+<td>Every push and PR</td>
+<td>Runs the tests of stores on S3 against an S3 emulator (RustFS) on Linux; elsewhere these tests are skipped</td>
+</tr>
+<tr>
+<td><strong>Docs Quality</strong></td>
+<td>Push to <code>main</code>, every pull request, weekly, or started by hand</td>
+<td>Checks the language of the docs pages a pull request changes with Vale, and the links of the built site with lychee: links between our pages on every push and pull request, external links too in the weekly run, which opens an issue when one fails</td>
 </tr>
 <tr>
 <td><strong>Deploy Docs</strong></td>
-<td>Push to <code>main</code></td>
+<td>A published release, or started by hand</td>
 <td>Builds and deploys the documentation site</td>
 </tr>
 </tbody>
 </table>
+<p>No <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> workflow checks out the test-data submodule
+(<code>packages/canvod-readers/tests/test_data</code>): the tests that need it skip
+there, and the S3 Tests leave out the two S3 tests that read it
+(<code>canvodpy/tests/test_s3_run.py</code>, <code>canvodpy/tests/test_s3_two_runs.py</code>). Run them on your machine before you open a pull
+request that touches the readers, the stores or the pipeline
+(<code>git submodule update --init packages/canvod-readers/tests/test_data</code>,
+then <code>just test</code>). The end-to-end runs take their settings from
+<code>config/canvod-settings.yaml.example</code>, not from your settings file, so
+they run the same on every machine.</p>
 <h3 id="test-coverage-with-coveralls">Test coverage with Coveralls<a class="headerlink" href="#test-coverage-with-coveralls" title="Permanent link">&para;</a></h3>
 <p>The project uses <a href="https://coveralls.io/">Coveralls</a> to track test coverage over time. After each test run in <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>:</p>
 <ol>
 <li>pytest generates a coverage report in LCOV format (<code>coverage.lcov</code>)</li>
-<li>The report is uploaded to <a href="https://coveralls.io/github/nfb2021/canvodpy">coveralls.io/github/nfb2021/canvodpy</a></li>
+<li>The report is uploaded to <a href="https://coveralls.io/github/TUW-GEO/canvodpy">coveralls.io/github/TUW-GEO/canvodpy</a></li>
 <li>A coverage summary is posted as a comment on the pull request, showing which lines are covered and which are not</li>
 </ol>
-<p>Coverage is <strong>not</strong> a gate (your PR will not be blocked by low coverage), but it is visible to reviewers. When adding new code, include tests — this is both good scientific practice (every computation should be verifiable) and a courtesy to future contributors who need to understand what the code does.</p>
+<p>Coverage is <strong>not</strong> a gate (low coverage does not block your PR), but it is visible to reviewers. When adding new code, include tests. This is both good scientific practice (every computation should be verifiable) and a courtesy to future contributors who need to understand what the code does.</p>
 <p>To measure coverage locally before pushing:</p>
 <div class="highlight"><pre><span></span><code>just<span class="w"> </span>test-coverage
 <span class="c1"># Opens an HTML report in your browser showing line-by-line coverage</span>
@@ -5519,8 +5879,16 @@ a genuine code quality issue.</p>
 <td>Lint, format, and type-check all code</td>
 </tr>
 <tr>
+<td><code>just sync</code></td>
+<td>Install dependencies and git hooks</td>
+</tr>
+<tr>
 <td><code>just hooks</code></td>
-<td>Install pre-commit hooks</td>
+<td>Install the git hooks only</td>
+</tr>
+<tr>
+<td><code>just graph</code></td>
+<td>Rebuild the code graph (free, local)</td>
 </tr>
 <tr>
 <td><code>just check-dev-tools</code></td>
@@ -5539,12 +5907,32 @@ a genuine code quality issue.</p>
 <td>Show the resolved configuration</td>
 </tr>
 <tr>
-<td><code>canvod-preflight validate &lt;dir&gt;</code></td>
-<td>Check data files against the naming convention</td>
+<td><code>just config-check-data &lt;site&gt;</code></td>
+<td>Check a site's data files as a run reads them</td>
 </tr>
 <tr>
 <td><code>just docs</code></td>
 <td>Preview documentation locally</td>
+</tr>
+<tr>
+<td><code>just docs-lint</code></td>
+<td>Check the language of the docs (Vale)</td>
+</tr>
+<tr>
+<td><code>just docs-lint-changed</code></td>
+<td>Vale on the pages changed since <code>origin/main</code></td>
+</tr>
+<tr>
+<td><code>just docs-links</code></td>
+<td>Check every link of the built docs (lychee)</td>
+</tr>
+<tr>
+<td><code>just cli-docs</code></td>
+<td>Write the command-line reference from <code>--help</code></td>
+</tr>
+<tr>
+<td><code>just cli-docs-check</code></td>
+<td>Check that reference against the <code>--help</code> texts</td>
 </tr>
 <tr>
 <td><code>just test-coverage</code></td>
@@ -5572,7 +5960,7 @@ a genuine code quality issue.</p>
 <dt><strong><code>uv sync</code> fails with a Python version error</strong></dt>
 <dd>canVODpy requires Python 3.14. Install a supported version with <code>uv python install 3.14</code> and try again.</dd>
 <dt><strong>Pre-commit hook fails on commit</strong></dt>
-<dd>Run <code>just check</code> — it will auto-fix most linting and formatting issues. Stage the fixed files and commit again.</dd>
+<dd>Run <code>just check</code>. It will auto-fix most linting and formatting issues. Stage the fixed files and commit again.</dd>
 <dt><strong>"push rejected" or "failed to push"</strong></dt>
 <dd>
 <p>Your branch is behind the remote. Pull the latest changes first:</p>
@@ -5585,17 +5973,17 @@ a genuine code quality issue.</p>
 <div class="highlight"><pre><span></span><code><span class="n">where</span><span class="p">.</span><span class="n">exe</span> <span class="n">bash</span>
 </code></pre></div>
 <p>Then update the path in the first lines of the Justfile:</p>
-<div class="highlight"><pre><span></span><code>set windows-shell := [&quot;C:/YOUR/ACTUAL/PATH/TO/bash.exe&quot;, &quot;-c&quot;]
+<div class="highlight"><pre><span></span><code>set windows-shell := ["C:/YOUR/ACTUAL/PATH/TO/bash.exe", "-c"]
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Do <strong>not</strong> commit this change — it's specific to your machine. The default path works for most installations and for <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>.</p>
+<p>Do <strong>not</strong> commit this change: it's specific to your machine. The default path works for most installations and for <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>.</p>
 </div>
 </dd>
 <dt><strong>Windows: <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> install fails with "execution of scripts is disabled"</strong></dt>
 <dd>
 <p>PowerShell's default execution policy blocks scripts. Use the bypass flag:</p>
-<div class="highlight"><pre><span></span><code><span class="n">powershell</span> <span class="n">-ExecutionPolicy</span> <span class="n">ByPass</span> <span class="n">-c</span> <span class="s2">&quot;irm https://astral.sh/uv/install.ps1 | iex&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="n">powershell</span> <span class="n">-ExecutionPolicy</span> <span class="n">ByPass</span> <span class="n">-c</span> <span class="s2">"irm https://astral.sh/uv/install.ps1 | iex"</span>
 </code></pre></div>
 </dd>
 <dt><strong>Windows: line ending warnings (<code>LF will be replaced by CRLF</code>)</strong></dt>
@@ -5607,7 +5995,7 @@ a genuine code quality issue.</p>
 </dl>
 </details>
 <hr />
-<p><strong>Next in the trail:</strong> <a href="../configuration/">Configuration Guide</a> · <a href="../api-levels/">API Levels</a> · <a href="../../architecture/">Architecture</a> · <a href="../ai-development/">AI Development</a></p>
+<p><strong>Next in the trail:</strong> <a href="../configuration/">configuration</a> · <a href="../api-levels/">API levels</a> · <a href="../../architecture/">architecture</a> · <a href="../ai-development/">AI development</a></p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -5676,13 +6064,13 @@ a genuine code quality issue.</p>
         
         
           
-          <a href="../DEVELOPMENT/" class="md-footer__link md-footer__link--next" aria-label="Next: Development Guide">
+          <a href="../DEVELOPMENT/" class="md-footer__link md-footer__link--next" aria-label="Next: Development guide">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Development Guide
+                Development guide
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -5702,8 +6090,9 @@ a genuine code quality issue.</p>
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -5720,7 +6109,7 @@ a genuine code quality issue.</p>
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -5757,10 +6146,10 @@ a genuine code quality issue.</p>
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../../assets/mermaid-init.js"></script>
       

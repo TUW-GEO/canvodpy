@@ -15,7 +15,8 @@
         <link rel="canonical" href="https://canvodpy.eu/guides/ZENODO_SETUP/">
       
       
-        <link rel="prev" href="../PYPI_SETUP/">
+      
+        <link rel="prev" href="../../RELEASING/">
       
       
         <link rel="next" href="../OIDC_EXPLAINED/">
@@ -25,7 +26,7 @@
       
       
       <link rel="icon" href="../../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
@@ -36,12 +37,12 @@
       
         
       
-      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="../.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -173,6 +195,7 @@
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -286,12 +303,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -300,7 +311,7 @@
         <a href="../../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../impressum/" class="md-tabs__link">
+        <a href="../../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -523,12 +518,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -553,7 +542,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -575,7 +564,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -589,14 +578,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../users/cli/" class="md-nav__link">
+      <a href="../upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -615,26 +604,62 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -650,7 +675,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -670,14 +695,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../extensions/" class="md-nav__link">
+      <a href="../settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -689,6 +714,159 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -704,7 +882,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -731,7 +909,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -758,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -778,14 +956,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../notebooks/" class="md-nav__link">
+      <a href="../../packages/ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -793,6 +971,42 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -829,69 +1043,6 @@
       
         
       
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Packages
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
         
       
         
@@ -911,17 +1062,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-readers
+  How it works
 
     
   </span>
@@ -932,12 +1083,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_1">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-readers
+  How it works
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -956,88 +1107,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  RINEX v3.04 Format
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Reader
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Field Decoding
+  Reading GNSS files
 
     
   </span>
@@ -1064,7 +1134,7 @@
   <span class="md-ellipsis">
     
   
-  Ephemeris Sources
+  Ephemeris sources
 
     
   </span>
@@ -1076,159 +1146,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1244,7 +1161,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Orbits and clocks
 
     
   </span>
@@ -1271,7 +1188,7 @@
   <span class="md-ellipsis">
     
   
-  Preprocessing Pipeline
+  Orbit and clock preparation
 
     
   </span>
@@ -1298,7 +1215,7 @@
   <span class="md-ellipsis">
     
   
-  Interpolation Methods
+  Interpolation
 
     
   </span>
@@ -1325,7 +1242,7 @@
   <span class="md-ellipsis">
     
   
-  Coordinate Systems
+  Coordinate systems
 
     
   </span>
@@ -1337,97 +1254,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/auxiliary/products/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1443,7 +1269,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Hemispheric grids
 
     
   </span>
@@ -1455,70 +1281,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1534,7 +1296,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  VOD retrieval
 
     
   </span>
@@ -1546,74 +1308,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1629,7 +1323,34 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
 
     
   </span>
@@ -1656,7 +1377,7 @@
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Versioning with Icechunk
 
     
   </span>
@@ -1683,7 +1404,7 @@
   <span class="md-ellipsis">
     
   
-  Storage Strategies
+  Write strategies
 
     
   </span>
@@ -1695,70 +1416,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1774,7 +1431,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Store metadata
 
     
   </span>
@@ -1786,70 +1443,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1865,7 +1458,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Visualization
 
     
   </span>
@@ -1898,6 +1491,16 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -1911,17 +1514,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-config
+  Data formats
 
     
   </span>
@@ -1932,12 +1535,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-config
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -1949,14 +1552,149 @@
   
   
     <li class="md-nav__item">
-      <a href="../../packages/config/overview/" class="md-nav__link">
+      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/rinex-v2-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v2.11
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF field decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite catalog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product registry
 
     
   </span>
@@ -1989,6 +1727,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2002,17 +1744,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-utils
+  Extend
 
     
   </span>
@@ -2023,15 +1765,69 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-utils
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your own readers and VOD calculators
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/building-a-reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -2047,189 +1843,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2258,26 +1872,19 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
       
         
       
@@ -2327,7 +1934,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2343,7 +1950,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2389,7 +1996,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2416,7 +2023,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2436,14 +2043,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-design/" class="md-nav__link">
+      <a href="../reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2455,6 +2062,70 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2470,7 +2141,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2490,14 +2161,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../build-system/" class="md-nav__link">
+      <a href="../../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2517,14 +2188,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tooling/" class="md-nav__link">
+      <a href="../../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2544,14 +2215,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../principles/" class="md-nav__link">
+      <a href="../../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2559,6 +2230,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2595,10 +2275,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="">
             
   
   
@@ -2616,8 +2296,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -2640,7 +2320,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -2667,7 +2347,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -2694,7 +2374,733 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -2737,8 +3143,6 @@
       
         
       
-        
-      
     
     
     
@@ -2755,17 +3159,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" checked>
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -2776,12 +3180,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2827,34 +3231,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -2947,19 +3324,19 @@
   <a href="#how-it-works" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        How It Works
+        How it works
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="How It Works">
+    <nav class="md-nav" aria-label="How it works">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-initial-setup-one-time" class="md-nav__link">
+  <a href="#1-initial-setup-once" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Initial Setup (One-Time)
+        1. Initial setup (once)
       </span>
     </span>
   </a>
@@ -2970,7 +3347,7 @@
   <a href="#2-every-release" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Every Release
+        2. Every release
       </span>
     </span>
   </a>
@@ -2981,7 +3358,7 @@
   <a href="#3-users-cite-your-work" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Users Cite Your Work
+        3. Users cite your work
       </span>
     </span>
   </a>
@@ -2997,7 +3374,7 @@
   <a href="#step-1-create-citationcff-done" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step 1: Create CITATION.cff <em>(Done)</em>
+        Step 1. Create CITATION.cff <em>(done)</em>
       </span>
     </span>
   </a>
@@ -3008,19 +3385,19 @@
   <a href="#step-2-connect-github-to-zenodo" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step 2: Connect GitHub to Zenodo
+        Step 2. Connect GitHub to Zenodo
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 2: Connect GitHub to Zenodo">
+    <nav class="md-nav" aria-label="Step 2. Connect GitHub to Zenodo">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#21-create-zenodo-account" class="md-nav__link">
+  <a href="#21-create-a-zenodo-account" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.1: Create Zenodo Account
+        2.1. Create a Zenodo account
       </span>
     </span>
   </a>
@@ -3028,10 +3405,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#22-enable-repository-on-zenodo" class="md-nav__link">
+  <a href="#22-enable-the-repository-on-zenodo" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.2: Enable Repository on Zenodo
+        2.2. Enable the repository on Zenodo
       </span>
     </span>
   </a>
@@ -3039,10 +3416,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#23-verify-connection" class="md-nav__link">
+  <a href="#23-verify-the-connection" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.3: Verify Connection
+        2.3. Verify the connection
       </span>
     </span>
   </a>
@@ -3055,22 +3432,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-3-create-first-release" class="md-nav__link">
+  <a href="#step-3-create-the-first-release" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step 3: Create First Release
+        Step 3. Create the first release
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 3: Create First Release">
+    <nav class="md-nav" aria-label="Step 3. Create the first release">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#option-a-test-with-beta-release" class="md-nav__link">
+  <a href="#option-a-test-with-a-beta-release" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Option A: Test with Beta Release
+        Option A. Test with a beta release
       </span>
     </span>
   </a>
@@ -3081,7 +3458,7 @@
   <a href="#option-b-production-release" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Option B: Production Release
+        Option B. Production release
       </span>
     </span>
   </a>
@@ -3089,10 +3466,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#after-release" class="md-nav__link">
+  <a href="#after-the-release" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        After Release
+        After the release
       </span>
     </span>
   </a>
@@ -3105,10 +3482,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-4-add-doi-badge-to-readme" class="md-nav__link">
+  <a href="#step-4-add-the-doi-badge-to-the-readme" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step 4: Add DOI Badge to README
+        Step 4. Add the DOI badge to the README
       </span>
     </span>
   </a>
@@ -3116,10 +3493,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-5-update-documentation" class="md-nav__link">
+  <a href="#step-5-update-the-documentation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step 5: Update Documentation
+        Step 5. Update the documentation
       </span>
     </span>
   </a>
@@ -3130,19 +3507,19 @@
   <a href="#how-citations-work" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        How Citations Work
+        How citations work
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="How Citations Work">
+    <nav class="md-nav" aria-label="How citations work">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#for-researchers-using-your-package" class="md-nav__link">
+  <a href="#for-researchers-using-the-package" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        For Researchers Using Your Package
+        For researchers using the package
       </span>
     </span>
   </a>
@@ -3153,7 +3530,7 @@
   <a href="#for-papers" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        For Papers
+        For papers
       </span>
     </span>
   </a>
@@ -3161,10 +3538,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#concept-doi-vs-version-doi" class="md-nav__link">
+  <a href="#concept-doi-and-version-doi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Concept DOI vs Version DOI
+        Concept DOI and version DOI
       </span>
     </span>
   </a>
@@ -3199,15 +3576,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#example-how-it-looks" class="md-nav__link">
+  <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Example: How It Looks
+        Example
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Example: How It Looks">
+    <nav class="md-nav" aria-label="Example">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -3236,7 +3613,7 @@
   <a href="#in-papers" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        In Papers
+        In papers
       </span>
     </span>
   </a>
@@ -3252,19 +3629,19 @@
   <a href="#additional-metadata-optional" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Additional Metadata (Optional)
+        Additional metadata (optional)
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Additional Metadata (Optional)">
+    <nav class="md-nav" aria-label="Additional metadata (optional)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#zenodojson" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        .zenodo.json
+        <code>.zenodo.json</code>
       </span>
     </span>
   </a>
@@ -3288,10 +3665,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-start-checklist" class="md-nav__link">
+  <a href="#checklist" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quick Start Checklist
+        Checklist
       </span>
     </span>
   </a>
@@ -3321,7 +3698,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -3348,7 +3725,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -3403,17 +3780,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3424,12 +3801,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3448,7 +3825,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3475,7 +3852,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3502,7 +3879,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3522,14 +3899,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../SECURITY.md" class="md-nav__link">
+      <a href="../../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3567,6 +3944,8 @@
   
     
     
+      
+        
       
         
       
@@ -3613,7 +3992,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3629,10 +4008,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -3939,96 +4345,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -4084,19 +4400,19 @@
   <a href="#how-it-works" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        How It Works
+        How it works
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="How It Works">
+    <nav class="md-nav" aria-label="How it works">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-initial-setup-one-time" class="md-nav__link">
+  <a href="#1-initial-setup-once" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Initial Setup (One-Time)
+        1. Initial setup (once)
       </span>
     </span>
   </a>
@@ -4107,7 +4423,7 @@
   <a href="#2-every-release" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Every Release
+        2. Every release
       </span>
     </span>
   </a>
@@ -4118,7 +4434,7 @@
   <a href="#3-users-cite-your-work" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Users Cite Your Work
+        3. Users cite your work
       </span>
     </span>
   </a>
@@ -4134,7 +4450,7 @@
   <a href="#step-1-create-citationcff-done" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step 1: Create CITATION.cff <em>(Done)</em>
+        Step 1. Create CITATION.cff <em>(done)</em>
       </span>
     </span>
   </a>
@@ -4145,19 +4461,19 @@
   <a href="#step-2-connect-github-to-zenodo" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step 2: Connect GitHub to Zenodo
+        Step 2. Connect GitHub to Zenodo
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 2: Connect GitHub to Zenodo">
+    <nav class="md-nav" aria-label="Step 2. Connect GitHub to Zenodo">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#21-create-zenodo-account" class="md-nav__link">
+  <a href="#21-create-a-zenodo-account" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.1: Create Zenodo Account
+        2.1. Create a Zenodo account
       </span>
     </span>
   </a>
@@ -4165,10 +4481,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#22-enable-repository-on-zenodo" class="md-nav__link">
+  <a href="#22-enable-the-repository-on-zenodo" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.2: Enable Repository on Zenodo
+        2.2. Enable the repository on Zenodo
       </span>
     </span>
   </a>
@@ -4176,10 +4492,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#23-verify-connection" class="md-nav__link">
+  <a href="#23-verify-the-connection" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2.3: Verify Connection
+        2.3. Verify the connection
       </span>
     </span>
   </a>
@@ -4192,22 +4508,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-3-create-first-release" class="md-nav__link">
+  <a href="#step-3-create-the-first-release" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step 3: Create First Release
+        Step 3. Create the first release
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Step 3: Create First Release">
+    <nav class="md-nav" aria-label="Step 3. Create the first release">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#option-a-test-with-beta-release" class="md-nav__link">
+  <a href="#option-a-test-with-a-beta-release" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Option A: Test with Beta Release
+        Option A. Test with a beta release
       </span>
     </span>
   </a>
@@ -4218,7 +4534,7 @@
   <a href="#option-b-production-release" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Option B: Production Release
+        Option B. Production release
       </span>
     </span>
   </a>
@@ -4226,10 +4542,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#after-release" class="md-nav__link">
+  <a href="#after-the-release" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        After Release
+        After the release
       </span>
     </span>
   </a>
@@ -4242,10 +4558,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-4-add-doi-badge-to-readme" class="md-nav__link">
+  <a href="#step-4-add-the-doi-badge-to-the-readme" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step 4: Add DOI Badge to README
+        Step 4. Add the DOI badge to the README
       </span>
     </span>
   </a>
@@ -4253,10 +4569,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-5-update-documentation" class="md-nav__link">
+  <a href="#step-5-update-the-documentation" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Step 5: Update Documentation
+        Step 5. Update the documentation
       </span>
     </span>
   </a>
@@ -4267,19 +4583,19 @@
   <a href="#how-citations-work" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        How Citations Work
+        How citations work
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="How Citations Work">
+    <nav class="md-nav" aria-label="How citations work">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#for-researchers-using-your-package" class="md-nav__link">
+  <a href="#for-researchers-using-the-package" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        For Researchers Using Your Package
+        For researchers using the package
       </span>
     </span>
   </a>
@@ -4290,7 +4606,7 @@
   <a href="#for-papers" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        For Papers
+        For papers
       </span>
     </span>
   </a>
@@ -4298,10 +4614,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#concept-doi-vs-version-doi" class="md-nav__link">
+  <a href="#concept-doi-and-version-doi" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Concept DOI vs Version DOI
+        Concept DOI and version DOI
       </span>
     </span>
   </a>
@@ -4336,15 +4652,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#example-how-it-looks" class="md-nav__link">
+  <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Example: How It Looks
+        Example
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Example: How It Looks">
+    <nav class="md-nav" aria-label="Example">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4373,7 +4689,7 @@
   <a href="#in-papers" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        In Papers
+        In papers
       </span>
     </span>
   </a>
@@ -4389,19 +4705,19 @@
   <a href="#additional-metadata-optional" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Additional Metadata (Optional)
+        Additional metadata (optional)
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Additional Metadata (Optional)">
+    <nav class="md-nav" aria-label="Additional metadata (optional)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#zenodojson" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        .zenodo.json
+        <code>.zenodo.json</code>
       </span>
     </span>
   </a>
@@ -4425,10 +4741,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#quick-start-checklist" class="md-nav__link">
+  <a href="#checklist" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Quick Start Checklist
+        Checklist
       </span>
     </span>
   </a>
@@ -4501,6 +4817,8 @@
       
         
       
+        
+      
     
     
     
@@ -4510,7 +4828,7 @@
           
   
   <span class="md-ellipsis">
-    Development
+    Contribute
   </span>
 
         </a>
@@ -4535,8 +4853,6 @@
       
         
       
-        
-      
     
     
     
@@ -4546,7 +4862,7 @@
           
   
   <span class="md-ellipsis">
-    Release & Publishing
+    Release and publishing
   </span>
 
         </a>
@@ -4585,7 +4901,7 @@
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M0 64c0-17.7 14.3-32 32-32h448c17.7 0 32 14.3 32 32v32c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zm32 112h448v240c0 35.3-28.7 64-64 64H96c-35.3 0-64-28.7-64-64zm152 64c-13.3 0-24 10.7-24 24s10.7 24 24 24h144c13.3 0 24-10.7 24-24s-10.7-24-24-24z"/></svg></span> &nbsp; <strong>Permanent Archival</strong></p>
 <hr />
 <p>CERN guarantees 20+ years of preservation.
-Every release is archived forever — reproducibility guaranteed.</p>
+Every release is archived forever, so it stays reproducible.</p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M416 208c0 45.9-14.9 88.3-40 122.7l126.6 126.7c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.1-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0s208 93.1 208 208M208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288"/></svg></span> &nbsp; <strong><abbr title="Findable, Accessible, Interoperable, Reusable — guiding principles for scientific data stewardship (Wilkinson et al. 2016)">FAIR</abbr> Compliant</strong></p>
@@ -4596,89 +4912,96 @@ Searchable by researchers worldwide, indexed by Google Scholar.</p>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg></span> &nbsp; <strong>GitHub Integration</strong></p>
 <hr />
-<p>Link your repo once. Every subsequent GitHub release triggers
+<p>Link your repository once. Every subsequent GitHub release triggers
 automatic archival and <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> minting.</p>
 </li>
 </ul>
 </div>
 <hr />
-<h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
-<h3 id="1-initial-setup-one-time">1. Initial Setup (One-Time)<a class="headerlink" href="#1-initial-setup-one-time" title="Permanent link">&para;</a></h3>
-<p>You link your GitHub repo to Zenodo:
+<h2 id="how-it-works">How it works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
+<h3 id="1-initial-setup-once">1. Initial setup (once)<a class="headerlink" href="#1-initial-setup-once" title="Permanent link">&para;</a></h3>
+<p>You link your GitHub repository to Zenodo:
 - Zenodo watches for new releases
 - No manual uploads needed</p>
-<h3 id="2-every-release">2. Every Release<a class="headerlink" href="#2-every-release" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>just<span class="w"> </span>release<span class="w"> </span><span class="m">0</span>.1.0
-git<span class="w"> </span>push<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>--tags
+<h3 id="2-every-release">2. Every release<a class="headerlink" href="#2-every-release" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>just<span class="w"> </span>release<span class="w"> </span>canvod-store<span class="o">=</span><span class="m">1</span>.1.0<span class="w"> </span><span class="nv">canvodpy</span><span class="o">=</span><span class="m">1</span>.1.0<span class="w">   </span><span class="c1"># release commit on release/v1.1.0: open a PR, merge it</span>
+<span class="c1"># then, on the merged main:</span>
+just<span class="w"> </span>tag-release<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.0<span class="w"> </span>canvod-store-v1.1.0
 </code></pre></div>
+<p>Only the canvodpy tag (<code>v1.1.0</code>) creates a GitHub release, so Zenodo
+archives one version per canvodpy release; package tags get none.</p>
+<p>Zenodo takes the version and date of the record from <code>CITATION.cff</code> and
+<code>.zenodo.json</code> at the tag. <code>just release</code> writes canvodpy's version and the
+release date into both (and into <code>codemeta.json</code>), so the record carries
+the version of the release.</p>
 <p><strong>Automatic workflow:</strong>
 1. GitHub creates release v0.1.0
 2. Zenodo detects new release
 3. Zenodo archives the release
 4. Zenodo mints <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr>: <code>10.5281/zenodo.XXXXX</code>
 5. Zenodo creates citation metadata</p>
-<h3 id="3-users-cite-your-work">3. Users Cite Your Work<a class="headerlink" href="#3-users-cite-your-work" title="Permanent link">&para;</a></h3>
+<h3 id="3-users-cite-your-work">3. Users cite your work<a class="headerlink" href="#3-users-cite-your-work" title="Permanent link">&para;</a></h3>
 <p>Researchers can cite:
 <div class="highlight"><pre><span></span><code>Bader, N. F. (2026). canvodpy: GNSS Vegetation Optical Depth Analysis (v0.1.0).
 Zenodo. https://doi.org/10.5281/zenodo.XXXXX
 </code></pre></div></p>
-<p><strong>Version-specific DOIs:</strong>
-- v0.1.0 → <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr>: 10.5281/zenodo.12345
-- v0.2.0 → <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr>: 10.5281/zenodo.12346
-- Concept <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> → <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr>: 10.5281/zenodo.12344 (always latest)</p>
+<p><strong>A <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> for each version:</strong>
+- v0.1.0 <span class="arithmatex">\(\rightarrow\)</span> <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr>: <code>10.5281/zenodo.12345</code>
+- v0.2.0 <span class="arithmatex">\(\rightarrow\)</span> <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr>: <code>10.5281/zenodo.12346</code>
+- Concept <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> <span class="arithmatex">\(\rightarrow\)</span> <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr>: <code>10.5281/zenodo.12344</code> (always latest)</p>
 <hr />
-<h2 id="step-1-create-citationcff-done">Step 1: Create CITATION.cff <em>(Done)</em><a class="headerlink" href="#step-1-create-citationcff-done" title="Permanent link">&para;</a></h2>
+<h2 id="step-1-create-citationcff-done">Step 1. Create CITATION.cff <em>(done)</em><a class="headerlink" href="#step-1-create-citationcff-done" title="Permanent link">&para;</a></h2>
 <p><code>CITATION.cff</code> enables the <strong>"Cite this repository"</strong> button on GitHub, exports to BibTeX/APA/EndNote, and provides metadata for Zenodo.</p>
 <div class="admonition tip">
 <p class="admonition-title">Add your <abbr title="Open Researcher and Contributor ID — persistent digital identifier for researchers">ORCID</abbr> iD</p>
 <p>Edit <code>CITATION.cff</code> line 14 and add your <abbr title="Open Researcher and Contributor ID — persistent digital identifier for researchers">ORCID</abbr> identifier.
-Get one at <a href="https://orcid.org/register">orcid.org/register</a> — it links your publications to your researcher profile.</p>
+Get one at <a href="https://orcid.org/register">orcid.org/register</a>; it links your publications to your researcher profile.</p>
 </div>
 <hr />
-<h2 id="step-2-connect-github-to-zenodo">Step 2: Connect GitHub to Zenodo<a class="headerlink" href="#step-2-connect-github-to-zenodo" title="Permanent link">&para;</a></h2>
-<h3 id="21-create-zenodo-account">2.1: Create Zenodo Account<a class="headerlink" href="#21-create-zenodo-account" title="Permanent link">&para;</a></h3>
+<h2 id="step-2-connect-github-to-zenodo">Step 2. Connect GitHub to Zenodo<a class="headerlink" href="#step-2-connect-github-to-zenodo" title="Permanent link">&para;</a></h2>
+<h3 id="21-create-a-zenodo-account">2.1. Create a Zenodo account<a class="headerlink" href="#21-create-a-zenodo-account" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Go to: https://zenodo.org</li>
 <li>Click "Sign up"</li>
-<li><strong>Important:</strong> Sign up with GitHub!</li>
+<li><strong>Important:</strong> sign up with GitHub.</li>
 <li>Click "Log in with GitHub"</li>
 <li>This enables automatic integration</li>
 </ol>
-<h3 id="22-enable-repository-on-zenodo">2.2: Enable Repository on Zenodo<a class="headerlink" href="#22-enable-repository-on-zenodo" title="Permanent link">&para;</a></h3>
+<h3 id="22-enable-the-repository-on-zenodo">2.2. Enable the repository on Zenodo<a class="headerlink" href="#22-enable-the-repository-on-zenodo" title="Permanent link">&para;</a></h3>
 <ol>
 <li>After logging in, go to: https://zenodo.org/account/settings/github/</li>
-<li>Find <code>nfb2021/canvodpy</code> in the list</li>
+<li>Find <code>TUW-GEO/canvodpy</code> in the list</li>
 <li><strong>Toggle ON</strong> the switch next to it</li>
-<li>Zenodo is now watching for releases!</li>
+<li>Zenodo now watches for releases.</li>
 </ol>
-<h3 id="23-verify-connection">2.3: Verify Connection<a class="headerlink" href="#23-verify-connection" title="Permanent link">&para;</a></h3>
+<h3 id="23-verify-the-connection">2.3. Verify the connection<a class="headerlink" href="#23-verify-the-connection" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Should see: "✓ Enabled" next to canvodpy</li>
-<li>Zenodo will archive next release</li>
+<li>Zenodo archives the next release</li>
 </ul>
 <hr />
-<h2 id="step-3-create-first-release">Step 3: Create First Release<a class="headerlink" href="#step-3-create-first-release" title="Permanent link">&para;</a></h2>
-<h3 id="option-a-test-with-beta-release">Option A: Test with Beta Release<a class="headerlink" href="#option-a-test-with-beta-release" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>tag<span class="w"> </span>v0.1.0-beta.2<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Test Zenodo DOI creation&quot;</span>
-git<span class="w"> </span>push<span class="w"> </span>--tags
+<h2 id="step-3-create-the-first-release">Step 3. Create the first release<a class="headerlink" href="#step-3-create-the-first-release" title="Permanent link">&para;</a></h2>
+<h3 id="option-a-test-with-a-beta-release">Option A. Test with a beta release<a class="headerlink" href="#option-a-test-with-a-beta-release" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.1.0b2<span class="w"> </span>-m<span class="w"> </span><span class="s2">"Test Zenodo DOI creation"</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0b2
 </code></pre></div>
 <ul>
-<li>Creates TestPyPI release</li>
 <li>Zenodo creates <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr></li>
 <li>You can test the process safely</li>
 </ul>
-<h3 id="option-b-production-release">Option B: Production Release<a class="headerlink" href="#option-b-production-release" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>just<span class="w"> </span>release<span class="w"> </span><span class="m">0</span>.1.0
-git<span class="w"> </span>push<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>--tags
+<h3 id="option-b-production-release">Option B. Production release<a class="headerlink" href="#option-b-production-release" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>just<span class="w"> </span>release<span class="w"> </span><span class="nv">canvodpy</span><span class="o">=</span><span class="m">0</span>.1.0<span class="w"> </span>canvod-readers<span class="o">=</span><span class="m">0</span>.1.0<span class="w"> </span>...<span class="w">   </span><span class="c1"># open a PR, merge it</span>
+<span class="c1"># then, on the merged main:</span>
+just<span class="w"> </span>tag-release<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0<span class="w"> </span>canvod-readers-v0.1.0<span class="w"> </span>...
 </code></pre></div>
 <ul>
-<li>Creates production <abbr title="Python Package Index — public Python package repository">PyPI</abbr> release</li>
+<li>Creates the GitHub release; <abbr title="Python Package Index — public Python package repository">PyPI</abbr> follows with <code>gh workflow run publish_pypi.yml --ref v0.1.0</code></li>
 <li>Zenodo creates <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr></li>
 <li>This is the "real" first citable version</li>
 </ul>
-<h3 id="after-release">After Release<a class="headerlink" href="#after-release" title="Permanent link">&para;</a></h3>
+<h3 id="after-the-release">After the release<a class="headerlink" href="#after-the-release" title="Permanent link">&para;</a></h3>
 <ol>
-<li>Go to: https://zenodo.org/account/settings/github/repository/nfb2021/canvodpy</li>
+<li>Go to: https://zenodo.org/account/settings/github/repository/TUW-GEO/canvodpy</li>
 <li>You'll see your release listed</li>
 <li>Click to view the <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr></li>
 <li>Copy the <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> badge markdown</li>
@@ -4687,14 +5010,14 @@ git<span class="w"> </span>push<span class="w"> </span><span class="o">&amp;&amp
 <div class="highlight"><pre><span></span><code>[<span class="nt">![DOI</span>](<span class="na">https://zenodo.org/badge/DOI/10.5281/zenodo.12345.svg</span>)](https://doi.org/10.5281/zenodo.12345)
 </code></pre></div></p>
 <hr />
-<h2 id="step-4-add-doi-badge-to-readme">Step 4: Add <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> Badge to README<a class="headerlink" href="#step-4-add-doi-badge-to-readme" title="Permanent link">&para;</a></h2>
+<h2 id="step-4-add-the-doi-badge-to-the-readme">Step 4. Add the <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> badge to the README<a class="headerlink" href="#step-4-add-the-doi-badge-to-the-readme" title="Permanent link">&para;</a></h2>
 <p>Add to <code>README.md</code> (after other badges):</p>
 <div class="highlight"><pre><span></span><code>[<span class="nt">![DOI</span>](<span class="na">https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXX.svg</span>)](https://doi.org/10.5281/zenodo.XXXXX)
 </code></pre></div>
 <p>Replace <code>XXXXX</code> with your actual Zenodo ID.</p>
-<p><strong>Tip:</strong> Use the "concept <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr>" (always points to latest version)</p>
+<p><strong>Tip:</strong> use the "concept <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr>" (always points to latest version)</p>
 <hr />
-<h2 id="step-5-update-documentation">Step 5: Update Documentation<a class="headerlink" href="#step-5-update-documentation" title="Permanent link">&para;</a></h2>
+<h2 id="step-5-update-the-documentation">Step 5. Update the documentation<a class="headerlink" href="#step-5-update-the-documentation" title="Permanent link">&para;</a></h2>
 <p>Add citation section to <code>README.md</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="gu">## Citing canvodpy</span>
 
@@ -4717,21 +5040,21 @@ BibTeX:
 \`\`\`
 </code></pre></div>
 <hr />
-<h2 id="how-citations-work">How Citations Work<a class="headerlink" href="#how-citations-work" title="Permanent link">&para;</a></h2>
-<h3 id="for-researchers-using-your-package">For Researchers Using Your Package<a class="headerlink" href="#for-researchers-using-your-package" title="Permanent link">&para;</a></h3>
+<h2 id="how-citations-work">How citations work<a class="headerlink" href="#how-citations-work" title="Permanent link">&para;</a></h2>
+<h3 id="for-researchers-using-the-package">For researchers using the package<a class="headerlink" href="#for-researchers-using-the-package" title="Permanent link">&para;</a></h3>
 <p><strong>From GitHub:</strong>
 1. Click "Cite this repository" (top right)
 2. Choose format (APA, BibTeX, etc.)
 3. Copy citation</p>
 <p><strong>From Zenodo:</strong>
 1. Visit Zenodo <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> link
-2. Click "Export" → Choose format
+2. Click "Export" <span class="arithmatex">\(\rightarrow\)</span> Choose format
 3. Copy citation</p>
-<h3 id="for-papers">For Papers<a class="headerlink" href="#for-papers" title="Permanent link">&para;</a></h3>
+<h3 id="for-papers">For papers<a class="headerlink" href="#for-papers" title="Permanent link">&para;</a></h3>
 <p>Researchers cite specific versions:</p>
 <p><strong>Correct:</strong></p>
 <blockquote>
-<p>"We used canvodpy v0.1.0 (Bader, 2026) for <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> calculations."</p>
+<p>"<abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> was calculated with canvodpy v0.1.0 (Bader, 2026)."</p>
 </blockquote>
 <p><strong>Reference:</strong></p>
 <blockquote>
@@ -4739,15 +5062,15 @@ BibTeX:
 </blockquote>
 <p><strong>Why version-specific?</strong>
 - Reproducibility: v0.1.0 code is archived forever
-- Transparency: Readers know exactly what was used
-- <abbr title="Findable, Accessible, Interoperable, Reusable — guiding principles for scientific data stewardship (Wilkinson et al. 2016)">FAIR</abbr> principles: Findable specific version</p>
-<h3 id="concept-doi-vs-version-doi">Concept <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> vs Version <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr><a class="headerlink" href="#concept-doi-vs-version-doi" title="Permanent link">&para;</a></h3>
-<p><strong>Concept <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr></strong> (10.5281/zenodo.12344):
+- Transparency: readers know exactly what was used
+- <abbr title="Findable, Accessible, Interoperable, Reusable — guiding principles for scientific data stewardship (Wilkinson et al. 2016)">FAIR</abbr> principles: the exact version is findable</p>
+<h3 id="concept-doi-and-version-doi">Concept <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> and version <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr><a class="headerlink" href="#concept-doi-and-version-doi" title="Permanent link">&para;</a></h3>
+<p><strong>Concept <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr></strong> (<code>10.5281/zenodo.12344</code>):
 - Always points to latest version
-- Use for: General citations, badges</p>
-<p><strong>Version <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr></strong> (10.5281/zenodo.12345):
+- Use for: general citations, badges</p>
+<p><strong>Version <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr></strong> (<code>10.5281/zenodo.12345</code>):
 - Points to specific version (v0.1.0)
-- Use for: Research papers (reproducibility)</p>
+- Use for: research papers (reproducibility)</p>
 <hr />
 <h2 id="benefits">Benefits<a class="headerlink" href="#benefits" title="Permanent link">&para;</a></h2>
 <table>
@@ -4760,7 +5083,7 @@ BibTeX:
 <tbody>
 <tr>
 <td>Academic recognition</td>
-<td>Citable software output — <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> trackable in citations</td>
+<td>Citable software output; the <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> is trackable in citations</td>
 </tr>
 <tr>
 <td><abbr title="Open Researcher and Contributor ID — persistent digital identifier for researchers">ORCID</abbr> integration</td>
@@ -4776,24 +5099,24 @@ BibTeX:
 </tr>
 <tr>
 <td>Trusted repository</td>
-<td>Used by CERN, NASA, ESA — accepted by all journals</td>
+<td>Used by CERN, NASA, and ESA; accepted by all journals</td>
 </tr>
 </tbody>
 </table>
 <hr />
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <details class="failure">
-<summary>Repo not visible on Zenodo</summary>
+<summary>Repository not visible on Zenodo</summary>
 <ol>
 <li>Ensure you logged in <strong>with GitHub</strong> (not email)</li>
-<li>Check the repo is <strong>public</strong> — Zenodo only indexes public repos</li>
+<li>Check the repository is <strong>public</strong>: Zenodo only indexes public repositories</li>
 <li>Log out and back in; sync can take a few minutes</li>
 </ol>
 </details>
 <details class="failure">
 <summary>No <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> created for a release</summary>
 <ol>
-<li>Verify the toggle is <strong>ON</strong> at <a href="https://zenodo.org/account/settings/github/">zenodo.org/account/settings/github/</a></li>
+<li>Verify the toggle is <strong>ON</strong> at <a href="https://zenodo.org/account/settings/github/">Zenodo's GitHub settings</a></li>
 <li>Ensure the GitHub release is <strong>published</strong> (not a draft)</li>
 <li>Check your Zenodo email for error notifications</li>
 </ol>
@@ -4804,12 +5127,12 @@ BibTeX:
 Zenodo reads the updated file for the new <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> automatically.</p>
 </details>
 <details class="question">
-<summary>Can I get a <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> for old releases?</summary>
-<p>No — Zenodo only archives releases created <strong>after</strong> the integration was enabled.
+<summary>Do old releases get a <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr>?</summary>
+<p>No. Zenodo only archives releases created <strong>after</strong> the integration was enabled.
 You can create new patch/beta releases to archive historical code states.</p>
 </details>
 <hr />
-<h2 id="example-how-it-looks">Example: How It Looks<a class="headerlink" href="#example-how-it-looks" title="Permanent link">&para;</a></h2>
+<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
 <h3 id="on-github">On GitHub<a class="headerlink" href="#on-github" title="Permanent link">&para;</a></h3>
 <p><strong>Cite button:</strong>
 <div class="highlight"><pre><span></span><code>[Cite this repository ▼]
@@ -4829,11 +5152,11 @@ License: Apache-2.0
 
 [Download] [Cite] [Share] [Export]
 </code></pre></div></p>
-<h3 id="in-papers">In Papers<a class="headerlink" href="#in-papers" title="Permanent link">&para;</a></h3>
+<h3 id="in-papers">In papers<a class="headerlink" href="#in-papers" title="Permanent link">&para;</a></h3>
 <p><strong>Methods section:</strong></p>
 <blockquote>
 <p>"<abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> was calculated using canvodpy v0.1.0 (Bader, 2026),
-an open-source Python package for <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr>-based vegetation analysis."</p>
+an open source Python package for <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr>-based vegetation analysis."</p>
 </blockquote>
 <p><strong>References:</strong></p>
 <blockquote>
@@ -4841,27 +5164,27 @@ an open-source Python package for <abbr title="Global Navigation Satellite Syste
 Zenodo. https://doi.org/10.5281/zenodo.12345</p>
 </blockquote>
 <hr />
-<h2 id="additional-metadata-optional">Additional Metadata (Optional)<a class="headerlink" href="#additional-metadata-optional" title="Permanent link">&para;</a></h2>
-<h3 id="zenodojson">.zenodo.json<a class="headerlink" href="#zenodojson" title="Permanent link">&para;</a></h3>
+<h2 id="additional-metadata-optional">Additional metadata (optional)<a class="headerlink" href="#additional-metadata-optional" title="Permanent link">&para;</a></h2>
+<h3 id="zenodojson"><code>.zenodo.json</code><a class="headerlink" href="#zenodojson" title="Permanent link">&para;</a></h3>
 <p>For advanced metadata customization, create <code>.zenodo.json</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;canvodpy: GNSS Vegetation Optical Depth Analysis&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Python package for VOD calculation from GNSS SNR data&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;creators&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"canvodpy: GNSS Vegetation Optical Depth Analysis"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Python package for VOD calculation from GNSS SNR data"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"creators"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Bader, Nicolas François&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;affiliation&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;TU Wien&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;orcid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0000-0000-0000-0000&quot;</span>
+<span class="w">      </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Bader, Nicolas François"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"affiliation"</span><span class="p">:</span><span class="w"> </span><span class="s2">"TU Wien"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"orcid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0000-0000-0000-0000"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">],</span>
-<span class="w">  </span><span class="nt">&quot;keywords&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;GNSS&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;VOD&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;vegetation&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;remote sensing&quot;</span><span class="p">],</span>
-<span class="w">  </span><span class="nt">&quot;license&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Apache-2.0&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;communities&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">{</span><span class="nt">&quot;identifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;zenodo&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="nt">"keywords"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"GNSS"</span><span class="p">,</span><span class="w"> </span><span class="s2">"VOD"</span><span class="p">,</span><span class="w"> </span><span class="s2">"vegetation"</span><span class="p">,</span><span class="w"> </span><span class="s2">"remote sensing"</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">"license"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Apache-2.0"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"communities"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">"identifier"</span><span class="p">:</span><span class="w"> </span><span class="s2">"zenodo"</span><span class="p">}</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
-<p><strong>Note:</strong> CITATION.cff is usually sufficient!</p>
+<p><strong>Note:</strong> CITATION.cff is usually enough.</p>
 <hr />
 <h2 id="resources">Resources<a class="headerlink" href="#resources" title="Permanent link">&para;</a></h2>
 <ul>
@@ -4873,7 +5196,7 @@ Zenodo. https://doi.org/10.5281/zenodo.12345</p>
 <li><a href="https://guides.github.com/activities/citable-code/">Making Software Citable</a></li>
 </ul>
 <hr />
-<h2 id="quick-start-checklist">Quick Start Checklist<a class="headerlink" href="#quick-start-checklist" title="Permanent link">&para;</a></h2>
+<h2 id="checklist">Checklist<a class="headerlink" href="#checklist" title="Permanent link">&para;</a></h2>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Get <abbr title="Open Researcher and Contributor ID — persistent digital identifier for researchers">ORCID</abbr> iD (if you don't have one)</li>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Update CITATION.cff with your <abbr title="Open Researcher and Contributor ID — persistent digital identifier for researchers">ORCID</abbr></li>
@@ -4885,7 +5208,7 @@ Zenodo. https://doi.org/10.5281/zenodo.12345</p>
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Update documentation with citation instructions</li>
 </ul>
 <hr />
-<p><strong>Questions?</strong> Check <a href="https://help.zenodo.org/">Zenodo help</a> or ask in discussions!</p>
+<p><strong>Questions?</strong> Check <a href="https://help.zenodo.org/">Zenodo help</a> or ask in discussions.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -4940,7 +5263,7 @@ Zenodo. https://doi.org/10.5281/zenodo.12345</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../PYPI_SETUP/" class="md-footer__link md-footer__link--prev" aria-label="Previous: PyPI Setup">
+          <a href="../../RELEASING/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Release process">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4950,20 +5273,20 @@ Zenodo. https://doi.org/10.5281/zenodo.12345</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                PyPI Setup
+                Release process
               </div>
             </div>
           </a>
         
         
           
-          <a href="../OIDC_EXPLAINED/" class="md-footer__link md-footer__link--next" aria-label="Next: OIDC Authentication">
+          <a href="../OIDC_EXPLAINED/" class="md-footer__link md-footer__link--next" aria-label="Next: OIDC authentication">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                OIDC Authentication
+                OIDC authentication
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -4983,8 +5306,9 @@ Zenodo. https://doi.org/10.5281/zenodo.12345</p>
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -5001,7 +5325,7 @@ Zenodo. https://doi.org/10.5281/zenodo.12345</p>
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -5038,10 +5362,10 @@ Zenodo. https://doi.org/10.5281/zenodo.12345</p>
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../../assets/mermaid-init.js"></script>
       

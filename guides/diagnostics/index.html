@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="GNSS Transmissometry (GNSS-T) analysis framework for Python">
+        <meta name="description" content="Where a run writes its logs, how to find out what went wrong, and the performance dashboard">
       
       
         <meta name="author" content="Nicolas Bader">
@@ -15,33 +15,34 @@
         <link rel="canonical" href="https://canvodpy.eu/guides/diagnostics/">
       
       
+      
         <link rel="prev" href="../parallel-processing/">
       
       
-        <link rel="next" href="../../notebooks/">
+        <link rel="next" href="../../packages/ops/overview/">
       
       
         
       
       
       <link rel="icon" href="../../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
-        <title>Diagnostics & Monitoring - canVODpy</title>
+        <title>Diagnostics - canVODpy</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="../.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -168,11 +190,12 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Diagnostics & Monitoring
+              Diagnostics
             
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -288,12 +305,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -302,7 +313,7 @@
         <a href="../../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../impressum/" class="md-tabs__link">
+        <a href="../../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -525,12 +520,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -558,7 +547,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -580,7 +569,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -594,14 +583,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../users/cli/" class="md-nav__link">
+      <a href="../upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -620,26 +609,65 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -655,7 +683,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -675,14 +703,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../extensions/" class="md-nav__link">
+      <a href="../settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -694,6 +722,164 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -709,7 +895,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -736,7 +922,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -772,7 +958,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -789,7 +975,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -815,10 +1001,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#two-tracks-human-and-agent" class="md-nav__link">
+  <a href="#where-the-logs-go" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Two tracks: human and agent
+        Where the logs go
       </span>
     </span>
   </a>
@@ -826,10 +1012,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#run_id-correlating-a-single-pipeline-invocation" class="md-nav__link">
+  <a href="#the-log-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <code>run_id</code>: correlating a single pipeline invocation
+        The log files
       </span>
     </span>
   </a>
@@ -837,10 +1023,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#crash-handling-logs-are-the-only-evidence" class="md-nav__link">
+  <a href="#find-out-what-went-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Crash handling — logs are the only evidence
+        Find out what went wrong
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Find out what went wrong">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-run-does-when-something-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What the run does when something fails
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-files-and-days-without-vod" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Missing files and days without VOD
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-the-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Search the logs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-run-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The run ID
       </span>
     </span>
   </a>
@@ -848,10 +1084,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#stage_timer-a-simplified-performance-tracker" class="md-nav__link">
+  <a href="#the-run-history" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <code>stage_timer</code> — a simplified performance tracker
+        The run history
       </span>
     </span>
   </a>
@@ -859,10 +1095,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#live-performance-dashboard" class="md-nav__link">
+  <a href="#see-where-a-run-spends-its-time" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Live performance dashboard
+        See where a run spends its time
       </span>
     </span>
   </a>
@@ -870,10 +1106,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading-machineagentjson-after-a-failure" class="md-nav__link">
+  <a href="#time-your-own-code" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Reading <code>machine/agent.json</code> after a failure
+        Time your own code
       </span>
     </span>
   </a>
@@ -896,14 +1132,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../notebooks/" class="md-nav__link">
+      <a href="../../packages/ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -922,8 +1158,50 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
     
     
+      
+        
+      
+        
+      
+        
       
         
       
@@ -963,17 +1241,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
         
           
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Packages
+  How it works
 
     
   </span>
@@ -984,81 +1262,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-readers
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_1">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-readers
+  How it works
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -1077,88 +1286,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  RINEX v3.04 Format
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Reader
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Field Decoding
+  Reading GNSS files
 
     
   </span>
@@ -1185,7 +1313,7 @@
   <span class="md-ellipsis">
     
   
-  Ephemeris Sources
+  Ephemeris sources
 
     
   </span>
@@ -1197,159 +1325,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1365,7 +1340,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Orbits and clocks
 
     
   </span>
@@ -1392,7 +1367,7 @@
   <span class="md-ellipsis">
     
   
-  Preprocessing Pipeline
+  Orbit and clock preparation
 
     
   </span>
@@ -1419,7 +1394,7 @@
   <span class="md-ellipsis">
     
   
-  Interpolation Methods
+  Interpolation
 
     
   </span>
@@ -1446,7 +1421,7 @@
   <span class="md-ellipsis">
     
   
-  Coordinate Systems
+  Coordinate systems
 
     
   </span>
@@ -1458,97 +1433,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/auxiliary/products/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1564,7 +1448,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Hemispheric grids
 
     
   </span>
@@ -1576,70 +1460,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1655,7 +1475,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  VOD retrieval
 
     
   </span>
@@ -1667,74 +1487,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1750,7 +1502,34 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
 
     
   </span>
@@ -1777,7 +1556,7 @@
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Versioning with Icechunk
 
     
   </span>
@@ -1804,7 +1583,7 @@
   <span class="md-ellipsis">
     
   
-  Storage Strategies
+  Write strategies
 
     
   </span>
@@ -1816,70 +1595,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1895,7 +1610,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Store metadata
 
     
   </span>
@@ -1907,70 +1622,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1986,7 +1637,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Visualization
 
     
   </span>
@@ -2019,30 +1670,43 @@
       
         
       
-    
-    
-    
+        
       
+        
+      
+        
+      
+        
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
+      
         
           
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-config
+  Data formats
 
     
   </span>
@@ -2053,12 +1717,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-config
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2070,14 +1734,149 @@
   
   
     <li class="md-nav__item">
-      <a href="../../packages/config/overview/" class="md-nav__link">
+      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/rinex-v2-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v2.11
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF field decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite catalog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product registry
 
     
   </span>
@@ -2110,30 +1909,37 @@
       
         
       
-    
-    
-    
-      
+        
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
+      
         
           
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-utils
+  Extend
 
     
   </span>
@@ -2144,15 +1950,69 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-utils
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your own readers and VOD calculators
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/building-a-reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -2168,189 +2028,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2379,24 +2057,17 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
       
         
       
@@ -2443,7 +2114,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2459,7 +2130,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2505,7 +2176,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2532,7 +2203,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2552,14 +2223,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-design/" class="md-nav__link">
+      <a href="../reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2571,6 +2242,67 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2586,7 +2318,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2606,14 +2338,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../build-system/" class="md-nav__link">
+      <a href="../../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2633,14 +2365,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tooling/" class="md-nav__link">
+      <a href="../../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2660,14 +2392,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../principles/" class="md-nav__link">
+      <a href="../../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2675,6 +2407,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2708,10 +2449,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
             
   
   
@@ -2729,8 +2470,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -2753,7 +2494,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -2780,7 +2521,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -2807,7 +2548,727 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -2848,8 +3309,6 @@
       
         
       
-        
-      
     
     
     
@@ -2863,17 +3322,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -2884,12 +3343,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2935,34 +3394,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -3016,7 +3448,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -3043,7 +3475,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -3095,17 +3527,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3116,12 +3548,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3140,7 +3572,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3167,7 +3599,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3194,7 +3626,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3214,14 +3646,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../SECURITY.md" class="md-nav__link">
+      <a href="../../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3259,6 +3691,8 @@
   
     
     
+      
+        
       
         
       
@@ -3305,7 +3739,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3321,10 +3755,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -3631,96 +4092,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -3762,10 +4133,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#two-tracks-human-and-agent" class="md-nav__link">
+  <a href="#where-the-logs-go" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Two tracks: human and agent
+        Where the logs go
       </span>
     </span>
   </a>
@@ -3773,10 +4144,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#run_id-correlating-a-single-pipeline-invocation" class="md-nav__link">
+  <a href="#the-log-files" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <code>run_id</code>: correlating a single pipeline invocation
+        The log files
       </span>
     </span>
   </a>
@@ -3784,10 +4155,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#crash-handling-logs-are-the-only-evidence" class="md-nav__link">
+  <a href="#find-out-what-went-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Crash handling — logs are the only evidence
+        Find out what went wrong
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Find out what went wrong">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-the-run-does-when-something-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What the run does when something fails
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-files-and-days-without-vod" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Missing files and days without VOD
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#search-the-logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Search the logs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-run-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The run ID
       </span>
     </span>
   </a>
@@ -3795,10 +4216,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#stage_timer-a-simplified-performance-tracker" class="md-nav__link">
+  <a href="#the-run-history" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <code>stage_timer</code> — a simplified performance tracker
+        The run history
       </span>
     </span>
   </a>
@@ -3806,10 +4227,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#live-performance-dashboard" class="md-nav__link">
+  <a href="#see-where-a-run-spends-its-time" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Live performance dashboard
+        See where a run spends its time
       </span>
     </span>
   </a>
@@ -3817,10 +4238,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reading-machineagentjson-after-a-failure" class="md-nav__link">
+  <a href="#time-your-own-code" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Reading <code>machine/agent.json</code> after a failure
+        Time your own code
       </span>
     </span>
   </a>
@@ -3887,6 +4308,34 @@
       
         
       
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../../users/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    Retrieve VOD
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
         
       
         
@@ -3898,11 +4347,11 @@
     
     
       <li class="md-path__item">
-        <a href="../../users/" class="md-path__link">
+        <a href="../api-levels/" class="md-path__link">
           
   
   <span class="md-ellipsis">
-    Usage
+    Run
   </span>
 
         </a>
@@ -3924,211 +4373,629 @@
   
 
 
-<h1 id="diagnostics-performance-monitoring">Diagnostics &amp; Performance Monitoring<a class="headerlink" href="#diagnostics-performance-monitoring" title="Permanent link">&para;</a></h1>
-<p>canvodpy runs unattended on remote machines — a cron job, a scheduler, a
-headless server with no one watching. When something goes wrong there, the
-log files written during that run are the only forensic evidence that will
-ever exist: there is no re-run, no debugger, no live system to inspect
-after the fact. This page describes canvodpy's logging and lightweight
-performance-tracking infrastructure, built around that constraint.</p>
-<div class="admonition note">
-<p class="admonition-title">Superseded content</p>
-<p>This page previously described <code>canvod.utils.diagnostics</code> — a
-SQLite/StatsD/Airflow-metrics module that has been removed (it
-accumulated unused backends nobody exercised). Everything below
-describes what actually exists today.</p>
-</div>
+<h1 id="diagnostics">Diagnostics<a class="headerlink" href="#diagnostics" title="Permanent link">&para;</a></h1>
+<p>A scheduled <code>canvodpy run</code> often runs on a server where nobody watches
+it. Its log files are then the only record of what happened. This page
+explains where the logs go, what each file holds, how to find the cause
+of a failure, and how to see where a run spends its time.</p>
 <hr />
-<h2 id="two-tracks-human-and-agent">Two tracks: human and agent<a class="headerlink" href="#two-tracks-human-and-agent" title="Permanent link">&para;</a></h2>
-<p>Every log record is written to two purpose-built tracks, plus a couple of
-narrower supporting files, all under <code>.logs/</code> (or wherever
-<code>processing.logging.get_log_file()</code> points):</p>
-<pre class="mermaid"><code>graph LR
-    A[structlog event] --&gt; B[shared processors&lt;br/&gt;timestamp, level, run_id]
-    B --&gt; C[human/main.log&lt;br/&gt;readable, INFO+]
-    B --&gt; D[human/errors.log&lt;br/&gt;ERROR+, full traceback]
-    B --&gt; E[machine/agent.json&lt;br/&gt;always-on DEBUG&lt;br/&gt;causal narrative]
-    B --&gt; F[machine/performance.json&lt;br/&gt;stage_timing events]
-    B --&gt; G[component/*.log&lt;br/&gt;processor / auxiliary / icechunk]</code></pre>
+<h2 id="where-the-logs-go">Where the logs go<a class="headerlink" href="#where-the-logs-go" title="Permanent link">&para;</a></h2>
+<p>Set the log folder under <code>processing.logging</code> in <code>canvod-settings.yaml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">processing</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">logging</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">log_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/path/to/logs</span>
+</code></pre></div>
+<p>A run needs <code>log_dir</code>: without it, <code>canvodpy run</code> and <code>site.pipeline()</code>
+stop before they process anything, with a message that names the
+setting.</p>
+<p>Importing canVODpy writes no log files. Until a run starts, warnings and
+errors go to the terminal only. File logging starts when a pipeline is
+created, by <code>canvodpy run</code> or by <code>site.pipeline()</code> in Python, so the log
+folder comes from the settings of that run, including <code>--config-dir</code> and
+<code>--config</code>. To write the log files without a pipeline, for example when
+you use a reader or a store directly, call <code>canvodpy.setup_logging()</code>, or
+<code>canvodpy.setup_logging(log_dir=...)</code> for another folder.</p>
+<p>The terminal shows warnings and errors in every case.</p>
+<hr />
+<h2 id="the-log-files">The log files<a class="headerlink" href="#the-log-files" title="Permanent link">&para;</a></h2>
+<p>The logs use <a href="https://www.structlog.org/">structlog</a>: each entry is an
+event with a name, such as <code>task_failed</code>, and fields, such as the date
+and the receiver. The log folder holds these files:</p>
 <table>
 <thead>
 <tr>
 <th>File</th>
-<th>Purpose</th>
-<th>Level</th>
+<th>What it holds</th>
+<th>When a new file starts</th>
+<th>Old files kept</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>human/main.log</code></td>
-<td>Traditional readable text, for a person tailing a run</td>
-<td>INFO+</td>
+<td>Information, warnings, and errors, one readable line each</td>
+<td>Every midnight</td>
+<td>30</td>
 </tr>
 <tr>
 <td><code>human/errors.log</code></td>
-<td>Full stack traces for errors only</td>
-<td>ERROR+</td>
+<td>Errors only, with the full traceback</td>
+<td>At 50 MB</td>
+<td>5</td>
 </tr>
 <tr>
 <td><code>machine/agent.json</code></td>
-<td><strong>Always-on</strong> curated JSON causal narrative — the file to hand to an AI agent (or read yourself) for root-cause diagnosis</td>
-<td>DEBUG</td>
+<td>Every event, including debug messages, one JSON object per line</td>
+<td>At 100 MB</td>
+<td>150</td>
 </tr>
 <tr>
 <td><code>machine/performance.json</code></td>
-<td>Timing events (<code>stage_timing</code>, plus any event carrying <code>duration_seconds</code>)</td>
-<td>—</td>
+<td>Timing events: <code>stage_timing</code> and every event with a <code>duration_seconds</code> field</td>
+<td>At 50 MB</td>
+<td>60</td>
 </tr>
 <tr>
-<td><code>component/{processor,auxiliary,icechunk}.log</code></td>
-<td>Per-component readable logs</td>
-<td>DEBUG</td>
+<td><code>component/processor.log</code></td>
+<td>Events of the file processing</td>
+<td>Every midnight</td>
+<td>7</td>
+</tr>
+<tr>
+<td><code>component/auxiliary.log</code></td>
+<td>Events of the orbit and clock data</td>
+<td>Every midnight</td>
+<td>7</td>
+</tr>
+<tr>
+<td><code>component/icechunk.log</code></td>
+<td>Events of the store writes</td>
+<td>Every midnight</td>
+<td>7</td>
 </tr>
 </tbody>
 </table>
-<p><code>machine/agent.json</code> is deliberately <strong>always on</strong>, never gated behind a
-debug flag — on a remote run there is no way to retroactively enable debug
-logging after a failure, so it has to already be capturing everything.</p>
-<p>Every log record — from any package, any process — automatically carries
-the current <code>run_id</code> once one is bound (see below), so a human or an agent
-can grep a single identifier across every file this run touched.</p>
-<p>Multi-process note: each non-main process (a <code>ProcessPoolExecutor</code>/<abbr title="Reusable Process Pool Executor - based on Python's native concurrent.futures">loky</abbr>
-worker) gets its own per-PID-suffixed files (<code>agent.&lt;pid&gt;.json</code>, etc.) —
-<code>RotatingFileHandler</code>/<code>TimedRotatingFileHandler</code> aren't safe to share across
-processes, so rather than coordinate rotation, each process just gets its
-own file set.</p>
-<hr />
-<h2 id="run_id-correlating-a-single-pipeline-invocation"><code>run_id</code>: correlating a single pipeline invocation<a class="headerlink" href="#run_id-correlating-a-single-pipeline-invocation" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_run_id</span><span class="p">,</span> <span class="n">set_run_id</span><span class="p">,</span> <span class="n">reset_run_id</span>
+<p>Older files get a number or a date at the end of the name, for example
+<code>agent.json.1</code> or <code>main.log.2026-10-09</code>.</p>
+<p><code>machine/agent.json</code> always records every event, debug messages
+included. A failure on a remote server can't be run again with more
+logging, so the detail has to be there already. A timing event is
+therefore in both <code>machine/agent.json</code> and <code>machine/performance.json</code>:
+to count or sum timings, read only <code>machine/performance*.json</code>.</p>
+<p>Each worker process writes its own set of files, with its process ID in
+the name, for example <code>machine/agent.12345.json</code>. Files can't be shared
+safely between processes. A worker creates a file only when it logs to
+it. New workers get new process IDs, so these files don't rotate like
+the files of the main process. Instead, a run deletes worker files that
+haven't changed for 30 days when its file logging starts. To keep them
+longer or shorter, set <code>worker_log_retention_days</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">processing</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">logging</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">log_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/path/to/logs</span>
+<span class="w">    </span><span class="nt">worker_log_retention_days</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">90</span>
 </code></pre></div>
-<p>A <code>run_id</code> identifies one pipeline invocation for one site — format
-<code>{site}-{YYYYMMDD-HHMMSS}</code> (e.g. <code>ExampleSite-20260713-143022</code>), chosen to
-be legible and grep-able over a UUID. The CLI (<code>canvodpy run</code>) generates one
-automatically per site in a multi-site invocation (<code>--site A --site B</code>
-gets two independent run_ids — failures are site-scoped, and this keeps
-correlation with <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> commits, which are also per-site-store, clean).</p>
-<p>It's a <code>contextvars.ContextVar</code>, so it's bound automatically into every
-structlog event via a processor — no call site needs to pass it explicitly.
-Contextvars don't cross process boundaries, so worker processes
-(<code>ProcessPoolExecutor</code>/<abbr title="Reusable Process Pool Executor - based on Python's native concurrent.futures">loky</abbr>) receive it explicitly at startup via
-<code>initializer</code>/<code>initargs</code> (see <code>_worker_init_with_run_id</code> in
-<code>canvodpy.orchestrator.processor</code>).</p>
-<p>It also gets appended to <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> commit messages (<code>(run={run_id})</code>), so
-you can correlate a specific commit with the exact run that wrote it —
-across the log files <em>and</em> the data.</p>
-<div class="highlight"><pre><span></span><code><span class="n">token</span> <span class="o">=</span> <span class="n">set_run_id</span><span class="p">(</span><span class="s2">&quot;ExampleSite-20260713-143022&quot;</span><span class="p">)</span>
+<hr />
+<h2 id="find-out-what-went-wrong">Find out what went wrong<a class="headerlink" href="#find-out-what-went-wrong" title="Permanent link">&para;</a></h2>
+<h3 id="what-the-run-does-when-something-fails">What the run does when something fails<a class="headerlink" href="#what-the-run-does-when-something-fails" title="Permanent link">&para;</a></h3>
+<p>Most failures don't stop a run. The run logs an error event and goes on:</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>What failed</th>
+<th>What the run does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>task_failed</code></td>
+<td>Reading one file</td>
+<td>Writes the other files of that receiver and day</td>
+</tr>
+<tr>
+<td><code>worker_pool_broken</code></td>
+<td>A worker process died, for example because the machine ran out of memory</td>
+<td>Writes the other files of that receiver and day</td>
+</tr>
+<tr>
+<td><code>receiver_all_tasks_failed</code></td>
+<td>Every file of one receiver and day</td>
+<td>Writes nothing for that receiver and day</td>
+</tr>
+<tr>
+<td><code>batch_all_tasks_failed</code></td>
+<td>Every file of one batch</td>
+<td>Goes on with the next batch</td>
+</tr>
+<tr>
+<td><code>icechunk_write_failed</code></td>
+<td>Writing one receiver and day to the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store</td>
+<td>Goes on with the next receiver</td>
+</tr>
+<tr>
+<td><code>read_back_failed</code></td>
+<td>Reading a written day back from the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store</td>
+<td>Goes on with the next receiver</td>
+</tr>
+<tr>
+<td><code>vod_failed</code></td>
+<td>Computing the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of one receiver pair and day (<code>canvodpy run</code> only)</td>
+<td>Goes on with the next pair</td>
+</tr>
+</tbody>
+</table>
+<p>These events carry the date (<code>date</code> or <code>date_key</code>) and the receiver, and
+<code>human/errors.log</code> holds their tracebacks.</p>
+<p>After <code>receiver_all_tasks_failed</code>, <code>icechunk_write_failed</code> and
+<code>read_back_failed</code>, the receiver-day counts as failed: <code>canvodpy run</code>
+names it at the end and exits with code 3, and <code>process_day</code> raises an
+error.</p>
+<p>When a store write or read fails with a file system or <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> error,
+for example because a network drive lost its connection, the run tries
+again up to four times, after 5, 15, 45, and 90 seconds. Each retry logs
+a <code>store_op_retry</code> warning. Only when the last try fails does the run
+log the error. An object store's server error (an S3 "500 Internal
+Error") is retried the same way. If the error comes while a unit of days
+is committed, the run plans the unit's days again and writes them again
+(<code>op</code> is <code>write_unit</code>); in the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> phase it computes the unit again
+(<code>op</code> is <code>vod_unit</code>, with the unit's <code>first</code> and <code>last</code> day). So one
+such error does not lose the days of a unit. Errors that would fail the
+same way again are not retried: no permission, a missing file or folder,
+a full disk or quota, and a read-only file system.</p>
+<p>A conflict, when another commit changed the store first, is not a lost
+connection: the run tries again on the new state of the store, up to
+five tries in all, and logs a <code>store_conflict_retry</code> warning (for a day
+of a store made of day blocks, <code>forked_unit_conflict_retrying</code>) with the
+number of the retry and the seconds it waited. The wait doubles with
+every retry, from about 1 second, and has a random part, so two runs
+that collided don't try again at the same moment. When the last try
+loses too, the run logs a <code>store_conflict_lost</code> error: another writer
+committed to the store first every time, so what this step would have
+written isn't in the store. It names the step (<code>op</code>, for example
+<code>write_unit</code> for a unit of days), the days (<code>date</code>, or <code>first</code> and <code>last</code>
+for <code>vod_unit</code>) and the number of tries, with a hint to run those days
+again. For <code>commit_skipped_files</code> only the log-book rows of the skipped
+files are missing; the days' data is in the store. After a lost unit of days,
+the run goes on with its other days and records the unit's days as
+failed.</p>
+<p>Other errors stop the run:</p>
+<ul>
+<li><strong><code>run_crashed</code></strong>: <code>canvodpy run</code> logs this event when an error ends
+  the processing of a site. It names the step the run was in (<code>stage</code>,
+  for example <code>pipeline_process</code> or <code>vod_store</code>) and the last day that
+  was processed completely (<code>last_good_date_key</code>). Then the run stops.</li>
+<li><strong><code>uncaught_exception</code></strong>: any error that would end Python is logged
+  with its traceback before Python ends, in <code>canvodpy run</code> and in your
+  own scripts once file logging has started.</li>
+</ul>
+<p>At the end of a run, also after a crash, <code>canvodpy run</code> logs a <code>run_summary</code>
+event with the number of days processed (<code>days</code>), the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> results
+written (<code>vod_results</code>), and per step the number of times it ran, its
+total time, and its errors (<code>stages</code>). <code>stages</code> covers the steps of the
+main process, such as <code>planning</code>, <code>writing</code> (the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store),
+<code>vod_calc</code>, and <code>vod_store</code>.
+The reading steps run in the worker processes; their times are in the
+log files and in the <a href="#see-where-a-run-spends-its-time">dashboard</a>.</p>
+<h3 id="missing-files-and-days-without-vod">Missing files and days without <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr><a class="headerlink" href="#missing-files-and-days-without-vod" title="Permanent link">&para;</a></h3>
+<p>Before it processes anything, a run checks the files of each of its
+receiver-days. A receiver-day is complete when it has as
+many files as its file length gives for a whole day: 96 files of 15
+minutes (<code>15M</code> in the name), 24 of an hour, one daily file. For
+each receiver-day with fewer files, the run prints one line and logs a
+<code>receiver_day_incomplete</code> warning with the receiver, the day, the files
+found (<code>files_found</code>) and the files expected (<code>files_expected</code>):</p>
+<div class="highlight"><pre><span></span><code>  incomplete: canopy_01 has 81 of 96 files on 2025001
+</code></pre></div>
+<p>The run still processes that day, with the files it has. Today is not
+checked, because its files are still arriving.</p>
+<p>A day on which one receiver of a pair has files and the other has none
+is not processed, so it gets no <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>. The run prints one line per
+receiver that lacks files and logs a <code>days_without_vod</code> warning:</p>
+<div class="highlight"><pre><span></span><code>  no VOD on 2 days, reference_01 has no files: 2025002, 2025003
+</code></pre></div>
+<p>When the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of a processed day is skipped because the data of a
+receiver is missing, for example because that receiver-day failed, the
+run prints which data is missing and logs a <code>vod_skipped</code> warning; the
+log says why the receiver-day failed:</p>
+<div class="highlight"><pre><span></span><code>  VOD canopy_01_vs_reference_01: skipped, no data of canopy_01 on 2025001 (the log says why)
+</code></pre></div>
+<p>In Python, <code>site.pipeline(on_incomplete_day=..., on_days_without_vod=...)</code>
+receives the same findings: <code>(receiver, day, files_found, files_expected)</code>
+for each incomplete receiver-day, and a receiver with its days without
+<abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>.</p>
+<h3 id="search-the-logs">Search the logs<a class="headerlink" href="#search-the-logs" title="Permanent link">&para;</a></h3>
+<p>Each line of <code>machine/agent.json</code> is one JSON object, so you can search
+it with <code>grep</code> or <a href="https://jqlang.org/">jq</a>:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/path/to/logs
+
+<span class="c1"># The errors that stopped a run</span>
+grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">'"event": "(run_crashed|uncaught_exception)"'</span><span class="w"> </span>machine/agent.json
+
+<span class="c1"># Every failed file, with its date and receiver</span>
+jq<span class="w"> </span>-c<span class="w"> </span><span class="s1">'select(.event == "task_failed") | {timestamp, date, receiver}'</span><span class="w"> </span>machine/agent*.json
+
+<span class="c1"># Everything one run logged, in the main process and the workers</span>
+grep<span class="w"> </span>-h<span class="w"> </span><span class="s1">'"run_id": "ExampleSite-20261010-030000-3f9a1c"'</span><span class="w"> </span>machine/agent*.json
+</code></pre></div>
+<p>The worker processes write to their own files, so search
+<code>machine/agent*.json</code> to include them. Add the older files
+(<code>machine/agent*.json*</code>) to search further back.</p>
+<hr />
+<h2 id="the-run-id">The run ID<a class="headerlink" href="#the-run-id" title="Permanent link">&para;</a></h2>
+<p><code>canvodpy run</code> gives each run, which is one site, a run ID: the site name, the
+start time in UTC and six random characters, for example
+<code>ExampleSite-20261010-030000-3f9a1c</code>. The random part keeps the run IDs
+of two machines apart when both start a run in the same second. In
+Python, <code>site.pipeline()</code> sets one in the same way; it applies until the
+pipeline is closed, at the end of the <code>with</code> block. Every event of the
+run carries it in the <code>run_id</code> field, in the main process, and in the
+workers, so one search finds everything a run logged.</p>
+<p>The run ID also goes into the message of each commit the run makes to
+the stores, as <code>(run=ExampleSite-20261010-030000-3f9a1c)</code>. To see which run
+wrote which data, list the commits:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>log<span class="w"> </span>ExampleSite<span class="w"> </span>--store<span class="w"> </span>gnss
+</code></pre></div>
+<p>To use a run ID of your own, set it before you create the pipeline; the
+pipeline then keeps it:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Site</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">reset_run_id</span><span class="p">,</span> <span class="n">set_run_id</span>
+
+<span class="n">site</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">"ExampleSite"</span><span class="p">)</span>
+<span class="n">token</span> <span class="o">=</span> <span class="n">set_run_id</span><span class="p">(</span><span class="s2">"ExampleSite-reprocessing-2025"</span><span class="p">)</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="o">...</span>  <span class="c1"># process the site</span>
+    <span class="k">with</span> <span class="n">site</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">process_range</span><span class="p">(</span><span class="s2">"2025001"</span><span class="p">,</span> <span class="s2">"2025007"</span><span class="p">):</span>
+            <span class="o">...</span>
 <span class="k">finally</span><span class="p">:</span>
     <span class="n">reset_run_id</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </code></pre></div>
+<p>The worker processes take the run ID when they start. When the run ID
+changes, the run starts new workers.</p>
 <hr />
-<h2 id="crash-handling-logs-are-the-only-evidence">Crash handling — logs are the only evidence<a class="headerlink" href="#crash-handling-logs-are-the-only-evidence" title="Permanent link">&para;</a></h2>
-<p>Two complementary safety nets guarantee that an uncaught exception is
-logged before the process dies, whether it happens in the main process or
-a worker:</p>
-<ol>
-<li><strong><code>sys.excepthook</code></strong> (installed in <code>configure_logging()</code>): catches
-   anything that escapes all other handling in the main process, logs a
-   structured <code>uncaught_exception</code> event with the full traceback and
-   current <code>run_id</code>, then chains to the default hook (console output for
-   attended sessions is unchanged).</li>
-<li><strong>A top-level try/except around each site's processing loop</strong> in
-   <code>cli/run.py</code>: has access to state <code>sys.excepthook</code> can't reconstruct
-   after the stack unwinds — the last successfully processed date, which
-   stage it was in (<code>pipeline_process</code>, <code>vod_calc</code>, <code>vod_store</code>, ...). Logs
-   a <code>run_crashed</code> event with that context, then <strong>re-raises</strong> — a
-   swallowed crash that silently "succeeds" is worse than a visible
-   nonzero exit.</li>
-<li><strong>Worker-process failures</strong> (<code>ProcessPoolExecutor</code>): existing
-   <code>fut.result()</code> call sites log a <code>worker_task_failed</code> event with the
-   task's metadata (date, receiver) before failure handling proceeds, with
-   a distinct <code>worker_pool_broken</code> event for <code>BrokenProcessPool</code> (the
-   worker process itself died — OOM, segfault — a different failure class
-   than an exception raised inside a task).</li>
-</ol>
-<p>Degraded-but-not-crashed states are first-class logged events too, not
-just buried warnings: <code>file_skipped</code>, <code>vod_failed</code>,
-<code>clock_interpolation_skipped</code>, and similar — so <code>machine/agent.json</code> gives
-a reconstructable causal narrative even for a run that finished but took a
-degraded path.</p>
-<hr />
-<h2 id="stage_timer-a-simplified-performance-tracker"><code>stage_timer</code> — a simplified performance tracker<a class="headerlink" href="#stage_timer-a-simplified-performance-tracker" title="Permanent link">&para;</a></h2>
-<p>Deliberately <strong>not</strong> full telemetry: no spans, no collectors, no
-exporters, no extra dependency. <code>canvodpy.utils.telemetry</code> (an
-OpenTelemetry-based tracer) was removed because <code>opentelemetry</code> was never
-actually installed anywhere in this repo — every span was silently a
-no-op. <code>stage_timer</code> replaces it, plus the previously ragged mix of field
-names (<code>duration_seconds</code>, <code>processing_time_min</code>, ...) some call sites used.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">stage_timer</span><span class="p">,</span> <span class="n">timed_stage</span><span class="p">,</span> <span class="n">emit_run_summary</span>
+<h2 id="the-run-history">The run history<a class="headerlink" href="#the-run-history" title="Permanent link">&para;</a></h2>
+<p>Every run records itself in the <strong>run history</strong>: <code>run_history.sqlite</code>
+in the log folder, one file per machine (ADR 0018). A run of
+<code>canvodpy run</code>, of <code>site.pipeline()</code> (until the pipeline is closed, at
+the end of the <code>with</code> block) and of the Airflow task <code>process_day</code>
+records:</p>
+<ul>
+<li>its start: site, run ID, settings, canvodpy version and commit,
+  machine (CPU, memory, operating system, Python, size and free space of
+  the disks of the log folder and the stores), worker count, and the
+  label of <code>--label</code> or <code>site.pipeline(label=...)</code>;</li>
+<li>the receiver-days it plans, and for each one it finishes: <code>written</code>,
+  <code>skipped</code> (every file already in the store) or <code>failed</code>, and the size
+  of the data written (in memory, before compression);</li>
+<li>the time of each stage, with the process that ran it (see the table
+  below);</li>
+<li>every 30 seconds and once more at its end, also when it fails: the
+  CPU use and memory use of the machine (percent) and the free space of
+  the disks of the log folder and the stores
+  (<code>history.resource_samples(run_id)</code>);</li>
+<li>once a data day the run finishes, on the same background thread: the
+  on-disk size of each local store the run writes (the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> and <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>
+  stores), recorded against the data day (YYYYDOY) the run had finished,
+  so the run history shows how the store grew over the run; how long the
+  walk took is recorded beside it
+  (<code>history.store_sizes(run_id)</code>);</li>
+<li>its warnings and errors, in words, with their receiver and day (a
+  receiver-day with missing files reads, for example,
+  <code>canopy_01 has 81 of 96 files on 2025001</code>);</li>
+<li>its end: <code>finished</code>, or <code>failed</code> with the error.</li>
+</ul>
+<p>The same file holds the <a href="../../packages/naming/overview/#folders-of-other-days-come-from-the-file-index">file index</a>:
+the names found in each folder of every receiver directory, so a run need
+not list the folders that hold none of the days it processes.</p>
+<p>The stages a run records, from every <code>stage_timing</code> event of the run:</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Process</th>
+<th>One per</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>finding_files</code></td>
+<td>main</td>
+<td>receiver folder scanned</td>
+</tr>
+<tr>
+<td><code>auxiliary_data</code></td>
+<td>main</td>
+<td>day: downloading or reading the orbit and clock files</td>
+</tr>
+<tr>
+<td><code>rinex.process_file</code></td>
+<td>worker</td>
+<td>file: everything below, together</td>
+</tr>
+<tr>
+<td><code>reading</code>, <code>validating</code>, <code>augmenting</code></td>
+<td>worker</td>
+<td>file: reading it, checking its signals, adding positions and geometry</td>
+</tr>
+<tr>
+<td><code>day_block_growth</code></td>
+<td>main</td>
+<td>batch: giving its days a block in the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store, one commit</td>
+</tr>
+<tr>
+<td><code>planning</code></td>
+<td>main</td>
+<td>day: planning which worker writes which part of the day (reads the store's day blocks and log book)</td>
+</tr>
+<tr>
+<td><code>writing</code></td>
+<td>main</td>
+<td>unit of days with workers: merging the workers' parts of all its receivers and days and committing them to the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store, one commit; one record per unit, with <code>days</code> and the comma-joined dates; without workers: receiver-day, writing to the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store</td>
+</tr>
+<tr>
+<td><code>assembly</code></td>
+<td>main</td>
+<td>receiver-day: reading the written day back from the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store, in <code>process_range</code> and <code>process_date</code> only (a run reads nothing back)</td>
+</tr>
+<tr>
+<td><code>icechunk.write</code></td>
+<td>main</td>
+<td>group write of a store made before day blocks</td>
+</tr>
+<tr>
+<td><code>vod_day_block_growth</code></td>
+<td>main</td>
+<td>unit of days: giving its days a block in the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store, one commit</td>
+</tr>
+<tr>
+<td><code>vod_calc</code></td>
+<td>worker</td>
+<td><abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analysis and day: reading the day from the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store and computing its <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> (recorded by the main process)</td>
+</tr>
+<tr>
+<td><code>vod_store</code></td>
+<td>main</td>
+<td>unit of days: merging the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of all its days and analyses and committing it to the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store, one commit; one record per unit, with <code>days</code></td>
+</tr>
+</tbody>
+</table>
+<p>A run that has no end and whose process is gone shows as <code>interrupted</code>.
+A run whose run ID the run history already holds (set by the caller and
+used before) gets a number (<code>ExampleSite-20261010-030000-3f9a1c-2</code>).</p>
+<p>Read it from Python, also while a run writes to it:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy.run_history</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunHistory</span>
 
-<span class="k">with</span> <span class="n">stage_timer</span><span class="p">(</span><span class="s2">&quot;icechunk.write&quot;</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group_name</span><span class="p">,</span> <span class="n">size_mb</span><span class="o">=</span><span class="mf">12.4</span><span class="p">):</span>
-    <span class="n">to_icechunk</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group_name</span><span class="p">)</span>
-
-<span class="nd">@timed_stage</span><span class="p">(</span><span class="s2">&quot;rinex.process_file&quot;</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">process_one</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
-    <span class="o">...</span>
+<span class="k">with</span> <span class="n">RunHistory</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"/path/to/logs"</span><span class="p">,</span> <span class="n">read_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">history</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">history</span><span class="o">.</span><span class="n">runs</span><span class="p">(</span><span class="n">site</span><span class="o">=</span><span class="s2">"ExampleSite"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"benchmark-a"</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">run_id</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">started_at</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">ended_at</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">problem</span> <span class="ow">in</span> <span class="n">history</span><span class="o">.</span><span class="n">problems</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">run_id</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="n">problem</span><span class="o">.</span><span class="n">level</span><span class="p">,</span> <span class="n">problem</span><span class="o">.</span><span class="n">day</span><span class="p">,</span> <span class="n">problem</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
 </code></pre></div>
-<p>Emits exactly one event, <code>stage_timing</code>, on both success and failure
-(<code>status="ok"</code>/<code>"error"</code>) — on exception, it still emits before
-re-raising, so a partial summary exists even for a run that later crashes.
-<code>machine/performance.json</code> picks these up automatically (it also still
-picks up any pre-existing event that carries its own <code>duration_seconds</code>
-field under a more specific event name — e.g.
-<code>ephemeris_interpolation_complete</code> — those are deliberately detailed,
-named events, not a ragged convention needing consolidation).</p>
-<p><code>emit_run_summary()</code> rolls up all <code>stage_timing</code> events accumulated for the
-current <code>run_id</code> into one <code>run_summary</code> event — per-stage count, total
-seconds, error count. Called at the end of a successful site run, and also
-from the crash-handling path (showing whatever stages completed before the
-crash). <code>reset_run_stats(run_id)</code> clears the in-process accumulator
-afterward so a long-lived multi-site invocation doesn't grow it unbounded.</p>
-<p>Caveat: the accumulator is per-process. <code>stage_timer</code> calls made inside a
-<code>ProcessPoolExecutor</code>/<abbr title="Reusable Process Pool Executor - based on Python's native concurrent.futures">loky</abbr> worker land in that worker's own per-PID log
-file, but won't roll into the parent process's <code>run_summary</code> — solving
-that would require exactly the cross-process collector machinery this
-module exists to avoid.</p>
-<p>The per-file <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> pipeline emits <code>stage_timing</code> for four sub-stages —
-<code>reading</code>, <code>validating</code>, <code>augmenting</code>, <code>writing</code> — each tagged with
-<code>receiver</code> and <code>date_key</code>, specifically so the performance dashboard (next
-section) can break down both "what part of the current iteration is slow"
-and "elapsed time per receiver per day" from the same file.</p>
+<p>The run history must be on a local disk: SQLite needs shared memory for
+one process to write while others read, which network drives (NFS, SMB)
+don't provide. A run refuses to start when the log folder
+(<code>processing.logging.log_dir</code>) is on a network drive. Errors that stop
+<code>canvodpy run</code> before processing starts (for example a settings check)
+are in the log files only.</p>
 <hr />
-<h2 id="live-performance-dashboard">Live performance dashboard<a class="headerlink" href="#live-performance-dashboard" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>dashboard<span class="w">                    </span><span class="c1"># read-only app view</span>
-canvodpy<span class="w"> </span>dashboard<span class="w"> </span>--edit<span class="w">             </span><span class="c1"># marimo&#39;s interactive editor</span>
-canvodpy<span class="w"> </span>dashboard<span class="w"> </span>--logs-dir<span class="w"> </span>/path/to/.logs
+<h2 id="see-where-a-run-spends-its-time">See where a run spends its time<a class="headerlink" href="#see-where-a-run-spends-its-time" title="Permanent link">&para;</a></h2>
+<p>Finding the files is the first thing a run does, before it reads a file.
+On a network drive it can take minutes, so the CLI says, for each receiver,
+<code>Finding files of receiver &lt;name&gt; in &lt;folder&gt;...</code> and then
+<code>Found &lt;n&gt; files on &lt;d&gt; days for receiver &lt;name&gt; (&lt;s&gt; s)</code>, so you know it
+is working. From the second run on, the folders that hold none of the
+days the run processes come from the <a href="../../packages/naming/overview/#folders-of-other-days-come-from-the-file-index">file index</a>
+and the listing is much shorter; the log event <code>files_found</code> says per
+receiver how many folders were listed and how many came from the index.</p>
+<p>Next, a run over days already in the store finds the days whose files
+are all stored, by hashing the files' bytes, and skips them before it
+downloads auxiliary data or reads a file. The log event
+<code>stored_days_skipped</code> names those days, how many files were hashed and
+the seconds it took; the run history counts their receiver-days as
+skipped. The run then writes a log-book row with <code>action</code> set to
+<code>skipped</code> for each of their files, all in one commit. Since no file is
+read, the row takes its time span, attributes and preprocessing record
+from the row that holds the file. <code>skipped_files_logged</code> names the days and the commit;
+<code>skipped_files_not_logged</code> says why the commit failed. A failed commit
+leaves the days stored and skipped.</p>
+<p><code>canvodpy dashboard</code> opens a <a href="https://marimo.io/">marimo</a> app that reads
+the run history of a log folder:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>dashboard<span class="w">                         </span><span class="c1"># log folder from the settings</span>
+canvodpy<span class="w"> </span>dashboard<span class="w"> </span>--logs-dir<span class="w"> </span>/path/to/logs
+canvodpy<span class="w"> </span>dashboard<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8080</span>
 </code></pre></div>
-<p>A marimo notebook (<code>canvodpy/cli/dashboards/performance.py</code>) that reads
-<code>machine/performance*.json</code> and shows two views: a per-stage breakdown for
-the most recently completed (receiver, date) unit of work, and total
-elapsed time per receiver × day across the whole run. Click the refresh
-button to reload — works equally well pointed at a run still in progress
-(partial data) or a finished one. No new data format: it's the same
-<code>stage_timing</code> JSONL <code>stage_timer()</code> already writes, read directly with
-polars — not a separate telemetry backend.</p>
-<hr />
-<h2 id="reading-machineagentjson-after-a-failure">Reading <code>machine/agent.json</code> after a failure<a class="headerlink" href="#reading-machineagentjson-after-a-failure" title="Permanent link">&para;</a></h2>
-<p>The whole point: this file alone should be enough to answer "what
-happened?" without re-running anything.</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># Everything for one run, in order</span>
-grep<span class="w"> </span><span class="s1">&#39;&quot;run_id&quot;: &quot;ExampleSite-20260713-143022&quot;&#39;</span><span class="w"> </span>.logs/machine/agent.json
-
-<span class="c1"># Just the crash / uncaught exception</span>
-grep<span class="w"> </span>-E<span class="w"> </span><span class="s1">&#39;&quot;event&quot;: &quot;(run_crashed|uncaught_exception|worker_task_failed|worker_pool_broken)&quot;&#39;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>.logs/machine/agent.json
-
-<span class="c1"># How far did it get before dying?</span>
-grep<span class="w"> </span><span class="s1">&#39;&quot;event&quot;: &quot;run_summary&quot;&#39;</span><span class="w"> </span>.logs/machine/agent.json
+<p>To start it together with a run, use <code>canvodpy run --dashboard</code>; the
+dashboard keeps running after the run ends. <code>--dashboard-host</code> and
+<code>--dashboard-port</code> set its address.</p>
+<p>No runs of your own yet? <code>canvodpy.demo_data("run_history")</code> downloads
+an anonymized example: nine runs of the same seven days of two
+receivers with 1 to 126 workers, and a warm-up run with failed orbit
+downloads. Open it with
+<code>canvodpy dashboard --logs-dir &lt;folder&gt;/run_history</code>, where <code>&lt;folder&gt;</code>
+is the folder <code>demo_data</code> returns. The demo notebook
+<a href="https://github.com/TUW-GEO/canvodpy-demo/blob/main/23_run_dashboard.py">23 · Run Dashboard</a>
+shows the dashboard on it.</p>
+<p>The dashboard reads the run history, not the log files, so nothing
+disappears when the log files rotate, and it knows a run's settings,
+machine, progress, and problems.</p>
+<p><strong>Site overview:</strong> one row per site: its last run, that run's status and
+its start and end, and the receiver-days it planned, wrote, skipped,
+failed and hasn't done yet.</p>
+<p><strong>Run page:</strong> pick a run (newest first). It shows the run's settings, the
+canvodpy version and commit, the machine, the workers and the label; the
+progress per receiver (planned, written, skipped, failed, not yet done,
+bytes added);
+an estimate of when it finishes; the last finished step; the
+throughput; and the run's warnings and errors in words, with their
+receiver and day.</p>
+<p>The page labels the times in UTC and the three numbers above, and says
+how each is computed:</p>
+<ul>
+<li><strong>Estimate:</strong> for a running run, the mean time per finished
+  receiver-day of this run times the receiver-days not yet done. There
+  is no estimate before the first receiver-day finishes.</li>
+<li><strong>Last finished step:</strong> the newest recorded stage of a run (stage,
+  receiver, day, how long ago). The run history records a stage when it
+  ends, so this is the last finished step, not the step running now.</li>
+<li><strong>Throughput:</strong> receiver-days finished per hour and bytes added per
+  hour over the run (so far, for a running run).</li>
+</ul>
+<p><strong>Charts:</strong> the run page also shows charts of the run, built from the
+run history queries only:</p>
+<ul>
+<li><strong>Time per stage:</strong> the median of a stage's per-day seconds (left,
+  "Median per day") and the total seconds of each stage (right,
+  "Total"), in the same order (by total). The median is over the seconds
+  of a day, added up over the day's receivers; a stage that names no day
+  (such as <code>day_block_growth</code>) takes the median of its records; a unit
+  of days is split evenly over its days. A long bar is a stage that
+  takes a lot of the run.</li>
+<li><strong>Time per day:</strong> the stage seconds of a data day, added up over all
+  its receivers, as a line over the days so a trend over the run is easy
+  to see. A run that works in units of days splits a unit's record
+  evenly over its days. Receivers run in parallel, so this is not wall
+  time; a day can show more seconds than it took. A day's time is final
+  only after its unit's <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> phase: until then it still rises, since a
+  unit's writing record is split over its days when the unit commits,
+  and its <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> runs during the next unit. The x-axis is a date axis: its
+  labels thin out to fit the page, so a year of days stays readable.
+  The days of runs recorded with ISO dates for the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> phase
+  (<code>2025-06-18</code>) are shown under their YYYYDOY day too.</li>
+<li><strong>Store size on disk:</strong> the on-disk size of each local store (<abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr>,
+  <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>) as a line, plus a <strong>Total</strong> line, measured on the background
+  sampler thread when the run finished a new data day (never inside a
+  stage or a commit), so the growth of the store over the run is
+  visible. The x-axis is the data day as a date, one point per data day
+  the size was measured (a unit of days has one point, on its last day);
+  the y-axis is in MB or GB, chosen from the values. How long each walk
+  took is recorded too (<code>history.store_sizes(run_id)</code>).</li>
+<li><strong>CPU and memory:</strong> the percent of the CPU and memory used, sampled
+  during the run. A line near 100 % shows what limits the run.</li>
+<li><strong>Free disk:</strong> the free space of each folder, sampled during the run.
+  Free disk is one value per folder, so a chart has one line per folder;
+  the y-axis is in gigabytes.</li>
+<li><strong>Throughput over time:</strong> the receiver-days finished, cumulative from
+  the run start. The slope is the pace; a steep line is a fast run.</li>
+</ul>
+<p>The dashboard is always dark, whatever the machine's or the browser's
+setting: the notebook's script header sets the marimo theme. The data
+colors fit canvodpy's colors, those of this documentation. A chart
+with one series is canvodpy's green. Up to four series, such as CPU and
+memory, get cream, blue, amber and brick red, which differ in hue and in
+lightness. More series, such as a comparison of eight worker counts, run
+from dark blue over sky blue and amber to canvodpy's cream, so they get
+lighter in the sorted order of their labels. Both stay readable with a
+red-green color vision deficiency and in grayscale.</p>
+<p>Every chart of a duration (time per stage, time per day, the
+comparison) has a <strong>Time axis</strong> switch between a linear axis from zero
+and a logarithmic one, which spreads short and long stages apart. The
+free-disk chart starts its axis near the lowest value, not at zero, so
+a change in free space is visible. Hover over a point or a bar of any
+chart for its values; a day shows as YYYYDOY and as a date. The
+settings and the machine of a run are folded in; click to open them.</p>
+<p><strong>Compare runs by label:</strong> a run can take a free-text label with
+<code>canvodpy run --label &lt;text&gt;</code>, for example to group the repetitions of a
+benchmark. The dashboard groups the runs that share a label and compares
+them:</p>
+<ul>
+<li>Only <strong>finished</strong> runs are compared, and a run without a label is left
+  out.</li>
+<li>Each group shows its machine, workers, version and settings, or
+  "differs" when the group is not uniform. A group whose machine,
+  workers, version or settings differ is not a set of repetitions of the
+  same thing, and the dashboard says so.</li>
+<li>For each stage, the median time of the group's finished runs that
+  recorded it, with the minimum and the maximum. Per stage a run's time
+  is the sum over its receivers and days (across its worker processes).
+  In total, the median of the runs' wall time (ended minus started),
+  with the minimum and the maximum. Stages run in parallel, so the stage
+  times can add up to more than the total. The median is the middle of
+  the sorted times; the spread is min to max.</li>
+<li>A grouped bar chart shows the median time per stage: per stage one bar
+  per label, side by side, colored as described above, in the sorted
+  order of the labels (with zero-padded numbers, such as <code>w001</code>, <code>w016</code>, <code>w126</code>, that
+  is the order of the numbers). Hover over a bar for its label and time.</li>
+</ul>
+<p><strong>Download the data:</strong> the run page and the comparison each have a
+download button (<strong>Download the data of this run</strong>, <strong>Download the data
+of this comparison</strong>). Each gives a zip with:</p>
+<ul>
+<li><code>run_history.sqlite</code>: every record of the runs shown (settings,
+  machine, receiver-days, stage timings, resource samples, warnings and
+  errors) and nothing of other runs.</li>
+<li>One CSV file per table and chart of the view, with the rows the
+  dashboard showed.</li>
+<li><code>README.txt</code>: the canvodpy version, the log folder, the runs, and
+  what each file holds.</li>
+</ul>
+<p>Unzipped, the folder opens like a log folder, so
+<code>canvodpy dashboard --logs-dir &lt;folder&gt;</code> shows the same runs on another
+machine. The zip is made when you click, so for a running run its run
+history can hold records newer than the page. Each table's own
+<strong>Export</strong> button saves just that table as CSV or JSON.</p>
+<p>A run's status is one of:</p>
+<ul>
+<li><strong>Running:</strong> the run's process lives.</li>
+<li><strong>Finished:</strong> it ended and wrote a result.</li>
+<li><strong>Failed:</strong> it ended with an error.</li>
+<li><strong>Interrupted:</strong> its process is gone without an end (killed or
+  crashed).</li>
+<li><strong>Unknown:</strong> it started on another machine, whose processes can't be
+  checked from here.</li>
+</ul>
+<p>It reloads the run history every 10 seconds by default, so you can watch
+a run while it runs. On a long run, pick a longer interval.</p>
+<p>You can open the same notebook without canvodpy installed, on a machine
+that has a run history folder. From v1.0.0 on, canvodpy on <abbr title="Python Package Index — public Python package repository">PyPI</abbr> ships the
+run history, and <code>marimo run --sandbox</code> installs canvodpy in a sandbox
+and takes the folder from <code>--logs-dir</code> after <code>--</code>:</p>
+<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>marimo<span class="w"> </span>run<span class="w"> </span>--sandbox<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/canvodpy/src/canvodpy/cli/dashboards/performance.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--<span class="w"> </span>--logs-dir<span class="w"> </span>/path/to/logs
 </code></pre></div>
-<p>Each line is a self-contained JSON object — pipe through <code>jq</code> for
-formatting, or hand the whole grep'd slice to an LLM for triage.</p>
-<hr />
+<p>Read from that URL, the notebook takes the run history from the
+installed canvodpy (its logo comes from the installed package too), but
+the style sheet sits next to the notebook, so the app runs with marimo's
+default styling.</p>
 <div class="admonition example">
-<p class="admonition-title">Try it</p>
-<p><a href="../../notebooks/_build/02_configuration.html" target="_blank">02 · Configuration</a>
-· <a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/02_configuration.py">view source on molab</a></p>
+<p class="admonition-title">Try it in a notebook</p>
+<p>Open <a href="https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/20_workflow_batch_processing.py?mode=edit">Batch processing</a> in molab, the online notebook service of marimo.</p>
 </div>
+<hr />
+<h2 id="time-your-own-code">Time your own code<a class="headerlink" href="#time-your-own-code" title="Permanent link">&para;</a></h2>
+<p>To time a step in your own code or in a <a href="../plugins/">plugin</a>, use
+<code>stage_timer</code> or its decorator form <code>timed_stage</code>. Each writes one
+<code>stage_timing</code> event when the step ends, with the step name, the
+duration in seconds (<code>duration_seconds</code>), the status (<code>ok</code> or <code>error</code>),
+and the fields you pass. It also writes the event when the step fails,
+before the error goes on.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy.logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">stage_timer</span><span class="p">,</span> <span class="n">timed_stage</span>
+
+<span class="k">with</span> <span class="n">stage_timer</span><span class="p">(</span><span class="s2">"my_step"</span><span class="p">,</span> <span class="n">receiver</span><span class="o">=</span><span class="s2">"canopy_01"</span><span class="p">):</span>
+    <span class="o">...</span>
+
+
+<span class="nd">@timed_stage</span><span class="p">(</span><span class="s2">"my_function"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_function</span><span class="p">():</span> <span class="o">...</span>
+</code></pre></div>
+<p>When you measure the times yourself, for example several steps from one
+set of checkpoints, <code>record_stage_timing("my_step", seconds, ...)</code> writes
+the same event.</p>
+<p>The events go to <code>machine/performance.json</code>. The dashboard draws events
+that carry a <code>date_key</code> (<code>YYYYDDD</code>) and a <code>receiver</code> or <code>analysis</code>
+field.</p>
+<p>Every commit to a store also writes a <code>commit_parts</code> event there, not a
+stage: the seconds it waited for the commit lock (<code>lock_wait_seconds</code>),
+opened the repository (<code>open_seconds</code>), checked the content settings
+(<code>content_check_seconds</code>) and the stored lockfile
+(<code>lockfile_check_seconds</code>), rebased (<code>rebase_seconds</code>), wrote the
+store metadata and snapshot summary (<code>summary_seconds</code>; a process's
+first commit to a store rebuilds the summary from the whole store, later
+ones update it from their own log-book rows), committed
+(<code>icechunk_commit_seconds</code>) and released the lock
+(<code>lock_release_seconds</code>), with the commit message and the number of
+the commit in this process (<code>commit_number</code>).</p>
+<hr />
+<p><strong>Next in the trail:</strong> <a href="../parallel-processing/">parallel processing</a> · <a href="../configuration/">configuration</a> · <a href="../../architecture/">architecture</a></p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -4149,6 +5016,9 @@ formatting, or hand the whole grep'd slice to an LLM for triage.</p>
 
 
 
+
+  
+  
 
 
 
@@ -4180,7 +5050,7 @@ formatting, or hand the whole grep'd slice to an LLM for triage.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../parallel-processing/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Parallel Processing">
+          <a href="../parallel-processing/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Parallel processing">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4190,20 +5060,20 @@ formatting, or hand the whole grep'd slice to an LLM for triage.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Parallel Processing
+                Parallel processing
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../notebooks/" class="md-footer__link md-footer__link--next" aria-label="Next: Notebooks">
+          <a href="../../packages/ops/overview/" class="md-footer__link md-footer__link--next" aria-label="Next: Preprocessing">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Notebooks
+                Preprocessing
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -4223,8 +5093,9 @@ formatting, or hand the whole grep'd slice to an LLM for triage.</p>
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -4241,7 +5112,7 @@ formatting, or hand the whole grep'd slice to an LLM for triage.</p>
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -4278,10 +5149,10 @@ formatting, or hand the whole grep'd slice to an LLM for triage.</p>
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../../assets/mermaid-init.js"></script>
       

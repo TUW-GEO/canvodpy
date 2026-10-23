@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Retrieve GNSS-T VOD with canVODpy, from the command line or from Python.">
+        <meta name="description" content="Install canVODpy, describe your site and data in canvod-settings.yaml, and retrieve GNSS-T VOD from the command line or from Python.">
       
       
         <meta name="author" content="Nicolas Bader">
@@ -15,33 +15,34 @@
         <link rel="canonical" href="https://canvodpy.eu/users/">
       
       
+      
         <link rel="prev" href="./..">
       
       
-        <link rel="next" href="./cli/">
+        <link rel="next" href="../guides/upgrading/">
       
       
         
       
       
       <link rel="icon" href="../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
-        <title>Get Started — Users - canVODpy</title>
+        <title>Retrieve VOD - canVODpy</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="./..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="./.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="./.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -168,11 +190,12 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Get Started — Users
+              Retrieve VOD
             
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -288,12 +305,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -302,7 +313,7 @@
         <a href="././" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../impressum/" class="md-tabs__link">
+        <a href="../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -525,12 +520,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -558,7 +547,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -580,7 +569,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -594,14 +583,14 @@
   
   
     <li class="md-nav__item">
-      <a href="./cli/" class="md-nav__link">
+      <a href="../guides/upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -620,26 +609,65 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="./python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -655,7 +683,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -675,14 +703,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/extensions/" class="md-nav__link">
+      <a href="../guides/settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -694,6 +722,162 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -709,7 +893,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -736,7 +920,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -763,7 +947,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -783,14 +967,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../notebooks/" class="md-nav__link">
+      <a href="../packages/ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -809,8 +993,50 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../guides/extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
     
     
+      
+        
+      
+        
+      
+        
       
         
       
@@ -850,17 +1076,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
         
           
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Packages
+  How it works
 
     
   </span>
@@ -871,81 +1097,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-readers
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_1">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-readers
+  How it works
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -964,88 +1121,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/rinex-format/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  RINEX v3.04 Format
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/sbf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Reader
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/sbf-decoding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Field Decoding
+  Reading GNSS files
 
     
   </span>
@@ -1072,7 +1148,7 @@
   <span class="md-ellipsis">
     
   
-  Ephemeris Sources
+  Ephemeris sources
 
     
   </span>
@@ -1084,159 +1160,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/satellite-catalog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1252,7 +1175,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Orbits and clocks
 
     
   </span>
@@ -1279,7 +1202,7 @@
   <span class="md-ellipsis">
     
   
-  Preprocessing Pipeline
+  Orbit and clock preparation
 
     
   </span>
@@ -1306,7 +1229,7 @@
   <span class="md-ellipsis">
     
   
-  Interpolation Methods
+  Interpolation
 
     
   </span>
@@ -1333,7 +1256,7 @@
   <span class="md-ellipsis">
     
   
-  Coordinate Systems
+  Coordinate systems
 
     
   </span>
@@ -1345,97 +1268,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/auxiliary/products/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1451,7 +1283,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Hemispheric grids
 
     
   </span>
@@ -1463,70 +1295,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1542,7 +1310,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  VOD retrieval
 
     
   </span>
@@ -1554,74 +1322,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1637,7 +1337,34 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
 
     
   </span>
@@ -1664,7 +1391,7 @@
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Versioning with Icechunk
 
     
   </span>
@@ -1691,7 +1418,7 @@
   <span class="md-ellipsis">
     
   
-  Storage Strategies
+  Write strategies
 
     
   </span>
@@ -1703,70 +1430,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1782,7 +1445,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Store metadata
 
     
   </span>
@@ -1794,70 +1457,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1873,7 +1472,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Visualization
 
     
   </span>
@@ -1906,30 +1505,43 @@
       
         
       
-    
-    
-    
+        
       
+        
+      
+        
+      
+        
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
+      
         
           
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-config
+  Data formats
 
     
   </span>
@@ -1940,12 +1552,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-config
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -1957,14 +1569,149 @@
   
   
     <li class="md-nav__item">
-      <a href="../packages/config/overview/" class="md-nav__link">
+      <a href="../packages/readers/rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/readers/rinex-v2-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v2.11
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF field decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite catalog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product registry
 
     
   </span>
@@ -1997,30 +1744,37 @@
       
         
       
-    
-    
-    
-      
+        
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
+      
         
           
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-utils
+  Extend
 
     
   </span>
@@ -2031,15 +1785,69 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-utils
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your own readers and VOD calculators
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/readers/building-a-reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -2055,189 +1863,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2266,24 +1892,17 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
       
         
       
@@ -2330,7 +1949,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2346,7 +1965,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2392,7 +2011,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2419,7 +2038,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2439,14 +2058,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/architecture-design/" class="md-nav__link">
+      <a href="../guides/reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2458,6 +2077,67 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2473,7 +2153,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2493,14 +2173,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../build-system/" class="md-nav__link">
+      <a href="../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2520,14 +2200,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../tooling/" class="md-nav__link">
+      <a href="../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2547,14 +2227,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../principles/" class="md-nav__link">
+      <a href="../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2562,6 +2242,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2595,10 +2284,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
             
   
   
@@ -2616,8 +2305,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -2640,7 +2329,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -2667,7 +2356,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -2694,7 +2383,727 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -2735,8 +3144,6 @@
       
         
       
-        
-      
     
     
     
@@ -2750,17 +3157,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -2771,12 +3178,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2822,34 +3229,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../guides/PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -2903,7 +3283,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -2930,7 +3310,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -2982,17 +3362,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3003,12 +3383,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3027,7 +3407,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3054,7 +3434,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3081,7 +3461,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3101,14 +3481,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY.md" class="md-nav__link">
+      <a href="../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3146,6 +3526,8 @@
   
     
     
+      
+        
       
         
       
@@ -3192,7 +3574,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3208,10 +3590,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -3518,96 +3927,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -3625,6 +3944,11 @@
                       
                     
                     
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
                   
                   <div class="md-sidebar__inner">
                     
@@ -3636,6 +3960,158 @@
   
     
   
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before you start
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-install-canvodpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Install canVODpy
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-create-the-settings-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Create the settings file
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Create the settings file">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-the-file-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the file is
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-point-canvodpy-to-your-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Point canVODpy to your data
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Point canVODpy to your data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#file-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        File names
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ephemeris-products" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ephemeris products
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-check-the-settings-and-the-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Check the settings and the data
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-process-one-day" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Process one day
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-process-a-period" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. Process a period
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-open-the-vod" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        7. Open the VOD
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Next steps
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -3695,12 +4171,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -3710,7 +4180,7 @@
           
   
   <span class="md-ellipsis">
-    Usage
+    Retrieve VOD
   </span>
 
         </a>
@@ -3732,42 +4202,379 @@
   
 
 
-<h1 id="get-started-retrieving-vod">Get Started Retrieving <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr><a class="headerlink" href="#get-started-retrieving-vod" title="Permanent link">&para;</a></h1>
-<p><strong>The CLI is the main way to use canVODpy</strong> — a complete, terminal-first
-entrypoint designed to run unattended: cron jobs, HPC/remote machines,
-scheduled batch processing. Most users should start there, even if they
-plan to wrap it in their own scripts later.</p>
-<p>Python gives you two more targeted alternatives when you need to go beyond
-running the pipeline as-is: <code>Site.pipeline()</code> for scripted/notebook-driven
-runs, and the stateless <code>canvodpy.functional</code> building blocks if you're
-building your own custom pipeline logic in Python.</p>
-<div class="grid cards">
+<h1 id="retrieve-vod-from-your-gnss-data">Retrieve <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> from your <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> data<a class="headerlink" href="#retrieve-vod-from-your-gnss-data" title="Permanent link">&para;</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Upgrading from 0.x?</p>
+<p>Migrate your stores and check your settings first:
+<a href="../guides/upgrading/">Upgrading to v1.0.0</a>.</p>
+</div>
+<p>There are two ways to run canVODpy, and they're equivalent:</p>
 <ul>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M9.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L146.7 256zM224 384h256c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32"/></svg></span> &nbsp; <strong>CLI — start here</strong></p>
-<hr />
-<p>The recommended entrypoint for production runs, cron jobs, and remote/HPC
-deployments. Complete on its own — no Python required.</p>
-<p><a class="md-button md-button--primary" href="cli/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> CLI Quickstart</a></p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg></span> &nbsp; <strong>Python — for scripting &amp; custom pipelines</strong></p>
-<hr />
-<p><code>Site.pipeline()</code> for scripted/notebook-driven runs, or the functional
-building blocks (<code>read_rinex</code>, <code>augment_with_ephemeris</code>, ...) if you're
-assembling your own custom pipeline.</p>
-<p><a class="md-button md-button--primary" href="python/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Python Quickstart</a></p>
-</li>
+<li><strong>From the command line</strong>, with <code>canvodpy run</code>. This suits processing
+  a whole period without supervision, for example on a server.</li>
+<li><strong>From Python</strong>, with <code>Site.pipeline()</code>, in a script or a notebook.
+  This suits trying things out and going straight on to analysis.</li>
 </ul>
+<p>Both run the same processing, read the same settings file, and write the
+same stores. They also need the same setup, which this page goes through
+step by step:</p>
+<ol>
+<li><a href="#before-you-start">Before you start</a></li>
+<li><a href="#1-install-canvodpy">Install canVODpy</a></li>
+<li><a href="#2-create-the-settings-file">Create the settings file</a></li>
+<li><a href="#3-point-canvodpy-to-your-data">Point canVODpy to your data</a></li>
+<li><a href="#4-check-the-settings-and-the-data">Check the settings and the data</a></li>
+<li><a href="#5-process-one-day">Process one day</a></li>
+<li><a href="#6-process-a-period">Process a period</a></li>
+<li><a href="#7-open-the-vod">Open the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr></a></li>
+</ol>
+<p>Where the two ways differ, the steps show a <strong>Python</strong> and a
+<strong>Command line</strong> tab. Choosing a tab switches all tabs on the page.</p>
+<hr />
+<h2 id="before-you-start">Before you start<a class="headerlink" href="#before-you-start" title="Permanent link">&para;</a></h2>
+<p>You need:</p>
+<ul>
+<li><strong><abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> data from two receivers at one site</strong>: one below the canopy and
+  one with an unobstructed view of the sky, recording the same signals at
+  the same time. canVODpy derives <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> from the difference in their
+  signal-to-noise ratios; <a href="../packages/vod/overview/"><abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> retrieval</a>
+  explains the method.</li>
+<li><strong>A terminal</strong>: Terminal on macOS, a shell on Linux, or PowerShell on
+  Windows. All commands on this page are typed there.</li>
+<li><strong><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr></strong>, the tool that installs canVODpy and Python for you. Follow the
+  <a href="https://docs.astral.sh/uv/getting-started/installation/"><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> installation guide</a>.
+  canVODpy needs Python 3.14; if you don't have it, <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> downloads
+  it.</li>
+<li><strong>An internet connection</strong> during processing, to download the
+  satellite orbits and clocks.</li>
+</ul>
+<details class="tip">
+<summary>No data of your own yet? Use the demo data</summary>
+<p><code>canvodpy.demo_data()</code> downloads one day of the Rosalia site from
+Hugging Face: a receiver below the canopy and a reference receiver, on
+2025-01-01. It downloads only the kind of data you ask for, checks each
+archive against its sha256, and keeps the files in your user cache
+folder, so a second call needs no network.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">demo_data</span>
+
+<span class="n">root</span> <span class="o">=</span> <span class="n">demo_data</span><span class="p">(</span><span class="s2">"rinex"</span><span class="p">)</span>  <span class="c1"># RINEX v3.04, the whole day</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">demo_data</span><span class="p">(</span><span class="s2">"sbf"</span><span class="p">)</span>  <span class="c1"># SBF, 00:00 to 02:00</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">demo_data</span><span class="p">(</span><span class="s2">"aux"</span><span class="p">)</span>  <span class="c1"># SP3 orbits, CLK clocks, auxiliary store</span>
+</code></pre></div>
+<p>These three return the same folder. In it, the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files of the two
+receivers are in <code>rinex_v3_04/01_Rosalia/01_reference</code> and
+<code>rinex_v3_04/01_Rosalia/02_canopy</code>, the <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files in
+<code>sbf/01_Rosalia/01_reference</code> and <code>sbf/01_Rosalia/02_canopy</code>. Use
+the site folder as <code>gnss_site_data_root</code> and the receiver folders as
+<code>directory</code> in <a href="#3-point-canvodpy-to-your-data">step 3</a>. The
+pipeline still downloads the orbits and clocks from the agencies; the
+<code>"aux"</code> files are a copy for when that fails.</p>
+<p><code>demo_data("stores")</code> downloads the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store and the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store that
+canVODpy writes from the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> day, to look at a store without a run
+first. They are in <code>stores/rosalia_rinex_v3_04/gnss</code> and
+<code>stores/rosalia_rinex_v3_04/vod</code> of the folder it returns. Copy them
+before you write to them: the next call returns the same folder.</p>
+</details>
+<hr />
+<h2 id="1-install-canvodpy">1. Install canVODpy<a class="headerlink" href="#1-install-canvodpy" title="Permanent link">&para;</a></h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python</label><label for="__tabbed_1_2">Command line</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>Add canVODpy to the <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> project you work in. A <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> project is a folder
+with a <code>pyproject.toml</code> file that lists the packages your code needs;
+<abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> keeps them in an environment of their own in that folder. If you
+don't have a project yet, create one (see
+<a href="https://docs.astral.sh/uv/guides/projects/">Working on projects</a>):</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>init<span class="w"> </span>my-analysis<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>my-analysis
+</code></pre></div>
+<p>Then add canVODpy:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span>canvodpy
+</code></pre></div>
+<p>Your scripts and notebooks in the project can now <code>import canvodpy</code>.</p>
+<p>This also installs the <code>canvodpy</code> command into the environment of the
+project. Run it through <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>, from inside the project:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>canvodpy<span class="w"> </span>--help
+</code></pre></div>
+<p>This page writes the commands as <code>canvodpy ...</code>; in a project, type
+<code>uv run canvodpy ...</code>.</p>
+</div>
+<div class="tabbed-block">
+<p>Install canVODpy as a <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> tool:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>canvodpy
+uv<span class="w"> </span>tool<span class="w"> </span>update-shell<span class="w">   </span><span class="c1"># once: puts the tool folder on your PATH</span>
+</code></pre></div>
+<p><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> installs canVODpy into an environment of its own and puts the
+<code>canvodpy</code> command into a folder on your <code>PATH</code>, the list of folders
+in which the terminal looks for commands
+(see <a href="https://docs.astral.sh/uv/guides/tools/">Using tools</a>). Open a
+new terminal, and you can run the command from any folder, without
+<code>uv run</code>:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>--help
+</code></pre></div>
+<p>To update or remove the tool, run <code>uv tool upgrade canvodpy</code> or
+<code>uv tool uninstall canvodpy</code>.</p>
+</div>
+</div>
+</div>
+<details class="note">
+<summary>Run the command from a clone of the repository</summary>
+<p>To have <code>canvodpy</code> on your <code>PATH</code> and follow your local edits, link
+the command from the environment of the clone:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/path/to/canvodpy<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>sync
+ln<span class="w"> </span>-s<span class="w"> </span><span class="s2">"</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">/.venv/bin/canvodpy"</span><span class="w"> </span>~/.local/bin/canvodpy
+</code></pre></div>
+<p>After <code>git pull</code>, run <code>uv sync</code> again; the link stays valid. If you
+move the clone, recreate the environment and the link:</p>
+<div class="highlight"><pre><span></span><code>rm<span class="w"> </span>-rf<span class="w"> </span>.venv<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>uv<span class="w"> </span>sync
+ln<span class="w"> </span>-sf<span class="w"> </span><span class="s2">"</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">/.venv/bin/canvodpy"</span><span class="w"> </span>~/.local/bin/canvodpy
+</code></pre></div>
+<p>To remove the command, delete the link: <code>rm ~/.local/bin/canvodpy</code>.</p>
+</details>
+<hr />
+<h2 id="2-create-the-settings-file">2. Create the settings file<a class="headerlink" href="#2-create-the-settings-file" title="Permanent link">&para;</a></h2>
+<p>canVODpy needs to know where your data is, who you are, and which
+receivers to compare. It reads all of this from one file,
+<code>canvod-settings.yaml</code>. The file is in <a href="https://yaml.org/">YAML</a>, a plain
+text format in which each line holds a <code>name: value</code> pair and the
+indentation, with spaces, shows which setting belongs to which section.
+The file has three sections:</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>What it sets</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>processing:</code></td>
+<td>Your name and institution for the metadata, where to write the stores and the log files, ephemeris products, and processing parameters</td>
+</tr>
+<tr>
+<td><code>sites:</code></td>
+<td>Your sites, the folder of each receiver, and the receiver pairs to compute <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> for</td>
+</tr>
+<tr>
+<td><code>sids:</code></td>
+<td>The signals to keep</td>
+</tr>
+</tbody>
+</table>
+<p>Only a few settings are required; the
+<a href="../guides/configuration/#minimal-working-example">minimal example</a>
+shows them. All others have defaults.</p>
+<p>The settings wizard creates the file for you. It asks for your name, your
+email address, your institution, the folder for the stores, the folder
+for the log files, your site, and the folders of the two receivers. Then it writes the file and checks
+it:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>config<span class="w"> </span>init<span class="w"> </span>--interactive
+</code></pre></div>
+<p>To see what a question sets, answer <code>?</code>: the wizard prints the setting's
+description and asks again.</p>
+<p>Without <code>--interactive</code>, the command copies the template and you fill it
+in yourself, with <code>canvodpy config edit</code> or any text editor. Each setting
+in the template has a link to its entry in the
+<a href="../guides/settings/">Settings reference</a>, and
+<code>canvodpy config explain SETTING</code> prints that entry in the terminal.</p>
+<h3 id="where-the-file-is">Where the file is<a class="headerlink" href="#where-the-file-is" title="Permanent link">&para;</a></h3>
+<p>canVODpy looks for the settings file in this order:</p>
+<ol>
+<li>The folder in the environment variable <code>CANVOD_CONFIG_DIR</code>, or the
+   folder you give with <code>--config-dir</code>.</li>
+<li>The <code>config/</code> folder of a canVODpy clone, if you work in one.</li>
+<li><code>~/.config/canvodpy/</code> (or <code>$XDG_CONFIG_HOME/canvodpy/</code>).</li>
+</ol>
+<p>To see which file canVODpy found and whether it's valid, run:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>doctor
+</code></pre></div>
+<p>Python finds the file the same way: <code>Site("ExampleSite")</code> reads the site
+from the file that <code>canvodpy doctor</code> names.</p>
+<p>The <a href="../guides/configuration/">Configuration guide</a> describes every
+setting and how to keep machine-specific settings in a separate file.</p>
+<div class="admonition example">
+<p class="admonition-title">Try it in a notebook</p>
+<p>Open <a href="https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/02_configuration.py?mode=edit">Configuration</a> in molab, the online notebook service of marimo.</p>
 </div>
 <hr />
-<p>Both paths share the same installation and the same <code>canvod-settings.yaml</code>
-configuration file — see whichever guide you pick for the full walkthrough.</p>
+<h2 id="3-point-canvodpy-to-your-data">3. Point canVODpy to your data<a class="headerlink" href="#3-point-canvodpy-to-your-data" title="Permanent link">&para;</a></h2>
+<p>Each site has a data folder, <code>gnss_site_data_root</code>. Each receiver has a
+folder of its own inside it, <code>directory</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">sites</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">ExampleSite</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">gnss_site_data_root</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/data/ExampleSite</span>
+<span class="w">    </span><span class="nt">receivers</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">reference_01</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reference</span><span class="w">          </span><span class="c1"># the receiver with an unobstructed view of the sky</span>
+<span class="w">        </span><span class="nt">directory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">01_reference</span>
+<span class="w">        </span><span class="nt">paired_canopies</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">all</span>
+<span class="w">      </span><span class="nt">canopy_01</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">canopy</span><span class="w">             </span><span class="c1"># the receiver below the canopy</span>
+<span class="w">        </span><span class="nt">directory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">02_canopy</span>
+<span class="w">    </span><span class="nt">vod_analyses</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">canopy_01_vs_reference_01</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">canopy_receiver</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">canopy_01</span>
+<span class="w">        </span><span class="nt">reference_receiver</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reference_01</span>
+</code></pre></div>
+<p>Inside a receiver folder, the layout is up to you: all files in one
+folder, one folder per day, or deeper. Keep the files of each receiver
+in their own folder.</p>
+<h3 id="file-names">File names<a class="headerlink" href="#file-names" title="Permanent link">&para;</a></h3>
+<p>canVODpy takes the receiver and the day of each file from its name, so
+the files must follow the canVOD file naming convention, for example:</p>
+<div class="highlight"><pre><span></span><code>FANR01INK_R_20250010000_01D_05S_AA.rnx
+</code></pre></div>
+<p>This name says: site <code>FAN</code>, reference receiver <code>01</code>, data from The
+Inklings, starting on day 001 of 2025 at 00:00, one day of data, sampled
+every 5 seconds, in <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr>. The <a href="../packages/naming/overview/">file naming convention</a>
+explains each field.</p>
+<div class="admonition example">
+<p class="admonition-title">Try it in a notebook</p>
+<p>Open <a href="https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/04_naming_convention.py?mode=edit">Naming convention</a> in molab, the online notebook service of marimo.</p>
+</div>
+<p>If your files have other names, for example the names your receiver
+gives them, you don't have to rename them. A naming recipe maps them to
+the convention; it needs the optional <code>canvod-filemap</code> extension (see
+<a href="../guides/extensions/">Optional extensions</a>).</p>
+<p>canVODpy reads <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v2.11, <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> v3.04, Septentrio <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr>, and NMEA files. It
+doesn't read compressed files, including Hatanaka-compressed <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr>;
+decompress them first. The canopy receiver and the reference receiver
+must record the same file format.</p>
+<h3 id="ephemeris-products">Ephemeris products<a class="headerlink" href="#ephemeris-products" title="Permanent link">&para;</a></h3>
+<p>To compute where each satellite was, canVODpy downloads precise
+satellite orbits (<abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> files) and clocks (<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files) from the European Space Agency (ESA). This needs
+no account and no setup. To add the NASA Crustal Dynamics Data Information System (<abbr title="Crustal Dynamics Data Information System — NASA archive for GNSS orbits, clocks, and observation data">CDDIS</abbr>) as a
+fallback,
+see <a href="../guides/configuration/#ephemeris-data-sources">Ephemeris data sources</a>.</p>
 <hr />
-<p>Looking to contribute to canVODpy itself, not just use it? See
-<a href="../guides/getting-started/">Get Started Contributing</a> instead — it
-covers everything here plus the development environment, tests, and PR
-workflow.</p>
+<h2 id="4-check-the-settings-and-the-data">4. Check the settings and the data<a class="headerlink" href="#4-check-the-settings-and-the-data" title="Permanent link">&para;</a></h2>
+<p>Before the first run, check one site:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>config<span class="w"> </span>validate<span class="w"> </span>--site<span class="w"> </span>ExampleSite
+</code></pre></div>
+<p>The check finds the files of each receiver exactly as a run does. It
+lists the days and files a run would process, the files it would skip,
+and the problems that would stop the run, for example two files that
+cover the same time.</p>
+<hr />
+<h2 id="5-process-one-day">5. Process one day<a class="headerlink" href="#5-process-one-day" title="Permanent link">&para;</a></h2>
+<p>canVODpy names a day by its year and day of year, as <code>YYYYDDD</code>. For
+example, <code>2025001</code> is January 1, 2025 and <code>2025032</code> is February 1, 2025.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python</label><label for="__tabbed_2_2">Command line</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Site</span>
+
+<span class="n">site</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">"ExampleSite"</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">site</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">"2025001"</span><span class="p">,</span> <span class="s2">"2025001"</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">unit</span><span class="o">.</span><span class="n">days</span><span class="p">,</span> <span class="n">unit</span><span class="o">.</span><span class="n">vod</span><span class="o">.</span><span class="n">written</span><span class="p">)</span>
+</code></pre></div>
+<p><code>run</code> reads the files of each receiver, adds the satellite positions
+from the ephemeris products, and writes the observations to the
+site's <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> store. Then it computes <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> for every receiver pair in
+<code>vod_analyses</code> and writes it to the site's <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store. To work with the
+observations in Python, <code>pipeline.process_date("2025001")</code> returns
+one dataset per receiver, read back from the store.</p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>run<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025001</span>
+</code></pre></div>
+<p>The run reads the files of each receiver, adds the satellite positions
+from the ephemeris products, writes the observations to the site's
+<abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> store, and computes <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> for every receiver pair in
+<code>vod_analyses</code> and writes it to the site's <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store.</p>
+<p>Before it reads a file, a run finds the files of every receiver in the
+site. On a network drive this can take minutes. The CLI says, for each
+receiver, which folder it is scanning, and afterwards how many files and
+days it found, so you can see that the run is working. The next run is
+faster: it lists only the folders of the days it processes and takes
+the others from a
+<a href="../packages/naming/overview/#folders-of-other-days-come-from-the-file-index">file index</a>.</p>
+<p>To see what a run would process without running it, add <code>--dry-run</code>.</p>
+</div>
+</div>
+</div>
+<p>Files that are already in the store are skipped.</p>
+<div class="admonition example">
+<p class="admonition-title">Try it in a notebook</p>
+<p>Open <a href="https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/18_site_pipeline.py?mode=edit">Site pipeline</a>, <a href="https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/01_cli_pipeline.py?mode=edit">Running the pipeline from the command line</a> in molab, the online notebook service of marimo.</p>
+</div>
+<hr />
+<h2 id="6-process-a-period">6. Process a period<a class="headerlink" href="#6-process-a-period" title="Permanent link">&para;</a></h2>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python</label><label for="__tabbed_3_2">Command line</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p><code>run</code> processes the days in units of several days and yields what
+it stored and computed for each unit:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span> <span class="n">site</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">"2025001"</span><span class="p">,</span> <span class="s2">"2025031"</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unit</span><span class="o">.</span><span class="n">days</span><span class="p">),</span> <span class="n">unit</span><span class="o">.</span><span class="n">vod</span><span class="o">.</span><span class="n">missing</span><span class="p">)</span>
+</code></pre></div>
+<p><code>process_range("2025001", "2025031")</code> yields the datasets of one day
+at a time instead, read back from the store.</p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>run<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025031</span>
+</code></pre></div>
+<p>Leave out <code>--end</code> and the run processes up to today. Once the store
+holds data, <code>--update-to-latest</code> instead of the dates processes the
+days from the last stored day up to the latest files:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>run<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--update-to-latest
+</code></pre></div>
+<p>A run processes one site; for several, run it once per site
+(<a href="../guides/api-levels/#several-sites">Several sites</a>).</p>
+</div>
+</div>
+</div>
+<p>By default, canVODpy uses all but two of the machine's CPU cores. To set
+limits, see <a href="../guides/parallel-processing/">Parallel processing</a>.</p>
+<p>To follow a long run while it's in progress, add <code>--dashboard</code>. It opens the
+performance dashboard, which shows how long each step took per day and
+receiver. The diagnostics guide explains it under
+<a href="../guides/diagnostics/#see-where-a-run-spends-its-time">See where a run spends its time</a>.</p>
+<div class="admonition example">
+<p class="admonition-title">Try it in a notebook</p>
+<p>Open <a href="https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/20_workflow_batch_processing.py?mode=edit">Batch processing</a> in molab, the online notebook service of marimo.</p>
+</div>
+<hr />
+<h2 id="7-open-the-vod">7. Open the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr><a class="headerlink" href="#7-open-the-vod" title="Permanent link">&para;</a></h2>
+<p>However you processed the data, the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> is in the site's <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store, and
+you open it in Python. The store is an <a href="https://icechunk.io/"><abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr></a>
+repository, which keeps a history of every write, like git:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Site</span>
+
+<span class="n">site</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">"ExampleSite"</span><span class="p">)</span>
+<span class="n">site</span><span class="o">.</span><span class="n">vod_store</span><span class="o">.</span><span class="n">print_tree</span><span class="p">()</span>
+<span class="n">vod</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">vod_store</span><span class="o">.</span><span class="n">read_group</span><span class="p">(</span><span class="s2">"tau_omega/canopy_01_vs_reference_01"</span><span class="p">)</span>
+</code></pre></div>
+<p>Each receiver pair has one group, <code>&lt;VOD calculator&gt;/&lt;entry in
+vod_analyses&gt;</code>. <code>print_tree</code> lists them. <code>read_group</code> returns an
+<a href="https://docs.xarray.dev/"><abbr title="Labelled multi-dimensional arrays for Python — extends NumPy with named dims, coords, and attrs">xarray</abbr></a> Dataset, with <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> per time and signal.</p>
+<p>To look at the stores from the command line, without opening Python:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>list<span class="w">                          </span><span class="c1"># every site's stores and their status</span>
+canvodpy<span class="w"> </span>store<span class="w"> </span>info<span class="w"> </span>ExampleSite<span class="w"> </span>--store<span class="w"> </span>vod<span class="w">  </span><span class="c1"># the groups of the VOD store</span>
+canvodpy<span class="w"> </span>store<span class="w"> </span>log<span class="w"> </span>ExampleSite<span class="w"> </span>--store<span class="w"> </span>vod<span class="w">   </span><span class="c1"># the history of its writes</span>
+</code></pre></div>
+<div class="admonition example">
+<p class="admonition-title">Try it in a notebook</p>
+<p>Open <a href="https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/10_vod_retrieval.py?mode=edit"><abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> retrieval</a>, <a href="https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/11_icechunk_store.py?mode=edit"><abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> store</a> in molab, the online notebook service of marimo.</p>
+</div>
+<hr />
+<h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../guides/configuration/">Configuration guide</a>: every setting.</li>
+<li><a href="../guides/api-levels/">Command line and Python</a>: all options of
+  <code>canvodpy run</code>, and the <code>Site</code> and <code>Pipeline</code> objects in detail.</li>
+<li><a href="../api/cli/">Command line reference</a>: every <code>canvodpy</code> command and
+  option.</li>
+<li><a href="../guides/diagnostics/">Diagnostics</a>: the log files, what to do when
+  a run fails, and the performance dashboard.</li>
+<li><a href="../packages/grids/overview/">Hemispheric grids</a>: assign the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> to
+  cells of the sky.</li>
+<li><a href="../packages/store/overview/">Storage</a>: the history of a store, and
+  how to read the observations.</li>
+</ul>
+<p>To work on canVODpy itself, see
+<a href="../guides/contributor-setup/">Contributor setup</a>.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -3839,13 +4646,13 @@ workflow.</p>
         
         
           
-          <a href="./cli/" class="md-footer__link md-footer__link--next" aria-label="Next: CLI Quickstart">
+          <a href="../guides/upgrading/" class="md-footer__link md-footer__link--next" aria-label="Next: Upgrading to v1.0.0">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                CLI Quickstart
+                Upgrading to v1.0.0
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -3865,8 +4672,9 @@ workflow.</p>
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -3883,7 +4691,7 @@ workflow.</p>
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -3920,10 +4728,10 @@ workflow.</p>
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../assets/mermaid-init.js"></script>
       

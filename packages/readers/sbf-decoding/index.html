@@ -15,33 +15,34 @@
         <link rel="canonical" href="https://canvodpy.eu/packages/readers/sbf-decoding/">
       
       
+      
         <link rel="prev" href="../sbf/">
       
       
-        <link rel="next" href="../ephemeris-sources/">
+        <link rel="next" href="../satellite-catalog/">
       
       
         
       
       
       <link rel="icon" href="../../../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
-        <title>SBF Field Decoding - canVODpy</title>
+        <title>SBF field decoding - canVODpy</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="../../.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -168,11 +190,12 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              SBF Field Decoding
+              SBF field decoding
             
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -288,12 +305,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -302,7 +313,7 @@
         <a href="../../../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../../../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../impressum/" class="md-tabs__link">
+        <a href="../../../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -525,12 +520,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -558,7 +547,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -580,7 +569,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -594,14 +583,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../users/cli/" class="md-nav__link">
+      <a href="../../../guides/upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -620,26 +609,65 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -655,7 +683,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -675,14 +703,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guides/extensions/" class="md-nav__link">
+      <a href="../../../guides/settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -694,6 +722,162 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -709,7 +893,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -736,7 +920,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -763,7 +947,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -783,14 +967,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../notebooks/" class="md-nav__link">
+      <a href="../../ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -807,22 +991,519 @@
                   
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  How it works
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  How it works
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reading GNSS files
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ephemeris-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Ephemeris sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Orbits and clocks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Orbit and clock preparation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/interpolation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Interpolation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/coordinates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coordinate systems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../grids/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Hemispheric grids
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../vod/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  VOD retrieval
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/icechunk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Versioning with Icechunk
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/storage-strategies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Write strategies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store-metadata/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../viz/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Visualization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
     
   
   
   
     
     
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
       
         
       
@@ -852,17 +1533,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Packages
+  Data formats
 
     
   </span>
@@ -873,83 +1554,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_2_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-readers
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_2_10_1">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-readers
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -961,14 +1571,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../overview/" class="md-nav__link">
+      <a href="../rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
 
     
   </span>
@@ -988,14 +1598,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../rinex-format/" class="md-nav__link">
+      <a href="../rinex-v2-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  RINEX v3.04 Format
+  RINEX v2.11
 
     
   </span>
@@ -1022,7 +1632,7 @@
   <span class="md-ellipsis">
     
   
-  SBF Reader
+  SBF
 
     
   </span>
@@ -1058,7 +1668,7 @@
   <span class="md-ellipsis">
     
   
-  SBF Field Decoding
+  SBF field decoding
 
     
   </span>
@@ -1075,7 +1685,7 @@
   <span class="md-ellipsis">
     
   
-  SBF Field Decoding
+  SBF field decoding
 
     
   </span>
@@ -1104,7 +1714,7 @@
   <a href="#epoch-timestamps" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Epoch Timestamps
+        Epoch timestamps
       </span>
     </span>
   </a>
@@ -1115,7 +1725,7 @@
   <a href="#signal-number-decoding" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Signal Number Decoding
+        Signal number decoding
       </span>
     </span>
   </a>
@@ -1182,12 +1792,12 @@
   <a href="#doppler-shift" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Doppler Shift
+        Doppler shift
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Doppler Shift">
+    <nav class="md-nav" aria-label="Doppler shift">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1210,12 +1820,12 @@
   <a href="#carrier-phase" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Carrier Phase
+        Carrier phase
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Carrier Phase">
+    <nav class="md-nav" aria-label="Carrier phase">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1238,7 +1848,7 @@
   <a href="#glonass-fdma-carrier-frequencies" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        GLONASS FDMA Carrier Frequencies
+        GLONASS FDMA carrier frequencies
       </span>
     </span>
   </a>
@@ -1249,12 +1859,12 @@
   <a href="#satellite-geometry-satvisibility" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Satellite Geometry (SatVisibility → θ, φ)
+        Satellite geometry (SatVisibility → θ, φ)
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Satellite Geometry (SatVisibility → θ, φ)">
+    <nav class="md-nav" aria-label="Satellite geometry (SatVisibility → θ, φ)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1288,12 +1898,12 @@
   <a href="#measextra-signal-quality-fields" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        MeasExtra Signal-Quality Fields
+        MeasExtra signal-quality fields
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="MeasExtra Signal-Quality Fields">
+    <nav class="md-nav" aria-label="MeasExtra signal-quality fields">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1382,7 +1992,7 @@
   <a href="#auxiliary-scalar-fields" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Auxiliary Scalar Fields
+        Auxiliary scalar fields
       </span>
     </span>
   </a>
@@ -1393,7 +2003,7 @@
   <a href="#summary-non-trivial-transformations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Summary: Non-trivial Transformations
+        Summary: non-trivial transformations
       </span>
     </span>
   </a>
@@ -1427,33 +2037,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../ephemeris-sources/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Ephemeris Sources
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../satellite-catalog/" class="md-nav__link">
         
   
@@ -1461,241 +2044,7 @@
   <span class="md-ellipsis">
     
   
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/preprocessing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Preprocessing Pipeline
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/interpolation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Interpolation Methods
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/coordinates/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Coordinate Systems
+  Satellite catalog
 
     
   </span>
@@ -1722,189 +2071,7 @@
   <span class="md-ellipsis">
     
   
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../grids/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../vod/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
+  Product registry
 
     
   </span>
@@ -1947,24 +2114,27 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-store
+  Extend
 
     
   </span>
@@ -1975,12 +2145,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-store
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -1992,14 +2162,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../store/overview/" class="md-nav__link">
+      <a href="../../../guides/plugins/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  Your own readers and VOD calculators
 
     
   </span>
@@ -2019,14 +2189,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../store/icechunk/" class="md-nav__link">
+      <a href="../building-a-reader/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Build a reader
 
     
   </span>
@@ -2038,370 +2208,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../store/storage-strategies/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Storage Strategies
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../store-metadata/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../viz/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-config
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-config
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../config/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-utils
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-utils
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2417,189 +2223,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2628,24 +2252,17 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
       
         
       
@@ -2692,7 +2309,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2708,7 +2325,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2754,7 +2371,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2781,7 +2398,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2801,14 +2418,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guides/architecture-design/" class="md-nav__link">
+      <a href="../../../guides/reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2820,6 +2437,67 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2835,7 +2513,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2855,14 +2533,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../build-system/" class="md-nav__link">
+      <a href="../../../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2882,14 +2560,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tooling/" class="md-nav__link">
+      <a href="../../../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2909,14 +2587,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../principles/" class="md-nav__link">
+      <a href="../../../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2924,6 +2602,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2957,10 +2644,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
             
   
   
@@ -2978,8 +2665,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -3002,7 +2689,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -3029,7 +2716,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -3056,7 +2743,727 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -3097,8 +3504,6 @@
       
         
       
-        
-      
     
     
     
@@ -3112,17 +3517,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -3133,12 +3538,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3184,34 +3589,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../guides/PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -3265,7 +3643,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -3292,7 +3670,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -3344,17 +3722,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3365,12 +3743,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3389,7 +3767,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3416,7 +3794,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3443,7 +3821,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3463,14 +3841,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../SECURITY.md" class="md-nav__link">
+      <a href="../../../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3508,6 +3886,8 @@
   
     
     
+      
+        
       
         
       
@@ -3554,7 +3934,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3570,10 +3950,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -3880,96 +4287,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -4014,7 +4331,7 @@
   <a href="#epoch-timestamps" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Epoch Timestamps
+        Epoch timestamps
       </span>
     </span>
   </a>
@@ -4025,7 +4342,7 @@
   <a href="#signal-number-decoding" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Signal Number Decoding
+        Signal number decoding
       </span>
     </span>
   </a>
@@ -4092,12 +4409,12 @@
   <a href="#doppler-shift" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Doppler Shift
+        Doppler shift
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Doppler Shift">
+    <nav class="md-nav" aria-label="Doppler shift">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4120,12 +4437,12 @@
   <a href="#carrier-phase" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Carrier Phase
+        Carrier phase
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Carrier Phase">
+    <nav class="md-nav" aria-label="Carrier phase">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4148,7 +4465,7 @@
   <a href="#glonass-fdma-carrier-frequencies" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        GLONASS FDMA Carrier Frequencies
+        GLONASS FDMA carrier frequencies
       </span>
     </span>
   </a>
@@ -4159,12 +4476,12 @@
   <a href="#satellite-geometry-satvisibility" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Satellite Geometry (SatVisibility → θ, φ)
+        Satellite geometry (SatVisibility → θ, φ)
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Satellite Geometry (SatVisibility → θ, φ)">
+    <nav class="md-nav" aria-label="Satellite geometry (SatVisibility → θ, φ)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4198,12 +4515,12 @@
   <a href="#measextra-signal-quality-fields" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        MeasExtra Signal-Quality Fields
+        MeasExtra signal-quality fields
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="MeasExtra Signal-Quality Fields">
+    <nav class="md-nav" aria-label="MeasExtra signal-quality fields">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4292,7 +4609,7 @@
   <a href="#auxiliary-scalar-fields" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Auxiliary Scalar Fields
+        Auxiliary scalar fields
       </span>
     </span>
   </a>
@@ -4303,7 +4620,7 @@
   <a href="#summary-non-trivial-transformations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Summary: Non-trivial Transformations
+        Summary: non-trivial transformations
       </span>
     </span>
   </a>
@@ -4381,12 +4698,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -4396,7 +4707,7 @@
           
   
   <span class="md-ellipsis">
-    Usage
+    Retrieve VOD
   </span>
 
         </a>
@@ -4423,95 +4734,16 @@
       
         
       
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
     
     
     
     
       <li class="md-path__item">
-        <a href="../overview/" class="md-path__link">
+        <a href="../rinex-format/" class="md-path__link">
           
   
   <span class="md-ellipsis">
-    Packages
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-    
-  
-
-      
-        
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      <li class="md-path__item">
-        <a href="../overview/" class="md-path__link">
-          
-  
-  <span class="md-ellipsis">
-    canvod-readers
+    Data formats
   </span>
 
         </a>
@@ -4533,22 +4765,24 @@
   
 
 
-<h1 id="sbf-field-decoding-reference"><abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> Field Decoding Reference<a class="headerlink" href="#sbf-field-decoding-reference" title="Permanent link">&para;</a></h1>
+<h1 id="sbf-field-decoding-reference"><abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> field decoding reference<a class="headerlink" href="#sbf-field-decoding-reference" title="Permanent link">&para;</a></h1>
 <p>Every value stored in <code>obs_ds</code> and the <code>sbf_obs</code> metadata dataset is derived
-from raw <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> integers through a well-defined transformation.  This page documents
+from raw <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> integers through a well-defined transformation. This page documents
 each formula with the source field type, the arithmetic applied, and the firmware
 page reference.</p>
 <p>All page references are to the
 <strong>Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide</strong> (abbreviated
 <strong>RefGuide-4.14.0</strong>) unless stated otherwise.</p>
 <hr />
-<h2 id="epoch-timestamps">Epoch Timestamps<a class="headerlink" href="#epoch-timestamps" title="Permanent link">&para;</a></h2>
-<p><strong>Source:</strong> <code>MeasEpoch</code> header — <code>WNc</code> (u2) + <code>TOW</code> (u4, milliseconds).
-<strong>Source block:</strong> ReceiverTime (ΔLS), RefGuide-4.14.0 p.369.</p>
-<p><abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> Time uses a fixed epoch and has no leap seconds; UTC is obtained by
-subtracting the current <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>–UTC offset ΔLS:</p>
+<h2 id="epoch-timestamps">Epoch timestamps<a class="headerlink" href="#epoch-timestamps" title="Permanent link">&para;</a></h2>
+<p><strong>Source:</strong> <code>MeasEpoch</code> header: <code>WNc</code> (u2) + <code>TOW</code> (u4, milliseconds).
+The receiver time follows the <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> convention: <code>WNc</code> counts complete weeks
+since 1980-01-06 and there are no leap seconds (RefGuide-4.14.0,
+Section 2.3, p.53). The epoch is stored in <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time, the time scale of
+<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files and of the orbit and clock products, and the <code>epoch</code>
+coordinate records <code>time_system: GPS</code>:</p>
 <div class="arithmatex">\[
-t_\text{UTC} = t_\text{GPS epoch} + \frac{WN_c \times 604800 \times 10^3 + TOW}{10^3} - \Delta_\text{LS}
+t_\text{GPS} = t_\text{GPS epoch} + \frac{WN_c \times 604800 \times 10^3 + TOW}{10^3}
 \]</div>
 <table>
 <thead>
@@ -4562,7 +4796,7 @@ t_\text{UTC} = t_\text{GPS epoch} + \frac{WN_c \times 604800 \times 10^3 + TOW}{
 <tr>
 <td><span class="arithmatex">\(t_\text{GPS epoch}\)</span></td>
 <td><abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> reference epoch</td>
-<td>1980-01-06 00:00:00 UTC</td>
+<td>1980-01-06 00:00:00</td>
 </tr>
 <tr>
 <td><span class="arithmatex">\(WN_c\)</span></td>
@@ -4574,16 +4808,15 @@ t_\text{UTC} = t_\text{GPS epoch} + \frac{WN_c \times 604800 \times 10^3 + TOW}{
 <td>Time of Week</td>
 <td>ms, from <code>MeasEpoch.TOW</code></td>
 </tr>
-<tr>
-<td><span class="arithmatex">\(\Delta_\text{LS}\)</span></td>
-<td><abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> − UTC leap-second offset</td>
-<td>18 s (valid from 2017-01-01; updated from <code>ReceiverTime</code> when present)</td>
-</tr>
 </tbody>
 </table>
+<p>No leap seconds are subtracted. A file named for a <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> day therefore
+starts at 00:00:00 of that day and its epochs lie on the receiver's
+sampling grid. (Earlier versions stored UTC, 18 s earlier: such stores
+start at 23:59:42 of the previous day.)</p>
 <hr />
-<h2 id="signal-number-decoding">Signal Number Decoding<a class="headerlink" href="#signal-number-decoding" title="Permanent link">&para;</a></h2>
-<p><strong>Source:</strong> <code>MeasEpochChannelType1.Type</code> (u1) and <code>ObsInfo</code> (u1), p.262.</p>
+<h2 id="signal-number-decoding">Signal number decoding<a class="headerlink" href="#signal-number-decoding" title="Permanent link">&para;</a></h2>
+<p><strong>Source:</strong> <code>MeasEpochChannelType1.Type</code> (u1), p.261, and <code>ObsInfo</code> (u1), p.262.</p>
 <p>The 5 least-significant bits of <code>Type</code> carry a <em>signal index</em>:</p>
 <div class="arithmatex">\[
 \text{SigIdxLo} = \text{Type} \;\&amp;\; 0x1F
@@ -4597,7 +4830,7 @@ to constellation / band / tracking code is defined in the signal type table
 (RefGuide-4.14.0 §4.1.10, p.256).</p>
 <hr />
 <h2 id="cn0-snr">C/N₀ (<abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr>)<a class="headerlink" href="#cn0-snr" title="Permanent link">&para;</a></h2>
-<p><strong>Source:</strong> <code>MeasEpochChannelType1.CN0</code> (u1), p.264.
+<p><strong>Source:</strong> <code>MeasEpochChannelType1.CN0</code> (u1), p.261.
 <strong>Dataset variable:</strong> <code>SNR</code> (units: <code>dB-Hz</code>).</p>
 <p>The raw byte encodes carrier-to-noise density in two different scales depending
 on the signal type:</p>
@@ -4607,9 +4840,9 @@ C/N_0 = \begin{cases}
   \text{CN0}_\text{raw} \times 0.25       &amp; \text{signals 1 (GPS L1P) and 2 (GPS L2P)}
 \end{cases}
 \]</div>
-<p>Signals 1 and 2 are tracked <em>semi-codeless</em> and have a lower intrinsic <span class="arithmatex">\(C/N_0\)</span>;
+<p>Signals 1 and 2 are tracked <em>codelessly</em> (Septentrio reference guide 4.14.0, Sect. 3.2.4, <code>setCN0Mask</code>) and have a lower intrinsic <span class="arithmatex">\(C/N_0\)</span>;
 the firmware omits the +10 dB offset and enforces a minimum of 1 dB‑Hz.</p>
-<p><strong>Do-Not-Use:</strong> raw value 255 → stored as NaN.</p>
+<p><strong>Do-Not-Use:</strong> raw value 255 <span class="arithmatex">\(\rightarrow\)</span> stored as NaN.</p>
 <h3 id="cn0highres-correction-measextra">CN0HighRes correction (MeasExtra)<a class="headerlink" href="#cn0highres-correction-measextra" title="Permanent link">&para;</a></h3>
 <p><strong>Source:</strong> <code>MeasExtra.MeasExtraChannelSub.Misc</code> bits 0–2 (u3), p.265.</p>
 <p>When <code>MeasExtra</code> (Block 4000) is logged, the reader applies an additional
@@ -4617,7 +4850,11 @@ sub-quantisation correction that extends resolution from 0.25 dB to 1/32 dB:</p>
 <div class="arithmatex">\[
 C/N_{0,\,\text{final}} = C/N_0 + \underbrace{({\rm Misc} \;\&amp;\; 0x07)}_{\text{CN0HighRes}\;\in\{0,\ldots,7\}} \times 0.03125
 \]</div>
-<p>If <code>MeasExtra</code> is absent the correction is zero (NaN guard prevents modification).</p>
+<p>The correction comes from the MeasExtra block with the same time stamp as the
+MeasEpoch block. Each MeasExtra entry is matched to its observation by receiver
+channel and signal number; for extended signals (SigIdxLo = 31) the signal
+number is in bits 3–7 of MeasExtra <code>Misc</code> (p.265). Where MeasExtra is absent
+the correction is not applied.</p>
 <table>
 <thead>
 <tr>
@@ -4639,30 +4876,30 @@ C/N_{0,\,\text{final}} = C/N_0 + \underbrace{({\rm Misc} \;\&amp;\; 0x07)}_{\tex
 <hr />
 <h2 id="pseudorange">Pseudorange<a class="headerlink" href="#pseudorange" title="Permanent link">&para;</a></h2>
 <p><strong>Source:</strong> <code>MeasEpochChannelType1.Misc</code> bits 0–3 (<code>CodeMSB</code>, u4-equivalent),
-<code>CodeLSB</code> (u4), p.262.</p>
+<code>CodeLSB</code> (u4), p.261.</p>
 <div class="arithmatex">\[
 PR = \bigl(\text{CodeMSB} \times 2^{32} + \text{CodeLSB}\bigr) \times 10^{-3} \quad [\text{m}]
 \]</div>
 <p>where <span class="arithmatex">\(\text{CodeMSB} = \text{Misc} \;\&amp;\; 0x0F\)</span>.</p>
-<p><strong>Do-Not-Use:</strong> CodeMSB = 0 <strong>and</strong> CodeLSB = 0 → NaN.</p>
+<p><strong>Do-Not-Use:</strong> CodeMSB = 0 <strong>and</strong> CodeLSB = 0 <span class="arithmatex">\(\rightarrow\)</span> NaN.</p>
 <h3 id="type2-slave-signal-pseudorange">Type2 (slave signal) pseudorange<a class="headerlink" href="#type2-slave-signal-pseudorange" title="Permanent link">&para;</a></h3>
 <p><strong>Source:</strong> <code>MeasEpochChannelType2.OffsetsMSB</code> bits 0–2 (<code>CodeOffsetMSB</code>,
-3-bit two's-complement, range −4 to +3), <code>CodeOffsetLSB</code> (u2), p.264.</p>
+3-bit two's-complement, range <span class="arithmatex">\(-4\)</span> to <span class="arithmatex">\(+3\)</span>), p.262, <code>CodeOffsetLSB</code> (u2), p.263.</p>
 <div class="arithmatex">\[
 PR_2 = PR_1 + \bigl(\text{CodeOffsetMSB} \times 65536 + \text{CodeOffsetLSB}\bigr) \times 10^{-3} \quad [\text{m}]
 \]</div>
-<p><strong>Do-Not-Use:</strong> CodeOffsetMSB = −4 <strong>and</strong> CodeOffsetLSB = 0 → NaN.</p>
+<p><strong>Do-Not-Use:</strong> CodeOffsetMSB = <span class="arithmatex">\(-4\)</span> <strong>and</strong> CodeOffsetLSB = 0 <span class="arithmatex">\(\rightarrow\)</span> NaN.</p>
 <hr />
-<h2 id="doppler-shift">Doppler Shift<a class="headerlink" href="#doppler-shift" title="Permanent link">&para;</a></h2>
-<p><strong>Source:</strong> <code>MeasEpochChannelType1.Doppler</code> (i4), p.263.</p>
+<h2 id="doppler-shift">Doppler shift<a class="headerlink" href="#doppler-shift" title="Permanent link">&para;</a></h2>
+<p><strong>Source:</strong> <code>MeasEpochChannelType1.Doppler</code> (i4), p.261.</p>
 <div class="arithmatex">\[
 D = \text{Doppler}_\text{raw} \times 10^{-4} \quad [\text{Hz}]
 \]</div>
 <p>Positive Doppler indicates a closing range (approaching satellite).</p>
-<p><strong>Do-Not-Use:</strong> raw = −2 147 483 648 (<span class="arithmatex">\(= -2^{31}\)</span>, i4 minimum) → NaN.</p>
+<p><strong>Do-Not-Use:</strong> raw = <span class="arithmatex">\(-2\,147\,483\,648\)</span> (<span class="arithmatex">\(= -2^{31}\)</span>, i4 minimum) <span class="arithmatex">\(\rightarrow\)</span> NaN.</p>
 <h3 id="type2-slave-signal-doppler">Type2 (slave signal) Doppler<a class="headerlink" href="#type2-slave-signal-doppler" title="Permanent link">&para;</a></h3>
 <p><strong>Source:</strong> <code>MeasEpochChannelType2.OffsetsMSB</code> bits 3–7 (<code>DopplerOffsetMSB</code>,
-5-bit two's-complement, range −16 to +15), <code>DopplerOffsetLSB</code> (u2), p.264.</p>
+5-bit two's-complement, range <span class="arithmatex">\(-16\)</span> to <span class="arithmatex">\(+15\)</span>), p.262, <code>DopplerOffsetLSB</code> (u2), p.263.</p>
 <p>The Type2 Doppler includes a frequency-ratio correction to account for the
 different carrier frequency of the slave signal:</p>
 <div class="arithmatex">\[
@@ -4671,34 +4908,35 @@ D_2 = D_1 \times \frac{f_2}{f_1}
 \]</div>
 <p>where <span class="arithmatex">\(f_1, f_2\)</span> are the carrier frequencies of the Type1 (master) and Type2
 (slave) signals respectively.</p>
-<p><strong>Do-Not-Use:</strong> DopplerOffsetMSB = −16 <strong>and</strong> DopplerOffsetLSB = 0 → NaN.</p>
+<p><strong>Do-Not-Use:</strong> DopplerOffsetMSB = <span class="arithmatex">\(-16\)</span> <strong>and</strong> DopplerOffsetLSB = 0 <span class="arithmatex">\(\rightarrow\)</span> NaN.</p>
 <hr />
-<h2 id="carrier-phase">Carrier Phase<a class="headerlink" href="#carrier-phase" title="Permanent link">&para;</a></h2>
-<p><strong>Source:</strong> <code>MeasEpochChannelType1.CarrierMSB</code> (i1), <code>CarrierLSB</code> (u2), p.263–264.</p>
+<h2 id="carrier-phase">Carrier phase<a class="headerlink" href="#carrier-phase" title="Permanent link">&para;</a></h2>
+<p><strong>Source:</strong> <code>MeasEpochChannelType1.CarrierMSB</code> (i1), <code>CarrierLSB</code> (u2), p.261.</p>
 <p>The carrier phase is encoded as a fractional offset relative to the pseudorange,
-expressed in cycles.  Let <span class="arithmatex">\(\lambda = c / f\)</span> be the carrier wavelength:</p>
+expressed in cycles. Let <span class="arithmatex">\(\lambda = c / f\)</span> be the carrier wavelength:</p>
 <div class="arithmatex">\[
 L = \frac{PR}{\lambda} + \bigl(\text{CarrierMSB} \times 65536 + \text{CarrierLSB}\bigr) \times 10^{-3} \quad [\text{cycles}]
 \]</div>
 <div class="arithmatex">\[
 \lambda = \frac{c}{f} \quad \text{where } c = 299\,792\,458 \;\text{m/s}
 \]</div>
-<p><strong>Do-Not-Use:</strong> CarrierMSB = −128 <strong>and</strong> CarrierLSB = 0 → NaN.</p>
+<p><strong>Do-Not-Use:</strong> CarrierMSB = <span class="arithmatex">\(-128\)</span> <strong>and</strong> CarrierLSB = 0 <span class="arithmatex">\(\rightarrow\)</span> NaN.</p>
 <h3 id="type2-carrier-phase">Type2 carrier phase<a class="headerlink" href="#type2-carrier-phase" title="Permanent link">&para;</a></h3>
 <div class="arithmatex">\[
 L_2 = \frac{PR_2}{\lambda_2} + \bigl(\text{CarrierMSB}_2 \times 65536 + \text{CarrierLSB}_2\bigr) \times 10^{-3} \quad [\text{cycles}]
 \]</div>
 <p>Uses <span class="arithmatex">\(PR_2\)</span> (Type2 pseudorange, above) and the slave signal wavelength <span class="arithmatex">\(\lambda_2\)</span>.</p>
 <hr />
-<h2 id="glonass-fdma-carrier-frequencies"><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> <abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr> Carrier Frequencies<a class="headerlink" href="#glonass-fdma-carrier-frequencies" title="Permanent link">&para;</a></h2>
-<p><strong>Source:</strong> <code>ChannelStatus.ChannelSatInfo.FreqNr</code>, RefGuide-4.14.0 §4.1.10 p.256 and
-ChannelStatus Block 4013 p.393.</p>
-<p><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> uses Frequency Division Multiple Access (<abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr>).  The centre frequency
+<h2 id="glonass-fdma-carrier-frequencies"><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> <abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr> carrier frequencies<a class="headerlink" href="#glonass-fdma-carrier-frequencies" title="Permanent link">&para;</a></h2>
+<p><strong>Source:</strong> <code>MeasEpochChannelType1.ObsInfo</code> bits 3–7 (FreqNr, offset 8) for
+<abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> <abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr> signals (SigIdxLo 8–11), p.262; frequency formula §4.1.10, p.256.
+Type2 sub-blocks take FreqNr from their Type1 sub-block.</p>
+<p><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> uses Frequency Division Multiple Access (<abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr>).  The center frequency
 depends on the frequency slot <span class="arithmatex">\(K = \text{FreqNr} - 8\)</span>.</p>
 <div class="admonition note">
 <p class="admonition-title">FreqNr range differs by firmware version</p>
-<p>RefGuide-4.14.0 allows slot range −7 to +13 (FreqNr 1–21).
-RefGuide-4.15.1 restricts this to −7 to +6 (FreqNr 1–14),
+<p>RefGuide-4.14.0 allows slot range <span class="arithmatex">\(-7\)</span> to <span class="arithmatex">\(+13\)</span> (FreqNr 1–21).
+RefGuide-4.15.1 restricts this to <span class="arithmatex">\(-7\)</span> to <span class="arithmatex">\(+6\)</span> (FreqNr 1–14),
 matching the current <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> ICD allocation.</p>
 </div>
 <div class="arithmatex">\[
@@ -4712,9 +4950,9 @@ f_{L2}(K) = 1246 + K \times \frac{7}{16} \quad [\text{MHz}]
 <p><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> L3 <abbr title="Code Division Multiple Access — signal multiplexing used by GPS, Galileo, BeiDou: all SVs on same frequency, distinguished by PRN code (Navipedia: GPS Signal Plan)">CDMA</abbr> (signal 12) has a fixed frequency of 1202.025 MHz and does not
 use this formula.</p>
 <hr />
-<h2 id="satellite-geometry-satvisibility">Satellite Geometry (SatVisibility → θ, φ)<a class="headerlink" href="#satellite-geometry-satvisibility" title="Permanent link">&para;</a></h2>
-<p><strong>Source:</strong> <code>SatVisibility.SatInfo.Elevation</code> (i2, scale 0.01 °/LSB),
-<code>Azimuth</code> (u2, scale 0.01 °/LSB), RefGuide-4.14.0 p.400.</p>
+<h2 id="satellite-geometry-satvisibility">Satellite geometry (SatVisibility → θ, φ)<a class="headerlink" href="#satellite-geometry-satvisibility" title="Permanent link">&para;</a></h2>
+<p><strong>Source:</strong> <code>SatVisibility.SatInfo.Elevation</code> (i2, scale <span class="arithmatex">\(0.01^\circ\)</span>/LSB),
+<code>Azimuth</code> (u2, scale <span class="arithmatex">\(0.01^\circ\)</span>/LSB), RefGuide-4.14.0 p.400.</p>
 <h3 id="polar-angle">Polar angle θ<a class="headerlink" href="#polar-angle" title="Permanent link">&para;</a></h3>
 <p>The <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> block stores elevation above the horizon.  <code>canvod-readers</code> converts to
 the <em>polar angle</em> (co-elevation) used in the Tau-Omega <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> formula:</p>
@@ -4724,7 +4962,7 @@ the <em>polar angle</em> (co-elevation) used in the Tau-Omega <abbr title="Veget
 <table>
 <thead>
 <tr>
-<th>θ</th>
+<th><span class="arithmatex">\(\theta\)</span></th>
 <th>Geometry</th>
 </tr>
 </thead>
@@ -4741,13 +4979,22 @@ the <em>polar angle</em> (co-elevation) used in the Tau-Omega <abbr title="Veget
 </table>
 <h3 id="azimuth">Azimuth φ<a class="headerlink" href="#azimuth" title="Permanent link">&para;</a></h3>
 <div class="arithmatex">\[
-\phi\,[\text{rad}] = \text{deg2rad}\!\left(\text{Azimuth}_\text{raw} \times 0.01\right)
+\varphi\,[\text{rad}] = \text{deg2rad}\!\left(\text{Azimuth}_\text{raw} \times 0.01\right)
 \]</div>
-<p>The stored azimuth is the geographic (compass) convention: 0 = North, π/2 = East,
-measured clockwise.  Both θ and φ are stored in <strong>radians</strong> as <code>broadcast_theta</code>
+<p>The stored azimuth is the geographic (compass) convention: 0 = North, <span class="arithmatex">\(\pi/2\)</span> = East,
+measured clockwise.  Both <span class="arithmatex">\(\theta\)</span> and <span class="arithmatex">\(\varphi\)</span> are stored in <strong>radians</strong> as <code>broadcast_theta</code>
 and <code>broadcast_phi</code> in the <code>sbf_obs</code> metadata dataset.</p>
+<p><strong>Do-Not-Use:</strong> Elevation <span class="arithmatex">\(-32768\)</span> and Azimuth 65535 <span class="arithmatex">\(\rightarrow\)</span> NaN. Values come from the
+SatVisibility block with the same time stamp as the observations, and are
+copied to every signal of the satellite. SVID 62 (<abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> slot unknown) is
+skipped.</p>
+<p><strong>Orbit source:</strong> <code>SatVisibility.SatInfo.SatelliteInfo</code> (u1) states whether
+the angles were computed from the almanac (1) or the broadcast ephemeris (2);
+255 (unknown) is stored as <span class="arithmatex">\(-1\)</span>. It is stored as <code>broadcast_angle_source</code>.
+Broadcast-mode geometry (<code>SbfBroadcastProvider</code>) uses only the
+ephemeris-based angles.</p>
 <hr />
-<h2 id="measextra-signal-quality-fields">MeasExtra Signal-Quality Fields<a class="headerlink" href="#measextra-signal-quality-fields" title="Permanent link">&para;</a></h2>
+<h2 id="measextra-signal-quality-fields">MeasExtra signal-quality fields<a class="headerlink" href="#measextra-signal-quality-fields" title="Permanent link">&para;</a></h2>
 <p>All fields below are sourced from <code>MeasExtra</code> Block 4000,
 <code>MeasExtraChannelSub</code> sub-block, p.265.</p>
 <h3 id="multipath-correction-pseudorange">Multipath correction (pseudorange)<a class="headerlink" href="#multipath-correction-pseudorange" title="Permanent link">&para;</a></h3>
@@ -4767,30 +5014,30 @@ unsmoothed measurement before Hatch-filter carrier smoothing.</p>
 \sigma_\text{code}^2 = \text{CodeVar}_\text{raw} \times 10^{-4} \quad [\text{m}^2]
 \]</div>
 <p>Raw field: u2.  Estimated noise variance of the code-phase measurement.
-Maximum representable value is 6.5534 m² (raw = 65534). <strong>Do-Not-Use:</strong> 65535 → NaN.</p>
+Maximum representable value is 6.5534 m<span class="arithmatex">\(^2\)</span> (raw = 65534). <strong>Do-Not-Use:</strong> 65535 <span class="arithmatex">\(\rightarrow\)</span> NaN.</p>
 <h3 id="carrier-tracking-variance">Carrier tracking variance<a class="headerlink" href="#carrier-tracking-variance" title="Permanent link">&para;</a></h3>
 <div class="arithmatex">\[
 \sigma_\text{carrier}^2 = \text{CarrierVar}_\text{raw} \quad [\text{mcycles}^2]
 \]</div>
-<p>Raw field: u2, direct copy (scale = 1 mcycle²/LSB).  Maximum 65534 mcycles².
-<strong>Do-Not-Use:</strong> 65535 → NaN.</p>
+<p>Raw field: u2, direct copy (scale = 1 mcycle<span class="arithmatex">\(^2\)</span>/LSB).  Maximum 65534 mcycles<span class="arithmatex">\(^2\)</span>.
+<strong>Do-Not-Use:</strong> 65535 <span class="arithmatex">\(\rightarrow\)</span> NaN.</p>
 <p>The corresponding Doppler variance is:</p>
 <div class="arithmatex">\[
-\sigma_D^2 = \sigma_\text{carrier}^2 \times D_\text{VarFactor} \quad [\text{Hz}^2]
+\sigma_D^2 = \sigma_\text{carrier}^2 \times D_\text{VarFactor} \quad [\text{mHz}^2]
 \]</div>
 <p>where <code>DopplerVarFactor</code> (MeasExtra block header, p.264) is a per-epoch scale
-factor that converts mcycles² to Hz².</p>
+factor that converts mcycles<span class="arithmatex">\(^2\)</span> to mHz<span class="arithmatex">\(^2\)</span>. The Doppler variance is not stored.</p>
 <h3 id="lock-time">Lock time<a class="headerlink" href="#lock-time" title="Permanent link">&para;</a></h3>
 <div class="arithmatex">\[
 T_\text{lock} = \text{LockTime}_\text{raw} \quad [\text{s}]
 \]</div>
-<p>Raw field: u2.  Duration of uninterrupted carrier phase tracking.  Reset to 0 on
-reacquisition.  Clipped to 65534 s.  <strong>Do-Not-Use:</strong> 65535 → NaN.</p>
+<p>Raw field: u2. Duration of uninterrupted carrier phase tracking. Reset to 0 on
+reacquisition. Clipped to 65534 s. <strong>Do-Not-Use:</strong> 65535 <span class="arithmatex">\(\rightarrow\)</span> NaN.</p>
 <h3 id="cumulative-loss-of-continuity-counter">Cumulative loss-of-continuity counter<a class="headerlink" href="#cumulative-loss-of-continuity-counter" title="Permanent link">&para;</a></h3>
 <div class="arithmatex">\[
 N_\text{slip} = \text{CumLossCont}_\text{raw} \quad \text{(modulo 256)}
 \]</div>
-<p>Raw field: u1, direct copy.  Increments at every reacquisition or cycle slip.  A
+<p>Raw field: u1, direct copy. Increments at every reacquisition or cycle slip. A
 change <span class="arithmatex">\(\Delta N_\text{slip} \neq 0\)</span> between consecutive epochs is a direct
 indicator of a carrier-phase discontinuity (cycle slip).</p>
 <h3 id="carrier-multipath-correction">Carrier multipath correction<a class="headerlink" href="#carrier-multipath-correction" title="Permanent link">&para;</a></h3>
@@ -4800,7 +5047,7 @@ indicator of a carrier-phase discontinuity (cycle slip).</p>
 <p>Raw field: i1, scale <span class="arithmatex">\(1/512\)</span> cycles/LSB (<span class="arithmatex">\(\approx 1.953 \times 10^{-3}\)</span> cycles/LSB).
 Add to the stored carrier phase to recover the unmitigated phase.</p>
 <hr />
-<h2 id="auxiliary-scalar-fields">Auxiliary Scalar Fields<a class="headerlink" href="#auxiliary-scalar-fields" title="Permanent link">&para;</a></h2>
+<h2 id="auxiliary-scalar-fields">Auxiliary scalar fields<a class="headerlink" href="#auxiliary-scalar-fields" title="Permanent link">&para;</a></h2>
 <p>Fields stored with a simple scale or offset:</p>
 <table>
 <thead>
@@ -4815,44 +5062,44 @@ Add to the stored carrier phase to recover the unmitigated phase.</p>
 <tbody>
 <tr>
 <td><code>pdop</code>, <code>hdop</code>, <code>vdop</code></td>
-<td><abbr title="Dilution of Precision — scalar measure of how satellite geometry amplifies ranging errors (Navipedia: Dilution of Precision)">DOP</abbr> (Block 4001), fallback PVTGeodetic</td>
+<td><abbr title="Dilution of Precision — scalar measure of how satellite geometry amplifies ranging errors (Navipedia: Dilution of Precision)">DOP</abbr> (Block 4001)</td>
 <td>u2</td>
-<td>raw × 0.01</td>
+<td><span class="arithmatex">\(\text{raw} \times 0.01\)</span>; DNU 0</td>
 <td>1</td>
 </tr>
 <tr>
 <td><code>h_accuracy_m</code></td>
 <td>PVTGeodetic (Block 4007) <code>HAccuracy</code></td>
 <td>u2</td>
-<td>raw × 0.01; DNU 65535</td>
+<td><span class="arithmatex">\(\text{raw} \times 0.01\)</span>; DNU 65535</td>
 <td>m</td>
 </tr>
 <tr>
 <td><code>v_accuracy_m</code></td>
 <td>PVTGeodetic (Block 4007) <code>VAccuracy</code></td>
 <td>u2</td>
-<td>raw × 0.01; DNU 65535</td>
+<td><span class="arithmatex">\(\text{raw} \times 0.01\)</span>; DNU 65535</td>
 <td>m</td>
 </tr>
 <tr>
 <td><code>mean_corr_age_s</code></td>
 <td>PVTGeodetic (Block 4007) <code>MeanCorrAge</code></td>
 <td>u2</td>
-<td>raw × 0.01</td>
+<td><span class="arithmatex">\(\text{raw} \times 0.01\)</span>; DNU 65535</td>
 <td>s</td>
 </tr>
 <tr>
 <td><code>temperature_c</code></td>
 <td>ReceiverStatus (Block 4014) <code>Temperature</code></td>
 <td>u1</td>
-<td>raw − 100; DNU 0</td>
-<td>°C</td>
+<td><span class="arithmatex">\(\text{raw} - 100\)</span>; DNU 0</td>
+<td><span class="arithmatex">\(^\circ\)</span>C</td>
 </tr>
 </tbody>
 </table>
-<p>Page references: <abbr title="Dilution of Precision — scalar measure of how satellite geometry amplifies ranging errors (Navipedia: Dilution of Precision)">DOP</abbr> block p.349, PVTGeodetic pp.337–339, ReceiverStatus pp.396–399.</p>
+<p>Page references: <abbr title="Dilution of Precision — scalar measure of how satellite geometry amplifies ranging errors (Navipedia: Dilution of Precision)">DOP</abbr> block p.348, PVTGeodetic pp.337–339, ReceiverStatus pp.396–398.</p>
 <hr />
-<h2 id="summary-non-trivial-transformations">Summary: Non-trivial Transformations<a class="headerlink" href="#summary-non-trivial-transformations" title="Permanent link">&para;</a></h2>
+<h2 id="summary-non-trivial-transformations">Summary: non-trivial transformations<a class="headerlink" href="#summary-non-trivial-transformations" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -4863,35 +5110,35 @@ Add to the stored carrier phase to recover the unmitigated phase.</p>
 <tbody>
 <tr>
 <td><strong><abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr></strong></td>
-<td>Signal-dependent formula (±10 dB offset); two-pass correction from MeasExtra</td>
+<td>Signal-dependent formula (+10 dB-Hz offset except signals 1 and 2); CN0HighRes from the MeasExtra block of the same epoch</td>
 </tr>
 <tr>
 <td><strong>Pseudorange</strong></td>
-<td>40-bit reconstruction from two fields (CodeMSB × 2³² + CodeLSB); Type2 adds delta</td>
+<td>40-bit reconstruction from two fields (<span class="arithmatex">\(\text{CodeMSB} \times 2^{32} + \text{CodeLSB}\)</span>); Type2 adds delta</td>
 </tr>
 <tr>
 <td><strong>Carrier phase</strong></td>
-<td>Mixed-unit formula: pseudorange converted to cycles via λ = c/f, then phase delta added</td>
+<td>Mixed-unit formula: pseudorange converted to cycles via <span class="arithmatex">\(\lambda = c/f\)</span>, then phase delta added</td>
 </tr>
 <tr>
 <td><strong>Type2 Doppler</strong></td>
 <td>Frequency-ratio scale factor applied before adding delta</td>
 </tr>
 <tr>
-<td><strong>θ (polar angle)</strong></td>
-<td>Elevation → co-elevation (90° −  elevation), then degrees → radians</td>
+<td><strong><span class="arithmatex">\(\theta\)</span> (polar angle)</strong></td>
+<td>Elevation <span class="arithmatex">\(\rightarrow\)</span> co-elevation (<span class="arithmatex">\(90^\circ - \text{elevation}\)</span>), then degrees <span class="arithmatex">\(\rightarrow\)</span> radians</td>
 </tr>
 <tr>
-<td><strong>φ (azimuth)</strong></td>
-<td>Scale 0.01°/LSB, degrees → radians</td>
+<td><strong><span class="arithmatex">\(\varphi\)</span> (azimuth)</strong></td>
+<td>Scale <span class="arithmatex">\(0.01^\circ\)</span>/LSB, degrees <span class="arithmatex">\(\rightarrow\)</span> radians</td>
 </tr>
 <tr>
 <td><strong><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> frequencies</strong></td>
-<td>Slot-dependent <abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr> formula required for λ and Type2 Doppler</td>
+<td>Slot-dependent <abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr> formula required for <span class="arithmatex">\(\lambda\)</span> and Type2 Doppler</td>
 </tr>
 <tr>
 <td><strong>Epoch</strong></td>
-<td><abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> week + TOW (ms) → UTC datetime via leap-second subtraction</td>
+<td><abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> week + TOW (ms) <span class="arithmatex">\(\rightarrow\)</span> <code>datetime64[ns]</code> in <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time (no leap seconds)</td>
 </tr>
 <tr>
 <td><strong>CN0HighRes</strong></td>
@@ -4908,15 +5155,8 @@ Add to the stored carrier phase to recover the unmitigated phase.</p>
 <ul>
 <li>Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide</li>
 <li>Septentrio AsteRx SB3 ProBase Firmware v4.15.1 Reference Guide</li>
-<li>IS-<abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>-200 Rev. N §20.3.3.5.2.4 — <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time and leap seconds</li>
-<li><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04 signal nomenclature — used verbatim for <abbr title="Signal Identifier — canVODpy format: SV|Band|Code (e.g. G01|L1|C). Uniquely identifies one observable per epoch.">SID</abbr> code strings</li>
+<li><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04 signal nomenclature, used verbatim for <abbr title="Signal Identifier — canVODpy format: SV|Band|Code (e.g. G01|L1|C). Uniquely identifies one observable per epoch.">SID</abbr> code strings</li>
 </ul>
-<hr />
-<div class="admonition example">
-<p class="admonition-title">Try it</p>
-<p><a href="../../../notebooks/_build/06_sbf_reading.html" target="_blank">06 · <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> Reading</a>
-· <a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/06_sbf_reading.py">view source on molab</a></p>
-</div>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -4968,7 +5208,7 @@ Add to the stored carrier phase to recover the unmitigated phase.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../sbf/" class="md-footer__link md-footer__link--prev" aria-label="Previous: SBF Reader">
+          <a href="../sbf/" class="md-footer__link md-footer__link--prev" aria-label="Previous: SBF">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4978,20 +5218,20 @@ Add to the stored carrier phase to recover the unmitigated phase.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                SBF Reader
+                SBF
               </div>
             </div>
           </a>
         
         
           
-          <a href="../ephemeris-sources/" class="md-footer__link md-footer__link--next" aria-label="Next: Ephemeris Sources">
+          <a href="../satellite-catalog/" class="md-footer__link md-footer__link--next" aria-label="Next: Satellite catalog">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Ephemeris Sources
+                Satellite catalog
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -5011,8 +5251,9 @@ Add to the stored carrier phase to recover the unmitigated phase.</p>
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../../../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -5029,7 +5270,7 @@ Add to the stored carrier phase to recover the unmitigated phase.</p>
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -5066,10 +5307,10 @@ Add to the stored carrier phase to recover the unmitigated phase.</p>
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../../../assets/mermaid-init.js"></script>
       

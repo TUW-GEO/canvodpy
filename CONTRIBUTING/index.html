@@ -15,7 +15,8 @@
         <link rel="canonical" href="https://canvodpy.eu/CONTRIBUTING/">
       
       
-        <link rel="prev" href="../packages/naming/overview/">
+      
+        <link rel="prev" href="../packages/utils/overview/">
       
       
         <link rel="next" href="../guides/contributor-setup/">
@@ -25,7 +26,7 @@
       
       
       <link rel="icon" href="../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
@@ -36,12 +37,12 @@
       
         
       
-      <link rel="stylesheet" href="../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="./..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="./.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="./.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -173,6 +195,7 @@
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -286,12 +303,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -300,7 +311,7 @@
         <a href="../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="././" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../impressum/" class="md-tabs__link">
+        <a href="../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -523,12 +518,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -553,7 +542,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -575,7 +564,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -589,14 +578,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../users/cli/" class="md-nav__link">
+      <a href="../guides/upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -615,26 +604,62 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -650,7 +675,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -670,14 +695,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/extensions/" class="md-nav__link">
+      <a href="../guides/settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -689,6 +714,159 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -704,7 +882,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -731,7 +909,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -758,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -778,14 +956,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../notebooks/" class="md-nav__link">
+      <a href="../packages/ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -793,6 +971,42 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -829,69 +1043,6 @@
       
         
       
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Packages
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
         
       
         
@@ -911,17 +1062,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-readers
+  How it works
 
     
   </span>
@@ -932,12 +1083,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_1">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-readers
+  How it works
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -956,88 +1107,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/rinex-format/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  RINEX v3.04 Format
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/sbf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Reader
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/sbf-decoding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Field Decoding
+  Reading GNSS files
 
     
   </span>
@@ -1064,7 +1134,7 @@
   <span class="md-ellipsis">
     
   
-  Ephemeris Sources
+  Ephemeris sources
 
     
   </span>
@@ -1076,159 +1146,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/satellite-catalog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/readers/extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1244,7 +1161,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Orbits and clocks
 
     
   </span>
@@ -1271,7 +1188,7 @@
   <span class="md-ellipsis">
     
   
-  Preprocessing Pipeline
+  Orbit and clock preparation
 
     
   </span>
@@ -1298,7 +1215,7 @@
   <span class="md-ellipsis">
     
   
-  Interpolation Methods
+  Interpolation
 
     
   </span>
@@ -1325,7 +1242,7 @@
   <span class="md-ellipsis">
     
   
-  Coordinate Systems
+  Coordinate systems
 
     
   </span>
@@ -1337,97 +1254,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/auxiliary/products/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1443,7 +1269,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Hemispheric grids
 
     
   </span>
@@ -1455,70 +1281,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1534,7 +1296,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  VOD retrieval
 
     
   </span>
@@ -1546,74 +1308,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1629,7 +1323,34 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
 
     
   </span>
@@ -1656,7 +1377,7 @@
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Versioning with Icechunk
 
     
   </span>
@@ -1683,7 +1404,7 @@
   <span class="md-ellipsis">
     
   
-  Storage Strategies
+  Write strategies
 
     
   </span>
@@ -1695,70 +1416,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1774,7 +1431,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Store metadata
 
     
   </span>
@@ -1786,70 +1443,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1865,7 +1458,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Visualization
 
     
   </span>
@@ -1898,6 +1491,16 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -1911,17 +1514,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-config
+  Data formats
 
     
   </span>
@@ -1932,12 +1535,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-config
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -1949,14 +1552,149 @@
   
   
     <li class="md-nav__item">
-      <a href="../packages/config/overview/" class="md-nav__link">
+      <a href="../packages/readers/rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/readers/rinex-v2-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v2.11
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF field decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite catalog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product registry
 
     
   </span>
@@ -1989,6 +1727,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2002,17 +1744,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-utils
+  Extend
 
     
   </span>
@@ -2023,15 +1765,69 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-utils
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your own readers and VOD calculators
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../packages/readers/building-a-reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -2047,189 +1843,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../packages/naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2258,26 +1872,19 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
       
         
       
@@ -2327,7 +1934,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2343,7 +1950,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2417,7 +2024,7 @@
   <a href="#ways-to-contribute" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Ways to Contribute
+        Ways to contribute
       </span>
     </span>
   </a>
@@ -2428,7 +2035,7 @@
   <a href="#required-tools" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Required Tools
+        Required tools
       </span>
     </span>
   </a>
@@ -2439,7 +2046,7 @@
   <a href="#contribution-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Contribution Workflow
+        Contribution workflow
       </span>
     </span>
   </a>
@@ -2450,7 +2057,7 @@
   <a href="#commit-message-format" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Commit Message Format
+        Commit message format
       </span>
     </span>
   </a>
@@ -2458,49 +2065,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pre-commit-hooks" class="md-nav__link">
+  <a href="#git-hooks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Pre-Commit Hooks
+        Git hooks
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Pre-Commit Hooks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#hooks-and-what-they-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Hooks and what they check
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fixing-a-rejected-commit" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Fixing a rejected commit
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#continuous-integration-and-coverage" class="md-nav__link">
+  <a href="#common-commands" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Continuous Integration and Coverage
+        Common commands
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continuous-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Continuous integration
       </span>
     </span>
   </a>
@@ -2511,26 +2101,14 @@
   <a href="#pull-request-guidelines" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Pull Request Guidelines
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Pull Request Guidelines">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#test-coverage-requirement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Test coverage requirement
+        Pull request guidelines
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#licensing" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2540,28 +2118,12 @@
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
-  <a href="#code-quality" class="md-nav__link">
+  <a href="#releasing-maintainers" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Code Quality
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#deploying-maintainers" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Deploying (Maintainers)
+        Releasing (maintainers)
       </span>
     </span>
   </a>
@@ -2591,7 +2153,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2618,7 +2180,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2638,14 +2200,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../guides/architecture-design/" class="md-nav__link">
+      <a href="../guides/reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2657,6 +2219,70 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2672,7 +2298,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2692,14 +2318,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../build-system/" class="md-nav__link">
+      <a href="../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2719,14 +2345,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../tooling/" class="md-nav__link">
+      <a href="../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2746,14 +2372,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../principles/" class="md-nav__link">
+      <a href="../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2761,6 +2387,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2797,10 +2432,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="">
             
   
   
@@ -2818,8 +2453,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -2842,7 +2477,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -2869,7 +2504,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -2896,7 +2531,733 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -2937,8 +3298,6 @@
       
         
       
-        
-      
     
     
     
@@ -2955,17 +3314,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -2976,12 +3335,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3027,34 +3386,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../guides/PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -3108,7 +3440,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -3135,7 +3467,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -3190,17 +3522,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3211,12 +3543,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3235,7 +3567,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3262,7 +3594,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3289,7 +3621,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3309,14 +3641,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SECURITY.md" class="md-nav__link">
+      <a href="../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3354,6 +3686,8 @@
   
     
     
+      
+        
       
         
       
@@ -3400,7 +3734,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3416,10 +3750,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -3726,96 +4087,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -3860,7 +4131,7 @@
   <a href="#ways-to-contribute" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Ways to Contribute
+        Ways to contribute
       </span>
     </span>
   </a>
@@ -3871,7 +4142,7 @@
   <a href="#required-tools" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Required Tools
+        Required tools
       </span>
     </span>
   </a>
@@ -3882,7 +4153,7 @@
   <a href="#contribution-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Contribution Workflow
+        Contribution workflow
       </span>
     </span>
   </a>
@@ -3893,7 +4164,7 @@
   <a href="#commit-message-format" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Commit Message Format
+        Commit message format
       </span>
     </span>
   </a>
@@ -3901,49 +4172,32 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pre-commit-hooks" class="md-nav__link">
+  <a href="#git-hooks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Pre-Commit Hooks
+        Git hooks
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Pre-Commit Hooks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#hooks-and-what-they-check" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Hooks and what they check
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fixing-a-rejected-commit" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Fixing a rejected commit
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#continuous-integration-and-coverage" class="md-nav__link">
+  <a href="#common-commands" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Continuous Integration and Coverage
+        Common commands
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continuous-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Continuous integration
       </span>
     </span>
   </a>
@@ -3954,26 +4208,14 @@
   <a href="#pull-request-guidelines" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Pull Request Guidelines
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Pull Request Guidelines">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#test-coverage-requirement" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Test coverage requirement
+        Pull request guidelines
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
   <a href="#licensing" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -3983,28 +4225,12 @@
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
-  
-</li>
       
         <li class="md-nav__item">
-  <a href="#code-quality" class="md-nav__link">
+  <a href="#releasing-maintainers" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Code Quality
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#deploying-maintainers" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Deploying (Maintainers)
+        Releasing (maintainers)
       </span>
     </span>
   </a>
@@ -4077,6 +4303,8 @@
       
         
       
+        
+      
     
     
     
@@ -4086,7 +4314,7 @@
           
   
   <span class="md-ellipsis">
-    Development
+    Contribute
   </span>
 
         </a>
@@ -4109,114 +4337,95 @@
 
 
 <h1 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h1>
-<p>Contributions of all kinds are welcome — bug reports, feature implementations, documentation improvements, and feedback.</p>
-<hr />
-<h2 id="ways-to-contribute">Ways to Contribute<a class="headerlink" href="#ways-to-contribute" title="Permanent link">&para;</a></h2>
-<div class="grid cards">
+<p>Contributions of all kinds are welcome: bug reports, bug fixes, features,
+documentation, and feedback. This guide covers the development setup and the
+contribution workflow. A step-by-step setup for a new machine is in the
+<a href="https://canvodpy.eu/guides/contributor-setup/">contributor setup guide</a>.</p>
+<h2 id="ways-to-contribute">Ways to contribute<a class="headerlink" href="#ways-to-contribute" title="Permanent link">&para;</a></h2>
 <ul>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M192 96c0-53 43-96 96-96s96 43 96 96v3.6c0 15.7-12.7 28.4-28.4 28.4H220.5c-15.7 0-28.4-12.7-28.4-28.4V96zm345.6 12.8c10.6 14.1 7.7 34.2-6.4 44.8l-97.8 73.3c5.3 8.9 9.3 18.7 11.8 29.1H544c17.7 0 32 14.3 32 32s-14.3 32-32 32h-96v32c0 2.6-.1 5.3-.2 7.9l83.4 62.5c14.1 10.6 17 30.7 6.4 44.8s-30.7 17-44.8 6.4l-63.1-47.3c-23.2 44.2-66.5 76.2-117.7 83.9V280c0-13.3-10.7-24-24-24s-24 10.7-24 24v230.2c-51.2-7.7-94.5-39.7-117.7-83.9l-63.1 47.3c-14.1 10.6-34.2 7.7-44.8-6.4s-7.7-34.2 6.4-44.8l83.4-62.5c-.1-2.6-.2-5.2-.2-7.9v-32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32h98.8c2.5-10.4 6.5-20.2 11.8-29.1l-97.8-73.3c-14.1-10.6-17-30.7-6.4-44.8s30.7-17 44.8-6.4L192 184c12.3-5.1 25.8-8 40-8h112c14.2 0 27.7 2.8 40 8l108.8-81.6c14.1-10.6 34.2-7.7 44.8 6.4"/></svg></span> &nbsp; <strong>Report Bugs</strong></p>
-<hr />
-<p>Open an issue at <a href="https://github.com/nfb2021/canvodpy/issues">github.com/nfb2021/canvodpy/issues</a>.
-Include your OS, Python version, and steps to reproduce.</p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M509.4 98.6c7.6-7.6 20.3-5.7 24.1 4.3 6.8 17.7 10.5 37 10.5 57.1 0 88.4-71.6 160-160 160-17.5 0-34.4-2.8-50.2-8L146.9 498.9c-28.1 28.1-73.7 28.1-101.8 0s-28.1-73.7 0-101.8L232 210.2c-5.2-15.8-8-32.6-8-50.2C224 71.6 295.6 0 384 0c20.1 0 39.4 3.7 57.1 10.5 10 3.8 11.8 16.5 4.3 24.1l-88.7 88.7c-3 3-4.7 7.1-4.7 11.3V176c0 8.8 7.2 16 16 16h41.4c4.2 0 8.3-1.7 11.3-4.7z"/></svg></span> &nbsp; <strong>Fix Bugs</strong></p>
-<hr />
-<p>Issues labelled <strong>"bug"</strong> and <strong>"help wanted"</strong> are open for PRs.
-Comment on the issue first so nobody duplicates work.</p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1l-73.6 144.2-159.9 25.4c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2l144.4-73.4L432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2l-25.3-159.9 114.4-114.5c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3z"/></svg></span> &nbsp; <strong>Implement Features</strong></p>
-<hr />
-<p>Issues labelled <strong>"enhancement"</strong> and <strong>"help wanted"</strong> are open.
-Keep scope narrow — one feature per PR.</p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M384 512H96c-53 0-96-43-96-96V96C0 43 43 0 96 0h304c26.5 0 48 21.5 48 48v288c0 20.9-13.4 38.7-32 45.3V448c17.7 0 32 14.3 32 32s-14.3 32-32 32zM96 384c-17.7 0-32 14.3-32 32s14.3 32 32 32h256v-64zm32-232c0 13.3 10.7 24 24 24h176c13.3 0 24-10.7 24-24s-10.7-24-24-24H152c-13.3 0-24 10.7-24 24m24 72c-13.3 0-24 10.7-24 24s10.7 24 24 24h176c13.3 0 24-10.7 24-24s-10.7-24-24-24z"/></svg></span> &nbsp; <strong>Improve Documentation</strong></p>
-<hr />
-<p>Improvements to docs, docstrings, or external articles are always
-appreciated. See the <a href="../guides/DEVELOPMENT/">Development Guide</a>.</p>
-</li>
+<li><strong>Report bugs</strong> at https://github.com/TUW-GEO/canvodpy/issues. Include your
+  operating system, Python version, and the steps to reproduce.</li>
+<li><strong>Fix bugs:</strong> issues labeled "bug" and "help wanted" are open for pull
+  requests. Comment on the issue first so nobody duplicates work.</li>
+<li><strong>Implement features:</strong> issues labeled "enhancement" and "help wanted" are
+  open. Keep the scope narrow: one feature per pull request.</li>
+<li><strong>Improve documentation:</strong> docs, docstrings, or external articles. See the
+  <a href="https://canvodpy.eu/guides/DEVELOPMENT/">development guide</a>.</li>
+<li><strong>Submit feedback:</strong> file feature proposals at
+  https://github.com/TUW-GEO/canvodpy/issues. Keep the scope narrow and
+  explain the intended behavior.</li>
 </ul>
-</div>
-<hr />
-<h2 id="required-tools">Required Tools<a class="headerlink" href="#required-tools" title="Permanent link">&para;</a></h2>
-<p>Two tools must be installed before <code>uv sync</code> (not managed by it):</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">macOS</label><label for="__tabbed_1_2">Linux</label><label for="__tabbed_1_3">Windows</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>brew<span class="w"> </span>install<span class="w"> </span>uv<span class="w"> </span>just
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="c1"># uv</span>
-curl<span class="w"> </span>-LsSf<span class="w"> </span>https://astral.sh/uv/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+<h2 id="required-tools">Required tools<a class="headerlink" href="#required-tools" title="Permanent link">&para;</a></h2>
+<p>Two tools must be installed before <code>uv sync</code>, which doesn't manage them:
+the <a href="https://docs.astral.sh/uv/"><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr></a> package manager and the
+<a href="https://github.com/casey/just">just</a> command runner.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># macOS</span>
+brew<span class="w"> </span>install<span class="w"> </span>uv<span class="w"> </span>just
 
-<span class="c1"># just</span>
-curl<span class="w"> </span>--proto<span class="w"> </span><span class="s1">&#39;=https&#39;</span><span class="w"> </span>--tlsv1.2<span class="w"> </span>-sSf<span class="w"> </span>https://just.systems/install.sh<span class="w"> </span><span class="se">\</span>
+<span class="c1"># Linux</span>
+curl<span class="w"> </span>-LsSf<span class="w"> </span>https://astral.sh/uv/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh
+curl<span class="w"> </span>--proto<span class="w"> </span><span class="s1">'=https'</span><span class="w"> </span>--tlsv1.2<span class="w"> </span>-sSf<span class="w"> </span>https://just.systems/install.sh<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span><span class="p">|</span><span class="w"> </span>bash<span class="w"> </span>-s<span class="w"> </span>--<span class="w"> </span>--to<span class="w"> </span>~/.local/bin
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="n">powershell</span> <span class="n">-ExecutionPolicy</span> <span class="n">ByPass</span> <span class="n">-c</span> <span class="s2">&quot;irm https://astral.sh/uv/install.ps1 | iex&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="c"># Windows</span>
+<span class="n">powershell</span> <span class="n">-ExecutionPolicy</span> <span class="n">ByPass</span> <span class="n">-c</span> <span class="s2">"irm https://astral.sh/uv/install.ps1 | iex"</span>
 <span class="n">winget</span> <span class="n">install</span> <span class="n">Casey</span><span class="p">.</span><span class="n">Just</span>
 </code></pre></div>
-</div>
-</div>
-</div>
-<p>Verify both are available:</p>
-<div class="highlight"><pre><span></span><code>just<span class="w"> </span>check-dev-tools
-</code></pre></div>
-<hr />
-<h2 id="contribution-workflow">Contribution Workflow<a class="headerlink" href="#contribution-workflow" title="Permanent link">&para;</a></h2>
+<p>The repository needs <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> 0.13 (<code>required-version</code> in <code>pyproject.toml</code>), so
+every machine writes <code>uv.lock</code> the same way. Install a 0.13 release if <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>
+refuses to start.</p>
+<h2 id="contribution-workflow">Contribution workflow<a class="headerlink" href="#contribution-workflow" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="c1"># 1. Fork on GitHub, then clone your fork</span>
 git<span class="w"> </span>clone<span class="w"> </span>git@github.com:YOUR_USERNAME/canvodpy.git
 <span class="nb">cd</span><span class="w"> </span>canvodpy
 
-<span class="c1"># 2. Install dependencies + hooks</span>
+<span class="c1"># 2. Check the tools, install dependencies and hooks</span>
+just<span class="w"> </span>check-dev-tools
 git<span class="w"> </span>submodule<span class="w"> </span>update<span class="w"> </span>--init<span class="w"> </span>--recursive
 uv<span class="w"> </span>sync
 just<span class="w"> </span>hooks
+just<span class="w"> </span>agent-skills<span class="w">   </span><span class="c1"># if you develop with Claude Code: the shared agent workflow</span>
 
 <span class="c1"># 3. Create a feature branch</span>
 git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/my-feature
 
 <span class="c1"># 4. Make changes</span>
-<span class="c1"># packages/&lt;pkg&gt;/src/canvod/&lt;pkg&gt;/  ← implementation</span>
-<span class="c1"># packages/&lt;pkg&gt;/tests/             ← tests</span>
+<span class="c1"># packages/&lt;pkg&gt;/src/canvod/&lt;pkg&gt;/   implementation</span>
+<span class="c1"># packages/&lt;pkg&gt;/tests/              tests</span>
 
 <span class="c1"># 5. Verify</span>
 just<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>just<span class="w"> </span>check
 
 <span class="c1"># 6. Commit with Conventional Commits</span>
 git<span class="w"> </span>add<span class="w"> </span>packages/&lt;pkg&gt;/src/...<span class="w"> </span>packages/&lt;pkg&gt;/tests/...
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): add RINEX 4.0 support&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(readers): add RINEX 4.0 support"</span>
 
-<span class="c1"># 7. Push + open PR</span>
+<span class="c1"># 7. Push and open a pull request</span>
 git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>feature/my-feature
 </code></pre></div>
-<hr />
-<h2 id="commit-message-format">Commit Message Format<a class="headerlink" href="#commit-message-format" title="Permanent link">&para;</a></h2>
+<h2 id="commit-message-format">Commit message format<a class="headerlink" href="#commit-message-format" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>&lt;type&gt;(&lt;scope&gt;): &lt;subject&gt;
 </code></pre></div>
-<p><strong>Types:</strong> <code>feat</code> · <code>fix</code> · <code>docs</code> · <code>refactor</code> · <code>test</code> · <code>chore</code> · <code>perf</code> · <code>ci</code></p>
-<p><strong>Scopes:</strong> <code>readers</code> · <code>aux</code> · <code>grids</code> · <code>vod</code> · <code>store</code> · <code>viz</code> · <code>utils</code> · <code>docs</code> · <code>ci</code> · <code>deps</code></p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(vod): add tau-omega calculator&quot;</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(readers): handle empty RINEX files&quot;</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs: update installation instructions&quot;</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(viz)!: redesign 3D plotting API&quot;</span><span class="w">   </span><span class="c1"># ! = breaking change</span>
+<p><strong>Types:</strong> <code>feat</code>, <code>fix</code>, <code>docs</code>, <code>refactor</code>, <code>test</code>, <code>chore</code>, <code>perf</code>, <code>ci</code></p>
+<p><strong>Scopes</strong>, for example: <code>readers</code>, <code>aux</code>, <code>config</code>, <code>grids</code>, <code>vod</code>, <code>store</code>,
+<code>viz</code>, <code>utils</code>, <code>naming</code>, <code>orchestrator</code>, <code>diagnostics</code>, <code>ops</code>, <code>ci</code>, <code>docs</code>,
+<code>deps</code> (the list in <code>[tool.commitizen.customize]</code> of <code>pyproject.toml</code>)</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(vod): add tau-omega calculator"</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix(readers): handle empty RINEX files"</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"docs: update installation instructions"</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"feat(viz)!: redesign 3D plotting API"</span><span class="w">   </span><span class="c1"># ! = breaking change</span>
 </code></pre></div>
-<p>See <a href="https://www.conventionalcommits.org/">Conventional Commits</a> for the full specification.</p>
-<hr />
-<h2 id="pre-commit-hooks">Pre-Commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Permanent link">&para;</a></h2>
-<p>When you run <code>just hooks</code>, Git hooks are installed that execute automatically on every <code>git commit</code>. These hooks enforce code quality and commit message standards. <strong>If a hook fails, the commit is rejected</strong> — your files stay staged, but no commit object is created.</p>
-<h3 id="hooks-and-what-they-check">Hooks and what they check<a class="headerlink" href="#hooks-and-what-they-check" title="Permanent link">&para;</a></h3>
+<p>See <a href="https://www.conventionalcommits.org/">Conventional Commits</a> for the full
+specification.</p>
+<h2 id="git-hooks">Git hooks<a class="headerlink" href="#git-hooks" title="Permanent link">&para;</a></h2>
+<p><code>just hooks</code> installs Git hooks that run on their own. <strong>If a hook before the
+commit fails, the commit is rejected:</strong> your files stay staged, but no commit
+is created.</p>
 <table>
 <thead>
 <tr>
 <th>Hook</th>
-<th>Stage</th>
+<th>When</th>
 <th>What it does</th>
 </tr>
 </thead>
@@ -4224,17 +4433,17 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 <tr>
 <td><strong><abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> check --fix</strong></td>
 <td>Before commit</td>
-<td>Lints Python; auto-fixes where possible (unused imports, style)</td>
+<td>Lints Python; fixes what it can (unused imports, style)</td>
 </tr>
 <tr>
 <td><strong><abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> format</strong></td>
 <td>Before commit</td>
-<td>Formats Python code (indentation, line length, quotes)</td>
+<td>Formats Python code</td>
 </tr>
 <tr>
 <td><strong><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>-lock</strong></td>
 <td>Before commit</td>
-<td>Verifies <code>uv.lock</code> matches all <code>pyproject.toml</code> files</td>
+<td>Checks that <code>uv.lock</code> matches all <code>pyproject.toml</code> files</td>
 </tr>
 <tr>
 <td><strong>trailing-whitespace</strong></td>
@@ -4244,125 +4453,108 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 <tr>
 <td><strong>check-added-large-files</strong></td>
 <td>Before commit</td>
-<td>Blocks files above the size threshold</td>
+<td>Blocks files larger than the size limit</td>
 </tr>
 <tr>
 <td><strong>detect-private-key</strong></td>
 <td>Before commit</td>
-<td>Prevents accidental commit of SSH/PGP keys</td>
+<td>Blocks committed SSH/PGP keys</td>
 </tr>
 <tr>
 <td><strong>end-of-file-fixer</strong></td>
 <td>Before commit</td>
-<td>Ensures files end with exactly one newline</td>
+<td>Ends files with exactly one newline</td>
+</tr>
+<tr>
+<td><strong>check-agent-docs</strong></td>
+<td>Before commit</td>
+<td>Checks that paths and <code>just</code> recipes named in <code>AGENTS.md</code> files and skills exist</td>
 </tr>
 <tr>
 <td><strong>commitizen</strong></td>
-<td>After writing message</td>
-<td>Validates <code>type(scope): subject</code> format</td>
+<td>After writing the message</td>
+<td>Checks the <code>type(scope): subject</code> format</td>
+</tr>
+<tr>
+<td><strong>ty-check</strong></td>
+<td>Before push</td>
+<td>Type-checks the code with ty</td>
+</tr>
+<tr>
+<td><strong>code-graph</strong></td>
+<td>After commit, merge, checkout</td>
+<td>Updates the code graph in the background</td>
 </tr>
 </tbody>
 </table>
-<h3 id="fixing-a-rejected-commit">Fixing a rejected commit<a class="headerlink" href="#fixing-a-rejected-commit" title="Permanent link">&para;</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1"><abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> auto-fixed your code</label><label for="__tabbed_2_2">Commit message rejected by commitizen</label><label for="__tabbed_2_3"><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>-lock out of date</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<p><abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> modifies files in place when it can. After rejection, stage the fixes and retry:</p>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>-u
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): your original message&quot;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<p>Your message must follow <code>type(scope): subject</code>. Example:</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># Wrong:</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;updated the reader&quot;</span>
-
-<span class="c1"># Correct:</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(readers): handle empty observation epochs&quot;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>sync
-git<span class="w"> </span>add<span class="w"> </span>uv.lock
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): your message&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
-<p><a href="../guides/contributor-setup/#14-pre-commit-hooks-and-why-your-commit-may-be-rejected"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Full hook troubleshooting</a></p>
-<hr />
-<h2 id="continuous-integration-and-coverage">Continuous Integration and Coverage<a class="headerlink" href="#continuous-integration-and-coverage" title="Permanent link">&para;</a></h2>
-<p>Every push and pull request triggers automated <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> on GitHub Actions:</p>
+<p>When a commit is rejected:</p>
 <ul>
-<li><strong>Code Quality</strong> — <abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> linting, formatting, ty type-checking, lockfile consistency</li>
-<li><strong>Test with Coverage</strong> — pytest with coverage measurement, results uploaded to <a href="https://coveralls.io/github/nfb2021/canvodpy">Coveralls</a> and posted as a PR comment</li>
-<li><strong>Platform Tests</strong> — test suite across multiple OS and Python versions</li>
+<li><strong><abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr> fixed your code:</strong> it changed the files in place. Stage the fixes
+  and commit again: <code>git add -u</code>, then the same <code>git commit</code>.</li>
+<li><strong>commitizen rejected the message:</strong> write it as <code>type(scope): subject</code>,
+  for example <code>fix(readers): handle empty observation epochs</code>.</li>
+<li><strong><abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>-lock is out of date:</strong> run <code>uv sync</code>, <code>git add uv.lock</code>, and commit
+  again.</li>
 </ul>
-<p>The <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> runs the <strong>same checks as the pre-commit hooks</strong>, so fixing hook failures locally means your PR will pass <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>.</p>
-<hr />
-<h2 id="pull-request-guidelines">Pull Request Guidelines<a class="headerlink" href="#pull-request-guidelines" title="Permanent link">&para;</a></h2>
-<div class="admonition tip">
-<p class="admonition-title">Before opening a PR</p>
+<p>More cases are in the
+<a href="https://canvodpy.eu/guides/contributor-setup/#14-pre-commit-hooks-and-why-your-commit-may-be-rejected">hook troubleshooting</a>.</p>
+<h2 id="common-commands">Common commands<a class="headerlink" href="#common-commands" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>just<span class="w"> </span>--list<span class="w">                    </span><span class="c1"># Show all commands</span>
+just<span class="w"> </span><span class="nb">test</span><span class="w">                      </span><span class="c1"># Run all tests</span>
+just<span class="w"> </span>test-coverage<span class="w">             </span><span class="c1"># With coverage report</span>
+just<span class="w"> </span>test-package<span class="w"> </span>canvod-grids<span class="w"> </span><span class="c1"># Specific package</span>
+just<span class="w"> </span>check<span class="w">                     </span><span class="c1"># Lint + format + type-check</span>
+just<span class="w"> </span>docs<span class="w">                      </span><span class="c1"># Preview documentation</span>
+just<span class="w"> </span>docs-lint<span class="w">                 </span><span class="c1"># Language check of the docs (Vale)</span>
+just<span class="w"> </span>docs-lint-changed<span class="w">         </span><span class="c1"># Vale on the pages changed since origin/main</span>
+just<span class="w"> </span>docs-links<span class="w">                </span><span class="c1"># Link check of the built docs (lychee)</span>
+</code></pre></div>
+<h2 id="continuous-integration">Continuous integration<a class="headerlink" href="#continuous-integration" title="Permanent link">&para;</a></h2>
+<p>Every push and pull request runs these checks on GitHub Actions:</p>
+<ul>
+<li><strong>Python Code Quality:</strong> checks that <code>uv.lock</code> is up to date and runs <abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr>
+  (lint and format) and ty (types). It also builds and imports every package
+  with only its declared dependencies and checks the paths named in
+  <code>AGENTS.md</code> files and skills.</li>
+<li><strong>Test with coverage:</strong> pytest with coverage, uploaded to
+  <a href="https://coveralls.io/github/TUW-GEO/canvodpy">Coveralls</a> and posted as a
+  comment on the pull request.</li>
+<li><strong>Platform Tests:</strong> the test suite on Linux, Windows, and macOS.</li>
+<li><strong>Docs Quality:</strong> a language check (Vale) of the changed pages and root
+  files, and a link check (lychee) of the built site.</li>
+</ul>
+<h2 id="pull-request-guidelines">Pull request guidelines<a class="headerlink" href="#pull-request-guidelines" title="Permanent link">&para;</a></h2>
 <ol>
-<li><code>just test &amp;&amp; just check</code> must pass with no errors.</li>
-<li>Include tests for all new functionality.</li>
-<li>New code must not reduce test coverage. Aim to increase it.</li>
-<li>Update the Zensical documentation in <code>docs/</code> if adding or changing public API, behaviour, or configuration.</li>
-<li>Target Python 3.14+.</li>
+<li><code>just test &amp;&amp; just check</code> pass with no errors.</li>
+<li>The change follows <code>CODING_STANDARDS.md</code> (rules and per-change
+   checklist); the reasons are in <code>docs/adr/</code>.</li>
+<li>Include tests for every new feature: every new public function and method
+   has at least one test, edge cases and error paths (empty inputs, invalid
+   parameters) are covered, and coverage doesn't decrease. Run
+   <code>just test-coverage</code> to see which lines are covered.</li>
+<li>Update the Zensical documentation in <code>docs/</code> with every change of behavior
+   (new logic, new code, changed code), public API, or configuration. A pull
+   request without docs to match is declined. The changed pages must pass
+   Vale (<code>just docs-lint-changed</code>) and the built site the link check
+   (<code>just docs-links</code>); <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> runs both.</li>
+<li>Target Python 3.14.</li>
 <li>Add yourself to <code>CONTRIBUTORS.md</code> if this is your first contribution.</li>
 </ol>
-</div>
-<h3 id="test-coverage-requirement">Test coverage requirement<a class="headerlink" href="#test-coverage-requirement" title="Permanent link">&para;</a></h3>
-<p>Every pull request that adds new functionality <strong>must include tests</strong>. The <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr>
-pipeline measures line coverage and posts a report on the PR. While there is no
-hard minimum percentage, reviewers will check that:</p>
-<ul>
-<li>All new public functions and methods have at least one test</li>
-<li>Edge cases and error paths are covered (empty inputs, invalid parameters)</li>
-<li>Coverage does not decrease compared to the base branch</li>
-</ul>
-<p>Run <code>just test-coverage</code> locally to inspect which lines are covered before pushing.</p>
-<h3 id="licensing">Licensing<a class="headerlink" href="#licensing" title="Permanent link">&para;</a></h3>
-<p>canVODpy is licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>.
-By submitting a pull request, you agree that your contribution is licensed under
-the same terms. The <code>LICENSE</code> and <code>NOTICE</code> files at the repository root apply to
-all source files. Per-file license headers are not required.</p>
-<hr />
-<h2 id="code-quality">Code Quality<a class="headerlink" href="#code-quality" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>just<span class="w"> </span>check<span class="w">          </span><span class="c1"># lint + format + type-check (run before committing)</span>
+<h2 id="licensing">Licensing<a class="headerlink" href="#licensing" title="Permanent link">&para;</a></h2>
+<p>canVODpy is licensed under the
+<a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. By
+submitting a pull request, you agree that your contribution is licensed under
+the same terms. The <code>LICENSE</code> and <code>NOTICE</code> files at the repository root apply
+to all source files. Per-file license headers aren't required.</p>
+<h2 id="releasing-maintainers">Releasing (maintainers)<a class="headerlink" href="#releasing-maintainers" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>just<span class="w"> </span>release-status<span class="w">                              </span><span class="c1"># commits per package since its last tag</span>
+just<span class="w"> </span>release<span class="w"> </span>canvod-store<span class="o">=</span><span class="m">1</span>.1.0<span class="w"> </span><span class="nv">canvodpy</span><span class="o">=</span><span class="m">1</span>.1.0<span class="w">   </span><span class="c1"># tests, versions, release commit on release/v1.1.0</span>
 </code></pre></div>
-<table>
-<thead>
-<tr>
-<th>Tool</th>
-<th>Role</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><abbr title="Fast Python linter and formatter written in Rust — replaces flake8, black, isort">ruff</abbr></strong></td>
-<td>Linting + formatting</td>
-</tr>
-<tr>
-<td><strong>ty</strong></td>
-<td>Type checking</td>
-</tr>
-<tr>
-<td><strong>pytest</strong></td>
-<td>Testing with coverage</td>
-</tr>
-<tr>
-<td><strong>pre-commit</strong></td>
-<td>Automatic checks on <code>git commit</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="deploying-maintainers">Deploying (Maintainers)<a class="headerlink" href="#deploying-maintainers" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>just<span class="w"> </span>bump<span class="w"> </span>minor<span class="w">     </span><span class="c1"># bump version in all pyproject.toml files</span>
-git<span class="w"> </span>push
-git<span class="w"> </span>push<span class="w"> </span>--tags<span class="w">     </span><span class="c1"># triggers GitHub Actions → publish to PyPI</span>
-</code></pre></div>
+<p>Each package has its own version; the maintainer chooses them, and canvodpy
+is part of every release. Then open a pull request for the release branch;
+after it's merged, a maintainer runs <code>just tag-release</code> on <code>main</code>, pushes
+the tags, and starts the <abbr title="Python Package Index — public Python package repository">PyPI</abbr> publish. The full steps are in the
+<a href="https://canvodpy.eu/RELEASING/">release process</a>.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -4414,7 +4606,7 @@ git<span class="w"> </span>push<span class="w"> </span>--tags<span class="w">   
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../packages/naming/overview/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Naming Convention &amp; Validation">
+          <a href="../packages/utils/overview/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Utilities">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4424,20 +4616,20 @@ git<span class="w"> </span>push<span class="w"> </span>--tags<span class="w">   
                 Previous
               </span>
               <div class="md-ellipsis">
-                Naming Convention & Validation
+                Utilities
               </div>
             </div>
           </a>
         
         
           
-          <a href="../guides/contributor-setup/" class="md-footer__link md-footer__link--next" aria-label="Next: Contributor Setup">
+          <a href="../guides/contributor-setup/" class="md-footer__link md-footer__link--next" aria-label="Next: Contributor setup">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Contributor Setup
+                Contributor setup
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -4457,8 +4649,9 @@ git<span class="w"> </span>push<span class="w"> </span>--tags<span class="w">   
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -4475,7 +4668,7 @@ git<span class="w"> </span>push<span class="w"> </span>--tags<span class="w">   
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -4512,10 +4705,10 @@ git<span class="w"> </span>push<span class="w"> </span>--tags<span class="w">   
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../assets/mermaid-init.js"></script>
       

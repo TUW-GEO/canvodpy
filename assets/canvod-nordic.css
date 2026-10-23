@@ -180,10 +180,32 @@ main{
 }
 .md-tabs__link{
   color: var(--g2) !important;
+  text-decoration: none !important;
 }
-.md-tabs__link--active,
+/* Zensical marks the active tab on the item (.md-tabs__item--active),
+   not on the link as Material does (.md-tabs__link--active). */
+.md-tabs__item--active .md-tabs__link,
 .md-tabs__link:hover{
   color: var(--g1) !important;
+}
+.md-tabs__item--active{
+  border-bottom-color: var(--g1);
+}
+
+/* Site title links home (overrides/partials/header.html) */
+.md-header__home,
+.md-header__home:visited,
+.md-header__home:hover{
+  display: block;
+  height: 100%;          /* the title texts inside are positioned absolutely */
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+/* Search shortcut hint (the "⌘K" after the search button) */
+.md-search__button::after{
+  color: var(--g1) !important;
+  background: color-mix(in srgb, var(--g5) 60%, transparent) !important;
 }
 
 /* Footer */
@@ -271,15 +293,11 @@ small, figcaption,
 .md-typeset .md-caption,
 .md-typeset .admonition-title,
 .md-nav__title,
-/* GitHub repo info — visible in header bar on desktop */
-@media screen and (min-width: 76.25em){
-  .md-header__source{
-    display: block !important;
-    max-width: 13rem;
-    width: auto;
-    margin-left: auto;
-  }
+.md-source__facts,
+.md-footer__direction{
+  color: var(--muted) !important;
 }
+
 .md-source{
   color: var(--g1) !important;
 }
@@ -402,7 +420,7 @@ nav a:hover{
 }
 
 @media screen and (min-width: 960px){
-  .md-sidebar--secondary{
+  .md-sidebar--secondary:not([hidden]){
     display: block !important;
     height: auto !important;
   }
@@ -795,16 +813,17 @@ body{
   letter-spacing: 0.01em;
 }
 
-.hero .md-button.md-button--primary,
-.hero .md-button.md-button--primary:visited,
-.md-typeset .hero .md-button.md-button--primary{
+/* Primary buttons on every page, not only the hero: the generic button
+   rule above sets the text to the link color, which is unreadable on the
+   link-colored background. */
+.md-typeset .md-button.md-button--primary,
+.md-typeset .md-button.md-button--primary:visited{
   background: var(--link);
   color: var(--bg) !important;
   text-decoration: none !important;
 }
 
-.hero .md-button.md-button--primary:hover,
-.md-typeset .hero .md-button.md-button--primary:hover{
+.md-typeset .md-button.md-button--primary:hover{
   background: var(--link-hover);
   border-color: var(--link-hover);
   color: var(--bg) !important;
@@ -846,6 +865,18 @@ body{
 /* Section dividers: generous breathing room */
 .md-typeset hr{
   margin: 2.4rem 0 !important;
+}
+/* ...but not the divider between a card's title and its text */
+.md-typeset .grid.cards hr{
+  margin: 0.5rem 0 !important;
+}
+
+/* Desktop first: a wider page than the theme's default 61rem, so text,
+   tables and diagrams get room on computer screens. */
+/* Keep header, tabs, content and footer off the screen edges */
+.md-grid{
+  max-width: 80rem;
+  padding-inline: clamp(0.5rem, 3vw, 2.5rem);
 }
 
 /* =========================================================

@@ -6,13 +6,14 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Store-level provenance, compliance validation, and inventory for Icechunk stores">
+        <meta name="description" content="The metadata that describes a whole store, how runs write it, and how to read, check, and catalog it.">
       
       
         <meta name="author" content="Nicolas Bader">
       
       
         <link rel="canonical" href="https://canvodpy.eu/packages/store-metadata/overview/">
+      
       
       
         <link rel="prev" href="../../store/storage-strategies/">
@@ -25,7 +26,7 @@
       
       
       <link rel="icon" href="../../../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
@@ -36,12 +37,12 @@
       
         
       
-      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="../../.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -173,6 +195,7 @@
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -288,12 +305,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -302,7 +313,7 @@
         <a href="../../../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../../../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../impressum/" class="md-tabs__link">
+        <a href="../../../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -525,12 +520,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -558,7 +547,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -580,7 +569,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -594,14 +583,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../users/cli/" class="md-nav__link">
+      <a href="../../../guides/upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -620,26 +609,65 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -655,7 +683,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -675,14 +703,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guides/extensions/" class="md-nav__link">
+      <a href="../../../guides/settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -694,6 +722,162 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -709,7 +893,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -736,7 +920,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -763,7 +947,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -783,14 +967,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../notebooks/" class="md-nav__link">
+      <a href="../../ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -807,12 +991,54 @@
                   
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
     
   
   
   
     
     
+      
+        
+      
+        
+      
+        
       
         
       
@@ -852,17 +1078,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Packages
+  How it works
 
     
   </span>
@@ -873,81 +1099,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_2_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_2_5">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-readers
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_1">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-readers
+  How it works
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -966,88 +1123,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/rinex-format/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  RINEX v3.04 Format
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/sbf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Reader
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/sbf-decoding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Field Decoding
+  Reading GNSS files
 
     
   </span>
@@ -1074,7 +1150,7 @@
   <span class="md-ellipsis">
     
   
-  Ephemeris Sources
+  Ephemeris sources
 
     
   </span>
@@ -1086,159 +1162,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/satellite-catalog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1254,7 +1177,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Orbits and clocks
 
     
   </span>
@@ -1281,7 +1204,7 @@
   <span class="md-ellipsis">
     
   
-  Preprocessing Pipeline
+  Orbit and clock preparation
 
     
   </span>
@@ -1308,7 +1231,7 @@
   <span class="md-ellipsis">
     
   
-  Interpolation Methods
+  Interpolation
 
     
   </span>
@@ -1335,7 +1258,7 @@
   <span class="md-ellipsis">
     
   
-  Coordinate Systems
+  Coordinate systems
 
     
   </span>
@@ -1347,97 +1270,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/products/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1453,7 +1285,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Hemispheric grids
 
     
   </span>
@@ -1465,70 +1297,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1544,7 +1312,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  VOD retrieval
 
     
   </span>
@@ -1556,74 +1324,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1639,7 +1339,34 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
 
     
   </span>
@@ -1666,7 +1393,7 @@
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Versioning with Icechunk
 
     
   </span>
@@ -1693,7 +1420,7 @@
   <span class="md-ellipsis">
     
   
-  Storage Strategies
+  Write strategies
 
     
   </span>
@@ -1705,72 +1432,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1795,7 +1456,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Store metadata
 
     
   </span>
@@ -1812,7 +1473,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Store metadata
 
     
   </span>
@@ -1838,10 +1499,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#why-store-level-metadata" class="md-nav__link">
+  <a href="#where-its-stored" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Why store-level metadata?
+        Where it's stored
       </span>
     </span>
   </a>
@@ -1849,10 +1510,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#sections" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Sections
       </span>
     </span>
   </a>
@@ -1860,10 +1521,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#standards-compliance" class="md-nav__link">
+  <a href="#how-runs-write-it" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Standards Compliance
+        How runs write it
       </span>
     </span>
   </a>
@@ -1871,10 +1532,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#metadata-schema-11-sections" class="md-nav__link">
+  <a href="#settings" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Metadata Schema (11 Sections)
+        Settings
       </span>
     </span>
   </a>
@@ -1882,104 +1543,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api" class="md-nav__link">
+  <a href="#read-the-metadata" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        API
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="API">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#collecting-and-writing-metadata" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Collecting and writing metadata
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#reading-and-checking-metadata" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Reading and checking metadata
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-metadata-incremental" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Updating metadata (incremental)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Validation
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#inventory-scanning-multiple-stores" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Inventory: scanning multiple stores
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#stac-catalog-export" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        STAC catalog export
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#display" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Display
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#storage-location" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Storage Location
+        Read the metadata
       </span>
     </span>
   </a>
@@ -1987,10 +1554,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#orchestrator-integration" class="md-nav__link">
+  <a href="#stores-on-s3" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Orchestrator Integration
+        Stores on S3
       </span>
     </span>
   </a>
@@ -1998,41 +1565,68 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#check-against-the-standards" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Configuration
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Configuration">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#canvod-settingsyaml-creator-and-publisher-processingmetadata" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>canvod-settings.yaml</code> — Creator and publisher (<code>processing.metadata:</code>)
+        Check against the standards
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#canvod-settingsyaml-spatial-extent-sitesname" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#change-the-description-amendments" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <code>canvod-settings.yaml</code> — Spatial extent (<code>sites.&lt;name&gt;:</code>)
+        Change the description: amendments
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#move-an-older-store-to-the-current-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Move an older store to the current form
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#list-the-stores-of-a-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        List the stores of a directory
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#write-the-stac-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Write the STAC catalog
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publish-a-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Publish a release
+      </span>
+    </span>
+  </a>
   
 </li>
       
@@ -2044,70 +1638,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2123,7 +1653,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Visualization
 
     
   </span>
@@ -2156,30 +1686,43 @@
       
         
       
-    
-    
-    
+        
       
+        
+      
+        
+      
+        
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
+      
         
           
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-config
+  Data formats
 
     
   </span>
@@ -2190,12 +1733,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-config
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2207,14 +1750,149 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config/overview/" class="md-nav__link">
+      <a href="../../readers/rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../readers/rinex-v2-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v2.11
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF field decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite catalog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product registry
 
     
   </span>
@@ -2247,30 +1925,37 @@
       
         
       
-    
-    
-    
-      
+        
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
+      
         
           
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-utils
+  Extend
 
     
   </span>
@@ -2281,15 +1966,69 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-utils
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your own readers and VOD calculators
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../readers/building-a-reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -2305,189 +2044,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2516,24 +2073,17 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
       
         
       
@@ -2580,7 +2130,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2596,7 +2146,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2642,7 +2192,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2669,7 +2219,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2689,14 +2239,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guides/architecture-design/" class="md-nav__link">
+      <a href="../../../guides/reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2708,6 +2258,67 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2723,7 +2334,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2743,14 +2354,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../build-system/" class="md-nav__link">
+      <a href="../../../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2770,14 +2381,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tooling/" class="md-nav__link">
+      <a href="../../../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2797,14 +2408,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../principles/" class="md-nav__link">
+      <a href="../../../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2812,6 +2423,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2845,10 +2465,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
             
   
   
@@ -2866,8 +2486,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -2890,7 +2510,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -2917,7 +2537,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -2944,7 +2564,727 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -2985,8 +3325,6 @@
       
         
       
-        
-      
     
     
     
@@ -3000,17 +3338,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -3021,12 +3359,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3072,34 +3410,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../guides/PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -3153,7 +3464,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -3180,7 +3491,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -3232,17 +3543,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3253,12 +3564,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3277,7 +3588,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3304,7 +3615,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3331,7 +3642,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3351,14 +3662,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../SECURITY.md" class="md-nav__link">
+      <a href="../../../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3396,6 +3707,8 @@
   
     
     
+      
+        
       
         
       
@@ -3442,7 +3755,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3458,10 +3771,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -3768,96 +4108,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -3899,10 +4149,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#why-store-level-metadata" class="md-nav__link">
+  <a href="#where-its-stored" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Why store-level metadata?
+        Where it's stored
       </span>
     </span>
   </a>
@@ -3910,10 +4160,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#sections" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Overview
+        Sections
       </span>
     </span>
   </a>
@@ -3921,10 +4171,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#standards-compliance" class="md-nav__link">
+  <a href="#how-runs-write-it" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Standards Compliance
+        How runs write it
       </span>
     </span>
   </a>
@@ -3932,10 +4182,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#metadata-schema-11-sections" class="md-nav__link">
+  <a href="#settings" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Metadata Schema (11 Sections)
+        Settings
       </span>
     </span>
   </a>
@@ -3943,104 +4193,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#api" class="md-nav__link">
+  <a href="#read-the-metadata" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        API
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="API">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#collecting-and-writing-metadata" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Collecting and writing metadata
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#reading-and-checking-metadata" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Reading and checking metadata
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#updating-metadata-incremental" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Updating metadata (incremental)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Validation
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#inventory-scanning-multiple-stores" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Inventory: scanning multiple stores
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#stac-catalog-export" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        STAC catalog export
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#display" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Display
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#storage-location" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Storage Location
+        Read the metadata
       </span>
     </span>
   </a>
@@ -4048,10 +4204,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#orchestrator-integration" class="md-nav__link">
+  <a href="#stores-on-s3" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Orchestrator Integration
+        Stores on S3
       </span>
     </span>
   </a>
@@ -4059,41 +4215,68 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#check-against-the-standards" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Configuration
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Configuration">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#canvod-settingsyaml-creator-and-publisher-processingmetadata" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        <code>canvod-settings.yaml</code> — Creator and publisher (<code>processing.metadata:</code>)
+        Check against the standards
       </span>
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#canvod-settingsyaml-spatial-extent-sitesname" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#change-the-description-amendments" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        <code>canvod-settings.yaml</code> — Spatial extent (<code>sites.&lt;name&gt;:</code>)
+        Change the description: amendments
       </span>
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#move-an-older-store-to-the-current-form" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Move an older store to the current form
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#list-the-stores-of-a-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        List the stores of a directory
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#write-the-stac-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Write the STAC catalog
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publish-a-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Publish a release
+      </span>
+    </span>
+  </a>
   
 </li>
       
@@ -4157,12 +4340,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -4172,7 +4349,7 @@
           
   
   <span class="md-ellipsis">
-    Usage
+    Retrieve VOD
   </span>
 
         </a>
@@ -4198,26 +4375,6 @@
         
       
         
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      
-  
-  
-    
-    
       
         
       
@@ -4244,36 +4401,7 @@
           
   
   <span class="md-ellipsis">
-    Packages
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-    
-  
-
-      
-        
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-    
-      <li class="md-path__item">
-        <a href="././" class="md-path__link">
-          
-  
-  <span class="md-ellipsis">
-    canvod-store-metadata
+    How it works
   </span>
 
         </a>
@@ -4296,289 +4424,803 @@
 
 
 <h1 id="canvod-store-metadata">canvod-store-metadata<a class="headerlink" href="#canvod-store-metadata" title="Permanent link">&para;</a></h1>
-<h2 id="why-store-level-metadata">Why store-level metadata?<a class="headerlink" href="#why-store-level-metadata" title="Permanent link">&para;</a></h2>
-<p><abbr title="GNSS Transmissometry — method using differential SNR between canopy and reference receivers to estimate vegetation properties">GNSS-T</abbr> <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> retrievals produce versioned <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> stores that may be shared,
-published, or revisited years later. Without embedded provenance, critical
-questions become unanswerable:</p>
-<ul>
-<li><strong>Reproducibility</strong> — which software version, config, and ephemeris source
-  produced this store? The <code>ProcessingProvenance</code> and <code>ConfigSnapshot</code> sections
-  capture the full environment (down to Python version, <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> lockfile hash, and
-  worker configuration) so any store can be reproduced from scratch.</li>
-<li><strong><abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> registration</strong> — TU Wien Repositum and Zenodo require <abbr title="DataCite Metadata Schema — required metadata for DOI registration of research datasets">DataCite</abbr> 4.5
-  metadata (creator, title, identifier, rights). Rather than filling these
-  manually at publication time, canvodpy collects them automatically during
-  ingestion.</li>
-<li><strong>Discovery</strong> — <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> and <abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr> metadata enable stores to be found by
-  spatiotemporal queries, indexed in geospatial catalogs, and opened by tools
-  that understand these conventions (e.g. <code>pystac</code>, <code>intake-stac</code>).</li>
-<li><strong>Audit trail</strong> — the <code>Instruments</code> section records which receivers, file
-  formats, and observation counts went into the store, linking the data product
-  back to the physical hardware.</li>
-</ul>
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p><code>canvod-store-metadata</code> manages <strong>store-level provenance</strong> — the metadata that
-describes an entire <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> store rather than individual files within it. It
-captures who created the store, what software was used, which site and receivers
-contributed data, what time period is covered, and whether the metadata meets
-scientific data standards.</p>
+<p><code>canvod-store-metadata</code> keeps the metadata that describes a whole store:
+who created it, with which software and settings, for which site and
+receivers, and which period it covers. Runs write it to both stores of a
+site. You can read it, check it for missing fields, and list the stores of
+a directory with it.</p>
 <div class="admonition info">
-<p class="admonition-title">Not to be confused with the file registry</p>
-<p>The <strong>file registry</strong> (<code>{group}/metadata/table</code>) in <code>canvod-store</code> tracks
-individual ingested files (hash, filename, temporal range). Store metadata
-is a separate layer that describes the store as a whole — analogous to the
-difference between a library catalogue entry (store metadata) and the
-individual book records (file registry).</p>
+<p class="admonition-title">Store metadata and the log book</p>
+<p>The log book of a group (<code>{group}/metadata/table</code>, in <code>canvod-store</code>)
+has one row per stored file. The store metadata describes the store as
+a whole.</p>
 </div>
-<hr />
-<h2 id="standards-compliance">Standards Compliance<a class="headerlink" href="#standards-compliance" title="Permanent link">&para;</a></h2>
-<p>Store metadata aligns with four established standards:</p>
+<h2 id="where-its-stored">Where it's stored<a class="headerlink" href="#where-its-stored" title="Permanent link">&para;</a></h2>
+<p>A store's metadata has three parts (ADR 0014), each kept where <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr>
+keeps that kind of information:</p>
 <table>
 <thead>
 <tr>
-<th>Standard</th>
-<th>Version</th>
-<th>Purpose</th>
+<th>Part</th>
+<th>Where</th>
+<th>What it holds</th>
+<th>Changes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="https://schema.datacite.org/"><abbr title="DataCite Metadata Schema — required metadata for DOI registration of research datasets">DataCite</abbr></a></td>
-<td>4.5</td>
-<td>Mandatory fields for <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> registration (TU Wien Repositum)</td>
+<td><strong>Repository metadata</strong></td>
+<td><abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr>'s repository metadata: on no branch, in no snapshot</td>
+<td>What describes the store as a whole: identity, creator, publisher and license, site and position, receivers or <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analyses, references</td>
+<td>Fixed fields never; amendable fields only by amendment</td>
 </tr>
 <tr>
-<td><a href="https://wiki.esipfed.org/Attribute_Convention_for_Data_Discovery"><abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr></a></td>
-<td>1.3</td>
-<td>Attribute Convention for Data Discovery in NetCDF/<abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr></td>
+<td><strong>Snapshot summary</strong></td>
+<td>Root attributes of each snapshot</td>
+<td>What the snapshot holds: time coverage, per-receiver epochs, signals, variables, time range and position, constellations</td>
+<td>Written by every commit, from the data of that commit</td>
 </tr>
 <tr>
-<td><a href="https://stacspec.org/"><abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr></a></td>
-<td>1.1</td>
-<td>SpatioTemporal Asset Catalog for geospatial data</td>
-</tr>
-<tr>
-<td><a href="https://www.w3.org/TR/prov-overview/">W3C PROV</a></td>
-<td>—</td>
-<td>Provenance model (software, environment, lineage)</td>
+<td><strong>Commit metadata</strong></td>
+<td><abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr>'s metadata of each commit</td>
+<td>How the commit was made: software versions, environment, settings and their hash, hash of <code>uv.lock</code></td>
+<td>Written by every commit</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="metadata-schema-11-sections">Metadata Schema (11 Sections)<a class="headerlink" href="#metadata-schema-11-sections" title="Permanent link">&para;</a></h2>
-<p>The root <code>StoreMetadata</code> model composes 11 section models, each a frozen
-Pydantic <code>BaseModel</code>:</p>
+<p>Every commit also writes a copy of the repository metadata into the root
+attributes, in standard form: flat CF and <abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr> global attributes, the
+<abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> conventions for <code>proj</code>, <code>license</code> and <code>stac</code>, and the lossless copy
+under <code>canvod:repository_metadata</code>. So each snapshot shows its store as
+it was when it was committed, and tools that read only the root group,
+such as <abbr title="Labelled multi-dimensional arrays for Python — extends NumPy with named dims, coords, and attrs">xarray</abbr>, see it too. The <code>uv.lock</code> and <code>pyproject.toml</code> are those
+of the project the run starts in: the nearest directory, from the working
+directory up, that holds both. A run outside such a project records
+neither. Their text is stored once per hash, in the reserved group
+<code>canvod</code>. A run with a lockfile the store doesn't hold yet stores it in a
+commit of its own ("Store the lockfile in use") before its first data
+commit, so the data commits of two runs never both write it. Two runs
+that start with the same new lockfile store it once:</p>
+<div class="highlight"><pre><span></span><code>store_root/                    # root attributes: root copy and snapshot summary
+├── canvod/
+│   └── environments/
+│       └── &lt;uv.lock hash&gt;/    # uv_lock, pyproject_toml (text as bytes)
+├── canopy_01/
+│   ├── SNR
+│   ├── ...
+│   └── metadata/
+│       ├── table              # log book (canvod-store)
+│       └── sbf_obs            # SBF receivers only (canvod-store)
+└── reference_01_canopy_01/
+    └── ...
+</code></pre></div>
+<p>The <strong>fixed fields</strong> say which store this is: the store id, UUID, store
+type, source format, naming authority, catalog link, and creation date.
+The store id is <code>{site}-{store folder}</code>, from the site name in lowercase
+and the store's folder name (<code>gnss</code>, <code>vod</code>, or <code>vod-recompute</code> for a second
+<abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store).
+Every other field of the repository metadata is <strong>amendable</strong>.</p>
+<h2 id="sections">Sections<a class="headerlink" href="#sections" title="Permanent link">&para;</a></h2>
+<p><code>read_metadata()</code> combines the three parts of one snapshot into one
+<code>StoreMetadata</code>, with a <code>metadata_version</code> and these sections:</p>
 <table>
 <thead>
 <tr>
 <th>Section</th>
 <th>Model</th>
-<th>Fields</th>
-<th>What it captures</th>
+<th>Content</th>
+<th>Part</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>1. Identity &amp; Discovery</td>
+<td><code>identity</code></td>
 <td><code>StoreIdentity</code></td>
-<td>id, title, description, store_type, source_format, keywords, conventions</td>
-<td>Unique identification and search</td>
+<td>ID, UUID, naming authority, catalog link, title, description, store type, source format, keywords</td>
+<td>Repository metadata</td>
 </tr>
 <tr>
-<td>2. Creator</td>
+<td><code>creator</code></td>
 <td><code>Creator</code></td>
-<td>name, email, orcid, institution, institution_ror, department</td>
-<td>Who created the store</td>
+<td>Name, email, <abbr title="Open Researcher and Contributor ID — persistent digital identifier for researchers">ORCID</abbr>, institution and its <abbr title="Research Organization Registry — persistent identifier for research institutions">ROR</abbr> ID, department, research group, website</td>
+<td>Repository metadata</td>
 </tr>
 <tr>
-<td>3. Publisher &amp; Rights</td>
+<td><code>publisher</code></td>
 <td><code>Publisher</code></td>
-<td>name, url, license (<abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr>), license_uri</td>
-<td>Data access rights</td>
+<td>Name, URL, license (<abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr> identifier or <code>other</code>), license URI</td>
+<td>Repository metadata</td>
 </tr>
 <tr>
-<td>4. Temporal Extent</td>
+<td><code>temporal</code></td>
 <td><code>TemporalExtent</code></td>
-<td>created, updated, collected_start/end, duration, resolution</td>
-<td>Time coverage</td>
+<td>Created; updated, first and last stored epoch, duration, resolution (the finest cadence of any day)</td>
+<td>Created: repository metadata; the rest: snapshot summary</td>
 </tr>
 <tr>
-<td>5. Spatial Extent &amp; Site</td>
+<td><code>spatial</code></td>
 <td><code>SpatialExtent</code></td>
-<td>site name/country, lat/lon/alt (<abbr title="World Geodetic System 1984 — reference ellipsoid and datum used by GPS (Navipedia: Reference Frames in GNSS)">WGS84</abbr>), bounding box</td>
-<td>Geographic coverage</td>
+<td>Site name, description and country, latitude, longitude, altitude (<abbr title="World Geodetic System 1984 — reference ellipsoid and datum used by GPS (Navipedia: Reference Frames in GNSS)">WGS84</abbr>); bounding box</td>
+<td>Site and position: repository metadata; bounding box: snapshot summary</td>
 </tr>
 <tr>
-<td>6. Instruments</td>
+<td><code>instruments</code></td>
 <td><code>Instruments</code></td>
-<td>platform, per-receiver: type, directory, format, epochs, SIDs</td>
-<td>Hardware provenance</td>
+<td>Platform; per receiver: type, directory, reader format, hardware, antenna; epochs, signals, variables, time range, cadence per time range, position</td>
+<td>Receiver description: repository metadata; counts, time range, cadences, position: snapshot summary</td>
 </tr>
 <tr>
-<td>7. Software Provenance</td>
-<td><code>ProcessingProvenance</code></td>
-<td>software versions, Python, <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>, processing level, lineage</td>
-<td>Software environment</td>
+<td><code>vod_analyses</code></td>
+<td><code>VodAnalysisInfo</code></td>
+<td>Per <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analysis of a <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store: its canopy and reference receiver</td>
+<td>Repository metadata</td>
 </tr>
 <tr>
-<td>8. Environment</td>
-<td><code>Environment</code></td>
-<td>hostname, OS, arch, CPU count, memory, disk, worker config</td>
-<td>Compute environment</td>
-</tr>
-<tr>
-<td>9. Config Snapshot</td>
-<td><code>ConfigSnapshot</code></td>
-<td>processing params, preprocessing, compression, config hash</td>
-<td>Reproducibility</td>
-</tr>
-<tr>
-<td>10. References</td>
+<td><code>references</code></td>
 <td><code>References</code></td>
-<td>repository, documentation, publications, funding</td>
-<td>Related resources</td>
+<td>Repository, documentation, publications, funding</td>
+<td>Repository metadata</td>
 </tr>
 <tr>
-<td>11. Summaries</td>
+<td><code>summaries</code></td>
 <td><code>Summaries</code></td>
-<td>total_epochs, total_sids, constellations, variables, history</td>
-<td>Aggregate statistics</td>
+<td>Number of epochs and signals, constellations, variables, number of files</td>
+<td>Snapshot summary</td>
+</tr>
+<tr>
+<td><code>processing</code></td>
+<td><code>ProcessingProvenance</code></td>
+<td>Versions of canvodpy and of the 11 <code>canvod-*</code> packages it installs, and of the main libraries (<abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr>, <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr>, <abbr title="Labelled multi-dimensional arrays for Python — extends NumPy with named dims, coords, and attrs">xarray</abbr>, Dask, NumPy, <abbr title="Fast DataFrame library written in Rust — used for metadata catalogs and inventory">Polars</abbr>, Pydantic); Python and <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> versions; processing level; facility: the institution that processed the data (<code>processing.metadata.institution</code>)</td>
+<td>Commit metadata</td>
+</tr>
+<tr>
+<td><code>environment</code></td>
+<td><code>Environment</code></td>
+<td>Operating system, architecture, CPUs, memory, free disk space, the hash and text of <code>uv.lock</code>, and the text of <code>pyproject.toml</code></td>
+<td>Commit metadata</td>
+</tr>
+<tr>
+<td><code>config</code></td>
+<td><code>ConfigSnapshot</code></td>
+<td>The processing, preprocessing, auxiliary data, compression, <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr>, and signal settings, and their hash, without the settings of one computer (below)</td>
+<td>Commit metadata</td>
+</tr>
+<tr>
+<td><code>amendments</code></td>
+<td><code>Amendment</code></td>
+<td>Each amendment: field, old and new value, reason, who, when</td>
+<td>Repository metadata</td>
+</tr>
+<tr>
+<td><code>migration</code></td>
+<td><code>MigrationRecord</code></td>
+<td>For a migrated store: old id, who migrated it and when, fields given</td>
+<td>Repository metadata</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2 id="api">API<a class="headerlink" href="#api" title="Permanent link">&para;</a></h2>
-<h3 id="collecting-and-writing-metadata">Collecting and writing metadata<a class="headerlink" href="#collecting-and-writing-metadata" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">collect_metadata</span><span class="p">,</span> <span class="n">write_metadata</span>
-
-<span class="c1"># Collect metadata from the current environment and config</span>
-<span class="n">metadata</span> <span class="o">=</span> <span class="n">collect_metadata</span><span class="p">(</span>
-    <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
-    <span class="n">site_name</span><span class="o">=</span><span class="s2">&quot;ExampleSite&quot;</span><span class="p">,</span>
-    <span class="n">site_config</span><span class="o">=</span><span class="n">site_config</span><span class="p">,</span>
-    <span class="n">store_type</span><span class="o">=</span><span class="s2">&quot;rinex_store&quot;</span><span class="p">,</span>
-    <span class="n">source_format</span><span class="o">=</span><span class="s2">&quot;rinex3&quot;</span><span class="p">,</span>
-    <span class="n">store_path</span><span class="o">=</span><span class="n">store_path</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="c1"># Write to the Icechunk store root attributes</span>
-<span class="n">write_metadata</span><span class="p">(</span><span class="n">store_path</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="reading-and-checking-metadata">Reading and checking metadata<a class="headerlink" href="#reading-and-checking-metadata" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_metadata</span><span class="p">,</span> <span class="n">metadata_exists</span>
-
-<span class="k">if</span> <span class="n">metadata_exists</span><span class="p">(</span><span class="n">store_path</span><span class="p">):</span>
-    <span class="n">meta</span> <span class="o">=</span> <span class="n">read_metadata</span><span class="p">(</span><span class="n">store_path</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">identity</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">creator</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">temporal</span><span class="o">.</span><span class="n">collected_start</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="updating-metadata-incremental">Updating metadata (incremental)<a class="headerlink" href="#updating-metadata-incremental" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">update_metadata</span>
-
-<span class="c1"># After ingesting new data, update timestamps and summaries</span>
-<span class="n">update_metadata</span><span class="p">(</span><span class="n">store_path</span><span class="p">,</span> <span class="p">{</span>
-    <span class="s2">&quot;temporal.updated&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-03-09T12:00:00Z&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;temporal.collected_end&quot;</span><span class="p">:</span> <span class="s2">&quot;2025-031&quot;</span><span class="p">,</span>
-<span class="p">})</span>
-</code></pre></div>
-<h3 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_all</span><span class="p">,</span> <span class="n">validate_datacite</span><span class="p">,</span> <span class="n">validate_fair</span>
-
-<span class="c1"># Check compliance against all standards</span>
-<span class="n">results</span> <span class="o">=</span> <span class="n">validate_all</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
-<span class="c1"># → {&quot;datacite&quot;: [...issues...], &quot;acdd&quot;: [...], &quot;stac&quot;: [...], &quot;fair&quot;: [...]}</span>
-
-<span class="c1"># Check DataCite mandatory fields only</span>
-<span class="n">issues</span> <span class="o">=</span> <span class="n">validate_datacite</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
-
-<span class="c1"># Check FAIR principles</span>
-<span class="n">issues</span> <span class="o">=</span> <span class="n">validate_fair</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
-</code></pre></div>
-<h3 id="inventory-scanning-multiple-stores">Inventory: scanning multiple stores<a class="headerlink" href="#inventory-scanning-multiple-stores" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">scan_stores</span>
-
-<span class="c1"># Walk a directory tree, find all Icechunk stores, read their metadata</span>
-<span class="n">df</span> <span class="o">=</span> <span class="n">scan_stores</span><span class="p">(</span><span class="n">root_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/data/stores/&quot;</span><span class="p">))</span>
-<span class="c1"># → Polars DataFrame with one row per store:</span>
-<span class="c1">#   id, title, store_type, source_format, site, creator, time_start, time_end, ...</span>
-</code></pre></div>
-<h3 id="stac-catalog-export"><abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> catalog export<a class="headerlink" href="#stac-catalog-export" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">scan_stores_as_stac</span><span class="p">,</span> <span class="n">write_stac_catalog</span>
-
-<span class="c1"># Generate a STAC Catalog JSON</span>
-<span class="n">stac</span> <span class="o">=</span> <span class="n">scan_stores_as_stac</span><span class="p">(</span><span class="n">root_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/data/stores/&quot;</span><span class="p">))</span>
-
-<span class="c1"># Write STAC catalog and collection files to disk</span>
-<span class="n">write_stac_catalog</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/data/stac/&quot;</span><span class="p">))</span>
-</code></pre></div>
-<h3 id="display">Display<a class="headerlink" href="#display" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">show_metadata</span><span class="p">,</span> <span class="n">format_metadata</span>
-
-<span class="c1"># Pretty-print metadata to the terminal</span>
-<span class="n">show_metadata</span><span class="p">(</span><span class="n">store_path</span><span class="p">)</span>
-
-<span class="c1"># Get formatted string for embedding in reports</span>
-<span class="n">text</span> <span class="o">=</span> <span class="n">format_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
-</code></pre></div>
-<hr />
-<h2 id="storage-location">Storage Location<a class="headerlink" href="#storage-location" title="Permanent link">&para;</a></h2>
-<p>Metadata is stored as a JSON-serializable dictionary in the <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> store's <strong>root
-attributes</strong> under the key <code>canvod_metadata</code>:</p>
-<div class="highlight"><pre><span></span><code>store_root/
-├── .zattrs                    ← contains {&quot;canvod_metadata&quot;: {...}}
-├── canopy_01/
-│   ├── SNR
-│   ├── metadata/
-│   │   ├── table/             ← file registry (canvod-store)
-│   │   └── sbf_obs/           ← SBF quality monitoring (canvod-store)
-│   └── ...
-└── reference_01/
-    └── ...
-</code></pre></div>
-<hr />
-<h2 id="orchestrator-integration">Orchestrator Integration<a class="headerlink" href="#orchestrator-integration" title="Permanent link">&para;</a></h2>
-<p>The orchestrator writes metadata automatically during data ingestion:</p>
+<p>Stores are shared, so they record nothing that belongs to one computer
+or its user account. The recorded settings leave out the folders of the
+computer that ran: <code>gnss_site_data_root</code>, <code>aux_data_dir</code>,
+<code>shared_aux_cache_dir</code>, <code>log_dir</code>, and <code>stores_root_dir</code> when it is a
+local folder (an <code>s3://</code> URL is kept). The same settings on two computers
+therefore give the same hash. The content settings record who set them by
+<code>processing.metadata.initials</code> (the author when no initials are set),
+and no host name is recorded. Credentials are never recorded. With
+<code>processing.metadata.record_machine: false</code> the <code>environment</code> of a commit
+leaves the computer out too: its operating system, architecture, CPUs,
+memory and free disk are null. Stores that are published, such as the
+<a href="../../../guides/reference-stores/">reference stores</a>, set it. Stores
+written by canVODpy before 1.0.0 keep the folders, host name and
+<code>user@host</code> they recorded: their snapshots can't be changed.</p>
+<p>The field names follow three metadata standards: the <abbr title="DataCite Metadata Schema — required metadata for DOI registration of research datasets">DataCite</abbr> Metadata Schema 4.5, the
+Attribute Convention for Data Discovery (<abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr>) 1.3, and the SpatioTemporal
+Asset Catalog (<abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr>) 1.1.</p>
+<h2 id="how-runs-write-it">How runs write it<a class="headerlink" href="#how-runs-write-it" title="Permanent link">&para;</a></h2>
+<p>Every run writes the metadata itself, whether it starts from the command
+line (<code>canvodpy run</code>), from Python (<code>Site.pipeline()</code>, <code>site.vod</code>,
+<code>FluentWorkflow.to_store()</code>, the write methods of <code>GnssResearchSite</code>) or
+from Airflow. All of them take the same step, <code>ensure_store_metadata()</code>,
+before they write data:</p>
 <ol>
-<li><strong>First write</strong> to a new store: <code>collect_metadata()</code> gathers all 11 sections, <code>write_metadata()</code> persists them</li>
-<li><strong>Every subsequent write</strong>: <code>update_metadata()</code> refreshes the <code>temporal.updated</code> timestamp and increments summaries</li>
+<li>Before the first write to a store, <code>collect_metadata()</code> builds the
+   repository metadata from the settings, and <code>write_metadata()</code> writes
+   it. A store never holds data without its metadata: a commit to a
+   store without repository metadata is refused, and nothing is
+   committed. Code that writes to a store directly, without a run, gives
+   it its metadata first.</li>
+<li>Every commit, of a run or of any other canVODpy command, writes the
+   root copy and the snapshot summary in the same commit as the data,
+   and records the commit metadata. The snapshot summary therefore can't
+   disagree with the data it describes. A process rebuilds the summary
+   from the whole store at its first commit to a store's branch; from
+   then on it updates the summary from the log-book rows each commit
+   adds, including rows another run committed in between, so a commit
+   costs the same however many days the store holds (ADR 0021). It
+   rebuilds the summary from the whole store again after a failed
+   commit, when a group's log book was written anew (its columns
+   changed, it shrank, or its last known row differs), and for a store
+   with a group written by appending or a log book without row numbers.
+   <code>summarize_store()</code> always reads the whole store. A commit that only gives days
+   their block and writes no data keeps the summary of the snapshot
+   before, with its time updated; it refuses any other change, compared
+   with the snapshot it started from.</li>
+<li>A run that writes a receiver (<abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store) or a <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analysis (<abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>
+   store) that the repository metadata doesn't list is refused. The
+   error names the <code>canvodpy store amend</code> command that adds it.
+   <code>FluentWorkflow.to_store()</code> writes <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> to the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analysis of the
+   settings that pairs the receivers of its <code>.vod()</code> step, and refuses a
+   pair without one.</li>
 </ol>
-<p>No user action is required — metadata collection is a side effect of the standard <code>process_date()</code> / <code>process_range()</code> pipeline.</p>
-<hr />
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
-<p>Store metadata draws from two config sections:</p>
-<h3 id="canvod-settingsyaml-creator-and-publisher-processingmetadata"><code>canvod-settings.yaml</code> — Creator and publisher (<code>processing.metadata:</code>)<a class="headerlink" href="#canvod-settingsyaml-creator-and-publisher-processingmetadata" title="Permanent link">&para;</a></h3>
+<p>A failed metadata write fails the commit, and the run stops with an
+error. A commit whose root group differs from the repository metadata,
+for example after an edit by hand, is refused.</p>
+<p>The history of a store is its commit log. <code>show_metadata()</code> lists it,
+and <code>canvodpy store log SITE</code> draws it as a graph. Each commit records
+its settings, so the preprocessing of a write can be read from its
+commit. The full record of each file is in the group's log book (see
+<a href="../../ops/overview/#the-preprocessing-record">The preprocessing record</a>).</p>
+<h2 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
+<p>The metadata comes from two parts of <code>canvod-settings.yaml</code>.</p>
+<p>The creator and publisher come from <code>processing.metadata</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">processing</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">metadata</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">author</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Nicolas</span><span class="nv"> </span><span class="s">Bader&quot;</span>
-<span class="w">    </span><span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;support@canvodpy.eu&quot;</span>
-<span class="w">    </span><span class="nt">orcid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;0000-0002-1234-5678&quot;</span><span class="w">          </span><span class="c1"># optional</span>
-<span class="w">    </span><span class="nt">institution</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;TU</span><span class="nv"> </span><span class="s">Wien&quot;</span>
-<span class="w">    </span><span class="nt">institution_ror</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://ror.org/04d836q62&quot;</span><span class="w">  </span><span class="c1"># optional</span>
-<span class="w">    </span><span class="nt">department</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Geodesy</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">Geoinformation&quot;</span>
-<span class="w">    </span><span class="nt">license</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Apache-2.0&quot;</span><span class="w">                 </span><span class="c1"># SPDX identifier</span>
-<span class="w">    </span><span class="nt">publisher</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;TU</span><span class="nv"> </span><span class="s">Wien&quot;</span>
-<span class="w">    </span><span class="nt">naming_authority</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;at.ac.tuwien.geo&quot;</span>
+<span class="w">    </span><span class="nt">author</span><span class="p">:</span><span class="w"> </span><span class="s">"Jane</span><span class="nv"> </span><span class="s">Doe"</span>
+<span class="w">    </span><span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="s">"jane.doe@example.org"</span>
+<span class="w">    </span><span class="nt">orcid</span><span class="p">:</span><span class="w"> </span><span class="s">"0000-0002-1825-0097"</span><span class="w">         </span><span class="c1"># optional, ORCID's test person</span>
+<span class="w">    </span><span class="nt">institution</span><span class="p">:</span><span class="w"> </span><span class="s">"Example</span><span class="nv"> </span><span class="s">University"</span>
+<span class="w">    </span><span class="c1"># institution_ror: "https://ror.org/&lt;id&gt;"  # optional</span>
+<span class="w">    </span><span class="nt">department</span><span class="p">:</span><span class="w"> </span><span class="s">"Department</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">Geodesy"</span><span class="w">     </span><span class="c1"># optional</span>
+<span class="w">    </span><span class="nt">license</span><span class="p">:</span><span class="w"> </span><span class="s">"CC-BY-4.0"</span><span class="w">                 </span><span class="c1"># required to create a store, SPDX identifier</span>
+<span class="w">    </span><span class="nt">license_uri</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">                    </span><span class="c1"># the license text; required when license is "other"</span>
+<span class="w">    </span><span class="nt">publisher</span><span class="p">:</span><span class="w"> </span><span class="s">"Example</span><span class="nv"> </span><span class="s">University"</span><span class="w">      </span><span class="c1"># required to create a store</span>
+<span class="w">    </span><span class="nt">naming_authority</span><span class="p">:</span><span class="w"> </span><span class="s">"org.example"</span><span class="w">      </span><span class="c1"># required to create a store</span>
+<span class="w">    </span><span class="nt">initials</span><span class="p">:</span><span class="w"> </span><span class="s">"JD"</span><span class="w">                       </span><span class="c1"># required to amend or migrate</span>
 </code></pre></div>
-<h3 id="canvod-settingsyaml-spatial-extent-sitesname"><code>canvod-settings.yaml</code> — Spatial extent (<code>sites.&lt;name&gt;:</code>)<a class="headerlink" href="#canvod-settingsyaml-spatial-extent-sitesname" title="Permanent link">&para;</a></h3>
+<p><abbr title="DataCite Metadata Schema — required metadata for DOI registration of research datasets">DataCite</abbr> requires the publisher and <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> requires the license, so a
+store isn't created without them.</p>
+<p>A first run, and <code>config validate</code>, refuse to start when a setting the
+new store needs is missing (the site's store description, the publisher,
+the license or the naming authority).</p>
+<p>The license is an identifier from the <a href="https://spdx.org/licenses/"><abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr> license list</a>
+(a copy of version 3.27.0 comes with the package), as <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> 1.1 asks. A
+license outside <abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr> is <code>other</code>, with <code>license_uri</code> naming its text.
+Any other value is refused when a store is created or the license is
+amended; the error names the field and points to the <abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr> list.</p>
+<p>The license is one of the metadata rules: rules that a standard sets for
+a field. The models of the package check them when metadata is made,
+so a store isn't created, and a field isn't amended, with a value that
+breaks one. The error names the field, the value, and the rule.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Rule</th>
+<th>Standard</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>publisher.license</code></td>
+<td><abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr> identifier, or <code>other</code> with <code>license_uri</code></td>
+<td><abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr>, <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> 1.1</td>
+</tr>
+<tr>
+<td><code>creator.orcid</code></td>
+<td><code>0000-0000-0000-000X</code>, alone or after <code>https://orcid.org/</code>, with a valid check digit</td>
+<td><abbr title="Open Researcher and Contributor ID — persistent digital identifier for researchers">ORCID</abbr></td>
+</tr>
+<tr>
+<td><code>creator.institution_ror</code></td>
+<td>Nine characters starting with <code>0</code>, alone or after <code>https://ror.org/</code></td>
+<td><abbr title="Research Organization Registry — persistent identifier for research institutions">ROR</abbr></td>
+</tr>
+<tr>
+<td><code>identity.persistent_identifier</code></td>
+<td>A <abbr title="Digital Object Identifier — persistent identifier for publications, datasets, and software">DOI</abbr> (<code>10.&lt;registrant&gt;/&lt;suffix&gt;</code>), when given as one: starting with <code>10.</code>, <code>doi:</code> or <code>https://doi.org/</code>; other identifiers aren't checked</td>
+<td><abbr title="DataCite Metadata Schema — required metadata for DOI registration of research datasets">DataCite</abbr></td>
+</tr>
+<tr>
+<td><code>creator.type</code>, <code>publisher.type</code></td>
+<td><code>Personal</code>, <code>Organizational</code>, <code>Institutional</code>, or an <abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr> type (<code>person</code>, <code>group</code>, <code>institution</code>, <code>position</code>)</td>
+<td><abbr title="DataCite Metadata Schema — required metadata for DOI registration of research datasets">DataCite</abbr>, <abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr> 1.3</td>
+</tr>
+<tr>
+<td><code>identity.store_type</code></td>
+<td><code>gnss_store</code>, <code>vod_store</code> or <code>geodesy_store</code></td>
+<td>canVODpy</td>
+</tr>
+<tr>
+<td><code>spatial.geospatial_lat</code>, <code>_lat_min</code>, <code>_lat_max</code></td>
+<td>-90 to 90</td>
+<td><abbr title="World Geodetic System 1984 — reference ellipsoid and datum used by GPS (Navipedia: Reference Frames in GNSS)">WGS84</abbr></td>
+</tr>
+<tr>
+<td><code>spatial.geospatial_lon</code>, <code>_lon_min</code>, <code>_lon_max</code></td>
+<td>-180 to 180</td>
+<td><abbr title="World Geodetic System 1984 — reference ellipsoid and datum used by GPS (Navipedia: Reference Frames in GNSS)">WGS84</abbr></td>
+</tr>
+<tr>
+<td><code>spatial.bbox</code></td>
+<td>Four values, W, S, E, N (<abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> 1.1), with W &lt;= E and S &lt;= N (a site never spans the 180° meridian)</td>
+<td><abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> 1.1, canvodpy</td>
+</tr>
+<tr>
+<td><code>temporal.time_coverage_duration</code>, <code>time_coverage_resolution</code></td>
+<td>ISO 8601 duration, such as <code>PT5S</code></td>
+<td><abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr> 1.3</td>
+</tr>
+<tr>
+<td><code>publisher.license_uri</code>, <code>publisher.url</code>, <code>creator.website</code></td>
+<td>A URL starting with <code>http://</code> or <code>https://</code>, kept as written</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>The source format, the timestamps and the email address have no rule.
+The source format of a <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store is the <code>source_format</code> of the reader that
+read its files (<code>rinex3</code>, <code>rinex3_stripped</code>, <code>rinex2</code>, <code>sbf</code> or <code>nmea</code>), the
+same value as the store's <code>source_format</code> root attribute.</p>
+<p>The description of the site's stores, the site description, and the
+location come from the site:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">sites</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">ExampleSite</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ExampleSite</span><span class="nv"> </span><span class="s">GNSS-T</span><span class="nv"> </span><span class="s">research</span><span class="nv"> </span><span class="s">site&quot;</span>
-<span class="w">    </span><span class="nt">country</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Austria&quot;</span>
-<span class="w">    </span><span class="nt">latitude</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">47.702</span>
-<span class="w">    </span><span class="nt">longitude</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16.299</span>
+<span class="w">    </span><span class="nt">store_description</span><span class="p">:</span><span class="w"> </span><span class="s">"GNSS-T</span><span class="nv"> </span><span class="s">observations</span><span class="nv"> </span><span class="s">below</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">beech</span><span class="nv"> </span><span class="s">canopy"</span><span class="w">  </span><span class="c1"># required to create a store</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Example</span><span class="nv"> </span><span class="s">GNSS-T</span><span class="nv"> </span><span class="s">research</span><span class="nv"> </span><span class="s">site"</span>
+<span class="w">    </span><span class="nt">country</span><span class="p">:</span><span class="w"> </span><span class="s">"AT"</span><span class="w">            </span><span class="c1"># ISO 3166-1 code</span>
+<span class="w">    </span><span class="nt">latitude</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">47.70</span>
+<span class="w">    </span><span class="nt">longitude</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16.30</span>
 <span class="w">    </span><span class="nt">altitude_m</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">575.0</span>
 <span class="w">    </span><span class="nt">receivers</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">canopy_01</span><span class="p">:</span>
 <span class="w">        </span><span class="c1"># ...</span>
 </code></pre></div>
-<hr />
-<div class="admonition example">
-<p class="admonition-title">Try it</p>
-<p><a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/12_store_metadata.py">12 · Store Metadata</a>
-on molab (no rendered copy here yet: it uses canvodpy code that is not
-released yet)</p>
-</div>
+<p>For every setting, see <a href="../../../guides/configuration/">Configuration</a>.</p>
+<h2 id="read-the-metadata">Read the metadata<a class="headerlink" href="#read-the-metadata" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">metadata_exists</span><span class="p">,</span> <span class="n">read_metadata</span><span class="p">,</span> <span class="n">show_metadata</span>
+
+<span class="k">if</span> <span class="n">metadata_exists</span><span class="p">(</span><span class="n">store_path</span><span class="p">):</span>
+    <span class="n">meta</span> <span class="o">=</span> <span class="n">read_metadata</span><span class="p">(</span><span class="n">store_path</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">identity</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">temporal</span><span class="o">.</span><span class="n">collected_start</span><span class="p">)</span>
+
+<span class="n">show_metadata</span><span class="p">(</span><span class="n">store_path</span><span class="p">)</span>  <span class="c1"># print all sections</span>
+</code></pre></div>
+<p><code>read_metadata()</code> reads the tip of <code>main</code>; <code>branch=</code> reads another
+branch, and <code>snapshot_id=</code> reads one snapshot as it was when it was
+committed. <code>format_metadata(meta)</code> returns the text of <code>show_metadata()</code>
+as a string.</p>
+<p>To recreate the Python environment that wrote a store, <code>extract_env()</code>
+writes the stored <code>pyproject.toml</code> and <code>uv.lock</code> to a directory.</p>
+<h2 id="stores-on-s3">Stores on S3<a class="headerlink" href="#stores-on-s3" title="Permanent link">&para;</a></h2>
+<p><a href="../../../guides/s3/">Stores on S3</a> covers choosing a provider,
+credentials, access policies and the bucket settings to avoid. The
+functions that read or write the metadata take a store location:
+a local directory, or an <code>s3://bucket/prefix</code> URL. A URL without a
+bucket or a prefix is refused, and so are other schemes such as <code>gs://</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_metadata</span><span class="p">,</span> <span class="n">show_metadata</span>
+
+<span class="n">meta</span> <span class="o">=</span> <span class="n">read_metadata</span><span class="p">(</span><span class="s2">"s3://example-bucket/stores/ExampleSite/gnss"</span><span class="p">)</span>
+<span class="n">show_metadata</span><span class="p">(</span><span class="s2">"s3://example-bucket/stores/ExampleSite/gnss"</span><span class="p">)</span>
+</code></pre></div>
+<p>Credentials, region and endpoint come only from the environment or the
+shared AWS files, never from the settings or the store metadata:</p>
+<ul>
+<li><code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code>, or <code>AWS_PROFILE</code>;</li>
+<li><code>~/.aws/credentials</code> and <code>~/.aws/config</code>;</li>
+<li><code>AWS_REGION</code>, and <code>AWS_ENDPOINT_URL</code> for storage that isn't AWS;</li>
+<li><code>CANVOD_S3_PATH_STYLE=1</code> for a self-hosted S3 service, such as Ceph,
+  that expects the bucket in the request path
+  (<code>https://endpoint/bucket/...</code>) rather than in the host name
+  (<code>https://bucket.endpoint/...</code>). Unset or <code>0</code> keeps the host name, as
+  AWS expects.</li>
+</ul>
+<p>Without a credential, opening fails with an error that names the
+location and these sources.</p>
+<p>Every function opens a store with <code>open_repository()</code>. Opening never
+creates a store, so a mistyped location fails instead of leaving an
+empty store behind. <code>store_exists()</code> says whether a location holds a
+store, without opening it. With <code>expected_uuid=</code>, a store with another UUID is
+refused, so a store replaced at the same location is never taken for
+the old one.</p>
+<p><code>open_repository(location, create=True)</code> creates a store. Without a
+<code>config=</code>, the new store gets the defaults of the <code>processing.icechunk</code>
+settings, the same as a store a run creates, not <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr>'s own
+defaults. Opening a store without a <code>config=</code> uses the configuration
+<abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> keeps with the store.</p>
+<p>On a local directory, commits hold a lock file in the store's directory,
+because <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> on a local file system can lose one of two concurrent
+commits without an error. On S3 there is no lock: <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr>'s
+conditional writes keep two commits from overwriting each other. The
+S3 service must support them
+(<a href="../../../guides/s3/#conditional-writes">Conditional writes</a>).</p>
+<p>Two runs may also create one store at the same time. Only one of them
+creates it: the commit that creates a store does not rebase, so the
+second one fails. That run then waits up to a minute for the first
+run's repository metadata and goes on with that store, as if it had
+found it; its settings are checked against the store's content settings
+like those of any later run.</p>
+<p>Creating, opening, reading the metadata, and refusing a conflicting
+commit are tested in <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> against an S3 emulator.</p>
+<p>Runs write stores on S3 when <code>processing.storage.stores_root_dir</code> is an
+<code>s3://bucket/prefix</code> URL (<a href="../../../guides/configuration/">configuration guide</a>).
+The run history and the file index stay in the log folder of the machine
+that runs. When the storage can't be reached, a run stops with an error
+that names the location and the credential sources listed earlier, never the credentials.
+The <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> catalog is written only for a local folder of stores so far.</p>
+<h2 id="check-against-the-standards">Check against the standards<a class="headerlink" href="#check-against-the-standards" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_all</span>
+
+<span class="n">failures</span> <span class="o">=</span> <span class="n">validate_all</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">recommended</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="c1"># {"rules": [], "zarr_conventions": [], "acdd": [], "datacite": [], "stac": [], "fair": []}</span>
+
+<span class="n">issues</span> <span class="o">=</span> <span class="n">validate_all</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>  <span class="c1"># also recommendations and FAIR advice</span>
+</code></pre></div>
+<p><code>validate_all()</code> returns a list of messages per standard.</p>
+<p>A store written before a rule existed may hold a value that breaks it.
+The store still opens: reading its metadata gives a
+<code>MetadataRuleWarning</code> that names the field, <code>rules</code> lists it, and an
+amendment of that field fixes it. An amendment of another field keeps
+the old value and warns again. The durations, the bounding box, and the
+latitude and longitude ranges are computed from the data; the next
+commit to the store computes them again. With
+<code>recommended=False</code> it lists only failures: what a standard requires, or
+for <abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr> 1.3 what it highly recommends. A store created by canVODpy has
+none. Without it, the lists also hold the <abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr> recommendations, marked
+<code>[recommended]</code>, and the <abbr title="Findable, Accessible, Interoperable, Reusable — guiding principles for scientific data stewardship (Wilkinson et al. 2016)">FAIR</abbr> advice.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>What is checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rules</code></td>
+<td>Fields that break a rule of their standard, such as a license outside <abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr></td>
+</tr>
+<tr>
+<td><code>zarr_conventions</code></td>
+<td>The <code>proj</code>, <code>license</code> and <code>stac</code> attributes of the root group, with <code>zarr-cm</code></td>
+</tr>
+<tr>
+<td><code>acdd</code></td>
+<td>The <abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr> 1.3 global attributes of the root group</td>
+</tr>
+<tr>
+<td><code>datacite</code></td>
+<td>Identifier, title, creator, creation date, store type, publisher</td>
+</tr>
+<tr>
+<td><code>stac</code></td>
+<td>Identifier, title, bounding box, time range, license</td>
+</tr>
+<tr>
+<td><code>fair</code></td>
+<td>Advice only: persistent identifier, access URL, cross-references, provenance</td>
+</tr>
+</tbody>
+</table>
+<p>The tests also check a day of data exported to netCDF with IOOS
+compliance-checker, for CF 1.11 and <abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr> 1.3. Three of its findings are
+known and accepted. CF has no standard names for <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> observables,
+UDUNITS has no unit for dB or dB-Hz, and the grid cell ids
+(<code>cell_id_*</code>) have no units because they are indices.</p>
+<h2 id="change-the-description-amendments">Change the description: amendments<a class="headerlink" href="#change-the-description-amendments" title="Permanent link">&para;</a></h2>
+<p>Amendable fields change only by amendment, with a reason:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>amend<span class="w"> </span>ExampleSite<span class="w"> </span>--store<span class="w"> </span>gnss<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span>identity.title<span class="o">=</span><span class="s2">"Example site GNSS-T observations"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--reason<span class="w"> </span><span class="s2">"Clearer title"</span>
+</code></pre></div>
+<p>The command shows the changes and asks before it writes them. Each
+changed field is recorded with its old and new value, the reason, who
+(the initials in <code>processing.metadata.initials</code>), and when. A new commit
+carries the new description. Snapshots from before keep the description
+they were written with; <code>show_metadata()</code> lists the amendments made
+since. A fixed field is refused: a different id or creation date means a
+different store.</p>
+<p><code>--add-receiver NAME</code> adds a receiver of the site's settings to a <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr>
+store, and <code>--add-vod-analysis NAME</code> adds a <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analysis to a <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store,
+so runs may write them. <code>--update-recipe NAME</code> records a receiver's
+naming recipe of the settings and the sha256 of its file in the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr>
+store, after the recipe changed on purpose: every run compares each
+recipe with the one the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store records and stops on a difference.
+The receiver must be in the store already, or be added with
+<code>--add-receiver NAME</code> in the same amendment. <code>--from FILE</code> reads the
+changes from a YAML file. In Python, <code>amend_metadata()</code> does the same.</p>
+<p>Runs set the snapshot summary and the commit metadata themselves; they
+are never amended.</p>
+<h2 id="move-an-older-store-to-the-current-form">Move an older store to the current form<a class="headerlink" href="#move-an-older-store-to-the-current-form" title="Permanent link">&para;</a></h2>
+<p>A store written before the repository metadata keeps its metadata in one
+root attribute. Runs refuse such a store, and the error names the
+command that moves all stores of its site, their folders, metadata and
+layout (<a href="../../../guides/upgrading/#3-migrate-each-sites-stores">Upgrading to v1.0.0</a>):</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>migrate<span class="w"> </span>ExampleSite<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--gnss-set<span class="w"> </span>identity.description<span class="o">=</span><span class="s2">"GNSS-T observations below a beech canopy"</span>
+</code></pre></div>
+<p><code>canvodpy store migrate-metadata ExampleSite --store gnss</code> runs the
+metadata step of one store alone, with <code>--set</code> for what it lacks.
+The migration writes the repository metadata, gives the store its new id
+and a UUID, and keeps the old id in the migration record, with who
+migrated it and when. A migrated store must pass the standards checks
+like a new one. Fields it lacks are taken from the settings, as a new
+store takes them: the site's <code>store_description</code>, the publisher and
+license, the site's latitude and longitude. The command marks each one
+<code>(from the settings)</code>. A field neither the store nor the settings hold is
+given with <code>--set</code>; otherwise the migration is refused and lists it. A
+value given with <code>--set</code> wins over the settings, and <code>--set FIELD=</code> with
+no value is refused. A license
+outside <abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr>, or another value that breaks a metadata rule, is refused
+too, naming the field to give, for example
+<code>--set publisher.license=Apache-2.0</code>. A computed value that breaks a
+rule, such as a duration, only warns: the migration computes it again. In a <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>
+store, the attributes of <code>VOD</code> are replaced with the current ones, and
+each <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analysis the store holds a group of (<code>tau_omega/&lt;analysis&gt;</code>) is
+listed, with its receivers from the settings (canVODpy 0.x listed none).
+Snapshots from before the migration stay readable.</p>
+<p>canVODpy 0.x stored epochs without recording their time scale. Every
+stored epoch is <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time now, and a write refuses a group whose epochs
+don't record it (<code>epoch.attrs["time_system"]</code>). The migration records it
+where it can tell:</p>
+<ul>
+<li>A <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> group read from <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files (it holds the attribute
+  <code>RINEX Version</code>) holds the epochs as the files give them, <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time.</li>
+<li>A <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> group holds the epochs of the site's <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store: it's <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time
+  when every group of that store is.</li>
+<li>A <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> group read from <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> or NMEA files holds UTC epochs, 18 s behind
+  <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time. The migration stops before it writes anything. The epochs
+  aren't shifted, because the epoch grid and the satellite positions were
+  computed for the old epochs: rebuild the store from the raw files.</li>
+</ul>
+<p>Only the attribute changes; the epochs stay as stored. In Python,
+<code>label_epoch_time_system()</code> from <code>canvod.store_metadata.migration</code> does
+the same.</p>
+<p>A <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store also gets its
+<a href="../../../guides/configuration/#content-settings-fixed-for-each-store">content settings</a>
+(ADR 0019), the settings that shape its data, also when it was migrated
+before: runs refuse a <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store without them. The command takes them
+from the settings recorded in the store's first commit, and each
+receiver's type and reader format from the repository metadata. A
+setting that commit doesn't record is not guessed: the command stops and
+lists it.</p>
+<p>A setting the data show is read from the data instead, because canVODpy
+0.x recorded settings its runs didn't follow:</p>
+<ul>
+<li><code>processing.preprocessing</code> is none (<code>null</code>) when no group shows a
+  preprocessing step. canVODpy 0.x recorded its preprocessing settings
+  with every run, but <code>canvodpy run</code> never applied them.</li>
+<li><code>store_radial_distance</code> is whether the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> groups hold <code>r</code>;
+  <code>store_delta_snr</code> and <code>store_radial_diff</code> are whether the site's <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>
+  groups hold <code>delta_snr</code> and <code>radial_diff</code> (canVODpy 0.x always wrote
+  <code>delta_snr</code>). Groups that disagree make the command list the setting,
+  to give with <code>--set</code>.</li>
+</ul>
+<p>The <code>paired_canopies</code> of a reference receiver is never
+recorded, so give it with the value the data was written with, by its
+key in <code>canvod-settings.yaml</code>:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>migrate-metadata<span class="w"> </span>ExampleSite<span class="w"> </span>--store<span class="w"> </span>gnss<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--set<span class="w"> </span>sites.ExampleSite.receivers.reference_01.paired_canopies<span class="o">=[</span>canopy_01<span class="o">]</span>
+</code></pre></div>
+<p>In Python, <code>migrate_content_settings(store_path, who=..., values=...)</code>
+from <code>canvod.store_metadata.migration</code> does the same.</p>
+<p>A <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store also gets its content settings (ADR 0019): the settings that
+shape the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> output (its chunks and compression, <code>store_delta_snr</code> and
+<code>store_radial_diff</code>), plus <code>gnss_content_hash</code>, the content-settings hash
+of the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store it was computed from. The migration takes the D1 keys
+from the store's first commit and <code>gnss_content_hash</code> from the site's
+<abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store where the settings put it now, or else where the settings
+of the first commit name it, once the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store has content settings. So
+migrate the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store first; otherwise the command lists
+<code>gnss_content_hash</code> as missing, to give with
+<code>--set gnss_content_hash=...</code>. The
+calculator and its parameters of each group are recorded in the group's
+attributes (ADR 0019 D2), not in the content settings.</p>
+<p>Content settings are never amended, with one exception. A <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store
+written with <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files holds a <code>clock</code> variable, and v1.0.0 runs read no
+<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files by default. <code>canvodpy store migrate</code> removes the variable and
+records <code>fetch_clock: false</code>; the content settings keep the change under
+<code>changes</code>, with the old value, the old hash, who made it and why. The
+site's <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store then records the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store's new hash, which it accepts
+only if the hash it held is one the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store had before such a change.
+In Python: <code>drop_clock()</code> and <code>follow_gnss_content_hash()</code> from
+<code>canvod.store_metadata.migration</code>.</p>
+<h2 id="list-the-stores-of-a-directory">List the stores of a directory<a class="headerlink" href="#list-the-stores-of-a-directory" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">scan_stores</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">scan_stores</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/data/stores/"</span><span class="p">))</span>
+<span class="c1"># Polars DataFrame, one row per store: id, title, store type, source format, site, ...</span>
+</code></pre></div>
+<p>A store written before stores kept repository metadata gets
+<code>needs_migration</code> in its row of <code>scan_stores()</code>, and <code>migrate_command</code>
+gives the command that migrates it.</p>
+<h2 id="write-the-stac-catalog">Write the <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> catalog<a class="headerlink" href="#write-the-stac-catalog" title="Permanent link">&para;</a></h2>
+<p>The catalog describes every store under the data root
+(<code>storage.stores_root_dir</code>) in <a href="https://stacspec.org"><abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr></a> 1.1, so that
+<abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> Browser, pystac and other <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> tools can find the data (ADR 0015).
+It is written only when you ask for it:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>stac<span class="w"> </span>write<span class="w">              </span><span class="c1"># the data root of the settings</span>
+canvodpy<span class="w"> </span>stac<span class="w"> </span>write<span class="w"> </span>--root<span class="w"> </span>/data/stores/
+just<span class="w"> </span>stac-write
+canvodpy<span class="w"> </span>run<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--write-catalog<span class="w">   </span><span class="c1"># after the run's last commit</span>
+</code></pre></div>
+<p><code>canvodpy run --write-catalog</code> writes the catalog of the settings' data
+root once every site of the run is processed. If the catalog is refused
+(see below), the run's data stays committed and the run exits with code 1;
+fix the stores it names, then run <code>canvodpy stac write</code>. A run without
+the option, a dry run and a failed run write no catalog.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">write_catalog</span>
+
+<span class="n">write_catalog</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/data/stores/"</span><span class="p">))</span>  <span class="c1"># returns /data/stores/catalog.json</span>
+</code></pre></div>
+<p>The catalog sits beside the stores, never inside one:</p>
+<div class="highlight"><pre><span></span><code>/data/stores/
+├── catalog.json
+├── gnss-observations/
+│   ├── collection.json
+│   └── org.middle-earth.fangorn-gnss/org.middle-earth.fangorn-gnss.json
+├── vod/
+│   ├── collection.json
+│   └── org.middle-earth.fangorn-vod/org.middle-earth.fangorn-vod.json
+├── gnss-geodesy/                only with geodesy stores
+└── Fangorn/
+    ├── gnss/                    the GNSS store
+    └── vod/                     the VOD store
+</code></pre></div>
+<p>There is one collection per product (<code>gnss-observations</code>, <code>vod</code>,
+<code>gnss-geodesy</code>) and one item per store; a site with a second store of a
+kind (<code>vod-recompute</code>) has two items in that collection. The item id is the naming
+authority and the store id, for example <code>org.middle-earth.fangorn-gnss</code>. The
+items of one site (its <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr>, <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> and geodesy stores, same naming authority
+and site name) link each other (<code>related</code>). A collection's extent covers
+all its items: their points and their time ranges. If its items have
+different licenses, the collection's license is <code>other</code>, with a link to
+the text of each.
+Every link is relative, so the whole data root can be copied or moved and
+the catalog still works. The store's catalog link (<code>identity.stac_link</code>)
+points at its item. A new store has the link before its item exists:
+until the first catalog write, <code>validate_all(meta, store_path=...)</code> and
+<code>just metadata-validate</code> show a warning for it, not a failure.</p>
+<p>Each write replaces the catalog fully. It describes the stores under the
+root at that moment: the item of a store that is gone is removed, and so
+is the collection of a product with no store left. Only files the
+previous write made are removed; any other file stays, and <code>releases/</code>
+(see <a href="#publish-a-release">Publish a release</a>) is never touched. Each file is replaced in one step, so nobody reads half
+a file. If two writes run at once, the last one wins.</p>
+<p>No store is left out silently. Every store under the root is read first.
+If any of them can't be described, nothing is written, and one error
+lists each such store with its reason:</p>
+<div class="highlight"><pre><span></span><code>❌ No catalog was written: 2 store(s) under /data/stores cannot be described.
+  Moria/gnss: needs migration to the current metadata form (ADR 0014): canvodpy store migrate Moria
+  Mordor/gnss: `publisher.license` 'Apache 2' is not an SPDX license identifier (see https://spdx.org/licenses/); a license outside SPDX is 'other' with license_uri; fix it with canvodpy store amend Mordor --store gnss
+</code></pre></div>
+<p>The reasons: the store can't be opened, has no metadata, needs
+migration, has no site position, has no usable license (none, not
+<abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr>, or <code>other</code> without <code>license_uri</code>), or holds no data yet (no time
+coverage: a run created the store and stopped before writing). <code>canvodpy stac write</code> then
+exits with code 1.</p>
+<p>An item has the site as a point (longitude, latitude, ellipsoidal height),
+the time range of the data, the store's license, its UUID
+(<code>canvod:uuid</code>), the site name (<code>canvod:site</code>) and the receivers with
+their type and position (<code>canvod:receivers</code>). A license outside <abbr title="Software Package Data Exchange — standardised license identifier system (e.g. MIT, Apache-2.0)">SPDX</abbr> is
+<code>other</code>, with a <code>license</code> link to its text (<code>license_uri</code>).</p>
+<p>Each stored dataset is one asset. Asset keys join the parts of the group
+path with a dot, because some tools read a <code>/</code> in a key as a path:</p>
+<table>
+<thead>
+<tr>
+<th>Asset key</th>
+<th>What it holds</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>canopy_01</code></td>
+<td>a receiver's observations (group <code>canopy_01</code>)</td>
+<td><code>data</code></td>
+</tr>
+<tr>
+<td><code>canopy_01.sbf_obs</code></td>
+<td>its <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> metadata, if any (<code>canopy_01/metadata/sbf_obs</code>)</td>
+<td><code>metadata</code></td>
+</tr>
+<tr>
+<td><code>canopy_01.log_book</code></td>
+<td>its log book (<code>canopy_01/metadata/table</code>)</td>
+<td><code>metadata</code></td>
+</tr>
+<tr>
+<td><code>tau_omega_zeroth_order.canopy_01_vs_reference_01</code></td>
+<td>a <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analysis</td>
+<td><code>data</code></td>
+</tr>
+<tr>
+<td><code>tau_omega_zeroth_order.canopy_01_vs_reference_01.log_book</code></td>
+<td>its log book</td>
+<td><code>metadata</code></td>
+</tr>
+</tbody>
+</table>
+<p>The group <code>canvod</code> (environments, kept by canvodpy) is no asset. A
+receiver's asset carries the receiver's position as stored: the median of
+its files' header positions, <abbr title="Earth-Centered Earth-Fixed — Cartesian (X,Y,Z) coordinate frame co-rotating with Earth (Navipedia: Reference Frames in GNSS)">ECEF</abbr> X, Y, Z in meters
+(<code>canvod:position_ecef_m</code>). The assets of observations, of <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analyses,
+and of <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> metadata list their dimensions and variables (the <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr>
+<code>datacube</code> extension: <code>cube:dimensions</code>, <code>cube:variables</code>). A coordinate
+that is no dimension, such as the satellite of each <abbr title="Signal Identifier — canVODpy format: SV|Band|Code (e.g. G01|L1|C). Uniquely identifies one observable per epoch.">SID</abbr>, is an
+<code>auxiliary</code> variable.</p>
+<p>An asset names everything needed to open it: the store (<code>href</code>), the
+group (<code>xarray:open_kwargs</code>) and the snapshot it describes
+(<code>canvod:snapshot_id</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">icechunk</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pystac</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
+
+<span class="n">item</span> <span class="o">=</span> <span class="n">pystac</span><span class="o">.</span><span class="n">Item</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span>
+    <span class="s2">"/data/stores/gnss-observations/org.middle-earth.fangorn-gnss/org.middle-earth.fangorn-gnss.json"</span>
+<span class="p">)</span>
+<span class="n">asset</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">assets</span><span class="p">[</span><span class="s2">"canopy_01"</span><span class="p">]</span>
+<span class="n">repo</span> <span class="o">=</span> <span class="n">icechunk</span><span class="o">.</span><span class="n">Repository</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
+    <span class="n">icechunk</span><span class="o">.</span><span class="n">local_filesystem_storage</span><span class="p">(</span><span class="n">asset</span><span class="o">.</span><span class="n">get_absolute_href</span><span class="p">())</span>
+<span class="p">)</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">readonly_session</span><span class="p">(</span><span class="n">snapshot_id</span><span class="o">=</span><span class="n">asset</span><span class="o">.</span><span class="n">extra_fields</span><span class="p">[</span><span class="s2">"canvod:snapshot_id"</span><span class="p">])</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">open_dataset</span><span class="p">(</span><span class="n">session</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="o">**</span><span class="n">asset</span><span class="o">.</span><span class="n">extra_fields</span><span class="p">[</span><span class="s2">"xarray:open_kwargs"</span><span class="p">])</span>
+</code></pre></div>
+<p>The media type of an asset is <code>application/vnd.zarr; version=3</code>, as the
+<abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> best practices for <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> recommend. xpystac can't open these assets:
+it opens <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> only from S3, and only the root group.</p>
+<h2 id="publish-a-release">Publish a release<a class="headerlink" href="#publish-a-release" title="Permanent link">&para;</a></h2>
+<p>A release is a version of the data that never changes. A paper or a
+data publication can cite it. It tags <code>main</code> in every store under the data root with
+the same <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> tag and writes the catalog of that tag under
+<code>releases/&lt;tag&gt;/</code>:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>stac<span class="w"> </span>release<span class="w"> </span>v2026.1<span class="w">    </span><span class="c1"># the data root of the settings</span>
+canvodpy<span class="w"> </span>stac<span class="w"> </span>release<span class="w"> </span>v2026.1<span class="w"> </span>--root<span class="w"> </span>/data/stores/
+just<span class="w"> </span>stac-release<span class="w"> </span>v2026.1
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store_metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_release</span>
+
+<span class="n">create_release</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/data/stores/"</span><span class="p">),</span> <span class="s2">"v2026.1"</span><span class="p">)</span>
+<span class="c1"># returns /data/stores/releases/v2026.1/catalog.json</span>
+</code></pre></div>
+<p>The release catalog has the same tree as the latest catalog, one folder
+deeper:</p>
+<div class="highlight"><pre><span></span><code>/data/stores/
+├── catalog.json                 the latest catalog
+└── releases/
+    └── v2026.1/
+        ├── catalog.json
+        ├── gnss-observations/
+        └── vod/
+</code></pre></div>
+<p>Each asset of a release names the tag (<code>canvod:tag</code>) and the snapshot the
+tag points at (<code>canvod:snapshot_id</code>), and has no <code>latest-version</code> role:
+that role tells the latest catalog's assets apart. Opening an asset by its
+tag gives the released data, whatever was written to <code>main</code> since:</p>
+<div class="highlight"><pre><span></span><code><span class="n">session</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">readonly_session</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="n">asset</span><span class="o">.</span><span class="n">extra_fields</span><span class="p">[</span><span class="s2">"canvod:tag"</span><span class="p">])</span>
+</code></pre></div>
+<p>A release refuses, before it tags anything:</p>
+<ul>
+<li>a tag with a <code>/</code>: those are canvod-store's own tags
+  (<code>keep/&lt;receiver&gt;/&lt;yyyydoy&gt;</code>), and <code>releases/&lt;tag&gt;/</code> stays one folder
+  deep;</li>
+<li>a store that can't be described, with the same error as
+  <code>canvodpy stac write</code>;</li>
+<li>a tag that exists in some of the stores already, naming them;</li>
+<li>a tag whose release catalog exists: a release catalog is never changed.</li>
+</ul>
+<p>If every store has the tag but <code>releases/&lt;tag&gt;/</code> is missing (the catalog
+write failed after tagging), running the release again writes only the
+catalog. Later catalog writes and later releases leave
+<code>releases/</code> as it is. Release tags are written by this command only; don't create
+or delete them by hand.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -4633,7 +5275,7 @@ released yet)</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../../store/storage-strategies/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Storage Strategies">
+          <a href="../../store/storage-strategies/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Write strategies">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4643,20 +5285,20 @@ released yet)</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Storage Strategies
+                Write strategies
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../viz/overview/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+          <a href="../../viz/overview/" class="md-footer__link md-footer__link--next" aria-label="Next: Visualization">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Overview
+                Visualization
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -4676,8 +5318,9 @@ released yet)</p>
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../../../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -4694,7 +5337,7 @@ released yet)</p>
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -4731,10 +5374,10 @@ released yet)</p>
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../../../assets/mermaid-init.js"></script>
       

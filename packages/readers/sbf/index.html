@@ -15,7 +15,8 @@
         <link rel="canonical" href="https://canvodpy.eu/packages/readers/sbf/">
       
       
-        <link rel="prev" href="../rinex-format/">
+      
+        <link rel="prev" href="../rinex-v2-format/">
       
       
         <link rel="next" href="../sbf-decoding/">
@@ -25,23 +26,23 @@
       
       
       <link rel="icon" href="../../../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
-        <title>SBF Reader - canVODpy</title>
+        <title>SBF - canVODpy</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="../../.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -168,11 +190,12 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              SBF Reader
+              SBF
             
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -288,12 +305,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -302,7 +313,7 @@
         <a href="../../../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../../../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../impressum/" class="md-tabs__link">
+        <a href="../../../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -525,12 +520,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -558,7 +547,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -580,7 +569,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -594,14 +583,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../users/cli/" class="md-nav__link">
+      <a href="../../../guides/upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -620,26 +609,65 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -655,7 +683,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -675,14 +703,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guides/extensions/" class="md-nav__link">
+      <a href="../../../guides/settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -694,6 +722,162 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -709,7 +893,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -736,7 +920,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -763,7 +947,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -783,14 +967,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../notebooks/" class="md-nav__link">
+      <a href="../../ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -807,22 +991,519 @@
                   
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  How it works
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  How it works
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reading GNSS files
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ephemeris-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Ephemeris sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Orbits and clocks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Orbit and clock preparation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/interpolation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Interpolation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/coordinates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coordinate systems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../grids/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Hemispheric grids
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../vod/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  VOD retrieval
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/icechunk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Versioning with Icechunk
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/storage-strategies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Write strategies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store-metadata/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../viz/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Visualization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
     
   
   
   
     
     
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
       
         
       
@@ -852,17 +1533,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Packages
+  Data formats
 
     
   </span>
@@ -873,83 +1554,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_2_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-readers
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_2_10_1">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-readers
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -961,14 +1571,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../overview/" class="md-nav__link">
+      <a href="../rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
 
     
   </span>
@@ -988,14 +1598,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../rinex-format/" class="md-nav__link">
+      <a href="../rinex-v2-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  RINEX v3.04 Format
+  RINEX v2.11
 
     
   </span>
@@ -1031,7 +1641,7 @@
   <span class="md-ellipsis">
     
   
-  SBF Reader
+  SBF
 
     
   </span>
@@ -1048,7 +1658,7 @@
   <span class="md-ellipsis">
     
   
-  SBF Reader
+  SBF
 
     
   </span>
@@ -1088,7 +1698,7 @@
   <a href="#decoded-sbf-blocks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Decoded SBF Blocks
+        Decoded SBF blocks
       </span>
     </span>
   </a>
@@ -1099,19 +1709,19 @@
   <a href="#output-datasets" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Output Datasets
+        Output datasets
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Output Datasets">
+    <nav class="md-nav" aria-label="Output datasets">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#observations-dataset-to_ds" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Observations dataset — <code>to_ds()</code>
+        Observations dataset: <code>to_ds()</code>
       </span>
     </span>
   </a>
@@ -1119,10 +1729,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#metadata-dataset-to_metadata_ds" class="md-nav__link">
+  <a href="#metadata-dataset-sbf_obs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Metadata dataset — <code>to_metadata_ds()</code>
+        Metadata dataset: <code>sbf_obs</code>
       </span>
     </span>
   </a>
@@ -1160,12 +1770,12 @@
   <a href="#coordinate-conventions" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Coordinate Conventions
+        Coordinate conventions
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Coordinate Conventions">
+    <nav class="md-nav" aria-label="Coordinate conventions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1199,7 +1809,7 @@
   <a href="#cf-convention-metadata-attributes" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        CF-Convention Metadata Attributes
+        CF-convention metadata attributes
       </span>
     </span>
   </a>
@@ -1221,7 +1831,7 @@
   <a href="#combined-scan-api-to_ds_and_auxiliary" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Combined Scan API — <code>to_ds_and_auxiliary()</code>
+        Combined scan API: <code>to_ds_and_auxiliary()</code>
       </span>
     </span>
   </a>
@@ -1232,7 +1842,7 @@
   <a href="#source-format-identification" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Source Format Identification
+        Source format identification
       </span>
     </span>
   </a>
@@ -1243,7 +1853,7 @@
   <a href="#broadcast-ephemeris-sbf-as-geometry-source" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Broadcast Ephemeris: SBF as Geometry Source
+        Broadcast ephemeris: SBF as geometry source
       </span>
     </span>
   </a>
@@ -1265,7 +1875,7 @@
   <a href="#satellite-catalog-enrichment" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Satellite Catalog Enrichment
+        Satellite catalog enrichment
       </span>
     </span>
   </a>
@@ -1287,7 +1897,7 @@
   <a href="#time-conversion" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Time Conversion
+        Time conversion
       </span>
     </span>
   </a>
@@ -1298,7 +1908,7 @@
   <a href="#glonass-fdma-frequencies" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        GLONASS FDMA Frequencies
+        GLONASS FDMA frequencies
       </span>
     </span>
   </a>
@@ -1339,34 +1949,7 @@
   <span class="md-ellipsis">
     
   
-  SBF Field Decoding
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../ephemeris-sources/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Ephemeris Sources
+  SBF field decoding
 
     
   </span>
@@ -1393,241 +1976,7 @@
   <span class="md-ellipsis">
     
   
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/preprocessing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Preprocessing Pipeline
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/interpolation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Interpolation Methods
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/coordinates/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Coordinate Systems
+  Satellite catalog
 
     
   </span>
@@ -1654,189 +2003,7 @@
   <span class="md-ellipsis">
     
   
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../grids/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../vod/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
+  Product registry
 
     
   </span>
@@ -1879,24 +2046,27 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-store
+  Extend
 
     
   </span>
@@ -1907,12 +2077,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-store
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -1924,14 +2094,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../store/overview/" class="md-nav__link">
+      <a href="../../../guides/plugins/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  Your own readers and VOD calculators
 
     
   </span>
@@ -1951,14 +2121,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../store/icechunk/" class="md-nav__link">
+      <a href="../building-a-reader/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Build a reader
 
     
   </span>
@@ -1970,370 +2140,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../store/storage-strategies/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Storage Strategies
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../store-metadata/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../viz/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-config
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-config
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../config/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-utils
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-utils
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2349,189 +2155,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2560,24 +2184,17 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
       
         
       
@@ -2624,7 +2241,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2640,7 +2257,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2686,7 +2303,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2713,7 +2330,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2733,14 +2350,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guides/architecture-design/" class="md-nav__link">
+      <a href="../../../guides/reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2752,6 +2369,67 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2767,7 +2445,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2787,14 +2465,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../build-system/" class="md-nav__link">
+      <a href="../../../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2814,14 +2492,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tooling/" class="md-nav__link">
+      <a href="../../../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2841,14 +2519,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../principles/" class="md-nav__link">
+      <a href="../../../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2856,6 +2534,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2889,10 +2576,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
             
   
   
@@ -2910,8 +2597,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -2934,7 +2621,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -2961,7 +2648,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -2988,7 +2675,727 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -3029,8 +3436,6 @@
       
         
       
-        
-      
     
     
     
@@ -3044,17 +3449,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -3065,12 +3470,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3116,34 +3521,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../guides/PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -3197,7 +3575,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -3224,7 +3602,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -3276,17 +3654,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3297,12 +3675,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3321,7 +3699,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3348,7 +3726,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3375,7 +3753,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3395,14 +3773,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../SECURITY.md" class="md-nav__link">
+      <a href="../../../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3440,6 +3818,8 @@
   
     
     
+      
+        
       
         
       
@@ -3486,7 +3866,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3502,10 +3882,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -3812,96 +4219,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -3957,7 +4274,7 @@
   <a href="#decoded-sbf-blocks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Decoded SBF Blocks
+        Decoded SBF blocks
       </span>
     </span>
   </a>
@@ -3968,19 +4285,19 @@
   <a href="#output-datasets" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Output Datasets
+        Output datasets
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Output Datasets">
+    <nav class="md-nav" aria-label="Output datasets">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#observations-dataset-to_ds" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Observations dataset — <code>to_ds()</code>
+        Observations dataset: <code>to_ds()</code>
       </span>
     </span>
   </a>
@@ -3988,10 +4305,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#metadata-dataset-to_metadata_ds" class="md-nav__link">
+  <a href="#metadata-dataset-sbf_obs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Metadata dataset — <code>to_metadata_ds()</code>
+        Metadata dataset: <code>sbf_obs</code>
       </span>
     </span>
   </a>
@@ -4029,12 +4346,12 @@
   <a href="#coordinate-conventions" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Coordinate Conventions
+        Coordinate conventions
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Coordinate Conventions">
+    <nav class="md-nav" aria-label="Coordinate conventions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4068,7 +4385,7 @@
   <a href="#cf-convention-metadata-attributes" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        CF-Convention Metadata Attributes
+        CF-convention metadata attributes
       </span>
     </span>
   </a>
@@ -4090,7 +4407,7 @@
   <a href="#combined-scan-api-to_ds_and_auxiliary" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Combined Scan API — <code>to_ds_and_auxiliary()</code>
+        Combined scan API: <code>to_ds_and_auxiliary()</code>
       </span>
     </span>
   </a>
@@ -4101,7 +4418,7 @@
   <a href="#source-format-identification" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Source Format Identification
+        Source format identification
       </span>
     </span>
   </a>
@@ -4112,7 +4429,7 @@
   <a href="#broadcast-ephemeris-sbf-as-geometry-source" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Broadcast Ephemeris: SBF as Geometry Source
+        Broadcast ephemeris: SBF as geometry source
       </span>
     </span>
   </a>
@@ -4134,7 +4451,7 @@
   <a href="#satellite-catalog-enrichment" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Satellite Catalog Enrichment
+        Satellite catalog enrichment
       </span>
     </span>
   </a>
@@ -4156,7 +4473,7 @@
   <a href="#time-conversion" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Time Conversion
+        Time conversion
       </span>
     </span>
   </a>
@@ -4167,7 +4484,7 @@
   <a href="#glonass-fdma-frequencies" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        GLONASS FDMA Frequencies
+        GLONASS FDMA frequencies
       </span>
     </span>
   </a>
@@ -4245,12 +4562,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -4260,7 +4571,7 @@
           
   
   <span class="md-ellipsis">
-    Usage
+    Retrieve VOD
   </span>
 
         </a>
@@ -4287,95 +4598,16 @@
       
         
       
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
     
     
     
     
       <li class="md-path__item">
-        <a href="../overview/" class="md-path__link">
+        <a href="../rinex-format/" class="md-path__link">
           
   
   <span class="md-ellipsis">
-    Packages
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-    
-  
-
-      
-        
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      <li class="md-path__item">
-        <a href="../overview/" class="md-path__link">
-          
-  
-  <span class="md-ellipsis">
-    canvod-readers
+    Data formats
   </span>
 
         </a>
@@ -4397,22 +4629,27 @@
   
 
 
-<h1 id="sbf-reader-septentrio-binary-format"><abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> Reader — Septentrio Binary Format<a class="headerlink" href="#sbf-reader-septentrio-binary-format" title="Permanent link">&para;</a></h1>
+<h1 id="sbf-reader-septentrio-binary-format"><abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> reader (Septentrio Binary Format)<a class="headerlink" href="#sbf-reader-septentrio-binary-format" title="Permanent link">&para;</a></h1>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
 <p>The Septentrio Binary Format (<abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr>) is the proprietary high-rate binary telemetry
 output of Septentrio <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> receivers (AsteRx SB3, mosaic-X5, PolaRx, etc.).
 <code>SbfReader</code> in <code>canvod-readers</code> decodes <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> streams and produces two complementary
 <code>xarray.Dataset</code> objects from a <strong>single file scan</strong>.</p>
+<p>All blocks with the same receiver time stamp (TOW, WNc) belong to one epoch
+(RefGuide-4.14.0, Section 4.1.3). The reader groups them that way, so the
+MeasExtra, SatVisibility, <abbr title="Position, Velocity, Time — the receiver navigation solution computed from pseudoranges (Navipedia: GNSS Basic Observables)">PVT</abbr> and status values of an epoch are stored with
+the observations of that same epoch. One decoder serves <code>iter_epochs()</code>,
+<code>to_ds()</code> and <code>to_ds_and_auxiliary()</code>; they give the same values.</p>
 <div class="admonition tip">
 <p class="admonition-title">No ephemeris download needed</p>
 <p>The <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> reader differs from <code>Rnxv3Obs</code> (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr>) in one fundamental respect:
 <strong>satellite geometry is embedded in the binary stream</strong>.
-No <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris download is required for quick-look analysis —
-the receiver's own navigation solution provides azimuth and polar angle
-for every tracked signal.</p>
+No <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> ephemeris download is required for quick-look analysis:
+the receiver firmware reports azimuth and elevation for every satellite
+it has an almanac or broadcast ephemeris for.</p>
 </div>
 <hr />
-<h2 id="decoded-sbf-blocks">Decoded <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> Blocks<a class="headerlink" href="#decoded-sbf-blocks" title="Permanent link">&para;</a></h2>
+<h2 id="decoded-sbf-blocks">Decoded <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> blocks<a class="headerlink" href="#decoded-sbf-blocks" title="Permanent link">&para;</a></h2>
 <div class="grid cards">
 <ul>
 <li>
@@ -4424,19 +4661,19 @@ Populates global dataset attributes.</p>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M256 0a256 256 0 1 1 0 512 256 256 0 1 1 0-512m-24 120v136c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24"/></svg></span> &nbsp; <strong>ReceiverTime</strong></p>
 <hr />
-<p><abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>↔UTC leap-second offset ΔLS.
-Used to convert <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> Time (WN + TOW) to UTC.</p>
+<p>Receiver time and its synchronization with <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> time.
+Grouped with the epoch; epochs need only the WNc and TOW of MeasEpoch.</p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M199 7c9.4-9.4 24.6-9.4 33.9 0l89.4 89.4 55-55c12.5-12.5 32.8-12.5 45.3 0l48 48c12.5 12.5 12.5 32.8 0 45.3l-55 55 89.4 89.4c9.4 9.4 9.4 24.6 0 33.9l-96 96c-9.4 9.4-24.6 9.4-33.9 0l-89.4-89.4-15.5 15.5c11.4 24.6 17.8 52 17.8 80.9 0 31.7-7.7 61.5-21.2 87.8-4.7 9-16.7 10.3-23.8 3.1l-96.3-96.3-60 60c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l60-60L5.1 269c-7.2-7.2-5.9-19.2 3.1-23.8C34.5 231.6 64.4 224 96 224c28.9 0 56.3 6.4 80.9 17.8l15.5-15.5L103 137c-9.4-9.4-9.4-24.6 0-33.9zm17 50.9L153.9 120l72.4 72.4 62.1-62.1zm176 300.2 62.1-62.1-72.4-72.4-62.1 62.1z"/></svg></span> &nbsp; <strong>ChannelStatus</strong></p>
 <hr />
-<p><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> <abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr> frequency-slot cache (<code>SVID → FreqNr</code>).
-Pre-scanned before MeasEpoch decoding.</p>
+<p>Per-satellite tracking and <abbr title="Position, Velocity, Time — the receiver navigation solution computed from pseudoranges (Navipedia: GNSS Basic Observables)">PVT</abbr>-usage status bit fields
+(<code>tracking_status_raw</code>, <code>pvt_status_raw</code>), main antenna.</p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M488 56c0-13.3-10.7-24-24-24s-24 10.7-24 24v400c0 13.3 10.7 24 24 24s24-10.7 24-24zm-128 72c-13.3 0-24 10.7-24 24v304c0 13.3 10.7 24 24 24s24-10.7 24-24V152c0-13.3-10.7-24-24-24m-80 120c0-13.3-10.7-24-24-24s-24 10.7-24 24v208c0 13.3 10.7 24 24 24s24-10.7 24-24zm-128 72c-13.3 0-24 10.7-24 24v112c0 13.3 10.7 24 24 24s24-10.7 24-24V344c0-13.3-10.7-24-24-24M48 384c-13.3 0-24 10.7-24 24v48c0 13.3 10.7 24 24 24s24-10.7 24-24v-48c0-13.3-10.7-24-24-24"/></svg></span> &nbsp; <strong>MeasEpoch</strong></p>
 <hr />
-<p>Per-epoch <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> observations: C/N₀ (<abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr>), pseudorange, carrier phase, Doppler.
+<p>Per-epoch <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> observations: <span class="arithmatex">\(C/N_0\)</span> (<abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr>), pseudorange, carrier phase, Doppler.
 Primary source for the observations dataset.</p>
 </li>
 <li>
@@ -4448,7 +4685,7 @@ horizontal and vertical accuracy estimates, age of corrections.</p>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M32 32c17.7 0 32 14.3 32 32v336c0 8.8 7.2 16 16 16h400c17.7 0 32 14.3 32 32s-14.3 32-32 32H80c-44.2 0-80-35.8-80-80V64c0-17.7 14.3-32 32-32m96 64c0-17.7 14.3-32 32-32h192c17.7 0 32 14.3 32 32s-14.3 32-32 32H160c-17.7 0-32-14.3-32-32m32 80h128c17.7 0 32 14.3 32 32s-14.3 32-32 32H160c-17.7 0-32-14.3-32-32s14.3-32 32-32m0 112h256c17.7 0 32 14.3 32 32s-14.3 32-32 32H160c-17.7 0-32-14.3-32-32s14.3-32 32-32"/></svg></span> &nbsp; <strong><abbr title="Dilution of Precision — scalar measure of how satellite geometry amplifies ranging errors (Navipedia: Dilution of Precision)">DOP</abbr></strong></p>
 <hr />
-<p>Dilution of Precision — PDOP, HDOP, VDOP per epoch.</p>
+<p>Dilution of Precision (PDOP, HDOP, VDOP) per epoch.</p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M176 24c0-13.3-10.7-24-24-24s-24 10.7-24 24v40c-35.3 0-64 28.7-64 64H24c-13.3 0-24 10.7-24 24s10.7 24 24 24h40v56H24c-13.3 0-24 10.7-24 24s10.7 24 24 24h40v56H24c-13.3 0-24 10.7-24 24s10.7 24 24 24h40c0 35.3 28.7 64 64 64v40c0 13.3 10.7 24 24 24s24-10.7 24-24v-40h56v40c0 13.3 10.7 24 24 24s24-10.7 24-24v-40h56v40c0 13.3 10.7 24 24 24s24-10.7 24-24v-40c35.3 0 64-28.7 64-64h40c13.3 0 24-10.7 24-24s-10.7-24-24-24h-40v-56h40c13.3 0 24-10.7 24-24s-10.7-24-24-24h-40v-56h40c13.3 0 24-10.7 24-24s-10.7-24-24-24h-40c0-35.3-28.7-64-64-64V24c0-13.3-10.7-24-24-24s-24 10.7-24 24v40h-56V24c0-13.3-10.7-24-24-24s-24 10.7-24 24v40h-56zm-16 104h192c17.7 0 32 14.3 32 32v192c0 17.7-14.3 32-32 32H160c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32m16 48v160h160V176z"/></svg></span> &nbsp; <strong>ReceiverStatus</strong></p>
@@ -4458,21 +4695,33 @@ horizontal and vertical accuracy estimates, age of corrections.</p>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M256 512a256 256 0 1 0 0-512 256 256 0 1 0 0 512m50.7-186.9-144.3 55.5c-19.4 7.5-38.5-11.6-31-31l55.5-144.3c3.3-8.5 9.9-15.1 18.4-18.4l144.3-55.5c19.4-7.5 38.5 11.6 31 31l-55.5 144.3c-3.2 8.5-9.9 15.1-18.4 18.4M288 256a32 32 0 1 0-64 0 32 32 0 1 0 64 0"/></svg></span> &nbsp; <strong>SatVisibility</strong></p>
 <hr />
-<p>Per-satellite azimuth and elevation for each tracked <abbr title="Space Vehicle — a single GNSS satellite, identified by system prefix + PRN number">SV</abbr>.
-Converted to geographic azimuth φ and polar angle θ.</p>
+<p>Per-satellite azimuth and elevation for each satellite above the
+horizon with an almanac or broadcast ephemeris, and which of the two
+the receiver used. Converted to geographic azimuth <span class="arithmatex">\(\varphi\)</span> and polar angle <span class="arithmatex">\(\theta\)</span>.</p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M64 96c0-17.7 14.3-32 32-32h160c17.7 0 32 14.3 32 32v288h96V256c0-17.7 14.3-32 32-32h64c17.7 0 32 14.3 32 32s-14.3 32-32 32h-32v128c0 17.7-14.3 32-32 32H256c-17.7 0-32-14.3-32-32V128h-96v128c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32h32z"/></svg></span> &nbsp; <strong>MeasExtra</strong></p>
 <hr />
-<p>Extra per-signal quality: multipath path-delay correction,
-code-phase and carrier-phase noise variance.</p>
+<p>Extra per-signal quality: multipath and smoothing corrections,
+code and carrier noise variance, lock time, CN0HighRes.</p>
+</li>
+<li>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M0 256a256 256 0 1 1 512 0 256 256 0 1 1-512 0m320 96c0-26.9-16.5-49.9-40-59.3V120c0-13.3-10.7-24-24-24s-24 10.7-24 24v172.7c-23.5 9.5-40 32.5-40 59.3 0 35.3 28.7 64 64 64s64-28.7 64-64M144 176a32 32 0 1 0 0-64 32 32 0 1 0 0 64m-16 80a32 32 0 1 0-64 0 32 32 0 1 0 64 0m288 32a32 32 0 1 0 0-64 32 32 0 1 0 0 64m-16-144a32 32 0 1 0-64 0 32 32 0 1 0 64 0"/></svg></span> &nbsp; <strong>QualityInd</strong></p>
+<hr />
+<p>Receiver quality scores (0-10): overall, <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> signals, RF power,
+CPU headroom, scintillation (firmware <span class="arithmatex">\(\geq\)</span> 4.15.1).</p>
+</li>
+<li>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M256 0c4.6 0 9.2 1 13.4 2.9l188.4 79.9c22 9.3 38.4 31 38.3 57.2-.5 99.2-41.3 280.7-213.6 363.2-16.7 8-36.1 8-52.8 0C57.3 420.7 16.6 239.2 16.1 140c-.1-26.2 16.3-47.9 38.3-57.2L242.7 2.9C246.9 1 251.4 0 256 0m0 66.8v378.1c138-66.8 175.1-214.8 176-303.4L256 66.9z"/></svg></span> &nbsp; <strong>RFStatus</strong></p>
+<hr />
+<p>Spoofing and navigation-message-authentication (NMA) flags.</p>
 </li>
 </ul>
 </div>
 <hr />
-<h2 id="output-datasets">Output Datasets<a class="headerlink" href="#output-datasets" title="Permanent link">&para;</a></h2>
-<h3 id="observations-dataset-to_ds">Observations dataset — <code>to_ds()</code><a class="headerlink" href="#observations-dataset-to_ds" title="Permanent link">&para;</a></h3>
-<p>Identical structure to <code>Rnxv3Obs.to_ds()</code> — a drop-in replacement:</p>
+<h2 id="output-datasets">Output datasets<a class="headerlink" href="#output-datasets" title="Permanent link">&para;</a></h2>
+<h3 id="observations-dataset-to_ds">Observations dataset: <code>to_ds()</code><a class="headerlink" href="#observations-dataset-to_ds" title="Permanent link">&para;</a></h3>
+<p>Identical structure to <code>Rnxv3Obs.to_ds()</code>, a drop-in replacement:</p>
 <table>
 <thead>
 <tr>
@@ -4487,15 +4736,15 @@ code-phase and carrier-phase noise variance.</p>
 </tr>
 <tr>
 <td><code>epoch</code> coordinate</td>
-<td><code>datetime64[ns]</code>, UTC</td>
+<td><code>datetime64[ns]</code>, <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time (attribute <code>time_system: GPS</code>)</td>
 </tr>
 <tr>
 <td><code>sid</code> coordinate</td>
-<td><code>"SV\|Band\|Code"</code> string (e.g. <code>G07\|L1\|C</code>)</td>
+<td><code>"SV\|Band\|Code"</code> string (for example <code>G07\|L1\|C</code>)</td>
 </tr>
 <tr>
 <td>Data variables</td>
-<td><code>SNR</code> (always), <code>Pseudorange</code>, <code>Phase</code>, <code>Doppler</code> (on request)</td>
+<td><code>SNR</code>, <code>Pseudorange</code>, <code>Phase</code>, <code>Doppler</code>, <code>SSI</code>, <code>Smoothing</code>, <code>HalfCycle</code> (select with <code>keep_data_vars</code>)</td>
 </tr>
 <tr>
 <td>Validation</td>
@@ -4503,10 +4752,33 @@ code-phase and carrier-phase noise variance.</p>
 </tr>
 </tbody>
 </table>
-<h3 id="metadata-dataset-to_metadata_ds">Metadata dataset — <code>to_metadata_ds()</code><a class="headerlink" href="#metadata-dataset-to_metadata_ds" title="Permanent link">&para;</a></h3>
-<p>A second dataset carrying receiver geometry and quality monitoring signals, stored
-under <code>{receiver}/metadata/sbf_obs</code> in the <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> store.</p>
-<p><strong>Epoch-level scalar variables</strong> (dimension: <code>epoch</code>):</p>
+<p><code>SNR</code> includes the MeasExtra CN0HighRes value of the same epoch where
+MeasExtra is logged (0.03125 dB-Hz resolution instead of 0.25 dB-Hz).
+<code>SSI</code> is derived from <code>SNR</code> (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04 banding); <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> has no native SSI.</p>
+<p><code>to_ds_and_auxiliary()</code> also returns the observables before the receiver's
+corrections: <code>SNR_raw</code>, <code>Pseudorange_unsmoothed</code>, <code>Pseudorange_raw</code>,
+<code>Phase_raw</code> (NaN where MeasExtra is not logged). <code>store_raw_observables=False</code>
+leaves them out, and <code>to_ds()</code> never includes them. A run passes
+<code>processing.params.store_sbf_raw_observables</code> (default <code>true</code>).</p>
+<div class="admonition note">
+<p class="admonition-title">Observations that are dropped</p>
+<p>SVID 62 marks a <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> satellite whose slot number the receiver does not
+know (RefGuide-4.14.0, Section 4.1.9). It has no <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> satellite code, and
+several such satellites would share one identifier, so its observations
+are not stored.</p>
+</div>
+<h3 id="metadata-dataset-sbf_obs">Metadata dataset: <code>sbf_obs</code><a class="headerlink" href="#metadata-dataset-sbf_obs" title="Permanent link">&para;</a></h3>
+<p>The second dataset returned by <code>to_ds_and_auxiliary()</code>, under the key
+<code>"sbf_obs"</code>. It has the same <code>epoch</code> and <code>sid</code> coordinates as the
+observations dataset and carries receiver geometry and quality monitoring
+signals. The pipeline stores it under <code>{group}/metadata/sbf_obs</code> in the
+<abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> store, in the same commit as the observations of the same files:
+a file whose observations are skipped as already stored adds no <code>sbf_obs</code>
+either, so <code>sbf_obs</code> covers exactly the stored observation files. An
+<code>overwrite</code> run replaces a file's <code>sbf_obs</code> together with its observations. Set
+<code>processing.params.store_sbf_metadata: false</code> to not store it; broadcast
+geometry still works, since it uses <code>sbf_obs</code> in memory.</p>
+<p><strong>Epoch-level values</strong> (coordinates on <code>epoch</code>):</p>
 <table>
 <thead>
 <tr>
@@ -4542,25 +4814,25 @@ under <code>{receiver}/metadata/sbf_obs</code> in the <abbr title="Version-contr
 <td>Number of SVs used in fix</td>
 </tr>
 <tr>
-<td><code>h_accuracy</code></td>
+<td><code>h_accuracy_m</code></td>
 <td>PVTGeodetic</td>
 <td><code>m</code></td>
 <td>2DRMS horizontal accuracy (~95 %)</td>
 </tr>
 <tr>
-<td><code>v_accuracy</code></td>
+<td><code>v_accuracy_m</code></td>
 <td>PVTGeodetic</td>
 <td><code>m</code></td>
-<td>2σ vertical accuracy (~95 %)</td>
+<td><span class="arithmatex">\(2\sigma\)</span> vertical accuracy (~95 %)</td>
 </tr>
 <tr>
 <td><code>pvt_mode</code></td>
 <td>PVTGeodetic</td>
 <td><code>1</code></td>
-<td>Fix type (see flag table)</td>
+<td>Fix type (see flag table, -1 unknown)</td>
 </tr>
 <tr>
-<td><code>mean_corr_age</code></td>
+<td><code>mean_corr_age_s</code></td>
 <td>PVTGeodetic</td>
 <td><code>s</code></td>
 <td>Age of differential corrections</td>
@@ -4569,13 +4841,13 @@ under <code>{receiver}/metadata/sbf_obs</code> in the <abbr title="Version-contr
 <td><code>cpu_load</code></td>
 <td>ReceiverStatus</td>
 <td><code>percent</code></td>
-<td>Receiver CPU utilisation</td>
+<td>Receiver CPU utilisation (-1 unknown)</td>
 </tr>
 <tr>
-<td><code>temperature</code></td>
+<td><code>temperature_c</code></td>
 <td>ReceiverStatus</td>
 <td><code>degC</code></td>
-<td>Board temperature</td>
+<td>Receiver temperature</td>
 </tr>
 <tr>
 <td><code>rx_error</code></td>
@@ -4583,8 +4855,51 @@ under <code>{receiver}/metadata/sbf_obs</code> in the <abbr title="Version-contr
 <td><code>1</code></td>
 <td>Error bit-field (see bitmask table)</td>
 </tr>
+<tr>
+<td><code>qual_overall</code></td>
+<td>QualityInd</td>
+<td><code>1</code></td>
+<td>Overall quality score (0-10, -1 unknown)</td>
+</tr>
+<tr>
+<td><code>qual_gnss_main</code></td>
+<td>QualityInd</td>
+<td><code>1</code></td>
+<td><abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> signals, main antenna</td>
+</tr>
+<tr>
+<td><code>qual_rf_main</code></td>
+<td>QualityInd</td>
+<td><code>1</code></td>
+<td>RF power level, main antenna</td>
+</tr>
+<tr>
+<td><code>qual_cpu</code></td>
+<td>QualityInd</td>
+<td><code>1</code></td>
+<td>CPU headroom</td>
+</tr>
+<tr>
+<td><code>qual_scintillation</code></td>
+<td>QualityInd</td>
+<td><code>1</code></td>
+<td>Scintillation score (firmware <span class="arithmatex">\(\geq\)</span> 4.15.1)</td>
+</tr>
+<tr>
+<td><code>spoofing_flag</code></td>
+<td>RFStatus</td>
+<td><code>1</code></td>
+<td>1 = signals may not be authentic (-1 unknown)</td>
+</tr>
+<tr>
+<td><code>nma_fail_flag</code></td>
+<td>RFStatus</td>
+<td><code>1</code></td>
+<td>1 = non-authentic navigation message detected (NMA, -1 unknown)</td>
+</tr>
 </tbody>
 </table>
+<p>Every variable that stores <code>-1</code> for unknown declares it as <code>_FillValue</code>, so tools that follow CF conventions read it as missing: <code>cpu_load</code>, <code>pvt_mode</code>, the <code>qual_*</code> variables, the two RFStatus flags, and the per-signal <code>broadcast_angle_source</code> and <code>rise_set</code>.</p>
 <p><strong>Per-signal variables</strong> (dimensions: <code>epoch × sid</code>):</p>
 <table>
 <thead>
@@ -4600,19 +4915,25 @@ under <code>{receiver}/metadata/sbf_obs</code> in the <abbr title="Version-contr
 <td><code>broadcast_theta</code></td>
 <td>SatVisibility</td>
 <td><code>rad</code></td>
-<td>Polar angle θ (0 = overhead, π/2 = horizon)</td>
+<td>Polar angle <span class="arithmatex">\(\theta\)</span> (0 = overhead, <span class="arithmatex">\(\pi/2\)</span> = horizon)</td>
 </tr>
 <tr>
 <td><code>broadcast_phi</code></td>
 <td>SatVisibility</td>
 <td><code>rad</code></td>
-<td>Geographic azimuth φ (0 = North, clockwise)</td>
+<td>Geographic azimuth <span class="arithmatex">\(\varphi\)</span> (0 = North, clockwise)</td>
+</tr>
+<tr>
+<td><code>broadcast_angle_source</code></td>
+<td>SatVisibility</td>
+<td><code>1</code></td>
+<td>Orbit data behind <span class="arithmatex">\(\theta\)</span> and <span class="arithmatex">\(\varphi\)</span>: 1 = almanac, 2 = ephemeris, -1 unknown</td>
 </tr>
 <tr>
 <td><code>rise_set</code></td>
 <td>SatVisibility</td>
 <td><code>1</code></td>
-<td>1 = rising, 0 = setting</td>
+<td>1 = rising, 0 = setting, -1 unknown</td>
 </tr>
 <tr>
 <td><code>mp_correction_m</code></td>
@@ -4648,7 +4969,7 @@ under <code>{receiver}/metadata/sbf_obs</code> in the <abbr title="Version-contr
 <td><code>cum_loss_cont</code></td>
 <td>MeasExtra</td>
 <td><code>1</code></td>
-<td>Cycle-slip counter (modulo 256; Δ ≠ 0 → slip)</td>
+<td>Cycle-slip counter (modulo 256; <span class="arithmatex">\(\Delta \neq 0 \rightarrow\)</span> slip)</td>
 </tr>
 <tr>
 <td><code>car_mp_corr_cycles</code></td>
@@ -4662,18 +4983,30 @@ under <code>{receiver}/metadata/sbf_obs</code> in the <abbr title="Version-contr
 <td><code>dB-Hz</code></td>
 <td>CN0HighRes sub-quantisation correction (applied to <abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr> automatically)</td>
 </tr>
+<tr>
+<td><code>tracking_status_raw</code></td>
+<td>ChannelStatus</td>
+<td><code>1</code></td>
+<td>Tracking status bit field, 2 bits per signal (main antenna)</td>
+</tr>
+<tr>
+<td><code>pvt_status_raw</code></td>
+<td>ChannelStatus</td>
+<td><code>1</code></td>
+<td><abbr title="Position, Velocity, Time — the receiver navigation solution computed from pseudoranges (Navipedia: GNSS Basic Observables)">PVT</abbr> usage bit field, 2 bits per signal (main antenna)</td>
+</tr>
 </tbody>
 </table>
 <div class="admonition tip">
 <p class="admonition-title">Field decoding formulas</p>
 <p>All transformations from raw <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> integers to physical units are documented
-in detail — including the signal-dependent C/N₀ formula, the 40-bit
+in detail, including the signal-dependent <span class="arithmatex">\(C/N_0\)</span> formula, the 40-bit
 pseudorange reconstruction, and the carrier-phase wavelength conversion:</p>
 <p><a href="../sbf-decoding/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> Field Decoding Reference</a></p>
 </div>
 <hr />
 <h2 id="pvt-mode-flags"><abbr title="Position, Velocity, Time — the receiver navigation solution computed from pseudoranges (Navipedia: GNSS Basic Observables)">PVT</abbr> mode flags<a class="headerlink" href="#pvt-mode-flags" title="Permanent link">&para;</a></h2>
-<p><code>pvt_mode</code> uses CF <code>flag_values</code> / <code>flag_meanings</code> attributes — a fixed set of mutually exclusive values:</p>
+<p><code>pvt_mode</code> uses CF <code>flag_values</code> / <code>flag_meanings</code> attributes, a fixed set of mutually exclusive values:</p>
 <div class="grid">
 <table>
 <thead>
@@ -4689,7 +5022,7 @@ pseudorange reconstruction, and the carrier-phase wavelength conversion:</p>
 </tr>
 <tr>
 <td><code>1</code></td>
-<td>StandAlone — autonomous from broadcast ephemeris</td>
+<td>StandAlone: autonomous from broadcast ephemeris</td>
 </tr>
 <tr>
 <td><code>2</code></td>
@@ -4697,19 +5030,27 @@ pseudorange reconstruction, and the carrier-phase wavelength conversion:</p>
 </tr>
 <tr>
 <td><code>3</code></td>
-<td>Fixed RTK</td>
+<td>Fixed location</td>
 </tr>
 <tr>
 <td><code>4</code></td>
-<td>Float RTK</td>
+<td>RTK with fixed ambiguities</td>
 </tr>
 <tr>
 <td><code>5</code></td>
-<td><abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr>-aided</td>
+<td>RTK with float ambiguities</td>
 </tr>
 <tr>
 <td><code>6</code></td>
-<td>MovingBase</td>
+<td><abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr>-aided</td>
+</tr>
+<tr>
+<td><code>7</code></td>
+<td>Moving-base RTK with fixed ambiguities</td>
+</tr>
+<tr>
+<td><code>8</code></td>
+<td>Moving-base RTK with float ambiguities</td>
 </tr>
 <tr>
 <td><code>10</code></td>
@@ -4719,19 +5060,24 @@ pseudorange reconstruction, and the carrier-phase wavelength conversion:</p>
 </table>
 <div class="admonition info">
 <p class="admonition-title">In the dataset</p>
-<div class="highlight"><pre><span></span><code><span class="n">meta_ds</span><span class="p">[</span><span class="s2">&quot;pvt_mode&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+<div class="highlight"><pre><span></span><code><span class="n">meta_ds</span><span class="p">[</span><span class="s2">"pvt_mode"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
 <span class="c1"># {</span>
-<span class="c1">#     &quot;long_name&quot;: &quot;PVT fix mode&quot;,</span>
-<span class="c1">#     &quot;flag_values&quot;: [0, 1, 2, 3, 4, 5, 6, 10],</span>
-<span class="c1">#     &quot;flag_meanings&quot;: &quot;no_solution standalone dgnss fixed_rtk float_rtk sbas moving_base ppp&quot;,</span>
-<span class="c1">#     &quot;units&quot;: &quot;1&quot;,</span>
+<span class="c1">#     "long_name": "PVT solution mode",</span>
+<span class="c1">#     "units": "1",</span>
+<span class="c1">#     "flag_values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 10],</span>
+<span class="c1">#     "flag_meanings": "no_pvt stand_alone differential fixed_location "</span>
+<span class="c1">#                      "rtk_fixed_ambiguities rtk_float_ambiguities sbas_aided "</span>
+<span class="c1">#                      "moving_base_rtk_fixed_ambiguities "</span>
+<span class="c1">#                      "moving_base_rtk_float_ambiguities ppp",</span>
+<span class="c1">#     "source": "SBF PVTGeodetic block (Block 4007), reported by receiver firmware",</span>
+<span class="c1">#     ...</span>
 <span class="c1"># }</span>
 </code></pre></div>
 </div>
 </div>
 <hr />
 <h2 id="rx_error-bitmask"><code>rx_error</code> bitmask<a class="headerlink" href="#rx_error-bitmask" title="Permanent link">&para;</a></h2>
-<p><code>rx_error</code> is a <strong>bit field</strong> — multiple flags may be set simultaneously.
+<p><code>rx_error</code> is a <strong>bit field</strong>: multiple flags may be set simultaneously.
 Test a specific flag with <code>(rx_error &amp; flag_mask) != 0</code>.</p>
 <table>
 <thead>
@@ -4743,138 +5089,153 @@ Test a specific flag with <code>(rx_error &amp; flag_mask) != 0</code>.</p>
 <tbody>
 <tr>
 <td><code>8</code> (bit 3)</td>
-<td>Software watchdog reset</td>
+<td>Software warning or error</td>
 </tr>
 <tr>
 <td><code>16</code> (bit 4)</td>
-<td>Antenna problem detected</td>
+<td>Watchdog expired since power-on</td>
 </tr>
 <tr>
 <td><code>32</code> (bit 5)</td>
-<td>Receiver congestion</td>
+<td>Antenna overcurrent</td>
 </tr>
 <tr>
 <td><code>64</code> (bit 6)</td>
-<td>CPU overload</td>
+<td>Output data congestion</td>
+</tr>
+<tr>
+<td><code>256</code> (bit 8)</td>
+<td>Missed external events</td>
 </tr>
 <tr>
 <td><code>512</code> (bit 9)</td>
-<td>Invalid configuration</td>
+<td>CPU load above 90 %</td>
 </tr>
 <tr>
 <td><code>1024</code> (bit 10)</td>
-<td>Out of geofence</td>
+<td>Invalid configuration</td>
 </tr>
 <tr>
 <td><code>2048</code> (bit 11)</td>
-<td>Reserved</td>
+<td>Out of geofence</td>
 </tr>
 </tbody>
 </table>
+<p>Source: RefGuide-4.14.0, ReceiverStatus, field RxError, p.398.</p>
 <div class="admonition example">
 <p class="admonition-title">Decoding the bitmask</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="n">rx_error</span> <span class="o">=</span> <span class="n">meta_ds</span><span class="p">[</span><span class="s2">&quot;rx_error&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>          <span class="c1"># int16 array (epoch,)</span>
+<span class="n">rx_error</span> <span class="o">=</span> <span class="n">meta_ds</span><span class="p">[</span><span class="s2">"rx_error"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>  <span class="c1"># int32 array (epoch,)</span>
 
-<span class="n">sw_watchdog</span>  <span class="o">=</span> <span class="p">(</span><span class="n">rx_error</span> <span class="o">&amp;</span> <span class="mi">8</span><span class="p">)</span>   <span class="o">!=</span> <span class="mi">0</span>            <span class="c1"># bit 3</span>
-<span class="n">antenna_prob</span> <span class="o">=</span> <span class="p">(</span><span class="n">rx_error</span> <span class="o">&amp;</span> <span class="mi">16</span><span class="p">)</span>  <span class="o">!=</span> <span class="mi">0</span>            <span class="c1"># bit 4</span>
-<span class="n">cpu_overload</span> <span class="o">=</span> <span class="p">(</span><span class="n">rx_error</span> <span class="o">&amp;</span> <span class="mi">64</span><span class="p">)</span>  <span class="o">!=</span> <span class="mi">0</span>            <span class="c1"># bit 6</span>
+<span class="n">software</span> <span class="o">=</span> <span class="p">(</span><span class="n">rx_error</span> <span class="o">&amp;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>  <span class="c1"># bit 3</span>
+<span class="n">antenna</span> <span class="o">=</span> <span class="p">(</span><span class="n">rx_error</span> <span class="o">&amp;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>  <span class="c1"># bit 5</span>
+<span class="n">cpu_overload</span> <span class="o">=</span> <span class="p">(</span><span class="n">rx_error</span> <span class="o">&amp;</span> <span class="mi">512</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>  <span class="c1"># bit 9</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epochs with software errors: </span><span class="si">{</span><span class="n">sw_watchdog</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epochs with antenna issues:  </span><span class="si">{</span><span class="n">antenna_prob</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Epochs with software errors: </span><span class="si">{</span><span class="n">software</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Epochs with antenna issues:  </span><span class="si">{</span><span class="n">antenna</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
-<p><code>rx_error = 48</code> means both bit 4 (antenna) and bit 5 (congestion) are set simultaneously.</p>
+<p><code>rx_error = 48</code> means both bit 4 (watchdog) and bit 5 (antenna) are set simultaneously.</p>
 </div>
 <hr />
-<h2 id="coordinate-conventions">Coordinate Conventions<a class="headerlink" href="#coordinate-conventions" title="Permanent link">&para;</a></h2>
+<h2 id="coordinate-conventions">Coordinate conventions<a class="headerlink" href="#coordinate-conventions" title="Permanent link">&para;</a></h2>
 <h3 id="polar-angle-theta">Polar angle θ (theta)<a class="headerlink" href="#polar-angle-theta" title="Permanent link">&para;</a></h3>
-<div class="arithmatex">\[\theta = 90° - \text{elevation}\]</div>
+<div class="arithmatex">\[\theta = 90^\circ - \text{elevation}\]</div>
+<p><code>broadcast_theta</code> and <code>broadcast_phi</code> are stored in radians; the tables
+below give degrees for readability.</p>
 <div class="grid">
 <table>
 <thead>
 <tr>
-<th>θ</th>
+<th><span class="arithmatex">\(\theta\)</span></th>
 <th>Meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>0°</code></td>
+<td><span class="arithmatex">\(0^\circ\)</span></td>
 <td>Satellite directly overhead (zenith)</td>
 </tr>
 <tr>
-<td><code>90°</code></td>
+<td><span class="arithmatex">\(90^\circ\)</span></td>
 <td>Satellite at the horizon</td>
 </tr>
 </tbody>
 </table>
 <div class="admonition warning">
 <p class="admonition-title">Elevation mask</p>
-<p>A typical 5–10° elevation mask corresponds to <code>θ &lt; 80–85°</code>.
-<abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analyses commonly restrict to <code>θ ≤ 70°</code> (elevation ≥ 20°) to limit multipath.</p>
+<p>A typical elevation mask of <span class="arithmatex">\(5^\circ\)</span> to <span class="arithmatex">\(10^\circ\)</span> corresponds to <span class="arithmatex">\(\theta &lt; 80^\circ\)</span> to <span class="arithmatex">\(85^\circ\)</span>.
+<abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analyses commonly restrict to <span class="arithmatex">\(\theta \leq 70^\circ\)</span> (elevation <span class="arithmatex">\(\geq 20^\circ\)</span>) to limit multipath.</p>
 </div>
 </div>
 <h3 id="azimuth-phi">Azimuth φ (phi)<a class="headerlink" href="#azimuth-phi" title="Permanent link">&para;</a></h3>
 <p>The stored value is the <strong>geographic (compass) azimuth</strong>:</p>
 <ul>
-<li>0° = North · 90° = East · 180° = South · 270° = West <em>(clockwise)</em></li>
-<li>This is the raw <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> <code>Azimuth</code> field scaled by 0.01°</li>
+<li><span class="arithmatex">\(0^\circ\)</span> = North · <span class="arithmatex">\(90^\circ\)</span> = East · <span class="arithmatex">\(180^\circ\)</span> = South · <span class="arithmatex">\(270^\circ\)</span> = West <em>(clockwise)</em></li>
+<li>The <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> <code>Azimuth</code> field (steps of <span class="arithmatex">\(0.01^\circ\)</span>), converted to radians</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Mathematical convention</p>
 <p>This is <strong>NOT</strong> the spherical-coordinate azimuthal angle, which is measured
 counterclockwise from East. To convert:</p>
-<div class="arithmatex">\[\phi_\text{spherical} = (90° - \phi_\text{stored}) \bmod 360°\]</div>
+<div class="arithmatex">\[\varphi_\text{spherical} = (90^\circ - \varphi_\text{stored}) \bmod 360^\circ\]</div>
 </div>
 <hr />
-<h2 id="cf-convention-metadata-attributes">CF-Convention Metadata Attributes<a class="headerlink" href="#cf-convention-metadata-attributes" title="Permanent link">&para;</a></h2>
-<p>Every variable in the metadata dataset carries full CF-convention attributes for NetCDF
-interoperability and scientific reproducibility.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">pdop</label><label for="__tabbed_1_2">theta</label><label for="__tabbed_1_3">rx_error</label><label for="__tabbed_1_4">pvt_mode</label></div>
+<h2 id="cf-convention-metadata-attributes">CF-convention metadata attributes<a class="headerlink" href="#cf-convention-metadata-attributes" title="Permanent link">&para;</a></h2>
+<p>Every variable in the metadata dataset carries the CF attributes <code>long_name</code> and
+<code>units</code>, plus <code>source</code>, <code>comment</code> and <code>references</code>, which say where each value comes
+from. None carries a <code>standard_name</code>: the CF standard name table has no name for these
+quantities.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1"><code>pdop</code></label><label for="__tabbed_1_2"><code>broadcast_theta</code></label><label for="__tabbed_1_3"><code>rx_error</code></label><label for="__tabbed_1_4"><code>pvt_mode</code></label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="n">meta_ds</span><span class="p">[</span><span class="s2">&quot;pdop&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+<div class="highlight"><pre><span></span><code><span class="n">meta_ds</span><span class="p">[</span><span class="s2">"pdop"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
 <span class="c1"># {</span>
-<span class="c1">#     &quot;long_name&quot;:     &quot;Position Dilution of Precision&quot;,</span>
-<span class="c1">#     &quot;standard_name&quot;: &quot;position_dilution_of_precision&quot;,</span>
-<span class="c1">#     &quot;units&quot;:         &quot;1&quot;,</span>
-<span class="c1">#     &quot;source&quot;:        &quot;SBF DOP block&quot;,</span>
-<span class="c1">#     &quot;comment&quot;:       &quot;PDOP = sqrt(σ_x² + σ_y² + σ_z²) / σ_R ...&quot;,</span>
-<span class="c1">#     &quot;references&quot;:    &quot;Septentrio AsteRx SB3 ProBase Firmware v4.14.0 ...&quot;,</span>
+<span class="c1">#     "long_name":  "Position Dilution of Precision",</span>
+<span class="c1">#     "units":      "1",</span>
+<span class="c1">#     "source":     "SBF DOP block (Block 4001), reported by receiver firmware",</span>
+<span class="c1">#     "comment":    "PDOP = √(Qxx + Qyy + Qzz), where Q is the position covariance ...",</span>
+<span class="c1">#     "references": "Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide, ...",</span>
 <span class="c1"># }</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="n">meta_ds</span><span class="p">[</span><span class="s2">&quot;theta&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+<div class="highlight"><pre><span></span><code><span class="n">meta_ds</span><span class="p">[</span><span class="s2">"broadcast_theta"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
 <span class="c1"># {</span>
-<span class="c1">#     &quot;long_name&quot;:     &quot;Polar angle&quot;,</span>
-<span class="c1">#     &quot;standard_name&quot;: &quot;polar_angle&quot;,</span>
-<span class="c1">#     &quot;units&quot;:         &quot;degrees&quot;,</span>
-<span class="c1">#     &quot;source&quot;:        &quot;SBF SatVisibility block&quot;,</span>
-<span class="c1">#     &quot;comment&quot;:       &quot;theta = 90 - elevation; 0 = overhead, 90 = horizon&quot;,</span>
+<span class="c1">#     "long_name":     "Satellite polar angle reported by the receiver",</span>
+<span class="c1">#     "short_name":    "θ_B",</span>
+<span class="c1">#     "units":         "rad",</span>
+<span class="c1">#     "source":        "SBF SatVisibility block (Block 4012), reported by receiver firmware",</span>
+<span class="c1">#     "comment":       "Polar angle from vertical: 0 = overhead, π/2 = horizon. ...",</span>
+<span class="c1">#     "references":    "Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide, ...",</span>
 <span class="c1"># }</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="n">meta_ds</span><span class="p">[</span><span class="s2">&quot;rx_error&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+<div class="highlight"><pre><span></span><code><span class="n">meta_ds</span><span class="p">[</span><span class="s2">"rx_error"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
 <span class="c1"># {</span>
-<span class="c1">#     &quot;long_name&quot;:     &quot;Receiver error status bit field&quot;,</span>
-<span class="c1">#     &quot;units&quot;:         &quot;1&quot;,</span>
-<span class="c1">#     &quot;flag_masks&quot;:    [8, 16, 32, 64, 512, 1024, 2048],</span>
-<span class="c1">#     &quot;flag_meanings&quot;: &quot;software_watchdog antenna congestion cpu_overload ...&quot;,</span>
-<span class="c1">#     &quot;source&quot;:        &quot;SBF ReceiverStatus block&quot;,</span>
+<span class="c1">#     "long_name":     "Receiver error status bit field",</span>
+<span class="c1">#     "units":         "1",</span>
+<span class="c1">#     "flag_masks":    [8, 16, 32, 64, 256, 512, 1024, 2048],</span>
+<span class="c1">#     "flag_meanings": "software watchdog antenna congestion missedevent cpuoverload "</span>
+<span class="c1">#                      "invalidconfig outofgeofence",</span>
+<span class="c1">#     "source":        "SBF ReceiverStatus block, reported by receiver firmware",</span>
+<span class="c1">#     ...</span>
 <span class="c1"># }</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="n">meta_ds</span><span class="p">[</span><span class="s2">&quot;pvt_mode&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
+<div class="highlight"><pre><span></span><code><span class="n">meta_ds</span><span class="p">[</span><span class="s2">"pvt_mode"</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span>
 <span class="c1"># {</span>
-<span class="c1">#     &quot;long_name&quot;:     &quot;PVT fix mode&quot;,</span>
-<span class="c1">#     &quot;units&quot;:         &quot;1&quot;,</span>
-<span class="c1">#     &quot;flag_values&quot;:   [0, 1, 2, 3, 4, 5, 6, 10],</span>
-<span class="c1">#     &quot;flag_meanings&quot;: &quot;no_solution standalone dgnss fixed_rtk float_rtk sbas moving_base ppp&quot;,</span>
-<span class="c1">#     &quot;source&quot;:        &quot;SBF PVTGeodetic block&quot;,</span>
+<span class="c1">#     "long_name": "PVT solution mode",</span>
+<span class="c1">#     "units": "1",</span>
+<span class="c1">#     "flag_values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 10],</span>
+<span class="c1">#     "flag_meanings": "no_pvt stand_alone differential fixed_location "</span>
+<span class="c1">#                      "rtk_fixed_ambiguities rtk_float_ambiguities sbas_aided "</span>
+<span class="c1">#                      "moving_base_rtk_fixed_ambiguities "</span>
+<span class="c1">#                      "moving_base_rtk_float_ambiguities ppp",</span>
+<span class="c1">#     "source": "SBF PVTGeodetic block (Block 4007), reported by receiver firmware",</span>
+<span class="c1">#     ...</span>
 <span class="c1"># }</span>
 </code></pre></div>
 </div>
@@ -4888,121 +5249,131 @@ interoperability and scientific reproducibility.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">canvod.readers.sbf</span><span class="w"> </span><span class="kn">import</span> <span class="n">SbfReader</span>
 
-<span class="n">reader</span> <span class="o">=</span> <span class="n">SbfReader</span><span class="p">(</span><span class="n">fpath</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;rref001a00.25_&quot;</span><span class="p">))</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">SbfReader</span><span class="p">(</span><span class="n">fpath</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"rref001a00.25_"</span><span class="p">))</span>
 
 <span class="c1"># Inspect header</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">rx_name</span><span class="p">)</span>       <span class="c1"># e.g. &quot;AsteRx SB3&quot;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">rx_version</span><span class="p">)</span>    <span class="c1"># e.g. &quot;4.14.4&quot;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">)</span>           <span class="c1"># number of MeasEpoch blocks</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">systems</span><span class="p">)</span>              <span class="c1"># [&quot;E&quot;, &quot;G&quot;, &quot;R&quot;, ...]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">rx_name</span><span class="p">)</span>  <span class="c1"># receiver name from ReceiverSetup</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">rx_version</span><span class="p">)</span>  <span class="c1"># e.g. "4.14.4"</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">)</span>  <span class="c1"># number of MeasEpoch blocks</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">systems</span><span class="p">)</span>  <span class="c1"># ["E", "G", "R", ...]</span>
 
 <span class="c1"># Observations only</span>
-<span class="n">obs_ds</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">to_ds</span><span class="p">(</span>
-    <span class="n">keep_data_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;SNR&quot;</span><span class="p">,</span> <span class="s2">&quot;Pseudorange&quot;</span><span class="p">,</span> <span class="s2">&quot;Phase&quot;</span><span class="p">,</span> <span class="s2">&quot;Doppler&quot;</span><span class="p">],</span>
-    <span class="n">write_global_attrs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="n">obs_ds</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">to_ds</span><span class="p">(</span><span class="n">keep_data_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"SNR"</span><span class="p">,</span> <span class="s2">"Pseudorange"</span><span class="p">,</span> <span class="s2">"Phase"</span><span class="p">,</span> <span class="s2">"Doppler"</span><span class="p">])</span>
 
-<span class="c1"># Metadata only</span>
-<span class="n">meta_ds</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">to_metadata_ds</span><span class="p">()</span>
+<span class="c1"># Observations and metadata</span>
+<span class="n">obs_ds</span><span class="p">,</span> <span class="n">aux</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">to_ds_and_auxiliary</span><span class="p">()</span>
+<span class="n">meta_ds</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[</span><span class="s2">"sbf_obs"</span><span class="p">]</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="c1"># Recommended: one binary scan, two datasets</span>
+<div class="highlight"><pre><span></span><code><span class="c1"># One binary scan, two datasets</span>
 <span class="n">obs_ds</span><span class="p">,</span> <span class="n">aux_dict</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">to_ds_and_auxiliary</span><span class="p">(</span>
-    <span class="n">keep_data_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;SNR&quot;</span><span class="p">,</span> <span class="s2">&quot;Pseudorange&quot;</span><span class="p">],</span>
-    <span class="n">write_global_attrs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">keep_data_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"SNR"</span><span class="p">,</span> <span class="s2">"Pseudorange"</span><span class="p">],</span>
 <span class="p">)</span>
-<span class="n">meta_ds</span> <span class="o">=</span> <span class="n">aux_dict</span><span class="p">[</span><span class="s2">&quot;sbf_obs&quot;</span><span class="p">]</span>
+<span class="n">meta_ds</span> <span class="o">=</span> <span class="n">aux_dict</span><span class="p">[</span><span class="s2">"sbf_obs"</span><span class="p">]</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">xarray</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">xr</span>
 
-<span class="n">readers</span> <span class="o">=</span> <span class="p">[</span><span class="n">SbfReader</span><span class="p">(</span><span class="n">fpath</span><span class="o">=</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sbf_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.sbf&quot;</span><span class="p">))]</span>
+<span class="n">readers</span> <span class="o">=</span> <span class="p">[</span><span class="n">SbfReader</span><span class="p">(</span><span class="n">fpath</span><span class="o">=</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sbf_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.sbf"</span><span class="p">))]</span>
 
 <span class="n">obs_list</span><span class="p">,</span> <span class="n">meta_list</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">readers</span><span class="p">:</span>
-    <span class="n">obs</span><span class="p">,</span> <span class="n">aux</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">to_ds_and_auxiliary</span><span class="p">(</span><span class="n">keep_data_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;SNR&quot;</span><span class="p">])</span>
+    <span class="n">obs</span><span class="p">,</span> <span class="n">aux</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">to_ds_and_auxiliary</span><span class="p">(</span><span class="n">keep_data_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"SNR"</span><span class="p">])</span>
     <span class="n">obs_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
-    <span class="n">meta_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">aux</span><span class="p">[</span><span class="s2">&quot;sbf_obs&quot;</span><span class="p">])</span>
+    <span class="n">meta_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">aux</span><span class="p">[</span><span class="s2">"sbf_obs"</span><span class="p">])</span>
 
-<span class="n">daily_obs</span>  <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">obs_list</span><span class="p">,</span>  <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;epoch&quot;</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">&quot;epoch&quot;</span><span class="p">)</span>
-<span class="n">daily_meta</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">meta_list</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">&quot;epoch&quot;</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">&quot;epoch&quot;</span><span class="p">)</span>
+<span class="n">daily_obs</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">obs_list</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">"epoch"</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">"outer"</span><span class="p">)</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"epoch"</span><span class="p">)</span>
+<span class="n">daily_meta</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">meta_list</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="s2">"epoch"</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="s2">"outer"</span><span class="p">)</span><span class="o">.</span><span class="n">sortby</span><span class="p">(</span><span class="s2">"epoch"</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="c1"># All GPS signals</span>
-<span class="n">gps</span> <span class="o">=</span> <span class="n">daily_obs</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">sid</span><span class="o">=</span><span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">daily_obs</span><span class="o">.</span><span class="n">sid</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;G&quot;</span><span class="p">)])</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="c1"># L1C band only</span>
-<span class="n">l1c</span> <span class="o">=</span> <span class="n">daily_obs</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">sid</span><span class="o">=</span><span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">daily_obs</span><span class="o">.</span><span class="n">sid</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="s2">&quot;|L1C|&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">])</span>
+<span class="c1"># All GPS signals</span>
+<span class="n">gps</span> <span class="o">=</span> <span class="n">daily_obs</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">sid</span><span class="o">=</span><span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">daily_obs</span><span class="o">.</span><span class="n">sid</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"G"</span><span class="p">)])</span>
+
+<span class="c1"># GPS L1 C/A only</span>
+<span class="n">l1c</span> <span class="o">=</span> <span class="n">daily_obs</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span>
+    <span class="n">sid</span><span class="o">=</span><span class="p">(</span><span class="n">daily_obs</span><span class="o">.</span><span class="n">system</span> <span class="o">==</span> <span class="s2">"G"</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">daily_obs</span><span class="o">.</span><span class="n">band</span> <span class="o">==</span> <span class="s2">"L1"</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">daily_obs</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s2">"C"</span><span class="p">)</span>
+<span class="p">)</span>
 
 <span class="c1"># Polar angle filter: elevation ≥ 20° → theta ≤ 70°</span>
-<span class="n">theta_mask</span> <span class="o">=</span> <span class="n">daily_meta</span><span class="p">[</span><span class="s2">&quot;theta&quot;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">70</span>
-<span class="n">snr_high_el</span> <span class="o">=</span> <span class="n">daily_obs</span><span class="p">[</span><span class="s2">&quot;SNR&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">theta_mask</span><span class="p">)</span>
+<span class="n">theta_mask</span> <span class="o">=</span> <span class="n">daily_meta</span><span class="p">[</span><span class="s2">"broadcast_theta"</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mi">70</span><span class="p">)</span>
+<span class="n">snr_high_el</span> <span class="o">=</span> <span class="n">daily_obs</span><span class="p">[</span><span class="s2">"SNR"</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">theta_mask</span><span class="p">)</span>
 </code></pre></div>
 </div>
 </div>
 </div>
 <hr />
-<h2 id="combined-scan-api-to_ds_and_auxiliary">Combined Scan API — <code>to_ds_and_auxiliary()</code><a class="headerlink" href="#combined-scan-api-to_ds_and_auxiliary" title="Permanent link">&para;</a></h2>
+<h2 id="combined-scan-api-to_ds_and_auxiliary">Combined scan API: <code>to_ds_and_auxiliary()</code><a class="headerlink" href="#combined-scan-api-to_ds_and_auxiliary" title="Permanent link">&para;</a></h2>
 <div class="admonition info">
 <p class="admonition-title">Why a combined scan?</p>
-<p>The pipeline always calls <code>to_ds_and_auxiliary()</code> rather than making two
-separate calls. This avoids reading and parsing the binary file twice.</p>
+<p>The pipeline always calls <code>to_ds_and_auxiliary()</code>, which reads and parses
+the binary file once and builds both datasets from the same decoded
+observations.</p>
 </div>
 <div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────┐
 │                  SBF file                        │
 │  MeasEpoch  PVTGeodetic  DOP  SatVisibility …   │
 └───────────────────────┬─────────────────────────┘
-                        │ single parser.read() pass
+                        │ single parser.read() pass,
+                        │ blocks grouped by time stamp
         ┌───────────────┴────────────────┐
         ▼                                ▼
-  obs accumulators              metadata accumulators
-  (SNR, PR, phase, Doppler)     (DOP, PVT, theta, phi, …)
+  MeasEpoch + MeasExtra         SatVisibility, DOP, PVT,
+  (SNR, PR, phase, Doppler)     status, quality (same epoch)
         │                                │
         ▼                                ▼
    obs_ds (epoch × sid)        meta_ds (epoch × sid)
-                                   key: &quot;sbf_obs&quot;
+                                   key: "sbf_obs"
 </code></pre></div>
 <p>Return type:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">tuple</span><span class="p">[</span><span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">]]</span>
-<span class="c1">#       obs_ds       {&quot;sbf_obs&quot;: meta_ds}</span>
+<span class="c1">#       obs_ds       {"sbf_obs": meta_ds}</span>
 </code></pre></div>
 <hr />
-<h2 id="source-format-identification">Source Format Identification<a class="headerlink" href="#source-format-identification" title="Permanent link">&para;</a></h2>
+<h2 id="source-format-identification">Source format identification<a class="headerlink" href="#source-format-identification" title="Permanent link">&para;</a></h2>
 <p>Every reader exposes a <code>source_format</code> property used by the store and viewer
-to identify the data origin. The base class returns <code>"rinex3"</code> by default;
-<code>SbfReader</code> overrides it:</p>
-<div class="highlight"><pre><span></span><code><span class="n">reader</span> <span class="o">=</span> <span class="n">SbfReader</span><span class="p">(</span><span class="n">fpath</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;station.25_&quot;</span><span class="p">))</span>
-<span class="n">reader</span><span class="o">.</span><span class="n">source_format</span>  <span class="c1"># → &quot;sbf&quot;</span>
+to identify the data origin. Every reader must define it; <code>SbfReader</code>
+returns <code>"sbf"</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">reader</span> <span class="o">=</span> <span class="n">SbfReader</span><span class="p">(</span><span class="n">fpath</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">"station.25_"</span><span class="p">))</span>
+<span class="n">reader</span><span class="o">.</span><span class="n">source_format</span>  <span class="c1"># → "sbf"</span>
 </code></pre></div>
 <p>This value is written as a root-level <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> attribute (<code>source_format</code>) on first
-ingest. The store viewer uses it to select the correct display labels and to
+ingest, and as <code>identity.source_format</code> in the store's metadata. The store viewer uses it to select the correct display labels and to
 detect whether <code>sbf_obs</code> metadata is available.</p>
 <hr />
-<h2 id="broadcast-ephemeris-sbf-as-geometry-source">Broadcast Ephemeris: <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> as Geometry Source<a class="headerlink" href="#broadcast-ephemeris-sbf-as-geometry-source" title="Permanent link">&para;</a></h2>
+<h2 id="broadcast-ephemeris-sbf-as-geometry-source">Broadcast ephemeris: <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> as geometry source<a class="headerlink" href="#broadcast-ephemeris-sbf-as-geometry-source" title="Permanent link">&para;</a></h2>
 <p>The <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> <code>SatVisibility</code> block provides satellite azimuth and elevation computed
-by the receiver firmware from broadcast navigation messages. This makes <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files
-a <strong>self-contained ephemeris source</strong> — no <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> download needed.</p>
+by the receiver firmware, per satellite either from its almanac or from its
+broadcast ephemeris (<code>broadcast_angle_source</code>). This makes <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files a
+<strong>self-contained ephemeris source</strong>: no <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr>/<abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> download needed.</p>
 <p>The <code>SbfBroadcastProvider</code> (an <code>EphemerisProvider</code> implementation) extracts
 theta/phi from the <code>sbf_obs</code> auxiliary dataset and aligns them to observation
-epochs and SIDs:</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># Automatic in the orchestrator when ephemeris_source = &quot;broadcast&quot;</span>
-<span class="c1"># and reader_format = &quot;sbf&quot;</span>
+epochs and SIDs. It uses only angles computed from the broadcast ephemeris;
+almanac-based angles become NaN, and a file without any ephemeris-based angle
+raises an error:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Automatic in the orchestrator when ephemeris_source = "broadcast"</span>
+<span class="c1"># and reader_format = "sbf"</span>
 
 <span class="c1"># Manual usage:</span>
-<span class="n">obs_ds</span><span class="p">,</span> <span class="n">aux</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">to_ds_and_auxiliary</span><span class="p">(</span><span class="n">keep_data_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;SNR&quot;</span><span class="p">])</span>
-<span class="n">sbf_obs</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[</span><span class="s2">&quot;sbf_obs&quot;</span><span class="p">]</span>
+<span class="n">obs_ds</span><span class="p">,</span> <span class="n">aux</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">to_ds_and_auxiliary</span><span class="p">(</span><span class="n">keep_data_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"SNR"</span><span class="p">])</span>
+<span class="n">sbf_obs</span> <span class="o">=</span> <span class="n">aux</span><span class="p">[</span><span class="s2">"sbf_obs"</span><span class="p">]</span>
 
-<span class="c1"># theta/phi are already in sbf_obs — no coordinate transform needed</span>
-<span class="n">theta</span> <span class="o">=</span> <span class="n">sbf_obs</span><span class="p">[</span><span class="s2">&quot;theta&quot;</span><span class="p">]</span>  <span class="c1"># polar angle (degrees)</span>
-<span class="n">phi</span> <span class="o">=</span> <span class="n">sbf_obs</span><span class="p">[</span><span class="s2">&quot;phi&quot;</span><span class="p">]</span>      <span class="c1"># geographic azimuth (degrees)</span>
+<span class="c1"># theta/phi are already in sbf_obs; no coordinate transform needed;</span>
+<span class="c1"># keep the ephemeris-based angles only, as SbfBroadcastProvider does</span>
+<span class="n">from_ephemeris</span> <span class="o">=</span> <span class="n">sbf_obs</span><span class="p">[</span><span class="s2">"broadcast_angle_source"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="n">sbf_obs</span><span class="p">[</span><span class="s2">"broadcast_theta"</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">from_ephemeris</span><span class="p">)</span>  <span class="c1"># polar angle (rad)</span>
+<span class="n">phi</span> <span class="o">=</span> <span class="n">sbf_obs</span><span class="p">[</span><span class="s2">"broadcast_phi"</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">from_ephemeris</span><span class="p">)</span>  <span class="c1"># geographic azimuth (rad)</span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">When to use broadcast vs agency final</p>
-<p>For <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> applications, broadcast ephemeris accuracy (~1-2 m orbit) produces
-angular errors six orders of magnitude below measurement noise. Use
+<p>The receiver reports the angles in steps of <span class="arithmatex">\(0.01^\circ\)</span>. Almanac-based angles
+are not used: on the 2025-001 test data they differed from the
+ephemeris-based angles by at most <span class="arithmatex">\(0.03^\circ\)</span> for <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> and <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>, but by up to
+<span class="arithmatex">\(0.26^\circ\)</span> for <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> and up to <span class="arithmatex">\(104^\circ\)</span> for <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>. Use
 <code>ephemeris_source: "broadcast"</code> for immediate processing without internet.
 See <a href="../ephemeris-sources/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Ephemeris Sources</a> for details.</p>
 </div>
@@ -5026,7 +5397,7 @@ alongside observations, enabling retrospective quality analysis.</p>
 </code></pre></div>
 <p>The metadata is stored at <code>{receiver}/metadata/sbf_obs</code> in the <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> hierarchy.</p>
 <hr />
-<h2 id="satellite-catalog-enrichment">Satellite Catalog Enrichment<a class="headerlink" href="#satellite-catalog-enrichment" title="Permanent link">&para;</a></h2>
+<h2 id="satellite-catalog-enrichment">Satellite catalog enrichment<a class="headerlink" href="#satellite-catalog-enrichment" title="Permanent link">&para;</a></h2>
 <p>Combine <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> observations with <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> satellite metadata to add <abbr title="Space Vehicle Number — permanent hardware identifier assigned at launch; does not change when PRN is reassigned">SVN</abbr>, block type,
 TX power, mass, and orbital plane as coordinates:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.readers.gnss_specs</span><span class="w"> </span><span class="kn">import</span> <span class="n">SatelliteCatalog</span>
@@ -5035,7 +5406,7 @@ TX power, mass, and orbital plane as coordinates:</p>
 <span class="n">enriched</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">enrich_dataset</span><span class="p">(</span><span class="n">obs_ds</span><span class="p">)</span>
 
 <span class="c1"># Now filter by satellite generation</span>
-<span class="n">gps3</span> <span class="o">=</span> <span class="n">enriched</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">sid</span><span class="o">=</span><span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;block&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;GPS-III&quot;</span><span class="p">))</span>
+<span class="n">gps3</span> <span class="o">=</span> <span class="n">enriched</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">sid</span><span class="o">=</span><span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">"block"</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"GPS-III"</span><span class="p">))</span>
 </code></pre></div>
 <p>See <a href="../satellite-catalog/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Satellite Catalog</a> for the full API.</p>
 <hr />
@@ -5065,7 +5436,7 @@ TX power, mass, and orbital plane as coordinates:</p>
 <td><code>ReceiverSetup</code> block</td>
 </tr>
 <tr>
-<td>Geometry (θ, φ)</td>
+<td>Geometry (<span class="arithmatex">\(\theta\)</span>, <span class="arithmatex">\(\varphi\)</span>)</td>
 <td>Requires <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> download</td>
 <td><strong>Embedded in file</strong></td>
 </tr>
@@ -5090,18 +5461,13 @@ TX power, mass, and orbital plane as coordinates:</p>
 <td>✓</td>
 </tr>
 <tr>
-<td><code>to_metadata_ds()</code></td>
-<td>—</td>
-<td>✓</td>
-</tr>
-<tr>
 <td><code>to_ds_and_auxiliary()</code></td>
 <td>Returns <code>{}</code> aux</td>
 <td>Returns <code>{"sbf_obs": meta_ds}</code></td>
 </tr>
 <tr>
 <td>Broadcast ephemeris</td>
-<td>Requires <code>.YYp</code> NAV file (planned)</td>
+<td>Not supported (needs a navigation file)</td>
 <td>Built-in via SatVisibility</td>
 </tr>
 <tr>
@@ -5112,45 +5478,40 @@ TX power, mass, and orbital plane as coordinates:</p>
 <tr>
 <td><abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr> quantization</td>
 <td>~0.001 dB</td>
-<td>0.25 dB (hardware)</td>
+<td>0.25 dB-Hz; 0.03125 dB-Hz with MeasExtra</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="time-conversion">Time Conversion<a class="headerlink" href="#time-conversion" title="Permanent link">&para;</a></h2>
-<p><abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> timestamps use <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> Time (<abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> Week + Time of Week in milliseconds).
-<code>SbfReader</code> converts <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> Time to UTC using the leap-second offset ΔLS from
-the <code>ReceiverTime</code> block.</p>
-<div class="arithmatex">\[\text{UTC} = \text{GPS\_epoch} + \frac{\text{WN} \times 604800 \times 10^3 + \text{TOW}}{10^3} - \Delta_\text{LS}\]</div>
-<p>Where <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> epoch = 1980-01-06 00:00:00 UTC and ΔLS = 18 s (current, valid
-from 2017-01-01). The ΔLS value is updated dynamically if a <code>ReceiverTime</code>
-block is present.</p>
+<h2 id="time-conversion">Time conversion<a class="headerlink" href="#time-conversion" title="Permanent link">&para;</a></h2>
+<p><abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> time stamps are <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time: <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> week (<code>WNc</code>) and time of week (<code>TOW</code>,
+milliseconds), with no leap seconds (RefGuide-4.14.0, Section 2.3, p.53).
+<code>SbfReader</code> keeps them in <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time, like <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files and the orbit and
+clock products:</p>
+<div class="arithmatex">\[\text{GPS time} = \text{GPS\_epoch} + \frac{\text{WN} \times 604800 \times 10^3 + \text{TOW}}{10^3}\]</div>
+<p>where <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> epoch = 1980-01-06 00:00:00. A file named for a <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> day starts at
+00:00:00 of that day. Stores written by earlier versions hold UTC epochs,
+18 s earlier (23:59:42 of the previous day for the first file of a day).</p>
 <hr />
-<h2 id="glonass-fdma-frequencies"><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> <abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr> Frequencies<a class="headerlink" href="#glonass-fdma-frequencies" title="Permanent link">&para;</a></h2>
-<p><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> signals use Frequency Division Multiple Access (<abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr>). The centre
-frequency depends on the frequency slot number (FreqNr, K ∈ {−7, …, +6}):</p>
+<h2 id="glonass-fdma-frequencies"><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> <abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr> frequencies<a class="headerlink" href="#glonass-fdma-frequencies" title="Permanent link">&para;</a></h2>
+<p><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> signals use Frequency Division Multiple Access (<abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr>). The center
+frequency depends on the frequency number <span class="arithmatex">\(K = \text{FreqNr} - 8\)</span>
+(RefGuide-4.14.0: <span class="arithmatex">\(K \in \{-7, \dots, +13\}\)</span>; RefGuide-4.15.1: <span class="arithmatex">\(K \in \{-7, \dots, +6\}\)</span>):</p>
 <div class="arithmatex">\[f_{L1} = 1602 \text{ MHz} + K \times 0.5625 \text{ MHz}$$
 $$f_{L2} = 1246 \text{ MHz} + K \times 0.4375 \text{ MHz}\]</div>
-<p><code>SbfReader</code> pre-scans all <code>ChannelStatus</code> blocks to build a complete
-<code>SVID → FreqNr</code> cache before iterating <code>MeasEpoch</code> blocks. This ensures
-accurate frequency assignments even for <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> epochs near the start of
-the file, before the receiver has broadcast the ChannelStatus block.</p>
+<p><code>SbfReader</code> takes FreqNr from bits 3-7 of the <code>ObsInfo</code> field of each
+MeasEpoch Type1 sub-block (RefGuide-4.14.0, p.262), so every <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>
+observation carries its own frequency number, from the first epoch of the
+file on. Type2 sub-blocks take it from their Type1 sub-block.</p>
 <hr />
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide</li>
 <li>Septentrio AsteRx SB3 ProBase Firmware v4.15.1 Reference Guide</li>
-<li>IS-<abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>-200 Rev. N, §20.3.3.5.2.4 (<abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time conversion)</li>
-<li>CF Conventions v1.11 — <code>flag_masks</code>, <code>flag_meanings</code>, <code>flag_values</code></li>
+<li>CF Conventions v1.11: <code>flag_masks</code>, <code>flag_meanings</code>, <code>flag_values</code></li>
 <li><abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04 signal nomenclature (used verbatim for <abbr title="Signal Identifier — canVODpy format: SV|Band|Code (e.g. G01|L1|C). Uniquely identifies one observable per epoch.">SID</abbr> strings)</li>
-<li><a href="../sbf-decoding/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> Field Decoding Reference</a> — all formulas with firmware page citations</li>
+<li><a href="../sbf-decoding/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> Field Decoding Reference</a>: all formulas with firmware page citations</li>
 </ul>
-<hr />
-<div class="admonition example">
-<p class="admonition-title">Try it</p>
-<p><a href="../../../notebooks/_build/06_sbf_reading.html" target="_blank">06 · <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> Reading</a>
-· <a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/06_sbf_reading.py">view source on molab</a></p>
-</div>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -5202,7 +5563,7 @@ the file, before the receiver has broadcast the ChannelStatus block.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../rinex-format/" class="md-footer__link md-footer__link--prev" aria-label="Previous: RINEX v3.04 Format">
+          <a href="../rinex-v2-format/" class="md-footer__link md-footer__link--prev" aria-label="Previous: RINEX v2.11">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -5212,20 +5573,20 @@ the file, before the receiver has broadcast the ChannelStatus block.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                RINEX v3.04 Format
+                RINEX v2.11
               </div>
             </div>
           </a>
         
         
           
-          <a href="../sbf-decoding/" class="md-footer__link md-footer__link--next" aria-label="Next: SBF Field Decoding">
+          <a href="../sbf-decoding/" class="md-footer__link md-footer__link--next" aria-label="Next: SBF field decoding">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                SBF Field Decoding
+                SBF field decoding
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -5245,8 +5606,9 @@ the file, before the receiver has broadcast the ChannelStatus block.</p>
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../../../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -5263,7 +5625,7 @@ the file, before the receiver has broadcast the ChannelStatus block.</p>
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -5300,10 +5662,10 @@ the file, before the receiver has broadcast the ChannelStatus block.</p>
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../../../assets/mermaid-init.js"></script>
       

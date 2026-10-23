@@ -15,6 +15,7 @@
         <link rel="canonical" href="https://canvodpy.eu/guides/HOW_RELEASE_WORKS/">
       
       
+      
         <link rel="prev" href="../OIDC_EXPLAINED/">
       
       
@@ -25,23 +26,23 @@
       
       
       <link rel="icon" href="../../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
-        <title>Release Internals - canVODpy</title>
+        <title>Release internals - canVODpy</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="../.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -168,11 +190,12 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Release Internals
+              Release internals
             
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -286,12 +303,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -300,7 +311,7 @@
         <a href="../../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../impressum/" class="md-tabs__link">
+        <a href="../../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -523,12 +518,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -553,7 +542,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -575,7 +564,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -589,14 +578,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../users/cli/" class="md-nav__link">
+      <a href="../upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -615,26 +604,62 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -650,7 +675,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -670,14 +695,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../extensions/" class="md-nav__link">
+      <a href="../settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -689,6 +714,159 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -704,7 +882,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -731,7 +909,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -758,7 +936,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -778,14 +956,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../notebooks/" class="md-nav__link">
+      <a href="../../packages/ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -793,6 +971,42 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -829,69 +1043,6 @@
       
         
       
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Packages
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
         
       
         
@@ -911,17 +1062,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-readers
+  How it works
 
     
   </span>
@@ -932,12 +1083,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_1">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-readers
+  How it works
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -956,88 +1107,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  RINEX v3.04 Format
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Reader
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Field Decoding
+  Reading GNSS files
 
     
   </span>
@@ -1064,7 +1134,7 @@
   <span class="md-ellipsis">
     
   
-  Ephemeris Sources
+  Ephemeris sources
 
     
   </span>
@@ -1076,159 +1146,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/readers/extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1244,7 +1161,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Orbits and clocks
 
     
   </span>
@@ -1271,7 +1188,7 @@
   <span class="md-ellipsis">
     
   
-  Preprocessing Pipeline
+  Orbit and clock preparation
 
     
   </span>
@@ -1298,7 +1215,7 @@
   <span class="md-ellipsis">
     
   
-  Interpolation Methods
+  Interpolation
 
     
   </span>
@@ -1325,7 +1242,7 @@
   <span class="md-ellipsis">
     
   
-  Coordinate Systems
+  Coordinate systems
 
     
   </span>
@@ -1337,97 +1254,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/auxiliary/products/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1443,7 +1269,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Hemispheric grids
 
     
   </span>
@@ -1455,70 +1281,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1534,7 +1296,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  VOD retrieval
 
     
   </span>
@@ -1546,74 +1308,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1629,7 +1323,34 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
 
     
   </span>
@@ -1656,7 +1377,7 @@
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Versioning with Icechunk
 
     
   </span>
@@ -1683,7 +1404,7 @@
   <span class="md-ellipsis">
     
   
-  Storage Strategies
+  Write strategies
 
     
   </span>
@@ -1695,70 +1416,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1774,7 +1431,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Store metadata
 
     
   </span>
@@ -1786,70 +1443,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1865,7 +1458,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Visualization
 
     
   </span>
@@ -1898,6 +1491,16 @@
       
         
       
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
     
     
     
@@ -1911,17 +1514,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-config
+  Data formats
 
     
   </span>
@@ -1932,12 +1535,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-config
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -1949,14 +1552,149 @@
   
   
     <li class="md-nav__item">
-      <a href="../../packages/config/overview/" class="md-nav__link">
+      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/rinex-v2-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v2.11
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF field decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite catalog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product registry
 
     
   </span>
@@ -1989,6 +1727,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -2002,17 +1744,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-utils
+  Extend
 
     
   </span>
@@ -2023,15 +1765,69 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-utils
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your own readers and VOD calculators
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/building-a-reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -2047,189 +1843,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../packages/naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2258,26 +1872,19 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
       
         
       
@@ -2327,7 +1934,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2343,7 +1950,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2389,7 +1996,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2416,7 +2023,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2436,14 +2043,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture-design/" class="md-nav__link">
+      <a href="../reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2455,6 +2062,70 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2470,7 +2141,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2490,14 +2161,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../build-system/" class="md-nav__link">
+      <a href="../../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2517,14 +2188,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tooling/" class="md-nav__link">
+      <a href="../../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2544,14 +2215,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../principles/" class="md-nav__link">
+      <a href="../../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2559,6 +2230,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2595,10 +2275,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="">
             
   
   
@@ -2616,8 +2296,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -2640,7 +2320,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -2667,7 +2347,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -2694,7 +2374,733 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -2737,8 +3143,6 @@
       
         
       
-        
-      
     
     
     
@@ -2755,17 +3159,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" checked>
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -2776,12 +3180,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2827,34 +3231,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -2908,7 +3285,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -2944,7 +3321,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -2961,7 +3338,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -2987,474 +3364,68 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-conventional-commits-system" class="md-nav__link">
+  <a href="#1-conventional-commits" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Conventional Commits System
+        1. Conventional commits
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="1. Conventional Commits System">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-it-is" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What It Is
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works-in-canvodpy" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How It Works in canvodpy
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-it-matters" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Why It Matters
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-git-changelog-generator" class="md-nav__link">
+  <a href="#2-versions-and-changelogs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Git Changelog Generator
+        2. Versions and changelogs
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="2. Git Changelog Generator">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-it-is_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What It Is
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How It Works
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration-git-changelogtoml" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Configuration: <code>.git-changelog.toml</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Usage
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-magic" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The Magic
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-version-management-with-commitizen" class="md-nav__link">
+  <a href="#3-draft-releases" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Version Management with Commitizen
+        3. Draft releases
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="3. Version Management with Commitizen">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-it-is_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What It Is
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works-for-monorepo" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How It Works for Monorepo
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-bump-process" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The Bump Process
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-unified-versioning" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Why Unified Versioning
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-github-releases-automation" class="md-nav__link">
+  <a href="#4-pypi-publishing" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. GitHub Releases Automation
+        4. PyPI publishing
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="4. GitHub Releases Automation">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-it-is_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What It Is
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-workflow-githubworkflowsreleaseyml" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The Workflow: <code>.github/workflows/release.yml</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-complete-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The Complete Flow
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-draft-releases" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Why Draft Releases?
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-pypi-publishing-setup" class="md-nav__link">
+  <a href="#5-trusted-publishing-with-oidc" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        5. PyPI Publishing Setup
+        5. Trusted Publishing with OIDC
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="5. PyPI Publishing Setup">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pypi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        PyPI
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#setup-process" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Setup Process
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Setup Process">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#step-1-register-account" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step 1: Register Account
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-2-reserve-package-name" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step 2: Reserve Package Name
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-3-verify-manual-upload" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step 3: Verify Manual Upload
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-trusted-publishing-with-oidc" class="md-nav__link">
+  <a href="#complete-example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6. Trusted Publishing with OIDC
+        Complete example
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="6. Trusted Publishing with OIDC">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#oidc" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        OIDC
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-oidc-works-simplified" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How OIDC Works (Simplified)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#setup-process-detailed" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Setup Process (Detailed)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Setup Process (Detailed)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#part-a-configure-on-pypi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Part A: Configure on PyPI
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#part-b-create-github-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Part B: Create GitHub Workflow
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#part-c-create-github-environment" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Part C: Create GitHub Environment
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-complete-publishing-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The Complete Publishing Flow
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#security-benefits" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Security Benefits
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#testing-with-testpypi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Testing with TestPyPI
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#complete-end-to-end-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Complete End-to-End Example
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Complete End-to-End Example">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#scenario-youre-creating-version-020" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Scenario: You're creating version 0.2.0
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3471,10 +3442,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#conventional-commits-hook-failing" class="md-nav__link">
+  <a href="#commit-message-rejected" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Conventional Commits Hook Failing
+        Commit message rejected
       </span>
     </span>
   </a>
@@ -3482,10 +3453,32 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changelog-not-updating" class="md-nav__link">
+  <a href="#release-refused" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Changelog Not Updating
+        Release refused
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#draft-release-missing" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Draft release missing
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pypi-workflow-publishes-nothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PyPI workflow publishes nothing
       </span>
     </span>
   </a>
@@ -3496,18 +3489,7 @@
   <a href="#oidc-upload-failing" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        OIDC Upload Failing
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#version-bump-not-working" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Version Bump Not Working
+        OIDC upload failing
       </span>
     </span>
   </a>
@@ -3516,17 +3498,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Summary
-      </span>
-    </span>
-  </a>
   
 </li>
       
@@ -3581,17 +3552,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3602,12 +3573,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3626,7 +3597,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3653,7 +3624,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3680,7 +3651,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3700,14 +3671,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../SECURITY.md" class="md-nav__link">
+      <a href="../../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3745,6 +3716,8 @@
   
     
     
+      
+        
       
         
       
@@ -3791,7 +3764,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3807,10 +3780,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -4117,96 +4117,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -4248,474 +4158,68 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-conventional-commits-system" class="md-nav__link">
+  <a href="#1-conventional-commits" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        1. Conventional Commits System
+        1. Conventional commits
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="1. Conventional Commits System">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-it-is" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What It Is
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works-in-canvodpy" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How It Works in canvodpy
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-it-matters" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Why It Matters
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-git-changelog-generator" class="md-nav__link">
+  <a href="#2-versions-and-changelogs" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        2. Git Changelog Generator
+        2. Versions and changelogs
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="2. Git Changelog Generator">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-it-is_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What It Is
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How It Works
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration-git-changelogtoml" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Configuration: <code>.git-changelog.toml</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Usage
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-magic" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The Magic
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-version-management-with-commitizen" class="md-nav__link">
+  <a href="#3-draft-releases" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        3. Version Management with Commitizen
+        3. Draft releases
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="3. Version Management with Commitizen">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-it-is_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What It Is
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works-for-monorepo" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How It Works for Monorepo
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-bump-process" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The Bump Process
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-unified-versioning" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Why Unified Versioning
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-github-releases-automation" class="md-nav__link">
+  <a href="#4-pypi-publishing" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        4. GitHub Releases Automation
+        4. PyPI publishing
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="4. GitHub Releases Automation">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-it-is_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        What It Is
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-workflow-githubworkflowsreleaseyml" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The Workflow: <code>.github/workflows/release.yml</code>
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-complete-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The Complete Flow
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-draft-releases" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Why Draft Releases?
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-pypi-publishing-setup" class="md-nav__link">
+  <a href="#5-trusted-publishing-with-oidc" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        5. PyPI Publishing Setup
+        5. Trusted Publishing with OIDC
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="5. PyPI Publishing Setup">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pypi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        PyPI
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#setup-process" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Setup Process
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Setup Process">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#step-1-register-account" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step 1: Register Account
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-2-reserve-package-name" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step 2: Reserve Package Name
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-3-verify-manual-upload" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Step 3: Verify Manual Upload
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-trusted-publishing-with-oidc" class="md-nav__link">
+  <a href="#complete-example" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        6. Trusted Publishing with OIDC
+        Complete example
       </span>
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="6. Trusted Publishing with OIDC">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#oidc" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        OIDC
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-oidc-works-simplified" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        How OIDC Works (Simplified)
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#setup-process-detailed" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Setup Process (Detailed)
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Setup Process (Detailed)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#part-a-configure-on-pypi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Part A: Configure on PyPI
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#part-b-create-github-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Part B: Create GitHub Workflow
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#part-c-create-github-environment" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Part C: Create GitHub Environment
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-complete-publishing-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The Complete Publishing Flow
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#security-benefits" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Security Benefits
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#testing-with-testpypi" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Testing with TestPyPI
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#complete-end-to-end-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Complete End-to-End Example
-      </span>
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Complete End-to-End Example">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#scenario-youre-creating-version-020" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Scenario: You're creating version 0.2.0
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -4732,10 +4236,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#conventional-commits-hook-failing" class="md-nav__link">
+  <a href="#commit-message-rejected" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Conventional Commits Hook Failing
+        Commit message rejected
       </span>
     </span>
   </a>
@@ -4743,10 +4247,32 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changelog-not-updating" class="md-nav__link">
+  <a href="#release-refused" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Changelog Not Updating
+        Release refused
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#draft-release-missing" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Draft release missing
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pypi-workflow-publishes-nothing" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PyPI workflow publishes nothing
       </span>
     </span>
   </a>
@@ -4757,18 +4283,7 @@
   <a href="#oidc-upload-failing" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        OIDC Upload Failing
-      </span>
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#version-bump-not-working" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Version Bump Not Working
+        OIDC upload failing
       </span>
     </span>
   </a>
@@ -4777,17 +4292,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Summary
-      </span>
-    </span>
-  </a>
   
 </li>
       
@@ -4857,6 +4361,8 @@
       
         
       
+        
+      
     
     
     
@@ -4866,7 +4372,7 @@
           
   
   <span class="md-ellipsis">
-    Development
+    Contribute
   </span>
 
         </a>
@@ -4891,8 +4397,6 @@
       
         
       
-        
-      
     
     
     
@@ -4902,7 +4406,7 @@
           
   
   <span class="md-ellipsis">
-    Release & Publishing
+    Release and publishing
   </span>
 
         </a>
@@ -4924,59 +4428,51 @@
   
 
 
-<h1 id="how-the-release-infrastructure-works">How the Release Infrastructure Works<a class="headerlink" href="#how-the-release-infrastructure-works" title="Permanent link">&para;</a></h1>
-<p>This page documents the complete release automation chain — from commit message to <abbr title="Python Package Index — public Python package repository">PyPI</abbr> upload.</p>
+<h1 id="how-the-release-infrastructure-works">How the release infrastructure works<a class="headerlink" href="#how-the-release-infrastructure-works" title="Permanent link">&para;</a></h1>
+<p>This page documents the release chain, from commit message to <abbr title="Python Package Index — public Python package repository">PyPI</abbr> upload.
+The steps to follow are in <a href="../../RELEASING/">Releasing</a>; the rules behind
+the versions are in <a href="../../VERSIONING/">Versioning</a>.</p>
 <div class="grid cards">
 <ul>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M512 240c0 132.5-114.6 240-256 240-37.1 0-72.3-7.4-104.1-20.7L33.5 510.1c-9.4 4-20.2 1.7-27.1-5.8s-8.4-18.5-3.6-27.5l48.8-92.2C19.2 344.3 0 294.3 0 240 0 107.5 114.6 0 256 0s256 107.5 256 240"/></svg></span> &nbsp; <strong>Conventional Commits</strong></p>
 <hr />
-<p>Structured commit messages that machines can parse.
-<code>feat</code>, <code>fix</code>, <code>docs</code> determine version bumps automatically.</p>
-<p><a href="#1-conventional-commits-system"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
+<p>Structured commit messages (<code>feat</code>, <code>fix</code>, <code>docs</code> and others), checked by
+commitizen on every commit. They fill the changelogs.</p>
+<p><a href="#1-conventional-commits"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
 </li>
 <li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M0 112c0-41.5 31.6-75.6 72-79.6V32h280c53 0 96 43 96 96v176H272c-39.8 0-72 32.2-72 72v60c0 24.3-19.7 44-44 44s-44-19.7-44-44V208H48c-26.5 0-48-21.5-48-48zm236.8 368c7.1-13.1 11.2-28.1 11.2-44v-60c0-13.3 10.7-24 24-24h248c13.3 0 24 10.7 24 24v24c0 44.2-35.8 80-80 80zM80 80c-17.7 0-32 14.3-32 32v48h64v-48c0-17.7-14.3-32-32-32"/></svg></span> &nbsp; <strong>Changelog Generator</strong></p>
+<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M32.5 96v149.5c0 17 6.7 33.3 18.7 45.3l192 192c25 25 65.5 25 90.5 0l149.5-149.5c25-25 25-65.5 0-90.5l-192-192C279.2 38.7 263 32 246 32H96.5c-35.3 0-64 28.7-64 64m112 16a32 32 0 1 1 0 64 32 32 0 1 1 0-64"/></svg></span> &nbsp; <strong>Versions per package</strong></p>
 <hr />
-<p><code>git-changelog</code> reads commit history and produces
-<code>CHANGELOG.md</code> automatically on every release.</p>
-<p><a href="#2-git-changelog-generator"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M32.5 96v149.5c0 17 6.7 33.3 18.7 45.3l192 192c25 25 65.5 25 90.5 0l149.5-149.5c25-25 25-65.5 0-90.5l-192-192C279.2 38.7 263 32 246 32H96.5c-35.3 0-64 28.7-64 64m112 16a32 32 0 1 1 0 64 32 32 0 1 1 0-64"/></svg></span> &nbsp; <strong>Version Management</strong></p>
-<hr />
-<p><code>commitizen</code> bumps <code>version</code> in all 8 <code>pyproject.toml</code> files
-simultaneously, creates a git tag, and commits.</p>
-<p><a href="#3-version-management-with-commitizen"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
+<p>Each package has its own version, chosen by the maintainer;
+<code>canvodpy</code> pins every package exactly. <code>scripts/release.py</code> checks the
+choice and writes versions, pins, changelogs and <code>uv.lock</code>.</p>
+<p><a href="#2-versions-and-changelogs"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg></span> &nbsp; <strong>GitHub Releases</strong></p>
 <hr />
-<p>A workflow detects new tags, creates a draft release from
-the CHANGELOG, and waits for maintainer approval.</p>
-<p><a href="#4-github-releases-automation"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
+<p>The canvodpy tag starts a workflow that drafts a GitHub release from
+canvodpy's <code>CHANGELOG.md</code> section and waits for the maintainer.</p>
+<p><a href="#3-draft-releases"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M560.3 237.2c10.4 11.8 28.3 14.4 41.8 5.5 14.7-9.8 18.7-29.7 8.9-44.4l-48-72c-2.8-4.2-6.6-7.7-11.1-10.2L351.4 4.7C332.1-6 308.6-6 289.2 4.7L88.8 116c-5.4 3-9.7 7.4-12.6 12.8l-48.5 89.9c-12.6 23.4-3.8 52.5 19.6 65.1l33 17.7v53.3c0 23 12.4 44.3 32.4 55.7l176 99.7c19.6 11.1 43.5 11.1 63.1 0l176-99.7c20.1-11.4 32.4-32.6 32.4-55.7V237.3zm-240-9.8L170.2 144l150.1-83.4L470.4 144zm-41.5 50.2-21.3 46.2L91.7 235l25.4-47.2z"/></svg></span> &nbsp; <strong><abbr title="Python Package Index — public Python package repository">PyPI</abbr> Publishing</strong></p>
 <hr />
-<p>Two workflows: <code>publish_testpypi.yml</code> (beta/alpha tags) and
-<code>publish_pypi.yml</code> (stable tags). Triggered by publishing the release.</p>
-<p><a href="#5-pypi-publishing-setup"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
+<p><code>publish_pypi.yml</code>, started by hand and never by a tag, publishes the
+packages whose release tag points at the commit.</p>
+<p><a href="#4-pypi-publishing"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
 </li>
 <li>
 <p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M128 96v64h128V96c0-35.3-28.7-64-64-64s-64 28.7-64 64m-64 64V96c0-70.7 57.3-128 128-128S320 25.3 320 96v64c35.3 0 64 28.7 64 64v224c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64"/></svg></span> &nbsp; <strong>OIDC Authentication</strong></p>
 <hr />
-<p>Short-lived JWT tokens from GitHub — no stored API keys.
-Each workflow run gets a unique 10-minute proof-of-identity.</p>
-<p><a href="#6-trusted-publishing-with-oidc"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
+<p>Short-lived tokens from GitHub, no stored API keys.</p>
+<p><a href="#5-trusted-publishing-with-oidc"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Details</a></p>
 </li>
 </ul>
 </div>
 <hr />
-<hr />
-<h2 id="1-conventional-commits-system">1. Conventional Commits System<a class="headerlink" href="#1-conventional-commits-system" title="Permanent link">&para;</a></h2>
-<h3 id="what-it-is">What It Is<a class="headerlink" href="#what-it-is" title="Permanent link">&para;</a></h3>
-<p>A specification for writing commit messages with a structured format that machines can parse.</p>
+<h2 id="1-conventional-commits">1. Conventional commits<a class="headerlink" href="#1-conventional-commits" title="Permanent link">&para;</a></h2>
 <p><strong>Format:</strong>
 <div class="highlight"><pre><span></span><code>&lt;type&gt;(&lt;scope&gt;): &lt;subject&gt;
 
@@ -4984,601 +4480,196 @@ Each workflow run gets a unique 10-minute proof-of-identity.</p>
 
 &lt;footer&gt;
 </code></pre></div></p>
-<h3 id="how-it-works-in-canvodpy">How It Works in canvodpy<a class="headerlink" href="#how-it-works-in-canvodpy" title="Permanent link">&para;</a></h3>
-<p><strong>Step 1: Developer writes a commit</strong>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): add RINEX 4.0 support&quot;</span>
-</code></pre></div></p>
-<p><strong>Step 2: Pre-commit hook intercepts</strong>
-- File: <code>.git/hooks/commit-msg</code> (installed by <code>just hooks</code>)
-- Runs: <code>commitizen check</code> on the message
-- Validates format matches conventional commits</p>
-<p><strong>Step 3: Hook validates or rejects</strong></p>
-<p><strong>Valid commit - allowed:</strong>
 <div class="highlight"><pre><span></span><code>feat(readers): add RINEX 4.0 support
 fix(vod): correct tau calculation
 docs: update installation guide
-</code></pre></div></p>
-<p><strong>Invalid commit - rejected:</strong>
-<div class="highlight"><pre><span></span><code>Added new feature
-WIP
-fixed bug
-</code></pre></div></p>
-<p><strong>Configuration Files:</strong></p>
-<ol>
-<li>
-<p><strong><code>pyproject.toml</code></strong> - Commitizen config
-   <div class="highlight"><pre><span></span><code><span class="k">[tool.commitizen]</span>
-<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;cz_conventional_commits&quot;</span>
-<span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;0.1.0&quot;</span>
-
-<span class="k">[tool.commitizen.customize]</span>
-<span class="n">scopes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;readers&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;aux&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;grids&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;vod&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;store&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;viz&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;utils&quot;</span><span class="p">,</span>
-<span class="p">]</span>
-</code></pre></div></p>
-</li>
-<li>
-<p><strong><code>.pre-commit-config.yaml</code></strong> - Hook registration
-   <div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">repo</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/commitizen-tools/commitizen</span>
-<span class="w">  </span><span class="nt">rev</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v4.13.3</span>
-<span class="w">  </span><span class="nt">hooks</span><span class="p">:</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">commitizen</span>
-<span class="w">      </span><span class="nt">stages</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">commit-msg</span><span class="p p-Indicator">]</span>
-</code></pre></div></p>
-</li>
-</ol>
-<h3 id="why-it-matters">Why It Matters<a class="headerlink" href="#why-it-matters" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Automated changelog:</strong> Tools can parse commits to generate CHANGELOG.md</li>
-<li><strong>Semantic versioning:</strong> Type determines version bump (feat=minor, fix=patch)</li>
-<li><strong>Clear history:</strong> Easy to see what changed without reading code</li>
-<li><strong>Community standard:</strong> Expected in 2026 for open-source projects</li>
-</ul>
-<hr />
-<h2 id="2-git-changelog-generator">2. Git Changelog Generator<a class="headerlink" href="#2-git-changelog-generator" title="Permanent link">&para;</a></h2>
-<h3 id="what-it-is_1">What It Is<a class="headerlink" href="#what-it-is_1" title="Permanent link">&para;</a></h3>
-<p>A tool (<a href="https://pawamoy.github.io/git-changelog/">git-changelog</a>) that reads your git history and generates a beautiful CHANGELOG.md file.</p>
-<h3 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h3>
-<p><strong>Input: Git Commits</strong>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>log<span class="w"> </span>--oneline
-abc1234<span class="w"> </span>feat<span class="o">(</span>vod<span class="o">)</span>:<span class="w"> </span>add<span class="w"> </span>tau-omega<span class="w"> </span>calculator
-def5678<span class="w"> </span>fix<span class="o">(</span>readers<span class="o">)</span>:<span class="w"> </span>handle<span class="w"> </span>empty<span class="w"> </span>files
-ghi9012<span class="w"> </span>docs:<span class="w"> </span>update<span class="w"> </span>API<span class="w"> </span>reference
-</code></pre></div></p>
-<p><strong>Processing:</strong>
-1. Read all commits since last tag (or all commits)
-2. Parse conventional commit format
-3. Group by type (Features, Bug Fixes, Docs)
-4. Extract issue numbers and link to GitHub
-5. Generate markdown sections</p>
-<p><strong>Output: CHANGELOG.md</strong>
-<div class="highlight"><pre><span></span><code><span class="gu">## [0.2.0] - 2026-02-04</span>
-
-<span class="gu">### Features</span>
-<span class="k">-</span><span class="w"> </span><span class="gs">**vod:**</span> add tau-omega calculator ([abc1234](link))
-
-<span class="gu">### Bug Fixes</span>
-<span class="k">-</span><span class="w"> </span><span class="gs">**readers:**</span> handle empty files ([def5678](link))
-
-<span class="gu">### Documentation</span>
-<span class="k">-</span><span class="w"> </span>update API reference ([ghi9012](link))
-</code></pre></div></p>
-<h3 id="configuration-git-changelogtoml">Configuration: <code>.git-changelog.toml</code><a class="headerlink" href="#configuration-git-changelogtoml" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="k">[changelog]</span>
-<span class="n">convention</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;angular&quot;</span><span class="w">  </span><span class="c1"># Use Angular/conventional commits style</span>
-
-<span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Features&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">types</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;feat&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Bug Fixes&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">types</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;fix&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Performance&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">types</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;perf&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">order</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="p">},</span>
-<span class="p">]</span>
-
-<span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;keepachangelog&quot;</span><span class="w">  </span><span class="c1"># Use Keep a Changelog format</span>
-<span class="n">provider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;github&quot;</span>
-<span class="n">repository</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;nfb2021/canvodpy&quot;</span>
 </code></pre></div>
-<h3 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h3>
-<p><strong>Manual generation:</strong>
-<div class="highlight"><pre><span></span><code>just<span class="w"> </span>changelog<span class="w">        </span><span class="c1"># Generate for current version</span>
-just<span class="w"> </span>changelog<span class="w"> </span>v0.2.0<span class="w"> </span><span class="c1"># Generate for specific version</span>
-</code></pre></div></p>
-<p><strong>What happens:</strong>
-1. Runs: <code>uvx git-changelog -Tio CHANGELOG.md -B="v0.2.0" -c angular</code>
-2. Reads commits from git history
-3. Parses with Angular convention
-4. Inserts at <code>&lt;!-- insertion marker --&gt;</code> in CHANGELOG.md
-5. Preserves existing content</p>
-<h3 id="the-magic">The Magic<a class="headerlink" href="#the-magic" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>No manual updates:</strong> CHANGELOG writes itself from commits!</li>
-<li><strong>Links everywhere:</strong> Auto-links to GitHub commits, issues, PRs</li>
-<li><strong>Consistent format:</strong> Always follows Keep a Changelog style</li>
-<li><strong>Version tracking:</strong> Each release gets its own section</li>
-</ul>
+<p>The commit-msg hook (installed by <code>just hooks</code>, <code>.pre-commit-config.yaml</code>)
+runs commitizen's check and rejects other messages (<code>fixed bug</code>, <code>WIP</code>).
+The <code>[tool.commitizen]</code> section of the root <code>pyproject.toml</code> configures
+only this check; commitizen does not bump versions here.</p>
+<p>The types sort the changelog lines (<code>feat</code> <span class="arithmatex">\(\rightarrow\)</span> Feat, <code>fix</code> <span class="arithmatex">\(\rightarrow\)</span> Fix, <code>perf</code>,
+<code>refactor</code>, everything else <span class="arithmatex">\(\rightarrow\)</span> Other; <code>type!:</code> <span class="arithmatex">\(\rightarrow\)</span> BREAKING CHANGES). They do
+not decide the version: the maintainer does.</p>
 <hr />
-<h2 id="3-version-management-with-commitizen">3. Version Management with Commitizen<a class="headerlink" href="#3-version-management-with-commitizen" title="Permanent link">&para;</a></h2>
-<h3 id="what-it-is_2">What It Is<a class="headerlink" href="#what-it-is_2" title="Permanent link">&para;</a></h3>
-<p>Commitizen can <strong>bump versions</strong> across multiple files in a coordinated way.</p>
-<h3 id="how-it-works-for-monorepo">How It Works for Monorepo<a class="headerlink" href="#how-it-works-for-monorepo" title="Permanent link">&para;</a></h3>
-<p><strong>Configuration: <code>pyproject.toml</code></strong>
-<div class="highlight"><pre><span></span><code><span class="k">[tool.commitizen]</span>
-<span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;0.1.0&quot;</span><span class="w">  </span><span class="c1"># Current version</span>
-
-<span class="c1"># All files to update when bumping</span>
-<span class="n">version_files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;canvodpy/pyproject.toml:version&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;packages/canvod-readers/pyproject.toml:version&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;packages/canvod-auxiliary/pyproject.toml:version&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="c1"># ... all 8 packages</span>
-<span class="p">]</span>
-
-<span class="n">tag_format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;v$version&quot;</span><span class="w">  </span><span class="c1"># Creates tags like v0.2.0</span>
-</code></pre></div></p>
-<h3 id="the-bump-process">The Bump Process<a class="headerlink" href="#the-bump-process" title="Permanent link">&para;</a></h3>
-<p><strong>Command:</strong>
-<div class="highlight"><pre><span></span><code>just<span class="w"> </span>bump<span class="w"> </span><span class="m">0</span>.2.0
-</code></pre></div></p>
-<p><strong>What happens:</strong></p>
+<h2 id="2-versions-and-changelogs">2. Versions and changelogs<a class="headerlink" href="#2-versions-and-changelogs" title="Permanent link">&para;</a></h2>
+<p><code>scripts/release.py</code>, through three recipes:</p>
+<table>
+<thead>
+<tr>
+<th>Recipe</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>just release-status</code></td>
+<td>For each package: version, last release tag, and the commits since that tag that touched the package's folder</td>
+</tr>
+<tr>
+<td><code>just release canvod-store=1.1.0 canvodpy=1.1.0</code></td>
+<td>Runs the tests, checks the choice, writes the versions, canvodpy's pins, the changelogs and <code>uv.lock</code>, commits them on <code>release/v1.1.0</code></td>
+</tr>
+<tr>
+<td><code>just tag-release</code></td>
+<td>On the merged commit on <code>main</code>: tags every package version without a tag; does not push</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Checks before anything is written</strong> (a refused release names every
+problem and changes nothing):</p>
 <ol>
-<li><strong>Read current version</strong> from <code>pyproject.toml</code></li>
-<li>
-<p>Current: <code>0.1.0</code></p>
-</li>
-<li>
-<p><strong>Calculate new version</strong></p>
-</li>
-<li>Target: <code>0.2.0</code></li>
-<li>
-<p>Can also use: <code>minor</code>, <code>patch</code>, <code>major</code></p>
-</li>
-<li>
-<p><strong>Update all version_files</strong> (8 packages!)
-   <div class="highlight"><pre><span></span><code>canvodpy/pyproject.toml:     version = &quot;0.2.0&quot;
-packages/canvod-readers/...: version = &quot;0.2.0&quot;
-packages/canvod-auxiliary/...:     version = &quot;0.2.0&quot;
-# ... all packages updated
-</code></pre></div></p>
-</li>
-<li>
-<p><strong>Update <abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr>.lock</strong>
-   <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>lock<span class="w">  </span><span class="c1"># Sync lockfile with new versions</span>
-</code></pre></div></p>
-</li>
-<li>
-<p><strong>Commit changes</strong>
-   <div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore: bump version to 0.2.0&quot;</span>
-</code></pre></div></p>
-</li>
-<li>
-<p><strong>Create git tag</strong>
-   <div class="highlight"><pre><span></span><code>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span><span class="s2">&quot;v0.2.0&quot;</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release v0.2.0&quot;</span>
-</code></pre></div></p>
-</li>
+<li>canvodpy is part of the release (it pins every package).</li>
+<li>Each version goes up and has no tag yet.</li>
+<li>canvodpy's increment (patch, minor, major) is at least the largest
+   increment of the packages released with it.</li>
+<li>Every package that requires a released package (<code>canvod-config&gt;=1.0.0,&lt;2</code>)
+   admits the new version; a major release needs the ranges widened by
+   hand first.</li>
+<li>The release files (<code>pyproject.toml</code> files, <code>uv.lock</code>, <code>CHANGELOG.md</code>
+   files) have no uncommitted changes.</li>
 </ol>
-<h3 id="why-unified-versioning">Why Unified Versioning<a class="headerlink" href="#why-unified-versioning" title="Permanent link">&para;</a></h3>
-<p><strong>Problem without it:</strong>
-- canvod-readers: 1.2.0
-- canvod-vod: 0.5.3
-- canvod-store: 2.1.0
-- User installs... which versions work together?</p>
-<p><strong>Solution with unified versioning:</strong>
-- All packages: 0.2.0
-- User installs canvodpy 0.2.0
-- All components guaranteed compatible</p>
+<p><strong>Changelogs.</strong> Every package has a <code>CHANGELOG.md</code> in its folder; canvodpy's
+is the one at the repository root. A release inserts a section after the
+<code>&lt;!-- insertion marker --&gt;</code> line of each released package, built from the
+commits since its last tag that touched its folder (<code>git log &lt;tag&gt;..HEAD --
+&lt;folder&gt;</code>). canvodpy's section lists its own commits and every pinned
+package version, marking the new ones. The sections can be edited in the
+release pull request.</p>
+<p><strong>Tags.</strong> <code>&lt;package&gt;-vX.Y.Z</code> for the packages (<code>canvod-store-v1.1.0</code>),
+<code>vX.Y.Z</code> for canvodpy. A package without a tag of its own (before
+per-package versions) counts from the last <code>vX.Y.Z</code> tag, when all packages
+were released together. Versions are written as Python normalizes them, so
+a pre-release is <code>1.1.0rc1</code>, tagged <code>v1.1.0rc1</code>.</p>
 <hr />
-<h2 id="4-github-releases-automation">4. GitHub Releases Automation<a class="headerlink" href="#4-github-releases-automation" title="Permanent link">&para;</a></h2>
-<h3 id="what-it-is_3">What It Is<a class="headerlink" href="#what-it-is_3" title="Permanent link">&para;</a></h3>
-<p>A GitHub Actions workflow that automatically creates releases when you push version tags.</p>
-<h3 id="the-workflow-githubworkflowsreleaseyml">The Workflow: <code>.github/workflows/release.yml</code><a class="headerlink" href="#the-workflow-githubworkflowsreleaseyml" title="Permanent link">&para;</a></h3>
-<p><strong>Trigger:</strong>
-<div class="highlight"><pre><span></span><code><span class="nt">on</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">push</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">tags</span><span class="p">:</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;v*.*.*&quot;</span><span class="w">  </span><span class="c1"># Matches v0.1.0, v1.0.0, etc.</span>
-</code></pre></div></p>
-<p><strong>Steps:</strong></p>
+<h2 id="3-draft-releases">3. Draft releases<a class="headerlink" href="#3-draft-releases" title="Permanent link">&para;</a></h2>
+<p><code>.github/workflows/release.yml</code> runs when a canvodpy tag (<code>v*.*.*</code>) is
+pushed. Package tags (<code>canvod-store-v1.1.0</code>) do not match and get no
+release of their own, so Zenodo archives one version per canvodpy release.</p>
 <ol>
-<li><strong>Detect tag push</strong></li>
-<li>You run: <code>git push --tags</code></li>
-<li>GitHub sees: new tag <code>v0.2.0</code></li>
-<li>
-<p>Workflow starts</p>
-</li>
-<li>
-<p><strong>Checkout code with history</strong>
-   <div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v6</span>
-<span class="w">  </span><span class="nt">with</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">fetch-depth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">  </span><span class="c1"># Need full history for changelog</span>
-</code></pre></div></p>
-</li>
-<li>
-<p><strong>Install tools</strong>
-   <div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">astral-sh/setup-uv@v7</span>
-<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uv python install 3.14</span>
-</code></pre></div></p>
-</li>
-<li>
-<p><strong>Generate release notes</strong>
-   <div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uvx git-changelog --release-notes &gt; release-notes.md</span>
-</code></pre></div></p>
-</li>
+<li>Checks out the tagged commit.</li>
+<li>Takes canvodpy's <code>CHANGELOG.md</code> section for the tag (from <code>## v1.1.0 (</code>
+   to the next <code>##</code>) as the release notes; fails if there is none.</li>
+<li>Creates a <strong>draft</strong> release (a pre-release for <code>a</code>, <code>b</code> and <code>rc</code>
+   versions) and waits for the maintainer to publish it.</li>
 </ol>
-<p>Extracts commits for THIS release only (since last tag)</p>
-<ol>
-<li><strong>Create GitHub release</strong>
-   <div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-<span class="w">    </span><span class="no">gh release create v0.2.0 \</span>
-<span class="w">      </span><span class="no">--title &quot;canvodpy v0.2.0&quot; \</span>
-<span class="w">      </span><span class="no">--notes-file release-notes.md \</span>
-<span class="w">      </span><span class="no">--draft \</span>
-<span class="w">      </span><span class="no">--verify-tag</span>
-</code></pre></div></li>
-</ol>
-<p>Creates a <strong>draft</strong> (not published yet!)</p>
-<h3 id="the-complete-flow">The Complete Flow<a class="headerlink" href="#the-complete-flow" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>Developer                    GitHub Actions                 GitHub
-    |                               |                          |
-    | just release 0.2.0           |                          |
-    |-----------------------------&gt;|                          |
-    |                               |                          |
-    | git push --tags              |                          |
-    |------------------------------------------------------------&gt;
-    |                               |                          |
-    |                               | Detect v0.2.0 tag        |
-    |                               |&lt;-------------------------|
-    |                               |                          |
-    |                               | Checkout code            |
-    |                               | Generate release notes   |
-    |                               | Create draft release     |
-    |                               |-------------------------&gt;|
-    |                               |                          |
-    | Review draft release          |                          |
-    |&lt;----------------------------------------------------------
-    |                               |                          |
-    | Click &quot;Publish Release&quot;       |                          |
-    |----------------------------------------------------------&gt;|
-    |                               |                          |
-</code></pre></div>
-<h3 id="why-draft-releases">Why Draft Releases?<a class="headerlink" href="#why-draft-releases" title="Permanent link">&para;</a></h3>
-<ul>
-<li><strong>Safety:</strong> Review before making public</li>
-<li><strong>Flexibility:</strong> Add migration notes, binaries, etc.</li>
-<li><strong>Control:</strong> You decide when to announce</li>
-</ul>
-<hr />
-<h2 id="5-pypi-publishing-setup">5. <abbr title="Python Package Index — public Python package repository">PyPI</abbr> Publishing Setup<a class="headerlink" href="#5-pypi-publishing-setup" title="Permanent link">&para;</a></h2>
-<h3 id="pypi"><abbr title="Python Package Index — public Python package repository">PyPI</abbr><a class="headerlink" href="#pypi" title="Permanent link">&para;</a></h3>
-<p><strong><abbr title="Python Package Index — public Python package repository">PyPI</abbr></strong> (Python Package Index) is where Python packages live.</p>
-<ul>
-<li>Users install: <code>pip install canvodpy</code></li>
-<li>Searches: https://pypi.org/project/canvodpy/</li>
-<li>Hosts: Wheels (.whl) and source distributions (.tar.gz)</li>
-</ul>
-<p><strong>TestPyPI</strong> is the sandbox for testing before real <abbr title="Python Package Index — public Python package repository">PyPI</abbr>.</p>
-<h3 id="setup-process">Setup Process<a class="headerlink" href="#setup-process" title="Permanent link">&para;</a></h3>
-<h4 id="step-1-register-account">Step 1: Register Account<a class="headerlink" href="#step-1-register-account" title="Permanent link">&para;</a></h4>
-<p><strong>TestPyPI (do this first!):</strong>
-1. Go to: https://test.pypi.org/account/register/
-2. Create account with your email
-3. Verify email</p>
-<p><strong>Real <abbr title="Python Package Index — public Python package repository">PyPI</abbr> (after testing):</strong>
-1. Go to: https://pypi.org/account/register/
-2. Create account (can use same email)
-3. Verify email</p>
-<h4 id="step-2-reserve-package-name">Step 2: Reserve Package Name<a class="headerlink" href="#step-2-reserve-package-name" title="Permanent link">&para;</a></h4>
-<p><strong>On TestPyPI:</strong>
-1. Build package locally:
-   <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>build
-</code></pre></div>
-   Creates: <code>dist/canvodpy-0.1.0-py3-none-any.whl</code></p>
-<ol>
-<li>
-<p>Upload manually (first time only):
-   <div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>twine<span class="w"> </span>upload<span class="w"> </span>--repository<span class="w"> </span>testpypi<span class="w"> </span>dist/*
-</code></pre></div></p>
-</li>
-<li>
-<p>Enter credentials when prompted</p>
-</li>
-<li>Package name now reserved!</li>
-</ol>
-<p><strong>On real <abbr title="Python Package Index — public Python package repository">PyPI</abbr>:</strong>
-- Same process, but omit <code>--repository testpypi</code>
-- <strong>CAUTION:</strong> Package names are permanent!</p>
-<h4 id="step-3-verify-manual-upload">Step 3: Verify Manual Upload<a class="headerlink" href="#step-3-verify-manual-upload" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><span class="c1"># Install from TestPyPI</span>
-pip<span class="w"> </span>install<span class="w"> </span>--index-url<span class="w"> </span>https://test.pypi.org/simple/<span class="w"> </span>canvodpy
-
-<span class="c1"># Test it works</span>
-python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import canvodpy; print(canvodpy.__version__)&quot;</span>
+<div class="highlight"><pre><span></span><code>Maintainer                          GitHub Actions               GitHub
+    | just release ..., PR, merge         |                           |
+    | just tag-release, git push tags     |                           |
+    |-----------------------------------------------------------------&gt;|
+    |                                     | v1.1.0 pushed             |
+    |                                     |&lt;--------------------------|
+    |                                     | notes from CHANGELOG.md   |
+    |                                     | draft release             |
+    |                                     |--------------------------&gt;|
+    | review the draft, "Publish release" |                           |
+    |-----------------------------------------------------------------&gt;|
 </code></pre></div>
 <hr />
-<h2 id="6-trusted-publishing-with-oidc">6. Trusted Publishing with OIDC<a class="headerlink" href="#6-trusted-publishing-with-oidc" title="Permanent link">&para;</a></h2>
-<h3 id="oidc">OIDC<a class="headerlink" href="#oidc" title="Permanent link">&para;</a></h3>
-<p><strong>OIDC</strong> (OpenID Connect) provides authentication without passwords or API tokens.</p>
-<p><strong>Old way (API tokens):</strong>
-<div class="highlight"><pre><span></span><code>GitHub Actions → API Token → PyPI
-Token in GitHub Secrets (can leak)
-Token expires
-Manual rotation needed
-</code></pre></div></p>
-<p><strong>New way (Trusted Publishing with OIDC):</strong>
-<div class="highlight"><pre><span></span><code>GitHub Actions → OIDC JWT → PyPI
-No tokens to store
-Never expires
-Cryptographically secure
-GitHub identity proves it&#39;s really you
-</code></pre></div></p>
-<h3 id="how-oidc-works-simplified">How OIDC Works (Simplified)<a class="headerlink" href="#how-oidc-works-simplified" title="Permanent link">&para;</a></h3>
-<ol>
-<li><strong>GitHub Actions runs your workflow</strong></li>
-<li>Workflow has identity: <code>repo: nfb2021/canvodpy</code></li>
-<li>
-<p>GitHub issues a JWT (JSON Web Token)</p>
-</li>
-<li>
-<p><strong>Workflow requests upload to <abbr title="Python Package Index — public Python package repository">PyPI</abbr></strong></p>
-</li>
-<li>Sends JWT instead of password/token</li>
-<li>
-<p>JWT says: "I'm an official GitHub Actions run from nfb2021/canvodpy"</p>
-</li>
-<li>
-<p><strong><abbr title="Python Package Index — public Python package repository">PyPI</abbr> verifies JWT</strong></p>
-</li>
-<li>Checks signature (is it really from GitHub?)</li>
-<li>Checks claims (is it the right repo?)</li>
-<li>Allows upload</li>
-</ol>
-<h3 id="setup-process-detailed">Setup Process (Detailed)<a class="headerlink" href="#setup-process-detailed" title="Permanent link">&para;</a></h3>
-<h4 id="part-a-configure-on-pypi">Part A: Configure on <abbr title="Python Package Index — public Python package repository">PyPI</abbr><a class="headerlink" href="#part-a-configure-on-pypi" title="Permanent link">&para;</a></h4>
-<ol>
-<li><strong>Go to your project on <abbr title="Python Package Index — public Python package repository">PyPI</abbr>:</strong></li>
-<li>https://test.pypi.org/manage/project/canvodpy/settings/publishing/</li>
-<li>
-<p>(or real <abbr title="Python Package Index — public Python package repository">PyPI</abbr> after testing)</p>
-</li>
-<li>
-<p><strong>Click "Add a new publisher"</strong></p>
-</li>
-<li>
-<p><strong>Fill in the form:</strong>
-   <div class="highlight"><pre><span></span><code>PyPI Project Name:     canvodpy
-Owner:                 nfb2021
-Repository name:       canvodpy
-Workflow name:         publish_pypi.yml
-Environment name:      release
-</code></pre></div></p>
-</li>
-<li>
-<p><strong>Click "Add"</strong></p>
-</li>
-<li>
-<p><abbr title="Python Package Index — public Python package repository">PyPI</abbr> now trusts GitHub Actions from that repo/workflow.</p>
-</li>
-</ol>
-<h4 id="part-b-create-github-workflow">Part B: Create GitHub Workflow<a class="headerlink" href="#part-b-create-github-workflow" title="Permanent link">&para;</a></h4>
-<p>Create: <code>.github/workflows/publish_pypi.yml</code></p>
-<div class="highlight"><pre><span></span><code><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Publish to PyPI</span>
-
-<span class="nt">on</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">release</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">types</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">published</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># Trigger when you publish a release</span>
-
-<span class="nt">permissions</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">id-token</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">write</span><span class="w">  </span><span class="c1"># REQUIRED for OIDC</span>
-<span class="w">  </span><span class="nt">contents</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read</span>
-
-<span class="nt">jobs</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">publish</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Upload to PyPI</span>
-<span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
-<span class="w">    </span><span class="nt">environment</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">release</span><span class="w">  </span><span class="c1"># MUST match PyPI config!</span>
-
-<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v6</span>
-
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install uv</span>
-<span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">astral-sh/setup-uv@v7</span>
-
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Build package</span>
-<span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uv build</span>
-
-<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Publish to PyPI</span>
-<span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pypa/gh-action-pypi-publish@release/v1</span>
-<span class="w">        </span><span class="nt">with</span><span class="p">:</span>
-<span class="w">          </span><span class="c1"># NO PASSWORD OR TOKEN NEEDED!</span>
-<span class="w">          </span><span class="c1"># OIDC handles authentication</span>
-</code></pre></div>
-<h4 id="part-c-create-github-environment">Part C: Create GitHub Environment<a class="headerlink" href="#part-c-create-github-environment" title="Permanent link">&para;</a></h4>
-<ol>
-<li><strong>Go to your GitHub repo:</strong></li>
-<li>
-<p>Settings → Environments → New environment</p>
-</li>
-<li>
-<p><strong>Name it:</strong> <code>release</code> (must match workflow!)</p>
-</li>
-<li>
-<p><strong>Add protection rules (optional but recommended):</strong></p>
-</li>
-<li>Required reviewers: Add yourself</li>
-<li>
-<p>Wait timer: 5 minutes (think before publishing)</p>
-</li>
-<li>
-<p><strong>Save</strong></p>
-</li>
-</ol>
-<h3 id="the-complete-publishing-flow">The Complete Publishing Flow<a class="headerlink" href="#the-complete-publishing-flow" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>1. Developer creates release
-   ├─&gt; just release 0.2.0
-   ├─&gt; git push --tags
-   └─&gt; GitHub Actions creates draft release
-
-2. Developer publishes release on GitHub
-   └─&gt; Click &quot;Publish Release&quot; button
-
-3. Publish workflow triggers
-   ├─&gt; GitHub generates OIDC JWT
-   ├─&gt; Workflow builds package
-   └─&gt; Sends package + JWT to PyPI
-
-4. PyPI verifies and publishes
-   ├─&gt; Verifies JWT is from nfb2021/canvodpy
-   ├─&gt; Accepts upload
-   └─&gt; Package now live!
-
-5. Users can install
-   └─&gt; pip install canvodpy==0.2.0
-</code></pre></div>
-<h3 id="security-benefits">Security Benefits<a class="headerlink" href="#security-benefits" title="Permanent link">&para;</a></h3>
-<p><strong>Traditional API Tokens:</strong>
-- Must be stored in GitHub Secrets
-- Can be leaked if workflow compromised
-- Have broad permissions
-- Need manual rotation</p>
-<p><strong>OIDC Trusted Publishing:</strong>
-- No secrets to store
-- JWT valid for ~10 minutes only
-- Scoped to specific repo + workflow
-- Automatic, no maintenance</p>
-<h3 id="testing-with-testpypi">Testing with TestPyPI<a class="headerlink" href="#testing-with-testpypi" title="Permanent link">&para;</a></h3>
-<p><strong>Why test first?</strong>
-- Real <abbr title="Python Package Index — public Python package repository">PyPI</abbr> uploads are <strong>permanent</strong> (can't delete!)
-- Package names are reserved forever
-- Better to catch mistakes on TestPyPI</p>
-<p><strong>Setup for TestPyPI:</strong></p>
-<ol>
-<li><strong>Configure on TestPyPI:</strong></li>
-<li>https://test.pypi.org/manage/project/canvodpy/settings/publishing/</li>
-<li>
-<p>Add publisher (same form as above)</p>
-</li>
-<li>
-<p><strong>Modify workflow for testing:</strong>
-   <div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Publish to TestPyPI</span>
-<span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pypa/gh-action-pypi-publish@release/v1</span>
-<span class="w">  </span><span class="nt">with</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">repository-url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://test.pypi.org/legacy/</span>
-</code></pre></div></p>
-</li>
-<li>
-<p><strong>Test the whole flow:</strong>
-   <div class="highlight"><pre><span></span><code><span class="c1"># Create test release</span>
-just<span class="w"> </span>release<span class="w"> </span><span class="m">0</span>.1.0-beta.1
-git<span class="w"> </span>push<span class="w"> </span>--tags
-
-<span class="c1"># Publish draft release</span>
-<span class="c1"># Workflow uploads to TestPyPI</span>
-
-<span class="c1"># Verify</span>
-pip<span class="w"> </span>install<span class="w"> </span>--index-url<span class="w"> </span>https://test.pypi.org/simple/<span class="w"> </span>canvodpy
-</code></pre></div></p>
-</li>
-</ol>
+<h2 id="4-pypi-publishing">4. <abbr title="Python Package Index — public Python package repository">PyPI</abbr> publishing<a class="headerlink" href="#4-pypi-publishing" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Runs on</th>
+<th>Publishes to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>publish_pypi.yml</code></td>
+<td>by hand only: <code>gh workflow run publish_pypi.yml --ref v1.1.0</code></td>
+<td><abbr title="Python Package Index — public Python package repository">PyPI</abbr></td>
+</tr>
+</tbody>
+</table>
+<p>It checks out the tagged commit with all tags and build exactly the
+packages whose release tag points at that commit
+(<code>scripts/release.py tagged</code>): for the <code>v1.1.0</code> example, canvodpy and
+canvod-store, nothing else. Tagging and publishing to <abbr title="Python Package Index — public Python package repository">PyPI</abbr> are separate
+decisions: a tag is not a promise that <abbr title="Python Package Index — public Python package repository">PyPI</abbr> has the version.</p>
+<p><strong><abbr title="Python Package Index — public Python package repository">PyPI</abbr></strong> (Python Package Index) hosts wheels and source distributions.
+A pre-release (<code>1.0.0b1</code>) goes to <abbr title="Python Package Index — public Python package repository">PyPI</abbr> too, through the same workflow;
+<abbr title="Fast Python package manager written in Rust — replaces pip, pip-tools, virtualenv">uv</abbr> and pip install it only when asked for it. Uploads to <abbr title="Python Package Index — public Python package repository">PyPI</abbr> are
+permanent: a version can never be uploaded twice, so a broken release is
+fixed by the next patch version.</p>
 <hr />
-<h2 id="complete-end-to-end-example">Complete End-to-End Example<a class="headerlink" href="#complete-end-to-end-example" title="Permanent link">&para;</a></h2>
-<h3 id="scenario-youre-creating-version-020">Scenario: You're creating version 0.2.0<a class="headerlink" href="#scenario-youre-creating-version-020" title="Permanent link">&para;</a></h3>
-<p><strong>Step 1: Development</strong>
-<div class="highlight"><pre><span></span><code><span class="c1"># Make your changes</span>
-git<span class="w"> </span>add<span class="w"> </span>.
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(readers): add RINEX 4.0 support&quot;</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(vod): correct tau calculation&quot;</span>
-
-<span class="c1"># Push to main</span>
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>main
-</code></pre></div></p>
-<p><strong>Step 2: Create Release</strong>
-<div class="highlight"><pre><span></span><code><span class="c1"># Run release command</span>
-just<span class="w"> </span>release<span class="w"> </span><span class="m">0</span>.2.0
-
-<span class="c1"># Output:</span>
-Tests<span class="w"> </span>passed
-CHANGELOG.md<span class="w"> </span>updated
-Version<span class="w"> </span>bumped<span class="w"> </span>to<span class="w"> </span><span class="m">0</span>.2.0
-Tag<span class="w"> </span>v0.2.0<span class="w"> </span>created
-Release<span class="w"> </span>ready
-
-Next:<span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>--tags
-</code></pre></div></p>
-<p><strong>Step 3: Push to GitHub</strong>
-<div class="highlight"><pre><span></span><code>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>main
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>--tags
-</code></pre></div></p>
-<p><strong>Step 4: GitHub Actions (automatic)</strong>
-<div class="highlight"><pre><span></span><code>→ release.yml workflow triggers
-→ Generates release notes
-→ Creates draft release on GitHub
-  (Takes ~1-2 minutes)
-</code></pre></div></p>
-<p><strong>Step 5: Review &amp; Publish</strong>
-<div class="highlight"><pre><span></span><code>→ Go to: https://github.com/nfb2021/canvodpy/releases
-→ See draft release v0.2.0
-→ Review release notes
-→ Click &quot;Publish Release&quot;
-</code></pre></div></p>
-<p><strong>Step 6: <abbr title="Python Package Index — public Python package repository">PyPI</abbr> Publishing (automatic)</strong>
-<div class="highlight"><pre><span></span><code>→ publish_pypi.yml workflow triggers
-→ Builds package with uv
-→ Authenticates with OIDC (no password!)
-→ Uploads to PyPI
-  (Takes ~2-3 minutes)
-</code></pre></div></p>
-<p><strong>Step 7: Users Install</strong>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">canvodpy</span><span class="o">==</span><span class="m">0</span>.2.0
-<span class="c1"># Works</span>
-</code></pre></div></p>
+<h2 id="5-trusted-publishing-with-oidc">5. Trusted Publishing with OIDC<a class="headerlink" href="#5-trusted-publishing-with-oidc" title="Permanent link">&para;</a></h2>
+<p>The workflow authenticates to <abbr title="Python Package Index — public Python package repository">PyPI</abbr> with OpenID Connect instead of
+stored API tokens:</p>
+<ol>
+<li>GitHub issues the workflow run a short-lived token (JWT) saying which
+   repository, workflow, and environment it is.</li>
+<li>The publish job sends it to <abbr title="Python Package Index — public Python package repository">PyPI</abbr> (<code>uv publish</code>, permission
+   <code>id-token: write</code>, given only to the publish job; the build job has no
+   upload permission).</li>
+<li><abbr title="Python Package Index — public Python package repository">PyPI</abbr> checks the signature and that repository, workflow, and environment
+   match a trusted publisher configured for the project. It then returns a
+   <abbr title="Python Package Index — public Python package repository">PyPI</abbr> API token that is valid for 15 minutes and only for the projects
+   with a matching publisher.</li>
+<li><code>uv publish</code> uploads the packages with that token
+   (<a href="../OIDC_EXPLAINED/">OIDC trusted publishing explained</a>).</li>
+</ol>
+<p>Each project on <abbr title="Python Package Index — public Python package repository">PyPI</abbr> (every package is its own project) needs the trusted
+publisher once:</p>
+<div class="highlight"><pre><span></span><code>Owner:             TUW-GEO
+Repository name:   canvodpy
+Workflow name:     publish_pypi.yml
+Environment name:  pypi
+</code></pre></div>
+<p>The GitHub environment <code>pypi</code> (Settings <span class="arithmatex">\(\rightarrow\)</span> Environments) can
+require a reviewer and a wait timer before the upload runs.</p>
+<p><strong>New package:</strong> a package that isn't on <abbr title="Python Package Index — public Python package repository">PyPI</abbr> yet has no project to add the
+publisher to. Add a <em>pending</em> publisher instead, under Publishing in your <abbr title="Python Package Index — public Python package repository">PyPI</abbr> account
+settings. It takes the package name and the four fields of the preceding
+block.
+The first upload creates the project and turns the pending publisher into a
+normal one. <abbr title="Python Package Index — public Python package repository">PyPI</abbr> can refuse a second pending publisher while one is pending;
+then upload that package first.</p>
+<p><strong>Why OIDC:</strong> no secret to store or rotate; the <abbr title="Python Package Index — public Python package repository">PyPI</abbr> token is valid for 15
+minutes and only for the projects whose publisher matches this repository,
+workflow, and environment.</p>
+<hr />
+<h2 id="complete-example">Complete example<a class="headerlink" href="#complete-example" title="Permanent link">&para;</a></h2>
+<p>Releasing a fix in canvod-grids and a feature in canvod-store:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>switch<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>main
+just<span class="w"> </span>release-status
+<span class="c1"># canvod-grids 1.0.0 (since canvod-grids-v1.0.0: 1 commits)</span>
+<span class="c1">#     1a2b3c4 fix(grids): ...</span>
+<span class="c1"># canvod-store 1.0.0 (since canvod-store-v1.0.0: 3 commits)</span>
+<span class="c1">#     ...</span>
+just<span class="w"> </span>release<span class="w"> </span>canvod-grids<span class="o">=</span><span class="m">1</span>.0.1<span class="w"> </span>canvod-store<span class="o">=</span><span class="m">1</span>.1.0<span class="w"> </span><span class="nv">canvodpy</span><span class="o">=</span><span class="m">1</span>.1.0
+git<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>release/v1.1.0
+gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--title<span class="w"> </span><span class="s2">"bump: canvodpy 1.1.0 (canvod-grids 1.0.1, canvod-store 1.1.0)"</span><span class="w"> </span>--body<span class="w"> </span><span class="s2">"..."</span>
+<span class="c1"># merged once CI passes, then on main:</span>
+git<span class="w"> </span>switch<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>main
+just<span class="w"> </span>tag-release
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.0<span class="w"> </span>canvod-grids-v1.0.1<span class="w"> </span>canvod-store-v1.1.0
+<span class="c1"># draft release v1.1.0 appears: review, publish</span>
+gh<span class="w"> </span>workflow<span class="w"> </span>run<span class="w"> </span>publish_pypi.yml<span class="w"> </span>--ref<span class="w"> </span>v1.1.0
+</code></pre></div>
+<p>Users then install <code>uv add canvodpy==1.1.0</code> (the whole tested mix) or
+<code>uv add canvod-store==1.1.0</code> on its own.</p>
 <hr />
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
-<h3 id="conventional-commits-hook-failing">Conventional Commits Hook Failing<a class="headerlink" href="#conventional-commits-hook-failing" title="Permanent link">&para;</a></h3>
-<p><strong>Error:</strong> <code>[ERROR] Commit message does not follow conventional commits format</code></p>
-<p><strong>Fix:</strong>
-<div class="highlight"><pre><span></span><code><span class="c1"># Check format</span>
-git<span class="w"> </span>log<span class="w"> </span>-1<span class="w"> </span>--oneline
-
-<span class="c1"># Should be: type(scope): description</span>
-<span class="c1"># Bad:  &quot;fixed the bug&quot;</span>
-<span class="c1"># Good: &quot;fix(vod): correct tau calculation&quot;</span>
-
-<span class="c1"># Amend if needed</span>
-git<span class="w"> </span>commit<span class="w"> </span>--amend<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(vod): correct tau calculation&quot;</span>
-</code></pre></div></p>
-<h3 id="changelog-not-updating">Changelog Not Updating<a class="headerlink" href="#changelog-not-updating" title="Permanent link">&para;</a></h3>
-<p><strong>Problem:</strong> Running <code>just changelog</code> but CHANGELOG.md unchanged</p>
-<p><strong>Causes &amp; Fixes:</strong>
-1. No conventional commits: Write proper commit messages
-2. No <code>&lt;!-- insertion marker --&gt;</code> in CHANGELOG.md: Add it
-3. Wrong version range: Check with <code>git tag -l</code></p>
-<h3 id="oidc-upload-failing">OIDC Upload Failing<a class="headerlink" href="#oidc-upload-failing" title="Permanent link">&para;</a></h3>
-<p><strong>Error:</strong> <code>Error: The workflow is not configured for publishing</code></p>
-<p><strong>Fix:</strong>
-1. Check environment name matches: <code>release</code>
-2. Verify <abbr title="Python Package Index — public Python package repository">PyPI</abbr> publisher settings (repo, workflow name)
-3. Ensure workflow has <code>id-token: write</code> permission</p>
-<h3 id="version-bump-not-working">Version Bump Not Working<a class="headerlink" href="#version-bump-not-working" title="Permanent link">&para;</a></h3>
-<p><strong>Error:</strong> <code>cz bump</code> fails</p>
-<p><strong>Causes:</strong>
-1. Uncommitted changes: <code>git status</code> → commit first
-2. No conventional commits: Can't determine bump type
-3. Version format wrong: Must be <code>0.2.0</code> not <code>v0.2.0</code></p>
-<hr />
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>You now have a <strong>production-grade release system</strong>:</p>
-<ol>
-<li><strong>Conventional commits</strong> enforce standard format</li>
-<li><strong>Git-changelog</strong> auto-generates CHANGELOG.md</li>
-<li><strong>Commitizen</strong> manages unified versioning</li>
-<li><strong>GitHub Actions</strong> automates releases</li>
-<li><strong>OIDC</strong> enables secure <abbr title="Python Package Index — public Python package repository">PyPI</abbr> publishing</li>
-</ol>
-<p><strong>Result:</strong> One command creates a professional release!</p>
-<div class="highlight"><pre><span></span><code>just<span class="w"> </span>release<span class="w"> </span><span class="m">0</span>.2.0
-</code></pre></div>
-<p>That's it.</p>
+<h3 id="commit-message-rejected">Commit message rejected<a class="headerlink" href="#commit-message-rejected" title="Permanent link">&para;</a></h3>
+<p><code>Commit message does not follow conventional commits format</code>: write
+<code>type(scope): subject</code>, for example <code>git commit --amend -m "fix(vod): correct tau
+calculation"</code>.</p>
+<h3 id="release-refused">Release refused<a class="headerlink" href="#release-refused" title="Permanent link">&para;</a></h3>
+<p><code>just release</code> prints <code>Not released:</code> and one line per problem; nothing
+was written. See <a href="../../RELEASING/#troubleshooting">Releasing</a>.</p>
+<h3 id="draft-release-missing">Draft release missing<a class="headerlink" href="#draft-release-missing" title="Permanent link">&para;</a></h3>
+<p>The tag must be a canvodpy tag (<code>v1.1.0</code>), and <code>CHANGELOG.md</code> must have a
+section <code>## v1.1.0 (...)</code> on the tagged commit.</p>
+<h3 id="pypi-workflow-publishes-nothing"><abbr title="Python Package Index — public Python package repository">PyPI</abbr> workflow publishes nothing<a class="headerlink" href="#pypi-workflow-publishes-nothing" title="Permanent link">&para;</a></h3>
+<p><code>No package's release tag points at this commit</code>: run it with
+<code>--ref &lt;canvodpy tag&gt;</code> after <code>just tag-release</code> and pushing the tags.</p>
+<h3 id="oidc-upload-failing">OIDC upload failing<a class="headerlink" href="#oidc-upload-failing" title="Permanent link">&para;</a></h3>
+<p><code>The workflow is not configured for publishing</code>: check that the project on
+<abbr title="Python Package Index — public Python package repository">PyPI</abbr> has the trusted publisher described earlier (each package separately), with the
+same workflow file and environment name, and that the workflow has
+<code>id-token: write</code>.</p>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -5630,7 +4721,7 @@ git<span class="w"> </span>commit<span class="w"> </span>--amend<span class="w">
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../OIDC_EXPLAINED/" class="md-footer__link md-footer__link--prev" aria-label="Previous: OIDC Authentication">
+          <a href="../OIDC_EXPLAINED/" class="md-footer__link md-footer__link--prev" aria-label="Previous: OIDC authentication">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -5640,20 +4731,20 @@ git<span class="w"> </span>commit<span class="w"> </span>--amend<span class="w">
                 Previous
               </span>
               <div class="md-ellipsis">
-                OIDC Authentication
+                OIDC authentication
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../FOSS_PRINCIPLES/" class="md-footer__link md-footer__link--next" aria-label="Next: FOSS Principles">
+          <a href="../../FOSS_PRINCIPLES/" class="md-footer__link md-footer__link--next" aria-label="Next: FOSS principles">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                FOSS Principles
+                FOSS principles
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -5673,8 +4764,9 @@ git<span class="w"> </span>commit<span class="w"> </span>--amend<span class="w">
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -5691,7 +4783,7 @@ git<span class="w"> </span>commit<span class="w"> </span>--amend<span class="w">
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -5728,10 +4820,10 @@ git<span class="w"> </span>commit<span class="w"> </span>--amend<span class="w">
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../../assets/mermaid-init.js"></script>
       

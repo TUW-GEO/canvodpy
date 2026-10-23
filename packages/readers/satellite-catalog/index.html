@@ -15,17 +15,18 @@
         <link rel="canonical" href="https://canvodpy.eu/packages/readers/satellite-catalog/">
       
       
-        <link rel="prev" href="../ephemeris-sources/">
+      
+        <link rel="prev" href="../sbf-decoding/">
       
       
-        <link rel="next" href="../architecture/">
+        <link rel="next" href="../../auxiliary/products/">
       
       
         
       
       
       <link rel="icon" href="../../../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
@@ -36,12 +37,12 @@
       
         
       
-      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="../../.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -173,6 +195,7 @@
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -288,12 +305,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -302,7 +313,7 @@
         <a href="../../../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../../../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../impressum/" class="md-tabs__link">
+        <a href="../../../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -525,12 +520,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -558,7 +547,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -580,7 +569,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -594,14 +583,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../users/cli/" class="md-nav__link">
+      <a href="../../../guides/upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -620,26 +609,65 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -655,7 +683,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -675,14 +703,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guides/extensions/" class="md-nav__link">
+      <a href="../../../guides/settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -694,6 +722,162 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -709,7 +893,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -736,7 +920,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -763,7 +947,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -783,14 +967,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../notebooks/" class="md-nav__link">
+      <a href="../../ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -807,22 +991,519 @@
                   
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  How it works
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  How it works
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reading GNSS files
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ephemeris-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Ephemeris sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Orbits and clocks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Orbit and clock preparation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/interpolation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Interpolation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/coordinates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coordinate systems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../grids/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Hemispheric grids
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../vod/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  VOD retrieval
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/icechunk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Versioning with Icechunk
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store/storage-strategies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Write strategies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../store-metadata/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../viz/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Visualization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
     
   
   
   
     
     
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
       
         
       
@@ -852,17 +1533,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" checked>
         
           
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Packages
+  Data formats
 
     
   </span>
@@ -873,83 +1554,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_2_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-readers
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_2_10_1">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-readers
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -961,14 +1571,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../overview/" class="md-nav__link">
+      <a href="../rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
 
     
   </span>
@@ -988,14 +1598,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../rinex-format/" class="md-nav__link">
+      <a href="../rinex-v2-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  RINEX v3.04 Format
+  RINEX v2.11
 
     
   </span>
@@ -1022,7 +1632,7 @@
   <span class="md-ellipsis">
     
   
-  SBF Reader
+  SBF
 
     
   </span>
@@ -1049,34 +1659,7 @@
   <span class="md-ellipsis">
     
   
-  SBF Field Decoding
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../ephemeris-sources/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Ephemeris Sources
+  SBF field decoding
 
     
   </span>
@@ -1112,7 +1695,7 @@
   <span class="md-ellipsis">
     
   
-  Satellite Catalog (IGS SINEX)
+  Satellite catalog
 
     
   </span>
@@ -1129,7 +1712,7 @@
   <span class="md-ellipsis">
     
   
-  Satellite Catalog (IGS SINEX)
+  Satellite catalog
 
     
   </span>
@@ -1191,12 +1774,12 @@
   <a href="#loading-the-catalog" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Loading the Catalog
+        Loading the catalog
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Loading the Catalog">
+    <nav class="md-nav" aria-label="Loading the catalog">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1291,7 +1874,7 @@
   <a href="#polars-dataframe-export" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Polars DataFrame Export
+        Polars DataFrame export
       </span>
     </span>
   </a>
@@ -1302,12 +1885,12 @@
   <a href="#dataset-enrichment" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Dataset Enrichment
+        Dataset enrichment
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Dataset Enrichment">
+    <nav class="md-nav" aria-label="Dataset enrichment">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1330,7 +1913,7 @@
   <a href="#integration-with-constellations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Integration with Constellations
+        Integration with constellations
       </span>
     </span>
   </a>
@@ -1341,7 +1924,7 @@
   <a href="#summary-of-catalog-contents" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Summary of Catalog Contents
+        Summary of catalog contents
       </span>
     </span>
   </a>
@@ -1352,7 +1935,7 @@
   <a href="#data-classes-reference" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Data Classes Reference
+        Data classes reference
       </span>
     </span>
   </a>
@@ -1386,240 +1969,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/preprocessing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Preprocessing Pipeline
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/interpolation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Interpolation Methods
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/coordinates/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Coordinate Systems
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../auxiliary/products/" class="md-nav__link">
         
   
@@ -1627,189 +1976,7 @@
   <span class="md-ellipsis">
     
   
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../grids/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../vod/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
+  Product registry
 
     
   </span>
@@ -1852,24 +2019,27 @@
       
       
         
+          
+          
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
         
           
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-store
+  Extend
 
     
   </span>
@@ -1880,12 +2050,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_5">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-store
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -1897,14 +2067,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../store/overview/" class="md-nav__link">
+      <a href="../../../guides/plugins/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  Your own readers and VOD calculators
 
     
   </span>
@@ -1924,14 +2094,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../store/icechunk/" class="md-nav__link">
+      <a href="../building-a-reader/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Build a reader
 
     
   </span>
@@ -1943,370 +2113,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../store/storage-strategies/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Storage Strategies
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../store-metadata/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../viz/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-config
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-config
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../config/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-utils
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-utils
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2322,189 +2128,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2533,24 +2157,17 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
       
         
       
@@ -2597,7 +2214,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2613,7 +2230,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2659,7 +2276,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2686,7 +2303,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2706,14 +2323,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guides/architecture-design/" class="md-nav__link">
+      <a href="../../../guides/reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2725,6 +2342,67 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2740,7 +2418,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2760,14 +2438,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../build-system/" class="md-nav__link">
+      <a href="../../../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2787,14 +2465,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tooling/" class="md-nav__link">
+      <a href="../../../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2814,14 +2492,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../principles/" class="md-nav__link">
+      <a href="../../../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2829,6 +2507,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2862,10 +2549,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
             
   
   
@@ -2883,8 +2570,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -2907,7 +2594,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -2934,7 +2621,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -2961,7 +2648,727 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -3002,8 +3409,6 @@
       
         
       
-        
-      
     
     
     
@@ -3017,17 +3422,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -3038,12 +3443,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3089,34 +3494,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../guides/PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -3170,7 +3548,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -3197,7 +3575,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -3249,17 +3627,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3270,12 +3648,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3294,7 +3672,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3321,7 +3699,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3348,7 +3726,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3368,14 +3746,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../SECURITY.md" class="md-nav__link">
+      <a href="../../../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3413,6 +3791,8 @@
   
     
     
+      
+        
       
         
       
@@ -3459,7 +3839,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3475,10 +3855,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -3785,96 +4192,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -3952,12 +4269,12 @@
   <a href="#loading-the-catalog" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Loading the Catalog
+        Loading the catalog
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Loading the Catalog">
+    <nav class="md-nav" aria-label="Loading the catalog">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4052,7 +4369,7 @@
   <a href="#polars-dataframe-export" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Polars DataFrame Export
+        Polars DataFrame export
       </span>
     </span>
   </a>
@@ -4063,12 +4380,12 @@
   <a href="#dataset-enrichment" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Dataset Enrichment
+        Dataset enrichment
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Dataset Enrichment">
+    <nav class="md-nav" aria-label="Dataset enrichment">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4091,7 +4408,7 @@
   <a href="#integration-with-constellations" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Integration with Constellations
+        Integration with constellations
       </span>
     </span>
   </a>
@@ -4102,7 +4419,7 @@
   <a href="#summary-of-catalog-contents" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Summary of Catalog Contents
+        Summary of catalog contents
       </span>
     </span>
   </a>
@@ -4113,7 +4430,7 @@
   <a href="#data-classes-reference" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Data Classes Reference
+        Data classes reference
       </span>
     </span>
   </a>
@@ -4191,12 +4508,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -4206,7 +4517,7 @@
           
   
   <span class="md-ellipsis">
-    Usage
+    Retrieve VOD
   </span>
 
         </a>
@@ -4233,95 +4544,16 @@
       
         
       
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
     
     
     
     
       <li class="md-path__item">
-        <a href="../overview/" class="md-path__link">
+        <a href="../rinex-format/" class="md-path__link">
           
   
   <span class="md-ellipsis">
-    Packages
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-    
-  
-
-      
-        
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      <li class="md-path__item">
-        <a href="../overview/" class="md-path__link">
-          
-  
-  <span class="md-ellipsis">
-    canvod-readers
+    Data formats
   </span>
 
         </a>
@@ -4343,32 +4575,35 @@
   
 
 
-<h1 id="satellite-catalog-igs-sinex-metadata">Satellite Catalog — <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> <abbr title="Solution INdependent EXchange format — IGS format for station coordinates, satellite metadata, and troposphere products">SINEX</abbr> Metadata<a class="headerlink" href="#satellite-catalog-igs-sinex-metadata" title="Permanent link">&para;</a></h1>
+<h1 id="satellite-catalog-igs-sinex-metadata">Satellite catalog (<abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> <abbr title="Solution INdependent EXchange format — IGS format for station coordinates, satellite metadata, and troposphere products">SINEX</abbr> metadata)<a class="headerlink" href="#satellite-catalog-igs-sinex-metadata" title="Permanent link">&para;</a></h1>
 <h2 id="why-satellite-metadata-matters-for-gnss-t">Why satellite metadata matters for <abbr title="GNSS Transmissometry — method using differential SNR between canopy and reference receivers to estimate vegetation properties">GNSS-T</abbr><a class="headerlink" href="#why-satellite-metadata-matters-for-gnss-t" title="Permanent link">&para;</a></h2>
 <p><abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr>-Transmissometry derives vegetation properties from the <strong>attenuation</strong> of
 satellite signals passing through a canopy. Several satellite-level properties
 directly affect signal interpretation:</p>
 <ul>
-<li><strong>Transmit power (TX)</strong> — different satellite generations broadcast at different
-  power levels (e.g. <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>-IIF: 240 W, <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>-III: 370 W). When computing transmittance
-  as the ratio of canopy-to-reference <abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr>, the absolute power cancels — but mixed
+<li><strong>Transmit power (TX)</strong>: different satellite generations broadcast at different
+  power levels (in the <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> file, for example <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>-IIF: 240 W, <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>-IIIA: 300 W). When computing transmittance
+  as the ratio of canopy-to-reference <abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr>, the absolute power cancels, but mixed
   constellations and satellite replacements can introduce systematic biases if not
   accounted for.</li>
-<li><strong><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> reassignments</strong> — a <abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> code (e.g. <code>G01</code>) is not permanently bound to one
+<li><strong><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> reassignments</strong>: a <abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> code (for example <code>G01</code>) is not permanently bound to one
   satellite vehicle. When a satellite is decommissioned and its <abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> reassigned to a
   new vehicle, the TX power, antenna pattern, and orbital characteristics change.
-  Long time series that span a reassignment must be flagged to avoid false trends.</li>
-<li><strong>Orbital plane and slot</strong> — the satellite's position in the constellation
+  A long time series that spans a reassignment can show a step that is not in the
+  vegetation; <code>reassignments_in_range</code> finds them.</li>
+<li><strong>Orbital plane and slot</strong>: the satellite's position in the constellation
   determines its sky track over the receiver site, which affects the polar angle
   distribution and therefore the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> sampling geometry.</li>
 </ul>
 <p>The <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> <abbr title="Solution INdependent EXchange format — IGS format for station coordinates, satellite metadata, and troposphere products">SINEX</abbr> catalog provides all of this information in a single, authoritative,
-machine-readable file — enabling canvodpy to track these properties automatically.</p>
+machine-readable file. <code>canvodpy run</code> does not use it: the catalog is a tool for
+your own analysis (for example <code>enrich_dataset</code> on data read from a store).</p>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>The <code>SatelliteCatalog</code> class parses the <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> <code>igs_satellite_metadata.snx</code> <abbr title="Solution INdependent EXchange format — IGS format for station coordinates, satellite metadata, and troposphere products">SINEX</abbr> file —
-a single authoritative source of satellite metadata maintained by the <a href="https://gssc.esa.int/navipedia/index.php/International_GNSS_Service_(IGS)" target="_blank"><abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr></a> (updated
-every 2-4 weeks by <a href="https://gssc.esa.int/navipedia/index.php/GNSS_Satellite_Orbit_Determination" target="_blank">DLR</a>). It provides time-aware queries for all <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> constellations:
-<abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>, <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>, <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>, <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>, <abbr title="Quasi-Zenith Satellite System — Japanese regional augmentation optimised for urban canyons (Navipedia: QZSS)">QZSS</abbr>, <abbr title="Indian Regional Navigation Satellite System (also known as NavIC) — 7-satellite regional system (Navipedia: IRNSS)">IRNSS</abbr>, and <abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr>.</p>
+<p>The <code>SatelliteCatalog</code> class parses the <abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> <code>igs_satellite_metadata.snx</code> <abbr title="Solution INdependent EXchange format — IGS format for station coordinates, satellite metadata, and troposphere products">SINEX</abbr> file:
+a single authoritative source of satellite metadata maintained by the <a href="https://igs.org/" target="_blank"><abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr></a>. It provides time-aware queries for all <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> constellations:
+<abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr>, <abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr>, <abbr title="European Global Navigation Satellite System — 30 SVs, dual-frequency civilian design (Navipedia: Galileo)">Galileo</abbr>, <abbr title="BeiDou Navigation Satellite System — Chinese constellation with regional and global services (Navipedia: BeiDou)">BeiDou</abbr>, <abbr title="Quasi-Zenith Satellite System — Japanese regional augmentation optimised for urban canyons (Navipedia: QZSS)">QZSS</abbr>, and <abbr title="Indian Regional Navigation Satellite System (also known as NavIC) — 7-satellite regional system (Navipedia: IRNSS)">IRNSS</abbr>. <abbr title="Satellite-Based Augmentation System — geostationary broadcasts providing integrity and corrections (Navipedia: SBAS)">SBAS</abbr> satellites are not in the
+<abbr title="Solution INdependent EXchange format — IGS format for station coordinates, satellite metadata, and troposphere products">SINEX</abbr> file; their <abbr title="Space Vehicle — a single GNSS satellite, identified by system prefix + PRN number">SV</abbr> list (<code>S01</code>–<code>S99</code>, <span class="arithmatex">\(nn = \text{PRN} - 100\)</span>) comes from the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr>
+specification.</p>
 <div class="admonition tip">
 <p class="admonition-title">Offline-first design</p>
 <p><code>SatelliteCatalog</code> <strong>never fails</strong> without internet. A bundled fallback copy
@@ -4377,7 +4612,7 @@ and cached locally.</p>
 </div>
 <hr />
 <h2 id="whats-in-the-sinex-file">What's in the <abbr title="Solution INdependent EXchange format — IGS format for station coordinates, satellite metadata, and troposphere products">SINEX</abbr> file?<a class="headerlink" href="#whats-in-the-sinex-file" title="Permanent link">&para;</a></h2>
-<p>The file contains seven data blocks covering ~290 satellite vehicles:</p>
+<p>The file has eight <code>SATELLITE/</code> blocks; the catalog reads the six below (not <code>COM</code> and <code>ECCENTRICITY</code>):</p>
 <table>
 <thead>
 <tr>
@@ -4390,12 +4625,12 @@ and cached locally.</p>
 <tr>
 <td><code>SATELLITE/IDENTIFIER</code></td>
 <td><abbr title="Space Vehicle Number — permanent hardware identifier assigned at launch; does not change when PRN is reassigned">SVN</abbr>, COSPAR ID, NORAD catalog number, block type, launch date</td>
-<td><code>G063</code>, <code>2014-068A</code>, <code>GPS-IIF</code></td>
+<td><code>G063</code>, <code>2011-036A</code>, <code>GPS-IIF</code></td>
 </tr>
 <tr>
 <td><code>SATELLITE/PRN</code></td>
-<td><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> ↔ <abbr title="Space Vehicle Number — permanent hardware identifier assigned at launch; does not change when PRN is reassigned">SVN</abbr> assignments with validity periods</td>
-<td>G01 → G063 from 2014-250 to open</td>
+<td><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> <span class="arithmatex">\(\leftrightarrow\)</span> <abbr title="Space Vehicle Number — permanent hardware identifier assigned at launch; does not change when PRN is reassigned">SVN</abbr> assignments with validity periods</td>
+<td>G01 <span class="arithmatex">\(\rightarrow\)</span> G080 from 2024-12-17 to open</td>
 </tr>
 <tr>
 <td><code>SATELLITE/TX_POWER</code></td>
@@ -4415,17 +4650,18 @@ and cached locally.</p>
 <tr>
 <td><code>SATELLITE/PLANE</code></td>
 <td>Orbital plane and slot assignments</td>
-<td>G063: plane B, slot 2</td>
+<td>G063: plane 4, slot D2A</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h2 id="loading-the-catalog">Loading the Catalog<a class="headerlink" href="#loading-the-catalog" title="Permanent link">&para;</a></h2>
+<h2 id="loading-the-catalog">Loading the catalog<a class="headerlink" href="#loading-the-catalog" title="Permanent link">&para;</a></h2>
 <h3 id="discovery-chain">Discovery chain<a class="headerlink" href="#discovery-chain" title="Permanent link">&para;</a></h3>
 <p><code>SatelliteCatalog.load()</code> searches for the file in this order:</p>
 <div class="highlight"><pre><span></span><code>1. Explicit search_dirs (e.g. config aux_data_dir)
 2. ~/.cache/canvod/
-3. Download from IGS (if online and cache is stale)
+3. Download from IGS (if online and the cached copy is older than
+   `max_age_days`, default 7)
 4. Bundled fallback (always works, ships with package)
 </code></pre></div>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Default (auto-download)</label><label for="__tabbed_1_2">Offline only</label><label for="__tabbed_1_3">From specific file</label><label for="__tabbed_1_4">Custom cache directory</label></div>
@@ -4441,12 +4677,12 @@ and cached locally.</p>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="n">catalog</span> <span class="o">=</span> <span class="n">SatelliteCatalog</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;/path/to/igs_satellite_metadata.snx&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">catalog</span> <span class="o">=</span> <span class="n">SatelliteCatalog</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">"/path/to/igs_satellite_metadata.snx"</span><span class="p">)</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="n">catalog</span> <span class="o">=</span> <span class="n">SatelliteCatalog</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
-    <span class="n">search_dirs</span><span class="o">=</span><span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/data/aux/&quot;</span><span class="p">)],</span>
+    <span class="n">search_dirs</span><span class="o">=</span><span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="s2">"/data/aux/"</span><span class="p">)],</span>
     <span class="n">max_age_days</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -4455,78 +4691,78 @@ and cached locally.</p>
 </div>
 <div class="admonition info">
 <p class="admonition-title">Placing the file manually</p>
-<p>Drop a fresh copy of <code>igs_satellite_metadata.snx</code> into <code>~/.cache/canvod/</code>
-or your project's <code>aux_data_dir</code>. The catalog will find it automatically.</p>
+<p>Drop a fresh copy of <code>igs_satellite_metadata.snx</code> into <code>~/.cache/canvod/</code>,
+or into a directory you pass as <code>search_dirs</code>.</p>
 </div>
 <hr />
 <h2 id="querying">Querying<a class="headerlink" href="#querying" title="Permanent link">&para;</a></h2>
 <p>All time-varying queries take an <code>on_date</code> parameter to resolve validity periods.</p>
 <h3 id="prn-svn-mapping"><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> ↔ <abbr title="Space Vehicle Number — permanent hardware identifier assigned at launch; does not change when PRN is reassigned">SVN</abbr> mapping<a class="headerlink" href="#prn-svn-mapping" title="Permanent link">&para;</a></h3>
-<p><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> codes (e.g. <code>G01</code>) are <strong>not permanent</strong> — they can be reassigned to different
+<p><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> codes (for example <code>G01</code>) are <strong>not permanent</strong>; they can be reassigned to different
 satellite vehicles over time. The catalog tracks the full assignment history.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span>
 
 <span class="n">catalog</span> <span class="o">=</span> <span class="n">SatelliteCatalog</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 
-<span class="c1"># What satellite vehicle is behind G01 today?</span>
-<span class="n">svn</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">prn_to_svn</span><span class="p">(</span><span class="s2">&quot;G01&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">17</span><span class="p">))</span>  <span class="c1"># → &quot;G063&quot;</span>
+<span class="c1"># What satellite vehicle was behind G01 on 2024-01-01?</span>
+<span class="n">svn</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">prn_to_svn</span><span class="p">(</span><span class="s2">"G01"</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2024</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → "G063"</span>
 
 <span class="c1"># Reverse lookup</span>
-<span class="n">prn</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">svn_to_prn</span><span class="p">(</span><span class="s2">&quot;G063&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">17</span><span class="p">))</span>  <span class="c1"># → &quot;G01&quot;</span>
+<span class="n">prn</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">svn_to_prn</span><span class="p">(</span><span class="s2">"G063"</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2024</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → "G01" (None from 2024-04-12 on)</span>
 
 <span class="c1"># Full assignment history for a PRN</span>
-<span class="n">history</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">prn_history</span><span class="p">(</span><span class="s2">&quot;G01&quot;</span><span class="p">)</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">prn_history</span><span class="p">(</span><span class="s2">"G01"</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">history</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">svn</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">start</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">end</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;active&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">svn</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">start</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">assignment</span><span class="o">.</span><span class="n">end</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'active'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="reassignment-detection">Reassignment detection<a class="headerlink" href="#reassignment-detection" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Were there any PRN reassignments in my processing window?</span>
-<span class="n">changes</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">reassignments_in_range</span><span class="p">(</span><span class="s2">&quot;G01&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">31</span><span class="p">))</span>
+<span class="n">changes</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">reassignments_in_range</span><span class="p">(</span><span class="s2">"G01"</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">31</span><span class="p">))</span>
 <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">changes</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">prn</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">old_svn</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">new_svn</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">new_start</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">prn</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">old_svn</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">new_svn</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">new_start</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Why reassignments matter</p>
 <p>If a <abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> is reassigned during your observation period, the satellite
-behind that <abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> changed — with different transmit power, antenna pattern,
+behind that <abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> changed, with different transmit power, antenna pattern,
 and orbital characteristics. Time series continuity assumptions break.</p>
 </div>
 <h3 id="active-prns-per-constellation">Active PRNs per constellation<a class="headerlink" href="#active-prns-per-constellation" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># All GPS satellites active on a given date</span>
-<span class="n">gps_prns</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">active_prns</span><span class="p">(</span><span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → [&quot;G01&quot;, &quot;G02&quot;, ...]</span>
+<span class="n">gps_prns</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">active_prns</span><span class="p">(</span><span class="s2">"G"</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → ["G01", "G02", ...]</span>
 
 <span class="c1"># Galileo</span>
-<span class="n">gal_prns</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">active_prns</span><span class="p">(</span><span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → [&quot;E01&quot;, &quot;E02&quot;, ...]</span>
+<span class="n">gal_prns</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">active_prns</span><span class="p">(</span><span class="s2">"E"</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → ["E01", "E02", ...]</span>
 </code></pre></div>
 <h3 id="satellite-metadata">Satellite metadata<a class="headerlink" href="#satellite-metadata" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Block type (satellite generation)</span>
-<span class="n">block</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">satellite_block</span><span class="p">(</span><span class="s2">&quot;G063&quot;</span><span class="p">)</span>  <span class="c1"># → &quot;GPS-IIF&quot;</span>
+<span class="n">block</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">satellite_block</span><span class="p">(</span><span class="s2">"G063"</span><span class="p">)</span>  <span class="c1"># → "GPS-IIF"</span>
 
 <span class="c1"># Transmit power</span>
-<span class="n">power</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">tx_power</span><span class="p">(</span><span class="s2">&quot;G063&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → 240 (Watts)</span>
+<span class="n">power</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">tx_power</span><span class="p">(</span><span class="s2">"G063"</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → 240 (Watts)</span>
 
 <span class="c1"># Mass</span>
-<span class="n">mass</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">mass</span><span class="p">(</span><span class="s2">&quot;G063&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → 1633.0 (kg)</span>
+<span class="n">mass</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">mass</span><span class="p">(</span><span class="s2">"G063"</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → 1633.0 (kg)</span>
 
 <span class="c1"># GLONASS frequency channel</span>
-<span class="n">channel</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">glonass_channel</span><span class="p">(</span><span class="s2">&quot;R730&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → 1</span>
+<span class="n">channel</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">glonass_channel</span><span class="p">(</span><span class="s2">"R730"</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → 1</span>
 
 <span class="c1"># Orbital plane and slot</span>
-<span class="n">plane</span><span class="p">,</span> <span class="n">slot</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">plane_and_slot</span><span class="p">(</span><span class="s2">&quot;G063&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → (&quot;B&quot;, &quot;2&quot;)</span>
+<span class="n">plane</span><span class="p">,</span> <span class="n">slot</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">plane_and_slot</span><span class="p">(</span><span class="s2">"G063"</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># → ("4", "D2A")</span>
 </code></pre></div>
 <h3 id="combined-metadata-lookup">Combined metadata lookup<a class="headerlink" href="#combined-metadata-lookup" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Get everything for a PRN on a date</span>
-<span class="n">meta</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">get_prn_metadata</span><span class="p">(</span><span class="s2">&quot;G01&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">meta</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">get_prn_metadata</span><span class="p">(</span><span class="s2">"G01"</span><span class="p">,</span> <span class="n">date</span><span class="p">(</span><span class="mi">2024</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 <span class="c1"># → {</span>
-<span class="c1">#     &quot;prn&quot;: &quot;G01&quot;, &quot;svn&quot;: &quot;G063&quot;, &quot;block&quot;: &quot;GPS-IIF&quot;,</span>
-<span class="c1">#     &quot;cospar_id&quot;: &quot;2014-068A&quot;, &quot;satcat&quot;: 40294,</span>
-<span class="c1">#     &quot;tx_power_watts&quot;: 240, &quot;mass_kg&quot;: 1633.0,</span>
-<span class="c1">#     &quot;plane&quot;: &quot;B&quot;, &quot;slot&quot;: &quot;2&quot;, &quot;glonass_channel&quot;: None,</span>
-<span class="c1">#     &quot;comment&quot;: &quot;Launched 2014-10-29&quot;</span>
+<span class="c1">#     "prn": "G01", "svn": "G063", "block": "GPS-IIF",</span>
+<span class="c1">#     "cospar_id": "2011-036A", "satcat": 37753,</span>
+<span class="c1">#     "comment": "Launched 2011-07-16; NAVSTAR 66",</span>
+<span class="c1">#     "tx_power_watts": 240, "mass_kg": 1633.0,</span>
+<span class="c1">#     "plane": "4", "slot": "D2A", "glonass_channel": None,</span>
 <span class="c1"># }</span>
 </code></pre></div>
 <hr />
-<h2 id="polars-dataframe-export"><abbr title="Fast DataFrame library written in Rust — used for metadata catalogs and inventory">Polars</abbr> DataFrame Export<a class="headerlink" href="#polars-dataframe-export" title="Permanent link">&para;</a></h2>
+<h2 id="polars-dataframe-export"><abbr title="Fast DataFrame library written in Rust — used for metadata catalogs and inventory">Polars</abbr> DataFrame export<a class="headerlink" href="#polars-dataframe-export" title="Permanent link">&para;</a></h2>
 <p>The catalog can be exported as a <abbr title="Fast DataFrame library written in Rust — used for metadata catalogs and inventory">Polars</abbr> DataFrame for interactive exploration
 in marimo notebooks.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Snapshot (one date)</label><label for="__tabbed_2_2">Full history</label></div>
@@ -4553,17 +4789,17 @@ in marimo notebooks.</p>
 
 <span class="c1"># TX power by constellation</span>
 <span class="n">mo</span><span class="o">.</span><span class="n">ui</span><span class="o">.</span><span class="n">table</span><span class="p">(</span>
-    <span class="n">df</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="s2">&quot;constellation&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
-        <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;tx_power_watts&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;mean_power_W&quot;</span><span class="p">),</span>
-        <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;tx_power_watts&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;min_power_W&quot;</span><span class="p">),</span>
-        <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;tx_power_watts&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;max_power_W&quot;</span><span class="p">),</span>
-        <span class="n">pl</span><span class="o">.</span><span class="n">len</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;count&quot;</span><span class="p">),</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="s2">"constellation"</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">"tx_power_watts"</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">"mean_power_W"</span><span class="p">),</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">"tx_power_watts"</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">"min_power_W"</span><span class="p">),</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">"tx_power_watts"</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">"max_power_W"</span><span class="p">),</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">len</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">"count"</span><span class="p">),</span>
     <span class="p">)</span>
 <span class="p">)</span>
 </code></pre></div>
 </div>
 <hr />
-<h2 id="dataset-enrichment">Dataset Enrichment<a class="headerlink" href="#dataset-enrichment" title="Permanent link">&para;</a></h2>
+<h2 id="dataset-enrichment">Dataset enrichment<a class="headerlink" href="#dataset-enrichment" title="Permanent link">&para;</a></h2>
 <p><code>enrich_dataset()</code> adds satellite metadata as <code>sid</code>-level coordinates on an
 existing <abbr title="Labelled multi-dimensional arrays for Python — extends NumPy with named dims, coords, and attrs">xarray</abbr> Dataset. This attaches <abbr title="Space Vehicle Number — permanent hardware identifier assigned at launch; does not change when PRN is reassigned">SVN</abbr>, block type, TX power, mass, plane,
 and slot to every signal identifier.</p>
@@ -4573,12 +4809,12 @@ and slot to every signal identifier.</p>
 <span class="n">enriched</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">enrich_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">on_date</span><span class="o">=</span><span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 
 <span class="c1"># New coordinates on the sid dimension:</span>
-<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;svn&quot;</span><span class="p">]</span>             <span class="c1"># &quot;G063&quot;, &quot;E210&quot;, ...</span>
-<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;block&quot;</span><span class="p">]</span>           <span class="c1"># &quot;GPS-IIF&quot;, &quot;GAL-FOC&quot;, ...</span>
-<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;tx_power_watts&quot;</span><span class="p">]</span>  <span class="c1"># 240.0, 265.0, ...</span>
-<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;mass_kg&quot;</span><span class="p">]</span>         <span class="c1"># 1633.0, 733.0, ...</span>
-<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;plane&quot;</span><span class="p">]</span>           <span class="c1"># &quot;B&quot;, &quot;A&quot;, ...</span>
-<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;slot&quot;</span><span class="p">]</span>            <span class="c1"># &quot;2&quot;, &quot;5&quot;, ...</span>
+<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">"svn"</span><span class="p">]</span>  <span class="c1"># "G063", "E210", ...</span>
+<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">"block"</span><span class="p">]</span>  <span class="c1"># "GPS-IIF", "GAL-FOC", ...</span>
+<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">"tx_power_watts"</span><span class="p">]</span>  <span class="c1"># 240.0, 265.0, ...</span>
+<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">"mass_kg"</span><span class="p">]</span>  <span class="c1"># 1633.0, 733.0, ...</span>
+<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">"plane"</span><span class="p">]</span>  <span class="c1"># "4", ... (as written in the SINEX file)</span>
+<span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">"slot"</span><span class="p">]</span>  <span class="c1"># "D2A", ...</span>
 </code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">Date inference</p>
@@ -4587,11 +4823,11 @@ dataset. Unknown SIDs (not in the catalog) get empty strings / NaN values.</p>
 </div>
 <h3 id="use-case-filter-by-satellite-generation">Use case: filter by satellite generation<a class="headerlink" href="#use-case-filter-by-satellite-generation" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># Select only GPS-III satellites (higher TX power)</span>
-<span class="n">gps3_mask</span> <span class="o">=</span> <span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;block&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;GPS-III&quot;</span><span class="p">)</span>
+<span class="n">gps3_mask</span> <span class="o">=</span> <span class="n">enriched</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">"block"</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"GPS-III"</span><span class="p">)</span>
 <span class="n">gps3_data</span> <span class="o">=</span> <span class="n">enriched</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">sid</span><span class="o">=</span><span class="n">gps3_mask</span><span class="p">)</span>
 </code></pre></div>
 <hr />
-<h2 id="integration-with-constellations">Integration with Constellations<a class="headerlink" href="#integration-with-constellations" title="Permanent link">&para;</a></h2>
+<h2 id="integration-with-constellations">Integration with constellations<a class="headerlink" href="#integration-with-constellations" title="Permanent link">&para;</a></h2>
 <p>Each constellation class has an <code>update_svs_from_catalog()</code> method that
 replaces the static <abbr title="Space Vehicle — a single GNSS satellite, identified by system prefix + PRN number">SV</abbr> list with the actual active PRNs from the catalog:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.readers.gnss_specs.constellations</span><span class="w"> </span><span class="kn">import</span> <span class="n">GPS</span>
@@ -4600,24 +4836,26 @@ replaces the static <abbr title="Space Vehicle — a single GNSS satellite, iden
 <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gps</span><span class="o">.</span><span class="n">svs</span><span class="p">))</span>  <span class="c1"># 32 (static default)</span>
 
 <span class="n">gps</span><span class="o">.</span><span class="n">update_svs_from_catalog</span><span class="p">(</span><span class="n">on_date</span><span class="o">=</span><span class="n">date</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gps</span><span class="o">.</span><span class="n">svs</span><span class="p">))</span>  <span class="c1"># actual active PRNs on that date</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gps</span><span class="o">.</span><span class="n">svs</span><span class="p">))</span>  <span class="c1"># the PRNs active on that date (32 on 2025-01-01)</span>
 </code></pre></div>
 <hr />
-<h2 id="summary-of-catalog-contents">Summary of Catalog Contents<a class="headerlink" href="#summary-of-catalog-contents" title="Permanent link">&para;</a></h2>
+<h2 id="summary-of-catalog-contents">Summary of catalog contents<a class="headerlink" href="#summary-of-catalog-contents" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="n">catalog</span> <span class="o">=</span> <span class="n">SatelliteCatalog</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">catalog</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+<span class="c1"># counts change with every IGS update; e.g.</span>
 <span class="c1"># {</span>
-<span class="c1">#     &quot;total_svns&quot;: 291,</span>
-<span class="c1">#     &quot;constellations&quot;: {&quot;GPS&quot;: 78, &quot;GLONASS&quot;: 67, &quot;Galileo&quot;: 36, ...},</span>
-<span class="c1">#     &quot;prn_assignments&quot;: 487,</span>
-<span class="c1">#     &quot;tx_power_records&quot;: 312,</span>
-<span class="c1">#     &quot;mass_records&quot;: 285,</span>
-<span class="c1">#     &quot;frequency_channels&quot;: 67,</span>
-<span class="c1">#     &quot;plane_slots&quot;: 410,</span>
+<span class="c1">#     "total_svns": 294,</span>
+<span class="c1">#     "constellations": {"GPS": 80, "GLONASS": 101, "Galileo": 36, "BeiDou": 60,</span>
+<span class="c1">#                        "QZSS": 7, "IRNSS": 10},</span>
+<span class="c1">#     "prn_assignments": 399,</span>
+<span class="c1">#     "tx_power_records": 229,</span>
+<span class="c1">#     "mass_records": 505,</span>
+<span class="c1">#     "frequency_channels": 149,</span>
+<span class="c1">#     "plane_slots": 259,</span>
 <span class="c1"># }</span>
 </code></pre></div>
 <hr />
-<h2 id="data-classes-reference">Data Classes Reference<a class="headerlink" href="#data-classes-reference" title="Permanent link">&para;</a></h2>
+<h2 id="data-classes-reference">Data classes reference<a class="headerlink" href="#data-classes-reference" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -4629,37 +4867,37 @@ replaces the static <abbr title="Space Vehicle — a single GNSS satellite, iden
 <tbody>
 <tr>
 <td><code>SatelliteIdentity</code></td>
-<td>svn, cospar_id, satcat, block, comment</td>
+<td><code>svn</code>, <code>cospar_id</code>, <code>satcat</code>, <code>block</code>, <code>comment</code></td>
 <td>Static satellite info</td>
 </tr>
 <tr>
 <td><code>PrnAssignment</code></td>
-<td>svn, prn, start, end</td>
-<td><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> ↔ <abbr title="Space Vehicle Number — permanent hardware identifier assigned at launch; does not change when PRN is reassigned">SVN</abbr> with validity period</td>
+<td><code>svn</code>, <code>prn</code>, <code>start</code>, <code>end</code></td>
+<td><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> <span class="arithmatex">\(\leftrightarrow\)</span> <abbr title="Space Vehicle Number — permanent hardware identifier assigned at launch; does not change when PRN is reassigned">SVN</abbr> with validity period</td>
 </tr>
 <tr>
 <td><code>TxPowerRecord</code></td>
-<td>svn, power_watts, start, end, comment</td>
+<td><code>svn</code>, <code>power_watts</code>, <code>start</code>, <code>end</code>, <code>comment</code></td>
 <td>TX power with validity</td>
 </tr>
 <tr>
 <td><code>MassRecord</code></td>
-<td>svn, mass_kg, start, end, comment</td>
+<td><code>svn</code>, <code>mass_kg</code>, <code>start</code>, <code>end</code>, <code>comment</code></td>
 <td>Mass with validity</td>
 </tr>
 <tr>
 <td><code>FrequencyChannel</code></td>
-<td>svn, channel, start, end, comment</td>
+<td><code>svn</code>, <code>channel</code>, <code>start</code>, <code>end</code>, <code>comment</code></td>
 <td><abbr title="GLObal NAvigation Satellite System — Russian constellation using FDMA and CDMA signals (Navipedia: GLONASS)">GLONASS</abbr> <abbr title="Frequency Division Multiple Access — GLONASS signal multiplexing: each SV on a different frequency channel (Navipedia: GLONASS Signal Plan)">FDMA</abbr> channel</td>
 </tr>
 <tr>
 <td><code>PlaneSlot</code></td>
-<td>svn, plane, slot, start, end, comment</td>
+<td><code>svn</code>, <code>plane</code>, <code>slot</code>, <code>start</code>, <code>end</code>, <code>comment</code></td>
 <td>Orbital plane and slot</td>
 </tr>
 <tr>
 <td><code>Reassignment</code></td>
-<td>prn, old_svn, new_svn, old_end, new_start</td>
+<td><code>prn</code>, <code>old_svn</code>, <code>new_svn</code>, <code>old_end</code>, <code>new_start</code></td>
 <td><abbr title="Pseudo-Random Noise — unique code identifying a satellite signal slot (e.g. G01, E02). PRN ≠ SVN; PRNs can be reassigned. (Navipedia: GNSS signal)">PRN</abbr> reassignment event</td>
 </tr>
 </tbody>
@@ -4668,15 +4906,9 @@ replaces the static <abbr title="Space Vehicle — a single GNSS satellite, iden
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="https://files.igs.org/pub/station/general/igs_satellite_metadata.snx"><abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> Satellite Metadata <abbr title="Solution INdependent EXchange format — IGS format for station coordinates, satellite metadata, and troposphere products">SINEX</abbr></a></li>
-<li>Steigenberger, P., et al. (2023). "<abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> satellite transmit power and its impact on orbit determination." <em>Journal of Geodesy</em>, 97(4).</li>
+<li>Steigenberger, P., Thoelert, S., Montenbruck, O. (2018). "<abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> satellite transmit power and its impact on orbit determination." <em>Journal of Geodesy</em>, 92(6), 609–624. doi:10.1007/s00190-017-1082-2</li>
 <li><abbr title="International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)">IGS</abbr> <abbr title="Solution INdependent EXchange format — IGS format for station coordinates, satellite metadata, and troposphere products">SINEX</abbr> format specification v2.02</li>
 </ul>
-<hr />
-<div class="admonition example">
-<p class="admonition-title">Try it</p>
-<p><a href="../../../notebooks/_build/07_satellite_catalog.html" target="_blank">07 · Satellite Catalog</a>
-· <a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/07_satellite_catalog.py">view source on molab</a></p>
-</div>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -4731,7 +4963,7 @@ replaces the static <abbr title="Space Vehicle — a single GNSS satellite, iden
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../ephemeris-sources/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Ephemeris Sources">
+          <a href="../sbf-decoding/" class="md-footer__link md-footer__link--prev" aria-label="Previous: SBF field decoding">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4741,20 +4973,20 @@ replaces the static <abbr title="Space Vehicle — a single GNSS satellite, iden
                 Previous
               </span>
               <div class="md-ellipsis">
-                Ephemeris Sources
+                SBF field decoding
               </div>
             </div>
           </a>
         
         
           
-          <a href="../architecture/" class="md-footer__link md-footer__link--next" aria-label="Next: Reader Architecture">
+          <a href="../../auxiliary/products/" class="md-footer__link md-footer__link--next" aria-label="Next: Product registry">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Reader Architecture
+                Product registry
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -4774,8 +5006,9 @@ replaces the static <abbr title="Space Vehicle — a single GNSS satellite, iden
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../../../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -4792,7 +5025,7 @@ replaces the static <abbr title="Space Vehicle — a single GNSS satellite, iden
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -4829,10 +5062,10 @@ replaces the static <abbr title="Space Vehicle — a single GNSS satellite, iden
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../../../assets/mermaid-init.js"></script>
       

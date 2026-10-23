@@ -1,0 +1,5048 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="What to do before your first run with canVODpy v1.0.0 - migrate your stores, update your settings file, and replace deprecated code.">
+      
+      
+        <meta name="author" content="Nicolas Bader">
+      
+      
+        <link rel="canonical" href="https://canvodpy.eu/guides/upgrading/">
+      
+      
+      
+        <link rel="prev" href="../../users/">
+      
+      
+        <link rel="next" href="../configuration/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo/canvodpy_favicon_bright_mode.svg">
+      <meta name="generator" content="zensical-0.0.71">
+    
+    
+      
+        <title>Upgrading to v1.0.0 - canVODpy</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.e442bf79.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+  <script>
+    // Patch mermaid to use "base" theme instead of "default" (blue).
+    // Material dynamically imports mermaid and calls initialize() —
+    // we intercept the import to patch the module before Material uses it.
+    (function() {
+      var _origImport = window.__import__ || null;
+
+      // Material uses dynamic import() for mermaid. We can't intercept
+      // native import(), but we CAN define a getter on window.mermaid
+      // that patches initialize() the moment it's assigned.
+      var _mermaid = undefined;
+      var _patched = false;
+      Object.defineProperty(window, "mermaid", {
+        configurable: true,
+        enumerable: true,
+        get: function() { return _mermaid; },
+        set: function(val) {
+          _mermaid = val;
+          if (val && val.initialize && !_patched) {
+            _patched = true;
+            var _origInit = val.initialize.bind(val);
+            val.initialize = function(config) {
+              var isDark = document.body && document.body.getAttribute("data-md-color-scheme") === "slate";
+            config = Object.assign({}, config, {
+              theme: "base",
+              themeVariables: isDark
+                ? { primaryColor: "#2a2a2a", primaryTextColor: "#E1E6B9", primaryBorderColor: "#555",
+                    lineColor: "#666", secondaryColor: "#1a1a1a", tertiaryColor: "#1e1e1e",
+                    mainBkg: "#2a2a2a", nodeBorder: "#555", clusterBkg: "#1a1a1a", clusterBorder: "#444",
+                    titleColor: "#E1E6B9", edgeLabelBackground: "#0d0d0d", nodeTextColor: "#E1E6B9",
+                    textColor: "#E1E6B9", fontFamily: '"Space Grotesk", system-ui, sans-serif' }
+                : { primaryColor: "#C4D7A4", primaryTextColor: "#183128", primaryBorderColor: "#5D7D5B",
+                    lineColor: "#5D7D5B", secondaryColor: "#E1E6B9", tertiaryColor: "#ABC8A4",
+                    mainBkg: "#C4D7A4", nodeBorder: "#5D7D5B", clusterBkg: "#E1E6B9", clusterBorder: "#6B8B69",
+                    titleColor: "#183128", edgeLabelBackground: "#E1E6B9", nodeTextColor: "#183128",
+                    textColor: "#183128", fontFamily: '"Space Grotesk", system-ui, sans-serif' }
+            });
+              return _origInit(config);
+            };
+          }
+        }
+      });
+    })();
+  </script>
+  
+      
+    
+
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/canvod-nordic.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  <link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: light)"
+        href="../../assets/logo/canvodpy_favicon_bright_mode.svg">
+  <link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: dark)"
+        href="../../assets/logo/canvodpy_favicon_dark_mode.svg">
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
+      
+  <img src="../../assets/logo/canvodpy_logo_dark_mode.svg" alt="canVODpy">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <a href="../.." class="md-header__home" title="canVODpy">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            canVODpy
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Upgrading to v1.0.0
+            
+          </span>
+        </div>
+      </div>
+      </a>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TUW-GEO/canvodpy
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+      
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../users/" class="md-tabs__link">
+          
+  
+  Retrieve VOD
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../CONTRIBUTING/" class="md-tabs__link">
+          
+  
+  Contribute
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+      
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/cli/" class="md-tabs__link">
+          
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="canVODpy" class="md-nav__button md-logo" aria-label="canVODpy" data-md-component="logo">
+      
+  <img src="../../assets/logo/canvodpy_logo_dark_mode.svg" alt="canVODpy">
+
+    </a>
+    canVODpy
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TUW-GEO/canvodpy
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../users/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Retrieve VOD
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Retrieve VOD
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrading to v1.0.0
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Upgrading to v1.0.0
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#before-your-first-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before your first run
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Before your first run">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-check-the-settings-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Check the settings file
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-back-up-your-stores" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Back up your stores
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-migrate-each-sites-stores" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Migrate each site's stores
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-check-the-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Check the result
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What changed
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deprecated" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Deprecated
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deprecated">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ways-to-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ways to run
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Deprecated settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Python API
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new-in-v100" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        New in v1.0.0
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Configure
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Configure
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings file
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api-levels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CLI and Python
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parallel-processing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Parallel processing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Diagnostics and monitoring
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/ops/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preprocessing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  How it works
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  How it works
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reading GNSS files
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/ephemeris-sources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Ephemeris sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Orbits and clocks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Orbit and clock preparation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/interpolation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Interpolation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/coordinates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coordinate systems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/grids/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Hemispheric grids
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/vod/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  VOD retrieval
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/icechunk/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Versioning with Icechunk
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store/storage-strategies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Write strategies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/store-metadata/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/viz/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Visualization
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data formats
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Data formats
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/rinex-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v3.04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/rinex-v2-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v2.11
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF field decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite catalog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product registry
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Extend
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Extend
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your own readers and VOD calculators
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/readers/building-a-reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../packages/utils/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Utilities
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contribute
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Contribute
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributor-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributor setup
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DEVELOPMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Development guide
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ai-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Developing with coding agents
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/issue-tracker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Issue tracker
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/triage-labels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Triage labels
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/domain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Domain docs
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Architecture
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Architecture
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Monorepo structure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../namespace-packages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Namespace packages
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release and publishing
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Release and publishing
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../VERSIONING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Versioning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RELEASING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release process
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ZENODO_SETUP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Zenodo DOI
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OIDC_EXPLAINED/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  OIDC authentication
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HOW_RELEASE_WORKS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Release internals
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Quality and compliance
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Quality and compliance
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FOSS_PRINCIPLES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  FOSS principles
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../FAIR_IMPLEMENTATION_SUMMARY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  FAIR software
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OPENSSF_BADGE_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  OpenSSF best practices
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security policy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Reference
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvodpy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvodpy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-readers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.readers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-auxiliary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.auxiliary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-grids/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.grids
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-vod/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.vod
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-store/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.store
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-store-metadata/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.store_metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-viz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.viz
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.config
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.utils
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/canvod-ops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  canvod.ops
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#before-your-first-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before your first run
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Before your first run">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-check-the-settings-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Check the settings file
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-back-up-your-stores" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Back up your stores
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-migrate-each-sites-stores" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Migrate each site's stores
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-check-the-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Check the result
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What changed
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deprecated" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Deprecated
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deprecated">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ways-to-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ways to run
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deprecated-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Deprecated settings
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Python API
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new-in-v100" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        New in v1.0.0
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../../users/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    Retrieve VOD
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+
+  
+  
+
+
+<h1 id="upgrading-to-v100">Upgrading to v1.0.0<a class="headerlink" href="#upgrading-to-v100" title="Permanent link">&para;</a></h1>
+<p>This page is for everyone who used canVODpy 0.x. Do the
+<a href="#before-your-first-run">four steps</a> before your first run with v1.0.0;
+the rest of the page lists what changed, what is deprecated and what is new.</p>
+<div class="admonition warning">
+<p class="admonition-title">Stores written with 0.x must be migrated</p>
+<p>A v1.0.0 run refuses a store written by canVODpy 0.x and names the
+command that migrates it. A nightly run stops there until you migrate.
+Migrating takes one command per site and keeps every earlier snapshot
+readable.</p>
+</div>
+<hr />
+<h2 id="before-your-first-run">Before your first run<a class="headerlink" href="#before-your-first-run" title="Permanent link">&para;</a></h2>
+<h3 id="1-check-the-settings-file">1. Check the settings file<a class="headerlink" href="#1-check-the-settings-file" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>config<span class="w"> </span>validate
+</code></pre></div>
+<p>It names every setting that is missing or no longer allowed, with its
+dotted key. A settings file from 0.x typically needs:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>processing.logging.log_dir</code></td>
+<td>Required for a run: the folder of the log files.</td>
+</tr>
+<tr>
+<td><code>processing.metadata.publisher</code>, <code>processing.metadata.license</code>, <code>processing.metadata.naming_authority</code></td>
+<td>Required to create a store; the metadata standards (<abbr title="DataCite Metadata Schema — required metadata for DOI registration of research datasets">DataCite</abbr>, <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr>) ask for them.</td>
+</tr>
+<tr>
+<td><code>sites.&lt;site&gt;.store_description</code></td>
+<td>Required to create a store: one sentence about the site's data.</td>
+</tr>
+<tr>
+<td><code>processing.metadata.initials</code></td>
+<td>Required to migrate or amend a store: who changed its metadata.</td>
+</tr>
+<tr>
+<td><code>processing.storage.gnss_store_name</code>, <code>processing.storage.vod_store_name</code></td>
+<td>A store's folder is named by its kind (<code>gnss</code>, <code>vod</code>), optionally with a suffix (<code>vod-recompute</code>); other names are refused. Remove <code>gnss_store_name: rinex</code>: the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store's folder is now <code>gnss</code>, and the migration moves it. Remove any other old name too, such as <code>vod_store_name: Site_VOD_store</code>, and move that store with <code>canvodpy store migrate SITE --rename Site_VOD_store=vod</code>; the settings check names the command.</td>
+</tr>
+<tr>
+<td><code>processing.preprocessing.temporal_aggregation.integer_method</code></td>
+<td>Required when temporal aggregation is set: <code>first</code>, <code>last</code> or <code>middle</code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">Preprocessing in your settings is now applied</p>
+<p>In 0.x, <code>canvodpy run</code> didn't apply <code>processing.preprocessing</code>, and the
+settings template set <code>temporal_aggregation</code> and <code>grid_assignment</code> to
+<code>enabled: true</code>. Since v1.0.0 a run applies every preprocessing
+section that is set. A store you migrate records the preprocessing its
+data show, none for a store written by <code>canvodpy run</code> in 0.x, and runs
+with other preprocessing are refused. So if you copied the template,
+delete the <code>preprocessing</code> section. See
+<a href="../../packages/ops/overview/">Preprocessing</a>.</p>
+</div>
+<p>Settings that are deprecated still work and print a warning that says what
+to do; they are listed <a href="#deprecated-settings">below</a>.</p>
+<h3 id="2-back-up-your-stores">2. Back up your stores<a class="headerlink" href="#2-back-up-your-stores" title="Permanent link">&para;</a></h3>
+<p>The migration commits to the stores; earlier snapshots stay readable, but
+keep a copy until you've checked the result. A store is a folder: copy it
+(<code>cp -a</code>, <code>rsync -a</code>).</p>
+<h3 id="3-migrate-each-sites-stores">3. Migrate each site's stores<a class="headerlink" href="#3-migrate-each-sites-stores" title="Permanent link">&para;</a></h3>
+<p>One command per site:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>migrate<span class="w"> </span>SITE
+</code></pre></div>
+<p>It shows what it will do, asks once (<code>--yes</code> skips the question), and
+then takes these steps, skipping each one that is done already:</p>
+<ol>
+<li><strong>The folders.</strong> A store's folder is named by its kind, <code>gnss</code> or
+   <code>vod</code>, optionally with a suffix (<code>vod-recompute</code>,
+   <a href="../../packages/store/overview/#store-folders">Store folders</a>). The
+   <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store's old folder <code>rinex</code> moves to <code>gnss</code>. Any other folder whose
+   name isn't its kind needs its new name: <code>--rename vod_2024=vod-2024</code>.
+   The store id is taken from the new name. A site that has both <code>rinex</code>
+   and <code>gnss</code> is refused: decide which store to keep. The next steps
+   migrate the stores your settings name (<code>gnss_store_name</code>,
+   <code>vod_store_name</code>). Another store, such as <code>vod-2024</code>, is only moved,
+   and the command says so: to migrate it, set
+   <code>vod_store_name: vod-2024</code> and run the command again.</li>
+<li><strong>The <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store, then the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store</strong>, each with the steps of
+   <code>migrate-metadata</code> and <code>migrate-layout</code> (described below).</li>
+<li><strong>The clock.</strong> A <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store written with <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files holds a <code>clock</code>
+   variable. v1.0.0 reads no <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> files by default, and <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> doesn't use
+   the clock: the variable is removed and the store records
+   <code>fetch_clock: false</code>. The <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store records the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store's new
+   content-settings hash, so <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> runs go on.</li>
+</ol>
+<p>If a step stops, fix the cause and run the command again.
+<code>migrate-metadata</code> and <code>migrate-layout</code> run single steps of one store
+(<code>--store gnss</code> or <code>--store vod</code>):</p>
+<ul>
+<li><strong><code>migrate-metadata</code></strong> moves the store to repository metadata: its
+  description, a store id and UUID, the time scale of its epochs, and
+  its <em>content settings</em>, the settings that shape its data and that
+  every later run must match
+  (<a href="../configuration/#content-settings-fixed-for-each-store">Content settings</a>).
+  Metadata the store lacks, such as the publisher and license, comes from
+  the settings file, marked <code>(from the settings)</code>. A store that is
+  already migrated is left as it is.</li>
+<li><strong><code>migrate-layout</code></strong> writes the groups again as day blocks, the layout
+  v1.0.0 runs write (<a href="../../packages/store/overview/#moving-a-store-to-day-blocks">Moving a store to day blocks</a>).
+  An epoch stored twice keeps the entry written last.</li>
+</ul>
+<p>Both show what they change and ask first. Each one is a single commit. The details are in
+<a href="../../packages/store-metadata/overview/#move-an-older-store-to-the-current-form">Move an older store to the current form</a>.</p>
+<p><strong>Settings the store doesn't record.</strong> <code>migrate-metadata</code> takes the
+content settings from the settings recorded in the store's first commit.
+A value that commit doesn't record isn't guessed: the command stops,
+lists it, and you give it with <code>--gnss-set</code> (or <code>--vod-set</code> for the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>
+store), as your settings file had it when the store was written. For a
+<abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store from canVODpy 0.4.0 these are typically:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>migrate<span class="w"> </span>SITE<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--gnss-set<span class="w"> </span>processing.params.store_sbf_metadata<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--gnss-set<span class="w"> </span>processing.params.rinex_v3_parser<span class="o">=</span>validated<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--gnss-set<span class="w"> </span><span class="s2">"sites.SITE.receivers.reference_01.paired_canopies=[canopy_01]"</span>
+</code></pre></div>
+<p>Some settings are read from the data instead, because canVODpy 0.x
+recorded settings its runs didn't follow: the preprocessing (none, unless
+the data show a step) and whether the stores hold <code>r</code>, <code>delta_snr</code> and
+<code>radial_diff</code>. canVODpy 0.x always wrote <code>delta_snr</code> to the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store, so
+a migrated store records <code>store_delta_snr: true</code>: set it in your settings
+file too.</p>
+<p><strong>Stores from <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> or NMEA files.</strong> canVODpy 0.x stored their epochs in
+UTC, 18 s behind the <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time v1.0.0 uses for every epoch. The
+migration refuses these stores before it writes anything, and so does
+the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store computed from them: rebuild them from the raw files with
+<code>canvodpy run</code>. Stores from <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> files hold <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time and migrate as
+they are.</p>
+<p><strong>Receivers with a naming recipe.</strong> A <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store records each
+receiver's naming recipe and the sha256 of the recipe file, and every
+run compares them with the settings. Stores of canVODpy 0.x record the
+recipe, if the receiver had one, without its sha256; a receiver that
+used the <code>naming</code> block and now has a recipe records none. The
+migration doesn't add them: it can't tell whether today's recipe file
+is the one the store was built with. For each receiver with a naming
+recipe, check that its recipe file is the one the store was built with,
+then record it:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>amend<span class="w"> </span>SITE<span class="w"> </span>--store<span class="w"> </span>gnss<span class="w"> </span>--update-recipe<span class="w"> </span>RECEIVER<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--reason<span class="w"> </span><span class="s2">"recipe of the stored days, recorded after the migration"</span>
+</code></pre></div>
+<p>Without this, the first run stops and prints the command. Sites whose
+files have canonical canVOD names have no recipes and skip this.</p>
+<h3 id="4-check-the-result">4. Check the result<a class="headerlink" href="#4-check-the-result" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>info<span class="w"> </span>SITE<span class="w">            </span><span class="c1"># content settings: set, with their hash</span>
+canvodpy<span class="w"> </span>run<span class="w"> </span>--site<span class="w"> </span>SITE<span class="w"> </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025001</span>
+</code></pre></div>
+<p>A run compares your settings with the store's content settings before it
+reads a file, and stops if they differ, listing each setting with both
+values. Change your settings to the store's values, or write a settings
+file from the store with <code>canvodpy config init --from-store &lt;store&gt;</code>.
+A dry run (<code>--dry-run</code>) lists the files a run would process, but doesn't
+compare the settings.</p>
+<hr />
+<h2 id="what-changed">What changed<a class="headerlink" href="#what-changed" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Before (0.x)</th>
+<th>Since v1.0.0</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runs append each file to the store.</td>
+<td>Runs write day blocks: every receiver-day has its slots, and a day processed again replaces its slots (<a href="../../adr/0016-day-blocks-and-forked-writes/">ADR 0016</a>).</td>
+<td>Migrate the stores (step 3).</td>
+</tr>
+<tr>
+<td>A store had no fixed settings.</td>
+<td>A store records its content settings when it is created; a run with other settings is refused (<a href="../../adr/0019-content-settings-and-several-writers/">ADR 0019</a>).</td>
+<td>To process with other settings, write a new store (<code>gnss_store_name: gnss-&lt;suffix&gt;</code>).</td>
+</tr>
+<tr>
+<td>Opening a store created it.</td>
+<td>Only a run creates a store; <code>open_gnss_store()</code> and <code>open_vod_store()</code> only open.</td>
+<td>Create stores with <code>canvodpy run</code>.</td>
+</tr>
+<tr>
+<td>A store's site came from its folder name.</td>
+<td>It comes from the store's metadata.</td>
+<td>Nothing; migrated stores have it.</td>
+</tr>
+<tr>
+<td>The <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store's folder was <code>rinex</code>, and store folders could have any name.</td>
+<td>A store's folder is named by its kind: <code>gnss</code>, <code>vod</code>, or the kind with a suffix (<a href="../../packages/store/overview/#store-folders">Store folders</a>); the store id ends in it.</td>
+<td>Migrate the stores (step 3); the migration moves <code>rinex</code> to <code>gnss</code>.</td>
+</tr>
+<tr>
+<td><code>canvodpy run</code> without dates resumed from the last stored day.</td>
+<td>A run without dates stops. <code>--update-to-latest</code> processes the days from the earliest last stored day of the receivers with new files up to the latest day with files (<a href="../api-levels/#which-days-a-run-processes">Which days a run processes</a>).</td>
+<td>Add <code>--update-to-latest</code> to scheduled runs.</td>
+</tr>
+<tr>
+<td><code>processing.preprocessing</code> had no effect.</td>
+<td>A run applies each section that is set.</td>
+<td>See the warning in step 1.</td>
+</tr>
+<tr>
+<td>Files were found in day folders with fixed names.</td>
+<td>Each file's day comes from its name, in any folder layout.</td>
+<td>Nothing; files with other names need a naming recipe (<a href="../../packages/naming/overview/">File names</a>).</td>
+</tr>
+<tr>
+<td><code>max_memory_gb</code> was a memory limit a run checked while it worked.</td>
+<td>It is the run's memory budget, applied before the work starts: it sizes the workers and the units of days a run commits at once (<a href="../parallel-processing/">Parallel processing</a>).</td>
+<td>Check its value.</td>
+</tr>
+<tr>
+<td>A run computed the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of each day in the main process, from the day read back from the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store, and committed the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store every day.</td>
+<td>A run stores a unit of days, then computes their <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> in the worker processes from the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store and commits the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store once per unit (<a href="../../adr/0021-runs-work-in-units-of-days/">ADR 0021</a>). Nothing is read back for <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>. In Python, <code>pipeline.run()</code> does what <code>canvodpy run</code> does. The Airflow task <code>process_day</code> returns the groups that stored the day, no longer their number of epochs.</td>
+<td>Use <code>pipeline.run()</code> instead of <code>process_range()</code> with <code>site.vod.compute_day_all()</code> to process and compute <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>.</td>
+</tr>
+<tr>
+<td>A run processed <code>days_per_batch</code> days at a time and committed every day.</td>
+<td>A run works in units of days and commits each unit once; it sizes the units from the memory budget, at most 31 days (<a href="../../adr/0021-runs-work-in-units-of-days/">ADR 0021</a>). A day that fails still fails alone.</td>
+<td>Remove <code>days_per_batch</code> (deprecated).</td>
+</tr>
+<tr>
+<td>A store recorded the name of each receiver's naming recipe.</td>
+<td>A <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store records each receiver's naming recipe and the sha256 of its file; a run stops if the settings give another recipe, or the recipe file changed (<a href="../../packages/naming/overview/">File names</a>).</td>
+<td>Record the recipes after migrating (step 3). After changing a recipe on purpose, <code>canvodpy store amend SITE --store gnss --update-recipe RECEIVER --reason "..."</code>.</td>
+</tr>
+<tr>
+<td><code>canvodpy[filemap]</code> installed canvod-filemap.</td>
+<td>The extra is gone.</td>
+<td>Install canvod-filemap from its tag (<a href="../extensions/">Optional extensions</a>), or <code>uv sync --group filemap</code> in the repository.</td>
+</tr>
+<tr>
+<td>canvod-grids installed canvod-store and canvod-store-metadata.</td>
+<td>It doesn't.</td>
+<td>Code that imports <code>canvod.store</code> declares canvod-store itself.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="deprecated">Deprecated<a class="headerlink" href="#deprecated" title="Permanent link">&para;</a></h2>
+<p>Deprecated code and settings still work in every v1.x release, warn when
+used, and are removed in v2.0.0 (<a href="../../adr/0005-deprecate-until-next-major/">ADR 0005</a>).
+The rest of the documentation leaves them out.</p>
+<h3 id="ways-to-run">Ways to run<a class="headerlink" href="#ways-to-run" title="Permanent link">&para;</a></h3>
+<p>All of these are replaced by one entry point: <code>canvodpy run</code>, or
+<code>canvodpy.Site(&lt;site&gt;).pipeline()</code> in Python
+(see <a href="../api-levels/">the command line and Python</a>).</p>
+<table>
+<thead>
+<tr>
+<th>Deprecated</th>
+<th>Use instead</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>canvodpy.process_date()</code></td>
+<td><code>Site(&lt;site&gt;).pipeline().process_date(&lt;date&gt;)</code></td>
+</tr>
+<tr>
+<td><code>canvodpy.calculate_vod()</code>, <code>Pipeline.calculate_vod()</code></td>
+<td><code>canvodpy run</code>, or <code>Site(&lt;site&gt;).vod.compute_bulk(&lt;analysis&gt;, start=..., end=...)</code></td>
+</tr>
+<tr>
+<td><code>canvodpy.preview_processing()</code></td>
+<td><code>Site(&lt;site&gt;).pipeline(dry_run=True).preview()</code></td>
+</tr>
+<tr>
+<td><code>FluentWorkflow</code>, <code>VODWorkflow</code></td>
+<td><code>Site(&lt;site&gt;).pipeline()</code> and <code>Site(&lt;site&gt;).vod</code></td>
+</tr>
+<tr>
+<td><code>canvodpy.functional</code> (all functions)</td>
+<td><code>canvodpy run</code>; for grids <code>canvod.grids.create_hemigrid()</code> and <code>add_cell_ids_to_ds_fast()</code></td>
+</tr>
+<tr>
+<td>Airflow tasks <code>check_rinex</code>, <code>check_sbf</code></td>
+<td><code>check_day</code></td>
+</tr>
+<tr>
+<td>Airflow tasks <code>process_rinex</code>, <code>process_sbf</code>, <code>fetch_aux_data</code>, <code>cleanup</code></td>
+<td><code>process_day</code></td>
+</tr>
+<tr>
+<td><code>DataDirMatcher</code>, <code>PairDataDirMatcher</code>, <code>DataDirectoryValidator</code></td>
+<td><code>canvodpy run</code> finds the files; <code>canvodpy config validate</code> checks them</td>
+</tr>
+</tbody>
+</table>
+<h3 id="deprecated-settings">Deprecated settings<a class="headerlink" href="#deprecated-settings" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Use instead</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sites.&lt;site&gt;.naming</code>, <code>sites.&lt;site&gt;.receivers.&lt;name&gt;.naming</code></td>
+<td><code>recipe</code> on each receiver with non-canonical file names</td>
+</tr>
+<tr>
+<td><code>sites.&lt;site&gt;.receivers.&lt;name&gt;.scs_from</code></td>
+<td><code>paired_canopies</code></td>
+</tr>
+<tr>
+<td><code>processing.metadata.store_description</code></td>
+<td><code>sites.&lt;site&gt;.store_description</code></td>
+</tr>
+<tr>
+<td><code>processing.storage.vod_store_strategy</code></td>
+<td>nothing (no effect); to recompute <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>, set <code>vod_store_name</code> to another name, such as <code>vod-recompute</code></td>
+</tr>
+<tr>
+<td><code>processing.logging.log_file_name</code></td>
+<td>nothing (no effect); log files have fixed names under <code>log_dir</code></td>
+</tr>
+<tr>
+<td><code>processing.params.days_per_batch</code>, <code>canvodpy run --days-per-batch</code>, argument <code>days_per_batch</code> of <code>Site.pipeline()</code> and <code>Pipeline</code></td>
+<td>nothing; the run sizes its units of days from <code>max_memory_gb</code>. Until v2.0.0 the value only caps the days per unit</td>
+</tr>
+</tbody>
+</table>
+<h3 id="python-api">Python API<a class="headerlink" href="#python-api" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Deprecated</th>
+<th>Use instead</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>create_gnss_store()</code>, <code>create_vod_store()</code></td>
+<td><code>open_gnss_store()</code>, <code>open_vod_store()</code></td>
+</tr>
+<tr>
+<td><code>canvod.grids.store_grid()</code>, <code>load_grid()</code>, <code>canvod.grids.analysis.AnalysisStorage</code></td>
+<td><code>canvod.store.store_grid()</code>, <code>load_grid()</code>, <code>AnalysisStorage</code></td>
+</tr>
+<tr>
+<td><code>add_cell_ids_to_vod()</code>, <code>add_cell_ids_to_vod_fast()</code>, argument <code>data_var</code> of <code>add_cell_ids_to_ds_fast()</code></td>
+<td><code>add_cell_ids_to_ds_fast(ds, grid, grid_name)</code></td>
+</tr>
+<tr>
+<td><code>store_dataset_with_cell_ids()</code></td>
+<td><code>canvod.ops.assign_grid_cells_in_store()</code></td>
+</tr>
+<tr>
+<td><code>GnssResearchSite.calculate_vod()</code>, <code>store_vod()</code>, <code>store_vod_analysis()</code>, <code>store_vod_analyses_batch()</code></td>
+<td><code>Site(&lt;site&gt;).vod.compute_days(&lt;days&gt;)</code> (writes), <code>Site(&lt;site&gt;).vod.compute_bulk(&lt;analysis&gt;, write=False)</code> (computes only)</td>
+</tr>
+<tr>
+<td>Writing <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> with <code>VodComputer.compute_day()</code> or <code>compute_day_all()</code> (<code>write=True</code>, the default), <code>VodComputer.write_day()</code></td>
+<td><code>pipeline.run()</code> or <code>Site(&lt;site&gt;).vod.compute_days(&lt;days&gt;)</code>; pass <code>write=False</code> to compute without writing</td>
+</tr>
+<tr>
+<td><code>VODCalculator.from_icechunkstore()</code>; argument <code>align</code> of <code>from_datasets()</code></td>
+<td><code>Site(&lt;site&gt;).vod.compute_bulk(&lt;analysis&gt;, write=False)</code>; <code>align</code> is ignored</td>
+</tr>
+<tr>
+<td><code>IcechunkDataReader</code></td>
+<td><code>canvodpy run</code> or <code>Site(&lt;site&gt;).pipeline().process_date(&lt;date&gt;)</code></td>
+</tr>
+<tr>
+<td><code>VodDataValidator</code></td>
+<td><code>canvod.readers.validate_vod_dataset</code></td>
+</tr>
+<tr>
+<td><code>scan_stores_as_stac</code>, <code>to_stac_collection</code>, <code>to_stac_collection_json</code>, <code>write_stac_collection</code>, <code>write_stac_catalog</code></td>
+<td><code>canvod.store_metadata.build_catalog</code>, <code>store_item</code>, <code>write_catalog</code> (or <code>canvodpy run --write-catalog</code>)</td>
+</tr>
+<tr>
+<td><code>apply_updates()</code>, <code>update_metadata()</code></td>
+<td><code>amend_metadata()</code> (<code>canvodpy store amend</code>); every commit writes the snapshot summary</td>
+</tr>
+<tr>
+<td><code>StoreMetadata.from_root_attrs()</code>, <code>history_entry()</code></td>
+<td><code>read_metadata()</code>; the history is the commit log (<code>show_metadata</code>)</td>
+</tr>
+<tr>
+<td><code>SiteNamingConfig</code>, <code>ReceiverNamingConfig</code>, <code>FilenameMapper</code>, <code>match_pattern</code></td>
+<td>a naming recipe (<code>recipe</code> on the receiver, canvod-filemap)</td>
+</tr>
+<tr>
+<td><code>StorageConfig.get_rinex_store_path()</code></td>
+<td><code>get_gnss_store_path()</code></td>
+</tr>
+<tr>
+<td><code>SiteConfig.resolve_scs_from()</code></td>
+<td><code>resolve_paired_canopies()</code></td>
+</tr>
+<tr>
+<td><code>ProcessingConfig.processing</code>, <code>ProcessingConfig.compression</code>, <code>CompressionConfig</code></td>
+<td><code>params</code>, <code>netcdf_compression</code>, <code>NetcdfCompressionConfig</code></td>
+</tr>
+<tr>
+<td><code>LoggingConfig.get_log_file()</code>; argument <code>logfile</code> of <code>configure_logging()</code></td>
+<td><code>get_log_dir()</code>; <code>log_dir</code></td>
+</tr>
+<tr>
+<td><code>canvodpy.logging.get_logger</code>, <code>get_file_logger</code>, <code>canvodpy.logging.context</code></td>
+<td><code>structlog.get_logger(__name__)</code>, <code>.bind(file=...)</code>, <code>structlog.contextvars.bound_contextvars</code></td>
+</tr>
+<tr>
+<td><code>canvod.readers.gnss_specs.utils.file_hash</code>, <code>isfloat</code></td>
+<td><code>canvod.utils.tools.file_hash</code>, <code>isfloat</code></td>
+</tr>
+<tr>
+<td><code>canvodpy.orchestrator.matcher.DatasetMatcher</code>, <code>canvodpy.orchestrator.interpolator.*</code></td>
+<td><code>canvod.auxiliary.matching.DatasetMatcher</code>, <code>canvod.auxiliary.interpolation.*</code></td>
+</tr>
+<tr>
+<td><code>ProductSpec.sampling_rate</code>, <code>ProductSpec.duration</code>, <code>AuxFile.generate_filename_based_on_type()</code></td>
+<td><code>ProductSpec.sp3_samplings</code> (every product file covers one day), <code>AuxFile.candidate_filenames</code></td>
+</tr>
+</tbody>
+</table>
+<details class="note">
+<summary>Internal helpers, rarely used directly</summary>
+<table>
+<thead>
+<tr>
+<th>Deprecated</th>
+<th>Use instead</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AugmentationFactory</code>, <code>AugmentationContext</code>, <code>AugmentationStep</code></td>
+<td>a <code>canvod.ops.Op</code> in a <code>canvod.ops.Pipeline</code></td>
+</tr>
+<tr>
+<td><code>SphericalCoordinateAugmentation</code>, <code>AuxDataAugmenter</code>, the <code>example_*</code> functions of <code>canvod.auxiliary.augmentation</code></td>
+<td><code>canvod.auxiliary.position.add_spherical_coords_to_dataset</code></td>
+</tr>
+<tr>
+<td><code>ClockCorrectionAugmentation</code></td>
+<td>nothing: it left the data unchanged</td>
+</tr>
+<tr>
+<td><code>worker_task()</code>, <code>worker_task_append_only()</code></td>
+<td><code>preprocess_with_hermite_aux()</code></td>
+</tr>
+<tr>
+<td><code>DistributedRinexDataProcessor</code>, <code>SingleReceiverProcessor</code>, <code>parsed_rinex_data_gen_2_receivers()</code>, <code>parsed_rinex_data_gen_parallel()</code></td>
+<td><code>Site(&lt;site&gt;).pipeline()</code></td>
+</tr>
+<tr>
+<td><code>VodComputer.check_preprocessing</code></td>
+<td><code>check_gnss_hash</code></td>
+</tr>
+<tr>
+<td><code>Rnxv3Obs.parse_observation_slice</code></td>
+<td><code>Rnxv3Obs.iter_epochs()</code>, <code>to_ds()</code></td>
+</tr>
+<tr>
+<td><code>canvod.readers.rinex.v2_11._register_factory()</code></td>
+<td>nothing: it never registered anything</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<h2 id="new-in-v100">New in v1.0.0<a class="headerlink" href="#new-in-v100" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Stores on S3, experimental</strong>: runs write <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> and <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> stores to
+  S3-compatible object storage, tested against S3 emulators only (<a href="../s3/">Stores on S3</a>).</li>
+<li><strong>Store metadata</strong> after <abbr title="DataCite Metadata Schema — required metadata for DOI registration of research datasets">DataCite</abbr> and <abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr>, checked against the
+  standards, and a <strong><abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> catalog</strong> of all stores
+  (<code>canvodpy run --write-catalog</code>; <a href="../../packages/store-metadata/overview/">Store metadata</a>).</li>
+<li><strong>Settings from a link</strong>: <code>--config-dir</code> and <code>CANVOD_CONFIG_DIR</code> take
+  the raw GitHub link of a settings file; naming recipes are read from
+  the same repository
+  (<a href="../configuration/#settings-from-a-github-repository">Settings from a GitHub repository</a>).</li>
+<li><strong>Join or reproduce a store</strong>: <code>canvodpy config init --from-store</code>
+  writes the settings file of a store (<a href="../configuration/#join-or-reproduce-a-store">Settings file</a>).</li>
+<li><strong>Run history and dashboard</strong>: every run records itself, its stage
+  timings and resource use (<a href="../diagnostics/">Diagnostics and monitoring</a>).</li>
+<li><strong>Data check</strong>: <code>canvodpy config validate</code> checks the receiver data the
+  way a run finds it, and runs warn about files they don't process and
+  about incomplete receiver-days.</li>
+<li><strong>Memory budget and units of days</strong>: <code>max_memory_gb</code> sizes the workers
+  and the units of days a run commits at once, and a run reads the next
+  unit while it computes <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>
+  (<a href="../parallel-processing/">Parallel processing</a>).</li>
+<li><strong>A complete command line</strong>: <code>canvodpy run</code>, <code>vod</code>, <code>vod-reconcile</code>,
+  <code>config</code>, <code>store</code>, <code>stac</code>, <code>doctor</code> and <code>dashboard</code>
+  (<a href="../../api/cli/">Command line</a>).</li>
+<li><strong>Plugins</strong>: your own readers and <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> calculators from installed
+  packages (<a href="../plugins/">Your own readers and <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> calculators</a>).</li>
+<li><strong>Comparing stores</strong> within fixed tolerances, and <code>canvodpy config explain</code>.</li>
+<li><strong>Stores that don't record the computer</strong>:
+  <code>processing.metadata.record_machine: false</code> leaves the operating
+  system, architecture, CPU count, memory and free disk out of every
+  commit, for stores that are published
+  (<a href="../settings/#processing-metadata-record_machine">Settings</a>). It is
+  true by default, so nothing changes for you.</li>
+<li><strong>Demo data</strong>: <code>canvodpy.demo_data()</code> downloads the demo day; the
+  <a href="https://canvodpy.eu/notebooks/">notebooks</a> use it.</li>
+</ul>
+<p>The full list is in the <a href="https://github.com/TUW-GEO/canvodpy/blob/main/CHANGELOG.md">changelog</a>.</p>
+<!-- Glossary: hover any abbreviation to see its definition -->
+
+<!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
+<!-- Satellite identifiers -->
+<!-- Observation data -->
+<!-- VOD and transmissometry -->
+<!-- Ephemerides and orbits -->
+<!-- Data standards -->
+<!-- Infrastructure -->
+<!-- Coordinate systems -->
+<!-- Signal bands -->
+<!-- Software tools -->
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../users/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Start here">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Start here
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../configuration/" class="md-footer__link md-footer__link--next" aria-label="Next: Settings file">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Settings file
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
+    </div>
+  
+  <a href="../../impressum/">Impressum and AI disclosure</a>
+  
+    · Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/canvodpy/" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      
+<div class="md-progress" data-md-component="progress" role="progressbar" aria-label="Loading"></div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a2388154.min.js"></script>
+      
+        <script src="../../assets/mermaid-init.js"></script>
+      
+        <script src="../../assets/mathjax-init.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

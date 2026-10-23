@@ -25,6 +25,84 @@
         <loc>https://canvodpy.eu/VERSIONING/</loc>
       </url>
       <url>
+        <loc>https://canvodpy.eu/adr/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0001-versioned-stores/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0002-gps-time/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0003-receivers-share-a-file-format/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0004-explicit-over-implicit/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0005-deprecate-until-next-major/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0006-preprocessing-only-when-set/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0007-provenance-in-log-books/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0008-files-found-by-name/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0009-plugins-via-entry-points/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0010-per-package-versions/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0011-free-tools-only/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0012-agent-development-workflow/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0013-agents-never-merge/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0014-store-metadata-split/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0015-stac-catalog-at-data-root/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0016-day-blocks-and-forked-writes/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0017-demo-data/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0018-run-history-in-sqlite/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0019-content-settings-and-several-writers/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0020-run-lists-folders-of-its-days/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0021-runs-work-in-units-of-days/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/adr/0022-credentials-from-the-environment/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/agents/domain/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/agents/issue-tracker/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/agents/triage-labels/</loc>
+      </url>
+      <url>
         <loc>https://canvodpy.eu/api/canvod-auxiliary/</loc>
       </url>
       <url>
@@ -58,6 +136,9 @@
         <loc>https://canvodpy.eu/api/canvodpy/</loc>
       </url>
       <url>
+        <loc>https://canvodpy.eu/api/cli/</loc>
+      </url>
+      <url>
         <loc>https://canvodpy.eu/architecture/</loc>
       </url>
       <url>
@@ -65,6 +146,9 @@
       </url>
       <url>
         <loc>https://canvodpy.eu/dependencies/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/glossary/</loc>
       </url>
       <url>
         <loc>https://canvodpy.eu/guides/DEVELOPMENT/</loc>
@@ -76,9 +160,6 @@
         <loc>https://canvodpy.eu/guides/OIDC_EXPLAINED/</loc>
       </url>
       <url>
-        <loc>https://canvodpy.eu/guides/PYPI_SETUP/</loc>
-      </url>
-      <url>
         <loc>https://canvodpy.eu/guides/ZENODO_SETUP/</loc>
       </url>
       <url>
@@ -88,16 +169,10 @@
         <loc>https://canvodpy.eu/guides/api-levels/</loc>
       </url>
       <url>
-        <loc>https://canvodpy.eu/guides/architecture-design/</loc>
-      </url>
-      <url>
         <loc>https://canvodpy.eu/guides/configuration/</loc>
       </url>
       <url>
         <loc>https://canvodpy.eu/guides/contributor-setup/</loc>
-      </url>
-      <url>
-        <loc>https://canvodpy.eu/guides/dask-resources/</loc>
       </url>
       <url>
         <loc>https://canvodpy.eu/guides/diagnostics/</loc>
@@ -106,25 +181,28 @@
         <loc>https://canvodpy.eu/guides/extensions/</loc>
       </url>
       <url>
-        <loc>https://canvodpy.eu/guides/getting-started/</loc>
-      </url>
-      <url>
         <loc>https://canvodpy.eu/guides/parallel-processing/</loc>
       </url>
       <url>
-        <loc>https://canvodpy.eu/guides/quickstart/</loc>
+        <loc>https://canvodpy.eu/guides/plugins/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/guides/reference-stores/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/guides/s3/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/guides/settings/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/guides/upgrading/</loc>
       </url>
       <url>
         <loc>https://canvodpy.eu/impressum/</loc>
       </url>
       <url>
-        <loc>https://canvodpy.eu/includes/abbreviations/</loc>
-      </url>
-      <url>
         <loc>https://canvodpy.eu/namespace-packages/</loc>
-      </url>
-      <url>
-        <loc>https://canvodpy.eu/notebooks/</loc>
       </url>
       <url>
         <loc>https://canvodpy.eu/packages/auxiliary/coordinates/</loc>
@@ -154,22 +232,19 @@
         <loc>https://canvodpy.eu/packages/ops/overview/</loc>
       </url>
       <url>
-        <loc>https://canvodpy.eu/packages/readers/architecture/</loc>
-      </url>
-      <url>
         <loc>https://canvodpy.eu/packages/readers/building-a-reader/</loc>
       </url>
       <url>
         <loc>https://canvodpy.eu/packages/readers/ephemeris-sources/</loc>
       </url>
       <url>
-        <loc>https://canvodpy.eu/packages/readers/extending/</loc>
-      </url>
-      <url>
         <loc>https://canvodpy.eu/packages/readers/overview/</loc>
       </url>
       <url>
         <loc>https://canvodpy.eu/packages/readers/rinex-format/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/packages/readers/rinex-v2-format/</loc>
       </url>
       <url>
         <loc>https://canvodpy.eu/packages/readers/satellite-catalog/</loc>
@@ -182,6 +257,9 @@
       </url>
       <url>
         <loc>https://canvodpy.eu/packages/store-metadata/overview/</loc>
+      </url>
+      <url>
+        <loc>https://canvodpy.eu/packages/store/chunks/</loc>
       </url>
       <url>
         <loc>https://canvodpy.eu/packages/store/icechunk/</loc>
@@ -209,11 +287,5 @@
       </url>
       <url>
         <loc>https://canvodpy.eu/users/</loc>
-      </url>
-      <url>
-        <loc>https://canvodpy.eu/users/cli/</loc>
-      </url>
-      <url>
-        <loc>https://canvodpy.eu/users/python/</loc>
       </url>
 </urlset>

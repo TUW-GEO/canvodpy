@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="GNSS Transmissometry (GNSS-T) analysis framework for Python">
+        <meta name="description" content="The GNSS store and the VOD store of a site, how runs write to them, and how to read them.">
       
       
         <meta name="author" content="Nicolas Bader">
@@ -15,33 +15,34 @@
         <link rel="canonical" href="https://canvodpy.eu/packages/store/overview/">
       
       
+      
         <link rel="prev" href="../../vod/overview/">
       
       
-        <link rel="next" href="../icechunk/">
+        <link rel="next" href="../chunks/">
       
       
         
       
       
       <link rel="icon" href="../../../assets/logo/canvodpy_favicon_bright_mode.svg">
-      <meta name="generator" content="zensical-0.0.69">
+      <meta name="generator" content="zensical-0.0.71">
     
     
       
-        <title>Overview - canVODpy</title>
+        <title>canvod-store - canVODpy</title>
       
     
     
       
         
       
-      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e15858d4.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.e442bf79.min.css">
       
         
           
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b27955a4.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b60ce83d.min.css">
       
       
 
@@ -129,7 +130,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -142,12 +143,32 @@
     </div>
     <div data-md-component="announce">
       
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            
+            
+  canVODpy v1.0.0 is out:
+  <a href="../../..#new-in-v100">see what's new</a>
+
+          </div>
+          
+            <script>var el=document.querySelector("[data-md-component=announce]");if(el){var content=el.querySelector(".md-typeset");__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0)}</script>
+          
+        </aside>
+      
     </div>
     
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../../.." title="canVODpy" class="md-header__button md-logo" aria-label="canVODpy" data-md-component="logo">
       
@@ -159,6 +180,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
+      <a href="../../.." class="md-header__home" title="canVODpy">
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
@@ -168,11 +190,12 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Overview
+              canvod-store
             
           </span>
         </div>
       </div>
+      </a>
     </div>
     
       
@@ -181,20 +204,20 @@
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
       </label>
     
   
     
     
     
-    <input class="md-option" data-md-color-media="none" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="none" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </label>
     
   
@@ -221,27 +244,21 @@
     
     <div class="md-header__source">
       
-        <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
       
     </div>
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -288,12 +305,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -302,7 +313,7 @@
         <a href="../../../users/" class="md-tabs__link">
           
   
-  Usage
+  Retrieve VOD
 
         </a>
       </li>
@@ -317,6 +328,8 @@
   
     
       
+      
+        
       
         
       
@@ -348,7 +361,7 @@
         <a href="../../../CONTRIBUTING/" class="md-tabs__link">
           
   
-  Development
+  Contribute
 
         </a>
       </li>
@@ -386,30 +399,6 @@
       
         
       
-    
-    
-    
-    
-      <li class="md-tabs__item">
-        <a href="../../../api/canvodpy/" class="md-tabs__link">
-          
-  
-  API Reference
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-  
-    
-      
-      
         
       
     
@@ -417,10 +406,10 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../impressum/" class="md-tabs__link">
+        <a href="../../../api/cli/" class="md-tabs__link">
           
   
-  Legal
+  Reference
 
         </a>
       </li>
@@ -431,7 +420,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -459,13 +454,13 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/nfb2021/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/TUW-GEO/canvodpy" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
   </div>
   <div class="md-source__repository">
-    nfb2021/canvodpy
+    TUW-GEO/canvodpy
   </div>
 </a>
     </div>
@@ -525,12 +520,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -558,7 +547,7 @@
   <span class="md-ellipsis">
     
   
-  Usage
+  Retrieve VOD
 
     
   </span>
@@ -580,7 +569,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Usage
+  Retrieve VOD
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -594,14 +583,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../users/cli/" class="md-nav__link">
+      <a href="../../../guides/upgrading/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  CLI Quickstart
+  Upgrading to v1.0.0
 
     
   </span>
@@ -620,26 +609,65 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../../users/python/" class="md-nav__link">
+    
+    
+      
         
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="">
+            
   
   
   <span class="md-ellipsis">
     
   
-  Python Quickstart
+  Configure
 
     
   </span>
   
   
 
-      </a>
-    </li>
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_3">
+              <span class="md-nav__icon md-icon"></span>
+              
   
+  Configure
 
-                
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -655,7 +683,7 @@
   <span class="md-ellipsis">
     
   
-  Configuration
+  Settings file
 
     
   </span>
@@ -675,14 +703,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guides/extensions/" class="md-nav__link">
+      <a href="../../../guides/settings/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Optional Extensions
+  Settings reference
 
     
   </span>
@@ -694,6 +722,162 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/s3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Stores on S3
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../config/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Settings models
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../naming/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File names
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Run
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -709,7 +893,7 @@
   <span class="md-ellipsis">
     
   
-  API Levels
+  CLI and Python
 
     
   </span>
@@ -736,7 +920,7 @@
   <span class="md-ellipsis">
     
   
-  Parallel Processing
+  Parallel processing
 
     
   </span>
@@ -763,7 +947,7 @@
   <span class="md-ellipsis">
     
   
-  Diagnostics & Monitoring
+  Diagnostics and monitoring
 
     
   </span>
@@ -783,14 +967,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../notebooks/" class="md-nav__link">
+      <a href="../../ops/overview/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Notebooks
+  Preprocessing
 
     
   </span>
@@ -807,12 +991,54 @@
                   
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Optional extensions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
     
   
   
   
     
     
+      
+        
+      
+        
+      
+        
       
         
       
@@ -852,17 +1078,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" checked>
         
           
-          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  Packages
+  How it works
 
     
   </span>
@@ -873,81 +1099,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_2_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_2_5">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Packages
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_1" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_1" id="__nav_2_10_1_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-readers
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_1_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_1">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-readers
+  How it works
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -966,88 +1123,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/rinex-format/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  RINEX v3.04 Format
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/sbf/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Reader
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/sbf-decoding/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  SBF Field Decoding
+  Reading GNSS files
 
     
   </span>
@@ -1074,7 +1150,7 @@
   <span class="md-ellipsis">
     
   
-  Ephemeris Sources
+  Ephemeris sources
 
     
   </span>
@@ -1086,159 +1162,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/satellite-catalog/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Satellite Catalog (IGS SINEX)
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/architecture/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reader Architecture
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../readers/extending/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Extending Readers
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_2" id="__nav_2_10_2_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-auxiliary
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_2_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_2">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-auxiliary
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1254,7 +1177,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Orbits and clocks
 
     
   </span>
@@ -1281,7 +1204,7 @@
   <span class="md-ellipsis">
     
   
-  Preprocessing Pipeline
+  Orbit and clock preparation
 
     
   </span>
@@ -1308,7 +1231,7 @@
   <span class="md-ellipsis">
     
   
-  Interpolation Methods
+  Interpolation
 
     
   </span>
@@ -1335,7 +1258,7 @@
   <span class="md-ellipsis">
     
   
-  Coordinate Systems
+  Coordinate systems
 
     
   </span>
@@ -1347,97 +1270,6 @@
   
 
                 
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../auxiliary/products/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Product Registry
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_3" id="__nav_2_10_3_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-grids
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_3_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_3">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-grids
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1453,7 +1285,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Hemispheric grids
 
     
   </span>
@@ -1465,70 +1297,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_4" id="__nav_2_10_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-vod
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_4_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_4">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-vod
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1544,7 +1312,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  VOD retrieval
 
     
   </span>
@@ -1556,76 +1324,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_5" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_5" id="__nav_2_10_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_5_label" aria-expanded="true">
-            <label class="md-nav__title" for="__nav_2_10_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1650,7 +1348,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Stores
 
     
   </span>
@@ -1667,7 +1365,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Stores
 
     
   </span>
@@ -1693,10 +1391,38 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#purpose" class="md-nav__link">
+  <a href="#the-two-stores-of-a-site" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Purpose
+        The two stores of a site
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The two stores of a site">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#store-folders" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Store folders
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Groups
       </span>
     </span>
   </a>
@@ -1704,10 +1430,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-versioned-storage" class="md-nav__link">
+  <a href="#day-blocks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Why versioned storage?
+        Day blocks
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Day blocks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-vod-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The VOD store
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moving-a-store-to-day-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Moving a store to day blocks
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-a-run-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How a run writes
       </span>
     </span>
   </a>
@@ -1715,10 +1480,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#architecture" class="md-nav__link">
+  <a href="#duplicate-checks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Architecture
+        Duplicate checks
       </span>
     </span>
   </a>
@@ -1726,10 +1491,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#core-components" class="md-nav__link">
+  <a href="#read-a-store" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Core Components
+        Read a store
       </span>
     </span>
   </a>
@@ -1737,10 +1502,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#storage-layout" class="md-nav__link">
+  <a href="#compare-two-stores" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Storage Layout
+        Compare two stores
       </span>
     </span>
   </a>
@@ -1748,10 +1513,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#data-flow" class="md-nav__link">
+  <a href="#history" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Data Flow
+        History
       </span>
     </span>
   </a>
@@ -1759,10 +1524,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#three-layer-deduplication" class="md-nav__link">
+  <a href="#command-line" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Three-Layer Deduplication
+        Command line
       </span>
     </span>
   </a>
@@ -1770,10 +1535,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#storage-format" class="md-nav__link">
+  <a href="#grids-and-analysis-results" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Storage Format
+        Grids and analysis results
       </span>
     </span>
   </a>
@@ -1781,32 +1546,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#versioning-and-history-api" class="md-nav__link">
+  <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Versioning and History API
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cli-quick-reference" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        CLI Quick Reference
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#store-level-provenance" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Store-Level Provenance
+        Next steps
       </span>
     </span>
   </a>
@@ -1829,6 +1572,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../chunks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chunks
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../icechunk/" class="md-nav__link">
         
   
@@ -1836,7 +1606,7 @@
   <span class="md-ellipsis">
     
   
-  Icechunk Storage
+  Versioning with Icechunk
 
     
   </span>
@@ -1863,7 +1633,7 @@
   <span class="md-ellipsis">
     
   
-  Storage Strategies
+  Write strategies
 
     
   </span>
@@ -1875,70 +1645,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_6" id="__nav_2_10_6_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-store-metadata
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_6_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_6">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-store-metadata
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -1954,7 +1660,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Store metadata
 
     
   </span>
@@ -1966,70 +1672,6 @@
   
 
                 
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_7" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_7" id="__nav_2_10_7_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-viz
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_7_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_7">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-viz
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2045,7 +1687,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
+  Visualization
 
     
   </span>
@@ -2078,30 +1720,43 @@
       
         
       
-    
-    
-    
+        
       
+        
+      
+        
+      
+        
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_8" >
+      
         
           
-          <label class="md-nav__link" for="__nav_2_10_8" id="__nav_2_10_8_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-config
+  Data formats
 
     
   </span>
@@ -2112,12 +1767,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_8_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_8">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_6">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-config
+  Data formats
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2129,14 +1784,149 @@
   
   
     <li class="md-nav__item">
-      <a href="../../config/overview/" class="md-nav__link">
+      <a href="../../readers/rinex-format/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Overview
+  RINEX v3.04
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../readers/rinex-v2-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  RINEX v2.11
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../readers/sbf/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../readers/sbf-decoding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SBF field decoding
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../readers/satellite-catalog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Satellite catalog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../auxiliary/products/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Product registry
 
     
   </span>
@@ -2169,30 +1959,37 @@
       
         
       
-    
-    
-    
-      
+        
       
         
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_9" >
+      
         
           
-          <label class="md-nav__link" for="__nav_2_10_9" id="__nav_2_10_9_label" tabindex="0">
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-  canvod-utils
+  Extend
 
     
   </span>
@@ -2203,15 +2000,69 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_2_7">
               <span class="md-nav__icon md-icon"></span>
               
   
-  canvod-utils
+  Extend
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Your own readers and VOD calculators
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../readers/building-a-reader/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build a reader
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -2227,189 +2078,7 @@
   <span class="md-ellipsis">
     
   
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_10" id="__nav_2_10_10_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-ops
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_10">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-ops
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ops/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Overview
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10_11" >
-        
-          
-          <label class="md-nav__link" for="__nav_2_10_11" id="__nav_2_10_11_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  canvod-preflight
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_10_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_2_10_11">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  canvod-preflight
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../naming/overview/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Naming Convention & Validation
+  Utilities
 
     
   </span>
@@ -2438,24 +2107,17 @@
     </li>
   
 
-                
-              
-            </ul>
-          </nav>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
         
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
       
         
       
@@ -2502,7 +2164,7 @@
   <span class="md-ellipsis">
     
   
-  Development
+  Contribute
 
     
   </span>
@@ -2518,7 +2180,7 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  Development
+  Contribute
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2564,7 +2226,7 @@
   <span class="md-ellipsis">
     
   
-  Contributor Setup
+  Contributor setup
 
     
   </span>
@@ -2591,7 +2253,7 @@
   <span class="md-ellipsis">
     
   
-  Development Guide
+  Development guide
 
     
   </span>
@@ -2611,14 +2273,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../guides/architecture-design/" class="md-nav__link">
+      <a href="../../../guides/reference-stores/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Architecture & Design Patterns
+  Reference stores
 
     
   </span>
@@ -2630,6 +2292,67 @@
   
 
                 
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Coding agents
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Coding agents
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
               
                 
                   
@@ -2645,7 +2368,7 @@
   <span class="md-ellipsis">
     
   
-  Developing with Claude Code
+  Developing with coding agents
 
     
   </span>
@@ -2665,14 +2388,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../build-system/" class="md-nav__link">
+      <a href="../../../agents/issue-tracker/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Build System
+  Issue tracker
 
     
   </span>
@@ -2692,14 +2415,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tooling/" class="md-nav__link">
+      <a href="../../../agents/triage-labels/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Tooling
+  Triage labels
 
     
   </span>
@@ -2719,14 +2442,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../principles/" class="md-nav__link">
+      <a href="../../../agents/domain/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Conventions & Defaults
+  Domain docs
 
     
   </span>
@@ -2734,6 +2457,15 @@
   
 
       </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
     </li>
   
 
@@ -2767,10 +2499,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
             
   
   
@@ -2788,8 +2520,8 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_9">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_6">
               <span class="md-nav__icon md-icon"></span>
               
   
@@ -2812,7 +2544,7 @@
   <span class="md-ellipsis">
     
   
-  Monorepo Structure
+  Monorepo structure
 
     
   </span>
@@ -2839,7 +2571,7 @@
   <span class="md-ellipsis">
     
   
-  Namespace Packages
+  Namespace packages
 
     
   </span>
@@ -2866,7 +2598,727 @@
   <span class="md-ellipsis">
     
   
-  Package Dependencies
+  Package dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Conventions and defaults
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Decisions
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Decisions
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0001-versioned-stores/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0001 Versioned stores
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0002-gps-time/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0002 GPS time
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0003-receivers-share-a-file-format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0003 One file format per site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0004-explicit-over-implicit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0004 Explicit over implicit
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0005-deprecate-until-next-major/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0005 Deprecation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0006-preprocessing-only-when-set/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0006 Preprocessing only when set
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0007-provenance-in-log-books/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0007 Provenance in log books
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0008-files-found-by-name/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0008 Files found by name
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0009-plugins-via-entry-points/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0009 Plugins
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0010-per-package-versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0010 Package versions
+
+    
+  </span>
+  
+  
+    
+  
+  
+    <span class="md-status md-status--accepted"></span>
+  
+
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0011-free-tools-only/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0011 Free tools only
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0012-agent-development-workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0012 Agent workflow
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0013-agents-never-merge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0013 Agents never merge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0014-store-metadata-split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0014 Store metadata
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0015-stac-catalog-at-data-root/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0015 STAC catalog and releases
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../adr/0016-day-blocks-and-forked-writes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  0016 Day blocks and parallel writes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Glossary
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build and tooling
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_10">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Build and tooling
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../build-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tooling
 
     
   </span>
@@ -2907,8 +3359,6 @@
       
         
       
-        
-      
     
     
     
@@ -2922,17 +3372,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Release & Publishing
+  Release and publishing
 
     
   </span>
@@ -2943,12 +3393,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_10">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_11">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Release & Publishing
+  Release and publishing
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -2994,34 +3444,7 @@
   <span class="md-ellipsis">
     
   
-  Release Process
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../guides/PYPI_SETUP/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  PyPI Setup
+  Release process
 
     
   </span>
@@ -3075,7 +3498,7 @@
   <span class="md-ellipsis">
     
   
-  OIDC Authentication
+  OIDC authentication
 
     
   </span>
@@ -3102,7 +3525,7 @@
   <span class="md-ellipsis">
     
   
-  Release Internals
+  Release internals
 
     
   </span>
@@ -3154,17 +3577,17 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_12" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3_12" id="__nav_3_12_label" tabindex="0">
             
   
   
   <span class="md-ellipsis">
     
   
-  Quality & Compliance
+  Quality and compliance
 
     
   </span>
@@ -3175,12 +3598,12 @@
           </label>
         
         
-          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_3_11">
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_3_12">
               <span class="md-nav__icon md-icon"></span>
               
   
-  Quality & Compliance
+  Quality and compliance
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
@@ -3199,7 +3622,7 @@
   <span class="md-ellipsis">
     
   
-  FOSS Principles
+  FOSS principles
 
     
   </span>
@@ -3226,7 +3649,7 @@
   <span class="md-ellipsis">
     
   
-  FAIR Software Compliance
+  FAIR software
 
     
   </span>
@@ -3253,7 +3676,7 @@
   <span class="md-ellipsis">
     
   
-  OpenSSF Best Practices
+  OpenSSF best practices
 
     
   </span>
@@ -3273,14 +3696,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../SECURITY.md" class="md-nav__link">
+      <a href="../../../SECURITY/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-  Security Policy
+  Security policy
 
     
   </span>
@@ -3318,6 +3741,8 @@
   
     
     
+      
+        
       
         
       
@@ -3364,7 +3789,7 @@
   <span class="md-ellipsis">
     
   
-  API Reference
+  Reference
 
     
   </span>
@@ -3380,10 +3805,37 @@
               <span class="md-nav__icon md-icon"></span>
               
   
-  API Reference
+  Reference
 
             </label>
             <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
               
                 
                   
@@ -3690,96 +4142,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-    
-    
-    
-      
-      
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
-        
-          
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Legal
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        
-          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-            <label class="md-nav__title" for="__nav_5">
-              <span class="md-nav__icon md-icon"></span>
-              
-  
-  Legal
-
-            </label>
-            <ul class="md-nav__list" data-md-scrollfix>
-              
-                
-                  
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../impressum/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Impressum & AI Disclosure
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-                
-              
-            </ul>
-          </nav>
-        
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -3821,10 +4183,38 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#purpose" class="md-nav__link">
+  <a href="#the-two-stores-of-a-site" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Purpose
+        The two stores of a site
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The two stores of a site">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#store-folders" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Store folders
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Groups
       </span>
     </span>
   </a>
@@ -3832,10 +4222,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-versioned-storage" class="md-nav__link">
+  <a href="#day-blocks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Why versioned storage?
+        Day blocks
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Day blocks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-vod-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The VOD store
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#moving-a-store-to-day-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Moving a store to day blocks
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-a-run-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How a run writes
       </span>
     </span>
   </a>
@@ -3843,10 +4272,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#architecture" class="md-nav__link">
+  <a href="#duplicate-checks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Architecture
+        Duplicate checks
       </span>
     </span>
   </a>
@@ -3854,10 +4283,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#core-components" class="md-nav__link">
+  <a href="#read-a-store" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Core Components
+        Read a store
       </span>
     </span>
   </a>
@@ -3865,10 +4294,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#storage-layout" class="md-nav__link">
+  <a href="#compare-two-stores" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Storage Layout
+        Compare two stores
       </span>
     </span>
   </a>
@@ -3876,10 +4305,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#data-flow" class="md-nav__link">
+  <a href="#history" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Data Flow
+        History
       </span>
     </span>
   </a>
@@ -3887,10 +4316,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#three-layer-deduplication" class="md-nav__link">
+  <a href="#command-line" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Three-Layer Deduplication
+        Command line
       </span>
     </span>
   </a>
@@ -3898,10 +4327,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#storage-format" class="md-nav__link">
+  <a href="#grids-and-analysis-results" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Storage Format
+        Grids and analysis results
       </span>
     </span>
   </a>
@@ -3909,32 +4338,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#versioning-and-history-api" class="md-nav__link">
+  <a href="#next-steps" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Versioning and History API
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cli-quick-reference" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        CLI Quick Reference
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#store-level-provenance" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Store-Level Provenance
+        Next steps
       </span>
     </span>
   </a>
@@ -4001,12 +4408,6 @@
       
         
       
-        
-      
-        
-      
-        
-      
     
     
     
@@ -4016,7 +4417,7 @@
           
   
   <span class="md-ellipsis">
-    Usage
+    Retrieve VOD
   </span>
 
         </a>
@@ -4042,26 +4443,6 @@
         
       
         
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      
-  
-  
-    
-    
       
         
       
@@ -4088,40 +4469,7 @@
           
   
   <span class="md-ellipsis">
-    Packages
-  </span>
-
-        </a>
-      </li>
-    
-  
-
-    
-  
-
-      
-        
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-    
-      <li class="md-path__item">
-        <a href="././" class="md-path__link">
-          
-  
-  <span class="md-ellipsis">
-    canvod-store
+    How it works
   </span>
 
         </a>
@@ -4144,239 +4492,467 @@
 
 
 <h1 id="canvod-store">canvod-store<a class="headerlink" href="#canvod-store" title="Permanent link">&para;</a></h1>
-<h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
-<p>The <code>canvod-store</code> package provides versioned storage management for <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> vegetation optical depth data using <strong><abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr></strong> — a cloud-native transactional format for multidimensional arrays built on <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> v3.</p>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M80 104a24 24 0 1 0 0-48 24 24 0 1 0 0 48m80-24c0 32.8-19.7 61-48 73.3V224h176c26.5 0 48-21.5 48-48v-22.7c-28.3-12.3-48-40.5-48-73.3 0-44.2 35.8-80 80-80s80 35.8 80 80c0 32.8-19.7 61-48 73.3V176c0 61.9-50.1 112-112 112H112v70.7c28.3 12.3 48 40.5 48 73.3 0 44.2-35.8 80-80 80S0 476.2 0 432c0-32.8 19.7-61 48-73.3V153.4C19.7 141 0 112.8 0 80 0 35.8 35.8 0 80 0s80 35.8 80 80m232 0a24 24 0 1 0-48 0 24 24 0 1 0 48 0M80 456a24 24 0 1 0 0-48 24 24 0 1 0 0 48"/></svg></span> &nbsp; <strong>Git-like versioning</strong></p>
-<hr />
-<p>Every write produces an <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> snapshot with a hash-addressable ID.
-Roll back to any earlier state, audit every append, and reproduce any
-result published from the store.</p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M0 336c0 79.5 64.5 144 144 144h304c70.7 0 128-57.3 128-128 0-51.6-30.5-96.1-74.5-116.3 6.7-13.1 10.5-28 10.5-43.7 0-53-43-96-96-96-17.7 0-34.2 4.8-48.4 13.1C343.5 63.3 295.4 32 240 32 160.5 32 96 96.5 96 176c0 8 .7 15.9 1.9 23.5C41 218.7 0 272.6 0 336"/></svg></span> &nbsp; <strong>Cloud-native format</strong></p>
-<hr />
-<p><abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> supports S3-compatible object stores (AWS, MinIO, Cloudflare R2).
-canvod-store currently writes to local filesystem; the underlying library
-is cloud-ready.</p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M0 256a256 256 0 1 1 512 0 256 256 0 1 1-512 0M288 96a32 32 0 1 0-64 0 32 32 0 1 0 64 0m-32 320c35.3 0 64-28.7 64-64 0-16.2-6-31.1-16-42.3l69.5-138.9c5.9-11.9 1.1-26.3-10.7-32.2s-26.3-1.1-32.2 10.7l-69.5 138.9c-1.7-.1-3.4-.2-5.1-.2-35.3 0-64 28.7-64 64s28.7 64 64 64m-80-272a32 32 0 1 0-64 0 32 32 0 1 0 64 0M96 288a32 32 0 1 0 0-64 32 32 0 1 0 0 64m352-32a32 32 0 1 0-64 0 32 32 0 1 0 64 0"/></svg></span> &nbsp; <strong>Chunked time-series access</strong></p>
-<hr />
-<p>Default chunks: <code>epoch: 17280, sid: -1</code> — one receiver-day (17280 epochs
-≈ 24 h at 5 s sampling). Zstd compression, O(1) epoch-range reads.</p>
-</li>
-<li>
-<p><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M48 256c0-114.9 93.1-208 208-208 63.1 0 119.6 28.1 157.8 72.5 8.6 10.1 23.8 11.2 33.8 2.6s11.2-23.8 2.6-33.8C403.3 34.6 333.7 0 256 0 114.6 0 0 114.6 0 256v40c0 13.3 10.7 24 24 24s24-10.7 24-24zm458.5-52.9c-2.7-13-15.5-21.3-28.4-18.5s-21.3 15.5-18.5 28.4c2.9 13.9 4.5 28.3 4.5 43.1v40c0 13.3 10.7 24 24 24s24-10.7 24-24v-40c0-18.1-1.9-35.8-5.5-52.9zM256 80c-19 0-37.4 3-54.5 8.6-15.2 5-18.7 23.7-8.3 35.9 7.1 8.3 18.8 10.8 29.4 7.9s21.8-4.4 33.4-4.4c70.7 0 128 57.3 128 128v24.9c0 25.2-1.5 50.3-4.4 75.3-1.7 14.6 9.4 27.8 24.2 27.8 11.8 0 21.9-8.6 23.3-20.3 3.3-27.4 5-55 5-82.7v-24.9c0-97.2-78.8-176-176-176zm-105.3 68.7c-9.1-10.6-25.3-11.4-33.9-.4C93.7 178.1 80 215.4 80 256v24.9c0 24.2-2.6 48.4-7.8 71.9-3.4 15.6 7.9 31.1 23.9 31.1 10.5 0 19.9-7 22.2-17.3 6.4-28.1 9.7-56.8 9.7-85.8v-24.9c0-27.2 8.5-52.4 22.9-73.1 7.2-10.4 8-24.6-.2-34.2zM256 160c-53 0-96 43-96 96v24.9c0 35.9-4.6 71.5-13.8 106.1-3.8 14.3 6.7 29 21.5 29 9.5 0 17.9-6.2 20.4-15.4 10.5-39 15.9-79.2 15.9-119.7V256c0-28.7 23.3-52 52-52s52 23.3 52 52v24.9c0 36.3-3.5 72.4-10.4 107.9-2.7 13.9 7.7 27.2 21.8 27.2 10.2 0 19-7 21-17 7.7-38.8 11.6-78.3 11.6-118.1V256c0-53-43-96-96-96m24 96c0-13.3-10.7-24-24-24s-24 10.7-24 24v24.9c0 59.9-11 119.3-32.5 175.2l-5.9 15.3c-4.8 12.4 1.4 26.3 13.8 31s26.3-1.4 31-13.8l5.9-15.3A536.2 536.2 0 0 0 280 280.9z"/></svg></span> &nbsp; <strong>Three-layer deduplication</strong></p>
-<hr />
-<p>Hash, temporal overlap, and intra-batch guards prevent any data from
-being written twice — safe to re-run pipelines at any time.</p>
-</li>
-</ul>
-</div>
-<hr />
-<h2 id="why-versioned-storage">Why versioned storage?<a class="headerlink" href="#why-versioned-storage" title="Permanent link">&para;</a></h2>
-<p><strong><abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr></strong> is chunked, compressed N-dimensional array storage — cloud-native
-and parallel-read-friendly. Think HDF5 without the file-locking.</p>
-<p><strong><abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr></strong> adds git-like version control on top of <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr>: every
-<code>session.commit()</code> creates an immutable snapshot with a hash-addressable ID.
-This gives the store three properties that matter for reproducible science:</p>
-<ul>
-<li><strong>ACID commits</strong> — a write either fully lands or it doesn't. No
-  half-written stores after a crash or interrupted ingest.</li>
-<li><strong>Reproducibility</strong> — cite a snapshot ID in a paper and always recover
-  the exact dataset state used for that analysis.</li>
-<li><strong>Auditability</strong> — <code>store.get_ops_log()</code> shows what was written, when,
-  and by whom; <code>store.plot_commit_graph()</code> visualises the full history.</li>
-</ul>
-<hr />
-<h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
-<p><code>GnssResearchSite</code> coordinates <strong>two separate <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> repositories per site</strong>, not one — a <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr>/<abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> store for raw, standardized observations and a <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store for retrieval results:</p>
-<pre class="mermaid"><code>graph TD
-    A1["`**GNSS Data (RINEX / SBF)**
-    epoch x sid`"]
-    A1 --&gt; B["`**Preprocessing**
-    encoding, padding`"]
-    B --&gt; C["RINEX/SBF Icechunk Repository"]
-    C --&gt; D1["`**receiver group**
-    canopy/, reference/
-    epoch x sid`"]
-    D1 --&gt; E["VOD Calculation"]
-    E --&gt; F["VOD Icechunk Repository"]
-    F --&gt; G["`**calculator/analysis group**
-    e.g. TauOmegaZerothOrder/canopy_reference
-    epoch x sid`"]</code></pre>
-<hr />
-<h2 id="core-components">Core Components<a class="headerlink" href="#core-components" title="Permanent link">&para;</a></h2>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Storage Manager</label><label for="__tabbed_1_2">Site Interface</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_rinex_store</span><span class="p">,</span> <span class="n">create_vod_store</span>
-
-<span class="c1"># Create or open a RINEX observations store</span>
-<span class="n">store</span> <span class="o">=</span> <span class="n">create_rinex_store</span><span class="p">(</span><span class="n">store_path</span><span class="p">)</span>
-
-<span class="c1"># Write a new group (first ingest for this receiver)</span>
-<span class="n">store</span><span class="o">.</span><span class="n">write_initial_group</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">group_name</span><span class="o">=</span><span class="s2">&quot;canopy&quot;</span><span class="p">)</span>
-
-<span class="c1"># Append subsequent days</span>
-<span class="n">store</span><span class="o">.</span><span class="n">append_to_group</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">group_name</span><span class="o">=</span><span class="s2">&quot;canopy&quot;</span><span class="p">)</span>
-
-<span class="c1"># Or let the store decide automatically</span>
-<span class="n">store</span><span class="o">.</span><span class="n">write_or_append_group</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">group_name</span><span class="o">=</span><span class="s2">&quot;canopy&quot;</span><span class="p">)</span>
+<p><code>canvod-store</code> keeps the data of a site in two
+<a href="https://icechunk.io/"><abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr></a> stores: the <strong><abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store</strong> holds the
+observations of every receiver, and the <strong><abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store</strong> holds the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>
+results. <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> stores <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> arrays and records every write as a commit,
+so earlier states of a store stay readable.</p>
+<p>This page describes what the stores hold, how a run writes to them, and how
+to read them in your own code.</p>
+<h2 id="the-two-stores-of-a-site">The two stores of a site<a class="headerlink" href="#the-two-stores-of-a-site" title="Permanent link">&para;</a></h2>
+<p>Each site has its own <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store and <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store, both under
+<code>processing.storage.stores_root_dir</code>:</p>
+<div class="highlight"><pre><span></span><code>&lt;stores_root_dir&gt;/
+└── ExampleSite/
+    ├── gnss/    # GNSS store (processing.storage.gnss_store_name)
+    └── vod/     # VOD store (processing.storage.vod_store_name)
 </code></pre></div>
-</div>
-<div class="tabbed-block">
+<p>The <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store holds data from every reader format (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr>, <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr>, and NMEA).</p>
+<h3 id="store-folders">Store folders<a class="headerlink" href="#store-folders" title="Permanent link">&para;</a></h3>
+<p>A store's folder is named by its kind: <code>gnss</code>, <code>vod</code>, or <code>geodesy</code>. For a
+second store of the same kind at a site, for example to compute <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> again
+with other settings, the name is the kind, <code>-</code> and a suffix of lowercase
+letters and digits, with single <code>_</code> or <code>-</code> between them: <code>vod-recompute</code>,
+<code>gnss-test</code>. Any other name is refused when the settings load. The store
+id is the site name and the folder, <code>examplesite-vod-recompute</code>; it is
+fixed when the store is created, so a store's folder can't be renamed
+later (a run refuses it, naming the cause).</p>
+<p>Before v1.0.0 the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store's folder was <code>rinex</code>. <code>canvodpy store migrate
+SITE</code> moves it to <code>gnss</code> (<a href="../../../guides/upgrading/">Upgrading to v1.0.0</a>).</p>
+<p>A store knows its site from its own metadata, not from the folder it
+sits in: <code>store.site_name</code> stays the same when the folder is moved or
+renamed. A store written before stores kept repository metadata has no
+site name; reading it raises an error that names
+<code>canvodpy store migrate</code>.</p>
+<pre class="mermaid"><code>graph TD
+    A["GNSS files of a receiver"] --&gt; B["Reader"]
+    B --&gt; C["GNSS store&lt;br/&gt;canopy_01, reference_01_canopy_01, ..."]
+    C --&gt; D["VOD calculator"]
+    D --&gt; E["VOD store&lt;br/&gt;tau_omega/canopy_01_vs_reference_01, ..."]</code></pre>
+<h2 id="groups">Groups<a class="headerlink" href="#groups" title="Permanent link">&para;</a></h2>
+<p>A store holds one group per receiver, or per <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analysis.</p>
+<p>In the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store:</p>
+<ul>
+<li>A canopy receiver has one group, named after the receiver, for example
+  <code>canopy_01</code>.</li>
+<li>A reference receiver has one group per canopy receiver it is paired with,
+  named <code>{reference}_{canopy}</code>, for example <code>reference_01_canopy_01</code>.</li>
+</ul>
+<p>In the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store, a group is named <code>{calculator}/{analysis}</code>, for example
+<code>tau_omega/canopy_01_vs_reference_01</code>.</p>
+<p>The data variables of a <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store group (for example <code>SNR</code>, <code>Phase</code>,
+<code>Pseudorange</code>, and <code>Doppler</code>, depending on the reader) have the dimensions
+<code>epoch</code> and <code>sid</code> and sit directly in the group:</p>
+<div class="highlight"><pre><span></span><code>canopy_01/
+├── SNR
+├── Phase
+├── ...
+└── metadata/
+    ├── table     # log book: one row per stored file
+    └── sbf_obs   # SBF receivers only: receiver metadata per file
+</code></pre></div>
+<p><code>sbf_obs</code> keeps the missing value each variable declares, as both the CF
+<code>_FillValue</code> and the <abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> <code>fill_value</code>: -1 for the integer flags (for
+example <code>rise_set</code> and <code>pvt_mode</code>), NaN for floating-point values.</p>
+<p>The log book (<code>metadata/table</code>) records each stored file: its hash, start,
+end, filename, the dataset attributes, and the preprocessing record (see
+<a href="../../ops/overview/#the-preprocessing-record">Preprocessing during a run</a>).
+In a group made of day blocks, it also records how many epochs of the file
+were stored (<code>epochs</code>). Every other value in it is text, JSON, or a time.</p>
+<p>The log book only grows: rows are appended, never changed. A run reads
+each group's log book whole the first time it needs it and afterwards only
+the rows committed since, by itself or by another run, so checking a day
+against it takes the same time however many days the store holds.</p>
+<h2 id="day-blocks">Day blocks<a class="headerlink" href="#day-blocks" title="Permanent link">&para;</a></h2>
+<p>A new <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store is written as day blocks
+(<a href="../../../adr/0016-day-blocks-and-forked-writes/">ADR 0016</a>). The <code>epoch</code>
+axis of a group holds one block per day, with one slot for every epoch of
+the day at the day's cadence: 17280 slots for a day at 5 s, 86400 at 1 s.
+Blocks are stored in the order the days were first processed; reading a
+group returns its epochs in time order.</p>
+<p>A run adds the blocks of a unit of days in one small
+commit, after it has prepared the days and before it reads any file. Only
+days whose orbit and clock products are ready get a block; the cadence
+comes from the filenames, so the run reads no file for this. If the files of a
+day then fail, its block stays empty and the next run of that day uses
+it. A group's first write creates the group and its first blocks. If
+another run added blocks to the store in the meantime, the run reads the
+store again, uses the blocks already there, and adds the rest.</p>
+<ul>
+<li>Each epoch of a file goes into its nearest slot: 00:00 of the day plus a
+  multiple of the cadence. The <code>epoch</code> coordinate keeps the epoch's real
+  time.</li>
+<li>A slot without data holds its grid time in <code>epoch</code>, NaN in
+  floating-point variables, and -1 in integer variables such as <code>LLI</code> and
+  <code>SSI</code> (their <code>_FillValue</code>).</li>
+<li>A write fills the slots from the file's first to its last epoch. When
+  the log book already holds a file of the same canonical name, the
+  write also empties the slots of that earlier write that the file now
+  has no epochs for, but never slots inside another stored file's span.
+  Writing a file again therefore never adds epochs, a file that now has
+  fewer epochs leaves nothing of its earlier write, and a file written
+  for the first time leaves the rest of its named period alone (after a
+  receiver restart, the next file can start inside it). A file without a
+  canonical name (possible with <code>temporal_aggregation</code>) replaces only the
+  slots from its first to its last epoch.</li>
+<li>The cadence of a day is the finest sampling interval in the names of the
+  files of the day, or the bin length of
+  <code>processing.preprocessing.temporal_aggregation</code> when it is set. Every
+  cadence is stored, and days in one group can have different cadences.
+  A day has ceil(86400 s / cadence) slots; its block holds whole chunks of
+  180 epochs (<code>processing.icechunk.chunk_strategies.gnss_store.epoch</code>),
+  padded with empty epochs where the slots don't fill the last chunk (84
+  per day at 15 min, none at 1 s to 1 min). Padding epochs lie between the
+  day's last slot and the next day, and loading leaves them out. A group
+  keeps the chunk size it was created with: a changed setting applies to
+  new groups only (see <a href="../chunks/">Chunks</a>).</li>
+<li>A group records its layout in its attributes (<code>epoch_layout:
+  day_blocks</code>) and the block of each day in <code>day_block_index</code> (start and
+  stop on the <code>epoch</code> axis, slots, cadence). A store whose groups were
+  written by appending files to the <code>epoch</code> axis, by canVODpy versions
+  before day blocks, is refused by runs until it is moved to day blocks
+  (see <a href="#moving-a-store-to-day-blocks">Moving a store to day blocks</a>).</li>
+</ul>
+<p><code>GnssResearchSite.read_receiver_data()</code> returns only the slots with data.
+<code>MyIcechunkStore.read_group()</code> returns every slot; with <code>drop_empty=True</code>
+it leaves out the empty ones (slots where every floating-point variable is
+missing).</p>
+<h3 id="the-vod-store">The <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store<a class="headerlink" href="#the-vod-store" title="Permanent link">&para;</a></h3>
+<p>A <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store group is made of day blocks when the canopy or the reference
+group of its analysis is. A day of <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> gets the cadence of its <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> data:
+the coarser of the two groups' cadences for that day, so every <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> epoch
+has its own slot. Slots without <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> hold NaN.</p>
+<ul>
+<li>A run writes the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of each day with its own commit. The <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of all
+  analyses of a day shares that commit.</li>
+<li>A write covers exactly one day; a result of more than one day is
+  refused (<code>LayoutError</code>). The log-book row of a write records how many
+  epochs of the day hold <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> (<code>epochs</code>).</li>
+<li>A result computed from the same <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> files as a stored one isn't
+  written; the run logs it. A result from other <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> files, for example
+  after more files of the day were stored, is written into the day's
+  slots and replaces the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> that was there. Its log-book row records the
+  action <code>overwrite</code>.</li>
+<li><abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> is computed only from <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> groups made of day blocks, and written
+  only into <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store groups made of day blocks. Either store written by
+  appending is refused (<code>LayoutError</code>, naming the command that moves it).</li>
+</ul>
+<p><code>GnssResearchSite.read_vod_analysis()</code> leaves out the empty slots, as
+<code>read_receiver_data()</code> does; with <code>drop_empty=False</code> it returns every
+slot.</p>
+<h3 id="moving-a-store-to-day-blocks">Moving a store to day blocks<a class="headerlink" href="#moving-a-store-to-day-blocks" title="Permanent link">&para;</a></h3>
+<p>A store written by canVODpy versions before day blocks holds groups
+written by appending files to the <code>epoch</code> axis. Runs write day blocks
+only, so they refuse such a store. Move it once:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>migrate-layout<span class="w"> </span>SITE<span class="w"> </span>--store<span class="w"> </span>gnss
+canvodpy<span class="w"> </span>store<span class="w"> </span>migrate-layout<span class="w"> </span>SITE<span class="w"> </span>--store<span class="w"> </span>vod
+</code></pre></div>
+<p>The command shows, for each group, its days, their cadences, its epochs
+and the duplicate entries it drops, and asks before it changes anything
+(<code>--yes</code> skips the question).</p>
+<ul>
+<li>Each group written by appending is written again, day by day. Each day
+  gets a block at its cadence: the finest step between its epochs,
+  rounded to 1 ms. A day with a single epoch takes the finest cadence of
+  the group. Days may have different cadences.</li>
+<li>An epoch stored more than once, for example by <code>unsafe_append</code>, keeps
+  the entry written last.</li>
+<li>A group keeps its attributes, its log book and its other metadata
+  (<code>sbf_obs</code>). It gets the chunks of the settings
+  (<code>processing.icechunk.chunk_strategies</code>).</li>
+<li>The log book gets the <code>epochs</code> column, so the snapshot summary counts
+  each epoch once, for the latest write of its file.</li>
+<li>Everything goes into one commit. Snapshots from before keep the old
+  layout and stay readable.</li>
+</ul>
+<p>A store written before repository metadata needs
+<code>canvodpy store migrate-metadata</code> first; <code>migrate-layout</code> refuses it and
+names that command.</p>
+<h2 id="how-a-run-writes">How a run writes<a class="headerlink" href="#how-a-run-writes" title="Permanent link">&para;</a></h2>
+<p><code>canvodpy run</code> writes to both stores; in your own code, read from them.</p>
+<p>On a file system, <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> can't detect two commits at the same time: both
+can report success while <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> loses one of them
+(<a href="https://icechunk.io/en/stable/guides/storage/"><abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr>: storage</a>). So
+every commit to a store first takes the store's commit lock, the file
+<code>.canvodpy-commit.lock</code> in the store directory. A commit from another
+thread or process, for example a second run or a scheduler task, waits
+until the lock is free. Write a store from one computer only.</p>
+<p>Two <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> warnings don't apply to these stores, so canVODpy hides them:
+that the file system is not safe for concurrent commits (the commit lock
+covers this), and that a lost reply to a write may show up as a conflict
+(<abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr>'s file system storage makes one try per write and keeps no
+write metadata). Every other <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> warning is shown. To set your own
+filter, set the environment variable <code>ICECHUNK_LOG</code>, for example
+<code>ICECHUNK_LOG=icechunk=debug</code>.</p>
+<p>For each receiver and day, a run does the following:</p>
+<ol>
+<li>Reads the files and computes the satellite angles.</li>
+<li>Applies the preprocessing in <code>processing.preprocessing</code>, if set.</li>
+<li>Checks each file against the group's log book (see
+   <a href="#duplicate-checks">Duplicate checks</a>).</li>
+<li>Writes the new data with one commit: the worker processes write the
+   files into their slots, and one commit writes the day of all
+   receivers. The same commit writes the snapshot summary and
+   records the commit metadata (see
+   <a href="../../store-metadata/overview/">canvod-store-metadata</a>).</li>
+</ol>
+<p>A write must match the group. A run stops with an error if:</p>
+<ul>
+<li>the data has other variables than the group
+  (<code>GroupVariablesMismatchError</code>);</li>
+<li>the data has other <code>sid</code> labels than the group
+  (<code>GroupCoordinatesMismatchError</code>). The labels are stored once per group,
+  so an append with other labels, for example after you change
+  <code>processing.params.aggregate_glonass_fdma</code>, would relabel the stored
+  data;</li>
+<li>the epochs aren't in <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time, or the group doesn't record its time
+  scale (<code>EpochTimeSystemError</code>). Every stored epoch is <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time
+  (<code>epoch.attrs["time_system"] == "GPS"</code>). Groups written by canVODpy
+  before it stored every epoch in <abbr title="Global Positioning System — US satellite navigation constellation, 31 SVs in 6 orbital planes (Navipedia: GPS)">GPS</abbr> time have no record (their <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> and
+  NMEA epochs were UTC, 18 s earlier); write to a new store;</li>
+<li>a day stored at a coarser cadence gets a file sampled more often
+  (<code>CadenceError</code>);</li>
+<li>a file would be appended to a group made of day blocks, or the store
+  holds groups written by appending (<code>LayoutError</code>).</li>
+</ul>
+<p>A file with two epochs in one slot, for example because its name gives a
+coarser sampling than its data, isn't stored: the run logs a
+<code>SlotCollisionError</code> and writes no log-book row for the file, so the next
+run tries it again.</p>
+<p>If another commit lands while a write is in progress, canVODpy rebases the
+write onto it when the two changed different groups. If both changed the
+same data, the later commit fails with <code>icechunk.RebaseFailedError</code> and
+writes nothing. The run then plans and writes the whole unit again on
+top of the other commit, up to five tries in all, with a
+growing wait in between. When the last try fails too,
+the run records the receivers and days as failed in its run history,
+with the error, and goes on with the next days. It does the same when
+it can't add the blocks of a unit.</p>
+<h2 id="duplicate-checks">Duplicate checks<a class="headerlink" href="#duplicate-checks" title="Permanent link">&para;</a></h2>
+<p>Before a run writes a file, it checks the file against the group's log
+book, in three ways:</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>What it finds</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hash</td>
+<td>The same file, already stored (SHA-256 of the file)</td>
+<td>The orchestrator, and again just before the commit</td>
+</tr>
+<tr>
+<td>Time span</td>
+<td>A file whose time span overlaps stored data, also when it has another name or other start and end times</td>
+<td>The orchestrator, and again just before the commit</td>
+</tr>
+<tr>
+<td>Batch</td>
+<td>Two files of one batch that cover the same time</td>
+<td>The orchestrator</td>
+</tr>
+</tbody>
+</table>
+<p>A file with the same hash counts as already stored: the default write
+strategy, <code>skip</code>, doesn't write it; <code>overwrite</code> replaces its time range.
+A file with another hash over stored data stops a run with <code>skip</code>, and
+replaces the stored data with <code>overwrite</code>; the run checks it again just
+before each commit. A file that overlaps another file of its batch is
+skipped. For details, see <a href="../storage-strategies/">Write strategies</a>.</p>
+<h2 id="read-a-store">Read a store<a class="headerlink" href="#read-a-store" title="Permanent link">&para;</a></h2>
+<p>Open the stores of a configured site with <code>Site</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Site</span>
 
-<span class="n">site</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">&quot;ExampleSite&quot;</span><span class="p">)</span>
-<span class="n">site</span><span class="o">.</span><span class="n">rinex_store</span><span class="o">.</span><span class="n">list_groups</span><span class="p">()</span>          <span class="c1"># [&quot;canopy_01&quot;, &quot;reference_01&quot;]</span>
-<span class="n">site</span><span class="o">.</span><span class="n">rinex_store</span><span class="o">.</span><span class="n">get_group_info</span><span class="p">(</span><span class="s2">&quot;canopy_01&quot;</span><span class="p">)</span>
+<span class="n">site</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="s2">"ExampleSite"</span><span class="p">)</span>
+<span class="n">site</span><span class="o">.</span><span class="n">gnss_store</span><span class="o">.</span><span class="n">list_groups</span><span class="p">()</span>  <span class="c1"># ["canopy_01", "reference_01_canopy_01"]</span>
+<span class="n">site</span><span class="o">.</span><span class="n">gnss_store</span><span class="o">.</span><span class="n">get_group_info</span><span class="p">(</span><span class="s2">"canopy_01"</span><span class="p">)</span>
 
-<span class="c1"># Read a group back as an xarray.Dataset</span>
-<span class="n">ds</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">rinex_store</span><span class="o">.</span><span class="n">read_group</span><span class="p">(</span><span class="s2">&quot;canopy_01&quot;</span><span class="p">)</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">gnss_store</span><span class="o">.</span><span class="n">read_group</span><span class="p">(</span><span class="s2">"canopy_01"</span><span class="p">)</span>
+<span class="n">ds_day</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">gnss_store</span><span class="o">.</span><span class="n">read_group</span><span class="p">(</span><span class="s2">"canopy_01"</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="s2">"2025001"</span><span class="p">)</span>
+<span class="n">ds_range</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">gnss_store</span><span class="o">.</span><span class="n">read_group</span><span class="p">(</span>
+    <span class="s2">"canopy_01"</span><span class="p">,</span> <span class="n">time_slice</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="s2">"2025-01-01"</span><span class="p">,</span> <span class="s2">"2025-01-15"</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><code>read_group()</code> returns an <code>xarray.Dataset</code> that reads its data only when a
+value is needed, its epochs in time order. <code>date="2025001"</code> selects that
+day only: from 00:00 up to, not including, 00:00 of the next day. A
+<code>time_slice</code> includes both of its ends, and an end written as a date
+(<code>"2025-01-15"</code>) means the whole of that day. For how reads load chunks,
+see <a href="../chunks/">Chunks</a>; for earlier states of a store, see
+<a href="../icechunk/">Versioning with <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr></a>.</p>
+<p>To open a store by its path, use <code>open_gnss_store()</code> or
+<code>open_vod_store()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">open_gnss_store</span>
 
-<span class="c1"># Time-range selection is done with xarray after loading</span>
-<span class="n">ds_subset</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">epoch</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="s2">&quot;2025-01-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2025-01-15&quot;</span><span class="p">))</span>
+<span class="n">store</span> <span class="o">=</span> <span class="n">open_gnss_store</span><span class="p">(</span><span class="s2">"/data/stores/ExampleSite/gnss"</span><span class="p">)</span>
 </code></pre></div>
-</div>
-</div>
-</div>
-<hr />
-<h2 id="storage-layout">Storage Layout<a class="headerlink" href="#storage-layout" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>{store_root}/
-└── {receiver_name}/            # e.g. &quot;canopy&quot;, &quot;reference&quot;
-    ├── SNR                     # Data variables (epoch × sid), at group root
-    ├── Phase
-    ├── Pseudorange
-    ├── Doppler
-    └── metadata/
-        └── table               # Per-file ingest ledger (hash, start, end, path)
+<p>Opening a store never creates one: a path without a store raises a
+<code>FileNotFoundError</code> that names the path. A run creates a site's stores
+when it first writes data, together with their metadata (see
+<a href="../../store-metadata/overview/">canvod-store-metadata</a>). <code>Site</code> opens its
+stores only when you first use them, so a new site has no stores until a
+run writes to it. <code>create_gnss_store()</code> and <code>create_vod_store()</code> are left
+over from development: they open a store as well, and are removed with
+the next major version.</p>
+<p>Reading a store needs no settings file, so a store you downloaded or got
+from a colleague opens as it is. Without a settings file the store opens
+with the configuration <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> keeps with it. Reads work, and so do
+branches and tags. Commits need the settings, because a commit records
+them, and so do expiring snapshots and garbage collection, a dry run
+included. On a store opened without settings they raise a
+<code>FileNotFoundError</code> that names <code>canvodpy config init</code>. Create the settings
+with it, then open the store again. A settings file that is there but
+can't be loaded fails the opening, as before.</p>
+<h2 id="compare-two-stores">Compare two stores<a class="headerlink" href="#compare-two-stores" title="Permanent link">&para;</a></h2>
+<p><code>compare_stores()</code> compares two stores and returns a report of every
+difference, per group and variable. It works on any two stores, for
+example the reference stores of the test data and the stores a change
+produces (spec #318), or a production store before and after an
+upgrade. It only reads, through <code>MyIcechunkStore</code> (<code>list_data_groups</code> and
+<code>read_group</code>), and never changes how a store is written or read.</p>
+<p>Open each store by its path, then compare:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">compare_stores</span><span class="p">,</span> <span class="n">open_gnss_store</span>
+
+<span class="n">reference</span> <span class="o">=</span> <span class="n">open_gnss_store</span><span class="p">(</span><span class="s2">"/data/stores/ExampleSite/gnss"</span><span class="p">)</span>
+<span class="n">new</span> <span class="o">=</span> <span class="n">open_gnss_store</span><span class="p">(</span><span class="s2">"/data/stores/ExampleSite-new/gnss"</span><span class="p">)</span>
+<span class="n">report</span> <span class="o">=</span> <span class="n">compare_stores</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+
+<span class="n">report</span><span class="o">.</span><span class="n">matches</span>  <span class="c1"># True when the stores are the same</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">to_text</span><span class="p">())</span>  <span class="c1"># a report for a person</span>
+<span class="n">report</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">()</span>  <span class="c1"># a report for CI</span>
 </code></pre></div>
-<p>Variables are written directly at the receiver group root — there is no
-intermediate <code>obs/</code> subgroup. The <code>metadata/table</code> sub-path holds the
-per-file ingest registry used by the deduplication guardrails.</p>
-<hr />
-<h2 id="data-flow">Data Flow<a class="headerlink" href="#data-flow" title="Permanent link">&para;</a></h2>
-<ol>
-<li><strong>Ingest</strong> — Raw <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> data (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> via <code>Rnxv3Obs</code> or <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> via <code>SbfReader</code>) + ephemerides</li>
-<li><strong>Preprocess</strong> — Normalise encodings, pad to global <abbr title="Signal Identifier — canVODpy format: SV|Band|Code (e.g. G01|L1|C). Uniquely identifies one observable per epoch.">SID</abbr>, strip fill values</li>
-<li><strong>Store observations</strong> — Append to <code>{group}/</code> with three-layer deduplication</li>
-<li><strong>Query</strong> — Retrieve by time range, signal, or group name</li>
-<li><strong>Analyse</strong> — <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> calculation using stored observations and grid geometry</li>
-</ol>
-<p>Writes are committed one snapshot per receiver-day, sequentially. <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr>'s
-local-filesystem backend serialises commits, so parallel receiver processing
-converges to a sequential write phase.</p>
-<hr />
-<h2 id="three-layer-deduplication">Three-Layer Deduplication<a class="headerlink" href="#three-layer-deduplication" title="Permanent link">&para;</a></h2>
-<p>Every ingest passes through three independent guards before a byte is
-written:</p>
+<p>The comparison uses <code>xarray.testing</code>: <code>assert_allclose</code> within the
+tolerance below for the float variables of the table, and
+<code>assert_identical</code> for everything else (integer and flag variables,
+coordinates, other floats). The report lists a group present in one
+store and not the other, a lost epoch or a renamed <abbr title="Signal Identifier — canVODpy format: SV|Band|Code (e.g. G01|L1|C). Uniquely identifies one observable per epoch.">SID</abbr>, a changed value
+(also a value present in one store and missing in the other), with the
+count of differing values, the largest difference and <abbr title="Labelled multi-dimensional arrays for Python — extends NumPy with named dims, coords, and attrs">xarray</abbr>'s message.</p>
+<p>Attributes are compared too, those of the store, the groups and every
+variable, also nested ones (the report names the inner key, for example
+<code>canvod:repository_metadata.identity.title</code>). Left out are only the
+attributes that change with every run or release: the creation and
+modification times, the store ids, the canvodpy version and the
+<code>Software</code> attribute, and the content hash of the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store a <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>
+store was computed from (its values are compared themselves). The list
+is <code>VOLATILE_ATTRIBUTES</code> in the same module. A changed input file
+therefore shows as a changed <code>File Hash</code>.
+A new or changed setting shows under
+<code>canvod:repository_metadata.content_settings</code>, by name and in its hash:
+it changes what the store records about how it was built, so it counts
+as a difference.</p>
+<p>The log books (<code>metadata/table</code>) are not compared. They record how a
+run wrote each file (write times, snapshot ids, run ids, paths); what
+the files hold is compared through the groups, and which files were
+read through <code>File Hash</code>.</p>
+<p>Float variables are compared within one absolute tolerance per
+variable, derived from the finest resolution any format records. A
+float variable not in the table is compared exactly and is reported as
+<code>no_tolerance</code>, so a new variable is noticed.</p>
 <table>
 <thead>
 <tr>
-<th>Layer</th>
-<th>What it checks</th>
-<th>Guard location</th>
+<th>Variable</th>
+<th>Tolerance</th>
+<th>Derivation</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>1. Hash match</strong></td>
-<td>SHA-256 of the source file; identical file is always a no-op</td>
-<td><code>append_to_group()</code> internal check</td>
+<td><code>SNR</code> (also 1-minute means), <code>Pseudorange</code>, <code>Phase</code>, <code>Doppler</code></td>
+<td>5e-4</td>
+<td>half the <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> observation resolution, format F14.3 = 0.001 (<abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 3.04, observation record, p. 67; <abbr title="Receiver Independent Exchange Format — standard ASCII format for GNSS observations, defined by IGS (Navipedia: RINEX)">RINEX</abbr> 2.11, observation record). <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> (0.25 dB-Hz) and NMEA GSV (1 dB-Hz) are coarser.</td>
 </tr>
 <tr>
-<td><strong>2. Temporal overlap</strong></td>
-<td>A new file covering an already-ingested time range is rejected, even if renamed or re-split (catches daily-vs-sub-daily file overlap)</td>
-<td><code>_check_existing_with_temporal_overlap()</code> in orchestrator</td>
+<td><code>delta_snr</code></td>
+<td>1e-3</td>
+<td>a difference of two <abbr title="Signal-to-Noise Ratio — carrier power relative to noise floor, in dB-Hz. Key observable for GNSS transmissometry. (Navipedia: GNSS Measurements)">SNR</abbr> values, 2 × 5e-4</td>
 </tr>
 <tr>
-<td><strong>3. Intra-batch overlap</strong></td>
-<td>Duplicate epochs within a single ingest batch are caught before the commit</td>
-<td><code>append_to_group()</code> batch validation</td>
+<td><code>VOD</code></td>
+<td>2e-4</td>
+<td><code>VOD = -(ln 10 / 10) · delta_snr · cos(theta)</code>; <code>(ln 10 / 10) × 1e-3 = 2.3e-4</code>, rounded down</td>
+</tr>
+<tr>
+<td><code>theta</code>, <code>phi</code></td>
+<td>1e-6 rad</td>
+<td>above the float32 spacing at pi/2 (1.2e-7 rad), the precision the angles are stored with; a larger difference is a changed satellite geometry</td>
 </tr>
 </tbody>
 </table>
-<p>All three layers must pass before <code>session.commit()</code> is called.</p>
-<hr />
-<h2 id="storage-format">Storage Format<a class="headerlink" href="#storage-format" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Property</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Backend format</td>
-<td><abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> (<abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> v3)</td>
-</tr>
-<tr>
-<td>Default chunks</td>
-<td><code>epoch: 17280</code>, <code>sid: -1</code></td>
-</tr>
-<tr>
-<td>Compression</td>
-<td>Zstd level 3</td>
-</tr>
-<tr>
-<td>Storage backend</td>
-<td>Local filesystem (<abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> library supports S3)</td>
-</tr>
-<tr>
-<td>Versioning</td>
-<td>Git-like snapshots, hash-addressable</td>
-</tr>
-<tr>
-<td>Deduplication</td>
-<td>Three-layer: hash + temporal overlap + intra-batch</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="versioning-and-history-api">Versioning and History API<a class="headerlink" href="#versioning-and-history-api" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="c1"># View ingest history</span>
-<span class="n">store</span><span class="o">.</span><span class="n">get_ops_log</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>      <span class="c1"># Returns list of dicts</span>
-<span class="n">store</span><span class="o">.</span><span class="n">print_ops_log</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>    <span class="c1"># Pretty-prints to console</span>
+<p>The tolerances, with their derivation and sources, are one constant in
+the code: <code>FLOAT_TOLERANCES</code> in
+<code>packages/canvod-store/src/canvod/store/comparison.py</code> (spec #318).</p>
+<p>The JSON form carries <code>matches</code>, so a <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> check can read the result.</p>
+<h2 id="history">History<a class="headerlink" href="#history" title="Permanent link">&para;</a></h2>
+<p>Each store keeps its commits and the operations on it:</p>
+<div class="highlight"><pre><span></span><code><span class="n">store</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">gnss_store</span>
 
-<span class="c1"># Visualise commit graph</span>
-<span class="n">store</span><span class="o">.</span><span class="n">plot_commit_graph</span><span class="p">()</span>        <span class="c1"># Wraps repo.ancestry_graph()</span>
+<span class="n">store</span><span class="o">.</span><span class="n">print_history</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># commits on main, newest first</span>
+<span class="n">store</span><span class="o">.</span><span class="n">plot_commit_graph</span><span class="p">()</span>  <span class="c1"># commit graph: SVG in a notebook, text in a terminal</span>
+<span class="n">store</span><span class="o">.</span><span class="n">print_ops_log</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>  <span class="c1"># commits, branch operations, expiry, garbage collection</span>
 
-<span class="c1"># Tag and compare snapshots</span>
-<span class="n">store</span><span class="o">.</span><span class="n">create_release_tag</span><span class="p">(</span><span class="s2">&quot;v1.0&quot;</span><span class="p">,</span> <span class="n">snapshot_id</span><span class="o">=</span><span class="s2">&quot;abc123&quot;</span><span class="p">)</span>
+<span class="n">store</span><span class="o">.</span><span class="n">create_release_tag</span><span class="p">(</span><span class="s2">"v1.0"</span><span class="p">)</span>  <span class="c1"># tag the latest commit on main</span>
 <span class="n">store</span><span class="o">.</span><span class="n">list_tags</span><span class="p">()</span>
-<span class="n">store</span><span class="o">.</span><span class="n">compare_snapshots</span><span class="p">(</span><span class="n">snapshot_id_1</span><span class="o">=</span><span class="s2">&quot;abc123&quot;</span><span class="p">,</span> <span class="n">snapshot_id_2</span><span class="o">=</span><span class="s2">&quot;def456&quot;</span><span class="p">)</span>
+<span class="n">store</span><span class="o">.</span><span class="n">compare_snapshots</span><span class="p">(</span><span class="n">snapshot_id_1</span><span class="p">,</span> <span class="n">snapshot_id_2</span><span class="p">)</span>
 </code></pre></div>
-<hr />
-<h2 id="cli-quick-reference">CLI Quick Reference<a class="headerlink" href="#cli-quick-reference" title="Permanent link">&para;</a></h2>
-<p><code>canvodpy store</code> wraps the Python API above for terminal use — inspecting a
-site's store doesn't require dropping into Python or a notebook:</p>
-<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>list<span class="w">                          </span><span class="c1"># every configured site&#39;s gnss/vod store paths + status</span>
-canvodpy<span class="w"> </span>store<span class="w"> </span>info<span class="w"> </span>ExampleSite<span class="w">                  </span><span class="c1"># tree of branches/groups + compression stats</span>
-canvodpy<span class="w"> </span>store<span class="w"> </span>info<span class="w"> </span>ExampleSite<span class="w"> </span>--group<span class="w"> </span>canopy_01<span class="w">   </span><span class="c1"># full dataset + metadata table for one group</span>
-canvodpy<span class="w"> </span>store<span class="w"> </span>log<span class="w"> </span>ExampleSite<span class="w">                   </span><span class="c1"># commit graph (wraps repo.ancestry_graph())</span>
-canvodpy<span class="w"> </span>store<span class="w"> </span>log<span class="w"> </span>ExampleSite<span class="w"> </span>--ops<span class="w">             </span><span class="c1"># ops audit trail (wraps repo.ops_log())</span>
+<h2 id="command-line">Command line<a class="headerlink" href="#command-line" title="Permanent link">&para;</a></h2>
+<p><code>canvodpy store</code> shows the stores of a configured site:</p>
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>store<span class="w"> </span>list<span class="w">                                 </span><span class="c1"># GNSS and VOD store paths of every site</span>
+canvodpy<span class="w"> </span>store<span class="w"> </span>info<span class="w"> </span>ExampleSite<span class="w">                     </span><span class="c1"># branches, groups, and statistics</span>
+canvodpy<span class="w"> </span>store<span class="w"> </span>info<span class="w"> </span>ExampleSite<span class="w"> </span>--group<span class="w"> </span>canopy_01<span class="w">   </span><span class="c1"># the dataset and log book of one group</span>
+canvodpy<span class="w"> </span>store<span class="w"> </span>log<span class="w"> </span>ExampleSite<span class="w">                      </span><span class="c1"># commit graph</span>
+canvodpy<span class="w"> </span>store<span class="w"> </span>log<span class="w"> </span>ExampleSite<span class="w"> </span>--ops<span class="w">                </span><span class="c1"># operations on the store</span>
+canvodpy<span class="w"> </span>store<span class="w"> </span>maintain<span class="w"> </span>ExampleSite<span class="w">                 </span><span class="c1"># what expiry and garbage collection would delete</span>
+canvodpy<span class="w"> </span>store<span class="w"> </span>migrate-layout<span class="w"> </span>ExampleSite<span class="w">           </span><span class="c1"># move a store written by appending to day blocks</span>
 </code></pre></div>
-<p><code>--store vod</code> targets the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store instead of the default <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> observation
-store; <code>--branch</code> selects a non-<code>main</code> branch for <code>info</code>/<code>log</code>.</p>
-<hr />
-<h2 id="store-level-provenance">Store-Level Provenance<a class="headerlink" href="#store-level-provenance" title="Permanent link">&para;</a></h2>
-<p>Rich <abbr title="DataCite Metadata Schema — required metadata for DOI registration of research datasets">DataCite</abbr> 4.5 / <abbr title="Attribute Convention for Dataset Discovery — NetCDF/CF metadata convention for self-describing datasets">ACDD</abbr> 1.3 / <abbr title="SpatioTemporal Asset Catalog — open specification for geospatial metadata and search">STAC</abbr> 1.1 metadata is stored as a root
-<abbr title="Chunked, compressed N-dimensional array storage format — cloud-native alternative to HDF5/NetCDF">Zarr</abbr> attribute (<code>canvod_metadata</code>) and managed by the companion package.</p>
-<p><a href="../../store-metadata/overview/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> canvod-store-metadata — provenance and <abbr title="Findable, Accessible, Interoperable, Reusable — guiding principles for scientific data stewardship (Wilkinson et al. 2016)">FAIR</abbr> compliance</a></p>
-<p><a href="../icechunk/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> storage details</a></p>
-<hr />
-<div class="admonition example">
-<p class="admonition-title">Try it</p>
-<p><a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/11_icechunk_store.py">11 · <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> Store</a>
-· <a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/13_workflow_store_operations.py">13 · Store Operations</a>
-on molab (no rendered copies here yet: they use canvodpy code that is
-not released yet)</p>
-</div>
+<p><code>--store vod</code> opens the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store instead of the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store, and <code>--branch</code>
+selects a branch other than <code>main</code>. For every option, see the
+<a href="../../../api/cli/">command-line reference</a>.</p>
+<p>On a store on S3, maintenance is a dry run only: another machine may be
+writing to the store, so <code>canvodpy store maintain</code> reports what it would
+do and <code>--execute</code> is refused, and <code>canvodpy store maintain-due</code> reports
+a due store without changing it. See
+<a href="../../../adr/0019-content-settings-and-several-writers/">ADR 0019</a>.</p>
+<h2 id="grids-and-analysis-results">Grids and analysis results<a class="headerlink" href="#grids-and-analysis-results" title="Permanent link">&para;</a></h2>
+<p><code>store_grid()</code> writes a hemispherical grid to the <code>grids/{grid_name}</code> group
+of a store, and <code>load_grid()</code> reads it back. A grid read back works for
+cell assignment only if it's an equal-area, equal-angle, or equirectangular
+grid; for the other grid types, build the grid again with
+<code>create_hemigrid()</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.grids</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_hemigrid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_grid</span><span class="p">,</span> <span class="n">store_grid</span>
+
+<span class="n">grid</span> <span class="o">=</span> <span class="n">create_hemigrid</span><span class="p">(</span><span class="s2">"equal_area"</span><span class="p">,</span> <span class="n">angular_resolution</span><span class="o">=</span><span class="mf">4.0</span><span class="p">)</span>
+<span class="n">store_grid</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="s2">"equal_area_4deg"</span><span class="p">)</span>
+<span class="n">grid</span> <span class="o">=</span> <span class="n">load_grid</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="s2">"equal_area_4deg"</span><span class="p">)</span>
+</code></pre></div>
+<p><code>AnalysisStorage</code> stores the results of an analysis on a grid in a <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>
+store: weights, masks, statistics, and time series per cell. The time
+series per cell go to the <code>per_cell</code> branch, one dataset per system, band,
+and code:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvod.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnalysisStorage</span>
+
+<span class="n">storage</span> <span class="o">=</span> <span class="n">AnalysisStorage</span><span class="p">(</span><span class="s2">"/path/to/vod_store"</span><span class="p">)</span>
+<span class="n">storage</span><span class="o">.</span><span class="n">store_percell_timeseries</span><span class="p">(</span><span class="n">percell_ds</span><span class="p">,</span> <span class="n">system</span><span class="o">=</span><span class="s2">"G"</span><span class="p">,</span> <span class="n">band</span><span class="o">=</span><span class="s2">"L1"</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s2">"C"</span><span class="p">)</span>
+<span class="n">storage</span><span class="o">.</span><span class="n">list_percell_datasets</span><span class="p">()</span>  <span class="c1"># ['C_B2b_I', 'E_E1_C', 'G_L1_C', ...]</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">storage</span><span class="o">.</span><span class="n">load_percell_timeseries</span><span class="p">(</span><span class="n">system</span><span class="o">=</span><span class="s2">"G"</span><span class="p">,</span> <span class="n">band</span><span class="o">=</span><span class="s2">"L1"</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s2">"C"</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../chunks/">Chunks</a>: how the stores are chunked, and how to choose the
+  chunk sizes.</li>
+<li><a href="../icechunk/">Versioning with <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr></a>: the store format, the
+  <abbr title="Version-controlled cloud-native tensor storage engine — git-like snapshots over Zarr v3 chunks">Icechunk</abbr> settings, and reading earlier states.</li>
+<li><a href="../storage-strategies/">Write strategies</a>: what a run does with a file
+  that's already stored.</li>
+<li><a href="../../store-metadata/overview/">canvod-store-metadata</a>: the metadata that
+  describes a whole store.</li>
+</ul>
 <!-- Glossary: hover any abbreviation to see its definition -->
 
 <!-- GNSS fundamentals — see Navipedia (navipedia.net) for detailed articles -->
@@ -4397,6 +4973,9 @@ not released yet)</p>
 
 
 
+
+  
+  
 
 
 
@@ -4428,7 +5007,7 @@ not released yet)</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../../vod/overview/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
+          <a href="../../vod/overview/" class="md-footer__link md-footer__link--prev" aria-label="Previous: VOD retrieval">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -4438,20 +5017,20 @@ not released yet)</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Overview
+                VOD retrieval
               </div>
             </div>
           </a>
         
         
           
-          <a href="../icechunk/" class="md-footer__link md-footer__link--next" aria-label="Next: Icechunk Storage">
+          <a href="../chunks/" class="md-footer__link md-footer__link--next" aria-label="Next: Chunks">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Icechunk Storage
+                Chunks
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -4471,8 +5050,9 @@ not released yet)</p>
       Copyright &copy; 2026 Nicolas François Bader, TU Wien. This documentation is provided &ldquo;as is&rdquo; without warranty of any kind, express or implied, including but not limited to warranties of correctness, completeness, or fitness for a particular purpose.
     </div>
   
+  <a href="../../../impressum/">Impressum and AI disclosure</a>
   
-    Made with
+    · Made with
     <a href="https://zensical.org/" target="_blank" rel="noopener">
       Zensical
     </a>
@@ -4489,7 +5069,7 @@ not released yet)</p>
       
       
     
-    <a href="https://github.com/nfb2021/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+    <a href="https://github.com/TUW-GEO/canvodpy" target="_blank" rel="noopener" title="github.com" class="md-social__link">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
     </a>
   
@@ -4526,10 +5106,10 @@ not released yet)</p>
       
         
         
-      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["content.code.copy","content.code.annotate","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.top","navigation.tracking","search.highlight","search.suggest","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["announce.dismiss","content.code.copy","content.code.annotate","content.footnote.tooltips","content.tooltips","content.tabs.link","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.instant.progress","navigation.path","navigation.sections","navigation.tabs","navigation.tabs.sticky","navigation.top","navigation.tracking","search.highlight","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.c47bb847.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.8b1c90bd.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.a2388154.min.js"></script>
       
         <script src="../../../assets/mermaid-init.js"></script>
       
