@@ -6,39 +6,19 @@
 members = ["packages/*", "canvodpy"]
 exclude = ["packages/canvod-filemap"]
 
-# canvod-filemap lives in the separate canvodpy-extensions
-# repo (https://github.com/TUW-GEO/canvodpy-extensions), GitHub-only. It is a
-# dependency group of this workspace (`uv sync --group filemap`), not an extra
-# of canvodpy: groups are never published, and an extra naming a package that
-# is not on PyPI cannot install from PyPI. Point uv at the public repo, pinned
-# to a release tag (<package>-v<version>); a local sibling-path source would
-# break `uv sync` on any machine without that repo cloned alongside canvodpy.
-[tool.uv.sources]
-# Extensions main after PR #83 (recipe links fetched in every run, #78)
-# until the canvod-filemap-v1.0.0 tag exists.
-canvod-filemap = { git = "https://github.com/TUW-GEO/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", rev = "08ab0fa6cdbbbc98498b39acc6f1f0efa484d002" }
-# The extensions repo takes canvod-preflight and canvod-utils from this repo
-# on GitHub until canvodpy 1.0.0 is on PyPI. The override makes
-# canvod-filemap use the local workspace packages instead, so the lock has
-# one of each (A8).
-# Drop the override, and the two source lines below, once both sides take them
-# from PyPI.
-canvod-preflight = { workspace = true }
-canvod-utils = { workspace = true }
-
 [tool.uv]
 # Everyone, CI included, uses the same uv minor version, so uv.lock is
 # written the same way everywhere. setup-uv reads this range.
 required-version = ">=0.13.0,<0.14"
-override-dependencies = ["canvod-preflight", "canvod-utils"]
 
 # ============================================================================
 # Development Dependencies (Workspace-wide)
 # ============================================================================
 
 [dependency-groups]
-# Naming recipes for non-canonical receiver filenames: uv sync --group filemap
-filemap = ["canvod-filemap"]
+# Naming recipes for non-canonical receiver filenames, from canvodpy-extensions
+# on PyPI: uv sync --group filemap
+filemap = ["canvod-filemap>=1.0.0"]
 dev = [
     "anywidget>=0.11.0",
     "commitizen>=4.19.2",

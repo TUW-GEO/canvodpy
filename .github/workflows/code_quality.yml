@@ -103,7 +103,7 @@ jobs:
               with:
                   repository: TUW-GEO/canvodpy-extensions
                   path: canvodpy-extensions-checkout
-                  fetch-depth: 0 # the locked commit may be on any branch
+                  fetch-depth: 0 # with the tags: the locked release tag
                   persist-credentials: false
             - name: Check paths and recipes named in AGENTS.md and skills
               env:

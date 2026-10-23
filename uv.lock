@@ -22,10 +22,6 @@ members = [
     "canvod-vod",
     "canvodpy",
 ]
-overrides = [
-    { name = "canvod-preflight", editable = "packages/canvod-preflight" },
-    { name = "canvod-utils", editable = "packages/canvod-utils" },
-]
 
 [manifest.dependency-groups]
 dev = [
@@ -48,7 +44,7 @@ dev = [
     { name = "ty", specifier = ">=0.0.88" },
     { name = "zensical", specifier = ">=0.0.70" },
 ]
-filemap = [{ name = "canvod-filemap", git = "https://github.com/TUW-GEO/canvodpy-extensions.git?subdirectory=packages%2Fcanvod-filemap&rev=08ab0fa6cdbbbc98498b39acc6f1f0efa484d002" }]
+filemap = [{ name = "canvod-filemap", specifier = ">=1.0.0" }]
 
 [[package]]
 name = "altair"
@@ -263,14 +259,18 @@ requires-dist = [
 
 [[package]]
 name = "canvod-filemap"
-version = "0.1.0"
-source = { git = "https://github.com/TUW-GEO/canvodpy-extensions.git?subdirectory=packages%2Fcanvod-filemap&rev=08ab0fa6cdbbbc98498b39acc6f1f0efa484d002#08ab0fa6cdbbbc98498b39acc6f1f0efa484d002" }
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "canvod-preflight" },
     { name = "canvod-utils" },
     { name = "natsort" },
     { name = "pydantic" },
     { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e1/e7/91eb898d131f62cafd2b1841ea424b3a0dbe003e0a60a7fa0ccf4e087e2d/canvod_filemap-1.0.0.tar.gz", hash = "sha256:e1c33f308f02a14315515c9b97c35ef41e4346efc4bde79e982ac8e78b1f691d", size = 15406, upload-time = "2026-10-23T23:35:27.683Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bc/44/1cbe645a26e60291f7b70a4716338b044d0ec9da842f608996663bc44d92/canvod_filemap-1.0.0-py3-none-any.whl", hash = "sha256:7ae5c2b250adc25f4aebc4180227256551e7e3566b141cd7244022a57e89d750", size = 18421, upload-time = "2026-10-23T23:35:26.636Z" },
 ]
 
 [[package]]

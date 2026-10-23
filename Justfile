@@ -98,10 +98,9 @@ audit *args:
     set -euo pipefail
     req="$(mktemp)"
     trap 'rm -f "$req"' EXIT
-    # pip-audit checks a requirements file with hashes. The filemap group is
-    # left out: canvod-filemap comes from git, without a hash.
+    # pip-audit checks a requirements file with hashes.
     uv export --frozen --format requirements-txt --no-emit-workspace \
-        --all-extras --all-groups --no-group filemap --quiet --output-file "$req"
+        --all-extras --all-groups --quiet --output-file "$req"
     uvx pip-audit@2.10.1 --disable-pip --requirement "$req" {{args}}
 
 # check that every package builds without the workspace sources, as the release workflow builds them for PyPI
