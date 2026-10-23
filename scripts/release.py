@@ -376,6 +376,20 @@ def _range_problems(
     return problems
 
 
+def _push_commands(tags: list[str]) -> list[str]:
+    """The pushes for the release tags: canvodpy's tag on its own, first.
+
+    GitHub creates no push event for tags when more than three tags are
+    pushed at once, so a canvodpy tag pushed with the package tags never
+    starts the workflow that drafts its GitHub release.
+    """
+    umbrella = [name for name in tags if name.startswith("v")]
+    others = [name for name in tags if not name.startswith("v")]
+    return [
+        f"git push origin {' '.join(group)}" for group in (umbrella, others) if group
+    ]
+
+
 def prepare(packages: dict[str, Package], args: list[str]) -> int:
     chosen: dict[str, Version] = {}
     for arg in args:
@@ -482,7 +496,8 @@ def prepare(packages: dict[str, Package], args: list[str]) -> int:
     print("  2. Push the branch and open a pull request; a maintainer merges it")
     print("  3. A maintainer tags the merged commit on main and pushes the tags:")
     print("       git switch main && git pull origin main && just tag-release")
-    print(f"       git push origin {' '.join(tags)}")
+    for command in _push_commands(tags):
+        print(f"       {command}")
     print("  4. GitHub Actions drafts the GitHub release of the canvodpy tag")
     print("  5. PyPI is separate and manual:")
     print(
@@ -513,7 +528,9 @@ def tag(packages: dict[str, Package]) -> int:
     print("Created (not pushed):")
     for name in created:
         print(f"  {name}")
-    print(f"\nPush them: git push origin {' '.join(created)}")
+    print("\nPush them, canvodpy's tag on its own:")
+    for command in _push_commands(created):
+        print(f"  {command}")
     return 0
 
 

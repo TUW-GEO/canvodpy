@@ -125,11 +125,18 @@ branch, so the tags are created only now, on `main`:
 git switch main
 git pull origin main
 just tag-release
-git push origin v1.1.0 canvod-store-v1.1.0 canvod-grids-v1.0.1
+git push origin v1.1.0
+git push origin canvod-store-v1.1.0 canvod-grids-v1.0.1
 ```
 
 `just tag-release` creates an annotated tag for every package version that
-has no tag yet, and prints the push command; it does not push.
+has no tag yet, and prints the push commands; it does not push.
+
+Push the canvodpy tag on its own, before the package tags. GitHub starts no
+workflow for tags when
+[more than three tags are pushed at once](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push),
+so a canvodpy tag pushed together with the package tags gets no draft
+release.
 
 ### 7. Publish the draft release
 
@@ -210,6 +217,19 @@ tag existing is not a promise that PyPI has it.
     [github.com/TUW-GEO/canvodpy/actions](https://github.com/TUW-GEO/canvodpy/actions),
     and that `CHANGELOG.md` has a section `## v1.1.0 (...)`.
     (PyPI publishing never triggers from a tag push at all; see step 8.)
+    If no run started, the canvodpy tag was pushed in one push of more
+    than three tags (step 6). Create the draft with the notes the workflow
+    would use, from the tagged `CHANGELOG.md`:
+
+    ```bash
+    git show v1.1.0:CHANGELOG.md | awk -v tag=v1.1.0 '
+      $0 ~ "^## " tag " " { found = 1; next }
+      found && /^## / { exit }
+      found { print }
+    ' > release-notes.md
+    gh release create v1.1.0 --title "canvodpy v1.1.0" \
+      --notes-file release-notes.md --draft --verify-tag
+    ```
 
 ??? failure "Tag is not allowed to deploy due to environment protection rules"
     The `pypi` environment accepts only tags of the form `v*.*.*`, the
