@@ -1,17 +1,15 @@
 # howfairis configuration
 # See: https://github.com/fair-software/howfairis
 
-# Checklist requirement now met with OpenSSF Best Practices badge!
-# Badge: https://www.bestpractices.dev/projects/12329
-# skip_checklist_checks_reason: "OpenSSF Best Practices badge obtained (project 12329)."
+# The checklist check looks for the OpenSSF Best Practices badge in the README:
+# https://www.bestpractices.dev/projects/12329
 
 # Ignore badges that are commented out in documentation
 ignore_commented_badges: true
 
-# Current compliance status:
-# - ✓ Public GitHub repository
-# - ✓ Apache 2.0 license in LICENSE file
-# - ✓ Published to PyPI (canvodpy + 11 sub-packages, v0.2.0)
-# - ✓ CITATION.cff with Zenodo DOI (10.5281/zenodo.19445061)
-# - ✓ codemeta.json for machine-readable metadata
-# - ✓ OpenSSF Best Practices badge (project 12329)
+# What the five checks find:
+# - Repository: public on GitHub
+# - License: Apache 2.0 in LICENSE
+# - Registry: canvodpy and its packages on PyPI
+# - Citation: CITATION.cff (version and Zenodo DOI) and codemeta.json
+# - Checklist: the OpenSSF Best Practices badge (project 12329)
