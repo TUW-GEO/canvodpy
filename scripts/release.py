@@ -344,6 +344,38 @@ def _release_files(packages: dict[str, Package]) -> list[Path]:
     return files
 
 
+def _range_problems(
+    packages: dict[str, Package], chosen: dict[str, Version]
+) -> list[str]:
+    """Requirements between the packages that the released versions don't meet.
+
+    A package left out of the release keeps its current version, and that
+    version must still fit every range, or PyPI gets requirements nobody can
+    install.
+    """
+    problems = []
+    for pkg in packages.values():
+        if pkg.name == UMBRELLA:
+            continue
+        for req in pkg.requirements():
+            if req.name not in packages:
+                continue
+            version = chosen.get(req.name, packages[req.name].version)
+            if req.specifier.contains(version, prereleases=True):
+                continue
+            if req.name in chosen:
+                problems.append(
+                    f"{pkg.name} requires {req}, which excludes {req.name} {version}: "
+                    f"check {pkg.name} against the new version and widen its range by hand."
+                )
+            else:
+                problems.append(
+                    f"{pkg.name} requires {req}, which excludes the current "
+                    f"{req.name} {version}: release {req.name} too, or widen the range."
+                )
+    return problems
+
+
 def prepare(packages: dict[str, Package], args: list[str]) -> int:
     chosen: dict[str, Version] = {}
     for arg in args:
@@ -380,22 +412,12 @@ def prepare(packages: dict[str, Package], args: list[str]) -> int:
                     f"{name} makes a {kinds[step]} release, canvodpy only a {kinds[umbrella_step]}: "
                     "canvodpy's increment must be at least the largest one of its packages."
                 )
-    for pkg in packages.values():
-        if pkg.name == UMBRELLA:
-            continue
-        for req in pkg.requirements():
-            if req.name in chosen and not req.specifier.contains(
-                chosen[req.name], prereleases=True
-            ):
-                problems.append(
-                    f"{pkg.name} requires {req}, which excludes {req.name} {chosen[req.name]}: "
-                    f"check {pkg.name} against the new version and widen its range by hand."
-                )
+    problems += _range_problems(packages, chosen)
     if UMBRELLA in chosen and _branch_taken(f"release/v{chosen[UMBRELLA]}"):
         problems.append(
             f"The branch release/v{chosen[UMBRELLA]} exists already (locally or on a "
-            "remote); the release commit goes on a new branch of that name. Delete "
-            "the old branch first."
+            "remote, as of your last `git fetch`); the release commit goes on a new "
+            "branch of that name. Delete the old branch first."
         )
     problems += [
         f"{problem} Zenodo reads the version from it; add it before releasing."

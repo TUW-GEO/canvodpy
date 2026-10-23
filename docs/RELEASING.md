@@ -80,9 +80,10 @@ This command:
 2. Refuses the release, and says why, when canvodpy is missing, a version
    does not go up or is tagged already, canvodpy's increment is smaller
    than a package's, a package's range on another excludes the new
-   version, a citation file lacks its version or date field, a release
+   version (or the current version of a package left out of the release),
+   a citation file lacks its version or date field, a release
    file has uncommitted changes, or the branch `release/v1.1.0` exists
-   already (locally or on the remote)
+   already (locally, or on the remote as of your last `git fetch`)
 3. Writes the new versions, canvodpy's `==` pins, a section in each
    released package's `CHANGELOG.md` (from the commits that touched its
    folder; canvodpy's lists the pinned versions), canvodpy's version and
@@ -180,6 +181,9 @@ tag existing is not a promise that PyPI has it.
     - *canvod-grids requires canvod-store<2,>=1.0.0, which excludes
       canvod-store 2.0.0*: check canvod-grids against the new major version,
       widen its range in its own pull request, then release both.
+    - *canvod-store requires canvod-utils<2,>=1.0.0, which excludes the
+      current canvod-utils 0.4.0*: canvod-utils is left out of the release,
+      but the new canvod-store needs a newer one. Add `canvod-utils=X.Y.Z`.
     - *Release files have uncommitted changes*: commit them in their own
       pull request, or discard them.
     - *The branch release/v1.1.0 exists already*: a branch of that name is

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## v0.4.0 (2026-09-02, never published)
 
 Tagged, but never published to PyPI or Zenodo. Its changes first appear
-in v1.0.0; users of the packages come from 0.3.0.
+in v1.0.0; users of canvodpy come from 0.3.0.
 
 ### Feat
 
