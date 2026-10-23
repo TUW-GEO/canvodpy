@@ -36,8 +36,9 @@ jobs:
             - name: Install the Project
               # --group optional pulls in healpy (canvod-grids' HEALPix grid
               # builder) so HEALPix-dependent tests actually run in CI
-              # instead of silently skipping.
-              run: uv sync --locked --dev --group optional
+              # instead of silently skipping. --group filemap (canvod-filemap,
+              # from canvodpy-extensions) does the same for the recipe tests.
+              run: uv sync --locked --dev --group optional --group filemap
 
             - name: Run Tests with Coverage
               run: uv run pytest

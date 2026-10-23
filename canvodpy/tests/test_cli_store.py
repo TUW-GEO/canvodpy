@@ -1431,7 +1431,7 @@ class TestStoreAmend:
         )
         recipe = config_dir / "recipes" / "TestSite" / "rx.yaml"
         recipe.parent.mkdir(parents=True)
-        recipe.write_text("name: rx\n")
+        recipe.write_bytes(b"name: rx\n")
 
         result = self._amend(
             config_dir, "--add-receiver", "canopy_02", "--reason", "r", "--yes"
@@ -1480,7 +1480,7 @@ class TestStoreAmend:
         )
         recipe = config_dir / "recipes" / "TestSite" / "rx.yaml"
         recipe.parent.mkdir(parents=True)
-        recipe.write_text("name: rx\n")
+        recipe.write_bytes(b"name: rx\n")
 
         def check() -> None:
             with pytest.MonkeyPatch.context() as mp:

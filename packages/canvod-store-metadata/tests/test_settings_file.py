@@ -108,7 +108,7 @@ def test_the_store_records_the_sha256_of_a_local_recipe(tmp_path, monkeypatch):
 
     path = tmp_path / "config" / "recipes" / SITE / "rx.yaml"
     path.parent.mkdir(parents=True)
-    path.write_text(_RECIPE)
+    path.write_bytes(_RECIPE.encode())
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path / "config"))
     store = _store_with_recipe(tmp_path, "rx")
 
@@ -125,7 +125,7 @@ def test_show_prints_the_sha256_of_the_recipe(tmp_path, monkeypatch):
 
     path = tmp_path / "config" / "recipes" / SITE / "rx.yaml"
     path.parent.mkdir(parents=True)
-    path.write_text(_RECIPE)
+    path.write_bytes(_RECIPE.encode())
     monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path / "config"))
     store = _store_with_recipe(tmp_path, "rx")
 
