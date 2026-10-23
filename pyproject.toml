@@ -6,9 +6,9 @@
 members = ["packages/*", "canvodpy"]
 exclude = ["packages/canvod-filemap"]
 
-# canvod-filemap and canvod-adapters live in the separate canvodpy-extensions
-# repo (https://github.com/TUW-GEO/canvodpy-extensions), GitHub-only. They are
-# dependency groups of this workspace (`uv sync --group filemap`), not extras
+# canvod-filemap lives in the separate canvodpy-extensions
+# repo (https://github.com/TUW-GEO/canvodpy-extensions), GitHub-only. It is a
+# dependency group of this workspace (`uv sync --group filemap`), not an extra
 # of canvodpy: groups are never published, and an extra naming a package that
 # is not on PyPI cannot install from PyPI. Point uv at the public repo, pinned
 # to a release tag (<package>-v<version>); a local sibling-path source would
@@ -17,7 +17,6 @@ exclude = ["packages/canvod-filemap"]
 # Extensions main after PR #83 (recipe links fetched in every run, #78)
 # until the canvod-filemap-v1.0.0 tag exists.
 canvod-filemap = { git = "https://github.com/TUW-GEO/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", rev = "08ab0fa6cdbbbc98498b39acc6f1f0efa484d002" }
-canvod-adapters = { git = "https://github.com/TUW-GEO/canvodpy-extensions.git", subdirectory = "packages/canvod-adapters", tag = "v0.1.0" }
 # The extensions repo takes canvod-preflight and canvod-utils from this repo
 # on GitHub until canvodpy 1.0.0 is on PyPI. The override makes
 # canvod-filemap use the local workspace packages instead, so the lock has

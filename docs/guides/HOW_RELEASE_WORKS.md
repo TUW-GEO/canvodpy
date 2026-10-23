@@ -166,8 +166,7 @@ decisions: a tag is not a promise that PyPI has the version.
 A pre-release (`1.0.0b1`) goes to PyPI too, through the same workflow;
 uv and pip install it only when asked for it. Uploads to PyPI are
 permanent: a version can never be uploaded twice, so a broken release is
-fixed by the next patch version. The one-time account and project setup is in
-[PyPI Setup](PYPI_SETUP.md).
+fixed by the next patch version.
 
 ---
 
@@ -197,6 +196,13 @@ Environment name:  pypi
 
 The GitHub environment `pypi` (Settings $\rightarrow$ Environments) can
 require a reviewer and a wait timer before the upload runs.
+
+**New package:** a package that isn't on PyPI yet has no project to add the
+publisher to. Add a *pending* publisher instead (PyPI: Your account
+$\rightarrow$ Publishing), with the package name and the four fields above.
+The first upload creates the project and turns the pending publisher into a
+normal one. PyPI can refuse a second pending publisher while one is pending;
+then upload that package first.
 
 **Why OIDC:** no secret to store or rotate, the token is valid for minutes
 and only for this repository and workflow.

@@ -1,15 +1,16 @@
 ---
 name: extensions-dependency
-description: Change how canvodpy takes canvod-filemap or canvod-adapters from canvodpy-extensions (git rev or tag, dependency groups, relock), or change canvodpy API the extensions use. Use when touching those sources or public API they import.
+description: Change how canvodpy takes canvod-filemap from canvodpy-extensions (git rev or tag, dependency groups, relock), or change canvodpy API the extensions use. Use when touching those sources or public API they import.
 ---
 
 # canvodpy and canvodpy-extensions
 
 The two repositories depend on each other, in both directions:
 
-- canvodpy installs **canvod-filemap** (and canvod-adapters) from the
-  extensions repository on GitHub, as workspace dependency groups:
-  `uv sync --group filemap`. They are not extras and not on PyPI.
+- canvodpy installs **canvod-filemap** from the extensions repository on
+  GitHub, as a workspace dependency group: `uv sync --group filemap`. It
+  is not an extra and not on PyPI. canvodpy depends on no extension; the
+  group only lets developers and CI test the two together.
 - The extensions import canvodpy: canvod-preflight's convention, the
   readers' contracts, `canvodpy.workflows.tasks` (canvod-airflow). Until
   canvodpy 1.0.0 is on PyPI they take canvodpy from a canvodpy git branch.
@@ -18,8 +19,8 @@ The two repositories depend on each other, in both directions:
 
 Root `pyproject.toml`:
 
-- `[tool.uv.sources]`: canvod-filemap and canvod-adapters, each as
-  `git` + `subdirectory` + a pinned `rev` (a commit) or `tag`. Never a
+- `[tool.uv.sources]`: canvod-filemap as `git` + `subdirectory` + a
+  pinned `rev` (a commit) or `tag`. Never a
   branch: a branch makes the lock move without a change here.
 - `[dependency-groups]`: `filemap = ["canvod-filemap"]`.
 - `override-dependencies`: makes canvod-filemap use this workspace's

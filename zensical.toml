@@ -125,7 +125,6 @@ nav = [
     { "Release and publishing" = [
       { "Versioning" = "VERSIONING.md" },
       { "Release process" = "RELEASING.md" },
-      { "PyPI setup" = "guides/PYPI_SETUP.md" },
       { "Zenodo DOI" = "guides/ZENODO_SETUP.md" },
       { "OIDC authentication" = "guides/OIDC_EXPLAINED.md" },
       { "Release internals" = "guides/HOW_RELEASE_WORKS.md" },
