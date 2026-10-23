@@ -125,7 +125,7 @@ GitHub's OIDC provider generates a JWT containing:
   "aud": "https://test.pypi.org",
   "repository": "TUW-GEO/canvodpy",
   "repository_owner": "TUW-GEO",
-  "repository_owner_id": "93122788",
+  "repository_owner_id": "<numeric owner id>",
   "workflow": "publish_testpypi.yml",
   "workflow_ref": "TUW-GEO/canvodpy/.github/workflows/publish_testpypi.yml@refs/tags/v0.1.0-beta.1",
   "environment": "testpypi",
