@@ -60,7 +60,9 @@ You link your GitHub repository to Zenodo:
 ```bash
 just release canvod-store=1.1.0 canvodpy=1.1.0   # release commit on release/v1.1.0: open a PR, merge it
 # then, on the merged main:
-just tag-release && git push origin v1.1.0 canvod-store-v1.1.0
+just tag-release
+git push origin v1.1.0   # on its own: it starts the draft release
+git push origin canvod-store-v1.1.0
 ```
 
 Only the canvodpy tag (`v1.1.0`) creates a GitHub release, so Zenodo
@@ -144,7 +146,9 @@ git push origin v0.1.0b2
 ```bash
 just release canvodpy=0.1.0 canvod-readers=0.1.0 ...   # open a PR, merge it
 # then, on the merged main:
-just tag-release && git push origin v0.1.0 canvod-readers-v0.1.0 ...
+just tag-release
+git push origin v0.1.0   # on its own: it starts the draft release
+git push origin canvod-readers-v0.1.0 ...
 ```
 
 - Creates the GitHub release; PyPI follows with `gh workflow run publish_pypi.yml --ref v0.1.0`
