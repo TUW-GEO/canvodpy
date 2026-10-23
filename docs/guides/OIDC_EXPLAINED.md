@@ -57,11 +57,12 @@ OIDC (OpenID Connect) is an authentication protocol built on OAuth 2.0. Instead 
 ### The flow
 
 ```
-┌─────────────┐
-│ Developer   │
-│ git push    │
-│ --tags      │
-└──────┬──────┘
+┌──────────────────────┐
+│ Maintainer           │
+│ gh workflow run      │
+│ publish_pypi.yml     │
+│ --ref v1.0.0         │
+└──────┬───────────────┘
        │
        ▼
 ┌─────────────────────────────────────────────────────────┐
@@ -82,9 +83,9 @@ OIDC (OpenID Connect) is an authentication protocol built on OAuth 2.0. Instead 
 │   ✓ Check JWT not expired (~10 min TTL)                │
 │   ✓ Validate claims:                                    │
 │     • repository: TUW-GEO/canvodpy ✓                    │
-│     • workflow: publish_testpypi.yml ✓                  │
-│     • environment: testpypi ✓                          │
-│     • package name: canvod-readers ✓                    │
+│     • workflow file: publish_pypi.yml ✓                 │
+│     • environment: pypi ✓                              │
+│   ✓ A publisher of the project canvod-readers matches  │
 │                                                         │
 │ All match? → PUBLISH                                    │
 │ Mismatch?   → REJECT                                    │
@@ -100,14 +101,15 @@ OIDC (OpenID Connect) is an authentication protocol built on OAuth 2.0. Instead 
 You register a **trust relationship** on PyPI:
 
 > "I trust GitHub Actions from repository `TUW-GEO/canvodpy`,
-> specifically the workflow `publish_testpypi.yml` running in
-> environment `testpypi`, to publish package `canvod-readers`"
+> specifically the workflow `publish_pypi.yml` running in
+> environment `pypi`, to publish package `canvod-readers`"
 
 **No secrets exchanged!** This just tells PyPI what to expect.
 
 ### 2. Workflow run
 
-When you push a tag (`v0.1.0-beta.1`), the workflow runs:
+A maintainer starts the workflow on a release tag
+(`gh workflow run publish_pypi.yml --ref v1.0.0`). Its publish job has:
 
 ```yaml
 permissions:
@@ -121,15 +123,15 @@ GitHub's OIDC provider generates a JWT containing:
 ```json
 {
   "iss": "https://token.actions.githubusercontent.com",
-  "sub": "repo:TUW-GEO/canvodpy:environment:testpypi",
-  "aud": "https://test.pypi.org",
+  "sub": "repo:TUW-GEO/canvodpy:environment:pypi",
+  "aud": "pypi",
   "repository": "TUW-GEO/canvodpy",
   "repository_owner": "TUW-GEO",
   "repository_owner_id": "<numeric owner id>",
-  "workflow": "publish_testpypi.yml",
-  "workflow_ref": "TUW-GEO/canvodpy/.github/workflows/publish_testpypi.yml@refs/tags/v0.1.0-beta.1",
-  "environment": "testpypi",
-  "ref": "refs/tags/v0.1.0-beta.1",
+  "workflow": "Publish to PyPI",
+  "job_workflow_ref": "TUW-GEO/canvodpy/.github/workflows/publish_pypi.yml@refs/tags/v1.0.0",
+  "environment": "pypi",
+  "ref": "refs/tags/v1.0.0",
   "iat": 1738677600,  // Issued at
   "exp": 1738678200   // Expires at (10 minutes later)
 }
@@ -142,7 +144,7 @@ GitHub's OIDC provider generates a JWT containing:
 `uv publish --trusted-publishing always`:
 1. Retrieves the JWT from GitHub's OIDC provider
 2. Bundles it with the package files
-3. Sends to PyPI/TestPyPI upload endpoint
+3. Sends them to the PyPI upload endpoint
 
 ### 5. PyPI checks the token
 
@@ -162,9 +164,9 @@ PyPI receives the request and validates:
 **3. Claims Validation**
 ```
 ✓ repository == "TUW-GEO/canvodpy"?
-✓ workflow == "publish_testpypi.yml"?
-✓ environment == "testpypi"?
-✓ Package name == "canvod-readers"? (matches upload)
+✓ workflow file in job_workflow_ref == "publish_pypi.yml"?
+✓ environment == "pypi"?
+✓ The publisher belongs to the uploaded project ("canvod-readers")?
 ```
 
 **4. Trust Relationship Lookup**
@@ -213,8 +215,8 @@ Each trust relationship is scoped to:
 | Scope | Example | Purpose |
 |-------|---------|---------|
 | Repository | `TUW-GEO/canvodpy` | Only this repository can publish |
-| Workflow | `publish_testpypi.yml` | Only this workflow file |
-| Environment | `testpypi` | Only this environment |
+| Workflow | `publish_pypi.yml` | Only this workflow file |
+| Environment | `pypi` | Only this environment |
 | Package | `canvod-readers` | Only this PyPI package |
 
 **Example attack prevention:**
@@ -239,7 +241,7 @@ PyPI records:
 - When publish occurred
 - Which files were uploaded
 
-**Full traceability:** "v0.1.0 was published by workflow X triggered by user Y at time Z"
+**Full traceability:** "v1.0.0 was published by workflow X triggered by user Y at time Z"
 
 ---
 
@@ -249,14 +251,14 @@ Each package needs its own trust relationship:
 
 ```
 PyPI Trust Registry:
-┌──────────────────┬─────────────────┬──────────────────────┬─────────┐
-│ Package          │ Repository      │ Workflow             │ Env     │
-├──────────────────┼─────────────────┼──────────────────────┼─────────┤
-│ canvod-readers   │ TUW-GEO/canvodpy│ publish_testpypi.yml │ testpypi│
-│ canvod-auxiliary       │ TUW-GEO/canvodpy│ publish_testpypi.yml │ testpypi│
-│ canvod-grids     │ TUW-GEO/canvodpy│ publish_testpypi.yml │ testpypi│
-│ ...              │ ...             │ ...                  │ ...     │
-└──────────────────┴─────────────────┴──────────────────────┴─────────┘
+┌──────────────────┬──────────────────┬──────────────────┬──────┐
+│ Package          │ Repository       │ Workflow         │ Env  │
+├──────────────────┼──────────────────┼──────────────────┼──────┤
+│ canvod-readers   │ TUW-GEO/canvodpy │ publish_pypi.yml │ pypi │
+│ canvod-auxiliary │ TUW-GEO/canvodpy │ publish_pypi.yml │ pypi │
+│ canvod-grids     │ TUW-GEO/canvodpy │ publish_pypi.yml │ pypi │
+│ ...              │ ...              │ ...              │ ...  │
+└──────────────────┴──────────────────┴──────────────────┴──────┘
 ```
 
 **Why?** PyPI validates per-package:
@@ -270,7 +272,7 @@ If you only register `canvodpy`, the workflow can't publish `canvod-readers`.
 ## GitHub environments
 
 ```yaml
-environment: testpypi  # ← Why this matters
+environment: pypi  # ← Why this matters
 ```
 
 ### Security benefits
@@ -292,8 +294,8 @@ environment: testpypi  # ← Why this matters
 **4. OIDC Scoping**
 - JWT includes environment name in claims
 - Different environments = different publishers
-- Example: `testpypi` environment $\rightarrow$ test.pypi.org
-           `pypi` environment $\rightarrow$ pypi.org
+- Example: a publisher registered for environment `pypi` rejects a run
+  in any other environment
 
 ---
 
@@ -303,12 +305,12 @@ environment: testpypi  # ← Why this matters
 
 **Workflow says:**
 ```yaml
-environment: testpypi
+environment: pypi
 ```
 
 **PyPI registered with:**
 ```
-Environment: test-pypi  # ← Note the dash!
+Environment: py-pi  # ← Note the dash!
 ```
 
 **Result:** the JWT is rejected (environment claim doesn't match)
@@ -317,12 +319,12 @@ Environment: test-pypi  # ← Note the dash!
 
 **Workflow filename:**
 ```
-.github/workflows/publish-testpypi.yml  # ← Note the dash!
+.github/workflows/publish-pypi.yml  # ← Note the dash!
 ```
 
 **PyPI registered with:**
 ```
-Workflow: publish_testpypi.yml  # ← Note the underscore!
+Workflow: publish_pypi.yml  # ← Note the underscore!
 ```
 
 **Result:** the JWT is rejected
