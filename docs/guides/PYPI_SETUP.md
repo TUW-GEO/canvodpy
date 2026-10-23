@@ -76,7 +76,7 @@ All 8 packages published:
 
 **3.1. Create the GitHub environment**
 
-1. Go to: https://github.com/nfb2021/canvodpy/settings/environments
+1. Go to: https://github.com/TUW-GEO/canvodpy/settings/environments
 2. Click "New environment"
 3. Name: `testpypi`
 4. Save
@@ -97,7 +97,7 @@ On each page:
 1. Click "Add a new publisher"
 2. Select "GitHub"
 3. Fill in:
-   - Owner: `nfb2021`
+   - Owner: `TUW-GEO`
    - Repository: `canvodpy`
    - Workflow: `publish_testpypi.yml`
    - Environment: `testpypi`
@@ -144,7 +144,7 @@ Uploading canvodpy-0.1.0-py3-none-any.whl
 4. **Fill in the form:**
    ```
    PyPI project name:     canvodpy
-   Owner:                 nfb2021
+   Owner:                 TUW-GEO
    Repository name:       canvodpy
    Workflow name:         publish_testpypi.yml
    Environment name:      test-release
@@ -157,7 +157,7 @@ Uploading canvodpy-0.1.0-py3-none-any.whl
    ✓ Trusted publisher added
 
    Publisher:
-   - Repository: nfb2021/canvodpy
+   - Repository: TUW-GEO/canvodpy
    - Workflow: publish_testpypi.yml
    - Environment: test-release
    ```
@@ -165,7 +165,7 @@ Uploading canvodpy-0.1.0-py3-none-any.whl
 ### Step 4. Create the GitHub environment
 
 1. **Go to your repository:**
-   - https://github.com/nfb2021/canvodpy
+   - https://github.com/TUW-GEO/canvodpy
 
 2. **Settings $\rightarrow$ Environments**
 
@@ -238,12 +238,12 @@ just tag-release && git push origin v0.1.0b1
 ```
 
 **Publish the draft release:**
-1. Go to: https://github.com/nfb2021/canvodpy/releases
+1. Go to: https://github.com/TUW-GEO/canvodpy/releases
 2. Find draft for `v0.1.0b1`
 3. Click "Publish release"
 
 **Watch the workflow:**
-1. Go to: https://github.com/nfb2021/canvodpy/actions
+1. Go to: https://github.com/TUW-GEO/canvodpy/actions
 2. See "Publish to TestPyPI" running
 3. Wait ~2-3 minutes
 4. Should say "✓ Complete"
@@ -314,7 +314,7 @@ password: your_pypi_password
 2. **Add publisher:**
    ```
    PyPI project name:     canvodpy
-   Owner:                 nfb2021
+   Owner:                 TUW-GEO
    Repository name:       canvodpy
    Workflow name:         publish_pypi.yml
    Environment name:      release

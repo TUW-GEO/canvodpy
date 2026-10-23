@@ -38,7 +38,7 @@ brew install just
 
 ### Report bugs
 
-Report bugs at https://github.com/nfb2021/canvodpy/issues. Include operating system, local setup details, and steps to reproduce.
+Report bugs at https://github.com/TUW-GEO/canvodpy/issues. Include operating system, local setup details, and steps to reproduce.
 
 ### Fix bugs
 
@@ -54,7 +54,7 @@ Improvements to documentation, docstrings, or external articles are appreciated.
 
 ### Submit feedback
 
-File feature proposals at https://github.com/nfb2021/canvodpy/issues. Keep the scope narrow and explain the intended behavior.
+File feature proposals at https://github.com/TUW-GEO/canvodpy/issues. Keep the scope narrow and explain the intended behavior.
 
 ## Development workflow
 

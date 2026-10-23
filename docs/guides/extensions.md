@@ -5,7 +5,7 @@ canvodpy ships as a lean core. Packages that only a subset of users need
 specific orchestrator) live in a separate repository so the core install
 stays small and dependency-free by default:
 
-**[github.com/nfb2021/canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions)**
+**[github.com/TUW-GEO/canvodpy-extensions](https://github.com/TUW-GEO/canvodpy-extensions)**
 
 canvodpy works fully without any of these. `canvod-filemap` is used only
 for receivers whose settings name a naming recipe (`recipe:`);
@@ -45,7 +45,7 @@ package on PyPI, so `canvodpy[filemap]` does not exist.
 Elsewhere, install the package from its tag:
 
 ```bash
-uv add "canvod-filemap @ git+https://github.com/nfb2021/canvodpy-extensions.git@canvod-filemap-v1.0.0#subdirectory=packages/canvod-filemap"
+uv add "canvod-filemap @ git+https://github.com/TUW-GEO/canvodpy-extensions.git@canvod-filemap-v1.0.0#subdirectory=packages/canvod-filemap"
 ```
 
 The group is pinned in the root `pyproject.toml`: the version range in
@@ -56,7 +56,7 @@ The group is pinned in the root `pyproject.toml`: the version range in
 filemap = ["canvod-filemap>=1.0.0"]
 
 [tool.uv.sources]
-canvod-filemap = { git = "https://github.com/nfb2021/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", tag = "canvod-filemap-v1.0.0" }
+canvod-filemap = { git = "https://github.com/TUW-GEO/canvodpy-extensions.git", subdirectory = "packages/canvod-filemap", tag = "canvod-filemap-v1.0.0" }
 ```
 
 If you have both repositories cloned as sibling directories locally (common
@@ -86,7 +86,7 @@ for the recipe format and mapping API.
 other way around):
 
 ```bash
-uv add "canvod-airflow[airflow] @ git+https://github.com/nfb2021/canvodpy-extensions.git@canvod-airflow-v1.0.0#subdirectory=packages/canvod-airflow"
+uv add "canvod-airflow[airflow] @ git+https://github.com/TUW-GEO/canvodpy-extensions.git@canvod-airflow-v1.0.0#subdirectory=packages/canvod-airflow"
 ```
 
 See [canvod-airflow's overview](https://extensions.canvodpy.eu/packages/airflow/overview/)
@@ -96,7 +96,7 @@ for DAG structure, deployment, and configuration.
 another program:
 
 ```bash
-uv add "canvod-adapters[store] @ git+https://github.com/nfb2021/canvodpy-extensions.git@canvod-adapters-v1.0.0#subdirectory=packages/canvod-adapters"
+uv add "canvod-adapters[store] @ git+https://github.com/TUW-GEO/canvodpy-extensions.git@canvod-adapters-v1.0.0#subdirectory=packages/canvod-adapters"
 ```
 
 See [canvod-adapters's overview](https://extensions.canvodpy.eu/packages/adapters/overview/)

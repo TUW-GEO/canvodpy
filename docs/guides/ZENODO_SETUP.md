@@ -116,7 +116,7 @@ Zenodo. https://doi.org/10.5281/zenodo.XXXXX
 ### 2.2. Enable the repository on Zenodo
 
 1. After logging in, go to: https://zenodo.org/account/settings/github/
-2. Find `nfb2021/canvodpy` in the list
+2. Find `TUW-GEO/canvodpy` in the list
 3. **Toggle ON** the switch next to it
 4. Zenodo now watches for releases.
 
@@ -153,7 +153,7 @@ just tag-release && git push origin v0.1.0 canvod-readers-v0.1.0 ...
 
 ### After the release
 
-1. Go to: https://zenodo.org/account/settings/github/repository/nfb2021/canvodpy
+1. Go to: https://zenodo.org/account/settings/github/repository/TUW-GEO/canvodpy
 2. You'll see your release listed
 3. Click to view the DOI
 4. Copy the DOI badge markdown

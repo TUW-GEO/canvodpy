@@ -40,7 +40,7 @@ liable for damages arising from the use or non-use of the software or informatio
 offered, or from the use of incorrect or incomplete information.
 
 Individual contributors are recorded in the project's
-[Git history](https://github.com/nfb2021/canvodpy) and `NOTICE` file. Each
+[Git history](https://github.com/TUW-GEO/canvodpy) and `NOTICE` file. Each
 contribution is made under the terms of the
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) and carries the
 warranty exclusions stated therein (Sections 7 and 8).

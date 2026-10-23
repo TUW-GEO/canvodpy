@@ -71,7 +71,7 @@ def test_data_dir() -> Path:
     """Root directory for test data.
 
     Location: packages/canvod-readers/tests/test_data
-    Repository: https://github.com/nfb2021/canvodpy-test-data.git
+    Repository: https://github.com/TUW-GEO/canvodpy-test-data.git
     Purpose: Validation testing with falsified/corrupted files
     """
     if not TEST_DATA_ROOT.exists():
@@ -192,7 +192,7 @@ def demo_dir() -> Path:
     """Root directory for demo data.
 
     Location: demo
-    Repository: https://github.com/nfb2021/canvodpy-demo.git
+    Repository: https://github.com/TUW-GEO/canvodpy-demo.git
     Purpose: Clean real-world data for demos and documentation
     """
     if not DEMO_ROOT.exists():

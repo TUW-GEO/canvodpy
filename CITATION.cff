@@ -18,8 +18,8 @@ authors:
     email: support@canvodpy.eu
     affiliation: "TU Wien, Department of Geodesy and Geoinformation, Climate and Environmental Remote Sensing CLIMERS Research Unit"
     orcid: "https://orcid.org/0000-0002-9932-1925"
-repository-code: "https://github.com/nfb2021/canvodpy"
-url: "https://github.com/nfb2021/canvodpy"
+repository-code: "https://github.com/TUW-GEO/canvodpy"
+url: "https://github.com/TUW-GEO/canvodpy"
 keywords:
   - GNSS-Transmissometry
   - GNSS-T
@@ -47,8 +47,8 @@ references:
       - family-names: Bader
         given-names: Nicolas François
         orcid: "https://orcid.org/0000-0002-9932-1925"
-    repository-code: "https://github.com/nfb2021/canvodpy-test-data"
-    url: "https://github.com/nfb2021/canvodpy-test-data"
+    repository-code: "https://github.com/TUW-GEO/canvodpy-test-data"
+    url: "https://github.com/TUW-GEO/canvodpy-test-data"
     doi: "10.5281/zenodo.19708759"
     abstract: >
       Real GNSS observations from Rosalia, Austria (DOY 2025-001) in RINEX v3.04
@@ -61,8 +61,8 @@ references:
       - family-names: Bader
         given-names: Nicolas François
         orcid: "https://orcid.org/0000-0002-9932-1925"
-    repository-code: "https://github.com/nfb2021/canvodpy-demo"
-    url: "https://github.com/nfb2021/canvodpy-demo"
+    repository-code: "https://github.com/TUW-GEO/canvodpy-demo"
+    url: "https://github.com/TUW-GEO/canvodpy-demo"
     abstract: >
       A collection of interactive marimo notebooks covering the full canVODpy
       pipeline from raw GNSS data ingestion through VOD retrieval and visualization.

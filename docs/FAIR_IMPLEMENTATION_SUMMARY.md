@@ -1,7 +1,7 @@
 # FAIR compliance setup - implementation summary
 
 **Date:** April 7, 2026
-**Repository:** nfb2021/canvodpy
+**Repository:** TUW-GEO/canvodpy
 **Status:** ✅ Complete: 5/5 green
 
 ## What was implemented
@@ -16,7 +16,7 @@ Automatically checks FAIR software compliance on every push and pull request:
 
 **Badge Added to README:**
 ```markdown
-[![FAIR Software](https://github.com/nfb2021/canvodpy/actions/workflows/fair-software.yml/badge.svg)](https://github.com/nfb2021/canvodpy/actions/workflows/fair-software.yml)
+[![FAIR Software](https://github.com/TUW-GEO/canvodpy/actions/workflows/fair-software.yml/badge.svg)](https://github.com/TUW-GEO/canvodpy/actions/workflows/fair-software.yml)
 ```
 
 ### 2. ✅ OpenSSF scorecard workflow
@@ -31,7 +31,7 @@ Automated security best practices scanning:
 
 **Badge Added to README:**
 ```markdown
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/nfb2021/canvodpy/badge)](https://securityscorecards.dev/viewer/?uri=github.com/nfb2021/canvodpy)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/TUW-GEO/canvodpy/badge)](https://securityscorecards.dev/viewer/?uri=github.com/TUW-GEO/canvodpy)
 ```
 
 ### 3. ✅ Security policy

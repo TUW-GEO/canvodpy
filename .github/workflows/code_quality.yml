@@ -101,7 +101,7 @@ jobs:
             - name: Check out canvodpy-extensions, to check the extensions paths too
               uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
-                  repository: nfb2021/canvodpy-extensions
+                  repository: TUW-GEO/canvodpy-extensions
                   path: canvodpy-extensions-checkout
                   fetch-depth: 0 # the locked commit may be on any branch
                   persist-credentials: false

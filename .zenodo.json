@@ -36,13 +36,13 @@
   "language": "eng",
   "related_identifiers": [
     {
-      "identifier": "https://github.com/nfb2021/canvodpy-test-data",
+      "identifier": "https://github.com/TUW-GEO/canvodpy-test-data",
       "relation": "isSupplementedBy",
       "scheme": "url",
       "resource_type": "software"
     },
     {
-      "identifier": "https://github.com/nfb2021/canvodpy-demo",
+      "identifier": "https://github.com/TUW-GEO/canvodpy-demo",
       "relation": "isDocumentedBy",
       "scheme": "url",
       "resource_type": "software"

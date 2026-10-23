@@ -295,4 +295,4 @@ All of these are replaced by one entry point: `canvodpy run`, or
 - **Demo data**: `canvodpy.demo_data()` downloads the demo day; the
   [notebooks](https://canvodpy.eu/notebooks/) use it.
 
-The full list is in the [changelog](https://github.com/nfb2021/canvodpy/blob/main/CHANGELOG.md).
+The full list is in the [changelog](https://github.com/TUW-GEO/canvodpy/blob/main/CHANGELOG.md).

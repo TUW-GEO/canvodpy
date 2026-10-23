@@ -135,7 +135,7 @@ The `.github/workflows/release.yml` workflow detects the canvodpy tag
 (`v1.1.0`) and creates a **draft** release whose notes are canvodpy's
 `CHANGELOG.md` section, including the package versions. Package tags get no
 GitHub release of their own. Review and publish at
-[github.com/nfb2021/canvodpy/releases](https://github.com/nfb2021/canvodpy/releases).
+[github.com/TUW-GEO/canvodpy/releases](https://github.com/TUW-GEO/canvodpy/releases).
 
 Pushing the tags does **not** publish to PyPI: tagging and PyPI
 publishing are deliberately decoupled (see step 8).
@@ -144,7 +144,7 @@ publishing are deliberately decoupled (see step 8).
 
 Not automatic. Trigger `publish_pypi.yml` on the canvodpy tag, either from
 the
-[Actions tab](https://github.com/nfb2021/canvodpy/actions/workflows/publish_pypi.yml)
+[Actions tab](https://github.com/TUW-GEO/canvodpy/actions/workflows/publish_pypi.yml)
 (the Run workflow button; choose the tag) or:
 
 ```bash
@@ -196,7 +196,7 @@ tag existing is not a promise that PyPI has it.
 
 ??? failure "Draft release did not appear"
     Verify the canvodpy tag matches the pattern `v*.*.*` at
-    [github.com/nfb2021/canvodpy/actions](https://github.com/nfb2021/canvodpy/actions),
+    [github.com/TUW-GEO/canvodpy/actions](https://github.com/TUW-GEO/canvodpy/actions),
     and that `CHANGELOG.md` has a section `## v1.1.0 (...)`.
     (PyPI publishing never triggers from a tag push at all; see step 8.)
 

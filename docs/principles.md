@@ -100,7 +100,7 @@ on that snapshot:
 
 !!! example "Try it in a notebook"
 
-    Open [Icechunk store](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/11_icechunk_store.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Icechunk store](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/11_icechunk_store.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
@@ -158,7 +158,7 @@ used only to open it. The fields of the name are listed in
 
 !!! example "Try it in a notebook"
 
-    Open [Naming convention](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/04_naming_convention.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Naming convention](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/04_naming_convention.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 

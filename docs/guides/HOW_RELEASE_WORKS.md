@@ -188,7 +188,7 @@ Each project on PyPI (every package is its own project) needs the trusted
 publisher once:
 
 ```
-Owner:             nfb2021
+Owner:             TUW-GEO
 Repository name:   canvodpy
 Workflow name:     publish_pypi.yml
 Environment name:  pypi
