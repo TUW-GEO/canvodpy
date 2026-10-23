@@ -363,12 +363,20 @@ class TestOldGridsNames:
 
 
 def test_store_and_load_log_instead_of_printing(
-    vod_store, small_equal_area_grid
+    vod_store, small_equal_area_grid, monkeypatch
 ) -> None:
     """store_grid() and load_grid() report through the log, not print()."""
+    import structlog
     from structlog.testing import capture_logs
 
+    from canvod.store import grid_storage
+
     with capture_logs() as logs:
+        # A logger made now logs into the capture, also when an earlier
+        # test cached grid_storage's logger with a run's settings.
+        monkeypatch.setattr(
+            grid_storage, "logger", structlog.get_logger(grid_storage.__name__)
+        )
         store_grid(small_equal_area_grid, vod_store, "logged")
         load_grid(vod_store, "logged")
     events = [
