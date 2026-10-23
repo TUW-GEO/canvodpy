@@ -172,8 +172,9 @@ changed docs pages and the link check of the built site
 Windows (`.github/workflows/test_platforms.yml`). When `uv.lock` or a
 `pyproject.toml` changes, CI checks the locked dependencies against known
 vulnerabilities (`just audit`; `.github/workflows/dependency_audit.yml`);
-`.github/workflows/publish_pypi.yml` runs the same check before every upload. A pull request that
-changes behavior without docs to match is declined (`CODING_STANDARDS.md`).
+`.github/workflows/publish_pypi.yml` runs the same check before every
+upload. A pull request that changes behavior without docs to match is
+declined (`CODING_STANDARDS.md`).
 
 ## Finding code: the code graph
 
