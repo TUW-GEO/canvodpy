@@ -22,7 +22,8 @@ canvod-adapters = { git = "https://github.com/nfb2021/canvodpy-extensions.git", 
 # on GitHub until canvodpy 1.0.0 is on PyPI. The override makes
 # canvod-filemap use the local workspace packages instead, so the lock has
 # one of each (A8).
-# Drop them, and the two source lines above, once both sides take them from PyPI.
+# Drop the override, and the two source lines below, once both sides take them
+# from PyPI.
 canvod-preflight = { workspace = true }
 canvod-utils = { workspace = true }
 
