@@ -67,7 +67,8 @@ with an unobstructed view of the sky.
 
     ---
 
-    - Day blocks: a day processed again replaces its data, and nothing else
+    - Day blocks: processing a day again writes only into that day's
+      slots; no other day is touched
     - Content settings fixed when a store is created; runs with other
       settings are refused
     - Compare two stores within fixed tolerances
