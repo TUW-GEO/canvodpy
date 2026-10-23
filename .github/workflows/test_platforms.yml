@@ -53,8 +53,10 @@ jobs:
               # `optional` group) ships no Windows wheels on PyPI, so it's
               # only installable on Linux/macOS -- HEALPix-dependent tests
               # skip on Windows, same as a local dev machine without it.
+              # --group filemap (canvod-filemap, from canvodpy-extensions)
+              # runs the recipe tests, which skip without it.
               if: matrix.os != 'windows-latest'
-              run: uv sync --locked --dev --group optional
+              run: uv sync --locked --dev --group optional --group filemap
             - name: Install the Project (Windows, no healpy)
               if: matrix.os == 'windows-latest'
               run: uv sync --locked --dev
