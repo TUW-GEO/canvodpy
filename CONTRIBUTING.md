@@ -85,7 +85,9 @@ git push origin feature/my-feature
 
 **Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`
 
-**Scopes:** `readers`, `aux`, `grids`, `vod`, `store`, `viz`, `utils`, `docs`, `ci`, `deps`
+**Scopes**, for example: `readers`, `aux`, `config`, `grids`, `vod`, `store`,
+`viz`, `utils`, `naming`, `orchestrator`, `diagnostics`, `ops`, `ci`, `docs`,
+`deps` (the list in `[tool.commitizen.customize]` of `pyproject.toml`)
 
 ```bash
 git commit -m "feat(vod): add tau-omega calculator"

@@ -83,11 +83,9 @@ a project.
 
 ### 1. Registration (one-time setup)
 
-You register a **trusted publisher** for each project on PyPI:
-
-> "I trust GitHub Actions from repository `TUW-GEO/canvodpy`,
-> specifically the workflow `publish_pypi.yml` running in
-> environment `pypi`, to publish package `canvod-readers`"
+You register a **trusted publisher** for each project on PyPI. In effect,
+it says: GitHub Actions in repository `TUW-GEO/canvodpy`, workflow
+`publish_pypi.yml`, environment `pypi`, may publish `canvod-readers`.
 
 **No secrets are exchanged.** This only tells PyPI what to expect.
 
