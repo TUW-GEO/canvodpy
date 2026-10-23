@@ -1,6 +1,6 @@
 [project]
 name = "canvodpy"
-version = "0.4.0"
+version = "1.0.0"
 description = "An open Python ecosystem for GNSS-Transmissometry canopy VOD retrievals"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -32,17 +32,17 @@ classifiers = [
 
 # Core dependencies - sub-packages from workspace
 dependencies = [
-    "canvod-readers==0.4.0",
-    "canvod-auxiliary==0.4.0",
-    "canvod-grids==0.4.0",
-    "canvod-store==0.4.0",
-    "canvod-store-metadata==0.4.0",
-    "canvod-utils==0.4.0",
-    "canvod-config==0.4.0",
-    "canvod-viz==0.4.0",
-    "canvod-vod==0.4.0",
-    "canvod-ops==0.4.0",
-    "canvod-preflight==0.4.0",
+    "canvod-readers==1.0.0",
+    "canvod-auxiliary==1.0.0",
+    "canvod-grids==1.0.0",
+    "canvod-store==1.0.0",
+    "canvod-store-metadata==1.0.0",
+    "canvod-utils==1.0.0",
+    "canvod-config==1.0.0",
+    "canvod-viz==1.0.0",
+    "canvod-vod==1.0.0",
+    "canvod-ops==1.0.0",
+    "canvod-preflight==1.0.0",
     "numpy>=1.26.0",
     "pandas>=2.1.0",
     "polars>=1.0.0",

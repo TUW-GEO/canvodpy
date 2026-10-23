@@ -181,7 +181,7 @@ wheels = [
 
 [[package]]
 name = "canvod-auxiliary"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-auxiliary" }
 dependencies = [
     { name = "canvod-config" },
@@ -240,7 +240,7 @@ dev = [
 
 [[package]]
 name = "canvod-config"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-config" }
 dependencies = [
     { name = "canvod-utils" },
@@ -275,7 +275,7 @@ dependencies = [
 
 [[package]]
 name = "canvod-grids"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-grids" }
 dependencies = [
     { name = "canvod-utils" },
@@ -324,7 +324,7 @@ optional = [{ name = "healpy", specifier = ">=1.16.0" }]
 
 [[package]]
 name = "canvod-ops"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-ops" }
 dependencies = [
     { name = "canvod-config" },
@@ -361,7 +361,7 @@ dev = [
 
 [[package]]
 name = "canvod-preflight"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-preflight" }
 dependencies = [
     { name = "canvod-utils" },
@@ -380,7 +380,7 @@ requires-dist = [
 
 [[package]]
 name = "canvod-readers"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-readers" }
 dependencies = [
     { name = "canvod-config" },
@@ -435,7 +435,7 @@ dev = [
 
 [[package]]
 name = "canvod-store"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-store" }
 dependencies = [
     { name = "canvod-auxiliary" },
@@ -492,7 +492,7 @@ dev = [
 
 [[package]]
 name = "canvod-store-metadata"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-store-metadata" }
 dependencies = [
     { name = "canvod-config" },
@@ -545,7 +545,7 @@ dev = [
 
 [[package]]
 name = "canvod-utils"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-utils" }
 dependencies = [
     { name = "pydantic" },
@@ -560,7 +560,7 @@ requires-dist = [
 
 [[package]]
 name = "canvod-viz"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-viz" }
 dependencies = [
     { name = "canvod-grids" },
@@ -586,7 +586,7 @@ provides-extras = ["widgets"]
 
 [[package]]
 name = "canvod-vod"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "packages/canvod-vod" }
 dependencies = [
     { name = "canvod-utils" },
@@ -623,7 +623,7 @@ dev = [
 
 [[package]]
 name = "canvodpy"
-version = "0.4.0"
+version = "1.0.0"
 source = { editable = "canvodpy" }
 dependencies = [
     { name = "altair" },

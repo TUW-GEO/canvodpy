@@ -1,6 +1,6 @@
 [project]
 name = "canvod-store-metadata"
-version = "0.4.0"
+version = "1.0.0"
 description = "Store metadata for canVODpy stores, in DataCite, ACDD, and STAC"
 readme = "README.md"
 requires-python = ">=3.14"

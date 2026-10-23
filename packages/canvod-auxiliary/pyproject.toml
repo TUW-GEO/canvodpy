@@ -1,6 +1,6 @@
 [project]
 name = "canvod-auxiliary"
-version = "0.4.0"
+version = "1.0.0"
 description = "Satellite orbits and clocks, and the satellite angles of each GNSS observation"
 readme = "README.md"
 requires-python = ">=3.14"
