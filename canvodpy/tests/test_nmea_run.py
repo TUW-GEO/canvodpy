@@ -89,7 +89,7 @@ def test_a_run_of_nmea_data_writes_the_gnss_and_vod_stores(hainich_settings):
     )
 
     assert result.exit_code == 0, result.output
-    gnss = MyIcechunkStore(hainich_settings / "rinex", store_type="gnss_store")
+    gnss = MyIcechunkStore(hainich_settings / "gnss", store_type="gnss_store")
     vod = MyIcechunkStore(hainich_settings / "vod", store_type="vod_store")
     assert {"canopy_01", "reference_01_canopy_01"} <= set(_data_groups(gnss))
     assert _data_groups(vod)
