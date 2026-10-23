@@ -82,7 +82,7 @@ This command:
    than a package's, a package's range on another excludes the new
    version, a citation file lacks its version or date field, a release
    file has uncommitted changes, or the branch `release/v1.1.0` exists
-   already, locally or on the remote
+   already (locally or on the remote)
 3. Writes the new versions, canvodpy's `==` pins, a section in each
    released package's `CHANGELOG.md` (from the commits that touched its
    folder; canvodpy's lists the pinned versions), canvodpy's version and
@@ -130,7 +130,7 @@ git push origin v1.1.0 canvod-store-v1.1.0 canvod-grids-v1.0.1
 `just tag-release` creates an annotated tag for every package version that
 has no tag yet, and prints the push command; it does not push.
 
-### 7. Publish GitHub release
+### 7. Publish the draft release
 
 The `.github/workflows/release.yml` workflow detects the canvodpy tag
 (`v1.1.0`) and creates a **draft** release whose notes are canvodpy's
