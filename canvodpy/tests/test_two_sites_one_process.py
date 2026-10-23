@@ -63,12 +63,11 @@ def test_a_site_works_after_a_second_site_is_created(site):
     with a.pipeline(dry_run=True) as pipeline:
         first = _files(pipeline.preview("2025001", "2025001"))
     first_folder = remote_file.run_folder()
-    b = Site("fangorn")
+    Site("fangorn")
     assert not first_folder.exists()
     with a.pipeline(dry_run=True) as pipeline:
         assert _files(pipeline.preview("2025001", "2025001")) == first
     assert first == {"canopy_01": 1, "reference_01_canopy_01": 1}
-    del b
 
 
 def test_a_pipeline_made_before_the_second_site(site):
@@ -79,4 +78,5 @@ def test_a_pipeline_made_before_the_second_site(site):
         first = _files(pipeline.preview("2025001", "2025001"))
         Site("fangorn")
         assert _files(pipeline.preview("2025001", "2025001")) == first
-        print("REQUESTS", len(site.requests))
+    # The second Site starts a new run folder, so the recipe is fetched again.
+    assert len(site.requests) == 2
