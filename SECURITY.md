@@ -2,11 +2,14 @@
 
 ## Supported Versions
 
-canvodpy is currently in **beta** (pre-1.0 release). Security updates are provided for:
+Security fixes go into the latest 1.x release of each package. Releases
+before 1.0.0 get no fixes; upgrade with the
+[upgrading guide](https://canvodpy.eu/guides/upgrading/).
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.x.x   | :white_check_mark: |
+| 1.x.x   | :white_check_mark: |
+| < 1.0.0 | :x:                |
 
 ## Reporting a Vulnerability
 
