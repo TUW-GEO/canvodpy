@@ -93,14 +93,14 @@ The code is the truth; don't copy the constants into new code.
 ### canvodpy-extensions
 
 Optional packages in a separate repository
-(<https://github.com/nfb2021/canvodpy-extensions>), GitHub-only:
+(<https://github.com/TUW-GEO/canvodpy-extensions>), GitHub-only:
 canvod-filemap (naming recipes), canvod-airflow (DAGs), canvod-adapters
 (exchange with other GNSS-T programs). canvodpy installs canvod-filemap as
 the workspace dependency group `filemap` (`uv sync --group filemap`).
 The extensions import canvodpy's contracts and `canvodpy.workflows.tasks`.
 Before renaming or changing anything public, search the extensions for it
 and plan their change too; their agent instructions are
-[`AGENTS.md`](https://github.com/nfb2021/canvodpy-extensions/blob/main/AGENTS.md). See the `extensions-dependency` guide.
+[`AGENTS.md`](https://github.com/TUW-GEO/canvodpy-extensions/blob/main/AGENTS.md). See the `extensions-dependency` guide.
 
 ## Task guides
 
@@ -224,7 +224,7 @@ changing these, and run `just test-fast` afterwards.
 
 ### Issue tracker
 
-Issues and specs live in GitHub Issues of nfb2021/canvodpy (`gh`). See `docs/agents/issue-tracker.md`.
+Issues and specs live in GitHub Issues of TUW-GEO/canvodpy (`gh`). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

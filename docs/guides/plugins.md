@@ -11,7 +11,7 @@ marked as yours.
 
 !!! example "Try it in a notebook"
 
-    Open [Your Own VOD Calculator](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/21_plugins.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Your Own VOD Calculator](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/21_plugins.py?mode=edit) in molab, the online notebook service of marimo.
 
 ## Base classes and factories
 

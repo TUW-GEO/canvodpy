@@ -18,7 +18,7 @@ The OpenSSF Best Practices Badge (formerly CII Best Practices) is a certificatio
 1. Go to https://bestpractices.coreinfrastructure.org/
 2. Sign in with GitHub
 3. Click "Add Project"
-4. Enter: `https://github.com/nfb2021/canvodpy`
+4. Enter: `https://github.com/TUW-GEO/canvodpy`
 
 ### Step 2: Complete questionnaire
 

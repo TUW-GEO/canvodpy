@@ -81,7 +81,7 @@ OIDC (OpenID Connect) is an authentication protocol built on OAuth 2.0. Instead 
 │   ✓ Verify JWT signature (GitHub's public key)         │
 │   ✓ Check JWT not expired (~10 min TTL)                │
 │   ✓ Validate claims:                                    │
-│     • repository: nfb2021/canvodpy ✓                    │
+│     • repository: TUW-GEO/canvodpy ✓                    │
 │     • workflow: publish_testpypi.yml ✓                  │
 │     • environment: testpypi ✓                          │
 │     • package name: canvod-readers ✓                    │
@@ -99,7 +99,7 @@ OIDC (OpenID Connect) is an authentication protocol built on OAuth 2.0. Instead 
 
 You register a **trust relationship** on PyPI:
 
-> "I trust GitHub Actions from repository `nfb2021/canvodpy`,
+> "I trust GitHub Actions from repository `TUW-GEO/canvodpy`,
 > specifically the workflow `publish_testpypi.yml` running in
 > environment `testpypi`, to publish package `canvod-readers`"
 
@@ -121,13 +121,13 @@ GitHub's OIDC provider generates a JWT containing:
 ```json
 {
   "iss": "https://token.actions.githubusercontent.com",
-  "sub": "repo:nfb2021/canvodpy:environment:testpypi",
+  "sub": "repo:TUW-GEO/canvodpy:environment:testpypi",
   "aud": "https://test.pypi.org",
-  "repository": "nfb2021/canvodpy",
-  "repository_owner": "nfb2021",
-  "repository_owner_id": "93122788",
+  "repository": "TUW-GEO/canvodpy",
+  "repository_owner": "TUW-GEO",
+  "repository_owner_id": "<numeric owner id>",
   "workflow": "publish_testpypi.yml",
-  "workflow_ref": "nfb2021/canvodpy/.github/workflows/publish_testpypi.yml@refs/tags/v0.1.0-beta.1",
+  "workflow_ref": "TUW-GEO/canvodpy/.github/workflows/publish_testpypi.yml@refs/tags/v0.1.0-beta.1",
   "environment": "testpypi",
   "ref": "refs/tags/v0.1.0-beta.1",
   "iat": 1738677600,  // Issued at
@@ -161,7 +161,7 @@ PyPI receives the request and validates:
 
 **3. Claims Validation**
 ```
-✓ repository == "nfb2021/canvodpy"?
+✓ repository == "TUW-GEO/canvodpy"?
 ✓ workflow == "publish_testpypi.yml"?
 ✓ environment == "testpypi"?
 ✓ Package name == "canvod-readers"? (matches upload)
@@ -212,7 +212,7 @@ Each trust relationship is scoped to:
 
 | Scope | Example | Purpose |
 |-------|---------|---------|
-| Repository | `nfb2021/canvodpy` | Only this repository can publish |
+| Repository | `TUW-GEO/canvodpy` | Only this repository can publish |
 | Workflow | `publish_testpypi.yml` | Only this workflow file |
 | Environment | `testpypi` | Only this environment |
 | Package | `canvod-readers` | Only this PyPI package |
@@ -252,9 +252,9 @@ PyPI Trust Registry:
 ┌──────────────────┬─────────────────┬──────────────────────┬─────────┐
 │ Package          │ Repository      │ Workflow             │ Env     │
 ├──────────────────┼─────────────────┼──────────────────────┼─────────┤
-│ canvod-readers   │ nfb2021/canvodpy│ publish_testpypi.yml │ testpypi│
-│ canvod-auxiliary       │ nfb2021/canvodpy│ publish_testpypi.yml │ testpypi│
-│ canvod-grids     │ nfb2021/canvodpy│ publish_testpypi.yml │ testpypi│
+│ canvod-readers   │ TUW-GEO/canvodpy│ publish_testpypi.yml │ testpypi│
+│ canvod-auxiliary       │ TUW-GEO/canvodpy│ publish_testpypi.yml │ testpypi│
+│ canvod-grids     │ TUW-GEO/canvodpy│ publish_testpypi.yml │ testpypi│
 │ ...              │ ...             │ ...                  │ ...     │
 └──────────────────┴─────────────────┴──────────────────────┴─────────┘
 ```
@@ -329,8 +329,8 @@ Workflow: publish_testpypi.yml  # ← Note the underscore!
 
 ### 3. Wrong repository owner
 
-**Your GitHub username:** `nfb2021`
-**PyPI registered with:** `NFB2021` (different case!)
+**Repository owner on GitHub:** `TUW-GEO`
+**PyPI registered with:** `tuw-geo` (different case!)
 
 **Result:** the JWT is rejected (the check is case-sensitive)
 

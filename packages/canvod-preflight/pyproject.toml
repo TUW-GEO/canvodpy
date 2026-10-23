@@ -39,10 +39,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nfb2021/canvodpy"
+Homepage = "https://github.com/TUW-GEO/canvodpy"
 Documentation = "https://canvodpy.eu/packages/naming/overview/"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues = "https://github.com/nfb2021/canvodpy/issues"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues = "https://github.com/TUW-GEO/canvodpy/issues"
 
 [project.scripts]
 canvod-preflight = "canvod.preflight.cli:app"

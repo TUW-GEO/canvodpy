@@ -163,7 +163,7 @@ and every argument named by its companion `deprecated_argument`
   title   = {canvodpy: GNSS Vegetation Optical Depth Analysis},
   version = {1.0.0},
   year    = {2026},
-  url     = {https://github.com/nfb2021/canvodpy},
+  url     = {https://github.com/TUW-GEO/canvodpy},
   doi     = {10.5281/zenodo.XXXXXXX}
 }
 ```

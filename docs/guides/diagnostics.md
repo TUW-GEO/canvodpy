@@ -377,7 +377,7 @@ receivers with 1 to 126 workers, and a warm-up run with failed orbit
 downloads. Open it with
 `canvodpy dashboard --logs-dir <folder>/run_history`, where `<folder>`
 is the folder `demo_data` returns. The demo notebook
-[23 · Run Dashboard](https://github.com/nfb2021/canvodpy-demo/blob/main/23_run_dashboard.py)
+[23 · Run Dashboard](https://github.com/TUW-GEO/canvodpy-demo/blob/main/23_run_dashboard.py)
 shows the dashboard on it.
 
 The dashboard reads the run history, not the log files, so nothing
@@ -524,7 +524,7 @@ and takes the folder from `--logs-dir` after `--`:
 
 ```bash
 uvx marimo run --sandbox \
-  https://raw.githubusercontent.com/nfb2021/canvodpy/main/canvodpy/src/canvodpy/cli/dashboards/performance.py \
+  https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/canvodpy/src/canvodpy/cli/dashboards/performance.py \
   -- --logs-dir /path/to/logs
 ```
 
@@ -535,7 +535,7 @@ default styling.
 
 !!! example "Try it in a notebook"
 
-    Open [Batch processing](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/20_workflow_batch_processing.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Batch processing](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/20_workflow_batch_processing.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 

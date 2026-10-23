@@ -24,7 +24,7 @@ output = "CHANGELOG.md"
 
 # Commit link style (GitHub)
 provider = "github"
-repository = "nfb2021/canvodpy"
+repository = "TUW-GEO/canvodpy"
 
 # Parse trailers (e.g., "Closes #123")
 parse_trailers = true

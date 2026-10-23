@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/nfb2021/canvodpy/main/docs/assets/logo/canvodpy_logo_dark_mode.svg">
-    <img alt="canVODpy" src="https://raw.githubusercontent.com/nfb2021/canvodpy/main/docs/assets/logo/canvodpy_logo_bright_mode.svg" width="260">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_dark_mode.svg">
+    <img alt="canVODpy" src="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_bright_mode.svg" width="260">
   </picture>
 </p>
 
@@ -9,7 +9,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/canvod-preflight.svg)](https://pypi.org/project/canvod-preflight/)
 [![Python](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/nfb2021/canvodpy/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18496233-blue)](https://doi.org/10.5281/zenodo.18496233)
 
 **The canVOD file name convention for GNSS-T receiver files.** `canvod-preflight` is a package of
@@ -50,9 +50,9 @@ print(name.site, name.receiver_type, name.year, name.doy)  # ROS A 2025 1
 
 If you use canVODpy, please cite it with its DOI,
 [`10.5281/zenodo.18496233`](https://doi.org/10.5281/zenodo.18496233), which always leads to the newest
-version. [CITATION.cff](https://github.com/nfb2021/canvodpy/blob/main/CITATION.cff) has the full
+version. [CITATION.cff](https://github.com/TUW-GEO/canvodpy/blob/main/CITATION.cff) has the full
 citation.
 
 ## License
 
-[Apache License 2.0](https://github.com/nfb2021/canvodpy/blob/main/LICENSE)
+[Apache License 2.0](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE)

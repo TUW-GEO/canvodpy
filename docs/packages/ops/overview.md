@@ -77,7 +77,7 @@ signals takes about one second.
 linear in the SNR difference in dB, the mean of the dB values gives the mean of
 the per-epoch VOD if the canopy and reference bins average the same
 epochs and $\theta$ changes little within a bin
-([issue #192](https://github.com/nfb2021/canvodpy/issues/192)). The median is
+([issue #192](https://github.com/TUW-GEO/canvodpy/issues/192)). The median is
 the same in dB and in linear power.
 
 Measured on one day of the Rosalia test data (5 s, 271 signals), against the

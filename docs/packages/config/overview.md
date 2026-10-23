@@ -66,4 +66,4 @@ From the command line, `canvodpy config validate` runs the same check.
 
 !!! example "Try it in a notebook"
 
-    Open [Configuration](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/02_configuration.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Configuration](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/02_configuration.py?mode=edit) in molab, the online notebook service of marimo.

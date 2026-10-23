@@ -55,10 +55,10 @@ optional = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nfb2021/canvodpy"
+Homepage = "https://github.com/TUW-GEO/canvodpy"
 Documentation = "https://canvodpy.eu/packages/grids/overview/"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues = "https://github.com/nfb2021/canvodpy/issues"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues = "https://github.com/TUW-GEO/canvodpy/issues"
 
 [build-system]
 requires = ["uv_build>=0.13.0,<0.14.0"]

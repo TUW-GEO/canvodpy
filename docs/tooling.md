@@ -326,7 +326,7 @@ canVODpy follows FAIR software principles and OpenSSF best practices:
     **Runs:** weekly and on every push to main
     **Results:** the GitHub Security tab
 
-    [:octicons-arrow-right-24: View Scorecard](https://securityscorecards.dev/viewer/?uri=github.com/nfb2021/canvodpy)
+    [:octicons-arrow-right-24: View Scorecard](https://securityscorecards.dev/viewer/?uri=github.com/TUW-GEO/canvodpy)
 
 -   :fontawesome-solid-lock: &nbsp; **Security Policy**
 

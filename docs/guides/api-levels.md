@@ -78,7 +78,7 @@ files failed counts as written. In Python,
 
 !!! example "Try it in a notebook"
 
-    Open [Site pipeline](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/18_site_pipeline.py?mode=edit), [Running the pipeline from the command line](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/01_cli_pipeline.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Site pipeline](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/18_site_pipeline.py?mode=edit), [Running the pipeline from the command line](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/01_cli_pipeline.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
@@ -295,7 +295,7 @@ model and its output.
 
 !!! example "Try it in a notebook"
 
-    Open [VOD retrieval](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/10_vod_retrieval.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [VOD retrieval](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/10_vod_retrieval.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
@@ -341,7 +341,7 @@ optional extension; see [Optional extensions](extensions.md).
 
 !!! example "Try it in a notebook"
 
-    Open [API overview](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/17_api_overview.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [API overview](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/17_api_overview.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 

@@ -21,7 +21,7 @@ Please **do not** report security vulnerabilities through public GitHub issues, 
 Report security vulnerabilities via one of these methods:
 
 **Preferred:** Use GitHub's private vulnerability reporting:
-- Go to https://github.com/nfb2021/canvodpy/security/advisories
+- Go to https://github.com/TUW-GEO/canvodpy/security/advisories
 - Click "Report a vulnerability"
 - Fill in the details
 
@@ -150,8 +150,8 @@ For security-related questions or concerns:
 - **Affiliation:** Climate and Environmental Remote Sensing (CLIMERS), TU Wien
 
 For general questions (non-security), please use:
-- GitHub Discussions: https://github.com/nfb2021/canvodpy/discussions
-- GitHub Issues: https://github.com/nfb2021/canvodpy/issues
+- GitHub Discussions: https://github.com/TUW-GEO/canvodpy/discussions
+- GitHub Issues: https://github.com/TUW-GEO/canvodpy/issues
 
 ---
 

@@ -7,7 +7,7 @@ Quick reference for day-to-day canVODpy development.
 ## Initial setup
 
 ```bash
-git clone https://github.com/nfb2021/canvodpy.git
+git clone https://github.com/TUW-GEO/canvodpy.git
 cd canvodpy
 git submodule update --init --recursive   # test data + demo data
 uv sync                                    # install all packages (editable)
@@ -207,7 +207,7 @@ git rebase main
 If `upstream` is not configured, add it once:
 
 ```bash
-git remote add upstream git@github.com:nfb2021/canvodpy.git
+git remote add upstream git@github.com:TUW-GEO/canvodpy.git
 ```
 
 [:octicons-arrow-right-24: Detailed fork sync guide](contributor-setup.md#12-keeping-your-fork-up-to-date)
@@ -276,7 +276,7 @@ Every push and PR triggers GitHub Actions workflows:
 | Workflow | Checks |
 |----------|--------|
 | **Code Quality** | ruff lint, ruff format, ty type-check, lockfile consistency |
-| **Test with Coverage** | pytest $\rightarrow$ coverage.lcov $\rightarrow$ [Coveralls](https://coveralls.io/github/nfb2021/canvodpy) |
+| **Test with Coverage** | pytest $\rightarrow$ coverage.lcov $\rightarrow$ [Coveralls](https://coveralls.io/github/TUW-GEO/canvodpy) |
 | **Platform Tests** | Multi-OS, multi-Python-version test matrix |
 
 Coverage reports are posted as PR comments and tracked on Coveralls over time. To run coverage locally:

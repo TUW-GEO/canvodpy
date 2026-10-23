@@ -274,7 +274,7 @@ A **fork** is your own copy of the project on GitHub. You make changes in your f
 
 ### Fork on GitHub
 
-1. Go to [github.com/nfb2021/canvodpy](https://github.com/nfb2021/canvodpy).
+1. Go to [github.com/TUW-GEO/canvodpy](https://github.com/TUW-GEO/canvodpy).
 2. Click the **Fork** button in the top-right corner.
 3. GitHub creates a copy at `github.com/YOUR_USERNAME/canvodpy`.
 
@@ -292,7 +292,7 @@ Replace `YOUR_USERNAME` with your actual GitHub username.
 This lets you pull in updates from the original repository later:
 
 ```bash
-git remote add upstream git@github.com:nfb2021/canvodpy.git
+git remote add upstream git@github.com:TUW-GEO/canvodpy.git
 ```
 
 Verify your remotes:
@@ -366,7 +366,7 @@ If both commands complete without errors, your environment is ready.
 
 ## 12. Keeping your fork up to date
 
-The upstream repository (`nfb2021/canvodpy`) receives regular updates. To incorporate these into your fork, you need to **fetch from upstream and merge into your local branch**. This section explains every step.
+The upstream repository (`TUW-GEO/canvodpy`) receives regular updates. To incorporate these into your fork, you need to **fetch from upstream and merge into your local branch**. This section explains every step.
 
 ### Why this is necessary
 
@@ -385,14 +385,14 @@ You should see two remotes:
 ```
 origin    git@github.com:YOUR_USERNAME/canvodpy.git (fetch)
 origin    git@github.com:YOUR_USERNAME/canvodpy.git (push)
-upstream  git@github.com:nfb2021/canvodpy.git (fetch)
-upstream  git@github.com:nfb2021/canvodpy.git (push)
+upstream  git@github.com:TUW-GEO/canvodpy.git (fetch)
+upstream  git@github.com:TUW-GEO/canvodpy.git (push)
 ```
 
 If `upstream` is missing, add it:
 
 ```bash
-git remote add upstream git@github.com:nfb2021/canvodpy.git
+git remote add upstream git@github.com:TUW-GEO/canvodpy.git
 ```
 
 ### Update your local `main` branch
@@ -755,7 +755,7 @@ they run the same on every machine.
 The project uses [Coveralls](https://coveralls.io/) to track test coverage over time. After each test run in CI:
 
 1. pytest generates a coverage report in LCOV format (`coverage.lcov`)
-2. The report is uploaded to [coveralls.io/github/nfb2021/canvodpy](https://coveralls.io/github/nfb2021/canvodpy)
+2. The report is uploaded to [coveralls.io/github/TUW-GEO/canvodpy](https://coveralls.io/github/TUW-GEO/canvodpy)
 3. A coverage summary is posted as a comment on the pull request, showing which lines are covered and which are not
 
 Coverage is **not** a gate (low coverage does not block your PR), but it is visible to reviewers. When adding new code, include tests. This is both good scientific practice (every computation should be verifiable) and a courtesy to future contributors who need to understand what the code does.

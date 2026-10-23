@@ -89,9 +89,9 @@ classifiers = [
 dependencies = ["numpy>=2.0", "xarray>=2024.0"]
 
 [project.urls]
-Homepage   = "https://github.com/nfb2021/canvodpy"
-Repository = "https://github.com/nfb2021/canvodpy"
-Issues     = "https://github.com/nfb2021/canvodpy/issues"
+Homepage   = "https://github.com/TUW-GEO/canvodpy"
+Repository = "https://github.com/TUW-GEO/canvodpy"
+Issues     = "https://github.com/TUW-GEO/canvodpy/issues"
 ```
 
 ---

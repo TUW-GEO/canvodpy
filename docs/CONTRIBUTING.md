@@ -12,7 +12,7 @@ Contributions of all kinds are welcome: bug reports, feature implementations, do
 
     ---
 
-    Open an issue at [github.com/nfb2021/canvodpy/issues](https://github.com/nfb2021/canvodpy/issues).
+    Open an issue at [github.com/TUW-GEO/canvodpy/issues](https://github.com/TUW-GEO/canvodpy/issues).
     Include your OS, Python version, and steps to reproduce.
 
 -   :fontawesome-solid-wrench: &nbsp; **Fix Bugs**
@@ -187,7 +187,7 @@ When you run `just hooks`, Git hooks are installed that execute automatically on
 Every push and pull request triggers automated CI on GitHub Actions:
 
 - **Code Quality**: ruff linting, formatting, ty type-checking, lockfile consistency
-- **Test with Coverage**: pytest with coverage measurement, results uploaded to [Coveralls](https://coveralls.io/github/nfb2021/canvodpy), and posted as a PR comment
+- **Test with Coverage**: pytest with coverage measurement, results uploaded to [Coveralls](https://coveralls.io/github/TUW-GEO/canvodpy), and posted as a PR comment
 - **Platform Tests**: test suite across multiple OS and Python versions
 
 The CI runs the **same checks as the pre-commit hooks**, so fixing hook failures locally means your PR passes CI.

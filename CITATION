@@ -3,6 +3,6 @@ author = {Bader, Nicolas François},
 doi = {10.5281/zenodo.18636775},
 month = {2},
 title = {canVODpy: An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrievals},
-url = {https://github.com/nfb2021/canvodpy},
+url = {https://github.com/TUW-GEO/canvodpy},
 year = {2026}
 }

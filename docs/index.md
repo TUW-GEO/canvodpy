@@ -30,7 +30,7 @@ with an unobstructed view of the sky.
 
 [Retrieve VOD from your GNSS data :fontawesome-solid-arrow-right:](users/index.md){ .md-button .md-button--primary }
 [Contribute to canVODpy :fontawesome-solid-arrow-right:](CONTRIBUTING.md){ .md-button }
-[See canVODpy at work in molab :fontawesome-solid-arrow-up-right-from-square:](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_convenience_speedrun.py){ .md-button target=_blank }
+[See canVODpy at work in molab :fontawesome-solid-arrow-up-right-from-square:](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/03_convenience_speedrun.py){ .md-button target=_blank }
 
 </div>
 

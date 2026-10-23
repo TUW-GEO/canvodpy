@@ -1,16 +1,16 @@
 <!-- The PyPI page of canvodpy: the repository README with absolute links. Change both together. -->
 <h1 align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/nfb2021/canvodpy/main/docs/assets/logo/canvodpy_logo_dark_mode.svg">
-    <img alt="canVODpy" src="https://raw.githubusercontent.com/nfb2021/canvodpy/main/docs/assets/logo/canvodpy_logo_bright_mode.svg" width="390">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_dark_mode.svg">
+    <img alt="canVODpy" src="https://raw.githubusercontent.com/TUW-GEO/canvodpy/main/docs/assets/logo/canvodpy_logo_bright_mode.svg" width="390">
   </picture>
 </h1>
 
-[![Platform Tests](https://github.com/nfb2021/canvodpy/actions/workflows/test_platforms.yml/badge.svg)](https://github.com/nfb2021/canvodpy/actions/workflows/test_platforms.yml)
-[![Code Coverage](https://github.com/nfb2021/canvodpy/actions/workflows/test_coverage.yml/badge.svg)](https://github.com/nfb2021/canvodpy/actions/workflows/test_coverage.yml)
+[![Platform Tests](https://github.com/TUW-GEO/canvodpy/actions/workflows/test_platforms.yml/badge.svg)](https://github.com/TUW-GEO/canvodpy/actions/workflows/test_platforms.yml)
+[![Code Coverage](https://github.com/TUW-GEO/canvodpy/actions/workflows/test_coverage.yml/badge.svg)](https://github.com/TUW-GEO/canvodpy/actions/workflows/test_coverage.yml)
 [![PyPI](https://img.shields.io/pypi/v/canvodpy.svg)](https://pypi.org/project/canvodpy/)
 [![Python](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
-[![Platforms](https://img.shields.io/badge/platform-Linux%20|%20macOS%20(Apple%20silicon)%20|%20Windows-lightgrey)](https://github.com/nfb2021/canvodpy/actions/workflows/test_platforms.yml)
+[![Platforms](https://img.shields.io/badge/platform-Linux%20|%20macOS%20(Apple%20silicon)%20|%20Windows-lightgrey)](https://github.com/TUW-GEO/canvodpy/actions/workflows/test_platforms.yml)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18496233-blue)](https://doi.org/10.5281/zenodo.18496233)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![fair-software.eu](https://img.shields.io/badge/fair--software.eu-%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F%20%20%E2%97%8F-green)](https://fair-software.eu)
@@ -28,7 +28,7 @@ with an unobstructed view of the sky.
 
 ## Try it
 
-<a href="https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/03_convenience_speedrun.py"><img alt="Open in molab" src="https://marimo.io/molab-shield.svg" height="32"></a>
+<a href="https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/03_convenience_speedrun.py"><img alt="Open in molab" src="https://marimo.io/molab-shield.svg" height="32"></a>
 
 The speedrun notebook goes through the whole pipeline on real test data,
 from receiver files to VOD, in your browser. **All 21 notebooks** are at
@@ -39,7 +39,7 @@ To run a notebook on your own machine instead, install
 [uv](https://docs.astral.sh/uv/getting-started/installation/) and run:
 
 ```bash
-uvx marimo edit --sandbox https://raw.githubusercontent.com/nfb2021/canvodpy-demo/main/03_convenience_speedrun.py
+uvx marimo edit --sandbox https://raw.githubusercontent.com/TUW-GEO/canvodpy-demo/main/03_convenience_speedrun.py
 ```
 
 The notebooks download their test data on first use (about 350 MB).
@@ -98,7 +98,7 @@ by step.
 
 Optional extensions, such as `canvod-filemap` for file names that don't
 follow the convention, are in
-[canvodpy-extensions](https://github.com/nfb2021/canvodpy-extensions).
+[canvodpy-extensions](https://github.com/TUW-GEO/canvodpy-extensions).
 
 ## Development
 
@@ -106,7 +106,7 @@ Development needs [uv](https://docs.astral.sh/uv/getting-started/installation/)
 and [just](https://github.com/casey/just).
 
 ```bash
-git clone --recurse-submodules https://github.com/nfb2021/canvodpy.git
+git clone --recurse-submodules https://github.com/TUW-GEO/canvodpy.git
 cd canvodpy
 just check-dev-tools   # checks that the tools are installed
 uv sync
@@ -132,8 +132,8 @@ All documentation is at **[canvodpy.eu](https://canvodpy.eu/)**:
 
 ## Contributing
 
-Contributions of all kinds are welcome. See [CONTRIBUTING.md](https://github.com/nfb2021/canvodpy/blob/main/CONTRIBUTING.md).
-First-time contributors: add yourself to [CONTRIBUTORS.md](https://github.com/nfb2021/canvodpy/blob/main/CONTRIBUTORS.md)
+Contributions of all kinds are welcome. See [CONTRIBUTING.md](https://github.com/TUW-GEO/canvodpy/blob/main/CONTRIBUTING.md).
+First-time contributors: add yourself to [CONTRIBUTORS.md](https://github.com/TUW-GEO/canvodpy/blob/main/CONTRIBUTORS.md)
 in your pull request.
 
 ## How to cite
@@ -141,12 +141,12 @@ in your pull request.
 If you use canVODpy, please cite it with its DOI,
 [`10.5281/zenodo.18496233`](https://doi.org/10.5281/zenodo.18496233). This
 DOI always leads to the newest version, and Zenodo also lists a DOI for
-each version. [CITATION.cff](https://github.com/nfb2021/canvodpy/blob/main/CITATION.cff) has the full citation, and GitHub
+each version. [CITATION.cff](https://github.com/TUW-GEO/canvodpy/blob/main/CITATION.cff) has the full citation, and GitHub
 shows it in the "Cite this repository" menu.
 
 ## License
 
-Licensed under the [Apache License 2.0](https://github.com/nfb2021/canvodpy/blob/main/LICENSE).
+Licensed under the [Apache License 2.0](https://github.com/TUW-GEO/canvodpy/blob/main/LICENSE).
 
 This software is provided "as is" without warranty of any kind. See the
 [Impressum](https://canvodpy.eu/impressum/) for the full legal notice and

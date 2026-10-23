@@ -223,7 +223,7 @@ setting and how to keep machine-specific settings in a separate file.
 
 !!! example "Try it in a notebook"
 
-    Open [Configuration](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/02_configuration.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Configuration](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/02_configuration.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
@@ -270,7 +270,7 @@ explains each field.
 
 !!! example "Try it in a notebook"
 
-    Open [Naming convention](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/04_naming_convention.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Naming convention](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/04_naming_convention.py?mode=edit) in molab, the online notebook service of marimo.
 
 If your files have other names, for example the names your receiver
 gives them, you don't have to rename them. A naming recipe maps them to
@@ -355,7 +355,7 @@ Files that are already in the store are skipped.
 
 !!! example "Try it in a notebook"
 
-    Open [Site pipeline](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/18_site_pipeline.py?mode=edit), [Running the pipeline from the command line](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/01_cli_pipeline.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Site pipeline](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/18_site_pipeline.py?mode=edit), [Running the pipeline from the command line](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/01_cli_pipeline.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
@@ -402,7 +402,7 @@ receiver. The diagnostics guide explains it under
 
 !!! example "Try it in a notebook"
 
-    Open [Batch processing](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/20_workflow_batch_processing.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [Batch processing](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/20_workflow_batch_processing.py?mode=edit) in molab, the online notebook service of marimo.
 
 ---
 
@@ -434,7 +434,7 @@ canvodpy store log ExampleSite --store vod   # the history of its writes
 
 !!! example "Try it in a notebook"
 
-    Open [VOD retrieval](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/10_vod_retrieval.py?mode=edit), [Icechunk store](https://molab.marimo.io/github/nfb2021/canvodpy-demo/blob/main/11_icechunk_store.py?mode=edit) in molab, the online notebook service of marimo.
+    Open [VOD retrieval](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/10_vod_retrieval.py?mode=edit), [Icechunk store](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/11_icechunk_store.py?mode=edit) in molab, the online notebook service of marimo.
 
 
 ---

@@ -13,7 +13,7 @@
       "givenName": "Nicolas François"
     }
   ],
-  "codeRepository": "https://github.com/nfb2021/canvodpy",
+  "codeRepository": "https://github.com/TUW-GEO/canvodpy",
   "datePublished": "2026-02-13",
   "description": "canVODpy aims to be the central community-driven software suite for deriving canopy Vegetation Optical Depth (VOD) from the signal-to-noise ratio of the same GNSS signal, received at the same time by one receiver below the canopy and one with an unobstructed view of the sky. It reads RINEX v2.11, RINEX v3.04, stripped RINEX v3.05, NMEA v4.00, and Septentrio binary (SBF) files; computes the satellite angles of every observation from final orbit and clock products or from broadcast ephemerides; keeps observations and VOD in versioned Icechunk stores with DataCite, ACDD, and STAC metadata; retrieves VOD with the zeroth-order tau-omega model; and assigns observations to hemispheric grids.",
   "identifier": "https://doi.org/10.5281/zenodo.18496233",
@@ -33,6 +33,6 @@
   ],
   "license": "https://spdx.org/licenses/Apache-2.0",
   "name": "canVODpy: An Open Python Ecosystem for GNSS-Transmissometry Canopy VOD Retrievals",
-  "url": "https://github.com/nfb2021/canvodpy",
+  "url": "https://github.com/TUW-GEO/canvodpy",
   "version": "0.1.0"
 }
