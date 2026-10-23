@@ -60,12 +60,12 @@
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">2<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
-            <a id="prevFileLink" class="nav" href="z_ded10f5ab3763012_hampel_filtering_py.html">&#xab; prev</a> &nbsp; &nbsp;
+            <a id="prevFileLink" class="nav" href="z_ded10f5ab3763012_filtering_py.html">&#xab; prev</a> &nbsp; &nbsp;
             <a id="indexLink" class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="z_ded10f5ab3763012_per_cell_analysis_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-23 14:28 +0000
+            created at 2026-10-23 18:41 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -176,7 +176,7 @@
     <p class="pln"><span class="n"><a id="t94" href="#t94">94</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t95" href="#t95">95</a></span><span class="t">        <span class="nam">phi</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_grid_df</span><span class="op">[</span><span class="str">&quot;phi&quot;</span><span class="op">]</span><span class="op">.</span><span class="nam">to_numpy</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t96" href="#t96">96</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t97" href="#t97">97</a></span><span class="t">        <span class="com"># Normalise to [0, 2&#960;)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t97" href="#t97">97</a></span><span class="t">        <span class="com"># Normalize to [0, 2&#960;)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t98" href="#t98">98</a></span><span class="t">        <span class="nam">phi</span> <span class="op">=</span> <span class="nam">np</span><span class="op">.</span><span class="nam">mod</span><span class="op">(</span><span class="nam">phi</span><span class="op">,</span> <span class="num">2</span> <span class="op">*</span> <span class="nam">np</span><span class="op">.</span><span class="nam">pi</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t99" href="#t99">99</a></span><span class="t">        <span class="nam">phi_min</span> <span class="op">=</span> <span class="nam">np</span><span class="op">.</span><span class="nam">mod</span><span class="op">(</span><span class="nam">phi_min</span><span class="op">,</span> <span class="num">2</span> <span class="op">*</span> <span class="nam">np</span><span class="op">.</span><span class="nam">pi</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t100" href="#t100">100</a></span><span class="t">        <span class="nam">phi_max</span> <span class="op">=</span> <span class="nam">np</span><span class="op">.</span><span class="nam">mod</span><span class="op">(</span><span class="nam">phi_max</span><span class="op">,</span> <span class="num">2</span> <span class="op">*</span> <span class="nam">np</span><span class="op">.</span><span class="nam">pi</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -453,7 +453,7 @@
     <p class="pln"><span class="n"><a id="t371" href="#t371">371</a></span><span class="t"><span class="str">        Parameters</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t372" href="#t372">372</a></span><span class="t"><span class="str">        ----------</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t373" href="#t373">373</a></span><span class="t"><span class="str">        center_phi : float</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t374" href="#t374">374</a></span><span class="t"><span class="str">            Centre azimuth of sector.</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t374" href="#t374">374</a></span><span class="t"><span class="str">            Center azimuth of sector.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t375" href="#t375">375</a></span><span class="t"><span class="str">        sector_width : float</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t376" href="#t376">376</a></span><span class="t"><span class="str">            Full angular width of sector.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t377" href="#t377">377</a></span><span class="t"><span class="str">        theta_min : float</span>&nbsp;</span><span class="r"></span></p>
@@ -621,7 +621,7 @@
     <p class="pln"><span class="n"><a id="t539" href="#t539">539</a></span><span class="t"><span class="str">    Raises</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t540" href="#t540">540</a></span><span class="t"><span class="str">    ------</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t541" href="#t541">541</a></span><span class="t"><span class="str">    ValueError</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t542" href="#t542">542</a></span><span class="t"><span class="str">        If *hemisphere* is not recognised.</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t542" href="#t542">542</a></span><span class="t"><span class="str">        If *hemisphere* is not recognized.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t543" href="#t543">543</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t544" href="#t544">544</a></span><span class="t"><span class="str">    &quot;&quot;&quot;</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t545" href="#t545">545</a></span><span class="t">    <span class="nam">_RANGES</span> <span class="op">=</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
@@ -669,12 +669,12 @@
 <footer>
     <div class="content">
         <p>
-            <a class="nav" href="z_ded10f5ab3763012_hampel_filtering_py.html">&#xab; prev</a> &nbsp; &nbsp;
+            <a class="nav" href="z_ded10f5ab3763012_filtering_py.html">&#xab; prev</a> &nbsp; &nbsp;
             <a class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a class="nav" href="z_ded10f5ab3763012_per_cell_analysis_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-23 14:28 +0000
+            created at 2026-10-23 18:41 +0000
         </p>
     </div>
 </footer>

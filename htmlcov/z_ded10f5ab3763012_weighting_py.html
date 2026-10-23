@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_8d7a9ad53745425b___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-23 14:28 +0000
+            created at 2026-10-23 18:41 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -100,7 +100,7 @@
     <p class="pln"><span class="n"><a id="t18" href="#t18">18</a></span><span class="t"><span class="str">* Supported weight types: ``solid_angle``, ``observation_count``,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t"><span class="str">  ``snr``, ``sin_elevation``, ``inverse_variance``, ``custom``.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t"><span class="str">* Multiple weights are combined element-wise (multiply or add) and</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t"><span class="str">  optionally normalised to sum to 1.</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t"><span class="str">  optionally normalized to sum to 1.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t"><span class="str">* Dask-backed datasets are handled efficiently: only scalar statistics</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t23" href="#t23">23</a></span><span class="t"><span class="str">  are computed eagerly; masks stay lazy.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t24" href="#t24">24</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -177,7 +177,7 @@
     <p class="pln"><span class="n"><a id="t95" href="#t95">95</a></span><span class="t"><span class="str">            ``&#x27;snr&#x27;``, ``&#x27;sin_elevation&#x27;``, ``&#x27;inverse_variance&#x27;``,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t96" href="#t96">96</a></span><span class="t"><span class="str">            ``&#x27;custom&#x27;``.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t97" href="#t97">97</a></span><span class="t"><span class="str">        normalize : bool</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t98" href="#t98">98</a></span><span class="t"><span class="str">            If ``True``, normalise this component to sum to 1.0 before</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t98" href="#t98">98</a></span><span class="t"><span class="str">            If ``True``, normalize this component to sum to 1.0 before</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t99" href="#t99">99</a></span><span class="t"><span class="str">            combination.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t100" href="#t100">100</a></span><span class="t"><span class="str">        **kwargs</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t101" href="#t101">101</a></span><span class="t"><span class="str">            Weight-specific parameters (see individual ``_compute_*``</span>&nbsp;</span><span class="r"></span></p>
@@ -234,7 +234,7 @@
     <p class="pln"><span class="n"><a id="t152" href="#t152">152</a></span><span class="t"><span class="str">            ``&#x27;multiply&#x27;`` &#8211; element-wise product (default).</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t153" href="#t153">153</a></span><span class="t"><span class="str">            ``&#x27;add&#x27;``      &#8211; element-wise sum.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t154" href="#t154">154</a></span><span class="t"><span class="str">        normalize_final : bool</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t155" href="#t155">155</a></span><span class="t"><span class="str">            If ``True``, normalise the final array to sum to 1.0.</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t155" href="#t155">155</a></span><span class="t"><span class="str">            If ``True``, normalize the final array to sum to 1.0.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t156" href="#t156">156</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t157" href="#t157">157</a></span><span class="t"><span class="str">        Returns</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t158" href="#t158">158</a></span><span class="t"><span class="str">        -------</span>&nbsp;</span><span class="r"></span></p>
@@ -431,7 +431,7 @@
     <p class="mis show_mis"><span class="n"><a id="t349" href="#t349">349</a></span><span class="t">                <span class="key">if</span> <span class="nam">v0</span><span class="op">[</span><span class="num">2</span><span class="op">]</span> <span class="op">&lt;</span> <span class="op">-</span><span class="num">0.01</span> <span class="key">or</span> <span class="nam">v1</span><span class="op">[</span><span class="num">2</span><span class="op">]</span> <span class="op">&lt;</span> <span class="op">-</span><span class="num">0.01</span> <span class="key">or</span> <span class="nam">v2</span><span class="op">[</span><span class="num">2</span><span class="op">]</span> <span class="op">&lt;</span> <span class="op">-</span><span class="num">0.01</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t350" href="#t350">350</a></span><span class="t">                    <span class="key">continue</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t351" href="#t351">351</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t352" href="#t352">352</a></span><span class="t">                <span class="com"># Normalise to unit sphere</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t352" href="#t352">352</a></span><span class="t">                <span class="com"># Normalize to unit sphere</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t353" href="#t353">353</a></span><span class="t">                <span class="nam">v0</span> <span class="op">=</span> <span class="nam">v0</span> <span class="op">/</span> <span class="nam">np</span><span class="op">.</span><span class="nam">linalg</span><span class="op">.</span><span class="nam">norm</span><span class="op">(</span><span class="nam">v0</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t354" href="#t354">354</a></span><span class="t">                <span class="nam">v1</span> <span class="op">=</span> <span class="nam">v1</span> <span class="op">/</span> <span class="nam">np</span><span class="op">.</span><span class="nam">linalg</span><span class="op">.</span><span class="nam">norm</span><span class="op">(</span><span class="nam">v1</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t355" href="#t355">355</a></span><span class="t">                <span class="nam">v2</span> <span class="op">=</span> <span class="nam">v2</span> <span class="op">/</span> <span class="nam">np</span><span class="op">.</span><span class="nam">linalg</span><span class="op">.</span><span class="nam">norm</span><span class="op">(</span><span class="nam">v2</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -719,7 +719,7 @@
     <p class="pln"><span class="n"><a id="t637" href="#t637">637</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t638" href="#t638">638</a></span><span class="t">    <span class="op">@</span><span class="nam">staticmethod</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t639" href="#t639">639</a></span><span class="t">    <span class="key">def</span> <span class="nam">_normalize_weights</span><span class="op">(</span><span class="nam">weights</span><span class="op">:</span> <span class="nam">np</span><span class="op">.</span><span class="nam">ndarray</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="nam">np</span><span class="op">.</span><span class="nam">ndarray</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t640" href="#t640">640</a></span><span class="t">        <span class="str">&quot;&quot;&quot;Normalise weights to sum to 1.0, handling NaN and zeros.&quot;&quot;&quot;</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t640" href="#t640">640</a></span><span class="t">        <span class="str">&quot;&quot;&quot;Normalize weights to sum to 1.0, handling NaN and zeros.&quot;&quot;&quot;</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t641" href="#t641">641</a></span><span class="t">        <span class="nam">weights</span> <span class="op">=</span> <span class="nam">np</span><span class="op">.</span><span class="nam">nan_to_num</span><span class="op">(</span><span class="nam">weights</span><span class="op">,</span> <span class="nam">nan</span><span class="op">=</span><span class="num">0.0</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t642" href="#t642">642</a></span><span class="t">        <span class="nam">weight_sum</span> <span class="op">=</span> <span class="nam">weights</span><span class="op">.</span><span class="nam">sum</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t643" href="#t643">643</a></span><span class="t">        <span class="key">if</span> <span class="nam">weight_sum</span> <span class="op">&gt;</span> <span class="num">0</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -758,7 +758,7 @@
     <p class="pln"><span class="n"><a id="t676" href="#t676">676</a></span><span class="t"><span class="str">    grid : GridData</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t677" href="#t677">677</a></span><span class="t"><span class="str">        Grid instance.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t678" href="#t678">678</a></span><span class="t"><span class="str">    normalize : bool</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t679" href="#t679">679</a></span><span class="t"><span class="str">        If ``True``, normalise to sum to 1.0.</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t679" href="#t679">679</a></span><span class="t"><span class="str">        If ``True``, normalize to sum to 1.0.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t680" href="#t680">680</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t681" href="#t681">681</a></span><span class="t"><span class="str">    Returns</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t682" href="#t682">682</a></span><span class="t"><span class="str">    -------</span>&nbsp;</span><span class="r"></span></p>
@@ -778,7 +778,7 @@
             <a class="nav" href="z_8d7a9ad53745425b___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-23 14:28 +0000
+            created at 2026-10-23 18:41 +0000
         </p>
     </div>
 </footer>

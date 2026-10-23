@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_71ccfa8a540bd563_constellations_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-23 14:28 +0000
+            created at 2026-10-23 18:41 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -90,7 +90,7 @@
     <p class="pln"><span class="n"><a id="t8" href="#t8">8</a></span><span class="t"><span class="str">- KEEP_RNX_VARS &#8594; processing.keep_gnss_observables</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t9" href="#t9">9</a></span><span class="t"><span class="str">- COMPRESSION &#8594; compression.{zlib, complevel}</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t10" href="#t10">10</a></span><span class="t"><span class="str">- AUTHOR, EMAIL, etc. &#8594; metadata.{author, email, ...}</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t11" href="#t11">11</a></span><span class="t"><span class="str">- SOFTWARE &#8594; canvod.utils._meta.SOFTWARE_ATTRS</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t11" href="#t11">11</a></span><span class="t"><span class="str">- SOFTWARE &#8594; the readers&#x27; ``Software`` attribute (``GNSSDataReader._build_attrs``)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t12" href="#t12">12</a></span><span class="t"><span class="str">&quot;&quot;&quot;</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t13" href="#t13">13</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t14" href="#t14">14</a></span><span class="t"><span class="key">import</span> <span class="nam">re</span>&nbsp;</span><span class="r"></span></p>
@@ -106,8 +106,8 @@
     <p class="run"><span class="n"><a id="t24" href="#t24">24</a></span><span class="t"><span class="key">if</span> <span class="str">&quot;dBHz&quot;</span> <span class="key">not</span> <span class="key">in</span> <span class="nam">UREG</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t25" href="#t25">25</a></span><span class="t">    <span class="nam">UREG</span><span class="op">.</span><span class="nam">define</span><span class="op">(</span><span class="str">&quot;dBHz = 10 * log10(hertz)&quot;</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t26" href="#t26">26</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t27" href="#t27">27</a></span><span class="t"><span class="com"># DEPRECATED: Use canvod.filemap.patterns.BUILTIN_PATTERNS instead.</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t28" href="#t28">28</a></span><span class="t"><span class="com"># These are kept only for backward compatibility with DataDirMatcher.</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t27" href="#t27">27</a></span><span class="t"><span class="com"># Left over from development: canvodpy run finds files by their canonical</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t28" href="#t28">28</a></span><span class="t"><span class="com"># names (canvodpy.orchestrator.discovery) or a naming recipe (canvod-filemap).</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t29" href="#t29">29</a></span><span class="t"><span class="nam">FORMAT_GLOB_PATTERNS</span><span class="op">:</span> <span class="nam">dict</span><span class="op">[</span><span class="nam">str</span><span class="op">,</span> <span class="nam">tuple</span><span class="op">[</span><span class="nam">str</span><span class="op">,</span> <span class="op">...</span><span class="op">]</span><span class="op">]</span> <span class="op">=</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t30" href="#t30">30</a></span><span class="t">    <span class="str">&quot;rinex3&quot;</span><span class="op">:</span> <span class="op">(</span><span class="str">&quot;*.[0-9][0-9]o&quot;</span><span class="op">,</span> <span class="str">&quot;*.O&quot;</span><span class="op">,</span> <span class="str">&quot;*.rnx&quot;</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t31" href="#t31">31</a></span><span class="t">    <span class="str">&quot;rinex2&quot;</span><span class="op">:</span> <span class="op">(</span><span class="str">&quot;*.[0-9][0-9]o&quot;</span><span class="op">,</span> <span class="str">&quot;*.O&quot;</span><span class="op">,</span> <span class="str">&quot;*.rnx&quot;</span><span class="op">,</span> <span class="str">&quot;*.obs&quot;</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -170,7 +170,7 @@
             <a class="nav" href="z_71ccfa8a540bd563_constellations_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-23 14:28 +0000
+            created at 2026-10-23 18:41 +0000
         </p>
     </div>
 </footer>

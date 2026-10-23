@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for packages/canvod-grids/src/canvod/grids/grids_impl/healpix_grid.py: 85%</title>
+    <title>Coverage for packages/canvod-grids/src/canvod/grids/grids_impl/healpix_grid.py: 89%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_c827f16f.png">
     <link rel="stylesheet" href="style_cb_4667309f.css" type="text/css">
     <script src="coverage_html_cb_15cffcd0.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>packages<span class="sep">/</span>canvod-grids<span class="sep">/</span>src<span class="sep">/</span>canvod<span class="sep">/</span>grids<span class="sep">/</span>grids_impl<span class="sep">/</span>healpix_grid.py</b>:
-            <span class="pc_cov">85%</span>
+            <span class="pc_cov">89%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -55,8 +55,8 @@
         </aside>
         <h2>
             <span class="text">46 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">39<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">7<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">41<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">5<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_c44208f1f872dd22_htm_grid_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-23 14:28 +0000
+            created at 2026-10-23 18:41 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -148,7 +148,7 @@
     <p class="pln"><span class="n"><a id="t66" href="#t66">66</a></span><span class="t"><span class="str">       equatorial belt).</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t67" href="#t67">67</a></span><span class="t"><span class="str">    2. Each base pixel is subdivided into ``nside&#178;`` equal-area children</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t68" href="#t68">68</a></span><span class="t"><span class="str">       using a hierarchical quadtree.</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t69" href="#t69">69</a></span><span class="t"><span class="str">    3. Pixel centres are returned by ``healpy.pix2ang(nside, ipix)`` in</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t69" href="#t69">69</a></span><span class="t"><span class="str">    3. Pixel centers are returned by ``healpy.pix2ang(nside, ipix)`` in</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t70" href="#t70">70</a></span><span class="t"><span class="str">       RING ordering (pixels ordered by increasing colatitude).</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t71" href="#t71">71</a></span><span class="t"><span class="str">    4. This builder keeps only pixels with ``theta &#8804; &#960;/2 &#8722; cutoff_theta``</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t72" href="#t72">72</a></span><span class="t"><span class="str">       (northern hemisphere above the elevation mask).</span>&nbsp;</span><span class="r"></span></p>
@@ -201,8 +201,8 @@
     <p class="pln"><span class="n"><a id="t119" href="#t119">119</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t120" href="#t120">120</a></span><span class="t">        <span class="com"># Determine nside</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t121" href="#t121">121</a></span><span class="t">        <span class="key">if</span> <span class="nam">nside</span> <span class="key">is</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t122" href="#t122">122</a></span><span class="t">            <span class="nam">nside_estimate</span> <span class="op">=</span> <span class="nam">int</span><span class="op">(</span><span class="nam">np</span><span class="op">.</span><span class="nam">sqrt</span><span class="op">(</span><span class="num">3</span> <span class="op">/</span> <span class="nam">np</span><span class="op">.</span><span class="nam">pi</span><span class="op">)</span> <span class="op">*</span> <span class="num">60</span> <span class="op">/</span> <span class="nam">angular_resolution</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t123" href="#t123">123</a></span><span class="t">            <span class="nam">self</span><span class="op">.</span><span class="nam">nside</span> <span class="op">=</span> <span class="num">2</span> <span class="op">**</span> <span class="nam">max</span><span class="op">(</span><span class="num">0</span><span class="op">,</span> <span class="nam">int</span><span class="op">(</span><span class="nam">np</span><span class="op">.</span><span class="nam">round</span><span class="op">(</span><span class="nam">np</span><span class="op">.</span><span class="nam">log2</span><span class="op">(</span><span class="nam">nside_estimate</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t122" href="#t122">122</a></span><span class="t">            <span class="nam">nside_estimate</span> <span class="op">=</span> <span class="nam">int</span><span class="op">(</span><span class="nam">np</span><span class="op">.</span><span class="nam">sqrt</span><span class="op">(</span><span class="num">3</span> <span class="op">/</span> <span class="nam">np</span><span class="op">.</span><span class="nam">pi</span><span class="op">)</span> <span class="op">*</span> <span class="num">60</span> <span class="op">/</span> <span class="nam">angular_resolution</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t123" href="#t123">123</a></span><span class="t">            <span class="nam">self</span><span class="op">.</span><span class="nam">nside</span> <span class="op">=</span> <span class="num">2</span> <span class="op">**</span> <span class="nam">max</span><span class="op">(</span><span class="num">0</span><span class="op">,</span> <span class="nam">int</span><span class="op">(</span><span class="nam">np</span><span class="op">.</span><span class="nam">round</span><span class="op">(</span><span class="nam">np</span><span class="op">.</span><span class="nam">log2</span><span class="op">(</span><span class="nam">nside_estimate</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t124" href="#t124">124</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t125" href="#t125">125</a></span><span class="t">            <span class="key">if</span> <span class="nam">nside</span> <span class="op">&lt;</span> <span class="num">1</span> <span class="key">or</span> <span class="op">(</span><span class="nam">nside</span> <span class="op">&amp;</span> <span class="op">(</span><span class="nam">nside</span> <span class="op">-</span> <span class="num">1</span><span class="op">)</span><span class="op">)</span> <span class="op">!=</span> <span class="num">0</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t126" href="#t126">126</a></span><span class="t">                <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span><span class="fst">f&quot;</span><span class="fst">nside must be a power of 2, got </span><span class="op">{</span><span class="nam">nside</span><span class="op">}</span><span class="fst">&quot;</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -215,7 +215,7 @@
     <p class="run"><span class="n"><a id="t133" href="#t133">133</a></span><span class="t">            <span class="nam">self</span><span class="op">.</span><span class="nam">hp</span> <span class="op">=</span> <span class="nam">hp</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t134" href="#t134">134</a></span><span class="t">        <span class="key">except</span> <span class="nam">ImportError</span> <span class="key">as</span> <span class="nam">e</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t135" href="#t135">135</a></span><span class="t">            <span class="key">raise</span> <span class="nam">ImportError</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t136" href="#t136">136</a></span><span class="t">                <span class="str">&quot;healpy is required for HEALPix grid. Install with: pip install healpy&quot;</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t136" href="#t136">136</a></span><span class="t">                <span class="str">&quot;healpy is required for HEALPix grid. Install with: uv add healpy&quot;</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t137" href="#t137">137</a></span><span class="t">            <span class="op">)</span> <span class="key">from</span> <span class="nam">e</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t138" href="#t138">138</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t139" href="#t139">139</a></span><span class="t">        <span class="nam">pixel_size_arcmin</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">hp</span><span class="op">.</span><span class="nam">nside2resol</span><span class="op">(</span><span class="nam">self</span><span class="op">.</span><span class="nam">nside</span><span class="op">,</span> <span class="nam">arcmin</span><span class="op">=</span><span class="key">True</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -250,7 +250,7 @@
     <p class="pln"><span class="n"><a id="t168" href="#t168">168</a></span><span class="t"><span class="str">        Returns</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t169" href="#t169">169</a></span><span class="t"><span class="str">        -------</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t170" href="#t170">170</a></span><span class="t"><span class="str">        grid : pl.DataFrame</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t171" href="#t171">171</a></span><span class="t"><span class="str">            One row per pixel.  Contains phi, theta (centre), approximate</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t171" href="#t171">171</a></span><span class="t"><span class="str">            One row per pixel.  Contains phi, theta (center), approximate</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t172" href="#t172">172</a></span><span class="t"><span class="str">            bounding-box limits, ``healpix_ipix`` (RING-ordered pixel index),</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t173" href="#t173">173</a></span><span class="t"><span class="str">            and ``healpix_nside``.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t174" href="#t174">174</a></span><span class="t"><span class="str">        theta_lims : np.ndarray</span>&nbsp;</span><span class="r"></span></p>
@@ -346,7 +346,7 @@
             <a class="nav" href="z_c44208f1f872dd22_htm_grid_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-23 14:28 +0000
+            created at 2026-10-23 18:41 +0000
         </p>
     </div>
 </footer>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for packages/canvod-grids/src/canvod/grids/grids_impl/fibonacci_grid.py: 90%</title>
+    <title>Coverage for packages/canvod-grids/src/canvod/grids/grids_impl/fibonacci_grid.py: 95%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_c827f16f.png">
     <link rel="stylesheet" href="style_cb_4667309f.css" type="text/css">
     <script src="coverage_html_cb_15cffcd0.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>packages<span class="sep">/</span>canvod-grids<span class="sep">/</span>src<span class="sep">/</span>canvod<span class="sep">/</span>grids<span class="sep">/</span>grids_impl<span class="sep">/</span>fibonacci_grid.py</b>:
-            <span class="pc_cov">90%</span>
+            <span class="pc_cov">95%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -55,8 +55,8 @@
         </aside>
         <h2>
             <span class="text">60 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">54<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">6<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">57<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">3<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_c44208f1f872dd22_geodesic_grid_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-23 14:28 +0000
+            created at 2026-10-23 18:41 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -98,7 +98,7 @@
     <p class="pln"><span class="n"><a id="t16" href="#t16">16</a></span><span class="t"><span class="str">    Points are distributed on the sphere using the *Fibonacci lattice*</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t17" href="#t17">17</a></span><span class="t"><span class="str">    (golden-spiral method), which provides one of the most uniform</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t18" href="#t18">18</a></span><span class="t"><span class="str">    point distributions achievable on a sphere without iterative</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t"><span class="str">    optimisation.  Each point then becomes the centre of a *spherical</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t"><span class="str">    optimization.  Each point then becomes the center of a *spherical</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t"><span class="str">    Voronoi cell* &#8212; the region of the sphere closer to that point than</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t"><span class="str">    to any other.  The resulting tessellation has no polar singularities</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t"><span class="str">    and near-uniform cell areas.</span>&nbsp;</span><span class="r"></span></p>
@@ -151,7 +151,7 @@
     <p class="pln"><span class="n"><a id="t69" href="#t69">69</a></span><span class="t"><span class="str">       Tessellating the full sphere (rather than hemisphere-only points)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t70" href="#t70">70</a></span><span class="t"><span class="str">       is required for correctness: with no sites in the southern</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t71" href="#t71">71</a></span><span class="t"><span class="str">       hemisphere, cells along the horizon would have no southern</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t72" href="#t72">72</a></span><span class="t"><span class="str">       neighbour to bound them and would balloon out to cover the entire</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t72" href="#t72">72</a></span><span class="t"><span class="str">       neighbor to bound them and would balloon out to cover the entire</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t73" href="#t73">73</a></span><span class="t"><span class="str">       (empty) opposite hemisphere.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t74" href="#t74">74</a></span><span class="t"><span class="str">    3. **Hemisphere filter** &#8211; of the resulting cells, only those whose</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t75" href="#t75">75</a></span><span class="t"><span class="str">       *generating point* has ``&#952; &#8804; &#960;/2 &#8722; cutoff_theta`` are kept.</span>&nbsp;</span><span class="r"></span></p>
@@ -216,9 +216,9 @@
     <p class="run"><span class="n"><a id="t134" href="#t134">134</a></span><span class="t">        <span class="nam">super</span><span class="op">(</span><span class="op">)</span><span class="op">.</span><span class="nam">__init__</span><span class="op">(</span><span class="nam">angular_resolution</span><span class="op">,</span> <span class="nam">cutoff_theta</span><span class="op">,</span> <span class="nam">phi_rotation</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t135" href="#t135">135</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t136" href="#t136">136</a></span><span class="t">        <span class="key">if</span> <span class="nam">n_points</span> <span class="key">is</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t137" href="#t137">137</a></span><span class="t">            <span class="nam">cell_area</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">angular_resolution_rad</span><span class="op">**</span><span class="num">2</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t138" href="#t138">138</a></span><span class="t">            <span class="nam">hemisphere_area</span> <span class="op">=</span> <span class="num">2</span> <span class="op">*</span> <span class="nam">np</span><span class="op">.</span><span class="nam">pi</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t139" href="#t139">139</a></span><span class="t">            <span class="nam">self</span><span class="op">.</span><span class="nam">n_points</span> <span class="op">=</span> <span class="nam">max</span><span class="op">(</span><span class="num">10</span><span class="op">,</span> <span class="nam">int</span><span class="op">(</span><span class="nam">hemisphere_area</span> <span class="op">/</span> <span class="nam">cell_area</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t137" href="#t137">137</a></span><span class="t">            <span class="nam">cell_area</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">angular_resolution_rad</span><span class="op">**</span><span class="num">2</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t138" href="#t138">138</a></span><span class="t">            <span class="nam">hemisphere_area</span> <span class="op">=</span> <span class="num">2</span> <span class="op">*</span> <span class="nam">np</span><span class="op">.</span><span class="nam">pi</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t139" href="#t139">139</a></span><span class="t">            <span class="nam">self</span><span class="op">.</span><span class="nam">n_points</span> <span class="op">=</span> <span class="nam">max</span><span class="op">(</span><span class="num">10</span><span class="op">,</span> <span class="nam">int</span><span class="op">(</span><span class="nam">hemisphere_area</span> <span class="op">/</span> <span class="nam">cell_area</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t140" href="#t140">140</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t141" href="#t141">141</a></span><span class="t">            <span class="nam">self</span><span class="op">.</span><span class="nam">n_points</span> <span class="op">=</span> <span class="nam">n_points</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t142" href="#t142">142</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -245,7 +245,7 @@
     <p class="pln"><span class="n"><a id="t163" href="#t163">163</a></span><span class="t"><span class="str">        Returns</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t164" href="#t164">164</a></span><span class="t"><span class="str">        -------</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t165" href="#t165">165</a></span><span class="t"><span class="str">        grid : pl.DataFrame</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t166" href="#t166">166</a></span><span class="t"><span class="str">            One row per Voronoi cell.  Contains phi, theta (centre),</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t166" href="#t166">166</a></span><span class="t"><span class="str">            One row per Voronoi cell.  Contains phi, theta (center),</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t167" href="#t167">167</a></span><span class="t"><span class="str">            bounding-box limits, ``voronoi_region`` (list of vertex indices</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t168" href="#t168">168</a></span><span class="t"><span class="str">            into the Voronoi vertex array), and ``n_vertices``.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t169" href="#t169">169</a></span><span class="t"><span class="str">        theta_lims : np.ndarray</span>&nbsp;</span><span class="r"></span></p>
@@ -284,7 +284,7 @@
     <p class="pln"><span class="n"><a id="t202" href="#t202">202</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t203" href="#t203">203</a></span><span class="t">        <span class="key">except</span> <span class="nam">ImportError</span> <span class="key">as</span> <span class="nam">e</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t204" href="#t204">204</a></span><span class="t">            <span class="key">raise</span> <span class="nam">ImportError</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t205" href="#t205">205</a></span><span class="t">                <span class="str">&quot;scipy required for Fibonacci grid. Install: pip install scipy&quot;</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t205" href="#t205">205</a></span><span class="t">                <span class="str">&quot;scipy required for Fibonacci grid. Install: uv add scipy&quot;</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t206" href="#t206">206</a></span><span class="t">            <span class="op">)</span> <span class="key">from</span> <span class="nam">e</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t207" href="#t207">207</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t208" href="#t208">208</a></span><span class="t">        <span class="nam">mask</span> <span class="op">=</span> <span class="nam">theta_full</span> <span class="op">&lt;=</span> <span class="op">(</span><span class="nam">np</span><span class="op">.</span><span class="nam">pi</span> <span class="op">/</span> <span class="num">2</span> <span class="op">-</span> <span class="nam">self</span><span class="op">.</span><span class="nam">cutoff_theta_rad</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -387,7 +387,7 @@
             <a class="nav" href="z_c44208f1f872dd22_geodesic_grid_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-23 14:28 +0000
+            created at 2026-10-23 18:41 +0000
         </p>
     </div>
 </footer>
