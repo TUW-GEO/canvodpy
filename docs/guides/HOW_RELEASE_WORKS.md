@@ -179,7 +179,8 @@ stored API tokens:
 1. GitHub issues the workflow run a short-lived token (JWT) saying which
    repository, workflow, and environment it is.
 2. The workflow sends it to PyPI with the upload
-   (`pypa/gh-action-pypi-publish`, permission `id-token: write`).
+   (`uv publish`, permission `id-token: write`, given only to the
+   publish job; the build job has no upload permission).
 3. PyPI checks the signature and that repository, workflow, and environment
    match a trusted publisher configured for the project, then accepts the
    upload.

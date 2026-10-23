@@ -212,5 +212,5 @@ tag existing is not a promise that PyPI has it.
     allows only one pending publisher per repository, workflow and
     environment, so two new packages need two runs: add the first
     package's pending publisher and run the workflow, then the second's
-    and run it again. Versions already on PyPI are skipped
-    (`skip-existing`).
+    and run it again. Files already on PyPI are skipped
+    (`uv publish --check-url`).

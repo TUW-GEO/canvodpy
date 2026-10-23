@@ -139,7 +139,7 @@ GitHub's OIDC provider generates a JWT containing:
 
 ### 4. Publish action
 
-The `pypa/gh-action-pypi-publish` action:
+`uv publish --trusted-publishing always`:
 1. Retrieves the JWT from GitHub's OIDC provider
 2. Bundles it with the package files
 3. Sends to PyPI/TestPyPI upload endpoint
