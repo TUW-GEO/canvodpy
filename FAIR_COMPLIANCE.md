@@ -1,4 +1,4 @@
-# FAIR Compliance Status — canvodpy
+# FAIR Compliance Status of canvodpy
 
 ## 1. Is there a FAIR certificate?
 
@@ -80,10 +80,10 @@ The authoritative standard is **FAIR4RS Principles v1.0** (RDA, 2022; [doi:10.10
 
 | Gap | FAIR principle | Action |
 |-----|---------------|--------|
-| ~~`codemeta.json`~~ | ~~F2, F4~~ | Done — `codemeta.json` exists at repo root |
+| ~~`codemeta.json`~~ | ~~F2, F4~~ | Done: `codemeta.json` exists at repo root |
 | Software Heritage archival | F1, A2 | Submit via [archive.softwareheritage.org/save](https://archive.softwareheritage.org/save/) to get a SWHID |
 | `howfairis` badge | All | Run `howfairis` on the repo, add badge to README |
-| `.zenodo.json` | F2 | Control communities, grants, related identifiers beyond CITATION.cff |
+| ~~`.zenodo.json`~~ | ~~F2~~ | Done: `.zenodo.json` exists at repo root, with related identifiers; it sets no communities or grants |
 | Output data provenance | R1.2, I2 | Embed in netCDF outputs: software name, version, DOI, processing date, input references |
 | Output data standards | I1, R3 | netCDF-4 with CF conventions (standard_name, units), ACDD global attributes |
 | Output data license | R1.1 | Explicitly license output data (e.g., CC-BY-4.0) |
