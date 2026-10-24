@@ -93,7 +93,7 @@ The code is the truth; don't copy the constants into new code.
 ### canvodpy-extensions
 
 Optional packages in a separate repository
-(<https://github.com/TUW-GEO/canvodpy-extensions>), GitHub-only:
+(<https://github.com/TUW-GEO/canvodpy-extensions>), each on PyPI:
 canvod-filemap (naming recipes), canvod-airflow (DAGs), canvod-adapters
 (exchange with other GNSS-T programs). canvodpy installs canvod-filemap as
 the workspace dependency group `filemap` (`uv sync --group filemap`).
@@ -271,7 +271,7 @@ people.
 - Every path and `just` recipe named in `AGENTS.md` files and the guides
   must exist: `just check-agent-docs` verifies this (pre-commit and CI).
   Write paths in canvodpy-extensions as `extensions:<path>`; they are
-  checked at the locked canvod-filemap commit when a canvodpy-extensions
+  checked at the locked canvod-filemap release tag when a canvodpy-extensions
   checkout is next to this repository (or at `$CANVODPY_EXTENSIONS_REPO`),
   and always in CI.
 - When a change makes a statement here wrong, fix it in the same PR.

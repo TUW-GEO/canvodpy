@@ -1250,8 +1250,10 @@ def current_recipes(
         if recipe and sha256 is None:
             msg = (
                 f"Found no naming recipe {recipe!r} of receiver {name!r}. "
-                "Install canvod-filemap (uv sync --group filemap) and check "
-                f"that `canvodpy config validate --site {site_name}` finds it."
+                "If canvod-filemap is missing, install it with: uv add "
+                "canvod-filemap (in a clone of the canvodpy repository: uv "
+                "sync --group filemap). Then check that `canvodpy config "
+                f"validate --site {site_name}` finds it."
             )
             raise ValueError(msg)
         recipes[name] = (recorded_name(recipe) if recipe else None, sha256)

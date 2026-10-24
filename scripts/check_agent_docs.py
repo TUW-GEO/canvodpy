@@ -15,8 +15,9 @@ a recipe of the root Justfile; a ``/<skill>`` must be a skill of
 ``.claude/skills/``, a ``/mattpocock-skills:<skill>`` a skill of the
 plugin (Claude Code calls plugin skills only by their full name).
 ``extensions:<path>`` names a path in the
-canvodpy-extensions repository; it is checked at the canvod-filemap commit
-locked in ``uv.lock`` if a canvodpy-extensions git checkout is found
+canvodpy-extensions repository; it is checked at the canvod-filemap release
+tag (or git commit) locked in ``uv.lock`` if a canvodpy-extensions git
+checkout is found
 (``$CANVODPY_EXTENSIONS_REPO``, or ``canvodpy-extensions`` next to this
 repository). Placeholders (``<...>``, ``PKG``, ``*``) and the paths listed
 below are not checked.
@@ -125,18 +126,25 @@ def extensions_repo() -> Path | None:
 
 
 def extensions_reference() -> str:
-    """The canvod-filemap commit locked in ``uv.lock``.
+    """The canvod-filemap version locked in ``uv.lock``, as a git reference.
+
+    A release from PyPI gives its tag ``canvod-filemap-v<version>``, a git
+    source its commit.
 
     Raises
     ------
     ValueError
-        If canvod-filemap is not locked from git.
+        If canvod-filemap is not in ``uv.lock``.
     """
     lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
     for package in lock["package"]:
-        if package["name"] == "canvod-filemap" and "git" in package.get("source", {}):
-            return urlsplit(package["source"]["git"]).fragment
-    raise ValueError("canvod-filemap is not locked from git in uv.lock")
+        if package["name"] != "canvod-filemap":
+            continue
+        source = package.get("source", {})
+        if "git" in source:
+            return urlsplit(source["git"]).fragment
+        return f"canvod-filemap-v{package['version']}"
+    raise ValueError("canvod-filemap is not in uv.lock")
 
 
 def just_recipes() -> set[str]:
@@ -204,7 +212,7 @@ def main() -> int:
         ref = extensions_reference()
         if not git_object_exists(repo, f"{ref}^{{commit}}"):
             print(
-                f"canvodpy-extensions {ref} is not in {repo}: fetch it (git -C {repo} fetch origin)"
+                f"canvodpy-extensions {ref} is not in {repo}: fetch it (git -C {repo} fetch origin --tags)"
             )
             return 1
         extensions = (repo, ref)
