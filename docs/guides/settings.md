@@ -110,6 +110,34 @@ Publisher URL
 - Type: text, or null
 - Default: `null`
 
+#### `processing.metadata.publisher_email` {#processing-metadata-publisher_email}
+
+Publisher contact email (ACDD `publisher_email`)
+
+- Type: email address, or null
+- Default: `null`
+
+#### `processing.metadata.project` {#processing-metadata-project}
+
+The project(s) that originated the data, comma-separated (ACDD project)
+
+- Type: text, or null
+- Default: `null`
+
+#### `processing.metadata.acknowledgement` {#processing-metadata-acknowledgement}
+
+Support to acknowledge, for example funding (ACDD acknowledgement)
+
+- Type: text, or null
+- Default: `null`
+
+#### `processing.metadata.comment` {#processing-metadata-comment}
+
+Further information about the data, not given elsewhere (ACDD comment)
+
+- Type: text, or null
+- Default: `null`
+
 #### `processing.metadata.naming_authority` {#processing-metadata-naming_authority}
 
 Your institution's domain in reverse order, lowercase (for example `org.middle-earth`). Required when a store is created: with the store id it gives the store's id in the STAC catalog.
@@ -886,7 +914,7 @@ WGS84 longitude
 
 #### `sites.<site>.altitude_m` {#sites-site-altitude_m}
 
-Altitude in meters
+Height above the WGS84 ellipsoid, in meters
 
 - Type: number, or null
 - Default: `null`

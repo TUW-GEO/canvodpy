@@ -82,6 +82,28 @@ _ACDD_SOURCE = {
     "geospatial_vertical_min": "spatial.geospatial_alt_m",
     "geospatial_vertical_max": "spatial.geospatial_alt_m",
     "geospatial_vertical_positive": "spatial.geospatial_alt_m",
+    "geospatial_bounds": "spatial.geospatial_lat and spatial.geospatial_lon",
+    "publisher_email": (
+        "publisher.email, the setting processing.metadata.publisher_email"
+    ),
+    "project": "identity.project, the setting processing.metadata.project",
+    "acknowledgement": (
+        "identity.acknowledgement, the setting processing.metadata.acknowledgement"
+    ),
+    "comment": "identity.comment, the setting processing.metadata.comment",
+}
+
+# ACDD recommended attributes canVODpy never writes, and why (#536); they
+# are not listed as recommendations.
+ACDD_NOT_WRITTEN = {
+    "history": (
+        "a store's history is its commit log (ADR 0014); a copy in the "
+        "attributes would be out of date after the next commit"
+    ),
+    "standard_name_vocabulary": "the data variables carry no CF standard names",
+    "geospatial_bounds_vertical_crs": (
+        "the bounds are 2-D: the altitude is typed in and often unset"
+    ),
 }
 
 
@@ -173,7 +195,7 @@ def validate_acdd(metadata: StoreMetadata, *, recommended: bool = True) -> list[
         issues += [
             f"[recommended] {_acdd_issue(name, 'recommended')}"
             for name in ACDD_RECOMMENDED
-            if attrs.get(name) in (None, "")
+            if name not in ACDD_NOT_WRITTEN and attrs.get(name) in (None, "")
         ]
     return issues
 

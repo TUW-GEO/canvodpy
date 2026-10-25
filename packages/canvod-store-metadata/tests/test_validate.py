@@ -183,8 +183,8 @@ class TestPassRule:
     def test_recommendations_are_listed_and_marked(self):
         issues = validate_acdd(_make_complete_metadata())
 
-        assert "[recommended] ACDD 1.3 recommended attribute `history` is missing" in (
-            issues
+        assert "[recommended] ACDD 1.3 recommended attribute `project` is missing" in (
+            " ".join(issues)
         )
         assert all(i.startswith("[recommended]") for i in issues)
 
@@ -207,6 +207,70 @@ class TestPassRule:
         assert attrs["Conventions"] == "CF-1.11, ACDD-1.3"
         assert attrs["summary"] == "GNSS observations from Fangorn research site"
         assert attrs["license"]["spdx"] == "CC-BY-4.0"
+
+    def test_the_acdd_settings_are_written(self):
+        meta = _make_complete_metadata()
+        meta.publisher.email = testing.PERSON_EMAIL
+        meta.identity.project = "The Red Book"
+        meta.identity.acknowledgement = "Funded by the Inklings"
+        meta.identity.comment = "Made-up data"
+
+        attrs = root_attributes(meta)
+
+        assert attrs["publisher_email"] == testing.PERSON_EMAIL
+        assert attrs["project"] == "The Red Book"
+        assert attrs["acknowledgement"] == "Funded by the Inklings"
+        assert attrs["comment"] == "Made-up data"
+
+    def test_unset_acdd_settings_are_not_written(self):
+        attrs = root_attributes(_make_complete_metadata())
+        for name in ("publisher_email", "project", "acknowledgement", "comment"):
+            assert name not in attrs
+
+    def test_a_missing_acdd_setting_is_named(self):
+        issues = validate_acdd(_make_complete_metadata())
+
+        assert (
+            "[recommended] ACDD 1.3 recommended attribute `project` is missing "
+            "(from identity.project, the setting processing.metadata.project)"
+        ) in issues
+        assert (
+            "[recommended] ACDD 1.3 recommended attribute `publisher_email` is "
+            "missing (from publisher.email, the setting "
+            "processing.metadata.publisher_email)"
+        ) in issues
+
+    def test_the_bounds_are_the_site_position(self):
+        attrs = root_attributes(_make_complete_metadata())
+        # EPSG:4326 gives latitude first (ACDD 1.3).
+        assert attrs["geospatial_bounds"] == (
+            f"POINT ({testing.LATITUDE} {testing.LONGITUDE})"
+        )
+        assert attrs["geospatial_bounds_crs"] == "EPSG:4326"
+        assert "geospatial_bounds_vertical_crs" not in attrs
+
+    def test_no_bounds_without_a_position(self):
+        meta = _make_complete_metadata()
+        meta.spatial.geospatial_lon = None
+
+        attrs = root_attributes(meta)
+
+        assert "geospatial_bounds" not in attrs
+        assert "geospatial_bounds_crs" not in attrs
+
+    def test_attributes_canvodpy_never_writes_are_not_recommended(self):
+        meta = _make_complete_metadata()
+        meta.spatial.geospatial_lat = None
+
+        issues = " ".join(validate_acdd(meta))
+
+        for name in (
+            "history",
+            "standard_name_vocabulary",
+            "geospatial_bounds_vertical_crs",
+        ):
+            assert f"`{name}`" not in issues
+        assert "`geospatial_bounds`" in issues
 
     def test_the_acdd_lists_are_complete(self):
         # ACDD 1.3 lists 32 recommended global attributes and eight values

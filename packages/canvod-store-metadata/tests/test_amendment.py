@@ -12,6 +12,7 @@ from canvod.store_metadata import (
     apply_updates,
     check_receivers,
     check_vod_analyses,
+    commit_with_rebase,
     read_metadata,
     update_metadata,
     write_metadata,
@@ -27,6 +28,7 @@ from canvod.store_metadata.schema import (
     TemporalExtent,
     VodAnalysisInfo,
 )
+from canvod.store_metadata.testing import give_test_metadata
 
 _CONFIG = {"processing": {"batch_hours": 24}}
 
@@ -189,6 +191,74 @@ class TestAmend:
         with pytest.raises(ValueError, match="spatial.geospatial_lat"):
             _amend(path, {"spatial.geospatial_lat": "north"})
         assert _repository(path)["amendments"] == []
+
+
+# The fields #536 added; a store written by canvodpy 1.0.0 has none of them.
+_NEW_FIELDS = {
+    "identity": ("project", "acknowledgement", "comment"),
+    "publisher": ("email",),
+}
+
+
+def _as_written_by_1_0(path: Path) -> None:
+    """Remove the fields #536 added from the repository metadata and root copy."""
+    from canvod.store_metadata.snapshot import REPOSITORY_METADATA_ATTR
+
+    def strip(repository: dict) -> dict:
+        for section, names in _NEW_FIELDS.items():
+            for name in names:
+                repository[section].pop(name, None)
+        return repository
+
+    repo = icechunk.Repository.open(
+        storage=icechunk.local_filesystem_storage(str(path))
+    )
+    session = repo.writable_session("main")
+    root = zarr.open_group(session.store, mode="r+")
+    root.attrs[REPOSITORY_METADATA_ATTR] = strip(
+        dict(root.attrs[REPOSITORY_METADATA_ATTR])
+    )
+    for name in ("geospatial_bounds", "geospatial_bounds_crs"):
+        root.attrs.pop(name, None)
+    session.commit("as written by canvodpy 1.0.0 (test)", allow_empty=True)
+    repo.set_metadata(strip(repo.get_metadata()))
+
+
+class TestStoresFromBeforeTheAcddFields:
+    """Stores written before the ACDD fields (#536) take commits and amendments."""
+
+    def test_a_commit_to_a_store_without_the_fields_is_not_refused(self, tmp_path):
+        # The made-up site has a position, so the root group has bounds.
+        path = give_test_metadata(tmp_path / "store")
+        _as_written_by_1_0(path)
+
+        repo = icechunk.Repository.open(
+            storage=icechunk.local_filesystem_storage(str(path))
+        )
+        commit_with_rebase(
+            repo.writable_session("main"), "a commit", store_path=path, config=_CONFIG
+        )
+
+    def test_an_amendment_adds_a_field(self, tmp_path):
+        # The made-up site has a position, so the root group has bounds.
+        path = give_test_metadata(tmp_path / "store")
+        _as_written_by_1_0(path)
+
+        _amend(
+            path,
+            {"publisher.email": testing.PERSON_EMAIL, "identity.project": "Red Book"},
+            reason="ACDD attributes",
+        )
+
+        session = icechunk.Repository.open(
+            storage=icechunk.local_filesystem_storage(str(path))
+        ).readonly_session(branch="main")
+        attrs = zarr.open_group(session.store, mode="r").attrs
+        assert attrs["publisher_email"] == testing.PERSON_EMAIL
+        assert attrs["project"] == "Red Book"
+        assert attrs["geospatial_bounds"] == (
+            f"POINT ({testing.LATITUDE} {testing.LONGITUDE})"
+        )
 
 
 class TestProtectedLists:

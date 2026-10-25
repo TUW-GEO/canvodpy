@@ -190,6 +190,31 @@ class TestCollectors:
             "storage": {"stores_root_dir": "s3://fangorn/stores"}
         }
 
+    def test_the_acdd_settings_go_into_the_store_metadata(self):
+        config, site_cfg = _settings()
+        meta_cfg = config.processing.metadata
+        meta_cfg.publisher_email = testing.PERSON_EMAIL
+        meta_cfg.project = "The Red Book"
+        meta_cfg.acknowledgement = "Funded by the Inklings"
+        meta_cfg.comment = "Made-up data"
+
+        meta = _collect(config, site_cfg)
+
+        assert meta.publisher.email == testing.PERSON_EMAIL
+        assert meta.identity.project == "The Red Book"
+        assert meta.identity.acknowledgement == "Funded by the Inklings"
+        assert meta.identity.comment == "Made-up data"
+
+    def test_unset_acdd_settings_stay_unset(self):
+        config, site_cfg = _settings()
+
+        meta = _collect(config, site_cfg)
+
+        assert meta.publisher.email is None
+        assert meta.identity.project is None
+        assert meta.identity.acknowledgement is None
+        assert meta.identity.comment is None
+
     def test_the_facility_is_the_institution_not_the_computer(self):
         config, site_cfg = _settings()
 
@@ -378,6 +403,10 @@ def _settings() -> tuple[MagicMock, MagicMock]:
             "license_uri",
             "naming_authority",
             "store_description",
+            "publisher_email",
+            "project",
+            "acknowledgement",
+            "comment",
         ]
     )
     meta_cfg.author = testing.PERSON_NAME
@@ -392,6 +421,10 @@ def _settings() -> tuple[MagicMock, MagicMock]:
         "publisher_url",
         "license_uri",
         "store_description",
+        "publisher_email",
+        "project",
+        "acknowledgement",
+        "comment",
     ):
         setattr(meta_cfg, name, None)
     meta_cfg.publisher = testing.PUBLISHER

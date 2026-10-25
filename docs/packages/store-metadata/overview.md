@@ -70,11 +70,11 @@ Every other field of the repository metadata is **amendable**.
 
 | Section | Model | Content | Part |
 |---|---|---|---|
-| `identity` | `StoreIdentity` | ID, UUID, naming authority, catalog link, title, description, store type, source format, keywords | Repository metadata |
+| `identity` | `StoreIdentity` | ID, UUID, naming authority, catalog link, title, description, store type, source format, keywords; project, acknowledgement, comment | Repository metadata |
 | `creator` | `Creator` | Name, email, ORCID, institution and its ROR ID, department, research group, website | Repository metadata |
-| `publisher` | `Publisher` | Name, URL, license (SPDX identifier or `other`), license URI | Repository metadata |
+| `publisher` | `Publisher` | Name, URL, email, license (SPDX identifier or `other`), license URI | Repository metadata |
 | `temporal` | `TemporalExtent` | Created; updated, first and last stored epoch, duration, resolution (the finest cadence of any day) | Created: repository metadata; the rest: snapshot summary |
-| `spatial` | `SpatialExtent` | Site name, description and country, latitude, longitude, altitude (WGS84); bounding box | Site and position: repository metadata; bounding box: snapshot summary |
+| `spatial` | `SpatialExtent` | Site name, description and country, latitude, longitude, altitude (height above the WGS84 ellipsoid); bounding box | Site and position: repository metadata; bounding box: snapshot summary |
 | `instruments` | `Instruments` | Platform; per receiver: type, directory, reader format, hardware, antenna; epochs, signals, variables, time range, cadence per time range, position | Receiver description: repository metadata; counts, time range, cadences, position: snapshot summary |
 | `vod_analyses` | `VodAnalysisInfo` | Per VOD analysis of a VOD store: its canopy and reference receiver | Repository metadata |
 | `references` | `References` | Repository, documentation, publications, funding | Repository metadata |
@@ -171,6 +171,10 @@ processing:
     publisher: "Example University"      # required to create a store
     naming_authority: "org.example"      # required to create a store
     initials: "JD"                       # required to amend or migrate
+    publisher_email: "data@example.org"  # optional, ACDD publisher_email
+    project: "Forest GNSS-T"             # optional, ACDD project
+    acknowledgement: "Funded by ..."     # optional, ACDD acknowledgement
+    comment: null                        # optional, ACDD comment
 ```
 
 DataCite requires the publisher and STAC requires the license, so a
@@ -341,6 +345,17 @@ commit to the store computes them again. With
 for ACDD 1.3 what it highly recommends. A store created by canVODpy has
 none. Without it, the lists also hold the ACDD recommendations, marked
 `[recommended]`, and the FAIR advice.
+
+A recommendation names the setting that fills it, such as
+`processing.metadata.project`; a store created before the setting was
+given takes the value by amendment (`--set identity.project=...`).
+`geospatial_bounds` is the site's position, `POINT (latitude longitude)`
+in EPSG:4326, which gives latitude first. Three ACDD recommended
+attributes are never written and not listed (`ACDD_NOT_WRITTEN`):
+`history`, because a store's history is its commit log;
+`standard_name_vocabulary`, because the data variables have no CF
+standard names; and `geospatial_bounds_vertical_crs`, because the bounds
+are two-dimensional: the altitude is typed in and often unset.
 
 | Key | What is checked |
 |---|---|

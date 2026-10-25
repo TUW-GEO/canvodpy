@@ -111,6 +111,36 @@ class TestMetadataConfig:
         assert d["research_group"] == "Group"
         assert d["website"] == "https://example.com"
 
+    def test_the_acdd_settings_are_optional(self):
+        m = MetadataConfig(author="A", email="a@b.com", institution="U")
+        assert (m.publisher_email, m.project, m.acknowledgement, m.comment) == (
+            None,
+            None,
+            None,
+            None,
+        )
+
+    def test_the_acdd_settings_are_read(self):
+        m = MetadataConfig(
+            author="A",
+            email="a@b.com",
+            institution="U",
+            publisher_email=testing.PERSON_EMAIL,
+            project="The Red Book",
+            acknowledgement="Funded by the Inklings",
+            comment="Made-up data",
+        )
+        assert m.publisher_email == testing.PERSON_EMAIL
+        assert m.project == "The Red Book"
+        assert m.acknowledgement == "Funded by the Inklings"
+        assert m.comment == "Made-up data"
+
+    def test_an_invalid_publisher_email_raises(self):
+        with pytest.raises(ValidationError, match="publisher_email"):
+            MetadataConfig(
+                author="A", email="a@b.com", institution="U", publisher_email="x"
+            )
+
 
 # ===================================================================
 # ReferencesConfig

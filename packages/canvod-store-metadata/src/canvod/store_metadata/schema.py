@@ -380,6 +380,9 @@ class StoreIdentity(BaseModel):
         None, description="DOI or other persistent identifier (FAIR F1)"
     )
     standard_name_vocabulary: str | None = Field(None)
+    project: str | None = Field(None, description="ACDD project")
+    acknowledgement: str | None = Field(None, description="ACDD acknowledgement")
+    comment: str | None = Field(None, description="ACDD comment")
 
 
 # §2 — Creator
@@ -402,6 +405,7 @@ class Publisher(BaseModel):
     name: str | None = Field(None, description="Publisher name")
     type: AgentType = Field("Institutional", description="Publisher type")
     url: Url | None = Field(None, description="Publisher URL")
+    email: str | None = Field(None, description="Publisher email")
     license: str | None = Field(
         None,
         description=(
@@ -474,7 +478,9 @@ class SpatialExtent(BaseModel):
     site: SiteInfo
     geospatial_lat: Latitude | None = Field(None, description="WGS84 latitude")
     geospatial_lon: Longitude | None = Field(None, description="WGS84 longitude")
-    geospatial_alt_m: float | None = Field(None, description="Altitude in meters")
+    geospatial_alt_m: float | None = Field(
+        None, description="Height above the WGS84 ellipsoid, in meters"
+    )
     geospatial_lat_min: Latitude | None = Field(None)
     geospatial_lat_max: Latitude | None = Field(None)
     geospatial_lon_min: Longitude | None = Field(None)
@@ -797,6 +803,9 @@ class RepositoryIdentity(BaseModel):
     description: str | None = None
     keywords: list[str] = Field(default_factory=list)
     persistent_identifier: PersistentIdentifier | None = None
+    project: str | None = None
+    acknowledgement: str | None = None
+    comment: str | None = None
 
 
 class RepositoryTemporal(BaseModel):

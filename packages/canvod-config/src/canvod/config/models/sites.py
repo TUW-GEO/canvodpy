@@ -286,7 +286,9 @@ class SiteConfig(_StrictModel):
     country: str | None = Field(None, description="Country code (ISO 3166-1)")
     latitude: float | None = Field(None, description="WGS84 latitude")
     longitude: float | None = Field(None, description="WGS84 longitude")
-    altitude_m: float | None = Field(None, description="Altitude in meters")
+    altitude_m: float | None = Field(
+        None, description="Height above the WGS84 ellipsoid, in meters"
+    )
     receivers: dict[str, ReceiverConfig] = Field(
         ..., description="The site's receivers, each named by its key"
     )

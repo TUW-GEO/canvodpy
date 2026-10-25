@@ -320,9 +320,16 @@ def collect_publisher(metadata_config: Any) -> Publisher:
     return Publisher(
         name=getattr(metadata_config, "publisher", None),
         url=getattr(metadata_config, "publisher_url", None),
+        email=_optional_str(metadata_config, "publisher_email"),
         license=getattr(metadata_config, "license", None),
         license_uri=getattr(metadata_config, "license_uri", None),
     )
+
+
+def _optional_str(config: Any, name: str) -> str | None:
+    """An optional setting as text, ``None`` when unset."""
+    value = getattr(config, name, None)
+    return None if value is None else str(value)
 
 
 def collect_spatial(site_config: Any, site_name: str) -> SpatialExtent:
@@ -640,6 +647,9 @@ def collect_metadata(
             keywords=["GNSS", "VOD", site_name, source_format],
             naming_authority=naming_authority,
             stac_link=stac_link(naming_authority, sid, store_type),
+            project=_optional_str(meta_cfg, "project"),
+            acknowledgement=_optional_str(meta_cfg, "acknowledgement"),
+            comment=_optional_str(meta_cfg, "comment"),
         ),
         creator=collect_creator(meta_cfg),
         publisher=collect_publisher(meta_cfg),

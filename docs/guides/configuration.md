@@ -354,7 +354,8 @@ processing:
     license: CC-BY-4.0  # SPDX identifier, or "other"; required to create a store
     initials: JD  # who set a new store's content settings or changed its metadata; required to amend or migrate
     # optional: orcid, institution_ror, department, research_group,
-    # website, publisher_url, license_uri (required when license is "other")
+    # website, publisher_url, license_uri (required when license is "other"),
+    # publisher_email, project, acknowledgement, comment (ACDD attributes)
 
   credentials:
     nasa_earthdata_acc_mail: null

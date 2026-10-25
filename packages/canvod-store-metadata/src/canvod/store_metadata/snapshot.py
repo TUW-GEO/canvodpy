@@ -77,7 +77,13 @@ _ROOT_COPY_KEYS = (
     "institution",
     "publisher_name",
     "publisher_url",
+    "publisher_email",
     "publisher_type",
+    "project",
+    "acknowledgement",
+    "comment",
+    "geospatial_bounds",
+    "geospatial_bounds_crs",
     "geospatial_lat_min",
     "geospatial_lat_max",
     "geospatial_lon_min",
@@ -101,6 +107,11 @@ _ROOT_COPY_KEYS = (
     SNAPSHOT_SUMMARY_ATTR,
     _METADATA_KEY,
 )
+
+# Root attributes derived from fields every store has, that canvodpy 1.0.0
+# did not write (#536): a root group without them is not refused, the next
+# commit writes them.
+_ADDED_AFTER_1_0 = ("geospatial_bounds", "geospatial_bounds_crs")
 
 
 def _acdd_type(value: str | None) -> str | None:
@@ -203,7 +214,19 @@ def root_copy(repository: dict[str, Any], summary: dict[str, Any]) -> dict[str, 
         "institution": creator.get("institution"),
         "publisher_name": publisher.get("name"),
         "publisher_url": publisher.get("url"),
+        "publisher_email": publisher.get("email"),
         "publisher_type": _acdd_type(publisher.get("type")),
+        "project": identity.get("project"),
+        "acknowledgement": identity.get("acknowledgement"),
+        "comment": identity.get("comment"),
+        # 2-D: the altitude is typed in and often unset. EPSG:4326 gives
+        # latitude first (ACDD 1.3).
+        "geospatial_bounds": (
+            f"POINT ({lat} {lon})" if lat is not None and lon is not None else None
+        ),
+        "geospatial_bounds_crs": (
+            "EPSG:4326" if lat is not None and lon is not None else None
+        ),
         "geospatial_lat_min": lat,
         "geospatial_lat_max": lat,
         "geospatial_lon_min": lon,
@@ -266,6 +289,11 @@ def _replay_amendments(copy: dict[str, Any], repository: dict[str, Any]) -> bool
         replayed = RepositoryMetadata.model_validate(
             replayed, context=READ_CONTEXT
         ).model_dump(mode="json")
+        # The repository metadata in the current form: a store written
+        # before a field was added (e.g. #536) has no key for it.
+        repository = RepositoryMetadata.model_validate(
+            repository, context=READ_CONTEXT
+        ).model_dump(mode="json")
     except ValidationError:
         return False
     return replayed == repository
@@ -296,7 +324,9 @@ def check_root_copy(
     differing = sorted(
         key
         for key in derived
-        if key != REPOSITORY_METADATA_ATTR and attrs.get(key) != derived[key]
+        if key != REPOSITORY_METADATA_ATTR
+        and attrs.get(key) != derived[key]
+        and not (key in _ADDED_AFTER_1_0 and key not in attrs)
     )
     if not _replay_amendments(copy, repository):
         differing.insert(0, REPOSITORY_METADATA_ATTR)

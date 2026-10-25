@@ -92,6 +92,27 @@ class MetadataConfig(_StrictModel):
         None, description="Publisher name. Required when a store is created."
     )
     publisher_url: str | None = Field(None, description="Publisher URL")
+    publisher_email: EmailStr | None = Field(
+        None, description="Publisher contact email (ACDD publisher_email)"
+    )
+    project: str | None = Field(
+        None,
+        description=(
+            "The project(s) that originated the data, comma-separated (ACDD project)"
+        ),
+    )
+    acknowledgement: str | None = Field(
+        None,
+        description=(
+            "Support to acknowledge, for example funding (ACDD acknowledgement)"
+        ),
+    )
+    comment: str | None = Field(
+        None,
+        description=(
+            "Further information about the data, not given elsewhere (ACDD comment)"
+        ),
+    )
     naming_authority: str | None = Field(
         None,
         description=(
