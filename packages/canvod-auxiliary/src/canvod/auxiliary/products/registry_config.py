@@ -304,6 +304,36 @@ class ProductRegistry:
 
         return self._products[key]
 
+    def product_of_file(self, filename: str) -> ProductSpec:
+        """Product of an SP3 or CLK file, from the prefix of its name.
+
+        Parameters
+        ----------
+        filename : str
+            File name, e.g. ``COD0OPSRAP_20250010000_01D_05M_ORB.SP3``.
+
+        Returns
+        -------
+        ProductSpec
+            The registry product with that prefix.
+
+        Raises
+        ------
+        UnknownProductError
+            If no registry product has the prefix.
+        """
+        prefix = filename.split("_", 1)[0].upper()
+        for spec in self._products.values():
+            if spec.prefix == prefix:
+                return spec
+        msg = (
+            f"No registry product has the file name prefix {prefix!r} "
+            f"({filename}). Prefixes: "
+            + ", ".join(sorted(s.prefix for s in self._products.values()))
+            + f"\nTo add a product, edit: {self.config_path}"
+        )
+        raise UnknownProductError(msg)
+
     def _unknown_product_message(self, agency: str, product_type: str) -> str:
         """Name the products closest to an unknown agency/product type."""
         lines = [f"Product not found: {agency}/{product_type}"]

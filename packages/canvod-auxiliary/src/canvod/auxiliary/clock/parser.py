@@ -49,8 +49,6 @@ def parse_clk_header(file_handle: TextIO) -> set[str]:
                     "observation epochs. Use a product in GPS time."
                 )
                 raise ValueError(msg)
-        elif "OF SOLN SATS" in line:
-            _ = int(line[4:6])
         elif "PRN LIST" in line:
             # Parse PRN list line(s)
             parts = line.split()[2:]  # Skip 'PRN' and 'LIST'
@@ -117,7 +115,9 @@ def parse_clk_data(
             satellites.add(sv_code)
 
             # Store complete record
-            clock_offset = float(parts[9])  # seconds (RINEX clock 3.04, Table A16)
+            # seconds (RINEX clock 3.04, Table A16); some centers (IAC) write
+            # Fortran exponents, 0.612D-03
+            clock_offset = float(parts[9].upper().replace("D", "E"))
             clock_records.append((epoch, sv_code, clock_offset))
 
     # Create lookup dictionaries for efficient indexing

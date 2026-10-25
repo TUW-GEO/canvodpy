@@ -41,6 +41,9 @@ sp3 = Sp3File.from_file("COD0MGXFIN_20250010000_01D_05M_ORB.SP3")
 print(sp3.data)  # satellite positions and velocities per epoch
 ```
 
+The product (here CODE final) comes from the prefix of the file name; a
+file of a product the registry doesn't list is refused.
+
 ## Documentation
 
 - [canvod-auxiliary in the canVODpy documentation](https://canvodpy.eu/packages/auxiliary/overview/)

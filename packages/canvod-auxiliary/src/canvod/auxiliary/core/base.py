@@ -16,6 +16,7 @@ from pydantic.dataclasses import dataclass
 
 from canvod.auxiliary.core.downloader import FileDownloader, FtpDownloader
 from canvod.auxiliary.interpolation import Interpolator
+from canvod.auxiliary.products.registry_config import get_registry
 
 log = structlog.get_logger(__name__)
 
@@ -77,7 +78,11 @@ class AuxFile(ABC):
                 user_email=self.user_email, timeout_s=self.ftp_timeout_s
             )
 
-        self.fpath = self.check_file_exists()
+        # A given file (from_file) is read as it is; otherwise the product's
+        # file is found locally or downloaded.
+        self.fpath = (
+            Path(self.fpath) if self.fpath is not None else self.check_file_exists()
+        )
 
     @classmethod
     def from_datetime_date(
@@ -141,19 +146,21 @@ class AuxFile(ABC):
         ------
         FileNotFoundError
             If the specified file does not exist.
+        UnknownProductError
+            If no registry product has the prefix of the file name.
         """
         fpath = Path(fpath)
         if not fpath.exists():
             raise FileNotFoundError(f"File not found: {fpath}")
 
         fname = fpath.name
-        agency = fname[0:3]
+        spec = get_registry().product_of_file(fname)
         yyyydoy = fname.split("_")[1][0:7]
 
         return cls(
             date=yyyydoy,
-            agency=agency,
-            product_type="final",
+            agency=spec.agency_code,
+            product_type=spec.product_type,
             ftp_server="N/A",
             local_dir=fpath.parent,
             fpath=fpath,
