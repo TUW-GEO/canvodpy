@@ -27,6 +27,7 @@ from canvodpy.cli.dashboards.charts import (
     day_key,
     day_rows,
     split_days,
+    stage_bars,
     stage_stats,
     store_rows,
     time_bars,
@@ -573,6 +574,31 @@ def test_log_time_axis_spans_whole_decades_and_drops_zero() -> None:
     assert kept == rows[1:]
     assert encoding["x"].to_dict()["scale"] == {"type": "log", "domain": [0.1, 100]}
     assert encoding["x2"].to_dict() == {"datum": 0.1}
+
+
+def test_stage_bars_show_every_value_next_to_its_bar() -> None:
+    # On a linear axis a stage far shorter than the longest gets a bar too
+    # thin to see (0.05 s next to 38.5 s); its value still shows as text.
+    rows = [
+        {"Stage": "reading", "Median (s)": 38.5},
+        {"Stage": "planning", "Median (s)": 0.05},
+    ]
+    kept, time = time_bars("x", "Median (s)", "Median (s)", rows, "linear")
+    spec = stage_bars(
+        kept, time, "Median (s)", "Median (s)", ".2f", ["reading", "planning"], "#000"
+    ).to_dict()
+
+    bars, values = spec["layer"]
+    assert bars["mark"]["type"] == "bar"
+    assert values["mark"]["type"] == "text"
+    assert values["encoding"]["text"] == {
+        "field": "Median (s)",
+        "format": ".2f",
+        "type": "quantitative",
+    }
+    # Both on the same time axis, so a value sits at the end of its bar.
+    assert bars["encoding"]["x"] == values["encoding"]["x"]
+    assert bars["encoding"]["x"]["scale"] == {"type": "linear", "zero": True}
 
 
 def test_line_time_axis_has_no_baseline_and_keeps_zero_on_linear() -> None:
