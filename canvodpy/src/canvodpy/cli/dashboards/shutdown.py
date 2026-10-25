@@ -30,16 +30,19 @@ def run_marker() -> str:
 def run_going(environ: Mapping[str, str]) -> bool | None:
     """Whether the run that started this dashboard is still going.
 
-    None when no run started it, as with ``canvodpy dashboard``. The start
-    time tells the run apart from a later process that got its ID.
+    None when no run started it, as with ``canvodpy dashboard``, or when
+    the variable doesn't hold a run. The start time tells the run apart
+    from a later process that got its ID; a process this user may not
+    look at is not the run either.
     """
-    marker = environ.get(RUN_VARIABLE)
-    if not marker:
-        return None
-    pid, started = marker.split()
     try:
-        return abs(psutil.Process(int(pid)).create_time() - float(started)) < 1
-    except psutil.NoSuchProcess:
+        pid, started = environ.get(RUN_VARIABLE, "").split()
+        pid_number, start_time = int(pid), float(started)
+    except ValueError:
+        return None
+    try:
+        return abs(psutil.Process(pid_number).create_time() - start_time) < 1
+    except psutil.Error:  # gone, or another user's (AccessDenied)
         return False
 
 

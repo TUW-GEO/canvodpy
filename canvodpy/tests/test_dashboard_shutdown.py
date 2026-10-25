@@ -40,6 +40,18 @@ class TestRunGoing:
 
         assert run_going({RUN_VARIABLE: marker}) is False
 
+    def test_another_user_s_process_is_not_the_run(self, monkeypatch):
+        def refuse(_process):
+            raise psutil.AccessDenied(1)
+
+        monkeypatch.setattr(psutil.Process, "create_time", refuse)
+
+        assert run_going({RUN_VARIABLE: "1 1700000000.0"}) is False
+
+    @pytest.mark.parametrize("marker", ["garbage", "12", "12 34 56", "x 1.0"])
+    def test_a_value_that_holds_no_run_is_no_run(self, marker):
+        assert run_going({RUN_VARIABLE: marker}) is None
+
 
 def _args(*, dashboard: bool, stop_at_end: bool) -> SimpleNamespace:
     return SimpleNamespace(

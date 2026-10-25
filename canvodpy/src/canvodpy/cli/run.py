@@ -55,7 +55,7 @@ from datetime import datetime
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import structlog
 import typer
@@ -75,6 +75,10 @@ from canvod.utils.logging import (
 )
 from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
 from canvodpy.logging import emit_run_summary
+
+if TYPE_CHECKING:
+    from canvod.config import CanvodConfig
+    from canvodpy.api import Site
 
 log = structlog.get_logger(__name__)
 
@@ -368,6 +372,7 @@ def _dashboard_for_run(args: SimpleNamespace, log_dir: Path) -> Generator[None]:
     finally:
         if args.dashboard_stop_at_end:
             dashboard.terminate()
+            dashboard.wait(timeout=5)
             print("Dashboard stopped (--dashboard-stop-at-end).")
         elif dashboard.poll() is None:
             print(
@@ -376,7 +381,9 @@ def _dashboard_for_run(args: SimpleNamespace, log_dir: Path) -> Generator[None]:
             )
 
 
-def _process_days(args: SimpleNamespace, config, site, start: str, end: str) -> int:
+def _process_days(
+    args: SimpleNamespace, config: CanvodConfig, site: Site, start: str, end: str
+) -> int:
     """Process the site's receiver-days from start to end, with their VOD."""
     from canvodpy.api import _passed
     from canvodpy.cli.dashboard import day_count, make_reporter

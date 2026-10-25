@@ -513,7 +513,7 @@ def _(mo):
 def _(mo):
     # The button that shuts the dashboard down; shown only when
     # `canvodpy run --dashboard` started it.
-    shutdown_button = mo.ui.run_button(label="Shut the dashboard down", kind="danger")
+    shutdown_button = mo.ui.run_button(label="Shut the dashboard down", kind="neutral")
     return (shutdown_button,)
 
 
@@ -552,7 +552,7 @@ def _(mo, refresh, shutdown_button):
                 justify="space-between",
                 align="center",
             ),
-            kind="success",
+            kind="info",
         )
     _output
     return
