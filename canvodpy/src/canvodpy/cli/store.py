@@ -214,14 +214,26 @@ def _print_group_content(icestore, group_name: str, branch: str) -> None:
 @store_app.command()
 def log(
     site: Annotated[
-        str,
+        str | None,
         typer.Argument(
-            help="Site name, as defined under sites: in canvod-settings.yaml"
+            help="Site name, as defined under sites: in canvod-settings.yaml. Omit when using --path."
         ),
-    ],
+    ] = None,
     store: Annotated[
-        str, typer.Option("--store", metavar="gnss|vod", help="Store to open.")
+        str,
+        typer.Option("--store", metavar="gnss|vod", help="Store of the site to open."),
     ] = "gnss",
+    path: Annotated[
+        str | None,
+        typer.Option(
+            "--path",
+            metavar="STORE",
+            help=(
+                "Open the store at this local path or s3://bucket/prefix "
+                "instead of a site's store, for example a copy. Needs no settings file."
+            ),
+        ),
+    ] = None,
     branch: Annotated[
         str | None,
         typer.Option(
@@ -239,21 +251,72 @@ def log(
     limit: Annotated[
         int, typer.Option("--limit", help="Number of operations that --ops shows.")
     ] = 50,
+    svg: Annotated[
+        Path | None,
+        typer.Option(
+            "--svg",
+            metavar="FILE",
+            help="Write the commit graph to this SVG file instead of printing it.",
+        ),
+    ] = None,
+    plain: Annotated[
+        bool,
+        typer.Option(
+            "--plain",
+            help="Draw the commit graph without colors, for a file or a CI log.",
+        ),
+    ] = False,
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
 ) -> None:
     """Show the commit history as a graph, or the store operations with --ops."""
-    if store not in _STORE_KINDS:
+    if ops and svg is not None:
         console.print(
-            f"[red]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/red]"
+            "[red]❌ --svg writes the commit graph; it doesn't go with --ops.[/red]"
         )
         raise typer.Exit(1)
-
-    icestore = _open_store(site, store)
+    if site is not None and path is None:
+        if store not in _STORE_KINDS:
+            console.print(
+                f"[red]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/red]"
+            )
+            raise typer.Exit(1)
+        icestore = _open_store(site, store)
+    elif path is not None and site is None:
+        icestore = _open_path(path)
+    else:
+        console.print("[red]❌ Give a site or --path: one of them, not both.[/red]")
+        raise typer.Exit(1)
 
     if ops:
         icestore.print_ops_log(limit=limit)
-    else:
-        print(icestore.plot_commit_graph(branch=branch))
+        return
+    graph = icestore.plot_commit_graph(branch=branch, plain=plain)
+    if svg is None:
+        print(graph)
+        return
+    svg.write_text(graph._repr_svg_(), encoding="utf-8")
+    console.print(f"[green]✓ Wrote[/green] {svg}")
+
+
+def _open_path(path: str):
+    """The store at ``path`` (local or ``s3://``), opened without settings.
+
+    Exits with a message that names the path if no store is there or the
+    storage can't be reached.
+    """
+    from canvod.store import MyIcechunkStore
+    from canvod.store_metadata import store_exists
+    from canvod.store_metadata.location import StorageUnreachableError
+
+    try:
+        exists = store_exists(path)
+    except (StorageUnreachableError, ValueError) as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(1) from None
+    if not exists:
+        console.print(f"[red]❌ No store at[/red] {path}")
+        raise typer.Exit(1)
+    return MyIcechunkStore(path, store_type=_folder_store_type(path) or "gnss_store")
 
 
 @store_app.command()
@@ -1541,7 +1604,7 @@ def _parse_renames(pairs: list[str]) -> dict[str, str]:
     return renames
 
 
-def _folder_store_type(path: Path) -> str | None:
+def _folder_store_type(path: Path | str) -> str | None:
     """A store's type, from its repository metadata or its old-form metadata."""
     from canvod.store_metadata import open_repository, read_metadata
 

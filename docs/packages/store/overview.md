@@ -438,7 +438,7 @@ store.compare_snapshots(snapshot_id_1, snapshot_id_2)
 
 ## Command line
 
-`canvodpy store` shows the stores of a configured site:
+`canvodpy store` shows the stores of a configured site; `store log --path` also shows a store outside the settings:
 
 ```bash
 canvodpy store list                                 # GNSS and VOD store paths of every site
@@ -446,6 +446,9 @@ canvodpy store info ExampleSite                     # branches, groups, and stat
 canvodpy store info ExampleSite --group canopy_01   # the dataset and log book of one group
 canvodpy store log ExampleSite                      # commit graph
 canvodpy store log ExampleSite --ops                # operations on the store
+canvodpy store log --path /data/copy/gnss           # commit graph of a store outside the settings
+canvodpy store log ExampleSite --svg history.svg    # commit graph as an SVG file
+canvodpy store log ExampleSite --plain              # commit graph without colors, for files and CI logs
 canvodpy store maintain ExampleSite                 # what expiry and garbage collection would delete
 canvodpy store migrate-layout ExampleSite           # move a store written by appending to day blocks
 ```

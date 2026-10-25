@@ -220,6 +220,115 @@ class TestStoreLog:
         assert result.exit_code == 0, result.output
         assert "NewCommit" in result.output
 
+    def test_opens_a_store_by_path_without_settings(self, tmp_path):
+        store_path = tmp_path / "copy" / "gnss"
+        _write_synthetic_store(store_path, n_slots=2)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "log", "--path", str(store_path)],
+            env=_env(tmp_path / "no-settings"),
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "slot 0" in result.output
+        assert "slot 1" in result.output
+
+    def test_a_missing_path_is_refused_by_name(self, tmp_path):
+        missing = tmp_path / "nowhere"
+
+        result = runner.invoke(
+            main_app,
+            ["store", "log", "--path", str(missing)],
+            env=_env(tmp_path / "no-settings"),
+        )
+
+        assert result.exit_code == 1
+        assert "No store at" in result.output
+        assert "nowhere" in result.output
+        assert "Traceback" not in result.output
+
+    def test_a_folder_without_a_store_is_refused_by_name(self, tmp_path):
+        folder = tmp_path / "just-files"
+        folder.mkdir()
+        (folder / "notes.txt").write_text("not a store")
+
+        result = runner.invoke(
+            main_app,
+            ["store", "log", "--path", str(folder)],
+            env=_env(tmp_path / "no-settings"),
+        )
+
+        assert result.exit_code == 1
+        assert "No store at" in result.output
+        assert "just-files" in result.output
+
+    @pytest.mark.parametrize("site_and_path", [True, False])
+    def test_exactly_one_of_site_or_path(self, tmp_path, site_and_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        store_path = stores_root / "TestSite" / "gnss"
+        _write_synthetic_store(store_path)
+        args = ["TestSite", "--path", str(store_path)] if site_and_path else []
+
+        result = runner.invoke(main_app, ["store", "log", *args], env=_env(config_dir))
+
+        assert result.exit_code == 1
+        assert "a site or --path" in result.output
+
+    def test_writes_the_graph_as_svg(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        _write_synthetic_store(stores_root / "TestSite" / "gnss", n_slots=2)
+        svg = tmp_path / "graph.svg"
+
+        result = runner.invoke(
+            main_app,
+            ["store", "log", "TestSite", "--branch", "main", "--svg", str(svg)],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        text = svg.read_text()
+        assert text.lstrip().startswith("<svg")
+        assert "slot 1" in text
+        assert "graph.svg" in result.output
+
+    def test_svg_does_not_go_with_ops(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        _write_synthetic_store(stores_root / "TestSite" / "gnss")
+        svg = tmp_path / "graph.svg"
+
+        result = runner.invoke(
+            main_app,
+            ["store", "log", "TestSite", "--ops", "--svg", str(svg)],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 1
+        assert "--ops" in result.output
+        assert not svg.exists()
+
+    def test_plain_prints_without_colors(self, tmp_path):
+        config_dir = tmp_path / "config"
+        stores_root = tmp_path / "stores"
+        _write_config(config_dir, stores_root)
+        _write_synthetic_store(stores_root / "TestSite" / "gnss", n_slots=2)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "log", "TestSite", "--branch", "main", "--plain"],
+            env=_env(config_dir),
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "slot 1" in result.output
+        assert "\x1b[" not in result.output
+
 
 class TestStoreMaintain:
     """dev/perf_degradation_findings_2026_07_15.md, Problem B: maintain
