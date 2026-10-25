@@ -154,7 +154,7 @@
             
   canVODpy v1.0.0 is out:
   <a href="../../whats-new/">see what's new</a>
-  or <a href="../upgrading/">upgrade from 0.x</a>
+  and <a href="../upgrading/">how to migrate from 0.x</a>
 
           </div>
           
@@ -4395,8 +4395,12 @@ sites; use the command line for scheduled runs.</p>
 <a href="../../users/">Retrieve <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr></a>.</p>
 <hr />
 <h2 id="process-a-period">Process a period<a class="headerlink" href="#process-a-period" title="Permanent link">&para;</a></h2>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python</label><label for="__tabbed_1_2">Command line</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Command line</label><label for="__tabbed_1_2">Python</label></div>
 <div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>run<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025007</span>
+</code></pre></div>
+</div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">canvodpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Site</span>
 
@@ -4404,10 +4408,6 @@ sites; use the command line for scheduled runs.</p>
 <span class="k">with</span> <span class="n">site</span><span class="o">.</span><span class="n">pipeline</span><span class="p">()</span> <span class="k">as</span> <span class="n">pipeline</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">"2025001"</span><span class="p">,</span> <span class="s2">"2025007"</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unit</span><span class="o">.</span><span class="n">days</span><span class="p">),</span> <span class="n">unit</span><span class="o">.</span><span class="n">vod</span><span class="o">.</span><span class="n">written</span><span class="p">)</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>run<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025007</span>
 </code></pre></div>
 </div>
 </div>
@@ -4706,8 +4706,16 @@ computes <abbr title="Vegetation Optical Depth — dimensionless measure of micr
 <a href="../upgrading/">Upgrading</a>.</p>
 <p>From observations already in the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store, for example after you
 change the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> settings, computed and written in the worker pool:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python</label><label for="__tabbed_2_2">Command line</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Command line</label><label for="__tabbed_2_2">Python</label></div>
 <div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>vod<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--analysis<span class="w"> </span>canopy_01_vs_reference_01<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025031</span>
+</code></pre></div>
+<p>The command runs <code>site.vod.compute_days</code> for whole days, from
+<code>--start</code> to <code>--end</code>; without them, for every day of the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store.
+It lists the days without <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>.</p>
+</div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
 
@@ -4741,14 +4749,6 @@ end at midnight at the start of January 31. With <code>write=False</code>, it
 reads the range into memory and computes the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> there, without the
 worker pool, and writes nothing. <code>site.vod.compute_bulk_all</code> computes
 every pair.</p>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code>canvodpy<span class="w"> </span>vod<span class="w"> </span>--site<span class="w"> </span>ExampleSite<span class="w"> </span>--analysis<span class="w"> </span>canopy_01_vs_reference_01<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>--start<span class="w"> </span><span class="m">2025001</span><span class="w"> </span>--end<span class="w"> </span><span class="m">2025031</span>
-</code></pre></div>
-<p>The command runs <code>site.vod.compute_days</code> for whole days, from
-<code>--start</code> to <code>--end</code>; without them, for every day of the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store.
-It lists the days without <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr>.</p>
 </div>
 </div>
 </div>
