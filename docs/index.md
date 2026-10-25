@@ -34,8 +34,6 @@ with an unobstructed view of the sky.
 
 </div>
 
----
-
 ## What makes canVODpy different
 
 <div class="grid cards" markdown>
