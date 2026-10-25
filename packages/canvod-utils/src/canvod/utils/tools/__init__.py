@@ -33,7 +33,7 @@ Examples
 
 from .date_utils import YYDOY, YYYYDOY, get_gps_week_from_filename
 from .deprecation import deprecated, deprecated_argument
-from .fs import directory_size_bytes
+from .fs import NEW_FILE_MODE, directory_size_bytes
 from .hashing import bytes_hash, file_hash
 from .sanitize import sanitize_directory
 from .validation import isfloat
@@ -45,6 +45,7 @@ from .worker import _worker_init
 gpsweekday = YYYYDOY.gpsweekday
 
 __all__ = [
+    "NEW_FILE_MODE",
     "YYDOY",
     "YYYYDOY",
     "_worker_init",

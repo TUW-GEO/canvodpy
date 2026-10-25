@@ -15,6 +15,7 @@ from urllib import request
 from urllib.parse import urlparse
 
 import structlog
+from canvod.utils.tools import NEW_FILE_MODE
 from rich.progress import (
     BarColumn,
     DownloadColumn,
@@ -56,17 +57,6 @@ def _download_progress() -> Progress:
     )
 
 
-def _current_umask() -> int:
-    umask = os.umask(0)
-    os.umask(umask)
-    return umask
-
-
-# Read once at import: os.umask sets the mask to read it, so calling it while
-# download threads create files could give one of them the wrong mode.
-_NEW_FILE_MODE = 0o666 & ~_current_umask()
-
-
 def _temp_path(destination: Path) -> Path:
     """A new, empty temporary file next to *destination*, for one writer only.
 
@@ -78,7 +68,7 @@ def _temp_path(destination: Path) -> Path:
         prefix=f".{destination.name}.", suffix=".tmp", dir=destination.parent
     )
     try:
-        os.chmod(name, _NEW_FILE_MODE)
+        os.chmod(name, NEW_FILE_MODE)
     finally:
         os.close(fd)
     return Path(name)

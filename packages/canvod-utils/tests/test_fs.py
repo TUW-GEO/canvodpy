@@ -1,11 +1,17 @@
-"""Tests for the shared file-system size helpers."""
+"""Tests for the shared file-system helpers."""
 
 from __future__ import annotations
 
 import os
 import types
 
-from canvod.utils.tools import directory_size_bytes
+from canvod.utils.tools import NEW_FILE_MODE, directory_size_bytes
+
+
+def test_new_file_mode_is_the_mode_of_a_file_the_os_makes(tmp_path) -> None:
+    plain = tmp_path / "plain"
+    plain.touch()
+    assert plain.stat().st_mode & 0o777 == NEW_FILE_MODE
 
 
 def test_directory_size_bytes_sums_the_files_recursively(tmp_path) -> None:

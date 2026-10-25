@@ -38,6 +38,7 @@ from canvod.utils.remote_file import (
     parse_remote_url,
     run_folder,
 )
+from canvod.utils.tools import NEW_FILE_MODE
 
 SETTINGS_FILE = "canvod-settings.yaml"
 
@@ -45,19 +46,6 @@ SETTINGS_FILE = "canvod-settings.yaml"
 # of a run folder that is gone (removed by new_run) are dropped.
 _FOLDERS: dict[tuple[Path, str], Path] = {}
 _LOCK = threading.Lock()
-
-
-def _file_mode() -> int:
-    """The mode a new file gets from the umask, read once at import: the
-    umask is process-wide and can only be read by setting it."""
-    umask = os.umask(0)
-    os.umask(umask)
-    return 0o666 & ~umask
-
-
-# mkstemp makes files only the owner reads; a copied recipe gets the mode
-# a new file would get, so a run folder shared on purpose stays readable.
-_FILE_MODE = _file_mode()
 
 
 def resolve_config_dir(url: str) -> Path:
@@ -278,7 +266,9 @@ def _copy_into(folder: Path, files: dict[str, Path]) -> None:
             partial = Path(name)
             try:
                 shutil.copyfile(path, partial)
-                partial.chmod(_FILE_MODE)
+                # mkstemp makes the copy owner-only; a run folder shared
+                # on purpose stays readable.
+                partial.chmod(NEW_FILE_MODE)
                 os.replace(partial, target)
             finally:
                 partial.unlink(missing_ok=True)

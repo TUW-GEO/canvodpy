@@ -1,14 +1,31 @@
-"""File system size helpers, shared across packages.
+"""File system helpers, shared across packages.
 
 Nothing here knows about stores; the functions are about folders and
 files. The run dashboard and the store-metadata summary both walk a
-store folder to report its size, so the walk lives here once.
+store folder to report its size, so the walk lives here once. Copied
+recipes and downloaded orbit files both need the mode of a new file, so
+that lives here once too.
 """
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
+
+
+def _umask() -> int:
+    umask = os.umask(0)
+    os.umask(umask)
+    return umask
+
+
+#: The mode ``open()`` gives a new file in this process (``0o666`` less the
+#: umask). Files made with ``tempfile.mkstemp`` are owner-only (0600) and
+#: ``os.replace`` keeps that; chmod them to this so files in a shared folder
+#: stay readable. Read once at import: ``os.umask`` can only be read by
+#: setting it, which is process-wide, so reading it while threads create
+#: files could give one of them the wrong mode.
+NEW_FILE_MODE: int = 0o666 & ~_umask()
 
 
 def directory_size_bytes(path: Path) -> int:
