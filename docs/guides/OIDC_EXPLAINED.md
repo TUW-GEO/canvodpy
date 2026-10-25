@@ -120,7 +120,7 @@ GitHub's OIDC provider issues a JWT with claims like these (shortened):
 
 GitHub signs it with its private key. Anyone can verify the signature with
 GitHub's public keys at
-`https://token.actions.githubusercontent.com/.well-known/jwks`.
+[`https://token.actions.githubusercontent.com/.well-known/jwks`](https://token.actions.githubusercontent.com/.well-known/jwks).
 
 ### 4. Exchange and upload
 
