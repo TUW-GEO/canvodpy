@@ -776,19 +776,28 @@ class MyIcechunkStore:
         self._require_settings()
         return self.repo.writable_session(branch)
 
+    def _to_icechunk(self, dataset: xr.Dataset, session, **kwargs) -> None:
+        """Write via ``to_icechunk``, after preparing the dataset for the group."""
+        dataset = prepare_write(
+            dataset, session.store, kwargs["group"], append_dim=kwargs.get("append_dim")
+        )
+        if "encoding" in kwargs:
+            kwargs["encoding"] = with_time_units(dataset, kwargs["encoding"])
+        to_icechunk(dataset, session, **kwargs)
+
+    @deprecated(
+        "`_to_icechunk_throttled` is left over from development and will be "
+        "removed with the next major version. Its cap on Zarr's concurrent "
+        "chunk writes covered only some of the store's writes. Use "
+        "`_to_icechunk` instead."
+    )
     def _to_icechunk_throttled(
         self, dataset: xr.Dataset, session, *, throttle: bool | None = None, **kwargs
     ) -> None:
         """Write via ``to_icechunk``, optionally capping zarr's async concurrency.
 
-        Zarr v3 issues chunk writes for a single array as a concurrent
-        ``asyncio.gather`` burst, sized by ``zarr.config``'s
-        ``async.concurrency`` (default 10). The cap is opt-in via
-        ``IcechunkConfig.zarr_async_concurrency`` (None = untouched). Only
-        the store's own write methods call this; the GNSS store writes of
-        ``canvodpy run`` (``orchestrator/processor.py``) and the day-block
-        writes (``day_blocks.py``) call ``to_icechunk`` directly, without
-        the cap (#188).
+        Deprecated (#188): the store's writes use ``_to_icechunk``, so
+        ``IcechunkConfig.zarr_async_concurrency`` has no effect on them.
 
         ``throttle`` overrides the config-derived default when explicitly
         passed; leave it ``None`` to defer to config.
@@ -1472,7 +1481,7 @@ class MyIcechunkStore:
             f"Added {', '.join(new_names)} to {group_name} ({step['op']})"
         )
         session = self._writable(temp_branch)
-        self._to_icechunk_throttled(to_write, session, group=group_name, mode="a")
+        self._to_icechunk(to_write, session, group=group_name, mode="a")
         self._append_metadata_row(
             zroot=zarr.open_group(session.store, mode="a"),
             group_name=group_name,
@@ -1687,7 +1696,7 @@ class MyIcechunkStore:
             size_mb=round(dataset_size_mb, 2),
             num_variables=num_variables,
         ):
-            self._to_icechunk_throttled(dataset, session, group=group_name, mode=mode)
+            self._to_icechunk(dataset, session, group=group_name, mode=mode)
 
         self._logger.info(f"Wrote dataset to group '{group_name}' (mode={mode})")
 
@@ -1815,7 +1824,7 @@ class MyIcechunkStore:
 
         dataset, encoding = self._for_group_creation(dataset)
         with self.writable_session(branch) as session:
-            self._to_icechunk_throttled(
+            self._to_icechunk(
                 dataset, session, group=group_name, mode="w", encoding=encoding
             )
             zroot = zarr.open_group(session.store, mode="a")
@@ -2021,7 +2030,7 @@ class MyIcechunkStore:
         )
         parts = metadata_parts or {}
 
-        self._to_icechunk_throttled(
+        self._to_icechunk(
             self._normalize_encodings(dataset), session, group=group_name, mode="w"
         )
         if table is not None:
@@ -2053,7 +2062,7 @@ class MyIcechunkStore:
                 if len(datasets) > 1
                 else datasets[0]
             )
-            self._to_icechunk_throttled(
+            self._to_icechunk(
                 self._normalize_encodings(rewrite),
                 session,
                 group=f"{path}/{name}",
@@ -2222,7 +2231,7 @@ class MyIcechunkStore:
         ds = self._normalize_encodings(meta_ds)
         ds = self._cleanse_dataset_attrs(ds)
         with self.writable_session(branch) as session:
-            self._to_icechunk_throttled(ds, session, group=path, mode="w")
+            self._to_icechunk(ds, session, group=path, mode="w")
             return commit_with_rebase(
                 session,
                 _with_run_id(f"[v{version}] metadata/{name} for {group_name}"),
@@ -2278,11 +2287,9 @@ class MyIcechunkStore:
         exists = zarr.open_group(session.store, mode="r").get(path) is not None
         for i, part in enumerate(clean):
             if i == 0 and not exists:
-                self._to_icechunk_throttled(part, session, group=path, mode="w")
+                self._to_icechunk(part, session, group=path, mode="w")
             else:
-                self._to_icechunk_throttled(
-                    part, session, group=path, append_dim="epoch"
-                )
+                self._to_icechunk(part, session, group=path, append_dim="epoch")
         return sum(part.sizes.get("epoch", 0) for part in clean)
 
     def append_metadata_datasets(
@@ -2546,9 +2553,7 @@ class MyIcechunkStore:
             commit_message = f"[v{version}] {action} to group '{group_name}'"
 
         with self.writable_session(branch) as session:
-            self._to_icechunk_throttled(
-                dataset, session, group=group_name, append_dim=append_dim
-            )
+            self._to_icechunk(dataset, session, group=group_name, append_dim=append_dim)
             zroot = zarr.open_group(session.store, mode="a")
             self._append_metadata_row(
                 zroot=zroot,
@@ -2667,7 +2672,7 @@ class MyIcechunkStore:
 
         if self.group_exists(group_name, branch):
             with self.writable_session(branch) as session:
-                self._to_icechunk_throttled(
+                self._to_icechunk(
                     dataset, session, group=group_name, append_dim=append_dim
                 )
                 for name, meta_ds in (metadata_datasets or {}).items():
@@ -2690,7 +2695,7 @@ class MyIcechunkStore:
         else:
             dataset, encoding = self._for_group_creation(dataset)
             with self.writable_session(branch) as session:
-                self._to_icechunk_throttled(
+                self._to_icechunk(
                     dataset, session, group=group_name, mode="w", encoding=encoding
                 )
                 for name, meta_ds in (metadata_datasets or {}).items():
@@ -3234,16 +3239,15 @@ class MyIcechunkStore:
                 data_vars=list(dataset.data_vars.keys()),
                 n_epochs=int(dataset.sizes.get("epoch", 0)),
                 approx_size_mb=round(dataset.nbytes / 1e6, 2),
-                zarr_async_concurrency=self._zarr_async_concurrency,
             )
             t_write_start = time.perf_counter()
             try:
                 if action == "append":
-                    self._to_icechunk_throttled(
+                    self._to_icechunk(
                         dataset, session, group=group_name, append_dim=append_dim
                     )
                 else:
-                    self._to_icechunk_throttled(
+                    self._to_icechunk(
                         dataset,
                         session,
                         group=group_name,
@@ -3452,10 +3456,9 @@ class MyIcechunkStore:
             data_vars=list(dataset.data_vars.keys()),
             n_epochs=int(dataset.sizes.get("epoch", 0)),
             approx_size_mb=round(dataset.nbytes / 1e6, 2),
-            zarr_async_concurrency=self._zarr_async_concurrency,
         )
         try:
-            self._to_icechunk_throttled(
+            self._to_icechunk(
                 dataset, fork_session, group=group_name, append_dim="epoch"
             )
         except Exception:
@@ -3793,9 +3796,8 @@ class MyIcechunkStore:
                         data_vars=list(plan.dataset.data_vars.keys()),
                         n_epochs=int(plan.dataset.sizes.get("epoch", 0)),
                         approx_size_mb=round(plan.dataset.nbytes / 1e6, 2),
-                        zarr_async_concurrency=self._zarr_async_concurrency,
                     )
-                    self._to_icechunk_throttled(
+                    self._to_icechunk(
                         plan.dataset,
                         prepass_session,
                         group=group_name,
@@ -4966,9 +4968,7 @@ class MyIcechunkStore:
         # session, same commit, so the temp branch never has a subgroup-less
         # state that could be read by anything else.
         with self.writable_session(temp_branch) as session:
-            self._to_icechunk_throttled(
-                ds_rechunked, session, group=group_name, mode="w"
-            )
+            self._to_icechunk(ds_rechunked, session, group=group_name, mode="w")
 
             subgroup_count = 0
             if subgroup_names:

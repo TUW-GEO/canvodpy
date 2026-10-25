@@ -4,9 +4,10 @@ Zarr v3's async codec pipeline issues chunk writes/reads for a single array
 as a concurrent ``asyncio.gather`` burst, sized by ``zarr.config``'s
 ``async.concurrency`` (default 10). On network-mounted (CIFS/NFS) stores
 that burst can trip connection-abort errors under load. Capping it costs
-throughput, so every caller opts in explicitly via its own config knob
-(``IcechunkConfig.zarr_async_concurrency``, ``AuxDataConfig.zarr_async_concurrency``)
-rather than this helper choosing a default.
+throughput, so the caller opts in explicitly via its own config knob
+(``AuxDataConfig.zarr_async_concurrency``) rather than this helper choosing
+a default. ``IcechunkConfig.zarr_async_concurrency`` is deprecated (#188):
+only the deprecated ``MyIcechunkStore._to_icechunk_throttled`` still reads it.
 
 Extracted out of ``MyIcechunkStore`` so the aux (SP3/CLK Hermite) cache's
 plain-Zarr write path -- a separate store, untouched by the Icechunk-only

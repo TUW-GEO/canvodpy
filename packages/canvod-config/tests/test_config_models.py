@@ -691,6 +691,18 @@ class TestIcechunkConfig:
         assert ic.manifest_preload_max_refs == 10_000
         assert ic.manifest_preload_max_arrays_to_scan == 500
 
+    def test_zarr_async_concurrency_deprecated(self):
+        """The Zarr write cap is deprecated and has no effect (#188)."""
+        with pytest.warns(FutureWarning, match="'zarr_async_concurrency' is left over"):
+            ic = IcechunkConfig(zarr_async_concurrency=2)
+        assert ic.zarr_async_concurrency == 2
+
+    def test_zarr_async_concurrency_unset_no_warning(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", FutureWarning)
+            ic = IcechunkConfig()
+        assert ic.zarr_async_concurrency is None
+
     def test_compression_level_bounds(self):
         with pytest.raises(ValidationError):
             IcechunkConfig(compression_level=-1)  # ge=0

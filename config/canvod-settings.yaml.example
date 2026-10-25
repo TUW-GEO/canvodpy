@@ -208,12 +208,6 @@ processing:
     inline_chunk_threshold_bytes: 512   # Bytes; chunks ≤ this are inlined into the manifest
     # https://canvodpy.eu/guides/settings/#processing-icechunk-get_partial_values_concurrency
     get_partial_values_concurrency: 1   # Concurrent partial-value reads (increase for S3/GCS)
-    # https://canvodpy.eu/guides/settings/#processing-icechunk-zarr_async_concurrency
-    # zarr_async_concurrency: 2         # Cap Zarr's concurrent chunk writes, only for
-    #                                    # writes through the store's own write methods:
-    #                                    # not the GNSS store writes of `canvodpy run`,
-    #                                    # not the day-block writes. Unset by default
-    #                                    # (Zarr's own default of 10 applies).
 
     # A chunk is the piece of an array that is read, compressed and written
     # as one. A group keeps the chunk size it was created with: a change
