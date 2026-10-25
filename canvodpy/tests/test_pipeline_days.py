@@ -137,3 +137,45 @@ def test_compressed_files_get_their_own_warning(tmp_path: Path) -> None:
         ".sbf.zip": "1 (e.g. FANA01INK_R_20250020030_15M_05S_AA.sbf.zip)",
     }
     assert "does not decompress" in fields["hint"]
+
+
+def test_a_canopy_gap_prepares_no_reference_copy_for_it(tmp_path: Path) -> None:
+    """canopy_02 has no files on day 2: a data gap, not a failure (#538).
+
+    The reference is still prepared for canopy_01 that day, but not for
+    canopy_02, whose position and VOD can't come from missing files; the
+    day is reported among the days without VOD instead.
+    """
+    clear_discovery_cache()
+    _touch(
+        tmp_path / "canopy",
+        "FANA01INK_R_20250010000_15M_05S_AA.sbf",
+        "FANA01INK_R_20250020000_15M_05S_AA.sbf",
+    )
+    _touch(tmp_path / "canopy2", "FANA02INK_R_20250010000_15M_05S_AA.sbf")
+    _touch(
+        tmp_path / "ref",
+        "FANR01INK_R_20250010000_15M_05S_AA.sbf",
+        "FANR01INK_R_20250020000_15M_05S_AA.sbf",
+    )
+    orch = _orchestrator(tmp_path)
+    site_config = orch.site._site_config
+    site_config.receivers["canopy_02"] = SimpleNamespace(
+        type="canopy", directory="canopy2", reader_format="sbf", recipe=None
+    )
+    site_config.resolve_paired_canopies = lambda name: ["canopy_01", "canopy_02"]
+    orch.site.vod_analyses["b"] = {
+        "canopy_receiver": "canopy_02",
+        "reference_receiver": "reference_01",
+    }
+
+    grouped = orch._group_by_date_and_receiver()
+
+    assert sorted(grouped["2025001"]) == [
+        "canopy_01",
+        "canopy_02",
+        "reference_01_canopy_01",
+        "reference_01_canopy_02",
+    ]
+    assert sorted(grouped["2025002"]) == ["canopy_01", "reference_01_canopy_01"]
+    assert orch._days_without_pair["canopy_02"] == {"2025002"}

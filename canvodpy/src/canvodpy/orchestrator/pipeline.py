@@ -762,6 +762,16 @@ class PipelineOrchestrator:
                     store_group = reference_store_group(ref_name, canopy_name)
                     if store_group in grouped[date_key]:
                         continue
+                    if (
+                        canopy_name not in days_of
+                        and canopy_name in site_config.receivers
+                    ):
+                        days_of[canopy_name] = self._receiver_days(canopy_name)
+                    if canopy_name in days_of and date_key not in days_of[canopy_name]:
+                        # A data gap of the canopy, not a failure: no position
+                        # and no VOD without its files (_warn_days_without_vod).
+                        self._days_without_pair[canopy_name].add(date_key)
+                        continue
                     # The canopy's files of the same day give the position
                     canopy_cfg = site_config.receivers.get(canopy_name)
                     canopy_position_day = (
