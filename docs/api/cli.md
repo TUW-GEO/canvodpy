@@ -217,6 +217,8 @@ $ canvodpy config validate [OPTIONS]
 * `--config <path>`: Settings file whose values replace those of canvod-settings.yaml.
 * `--site <str>`: Check the data of this site only. Repeat for several sites. Default: all sites.
 * `--check-sampling / --no-check-sampling`: Read the first file of the first and the last day of each receiver and compare the sampling interval of its data with the one in its canonical name.  [default: check-sampling]
+* `--start <str>`: Check the data from this day on, in YYYYDOY format, for example 2025001, as for canvodpy run. Default: the first day with files.
+* `--end <str>`: Check the data up to this day, in YYYYDOY format. Default: the last day with files.
 * `--help`: Show this message and exit.
 
 ### `canvodpy config show`

@@ -485,6 +485,26 @@ def _todo_placeholders(config_dir: Path) -> list[str]:
     return placeholder_keys
 
 
+def _period_days(start: str | None, end: str | None) -> tuple[str | None, str | None]:
+    """``--start`` and ``--end`` as YYYYDOY, checked; a usage error if not."""
+    from canvod.utils.tools import YYYYDOY
+
+    days = []
+    for option, value in (("--start", start), ("--end", end)):
+        if value is None:
+            days.append(None)
+            continue
+        try:
+            days.append(YYYYDOY.from_str(value).to_str())
+        except ValueError as exc:
+            msg = f"{value} is not a day in YYYYDOY format, for example 2025001: {exc}"
+            raise typer.BadParameter(msg, param_hint=option) from None
+    if days[0] and days[1] and days[0] > days[1]:
+        msg = f"--start {days[0]} is after --end {days[1]}."
+        raise typer.BadParameter(msg)
+    return days[0], days[1]
+
+
 @config_app.command()
 def validate(
     config_dir: Annotated[Path | None, CONFIG_DIR_OPTION] = None,
@@ -507,6 +527,25 @@ def validate(
             "one in its canonical name.",
         ),
     ] = True,
+    start: Annotated[
+        str | None,
+        typer.Option(
+            "--start",
+            help="Check the data from this day on, in YYYYDOY format, for "
+            "example 2025001, as for canvodpy run. Default: the first day "
+            "with files.",
+            show_default=False,
+        ),
+    ] = None,
+    end: Annotated[
+        str | None,
+        typer.Option(
+            "--end",
+            help="Check the data up to this day, in YYYYDOY format. Default: "
+            "the last day with files.",
+            show_default=False,
+        ),
+    ] = None,
 ) -> None:
     """Validate the configuration and the receiver data it points to.
 
@@ -526,6 +565,10 @@ def validate(
         Sites whose data to check; ``None`` checks all sites.
     check_sampling : bool
         Compare named and actual sampling intervals.
+    start, end : str | None
+        First and last day (YYYYDOY) whose data to check; ``None`` checks
+        from the first or up to the last day with files. An overlay for
+        part of the days is validated over those days.
 
     Returns
     -------
@@ -534,6 +577,7 @@ def validate(
     from canvod.config.loader import load_config
     from canvodpy.orchestrator.data_check import check_site_data
 
+    start, end = _period_days(start, end)
     config_dir = get_default_config_dir()
     console.print(f"\n[bold]Validating configuration in {config_dir}...[/bold]\n")
 
@@ -604,7 +648,7 @@ def validate(
 
     console.print("\n[bold]Checking receiver data...[/bold]")
     reports = [
-        check_site_data(name, config, check_sampling)
+        check_site_data(name, config, check_sampling, start, end)
         for name in site or list(config.sites.sites)
     ]
     for report in reports:

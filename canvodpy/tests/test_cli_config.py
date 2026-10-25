@@ -496,3 +496,50 @@ class TestExplain:
 
         assert result.exit_code == 1
         assert "processing.storage.stores_root_dir" in result.output
+
+
+class TestValidatePeriod:
+    """``config validate --start/--end`` checks only those days (#540)."""
+
+    @staticmethod
+    def _config_dir(tmp_path):
+        config_dir = tmp_path / "config"
+        TestValidateRecipeWithoutFilemap()._write_config(
+            config_dir, tmp_path, with_recipe=False
+        )
+        return config_dir
+
+    def test_the_period_reaches_the_data_check(self, tmp_path):
+        config_dir = self._config_dir(tmp_path)
+        with mock.patch("canvodpy.orchestrator.data_check.check_site_data") as check:
+            check.return_value.ok = True
+            runner.invoke(
+                _app(),
+                [
+                    "config",
+                    "validate",
+                    "--config-dir",
+                    str(config_dir),
+                    "--start",
+                    "2025001",
+                    "--end",
+                    "2025007",
+                ],
+            )
+        assert check.call_args.args[-2:] == ("2025001", "2025007")
+
+    @pytest.mark.parametrize(
+        ("args", "message"),
+        [
+            (["--start", "25001"], "YYYYDOY"),
+            (["--end", "2025400"], "YYYYDOY"),
+            (["--start", "2025007", "--end", "2025001"], "is after --end"),
+        ],
+    )
+    def test_a_wrong_period_is_a_usage_error(self, tmp_path, args, message):
+        config_dir = self._config_dir(tmp_path)
+        result = runner.invoke(
+            _app(), ["config", "validate", "--config-dir", str(config_dir), *args]
+        )
+        assert result.exit_code == 2
+        assert message in " ".join(result.output.split())

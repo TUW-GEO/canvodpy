@@ -16,6 +16,7 @@ from canvodpy.orchestrator.discovery import clear_discovery_cache
 DAY1 = "FANA01INK_R_20250010000_15M_05S_AA.rnx"
 DAY1_LATE = "FANA01INK_R_20250010015_15M_05S_AA.rnx"
 DAY2 = "FANA01INK_R_20250020000_15M_05S_AA.rnx"
+DAY3 = "FANA01INK_R_20250030000_15M_05S_AA.rnx"
 
 
 @pytest.fixture(autouse=True)
@@ -31,7 +32,13 @@ def _touch(directory: Path, *names: str) -> None:
         (directory / name).write_text("")
 
 
-def _check(tmp_path: Path, sampling_s: float | None = None, **cfg):
+def _check(
+    tmp_path: Path,
+    sampling_s: float | None = None,
+    start: str | None = None,
+    end: str | None = None,
+    **cfg,
+):
     cfg = {"directory": "rx", "reader_format": "rinex3", **cfg}
     with mock.patch(
         "canvodpy.orchestrator.data_check.data_sampling_seconds",
@@ -43,6 +50,8 @@ def _check(tmp_path: Path, sampling_s: float | None = None, **cfg):
             tmp_path,
             "fangorn",
             check_sampling=sampling_s is not None,
+            start=start,
+            end=end,
         )
     return report, read
 
@@ -138,6 +147,37 @@ def test_sampling_mismatch_is_an_error(tmp_path: Path) -> None:
         f"{tmp_path / 'rx' / DAY1} is named with sampling 05S by its file "
         f"name, but its data are sampled every 1 s."
     ]
+
+
+class TestPeriod:
+    """--start/--end: only the days of the period are checked (#540)."""
+
+    def test_only_the_days_of_the_period_count(self, tmp_path: Path) -> None:
+        _touch(tmp_path / "rx", DAY1, DAY1_LATE, DAY2, DAY3)
+        report, _ = _check(tmp_path, start="2025002", end="2025003")
+        assert report.days == ["2025002", "2025003"]
+        assert report.files == 2
+
+    def test_the_sampling_check_reads_the_period_s_first_and_last_day(
+        self, tmp_path: Path
+    ) -> None:
+        _touch(tmp_path / "rx", DAY1, DAY2, DAY3)
+        _, read = _check(tmp_path, sampling_s=5.0, start="2025001", end="2025002")
+        assert [c.args[0].name for c in read.call_args_list] == [DAY1, DAY2]
+
+    def test_start_or_end_alone(self, tmp_path: Path) -> None:
+        _touch(tmp_path / "rx", DAY1, DAY2, DAY3)
+        assert _check(tmp_path, start="2025002")[0].days == ["2025002", "2025003"]
+        clear_discovery_cache()
+        assert _check(tmp_path, end="2025002")[0].days == ["2025001", "2025002"]
+
+    def test_no_files_in_the_period_is_a_warning(self, tmp_path: Path) -> None:
+        _touch(tmp_path / "rx", DAY1)
+        report, _ = _check(tmp_path, start="2025002", end="2025003")
+        assert report.errors == []
+        assert report.warnings == [
+            f"{tmp_path / 'rx'} holds no files from 2025002 to 2025003."
+        ]
 
 
 def test_unreadable_file_is_a_warning(tmp_path: Path) -> None:

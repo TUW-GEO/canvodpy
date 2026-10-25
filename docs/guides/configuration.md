@@ -69,6 +69,17 @@ Only the fields present in the overlay are changed; everything else is read from
 A list in the overlay, such as `sids.custom_sids`, replaces the list of the main file as a
 whole; its entries are not added to the main file's.
 
+An overlay for part of the days, for example with the recipes of an
+older period whose files are sampled every second, is validated over
+those days with `--start` and `--end`, as for `canvodpy run`:
+
+```bash
+canvodpy config validate --config older-period.yaml --start 2025001 --end 2025090
+```
+
+Without them, `config validate` checks every day with files, and the
+sampling check reads the first and the last day.
+
 ### An overlay can add and change settings, not remove them
 
 The overlay is merged **on top of** the base `canvod-settings.yaml`; it can add new keys or

@@ -195,6 +195,8 @@ def check_receiver_data(
     site: str,
     check_sampling: bool = True,
     reader_options: dict[str, Any] | None = None,
+    start: str | None = None,
+    end: str | None = None,
 ) -> ReceiverReport:
     """Check one receiver's directory as a run would read it.
 
@@ -214,6 +216,9 @@ def check_receiver_data(
         canonical name.
     reader_options : dict | None
         Options passed to the reader for the sampling check.
+    start, end : str | None
+        First and last day (YYYYDOY) to check, as for ``canvodpy run``;
+        ``None`` checks from the first or up to the last day with files.
     """
     directory = base_path / cfg["directory"]
     configured_format = cfg.get("reader_format") or "auto"
@@ -231,10 +236,16 @@ def check_receiver_data(
                 report.warnings.append(note)
         scan = scan_directory(directory, recipe_path)
         reader_format = None if configured_format == "auto" else configured_format
-        days = receiver_days(name, directory, reader_format, recipe_path)
+        all_days = receiver_days(name, directory, reader_format, recipe_path)
     except DiscoveryError as exc:
         report.errors.append(str(exc))
         return report
+    days = [
+        day
+        for day in all_days
+        if (start is None or day.yyyydoy >= start)
+        and (end is None or day.yyyydoy <= end)
+    ]
 
     report.identity = scan.identity
     files_of_day = {day.yyyydoy: discover_files(day, reader_format) for day in days}
@@ -260,6 +271,9 @@ def check_receiver_data(
         f"processed: canVODpy does not decompress yet. Decompress them first "
         f"(gzip/zip, and crx2rnx for Hatanaka-compressed RINEX)."
     )
+    if not report.files and len(days) < len(all_days):
+        report.warnings.append(f"{directory} holds no files {_period(start, end)}.")
+        return report
     if not report.files:
         if report.compressed:
             report.errors.append(compressed_note + " Nothing would be processed.")
@@ -289,6 +303,13 @@ def check_receiver_data(
         for day in dict.fromkeys((report.days[0], report.days[-1])):
             _check_sampling(report, files_of_day[day][0], reader_options or {})
     return report
+
+
+def _period(start: str | None, end: str | None) -> str:
+    """``from <start> to <end>``, for a message; one of them may be None."""
+    if start and end:
+        return f"from {start} to {end}"
+    return f"from {start} on" if start else f"up to {end}"
 
 
 def missing_store_settings_errors(
@@ -332,7 +353,11 @@ def missing_store_settings_errors(
 
 
 def check_site_data(
-    site: str, config: Any = None, check_sampling: bool = True
+    site: str,
+    config: Any = None,
+    check_sampling: bool = True,
+    start: str | None = None,
+    end: str | None = None,
 ) -> SiteReport:
     """Check the data of every receiver of a site as a run would read them.
 
@@ -344,6 +369,8 @@ def check_site_data(
         Loaded configuration; ``None`` loads the active one.
     check_sampling : bool
         See :func:`check_receiver_data`.
+    start, end : str | None
+        First and last day (YYYYDOY) to check; see :func:`check_receiver_data`.
 
     Returns
     -------
@@ -370,7 +397,7 @@ def check_site_data(
         report.errors.append(str(exc))
     for name, cfg in receivers.items():
         report.receivers[name] = check_receiver_data(
-            name, cfg, base_path, site, check_sampling, reader_options
+            name, cfg, base_path, site, check_sampling, reader_options, start, end
         )
     for ref, canopy in site_config.get_reference_canopy_pairs():
         mixed = mixed_format_error(
