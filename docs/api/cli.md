@@ -345,19 +345,22 @@ Show the commit history as a graph, or the store operations with --ops.
 **Usage**:
 
 ```console
-$ canvodpy store log [OPTIONS] {site}
+$ canvodpy store log [OPTIONS] [site]
 ```
 
 **Arguments**:
 
-* `site`: Site name, as defined under sites: in canvod-settings.yaml  [required]
+* `site`: Site name, as defined under sites: in canvod-settings.yaml. Omit when using --path.
 
 **Options**:
 
-* `--store gnss|vod`: Store to open.  [default: gnss]
+* `--store gnss|vod`: Store of the site to open. Default: gnss. Not with --path.
+* `--path STORE`: Open the store at this local path or s3://bucket/prefix instead of a site's store, for example a copy. Needs no settings file.
 * `--branch <str>`: Show the history of this branch only. Default: all branches.
 * `--ops`: Show the operations on the store instead of the commit graph.
 * `--limit <int>`: Number of operations that --ops shows.  [default: 50]
+* `--svg FILE`: Write the commit graph to this SVG file instead of printing it.
+* `--plain`: Draw the commit graph without colors, for a file or a CI log.
 * `-c, --config-dir <path|url>`: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 
