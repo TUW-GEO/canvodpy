@@ -58,15 +58,8 @@ uv tool install canvodpy
 uv tool update-shell   # once: puts the tool folder on your PATH
 ```
 
-With the extension for naming recipes (file names that don't follow the
-canVOD convention):
-
-```bash
-uv tool install canvodpy --with canvod-filemap
-```
-
-For reproducible runs, pin the versions:
-`uv tool install canvodpy==1.0.0 --with canvod-filemap==1.0.0`.
+For reproducible runs, pin the version:
+`uv tool install canvodpy==1.0.0`.
 `uv tool upgrade canvodpy` updates the tool, `uv tool uninstall canvodpy`
 removes it.
 
