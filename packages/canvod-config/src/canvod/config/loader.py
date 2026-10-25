@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from canvod.utils.remote_file import is_url
 
 from .models import CanvodConfig
-from .remote import resolve_config_dir
+from .remote import fetch_overlay_recipes, resolve_config_dir
 
 
 class ConfigValidationError(ValueError):
@@ -267,6 +267,9 @@ class ConfigLoader:
         sites_raw = data.get("sites", {})
         if sites_raw_overlay:
             sites_raw = self._deep_merge(sites_raw, sites_raw_overlay)
+        if sites_raw_overlay and self.config_file is not None:
+            # Settings read from a URL: the overlay's recipes come from there too.
+            fetch_overlay_recipes(self.config_dir, sites_raw, self.config_file)
 
         # Plain dicts, not models: pydantic-settings merges a CANVOD__
         # variable into a dict, but a model it replaces as a whole.

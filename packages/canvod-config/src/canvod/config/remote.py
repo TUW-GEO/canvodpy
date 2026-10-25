@@ -13,6 +13,7 @@ is a URL is fetched by the recipe lookup, as with local settings.
 
 :func:`resolve_config_dir` fetches the settings file and those recipes,
 once per run, and puts them into a configuration folder of the run;
+:func:`fetch_overlay_recipes` adds the recipes that an overlay names;
 everything after it reads that folder as it reads a local one. The URL is
 not recorded: stores and the run history keep the settings, not where
 they came from.
@@ -87,21 +88,69 @@ def resolve_config_dir(url: str) -> Path:
     files = {SETTINGS_FILE: settings_path}
     for site, receiver, name in _recipe_names(settings):
         relative = f"recipes/{site}/{name}.yaml"
-        recipe_url = remote.sibling(relative).url
-        try:
-            files[relative] = fetch_remote(recipe_url, what="recipe")
-        except RemoteFetchError as exc:
-            msg = (
-                f"Receiver '{receiver}' of site '{site}' in the settings file {url} "
-                f"names the recipe '{name}', which is read from the same repository "
-                f"at the same link: {exc}"
-            )
-            raise RemoteFetchError(msg) from None
+        where = f"in the settings file {url}"
+        files[relative] = _fetch_recipe(remote, relative, site, receiver, name, where)
 
     folder = _config_folder(files)
     with _LOCK:
         _FOLDERS[key] = folder
     return folder
+
+
+def fetch_overlay_recipes(
+    config_dir: Path, sites: dict[str, Any], overlay: Path
+) -> None:
+    """Fetch the recipes that an overlay adds to settings read from a URL.
+
+    The overlay is applied after :func:`resolve_config_dir` fetched the
+    recipes the settings file names. A recipe that only the overlay names
+    (for example for an older period of a receiver) is read from the same
+    repository at the same link, into ``config_dir``. Nothing happens for
+    a local configuration folder.
+
+    Parameters
+    ----------
+    config_dir : Path
+        The configuration folder.
+    sites : dict[str, Any]
+        The ``sites:`` section, with the overlay applied.
+    overlay : Path
+        The overlay file, for the error message.
+
+    Raises
+    ------
+    RemoteURLError
+        If a recipe name is a path.
+    RemoteFetchError
+        If a recipe cannot be fetched.
+    """
+    url = settings_url(config_dir)
+    if url is None:
+        return
+    remote = parse_remote_url(url, what="settings file")
+    files = {}
+    for site, receiver, name in _recipe_names({"sites": sites}):
+        relative = f"recipes/{site}/{name}.yaml"
+        if (Path(config_dir) / relative).is_file():
+            continue
+        where = f"in the overlay {overlay} on the settings file {url}"
+        files[relative] = _fetch_recipe(remote, relative, site, receiver, name, where)
+    _copy_into(Path(config_dir), files)
+
+
+def _fetch_recipe(
+    remote, relative: str, site: str, receiver: str, name: str, where: str
+) -> Path:
+    """Fetch the recipe at ``relative`` next to the settings file."""
+    try:
+        return fetch_remote(remote.sibling(relative).url, what="recipe")
+    except RemoteFetchError as exc:
+        msg = (
+            f"Receiver '{receiver}' of site '{site}' {where} names the recipe "
+            f"'{name}', which is read from the same repository at the same "
+            f"link: {exc}"
+        )
+        raise RemoteFetchError(msg) from None
 
 
 def settings_url(config_dir: Path) -> str | None:
@@ -190,6 +239,12 @@ def _config_folder(files: dict[str, Path]) -> Path:
     parent = run_folder() / "config"
     parent.mkdir(exist_ok=True)
     folder = Path(tempfile.mkdtemp(dir=parent))
+    _copy_into(folder, files)
+    return folder
+
+
+def _copy_into(folder: Path, files: dict[str, Path]) -> None:
+    """Copy ``files`` (relative path -> fetched file) into ``folder``."""
     try:
         for relative, path in files.items():
             target = folder / relative
@@ -198,4 +253,3 @@ def _config_folder(files: dict[str, Path]) -> Path:
     except OSError as exc:
         msg = f"Cannot write the configuration folder {folder}: {exc}"
         raise RemoteFetchError(msg) from exc
-    return folder

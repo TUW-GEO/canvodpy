@@ -228,3 +228,65 @@ def test_config_dir_variable_may_be_a_url(server, tmp_path, monkeypatch):
 
     assert settings_url(folder) == SETTINGS_URL
     assert load_config().processing.metadata.author == testing.PERSON_NAME
+
+
+def _overlay(tmp_path: Path, recipe: str) -> Path:
+    """An overlay that gives the canopy receiver the recipe ``recipe``."""
+    overlay = tmp_path / "overlay.yaml"
+    overlay.write_text(
+        json.dumps(
+            {
+                "sites": {
+                    testing.SITE_KEY: {"receivers": {"canopy_01": {"recipe": recipe}}}
+                }
+            }
+        )
+    )
+    return overlay
+
+
+class TestOverlayRecipes:
+    """An overlay's recipes come from the settings' link too (#539)."""
+
+    def test_a_recipe_only_the_overlay_names_is_fetched(self, server, tmp_path):
+        server.serve(SETTINGS_URL, _settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
+        server.serve(RECIPE_URL, RECIPE)
+        older = f"{testing.SITE_KEY}_canopy_01s"
+        older_recipe = f"name: {older}\n".encode()
+        server.serve(f"{BASE}/recipes/{testing.SITE_KEY}/{older}.yaml", older_recipe)
+        folder = resolve_config_dir(SETTINGS_URL)
+
+        config = load_config(config_dir=folder, config_file=_overlay(tmp_path, older))
+
+        receiver = config.sites.sites[testing.SITE_KEY].receivers["canopy_01"]
+        assert receiver.recipe == older
+        path = folder / "recipes" / testing.SITE_KEY / f"{older}.yaml"
+        assert path.read_bytes() == older_recipe
+
+    def test_a_missing_overlay_recipe_names_the_overlay_and_the_url(
+        self, server, tmp_path
+    ):
+        server.serve(SETTINGS_URL, _settings(tmp_path))
+        folder = resolve_config_dir(SETTINGS_URL)
+        overlay = _overlay(tmp_path, "entmoot")
+
+        with pytest.raises(RemoteFetchError) as excinfo:
+            load_config(config_dir=folder, config_file=overlay)
+
+        message = str(excinfo.value)
+        assert "'entmoot'" in message
+        assert "canopy_01" in message
+        assert str(overlay) in message
+        assert f"{BASE}/recipes/{testing.SITE_KEY}/entmoot.yaml" in message
+
+    def test_an_overlay_on_a_local_folder_fetches_nothing(self, server, tmp_path):
+        local = tmp_path / "local"
+        local.mkdir()
+        (local / "canvod-settings.yaml").write_bytes(_settings(tmp_path))
+        overlay = _overlay(tmp_path, f"{testing.SITE_KEY}_canopy")
+
+        config = load_config(config_dir=local, config_file=overlay)
+
+        receiver = config.sites.sites[testing.SITE_KEY].receivers["canopy_01"]
+        assert receiver.recipe == f"{testing.SITE_KEY}_canopy"
+        assert not (local / "recipes").exists()

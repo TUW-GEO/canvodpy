@@ -245,6 +245,24 @@ def test_recipes_are_read_from_the_site_folder_of_the_config_dir(
         recipe_file("fangorn", "_template")
 
 
+def test_a_missing_recipe_of_settings_from_a_url_names_the_url(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """No `just naming-init` for settings read from a link (#539)."""
+    pytest.importorskip("canvod.filemap.recipe_files")
+    from canvod.config import remote
+
+    url = "https://raw.githubusercontent.com/the-inklings/red-book/main/canvod-settings.yaml"
+    monkeypatch.setattr(remote, "settings_url", lambda _dir: url)
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
+    with pytest.raises(DiscoveryError) as excinfo:
+        recipe_file("fangorn", "entmoot")
+    message = str(excinfo.value)
+    assert url in message
+    assert "recipes/fangorn/entmoot.yaml" in message
+    assert "naming-init" not in message
+
+
 def test_recipe_outside_its_site_folder_is_an_error(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

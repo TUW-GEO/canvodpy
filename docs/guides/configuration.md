@@ -130,6 +130,9 @@ canvodpy run --site ExampleSite --start 2025001 --end 2025007 \
   `GITHUB_TOKEN`, for example `export GH_TOKEN=$(gh auth token)`.
 - The folders of your machine (stores, auxiliary files, logs) go into an
   overlay file with `--config`, so one settings file serves every machine.
+  A recipe that only the overlay names, for example for an older period
+  of a receiver, is also read from the link's repository, next to the
+  settings file.
 - `canvodpy config init` and `canvodpy config edit` write the settings
   file, so they need a local folder; change settings from a link in their
   repository.
