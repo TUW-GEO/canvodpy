@@ -98,8 +98,8 @@ def _store(config) -> tuple[Path, Any]:
 
 
 @pytest.mark.integration
-def test_a_new_store_has_no_validation_failures(rosalia_one_day):
-    config, _ = rosalia_one_day
+def test_a_new_store_has_no_validation_failures(fangorn_one_day):
+    config, _ = fangorn_one_day
     store_path, _ = _store(config)
 
     result = validate_all(read_metadata(store_path), recommended=False)
@@ -115,8 +115,8 @@ def test_a_new_store_has_no_validation_failures(rosalia_one_day):
 
 
 @pytest.mark.integration
-def test_a_gnss_store_day_meets_cf_and_acdd(rosalia_one_day, tmp_path):
-    config, _ = rosalia_one_day
+def test_a_gnss_store_day_meets_cf_and_acdd(fangorn_one_day, tmp_path):
+    config, _ = fangorn_one_day
     _, session = _store(config)
     attrs = dict(zarr.open_group(session.store, mode="r").attrs)
     ds = load_group(session.store, "canopy_01", drop_empty=True)
@@ -125,8 +125,8 @@ def test_a_gnss_store_day_meets_cf_and_acdd(rosalia_one_day, tmp_path):
 
 
 @pytest.mark.integration
-def test_a_vod_day_meets_cf_and_acdd(rosalia_one_day, tmp_path):
-    config, _ = rosalia_one_day
+def test_a_vod_day_meets_cf_and_acdd(fangorn_one_day, tmp_path):
+    config, _ = fangorn_one_day
     _, session = _store(config)
     attrs = dict(zarr.open_group(session.store, mode="r").attrs)
     canopy, sky = (

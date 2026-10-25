@@ -55,10 +55,10 @@ def _assert_finished_run(run, receiver_days, label: str) -> None:
 
 
 @pytest.mark.integration
-def test_site_pipeline_records_its_run(rosalia_site) -> None:
+def test_site_pipeline_records_its_run(fangorn_site) -> None:
     from canvodpy import Site
 
-    config, _ = rosalia_site
+    config, _ = fangorn_site
     with Site(testing.SITE_KEY).pipeline(label="python-run") as pipeline:
         datasets = pipeline.process_date(DAY)
 
@@ -99,10 +99,10 @@ def test_site_pipeline_records_its_run(rosalia_site) -> None:
 
 
 @pytest.mark.integration
-def test_canvodpy_run_records_its_run_with_label(rosalia_site) -> None:
+def test_canvodpy_run_records_its_run_with_label(fangorn_site) -> None:
     from canvodpy.cli.app import main_app
 
-    config, _ = rosalia_site
+    config, _ = fangorn_site
     result = CliRunner().invoke(
         main_app,
         [
@@ -125,13 +125,13 @@ def test_canvodpy_run_records_its_run_with_label(rosalia_site) -> None:
 
 
 def test_a_run_that_raises_is_failed_with_its_error_and_problems(
-    rosalia_site, monkeypatch
+    fangorn_site, monkeypatch
 ) -> None:
     from canvodpy.orchestrator.pipeline import PipelineOrchestrator
 
     from canvodpy import Site
 
-    config, _ = rosalia_site
+    config, _ = fangorn_site
 
     def broken(self, **_kwargs):
         structlog.get_logger("canvodpy.test").warning(
@@ -161,12 +161,12 @@ def test_a_run_that_raises_is_failed_with_its_error_and_problems(
     assert "resource-sampler" not in {t.name for t in threading.enumerate()}
 
 
-def test_check_day_records_no_run(rosalia_site) -> None:
+def test_check_day_records_no_run(fangorn_site) -> None:
     # Airflow retries check_day until the files arrive; each retry would
     # add a failed run.
     from canvodpy.workflows.tasks import check_day
 
-    config, _ = rosalia_site
+    config, _ = fangorn_site
     assert check_day(testing.SITE_KEY, DAY)["ready"]
     with pytest.raises(RuntimeError, match="not yet available"):
         check_day(testing.SITE_KEY, "2025200")

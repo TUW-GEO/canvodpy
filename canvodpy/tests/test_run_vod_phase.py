@@ -31,9 +31,9 @@ ANALYSIS = "canopy_01_vs_reference_01"
 
 
 @pytest.fixture
-def two_days(rosalia_site, tmp_path, monkeypatch):
+def two_days(fangorn_site, tmp_path, monkeypatch):
     """The site on both days, with its VOD analysis; reading back fails."""
-    config, test_site = rosalia_site
+    config, test_site = fangorn_site
     site = config.sites.sites[testing.SITE_KEY]
     site.receivers = dict(test_site._site_config.receivers)
     site.vod_analyses = dict(test_site._site_config.vod_analyses)

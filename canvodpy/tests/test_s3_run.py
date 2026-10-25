@@ -75,9 +75,9 @@ def _assert_same_data(local: MyIcechunkStore, s3: MyIcechunkStore) -> None:
 
 @needs_s3
 def test_a_run_writes_the_same_stores_on_s3_as_in_a_local_folder(
-    rosalia_site, tmp_path
+    fangorn_site, tmp_path
 ) -> None:
-    config, _ = rosalia_site
+    config, _ = fangorn_site
     storage = config.processing.storage
 
     _run()
@@ -114,9 +114,9 @@ def test_a_run_writes_the_same_stores_on_s3_as_in_a_local_folder(
 
 
 def test_a_run_says_what_to_check_when_s3_cannot_be_reached(
-    rosalia_site, monkeypatch
+    fangorn_site, monkeypatch
 ) -> None:
-    config, _ = rosalia_site
+    config, _ = fangorn_site
     secret = "made-up-secret-of-the-ents"
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "made-up-key")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", secret)

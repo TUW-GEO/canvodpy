@@ -44,8 +44,8 @@ def _use(config, data: Path, stores: Path) -> Path:
 
 
 @pytest.fixture
-def two_days(rosalia_site, tmp_path):
-    config, test_site = rosalia_site
+def two_days(fangorn_site, tmp_path):
+    config, test_site = fangorn_site
     site = config.sites.sites[testing.SITE_KEY]
     site.receivers = dict(test_site._site_config.receivers)
     return config, _two_days(tmp_path)

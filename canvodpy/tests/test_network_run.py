@@ -27,10 +27,10 @@ pytestmark = [
 DAY = "2025001"
 
 
-def test_a_run_downloads_its_products_and_stores_the_same(rosalia_site, tmp_path):
+def test_a_run_downloads_its_products_and_stores_the_same(fangorn_site, tmp_path):
     from canvodpy import Site
 
-    config, test_site = rosalia_site
+    config, test_site = fangorn_site
     site = config.sites.sites[testing.SITE_KEY]
     site.receivers = dict(test_site._site_config.receivers)
     site.vod_analyses = dict(test_site._site_config.vod_analyses)

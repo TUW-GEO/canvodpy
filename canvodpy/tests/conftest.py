@@ -90,7 +90,7 @@ _TEST_VOD_ANALYSES = {
 
 
 @pytest.fixture
-def rosalia_site(tmp_path, monkeypatch):
+def fangorn_site(tmp_path, monkeypatch):
     """The made-up site on the Rosalia test data, ready to run.
 
     Uses self-contained test data and receiver config, and settings loaded
@@ -191,14 +191,14 @@ def rosalia_site(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def rosalia_one_day(rosalia_site):
+def fangorn_one_day(fangorn_site):
     """Run the pipeline on one day of the Rosalia test data.
 
     Returns the patched settings and the number of days processed.
     """
     from canvodpy.orchestrator.pipeline import PipelineOrchestrator
 
-    patched_config, site = rosalia_site
+    patched_config, site = fangorn_site
     counter = 0
     with PipelineOrchestrator(site=site, dry_run=False) as orchestrator:
         for date_key, _datasets, _receiver_times in orchestrator.process_by_date(

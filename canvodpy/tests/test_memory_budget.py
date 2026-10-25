@@ -251,10 +251,10 @@ def _log_events(log_dir: Path, event: str) -> list[dict]:
 
 
 @pytest.mark.integration
-def test_a_run_whose_file_does_not_fit_stops_before_reading(rosalia_site):
+def test_a_run_whose_file_does_not_fit_stops_before_reading(fangorn_site):
     from canvodpy.orchestrator.pipeline import PipelineOrchestrator
 
-    config, site = rosalia_site
+    config, site = fangorn_site
     with (
         PipelineOrchestrator(
             site=site, max_memory_gb=0.1, config=config
@@ -267,10 +267,10 @@ def test_a_run_whose_file_does_not_fit_stops_before_reading(rosalia_site):
 
 
 @pytest.mark.integration
-def test_a_run_logs_its_sizes_and_the_worker_peaks(rosalia_site):
+def test_a_run_logs_its_sizes_and_the_worker_peaks(fangorn_site):
     from canvodpy.orchestrator.pipeline import PipelineOrchestrator
 
-    config, site = rosalia_site
+    config, site = fangorn_site
     with PipelineOrchestrator(
         site=site, n_max_workers=2, max_memory_gb=64, config=config
     ) as orchestrator:
@@ -289,7 +289,7 @@ def test_a_run_logs_its_sizes_and_the_worker_peaks(rosalia_site):
 
 @pytest.mark.integration
 def test_each_run_sizes_from_the_deprecated_cap_and_records_the_sized_workers(
-    rosalia_site, monkeypatch
+    fangorn_site, monkeypatch
 ):
     import canvodpy.orchestrator.pipeline as pipeline_module
     from canvodpy.orchestrator.memory_budget import MemoryPlan
@@ -313,7 +313,7 @@ def test_each_run_sizes_from_the_deprecated_cap_and_records_the_sized_workers(
         )
 
     monkeypatch.setattr(pipeline_module, "plan_memory", one_worker_one_day)
-    config, site = rosalia_site
+    config, site = fangorn_site
     log_dir = Path(config.processing.logging.log_dir)
     with (
         recorded_run(site.site_name, log_dir=log_dir, settings={}, workers=4) as run,

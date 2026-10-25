@@ -76,13 +76,13 @@ def test_a_reference_group_gets_the_reference_receivers_setting(
 
 
 @pytest.mark.integration
-def test_a_run_stores_the_setting_of_canopy_and_reference(rosalia_site) -> None:
+def test_a_run_stores_the_setting_of_canopy_and_reference(fangorn_site) -> None:
     # A reference receiver's data go to a group named after the receiver
     # and its canopy (reference_01_canopy_01); the setting is the receiver's.
     from canvod.store import MyIcechunkStore
     from canvodpy import Site
 
-    config, test_site = rosalia_site
+    config, test_site = fangorn_site
     site = config.sites.sites[testing.SITE_KEY]
     site.receivers = {
         name: cfg.model_copy(update={"metadata": {"mount": f"{name} mast"}})

@@ -11,8 +11,8 @@ from canvod.store_metadata.layout import is_day_block_group
 
 
 @pytest.mark.integration
-def test_one_day_is_stored_as_day_blocks_without_losing_epochs(rosalia_one_day):
-    config, _ = rosalia_one_day
+def test_one_day_is_stored_as_day_blocks_without_losing_epochs(fangorn_one_day):
+    config, _ = fangorn_one_day
     store_path = config.processing.storage.get_gnss_store_path("fangorn")
     repo = icechunk.Repository.open(
         storage=icechunk.local_filesystem_storage(str(store_path))

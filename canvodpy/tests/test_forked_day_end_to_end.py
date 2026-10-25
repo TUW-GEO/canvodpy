@@ -45,11 +45,11 @@ def _commits(store_path: Path) -> int:
 
 @pytest.mark.integration
 def test_a_forked_day_stores_what_one_session_stores(
-    rosalia_site, tmp_path, monkeypatch
+    fangorn_site, tmp_path, monkeypatch
 ) -> None:
     from canvodpy import Site
 
-    config, test_site = rosalia_site
+    config, test_site = fangorn_site
     data = Path(test_site._site_config.gnss_site_data_root)
     site = config.sites.sites[testing.SITE_KEY]
     site.receivers = dict(test_site._site_config.receivers)
