@@ -11,7 +11,9 @@ Output
 packages/canvod-store/tests/fixtures/day0_store/    — icechunk store
 packages/canvod-store/tests/fixtures/day0_snapshot.json — checksums + metadata
 
-The fixture is gitignored (stores are large). Re-run this script if:
+The store is gitignored (stores are large); the tests need only the
+JSON summary, which is committed: they build a fresh store in a temporary
+folder and compare it with the summary. Re-run this script if:
 - The test data changes
 - A deliberate behavioral change is made to MyIcechunkStore (rare)
 - The icechunk storage format is upgraded

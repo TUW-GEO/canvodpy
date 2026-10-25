@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -73,26 +72,12 @@ def tmp_store(tmp_path):
 
 
 @pytest.fixture(scope="session")
-def day0_store_path() -> Path:
-    """Return the path to the frozen day 0 regression store.
+def day0_snapshot() -> dict[str, Any]:
+    """The frozen summary of the day 0 store (committed with the tests).
 
-    Skip the test if the fixture hasn't been built yet — run
-    ``python packages/canvod-store/tests/build_day0_store.py`` first.
+    The tests compare a store built fresh in a temporary folder with it;
+    no store on disk is needed.
     """
-    if not DAY0_STORE_PATH.exists():
-        pytest.skip(
-            f"Day 0 store not found at {DAY0_STORE_PATH}. "
-            "Run `python packages/canvod-store/tests/build_day0_store.py` first."
-        )
-    return DAY0_STORE_PATH
-
-
-@pytest.fixture(scope="session")
-def day0_snapshot(day0_store_path) -> dict[str, Any]:
-    """Load the day 0 snapshot metadata from the fixture directory."""
     import json
 
-    snapshot_file = _FIXTURES_DIR / "day0_snapshot.json"
-    if not snapshot_file.exists():
-        pytest.skip("Day 0 snapshot JSON not found.")
-    return json.loads(snapshot_file.read_text())
+    return json.loads((_FIXTURES_DIR / "day0_snapshot.json").read_text())
