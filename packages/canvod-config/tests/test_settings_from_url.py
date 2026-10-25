@@ -290,3 +290,30 @@ class TestOverlayRecipes:
         receiver = config.sites.sites[testing.SITE_KEY].receivers["canopy_01"]
         assert receiver.recipe == f"{testing.SITE_KEY}_canopy"
         assert not (local / "recipes").exists()
+
+    def test_a_copy_that_fails_leaves_no_half_written_recipe(
+        self, server, tmp_path, monkeypatch
+    ):
+        """Another run of the process may read the folder while a recipe is
+        copied into it: it sees the whole recipe or none."""
+        server.serve(SETTINGS_URL, _settings(tmp_path, f"{testing.SITE_KEY}_canopy"))
+        server.serve(RECIPE_URL, RECIPE)
+        older = f"{testing.SITE_KEY}_canopy_01s"
+        server.serve(
+            f"{BASE}/recipes/{testing.SITE_KEY}/{older}.yaml",
+            f"name: {older}\n".encode(),
+        )
+        folder = resolve_config_dir(SETTINGS_URL)
+
+        def half_copy(src, dst, *args, **kwargs):
+            Path(dst).write_bytes(Path(src).read_bytes()[:3])
+            raise OSError("disk full")
+
+        monkeypatch.setattr(remote.shutil, "copyfile", half_copy)
+        with pytest.raises(RemoteFetchError, match="disk full"):
+            load_config(config_dir=folder, config_file=_overlay(tmp_path, older))
+
+        recipes = folder / "recipes" / testing.SITE_KEY
+        assert sorted(p.name for p in recipes.iterdir()) == [
+            f"{testing.SITE_KEY}_canopy.yaml"
+        ]

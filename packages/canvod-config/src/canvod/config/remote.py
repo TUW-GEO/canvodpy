@@ -21,6 +21,7 @@ they came from.
 
 from __future__ import annotations
 
+import os
 import shutil
 import tempfile
 import threading
@@ -135,7 +136,9 @@ def fetch_overlay_recipes(
             continue
         where = f"in the overlay {overlay} on the settings file {url}"
         files[relative] = _fetch_recipe(remote, relative, site, receiver, name, where)
-    _copy_into(Path(config_dir), files)
+    # Other runs of the process may load the same folder at the same time.
+    with _LOCK:
+        _copy_into(Path(config_dir), files)
 
 
 def _fetch_recipe(
@@ -244,12 +247,21 @@ def _config_folder(files: dict[str, Path]) -> Path:
 
 
 def _copy_into(folder: Path, files: dict[str, Path]) -> None:
-    """Copy ``files`` (relative path -> fetched file) into ``folder``."""
+    """Copy ``files`` (relative path -> fetched file) into ``folder``.
+
+    Each file is copied next to its target and then renamed, so a reader
+    sees the whole file or none, also when a copy fails.
+    """
     try:
         for relative, path in files.items():
             target = folder / relative
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(path, target)
+            partial = target.with_name(f".{target.name}.partial")
+            try:
+                shutil.copyfile(path, partial)
+                os.replace(partial, target)
+            finally:
+                partial.unlink(missing_ok=True)
     except OSError as exc:
         msg = f"Cannot write the configuration folder {folder}: {exc}"
         raise RemoteFetchError(msg) from exc
