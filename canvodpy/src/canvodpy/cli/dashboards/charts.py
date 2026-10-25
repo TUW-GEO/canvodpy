@@ -85,6 +85,41 @@ def time_bars(
     }
 
 
+def stage_bars(
+    rows: list[dict],
+    time: dict,
+    field: str,
+    title: str,
+    value_format: str,
+    order: list[str],
+    color: str,
+) -> alt.LayerChart:
+    """Bars of one time per stage, each with its value at its end.
+
+    ``rows`` and ``time`` come from :func:`time_bars`. On a linear axis a
+    stage far shorter than the longest gets a bar too thin to see; its
+    value still shows. The stages run top to bottom in ``order``.
+    """
+    data = alt.Data(values=rows)
+    stage = alt.Y("Stage:N", sort=order, axis=alt.Axis(title="Stage"))
+    bars = alt.Chart(data, mark=alt.MarkDef(type="bar", color=color)).encode(
+        stage,
+        **time,
+        tooltip=[
+            "Stage:N",
+            alt.Tooltip(f"{field}:Q", title=title, format=value_format),
+        ],
+    )
+    values = alt.Chart(
+        data,
+        mark=alt.MarkDef(
+            type="text", align="left", baseline="middle", dx=3, color=color
+        ),
+    ).encode(stage, time["x"], text=alt.Text(f"{field}:Q", format=value_format))
+    # Room on the right for the value of the longest bar.
+    return alt.LayerChart(layer=[bars, values], padding={"right": 48})
+
+
 def time_line(
     channel: str, field: str, title: str, rows: list[dict], scale_type: str
 ) -> tuple[list[dict], dict]:
