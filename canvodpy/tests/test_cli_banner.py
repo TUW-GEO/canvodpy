@@ -60,6 +60,10 @@ def terminal(plain_env, monkeypatch):
     monkeypatch.setenv("LINES", "50")
     monkeypatch.setenv("COLORTERM", "truecolor")
     monkeypatch.setenv("TERM", "xterm-256color")
+    # The same terminal on every runner: on Windows, rich would ask the real
+    # console (none in CI, so 16 colours) and the banner would skip the flight.
+    monkeypatch.setattr("rich.console.WINDOWS", False)
+    monkeypatch.setattr(banner, "_WINDOWS", False)
     return use
 
 
