@@ -4644,7 +4644,8 @@ gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </spa
 <span class="c1"># merged once CI passes, then on main:</span>
 git<span class="w"> </span>switch<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>main
 just<span class="w"> </span>tag-release
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.0<span class="w"> </span>canvod-grids-v1.0.1<span class="w"> </span>canvod-store-v1.1.0
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.0<span class="w">   </span><span class="c1"># on its own: it starts the draft release</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>canvod-grids-v1.0.1<span class="w"> </span>canvod-store-v1.1.0
 <span class="c1"># draft release v1.1.0 appears: review, publish</span>
 gh<span class="w"> </span>workflow<span class="w"> </span>run<span class="w"> </span>publish_pypi.yml<span class="w"> </span>--ref<span class="w"> </span>v1.1.0
 </code></pre></div>

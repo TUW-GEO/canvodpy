@@ -4926,7 +4926,9 @@ automatic archival and <abbr title="Digital Object Identifier — persistent ide
 <h3 id="2-every-release">2. Every release<a class="headerlink" href="#2-every-release" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>just<span class="w"> </span>release<span class="w"> </span>canvod-store<span class="o">=</span><span class="m">1</span>.1.0<span class="w"> </span><span class="nv">canvodpy</span><span class="o">=</span><span class="m">1</span>.1.0<span class="w">   </span><span class="c1"># release commit on release/v1.1.0: open a PR, merge it</span>
 <span class="c1"># then, on the merged main:</span>
-just<span class="w"> </span>tag-release<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.0<span class="w"> </span>canvod-store-v1.1.0
+just<span class="w"> </span>tag-release
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.0<span class="w">   </span><span class="c1"># on its own: it starts the draft release</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>canvod-store-v1.1.0
 </code></pre></div>
 <p>Only the canvodpy tag (<code>v1.1.0</code>) creates a GitHub release, so Zenodo
 archives one version per canvodpy release; package tags get none.</p>
@@ -4992,7 +4994,9 @@ git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </
 <h3 id="option-b-production-release">Option B. Production release<a class="headerlink" href="#option-b-production-release" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>just<span class="w"> </span>release<span class="w"> </span><span class="nv">canvodpy</span><span class="o">=</span><span class="m">0</span>.1.0<span class="w"> </span>canvod-readers<span class="o">=</span><span class="m">0</span>.1.0<span class="w"> </span>...<span class="w">   </span><span class="c1"># open a PR, merge it</span>
 <span class="c1"># then, on the merged main:</span>
-just<span class="w"> </span>tag-release<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0<span class="w"> </span>canvod-readers-v0.1.0<span class="w"> </span>...
+just<span class="w"> </span>tag-release
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.0<span class="w">   </span><span class="c1"># on its own: it starts the draft release</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>canvod-readers-v0.1.0<span class="w"> </span>...
 </code></pre></div>
 <ul>
 <li>Creates the GitHub release; <abbr title="Python Package Index — public Python package repository">PyPI</abbr> follows with <code>gh workflow run publish_pypi.yml --ref v0.1.0</code></li>

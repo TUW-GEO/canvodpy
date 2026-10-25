@@ -4245,38 +4245,27 @@ around.</p>
 </tbody>
 </table>
 <h2 id="installing-an-extension">Installing an extension<a class="headerlink" href="#installing-an-extension" title="Permanent link">&para;</a></h2>
-<p>Extensions are released on GitHub only, each package under its own tag
-<code>&lt;package&gt;-v&lt;version&gt;</code> (for example <code>canvod-filemap-v1.0.0</code>), never on <abbr title="Python Package Index — public Python package repository">PyPI</abbr>.</p>
-<div class="admonition note">
-<p class="admonition-title">Before the 1.0.0 releases</p>
-<p>The commands below use the 1.0.0 tags. Until those releases exist, this
-repository pins canvod-filemap to a commit of the extensions' <code>main</code>
-(<code>rev = ...</code> in <code>[tool.uv.sources]</code>) and <code>uv sync --group filemap</code>
-installs that commit.</p>
-</div>
+<p>Each extension is a package on <abbr title="Python Package Index — public Python package repository">PyPI</abbr>, released on its own under the tag
+<code>&lt;package&gt;-v&lt;version&gt;</code> (for example <code>canvod-filemap-v1.0.0</code>). None has
+extras: each package brings what it needs.</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span>canvod-filemap
+uv<span class="w"> </span>add<span class="w"> </span>canvod-airflow
+uv<span class="w"> </span>add<span class="w"> </span>canvod-adapters
+</code></pre></div>
 <p>In a clone of this repository, <code>canvod-filemap</code> is the dependency group
-<code>filemap</code>. The root <code>pyproject.toml</code> points it at a release tag of the
-public repository, so</p>
+<code>filemap</code>:</p>
 <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w"> </span>--group<span class="w"> </span>filemap
 </code></pre></div>
-<p>installs that release on any machine, no sibling checkout required. The
-group exists only in this repository: it is not part of the <code>canvodpy</code>
-package on <abbr title="Python Package Index — public Python package repository">PyPI</abbr>, so <code>canvodpy[filemap]</code> does not exist.
-Elsewhere, install the package from its tag:</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">"canvod-filemap @ git+https://github.com/TUW-GEO/canvodpy-extensions.git@canvod-filemap-v1.0.0#subdirectory=packages/canvod-filemap"</span>
-</code></pre></div>
-<p>The group is pinned in the root <code>pyproject.toml</code>: the version range in
-<code>[dependency-groups]</code>, the tag in <code>[tool.uv.sources]</code>:</p>
+<p>The group exists only in this repository: it is not part of the <code>canvodpy</code>
+package on <abbr title="Python Package Index — public Python package repository">PyPI</abbr>, so <code>canvodpy[filemap]</code> does not exist. Its version range
+is in the root <code>pyproject.toml</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="k">[dependency-groups]</span>
 <span class="n">filemap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"canvod-filemap&gt;=1.0.0"</span><span class="p">]</span>
-
-<span class="k">[tool.uv.sources]</span>
-<span class="n">canvod-filemap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">git</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"https://github.com/TUW-GEO/canvodpy-extensions.git"</span><span class="p">,</span><span class="w"> </span><span class="n">subdirectory</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"packages/canvod-filemap"</span><span class="p">,</span><span class="w"> </span><span class="n">tag</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"canvod-filemap-v1.0.0"</span><span class="w"> </span><span class="p">}</span>
 </code></pre></div>
 <p>If you have both repositories cloned as sibling directories locally (common
-for contributors iterating on <code>canvod-filemap</code> itself), you can override the
-source in your own uncommitted local checkout to pick up changes without
-reinstalling:</p>
+for contributors iterating on <code>canvod-filemap</code> itself), you can point the
+group at your checkout in your own uncommitted copy to pick up changes
+without releasing:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># pyproject.toml (local override, do not commit)</span>
 <span class="k">[tool.uv.sources]</span>
 <span class="n">canvod-filemap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"../canvodpy-extensions/packages/canvod-filemap"</span><span class="w"> </span><span class="p">}</span>
@@ -4287,22 +4276,14 @@ reinstalling:</p>
 <code>canvodpy-extensions</code> cloned as a sibling directory. <code>uv</code> resolves
 every dependency group's sources when it locks, even groups that are
 not installed, so committing a local path breaks <code>uv sync</code> for
-everyone else.
-Keep the git source in version control; only override it locally.</p>
+everyone else.</p>
 </div>
 <p>See <a href="https://extensions.canvodpy.eu/packages/filemap/overview/">canvod-filemap's overview</a>
-for the recipe format and mapping API.</p>
-<p><code>canvod-airflow</code> is installed directly (it depends on <code>canvodpy</code>, not the
-other way around):</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">"canvod-airflow[airflow] @ git+https://github.com/TUW-GEO/canvodpy-extensions.git@canvod-airflow-v1.0.0#subdirectory=packages/canvod-airflow"</span>
-</code></pre></div>
-<p>See <a href="https://extensions.canvodpy.eu/packages/airflow/overview/">canvod-airflow's overview</a>
-for <abbr title="Directed Acyclic Graph — task dependency structure used by workflow schedulers (Airflow, Prefect)">DAG</abbr> structure, deployment, and configuration.</p>
-<p><code>canvod-adapters</code> is installed directly wherever you exchange data with
-another program:</p>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>add<span class="w"> </span><span class="s2">"canvod-adapters[store] @ git+https://github.com/TUW-GEO/canvodpy-extensions.git@canvod-adapters-v1.0.0#subdirectory=packages/canvod-adapters"</span>
-</code></pre></div>
-<p>See <a href="https://extensions.canvodpy.eu/packages/adapters/overview/">canvod-adapters's overview</a>
+for the recipe format and mapping API,
+<a href="https://extensions.canvodpy.eu/packages/airflow/overview/">canvod-airflow's overview</a>
+for <abbr title="Directed Acyclic Graph — task dependency structure used by workflow schedulers (Airflow, Prefect)">DAG</abbr> structure, deployment, and configuration (<code>canvod-airflow</code> depends
+on <code>canvodpy</code>, not the other way around), and
+<a href="https://extensions.canvodpy.eu/packages/adapters/overview/">canvod-adapters' overview</a>
 for the gnssvod conversion, including how merged <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> bands are imported.</p>
 <h2 id="what-happens-if-an-extension-isnt-installed">What happens if an extension isn't installed<a class="headerlink" href="#what-happens-if-an-extension-isnt-installed" title="Permanent link">&para;</a></h2>
 <p>canvodpy imports <code>canvod-filemap</code> only for a receiver whose settings set

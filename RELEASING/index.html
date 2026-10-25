@@ -4568,10 +4568,17 @@ branch, so the tags are created only now, on <code>main</code>:</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>switch<span class="w"> </span>main
 git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>main
 just<span class="w"> </span>tag-release
-git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.0<span class="w"> </span>canvod-store-v1.1.0<span class="w"> </span>canvod-grids-v1.0.1
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.1.0
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>canvod-store-v1.1.0<span class="w"> </span>canvod-grids-v1.0.1
 </code></pre></div>
 <p><code>just tag-release</code> creates an annotated tag for every package version that
-has no tag yet, and prints the push command; it does not push.</p>
+has no tag yet, and prints the push commands; it does not push.</p>
+<p>Push the canvodpy tag on its own, before the package tags. GitHub starts no
+workflow for tags when
+<a href="https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#push">more than three tags are pushed at once</a>,
+so a canvodpy tag pushed together with the package tags gets no draft
+release. The package tags start no workflow, so they can go in one push,
+however many there are.</p>
 <h3 id="7-publish-the-draft-release">7. Publish the draft release<a class="headerlink" href="#7-publish-the-draft-release" title="Permanent link">&para;</a></h3>
 <p>The <code>.github/workflows/release.yml</code> workflow detects the canvodpy tag
 (<code>v1.1.0</code>) and creates a <strong>draft</strong> release whose notes are canvodpy's
@@ -4645,7 +4652,18 @@ instead. A tag that exists only locally can be deleted with
 <p>Verify the canvodpy tag matches the pattern <code>v*.*.*</code> at
 <a href="https://github.com/TUW-GEO/canvodpy/actions">github.com/TUW-GEO/canvodpy/actions</a>,
 and that <code>CHANGELOG.md</code> has a section <code>## v1.1.0 (...)</code>.
-(<abbr title="Python Package Index — public Python package repository">PyPI</abbr> publishing never triggers from a tag push at all; see step 8.)</p>
+(<abbr title="Python Package Index — public Python package repository">PyPI</abbr> publishing never triggers from a tag push at all; see step 8.)
+If no run started, the canvodpy tag was pushed in one push of more
+than three tags (step 6). Create the draft with the notes the workflow
+would use, from the tagged <code>CHANGELOG.md</code>:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>show<span class="w"> </span>v1.1.0:CHANGELOG.md<span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span>-v<span class="w"> </span><span class="nv">tag</span><span class="o">=</span>v1.1.0<span class="w"> </span><span class="s1">'</span>
+<span class="s1">  $0 ~ "^## " tag " " { found = 1; next }</span>
+<span class="s1">  found &amp;&amp; /^## / { exit }</span>
+<span class="s1">  found { print }</span>
+<span class="s1">'</span><span class="w"> </span>&gt;<span class="w"> </span>release-notes.md
+gh<span class="w"> </span>release<span class="w"> </span>create<span class="w"> </span>v1.1.0<span class="w"> </span>--title<span class="w"> </span><span class="s2">"canvodpy v1.1.0"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--notes-file<span class="w"> </span>release-notes.md<span class="w"> </span>--draft<span class="w"> </span>--verify-tag
+</code></pre></div>
 </details>
 <details class="failure">
 <summary>Tag is not allowed to deploy due to environment protection rules</summary>
