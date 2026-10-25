@@ -70,7 +70,7 @@ Every other field of the repository metadata is **amendable**.
 
 | Section | Model | Content | Part |
 |---|---|---|---|
-| `identity` | `StoreIdentity` | ID, UUID, naming authority, catalog link, title, description, store type, source format, keywords; project, acknowledgement, comment | Repository metadata |
+| `identity` | `StoreIdentity` | ID, UUID, naming authority, catalog link, title, description, store type, source format, keywords; project, acknowledgement, comment, source, processing level | Repository metadata |
 | `creator` | `Creator` | Name, email, ORCID, institution and its ROR ID, department, research group, website | Repository metadata |
 | `publisher` | `Publisher` | Name, URL, email, license (SPDX identifier or `other`), license URI | Repository metadata |
 | `temporal` | `TemporalExtent` | Created; updated, first and last stored epoch, duration, resolution (the finest cadence of any day) | Created: repository metadata; the rest: snapshot summary |
@@ -79,7 +79,7 @@ Every other field of the repository metadata is **amendable**.
 | `vod_analyses` | `VodAnalysisInfo` | Per VOD analysis of a VOD store: its canopy and reference receiver | Repository metadata |
 | `references` | `References` | Repository, documentation, publications, funding | Repository metadata |
 | `summaries` | `Summaries` | Number of epochs and signals, constellations, variables, number of files | Snapshot summary |
-| `processing` | `ProcessingProvenance` | Versions of canvodpy and of the 11 `canvod-*` packages it installs, and of the main libraries (Icechunk, Zarr, xarray, Dask, NumPy, Polars, Pydantic); Python and uv versions; processing level; facility: the institution that processed the data (`processing.metadata.institution`) | Commit metadata |
+| `processing` | `ProcessingProvenance` | Versions of canvodpy and of the 11 `canvod-*` packages it installs, and of the main libraries (Icechunk, Zarr, xarray, Dask, NumPy, Polars, Pydantic); Python and uv versions; processing level (the store's, from the settings); facility: the institution that processed the data (`processing.metadata.institution`) | Commit metadata |
 | `environment` | `Environment` | Operating system, architecture, CPUs, memory, free disk space, the hash and text of `uv.lock`, and the text of `pyproject.toml` | Commit metadata |
 | `config` | `ConfigSnapshot` | The processing, preprocessing, auxiliary data, compression, Icechunk, and signal settings, and their hash, without the settings of one computer (below) | Commit metadata |
 | `amendments` | `Amendment` | Each amendment: field, old and new value, reason, who, when | Repository metadata |
@@ -175,7 +175,17 @@ processing:
     project: "Forest GNSS-T"             # optional, ACDD project
     acknowledgement: "Funded by ..."     # optional, ACDD acknowledgement
     comment: null                        # optional, ACDD comment
+    source:                              # optional, ACDD source, per store type
+      gnss: "GNSS receivers below and above a forest canopy"
+      vod: "GNSS-T VOD from the canopy and reference receivers"
+    processing_level:                    # optional, ACDD processing_level, per store type
+      gnss: null
+      vod: null
 ```
+
+`source` and `processing_level` hold one text per store type, because a
+site's GNSS and VOD stores are produced differently. canVODpy writes no
+text of its own into them.
 
 DataCite requires the publisher and STAC requires the license, so a
 store isn't created without them.

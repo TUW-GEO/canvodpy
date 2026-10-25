@@ -355,7 +355,8 @@ processing:
     initials: JD  # who set a new store's content settings or changed its metadata; required to amend or migrate
     # optional: orcid, institution_ror, department, research_group,
     # website, publisher_url, license_uri (required when license is "other"),
-    # publisher_email, project, acknowledgement, comment (ACDD attributes)
+    # publisher_email, project, acknowledgement, comment (ACDD attributes);
+    # source and processing_level, one text per store type: {gnss: ..., vod: ...}
 
   credentials:
     nasa_earthdata_acc_mail: null

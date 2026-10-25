@@ -195,7 +195,13 @@ class TestAmend:
 
 # The fields #536 added; a store written by canvodpy 1.0.0 has none of them.
 _NEW_FIELDS = {
-    "identity": ("project", "acknowledgement", "comment"),
+    "identity": (
+        "project",
+        "acknowledgement",
+        "comment",
+        "source",
+        "processing_level",
+    ),
     "publisher": ("email",),
 }
 

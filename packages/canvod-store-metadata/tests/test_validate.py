@@ -214,8 +214,13 @@ class TestPassRule:
         meta.identity.project = "The Red Book"
         meta.identity.acknowledgement = "Funded by the Inklings"
         meta.identity.comment = "Made-up data"
+        meta.identity.source = "GNSS receivers"
+        meta.identity.processing_level = "observations"
 
         attrs = root_attributes(meta)
+
+        assert attrs["source"] == "GNSS receivers"
+        assert attrs["processing_level"] == "observations"
 
         assert attrs["publisher_email"] == testing.PERSON_EMAIL
         assert attrs["project"] == "The Red Book"
@@ -224,7 +229,14 @@ class TestPassRule:
 
     def test_unset_acdd_settings_are_not_written(self):
         attrs = root_attributes(_make_complete_metadata())
-        for name in ("publisher_email", "project", "acknowledgement", "comment"):
+        for name in (
+            "publisher_email",
+            "project",
+            "acknowledgement",
+            "comment",
+            "source",
+            "processing_level",
+        ):
             assert name not in attrs
 
     def test_a_missing_acdd_setting_is_named(self):
@@ -238,6 +250,11 @@ class TestPassRule:
             "[recommended] ACDD 1.3 recommended attribute `publisher_email` is "
             "missing (from publisher.email, the setting "
             "processing.metadata.publisher_email)"
+        ) in issues
+        assert (
+            "[recommended] ACDD 1.3 recommended attribute `processing_level` is "
+            "missing (from identity.processing_level, the setting "
+            "processing.metadata.processing_level.gnss)"
         ) in issues
 
     def test_the_bounds_are_the_site_position(self):

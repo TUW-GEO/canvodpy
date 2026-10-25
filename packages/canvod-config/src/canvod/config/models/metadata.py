@@ -7,6 +7,19 @@ from pydantic import EmailStr, Field, field_validator, model_validator
 from .base import _StrictModel
 
 
+class StoreTypeText(_StrictModel):
+    """A text per store type: ``gnss`` for the GNSS store, ``vod`` for the
+    VOD store.
+
+    Notes
+    -----
+    This is a Pydantic model for configuration validation.
+    """
+
+    gnss: str | None = Field(None, description="For the GNSS store")
+    vod: str | None = Field(None, description="For the VOD store")
+
+
 class MetadataConfig(_StrictModel):
     """Metadata to be written to processed files.
 
@@ -111,6 +124,19 @@ class MetadataConfig(_StrictModel):
         None,
         description=(
             "Further information about the data, not given elsewhere (ACDD comment)"
+        ),
+    )
+    source: StoreTypeText | None = Field(
+        None,
+        description=(
+            "How the data were produced, per store type: gnss, vod (ACDD source)"
+        ),
+    )
+    processing_level: StoreTypeText | None = Field(
+        None,
+        description=(
+            "The processing level of the data, per store type: gnss, vod "
+            "(ACDD processing_level)"
         ),
     )
     naming_authority: str | None = Field(

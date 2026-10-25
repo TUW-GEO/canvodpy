@@ -383,6 +383,8 @@ class StoreIdentity(BaseModel):
     project: str | None = Field(None, description="ACDD project")
     acknowledgement: str | None = Field(None, description="ACDD acknowledgement")
     comment: str | None = Field(None, description="ACDD comment")
+    source: str | None = Field(None, description="ACDD source")
+    processing_level: str | None = Field(None, description="ACDD processing_level")
 
 
 # §2 — Creator
@@ -590,7 +592,9 @@ class ProcessingProvenance(BaseModel):
     uv_version: str | None = Field(
         None, description="uv version number, for example '0.13.1'"
     )
-    level: str = Field("L1", description="Processing level")
+    level: str | None = Field(
+        None, description="Processing level: the store's processing_level"
+    )
     lineage: str | None = Field(None, description="Processing lineage description")
     facility: str | None = Field(
         None, description="The institution that processed the data"
@@ -806,6 +810,8 @@ class RepositoryIdentity(BaseModel):
     project: str | None = None
     acknowledgement: str | None = None
     comment: str | None = None
+    source: str | None = None
+    processing_level: str | None = None
 
 
 class RepositoryTemporal(BaseModel):

@@ -135,6 +135,32 @@ class TestMetadataConfig:
         assert m.acknowledgement == "Funded by the Inklings"
         assert m.comment == "Made-up data"
 
+    def test_source_and_processing_level_are_per_store_type(self):
+        m = MetadataConfig(
+            author="A",
+            email="a@b.com",
+            institution="U",
+            source={"gnss": "GNSS receivers below a canopy"},
+            processing_level={"gnss": "observations", "vod": "VOD per signal"},
+        )
+        assert m.source.gnss == "GNSS receivers below a canopy"
+        assert m.source.vod is None
+        assert m.processing_level.vod == "VOD per signal"
+
+    def test_source_and_processing_level_are_unset_by_default(self):
+        m = MetadataConfig(author="A", email="a@b.com", institution="U")
+        assert m.source is None
+        assert m.processing_level is None
+
+    def test_an_unknown_store_type_is_refused(self):
+        with pytest.raises(ValidationError, match="gnnss"):
+            MetadataConfig(
+                author="A",
+                email="a@b.com",
+                institution="U",
+                processing_level={"gnnss": "observations"},
+            )
+
     def test_an_invalid_publisher_email_raises(self):
         with pytest.raises(ValidationError, match="publisher_email"):
             MetadataConfig(

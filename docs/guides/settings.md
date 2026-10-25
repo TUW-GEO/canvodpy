@@ -138,6 +138,42 @@ Further information about the data, not given elsewhere (ACDD comment)
 - Type: text, or null
 - Default: `null`
 
+### `processing.metadata.source` {#processing-metadata-source}
+
+How the data were produced, per store type: gnss, vod (ACDD source)
+
+#### `processing.metadata.source.gnss` {#processing-metadata-source-gnss}
+
+For the GNSS store
+
+- Type: text, or null
+- Default: `null`
+
+#### `processing.metadata.source.vod` {#processing-metadata-source-vod}
+
+For the VOD store
+
+- Type: text, or null
+- Default: `null`
+
+### `processing.metadata.processing_level` {#processing-metadata-processing_level}
+
+The processing level of the data, per store type: gnss, vod (ACDD `processing_level`)
+
+#### `processing.metadata.processing_level.gnss` {#processing-metadata-processing_level-gnss}
+
+For the GNSS store
+
+- Type: text, or null
+- Default: `null`
+
+#### `processing.metadata.processing_level.vod` {#processing-metadata-processing_level-vod}
+
+For the VOD store
+
+- Type: text, or null
+- Default: `null`
+
 #### `processing.metadata.naming_authority` {#processing-metadata-naming_authority}
 
 Your institution's domain in reverse order, lowercase (for example `org.middle-earth`). Required when a store is created: with the store id it gives the store's id in the STAC catalog.

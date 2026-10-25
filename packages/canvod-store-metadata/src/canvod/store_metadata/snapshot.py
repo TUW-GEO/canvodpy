@@ -82,6 +82,8 @@ _ROOT_COPY_KEYS = (
     "project",
     "acknowledgement",
     "comment",
+    "source",
+    "processing_level",
     "geospatial_bounds",
     "geospatial_bounds_crs",
     "geospatial_lat_min",
@@ -219,6 +221,8 @@ def root_copy(repository: dict[str, Any], summary: dict[str, Any]) -> dict[str, 
         "project": identity.get("project"),
         "acknowledgement": identity.get("acknowledgement"),
         "comment": identity.get("comment"),
+        "source": identity.get("source"),
+        "processing_level": identity.get("processing_level"),
         # 2-D: the altitude is typed in and often unset. EPSG:4326 gives
         # latitude first (ACDD 1.3).
         "geospatial_bounds": (
@@ -363,6 +367,7 @@ def commit_metadata(
         identity["store_type"],
         identity["source_format"],
         repository.get("creator", {}).get("institution"),
+        level=identity.get("processing_level"),
     )
     processing.datetime = committed_at
     environment = collect_environment(

@@ -332,6 +332,20 @@ def _optional_str(config: Any, name: str) -> str | None:
     return None if value is None else str(value)
 
 
+#: The key of each store type in a per-store-type setting (``source``,
+#: ``processing_level``); other store types have none.
+SETTING_KINDS = {"gnss_store": "gnss", "vod_store": "vod"}
+
+
+def store_type_text(texts: Any, store_type: str) -> str | None:
+    """The text of a per-store-type setting for ``store_type``; ``None``
+    when unset or for a store type without a key."""
+    kind = SETTING_KINDS.get(store_type)
+    if texts is None or kind is None:
+        return None
+    return getattr(texts, kind, None)
+
+
 def collect_spatial(site_config: Any, site_name: str) -> SpatialExtent:
     """Build SpatialExtent from SiteConfig."""
     lat = getattr(site_config, "latitude", None)
@@ -457,19 +471,21 @@ def collect_processing_provenance(
     store_type: str,
     source_format: str,
     facility: str | None = None,
+    level: str | None = None,
 ) -> ProcessingProvenance:
     """Build ProcessingProvenance.
 
     ``facility`` is the institution that processed the data
-    (``processing.metadata.institution``), never the computer.
+    (``processing.metadata.institution``), never the computer. ``level``
+    is the store's processing level (``identity.processing_level``, from
+    the settings); canVODpy gives none of its own, and no lineage text.
     """
     now = datetime.now(UTC).isoformat()
     return ProcessingProvenance(
         software=collect_software_versions(),
         python=collect_python_info(),
         uv_version=collect_uv_version(),
-        level="L1" if store_type == "gnss_store" else "L2",
-        lineage=f"Raw {source_format} data ingested into Icechunk store",
+        level=level,
         facility=facility,
         datetime=now,
     )
@@ -634,6 +650,9 @@ def collect_metadata(
         getattr(meta_cfg, "naming_authority", None)
     )
     description = _site_store_description(site_config, meta_cfg)
+    processing_level = store_type_text(
+        getattr(meta_cfg, "processing_level", None), store_type
+    )
     now = datetime.now(UTC).isoformat()
 
     return StoreMetadata(
@@ -650,6 +669,8 @@ def collect_metadata(
             project=_optional_str(meta_cfg, "project"),
             acknowledgement=_optional_str(meta_cfg, "acknowledgement"),
             comment=_optional_str(meta_cfg, "comment"),
+            source=store_type_text(getattr(meta_cfg, "source", None), store_type),
+            processing_level=processing_level,
         ),
         creator=collect_creator(meta_cfg),
         publisher=collect_publisher(meta_cfg),
@@ -659,7 +680,10 @@ def collect_metadata(
             site_config, hardware=store_type != "vod_store", site_name=site_name
         ),
         processing=collect_processing_provenance(
-            store_type, source_format, getattr(meta_cfg, "institution", None)
+            store_type,
+            source_format,
+            getattr(meta_cfg, "institution", None),
+            level=processing_level,
         ),
         environment=collect_environment(
             # The free disk of a local store's folder; S3 has none.

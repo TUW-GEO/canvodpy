@@ -15,6 +15,7 @@ from typing import Any
 
 import zarr_cm
 
+from .collectors import SETTING_KINDS
 from .schema import RepositoryMetadata, StoreMetadata, check_rules
 from .snapshot import root_copy
 
@@ -91,6 +92,11 @@ _ACDD_SOURCE = {
         "identity.acknowledgement, the setting processing.metadata.acknowledgement"
     ),
     "comment": "identity.comment, the setting processing.metadata.comment",
+    "source": "identity.source, the setting processing.metadata.source.{kind}",
+    "processing_level": (
+        "identity.processing_level, the setting "
+        "processing.metadata.processing_level.{kind}"
+    ),
 }
 
 # ACDD recommended attributes canVODpy never writes, and why (#536); they
@@ -186,22 +192,27 @@ def validate_acdd(metadata: StoreMetadata, *, recommended: bool = True) -> list[
         attrs = root_attributes(metadata)
     except ValueError as exc:
         return [str(exc)]
+    store_type = metadata.identity.store_type
     issues = [
-        _acdd_issue(name, "highly recommended")
+        _acdd_issue(name, "highly recommended", store_type)
         for name in ACDD_HIGHLY_RECOMMENDED
         if attrs.get(name) in (None, "")
     ]
     if recommended:
         issues += [
-            f"[recommended] {_acdd_issue(name, 'recommended')}"
+            f"[recommended] {_acdd_issue(name, 'recommended', store_type)}"
             for name in ACDD_RECOMMENDED
             if name not in ACDD_NOT_WRITTEN and attrs.get(name) in (None, "")
         ]
     return issues
 
 
-def _acdd_issue(name: str, level: str) -> str:
+def _acdd_issue(name: str, level: str, store_type: str) -> str:
     source = _ACDD_SOURCE.get(name)
+    if source is not None and "{kind}" in source:
+        kind = SETTING_KINDS.get(store_type)
+        # A store type without such a setting has only the field.
+        source = source.format(kind=kind) if kind else source.split(",")[0]
     where = f" (from {source})" if source else ""
     return f"ACDD 1.3 {level} attribute `{name}` is missing{where}"
 

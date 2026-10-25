@@ -205,6 +205,39 @@ class TestCollectors:
         assert meta.identity.acknowledgement == "Funded by the Inklings"
         assert meta.identity.comment == "Made-up data"
 
+    def test_source_and_processing_level_are_the_store_types(self):
+        from canvod.config.models import MetadataConfig
+
+        config, site_cfg = _settings()
+        texts = MetadataConfig(
+            author="A",
+            email="a@b.com",
+            institution="U",
+            source={"gnss": "GNSS receivers", "vod": "GNSS-T VOD"},
+            processing_level={"gnss": "observations", "vod": "VOD per signal"},
+        )
+        config.processing.metadata.source = texts.source
+        config.processing.metadata.processing_level = texts.processing_level
+
+        meta = _collect(config, site_cfg)
+
+        assert meta.identity.source == "GNSS receivers"
+        assert meta.identity.processing_level == "observations"
+        assert meta.processing.level == "observations"
+        assert collectors.store_type_text(texts.source, "vod_store") == "GNSS-T VOD"
+        assert collectors.store_type_text(texts.source, "geodesy_store") is None
+        assert collectors.store_type_text(None, "gnss_store") is None
+
+    def test_the_provenance_has_no_text_of_canvodpy(self):
+        config, site_cfg = _settings()
+
+        meta = _collect(config, site_cfg)
+
+        assert meta.identity.source is None
+        assert meta.identity.processing_level is None
+        assert meta.processing.level is None
+        assert meta.processing.lineage is None
+
     def test_unset_acdd_settings_stay_unset(self):
         config, site_cfg = _settings()
 
@@ -407,6 +440,8 @@ def _settings() -> tuple[MagicMock, MagicMock]:
             "project",
             "acknowledgement",
             "comment",
+            "source",
+            "processing_level",
         ]
     )
     meta_cfg.author = testing.PERSON_NAME
@@ -425,6 +460,8 @@ def _settings() -> tuple[MagicMock, MagicMock]:
         "project",
         "acknowledgement",
         "comment",
+        "source",
+        "processing_level",
     ):
         setattr(meta_cfg, name, None)
     meta_cfg.publisher = testing.PUBLISHER

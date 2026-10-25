@@ -22,7 +22,7 @@ from .compression import (
     NetcdfCompressionConfig,
 )
 from .logging import LogDirNotSetError, LoggingConfig
-from .metadata import CredentialsConfig, MetadataConfig
+from .metadata import CredentialsConfig, MetadataConfig, StoreTypeText
 from .preprocessing import (
     PREPROCESSING_ATTR,
     PREPROCESSING_RECORD_VERSION,
@@ -90,6 +90,7 @@ __all__ = [
     "SitesConfig",
     "StatisticsConfig",
     "StorageConfig",
+    "StoreTypeText",
     "TemporalAggregationConfig",
     "VodAnalysisConfig",
     "_StrictModel",
