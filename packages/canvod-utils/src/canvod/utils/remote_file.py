@@ -473,6 +473,7 @@ def _download(url: str, *, what: str, max_bytes: int, timeout: float) -> bytes:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             data = response.read(max_bytes + 1)
     except urllib.error.HTTPError as exc:
+        exc.close()  # the error holds the server's open response
         msg = (
             f"{_upper(what)} {url} could not be fetched: HTTP {exc.code} {exc.reason}."
         )

@@ -15,6 +15,7 @@ import sys
 import tempfile
 import textwrap
 import threading
+import urllib.error
 from pathlib import Path
 
 import pytest
@@ -511,6 +512,26 @@ def test_token_never_appears_in_messages(
     assert TOKEN not in str(excinfo.value)
     assert excinfo.value.__cause__ is None
     assert f"HTTP {status}" in str(excinfo.value) or status == 404
+
+
+def test_a_refused_request_leaves_no_response_open(
+    server: testing.RemoteFileServer, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real_urlopen = remote_file.urllib.request.urlopen
+    refused: list[urllib.error.HTTPError] = []
+
+    def recording_urlopen(*args, **kwargs):
+        try:
+            return real_urlopen(*args, **kwargs)
+        except urllib.error.HTTPError as exc:
+            refused.append(exc)
+            raise
+
+    monkeypatch.setattr(remote_file.urllib.request, "urlopen", recording_urlopen)
+    with pytest.raises(RemoteFetchError, match="not found"):
+        fetch(COMMIT_URL)
+    assert len(refused) == 1
+    assert refused[0].closed
 
 
 @pytest.mark.parametrize(("status", "token"), [(403, None), (429, None), (401, TOKEN)])
