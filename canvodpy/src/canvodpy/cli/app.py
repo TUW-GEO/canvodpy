@@ -7,12 +7,14 @@ canvodpy's user-facing surface (``Site``, ``Pipeline``)
 already lives.
 """
 
+import functools
 import shutil
 import textwrap
 from importlib.metadata import version as _pkg_version
 from typing import Annotated, Any
 
 import typer
+import typer.main
 from typer.core import TyperGroup
 
 
@@ -125,6 +127,69 @@ def _help_all_callback(ctx: typer.Context, value: bool) -> None:
         typer.echo("\nOne command with descriptions: canvodpy COMMAND --help")
         typer.echo(f"All commands with descriptions: {CLI_REFERENCE}")
         raise typer.Exit()
+
+
+#: How to load a new completion in the open terminal, by shell (Typer's names).
+_RELOAD = {
+    "zsh": "exec zsh",
+    "bash": "exec bash",
+    "fish": "exec fish",
+    "powershell": ". $PROFILE",
+    "pwsh": ". $PROFILE",
+}
+
+
+def _current_shell() -> str | None:
+    """The shell this runs in, detected as Typer detects it (shellingham)."""
+    import shellingham
+
+    try:
+        name, _command = shellingham.detect_shell()
+    except shellingham.ShellDetectionFailure:
+        return None
+    return name.lower()
+
+
+def _with_reload_hint(install: Any) -> Any:
+    """Typer's ``--install-completion`` callback, then how to load it now.
+
+    Typer ends the install with "Completion will take effect once you
+    restart the terminal"; this adds the command that loads it in the
+    open terminal instead, for the shell it was installed for: the one
+    this runs in, as Typer picks it, or the one named where Typer takes a
+    name (with its shell detection off). For a shell not in
+    :data:`_RELOAD` it adds nothing.
+    """
+
+    @functools.wraps(install)
+    def callback(ctx: typer.Context, param: Any, value: Any) -> Any:
+        try:
+            return install(ctx, param, value)
+        except SystemExit as done:
+            shell = value.lower() if isinstance(value, str) else _current_shell()
+            reload = _RELOAD.get(shell or "")
+            if done.code in (0, None) and reload:
+                typer.echo(f"Or load it in this terminal now: {reload}")
+            raise
+
+    return callback
+
+
+_typer_completion_arguments = typer.main.get_install_completion_arguments
+
+
+def _completion_arguments() -> tuple[Any, Any]:
+    """Typer's two completion options, the install one with the reload hint."""
+    install, show = _typer_completion_arguments()
+    install.callback = _with_reload_hint(install.callback)
+    return install, show
+
+
+# Typer builds its completion options when it builds the command; it looks
+# this function up there, so canvodpy's command gets the wrapped option.
+# canvodpy pins only typer>=0.9: if a Typer release renames this function or
+# stops looking it up, test_hint_after_typers_own_install fails.
+setattr(typer.main, "get_install_completion_arguments", _completion_arguments)  # noqa: B010
 
 
 @main_app.callback(invoke_without_command=True)
