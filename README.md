@@ -7,22 +7,24 @@
 | canvodpy/src/canvodpy/\_\_init\_\_.py                                           |       48 |        0 |    100% |           |
 | canvodpy/src/canvodpy/api.py                                                    |      215 |       42 |     80% |149-153, 288-290, 293, 526-528, 554-555, 609-614, 652-661, 724-726, 740-753, 837-846, 879, 919, 984-990, 1078-1079 |
 | canvodpy/src/canvodpy/cli/\_\_init\_\_.py                                       |        0 |        0 |    100% |           |
-| canvodpy/src/canvodpy/cli/app.py                                                |       33 |        4 |     88% |59-60, 81, 85 |
-| canvodpy/src/canvodpy/cli/config.py                                             |      407 |      160 |     61% |217-222, 343-347, 362, 433-449, 453, 455-457, 459-461, 470, 562-566, 582-584, 592-593, 599-603, 620, 648-673, 693-702, 717-792, 807-891, 906-914 |
-| canvodpy/src/canvodpy/cli/dashboard.py                                          |      114 |       45 |     61% |75, 85, 124-155, 161-169, 176-177, 180-188, 191-192, 195, 198-202, 205-206, 213-216, 219, 224, 227, 232-233, 261 |
+| canvodpy/src/canvodpy/cli/app.py                                                |      102 |       10 |     90% |144-150, 235-238, 242 |
+| canvodpy/src/canvodpy/cli/banner.py                                             |      132 |        7 |     95% |140, 163-164, 168-169, 213-214 |
+| canvodpy/src/canvodpy/cli/config.py                                             |      406 |      160 |     61% |219-224, 347-351, 366, 439-455, 459, 461-463, 465-467, 476, 568-572, 588-590, 598-599, 607-611, 628, 656-681, 701-710, 725-802, 817-901, 916-924 |
+| canvodpy/src/canvodpy/cli/dashboard.py                                          |      114 |       45 |     61% |75, 85, 124-154, 160-168, 175-176, 179-187, 190-191, 194, 197-201, 206-207, 214-217, 220, 225, 228, 233-234, 262 |
 | canvodpy/src/canvodpy/cli/dashboards/\_\_init\_\_.py                            |        0 |        0 |    100% |           |
 | canvodpy/src/canvodpy/cli/dashboards/charts.py                                  |      112 |        7 |     94% |35, 172, 202, 219-220, 229-230 |
 | canvodpy/src/canvodpy/cli/dashboards/comparison.py                              |       58 |        1 |     98% |        51 |
 | canvodpy/src/canvodpy/cli/dashboards/export.py                                  |       45 |        2 |     96% |    34, 36 |
 | canvodpy/src/canvodpy/cli/dashboards/performance.py                             |      380 |      336 |     12% |24-418, 438-445, 463-498, 506-511, 518-519, 524-560, 567-570, 575-601, 606-622, 627-635, 640-641, 646-659, 664-685, 690-714, 719-771, 776-789, 794-815, 820-834, 849-1095, 1100-1102, 1106 |
 | canvodpy/src/canvodpy/cli/dashboards/shutdown.py                                |       22 |        1 |     95% |        55 |
-| canvodpy/src/canvodpy/cli/doctor.py                                             |       75 |       10 |     87% |36, 42-43, 49-50, 115-118, 137-141 |
+| canvodpy/src/canvodpy/cli/doctor.py                                             |       74 |       10 |     86% |33, 39-40, 46-47, 112-115, 134-138 |
 | canvodpy/src/canvodpy/cli/options.py                                            |       44 |        0 |    100% |           |
 | canvodpy/src/canvodpy/cli/perf\_dashboard.py                                    |       28 |       19 |     32% |     53-81 |
-| canvodpy/src/canvodpy/cli/run.py                                                |      283 |       51 |     82% |94-96, 108-137, 146-147, 239, 295-301, 305-310, 317-319, 322, 441-470, 485, 519, 577, 582, 799-804, 827-828, 858 |
-| canvodpy/src/canvodpy/cli/stac.py                                               |       37 |        0 |    100% |           |
-| canvodpy/src/canvodpy/cli/store.py                                              |      737 |       85 |     88% |49-52, 100-101, 183, 199-200, 208-209, 246-249, 308-311, 326, 344, 353, 363, 437, 470, 515-521, 538-541, 543-551, 567-570, 572-573, 669-673, 708-712, 758, 761-763, 978-981, 984-988, 1000, 1056-1057, 1079, 1087-1091, 1095, 1102-1108, 1167-1169, 1217, 1343-1346, 1461-1462, 1538-1539, 1550, 1553-1554, 1583-1584, 1589-1591, 1615-1620, 1638, 1677, 1741, 1747-1748, 1799, 1805-1806 |
-| canvodpy/src/canvodpy/cli/vod.py                                                |       63 |       49 |     22% |29-33, 85-107, 112-119, 123-125, 164-198, 202 |
+| canvodpy/src/canvodpy/cli/run.py                                                |      285 |       51 |     82% |94-96, 108-137, 146-147, 239, 295-301, 305-310, 317-319, 322, 445-474, 489, 523, 581, 586, 803-808, 831-832, 862 |
+| canvodpy/src/canvodpy/cli/stac.py                                               |       36 |        0 |    100% |           |
+| canvodpy/src/canvodpy/cli/store.py                                              |      736 |       85 |     88% |48-51, 99-100, 182, 198-199, 207-208, 245-248, 307-310, 325, 343, 352, 362, 436, 471, 516-522, 539-542, 544-552, 568-571, 573-574, 670-674, 709-713, 759, 762-764, 979-984, 987-991, 1003, 1059-1062, 1084, 1092-1096, 1100, 1107-1113, 1172-1174, 1222, 1348-1351, 1466-1467, 1545-1548, 1559, 1562-1563, 1592-1593, 1598-1600, 1624-1629, 1647, 1686, 1750, 1756-1757, 1808, 1814-1815 |
+| canvodpy/src/canvodpy/cli/theme.py                                              |       56 |        1 |     98% |       281 |
+| canvodpy/src/canvodpy/cli/vod.py                                                |       62 |       49 |     21% |27-31, 83-109, 114-121, 127-129, 168-204, 208 |
 | canvodpy/src/canvodpy/demo.py                                                   |      138 |        9 |     93% |169, 212-214, 318-321, 339, 347 |
 | canvodpy/src/canvodpy/diagnostics/\_\_init\_\_.py                               |        2 |        2 |      0% |       6-8 |
 | canvodpy/src/canvodpy/diagnostics/sbf\_timing\_diagnostics\_new\_api.py         |      100 |      100 |      0% |    13-229 |
@@ -34,7 +36,7 @@
 | canvodpy/src/canvodpy/globals.py                                                |        9 |        9 |      0% |      8-50 |
 | canvodpy/src/canvodpy/logging/\_\_init\_\_.py                                   |       12 |        0 |    100% |           |
 | canvodpy/src/canvodpy/logging/context.py                                        |       16 |       16 |      0% |      8-52 |
-| canvodpy/src/canvodpy/logging/logging\_config.py                                |      227 |       22 |     90% |59, 110-113, 139, 185, 199, 265, 322-324, 478-481, 654, 682-687 |
+| canvodpy/src/canvodpy/logging/logging\_config.py                                |      255 |       23 |     91% |64, 115-118, 144, 190, 204, 270, 327-329, 374, 543-546, 719, 747-752 |
 | canvodpy/src/canvodpy/logging/run\_context.py                                   |       11 |        2 |     82% |     17-18 |
 | canvodpy/src/canvodpy/logging/run\_history\_handler.py                          |       76 |        4 |     95% |115, 128, 130, 132 |
 | canvodpy/src/canvodpy/logging/stage\_timer.py                                   |       11 |        2 |     82% |     17-18 |
@@ -52,7 +54,7 @@
 | canvodpy/src/canvodpy/orchestrator/store\_retry.py                              |       51 |        8 |     84% |68, 91-102, 175 |
 | canvodpy/src/canvodpy/orchestrator/vod\_phase.py                                |      231 |       46 |     80% |160-166, 184-244, 264-265, 267-272, 478-487 |
 | canvodpy/src/canvodpy/orchestrator/vod\_reconcile.py                            |       54 |        0 |    100% |           |
-| canvodpy/src/canvodpy/run\_history.py                                           |      433 |       28 |     94% |340, 367, 376, 378, 812-813, 839, 1041, 1048-1050, 1131-1134, 1262-1263, 1276-1277, 1281, 1293-1294, 1320, 1336-1345, 1351-1353 |
+| canvodpy/src/canvodpy/run\_history.py                                           |      433 |       27 |     94% |367, 376, 378, 812-813, 839, 1041, 1048-1050, 1131-1134, 1262-1263, 1276-1277, 1281, 1293-1294, 1320, 1336-1345, 1351-1353 |
 | canvodpy/src/canvodpy/utils/\_\_init\_\_.py                                     |        0 |        0 |    100% |           |
 | canvodpy/src/canvodpy/utils/history.py                                          |        8 |        0 |    100% |           |
 | canvodpy/src/canvodpy/vod\_computer.py                                          |      311 |       60 |     81% |97-103, 116-123, 175, 222, 327, 501-506, 542-601, 615-630, 751-752, 919, 930-938, 1018, 1082-1083 |
@@ -174,7 +176,7 @@
 | packages/canvod-readers/src/canvod/readers/nmea/\_\_init\_\_.py                 |        2 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/exceptions.py                   |       10 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/v4\_00.py                       |      387 |       51 |     87% |74-75, 184, 192, 197, 204, 258-259, 265, 272-273, 311, 319-320, 409-410, 414-416, 420-421, 491-492, 519, 523, 527, 531-535, 539, 543-547, 553, 587-588, 611, 641-643, 737, 742-743, 798-799, 824-825 |
-| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      164 |        8 |     95% |164, 168-176, 182, 250, 326, 331 |
+| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      164 |        8 |     95% |164, 168-176, 182, 250, 319, 331 |
 | packages/canvod-readers/src/canvod/readers/rinex/\_\_init\_\_.py                |        4 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/rinex/v2\_11.py                      |      716 |      569 |     21% |158-159, 162-164, 168-171, 186-192, 200-202, 263-265, 275-283, 291-485, 490, 493, 499-500, 516-539, 544-547, 611-622, 683-688, 692, 697, 700, 708, 714-726, 730, 736, 740-754, 758-760, 764, 768-772, 794-833, 860-872, 882-911, 929-966, 977-1062, 1082, 1096-1105, 1109, 1113-1131, 1147-1427, 1461-1514, 1522-1538, 1543-1556, 1559-1602, 1632-1654, 1679-1684 |
 | packages/canvod-readers/src/canvod/readers/rinex/v3\_04.py                      |      821 |      622 |     24% |102-105, 138-148, 156-180, 223-230, 253-264, 277-282, 362-369, 377-387, 409-549, 559-589, 606-611, 630-639, 656-663, 712-714, 747-755, 774-787, 806-838, 857-866, 871, 876, 880, 888-889, 960-982, 994, 998, 1007, 1018-1022, 1038, 1050, 1062-1067, 1079-1081, 1093, 1105-1109, 1127-1141, 1169-1244, 1259-1270, 1303-1322, 1331-1333, 1337-1340, 1354, 1370, 1384-1389, 1419-1440, 1467-1470, 1489-1499, 1518-1519, 1533-1550, 1561-1576, 1601-1608, 1643-1670, 1696-1713, 1733-1798, 1802, 1811-1824, 1847-1887, 1912-2007, 2022-2088, 2100-2113, 2141-2146, 2195-2246, 2285-2311, 2314-2359, 2374-2375 |
@@ -245,7 +247,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 127-136 |
-| **TOTAL**                                                                       | **29398** | **8343** | **72%** |           |
+| **TOTAL**                                                                       | **29680** | **8357** | **72%** |           |
 
 
 ## Setup coverage badge
