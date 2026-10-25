@@ -484,6 +484,12 @@ def create_grid_to_file(
     Notes
     -----
     Grid is saved as pickle for full structure preservation.
+
+    Warnings
+    --------
+    The grid file is a pickle, and loading a pickle runs code from the
+    file. ``assign_grid_cells_to_file()`` loads it: give it only files you
+    wrote yourself with this function, never a grid file from someone else.
     """
     log.info("create_grid_to_file", output=str(output_path))
 
@@ -547,6 +553,12 @@ def assign_grid_cells_to_file(
     Notes
     -----
     Chains with other *_to_file functions for Airflow pipelines.
+
+    Warnings
+    --------
+    ``grid_path`` is loaded as a pickle, which runs code from the file. Pass
+    only a grid file you wrote yourself with ``create_grid_to_file()``;
+    never a grid file from someone else.
     """
     log.info(
         "assign_grid_cells_to_file",
