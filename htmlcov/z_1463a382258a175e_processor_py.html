@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_1463a382258a175e_resources_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-25 21:14 +0000
+            created at 2026-10-25 21:39 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -2968,9 +2968,9 @@
     <p class="pln"><span class="n"><a id="t2886" href="#t2886">2886</a></span><span class="t"><span class="str">        3. One independent fork per group, dispatched into a thread pool</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t2887" href="#t2887">2887</a></span><span class="t"><span class="str">           (`_write_group_into_fork`) -- not a process pool: PHASE 2 already</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t2888" href="#t2888">2888</a></span><span class="t"><span class="str">           holds all datasets in this process&#x27;s memory, PHASE 3 is I/O-bound</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t2889" href="#t2889">2889</a></span><span class="t"><span class="str">           (releases the GIL), and threads keep `zarr_async_concurrency` at</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t2890" href="#t2890">2890</a></span><span class="t"><span class="str">           its configured per-process value instead of multiplying it by</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t2891" href="#t2891">2891</a></span><span class="t"><span class="str">           worker count against a CIFS/NFS mount.</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t2889" href="#t2889">2889</a></span><span class="t"><span class="str">           (releases the GIL), and threads share one process&#x27;s Zarr</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t2890" href="#t2890">2890</a></span><span class="t"><span class="str">           chunk-write concurrency instead of multiplying it by worker</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t2891" href="#t2891">2891</a></span><span class="t"><span class="str">           count against a CIFS/NFS mount.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t2892" href="#t2892">2892</a></span><span class="t"><span class="str">        4. Fail-fast: if any group&#x27;s write raises, do not merge or commit --</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t2893" href="#t2893">2893</a></span><span class="t"><span class="str">           groups before it in today&#x27;s sequential loop stay committed on</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t2894" href="#t2894">2894</a></span><span class="t"><span class="str">           retry, but under one shared batch commit that property is</span>&nbsp;</span><span class="r"></span></p>
@@ -6417,7 +6417,7 @@
             <a class="nav" href="z_1463a382258a175e_resources_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.16.2">coverage.py v7.16.2</a>,
-            created at 2026-10-25 21:14 +0000
+            created at 2026-10-25 21:39 +0000
         </p>
     </div>
 </footer>
