@@ -60,6 +60,27 @@ def test_a_run_history_of_a_newer_canvodpy_is_refused(tmp_path, monkeypatch):
         RunHistory.open(tmp_path)
 
 
+def test_reading_a_run_history_of_a_newer_canvodpy_leaves_no_connection_open(
+    tmp_path, monkeypatch
+):
+    with monkeypatch.context() as m:
+        m.setitem(run_history._MIGRATIONS, run_history.SCHEMA_VERSION, "")
+        m.setattr(run_history, "SCHEMA_VERSION", run_history.SCHEMA_VERSION + 1)
+        RunHistory.open(tmp_path).close()
+    opened = []
+    real_connect = sqlite3.connect
+
+    def connect(*args, **kwargs):
+        opened.append(real_connect(*args, **kwargs))
+        return opened[-1]
+
+    monkeypatch.setattr(run_history.sqlite3, "connect", connect)
+    with pytest.raises(RunHistoryVersionError, match="newer canvodpy"):
+        RunHistory.open(tmp_path, read_only=True)
+    with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
+        opened[0].execute("SELECT 1")
+
+
 def test_a_finished_run_shows_its_progress_timings_and_problems(tmp_path):
     with RunHistory.open(tmp_path) as history:
         _start(history)
@@ -338,8 +359,9 @@ def test_a_corrupt_file_index_reads_as_empty(tmp_path):
     root = tmp_path / "data"
     with RunHistory.open(tmp_path) as history:
         history.save_file_index(root, None, _listings())
-    with sqlite3.connect(run_history.run_history_path(tmp_path)) as db:
+    with closing(sqlite3.connect(run_history.run_history_path(tmp_path))) as db:
         db.execute("UPDATE file_index SET files = 'not json'")
+        db.commit()
     with RunHistory.open(tmp_path) as history:
         assert history.file_index(root, None) == {}
 

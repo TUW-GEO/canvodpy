@@ -485,8 +485,12 @@ class RunHistory:
                 autocommit=True,
                 check_same_thread=False,
             )
-            history = cls(connection, path)
-            history._check_version(history._version())
+            try:
+                history = cls(connection, path)
+                history._check_version(history._version())
+            except BaseException:
+                connection.close()
+                raise
             return history
 
         path.parent.mkdir(parents=True, exist_ok=True)

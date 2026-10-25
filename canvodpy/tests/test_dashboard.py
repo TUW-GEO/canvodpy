@@ -17,6 +17,7 @@ import statistics
 import subprocess
 import sys
 import zipfile
+from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -467,7 +468,7 @@ def test_example_history_names_no_person_machine_or_place() -> None:
     )
     anonymizer = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(anonymizer)
-    with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as db:
+    with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as db:
         tables = [
             row[0]
             for row in db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
