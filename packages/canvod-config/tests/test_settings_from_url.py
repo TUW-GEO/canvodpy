@@ -263,7 +263,9 @@ class TestOverlayRecipes:
         path = folder / "recipes" / testing.SITE_KEY / f"{older}.yaml"
         assert path.read_bytes() == older_recipe
         # A file made the usual way, not the owner-only mode of a temp file.
-        assert path.stat().st_mode & 0o777 == remote._FILE_MODE
+        plain = tmp_path / "plain.yaml"
+        plain.touch()
+        assert path.stat().st_mode & 0o777 == plain.stat().st_mode & 0o777
 
     def test_a_missing_overlay_recipe_names_the_overlay_and_the_url(
         self, server, tmp_path
