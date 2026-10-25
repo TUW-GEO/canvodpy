@@ -436,6 +436,24 @@ class TestCheck:
         with pytest.raises(ValueError, match="older canvodpy or edited by hand"):
             _commit(path, lambda s: _write_receiver(s, "reference_01", "2025-01-01", 4))
 
+    @pytest.mark.parametrize("section", [None, "identity"])
+    def test_a_repository_key_this_version_does_not_know_refuses_the_next_commit(
+        self, tmp_path, section
+    ):
+        # Written by a newer canvodpy or by hand: committing would drop it.
+        path = _store(tmp_path)
+        _commit(path, lambda s: _write_receiver(s, "canopy_01", "2025-01-01", 4))
+        repo = _repo(path)
+        metadata = repo.get_metadata()
+        if section is None:
+            metadata["unknown_section"] = {"note": "kept"}
+        else:
+            metadata[section] = {**metadata[section], "unknown_field": "kept"}
+        repo.set_metadata(metadata)
+
+        with pytest.raises(ValueError, match="older canvodpy or edited by hand"):
+            _commit(path, lambda s: _write_receiver(s, "reference_01", "2025-01-01", 4))
+
     def test_an_amendment_since_the_last_commit_carries_into_the_next(self, tmp_path):
         path = _store(tmp_path)
         _commit(path, lambda s: _write_receiver(s, "canopy_01", "2025-01-01", 4))

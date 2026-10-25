@@ -295,12 +295,26 @@ def _replay_amendments(copy: dict[str, Any], repository: dict[str, Any]) -> bool
         ).model_dump(mode="json")
         # The repository metadata in the current form: a store written
         # before a field was added (e.g. #536) has no key for it.
-        repository = RepositoryMetadata.model_validate(
+        current = RepositoryMetadata.model_validate(
             repository, context=READ_CONTEXT
         ).model_dump(mode="json")
     except ValidationError:
         return False
-    return replayed == repository
+    # A key the model doesn't know (a newer canvodpy, a hand edit) would be
+    # dropped by the next commit: it is a difference, not a missing field.
+    return replayed == current and not _unknown_keys(repository, current)
+
+
+def _unknown_keys(stored: Any, current: Any) -> bool:
+    """Whether ``stored`` holds a key that ``current`` (its model dump) lacks."""
+    if isinstance(stored, dict) and isinstance(current, dict):
+        return any(
+            key not in current or _unknown_keys(value, current[key])
+            for key, value in stored.items()
+        )
+    if isinstance(stored, list) and isinstance(current, list):
+        return any(map(_unknown_keys, stored, current))
+    return False
 
 
 def check_root_copy(
