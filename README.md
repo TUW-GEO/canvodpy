@@ -11,7 +11,7 @@
 | canvodpy/src/canvodpy/cli/config.py                                             |      407 |      160 |     61% |217-222, 343-347, 362, 433-449, 453, 455-457, 459-461, 470, 562-566, 582-584, 592-593, 599-603, 620, 648-673, 693-702, 717-792, 807-891, 906-914 |
 | canvodpy/src/canvodpy/cli/dashboard.py                                          |      114 |       45 |     61% |75, 85, 124-155, 161-169, 176-177, 180-188, 191-192, 195, 198-202, 205-206, 213-216, 219, 224, 227, 232-233, 261 |
 | canvodpy/src/canvodpy/cli/dashboards/\_\_init\_\_.py                            |        0 |        0 |    100% |           |
-| canvodpy/src/canvodpy/cli/dashboards/charts.py                                  |      106 |        7 |     93% |35, 137, 167, 184-185, 194-195 |
+| canvodpy/src/canvodpy/cli/dashboards/charts.py                                  |      112 |        7 |     94% |35, 172, 202, 219-220, 229-230 |
 | canvodpy/src/canvodpy/cli/dashboards/comparison.py                              |       58 |        1 |     98% |        51 |
 | canvodpy/src/canvodpy/cli/dashboards/export.py                                  |       45 |        2 |     96% |    34, 36 |
 | canvodpy/src/canvodpy/cli/dashboards/performance.py                             |      360 |      360 |      0% |   12-1057 |
@@ -244,7 +244,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 127-136 |
-| **TOTAL**                                                                       | **29326** | **8363** | **71%** |           |
+| **TOTAL**                                                                       | **29332** | **8363** | **71%** |           |
 
 
 ## Setup coverage badge
