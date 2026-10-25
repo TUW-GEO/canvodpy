@@ -176,6 +176,7 @@ testpaths = [
 addopts = "--cov --cov-report term-missing --cov-report lcov -rsx --verbose --color=yes"
 markers = [
     "integration: marks tests as integration tests (may require config files or external resources)",
+    "network: marks tests that reach the internet (skipped without CANVOD_NETWORK_TESTS=1; just test-network)",
 ]
 
 [tool.coverage.run]

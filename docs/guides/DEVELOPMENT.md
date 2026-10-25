@@ -79,10 +79,19 @@ All three sections live in a single `config/canvod-settings.yaml`. Template: `co
 just test                            # all tests
 just test-package canvod-readers     # specific package
 just test-coverage                   # with HTML coverage report
+just test-network                    # tests that reach the download servers
 ```
 
 Tests live in `packages/<pkg>/tests/`. Integration tests are marked
 `@pytest.mark.integration` and excluded from the default run.
+
+Network tests are marked `@pytest.mark.network` and skipped unless
+`just test-network` runs them; GitHub CI never does. They check every
+product of the registry on the FTP servers, download the COD final orbits
+and clocks of 2025-001 and compare them with the test data, and run a day
+of the test data that downloads its own orbits and clocks. Run them before
+a release and after changing the product registry. NASA CDDIS is checked
+only when the settings hold `credentials.nasa_earthdata_acc_mail`.
 
 ---
 

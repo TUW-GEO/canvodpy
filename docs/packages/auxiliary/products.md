@@ -167,3 +167,8 @@ any product is missing. NASA CDDIS is checked when the settings hold
 `credentials.nasa_earthdata_acc_mail`; otherwise products hosted only there
 are reported as skipped. Run it after editing `products.toml`, and from time
 to time: agencies rename products, change samplings, and stop publishing.
+
+`just test-network` runs the same check for 2025-001 as tests, one per
+product, together with a real download of the COD final files and a run
+that downloads its own orbits and clocks (see
+[Testing](../../guides/DEVELOPMENT.md#testing)).
