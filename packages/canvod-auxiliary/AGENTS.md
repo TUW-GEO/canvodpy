@@ -36,7 +36,8 @@ Background: `docs/packages/auxiliary/overview.md`,
 - Angles are radians in datasets; polar angle, not elevation.
 - **Products**: only `final` and `rapid`; file names come from
   `ProductSpec.sp3_filenames`/`clk_filenames` (one per listed sampling, tried
-  in order). After editing `products/products.toml`, run `just check-products`.
+  in order). After editing `products/products.toml`, run `just check-products`
+  and `just test-network`.
 
 ## Tests
 

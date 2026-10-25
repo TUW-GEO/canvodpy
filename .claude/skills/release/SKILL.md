@@ -27,7 +27,7 @@ to PyPI.
   in `README.md` (also the PyPI page), `docs/index.md`,
   `docs/users/index.md`, the release's `CHANGELOG.md` section and the
   GitHub release notes (Zenodo takes its text from them) link it.
-- `just check` and `just test` pass.
+- `just check`, `just test` and `just test-network` pass.
 - The release files (`pyproject.toml` files, `uv.lock`, the `CHANGELOG.md`
   files, `CITATION.cff`, `.zenodo.json`, `codemeta.json`) have no
   uncommitted changes; `just release` refuses otherwise and
