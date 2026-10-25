@@ -277,6 +277,19 @@ class TestStoreLog:
         assert result.exit_code == 1
         assert "a site or --path" in result.output
 
+    def test_store_does_not_go_with_path(self, tmp_path):
+        store_path = tmp_path / "copy" / "gnss"
+        _write_synthetic_store(store_path)
+
+        result = runner.invoke(
+            main_app,
+            ["store", "log", "--path", str(store_path), "--store", "vod"],
+            env=_env(tmp_path / "no-settings"),
+        )
+
+        assert result.exit_code == 1
+        assert "--store doesn't go with --path" in result.output
+
     def test_writes_the_graph_as_svg(self, tmp_path):
         config_dir = tmp_path / "config"
         stores_root = tmp_path / "stores"

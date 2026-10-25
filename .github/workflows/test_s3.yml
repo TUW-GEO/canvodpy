@@ -96,6 +96,7 @@ jobs:
                       canvodpy/tests/test_config_from_store_s3.py \
                       packages/canvod-store/tests/test_s3_maintenance.py \
                       canvodpy/tests/test_s3_maintenance_cli.py \
+                      canvodpy/tests/test_s3_store_log_cli.py \
                       --verbose --color=no -rs | tee pytest.log
                   if grep -q SKIPPED pytest.log; then
                       echo "::error::S3 tests were skipped; the emulator setup is broken."

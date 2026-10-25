@@ -354,7 +354,7 @@ $ canvodpy store log [OPTIONS] [site]
 
 **Options**:
 
-* `--store gnss|vod`: Store of the site to open.  [default: gnss]
+* `--store gnss|vod`: Store of the site to open. Default: gnss. Not with --path.
 * `--path STORE`: Open the store at this local path or s3://bucket/prefix instead of a site's store, for example a copy. Needs no settings file.
 * `--branch <str>`: Show the history of this branch only. Default: all branches.
 * `--ops`: Show the operations on the store instead of the commit graph.

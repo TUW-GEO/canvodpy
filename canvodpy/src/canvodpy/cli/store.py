@@ -219,9 +219,14 @@ def log(
         ),
     ] = None,
     store: Annotated[
-        str,
-        typer.Option("--store", metavar="gnss|vod", help="Store of the site to open."),
-    ] = "gnss",
+        str | None,
+        typer.Option(
+            "--store",
+            metavar="gnss|vod",
+            help="Store of the site to open. Default: gnss. Not with --path.",
+            show_default=False,
+        ),
+    ] = None,
     path: Annotated[
         str | None,
         typer.Option(
@@ -274,6 +279,7 @@ def log(
         )
         raise typer.Exit(1)
     if site is not None and path is None:
+        store = store or "gnss"
         if store not in _STORE_KINDS:
             console.print(
                 f"[canvod.error]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/canvod.error]"
@@ -281,6 +287,12 @@ def log(
             raise typer.Exit(1)
         icestore = _open_store(site, store)
     elif path is not None and site is None:
+        if store is not None:
+            console.print(
+                "[canvod.error]❌ --store doesn't go with --path: the store at "
+                "the path is opened as it is.[/canvod.error]"
+            )
+            raise typer.Exit(1)
         icestore = _open_path(path)
     else:
         console.print(
@@ -317,6 +329,9 @@ def _open_path(path: str):
     if not exists:
         console.print(f"[canvod.error]❌ No store at[/canvod.error] {path}")
         raise typer.Exit(1)
+    # The store type only picks the chunking of writes; log only reads the
+    # history, so a store without one is opened as a GNSS store. Don't
+    # reuse this for writing.
     return MyIcechunkStore(path, store_type=_folder_store_type(path) or "gnss_store")
 
 
