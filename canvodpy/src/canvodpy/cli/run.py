@@ -30,6 +30,10 @@ Usage
     # <log_dir>/machine/dashboard.log so it doesn't clutter run's progress)
     uv run canvodpy run --site ExampleSite --update-to-latest --dashboard --dashboard-host 0.0.0.0
 
+    # The same, but stop the dashboard when the run ends (by default it
+    # stays up to show the finished run until its button shuts it down)
+    uv run canvodpy run --site ExampleSite --update-to-latest --dashboard --dashboard-stop-at-end
+
 Exit codes
 ----------
     0  every receiver-day was written or skipped, or nothing was new
@@ -45,12 +49,13 @@ import socket
 import subprocess
 import sys
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
 from datetime import datetime
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import structlog
 import typer
@@ -71,6 +76,10 @@ from canvod.utils.logging import (
 from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
 from canvodpy.logging import emit_run_summary
 
+if TYPE_CHECKING:
+    from canvod.config import CanvodConfig
+    from canvodpy.api import Site
+
 log = structlog.get_logger(__name__)
 
 
@@ -87,24 +96,26 @@ def _pick_free_port(host: str) -> int:
         return s.getsockname()[1]
 
 
-def _start_dashboard(log_dir: Path, host: str, port: int) -> None:
+def _start_dashboard(log_dir: Path, host: str, port: int) -> subprocess.Popen:
     """Spawn the marimo performance dashboard as a detached subprocess.
 
     Its stdout/stderr go to a log file, not the terminal — the whole point
     is that ``canvodpy run``'s own progress output stays the only thing
-    visible in the foreground. The subprocess outlives this command (no
-    wait/terminate), so the dashboard stays up for reviewing the finished
-    run.
+    visible in the foreground. The subprocess outlives this command unless
+    --dashboard-stop-at-end is set, so the dashboard stays up for reviewing
+    the finished run; its button shuts it down.
     """
+    from canvodpy.cli.dashboards.shutdown import RUN_VARIABLE, run_marker
     from canvodpy.cli.perf_dashboard import _NOTEBOOK_PATH
 
     env = os.environ.copy()
     env["CANVODPY_PERF_LOG_DIR"] = str(log_dir)
+    env[RUN_VARIABLE] = run_marker()
     machine_dir = log_dir / "machine"
     machine_dir.mkdir(parents=True, exist_ok=True)
     dash_log = machine_dir / "dashboard.log"
 
-    subprocess.Popen(
+    process = subprocess.Popen(
         [
             sys.executable,
             "-m",
@@ -123,6 +134,7 @@ def _start_dashboard(log_dir: Path, host: str, port: int) -> None:
         stderr=subprocess.STDOUT,
     )
     print(f"Dashboard: http://{host}:{port}  (output: {dash_log})")
+    return process
 
 
 class EphemerisSourceChoice(enum.StrEnum):
@@ -310,7 +322,6 @@ def _main_impl(args: SimpleNamespace) -> int:
         config.processing.params.ephemeris_source = args.ephemeris_source
 
     from canvodpy.api import Site, _passed
-    from canvodpy.vod_computer import VodComputer
 
     site_name: str = args.site
     site = Site(site_name)
@@ -336,14 +347,49 @@ def _main_impl(args: SimpleNamespace) -> int:
                 print(f"  {k}: {v}")
         return 0
 
-    if args.dashboard:
-        _start_dashboard(
-            config.processing.logging.get_log_dir(),
-            args.dashboard_host,
-            args.dashboard_port or _pick_free_port(args.dashboard_host),
-        )
+    with _dashboard_for_run(args, config.processing.logging.get_log_dir()):
+        return _process_days(args, config, site, start, end)
 
+
+@contextmanager
+def _dashboard_for_run(args: SimpleNamespace, log_dir: Path) -> Generator[None]:
+    """The dashboard of --dashboard, for the length of the run.
+
+    It stays up after the run to show it, until its button shuts it down;
+    with --dashboard-stop-at-end it stops when the run ends, also when the
+    run fails or is stopped with Ctrl-C.
+    """
+    if not args.dashboard:
+        yield
+        return
+    dashboard = _start_dashboard(
+        log_dir,
+        args.dashboard_host,
+        args.dashboard_port or _pick_free_port(args.dashboard_host),
+    )
+    try:
+        yield
+    finally:
+        if args.dashboard_stop_at_end:
+            dashboard.terminate()
+            dashboard.wait(timeout=5)
+            print("Dashboard stopped (--dashboard-stop-at-end).")
+        elif dashboard.poll() is None:
+            print(
+                "The dashboard is still running, to show the finished run. "
+                "Shut it down with its button."
+            )
+
+
+def _process_days(
+    args: SimpleNamespace, config: CanvodConfig, site: Site, start: str, end: str
+) -> int:
+    """Process the site's receiver-days from start to end, with their VOD."""
+    from canvodpy.api import _passed
     from canvodpy.cli.dashboard import day_count, make_reporter
+    from canvodpy.vod_computer import VodComputer
+
+    site_name: str = args.site
 
     total = day_count(start, end)
     rows = [(site_name, group, total) for group in _site_groups(site)]
@@ -681,6 +727,17 @@ def run(
             help="Port for --dashboard to bind to. Default: a free port that the operating system picks.",
         ),
     ] = None,
+    dashboard_stop_at_end: Annotated[
+        bool,
+        typer.Option(
+            "--dashboard-stop-at-end",
+            help=(
+                "Stop the dashboard of --dashboard when the run ends. "
+                "Default: it stays up to show the finished run until you "
+                "shut it down with its button."
+            ),
+        ),
+    ] = False,
 ) -> None:
     """Process GNSS observations into Icechunk stores and compute VOD.
 
@@ -696,6 +753,9 @@ def run(
             "...; done",
             file=sys.stderr,
         )
+        raise typer.Exit(code=1)
+    if dashboard_stop_at_end and not dashboard:
+        print("Error: --dashboard-stop-at-end needs --dashboard.", file=sys.stderr)
         raise typer.Exit(code=1)
     from canvodpy.orchestrator.run_dates import NothingStoredError, check_run_dates
 
@@ -720,6 +780,7 @@ def run(
         dashboard=dashboard,
         dashboard_host=dashboard_host,
         dashboard_port=dashboard_port,
+        dashboard_stop_at_end=dashboard_stop_at_end,
     )
     from canvod.config.models import PreprocessingMismatchError
     from canvod.store.prepare import (

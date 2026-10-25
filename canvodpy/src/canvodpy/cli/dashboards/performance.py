@@ -513,6 +513,55 @@ def _(mo):
 
 @app.cell
 def _(mo):
+    # The button that shuts the dashboard down; shown only when
+    # `canvodpy run --dashboard` started it.
+    shutdown_button = mo.ui.run_button(label="Shut the dashboard down", kind="neutral")
+    return (shutdown_button,)
+
+
+@app.cell
+def _(mo, refresh, shutdown_button):
+    import os as _os
+
+    from canvodpy.cli.dashboards.shutdown import run_going, shut_down
+
+    _ = refresh  # notice when the run ends
+    _going = run_going(_os.environ)
+    if _going is None:
+        _output = None  # started by `canvodpy dashboard`: stopped with Ctrl+C
+    elif shutdown_button.value:
+        shut_down()
+        _output = mo.callout(
+            mo.md("The dashboard is shutting down. You can close this tab."),
+            kind="info",
+        )
+    elif _going:
+        _output = mo.hstack(
+            [
+                mo.md(
+                    "The run is still going. Shutting the dashboard down "
+                    "does not stop the run."
+                ),
+                shutdown_button,
+            ],
+            justify="space-between",
+            align="center",
+        )
+    else:
+        _output = mo.callout(
+            mo.hstack(
+                [mo.md("**The run has finished.**"), shutdown_button],
+                justify="space-between",
+                align="center",
+            ),
+            kind="info",
+        )
+    _output
+    return
+
+
+@app.cell
+def _(mo):
     # Linear or logarithmic time axes, for every chart that shows a
     # duration: the stage and day charts and the comparison.
     time_axis = mo.ui.radio(

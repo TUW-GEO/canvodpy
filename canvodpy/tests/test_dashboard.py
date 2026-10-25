@@ -20,6 +20,7 @@ import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
+import psutil
 import pytest
 from canvodpy.cli.dashboards.charts import (
     chart_categories,
@@ -35,6 +36,7 @@ from canvodpy.cli.dashboards.charts import (
 )
 from canvodpy.cli.dashboards.comparison import build_comparison
 from canvodpy.cli.dashboards.export import export_zip
+from canvodpy.cli.dashboards.shutdown import RUN_VARIABLE, run_marker
 from canvodpy.run_history import RunHistory, StageTiming, StoreSize
 
 import canvodpy
@@ -289,6 +291,55 @@ def test_dashboard_exports_with_run_history(tmp_path: Path) -> None:
     _seed(log_dir)
     result = _export(log_dir, app_dir)
     assert result.returncode == 0, result.stderr + result.stdout
+
+
+def _cell_outputs(log_dir: Path, monkeypatch, run_marker: str | None) -> str:
+    """The notebook's cell outputs as HTML, without its source code."""
+    monkeypatch.setenv("CANVODPY_PERF_LOG_DIR", str(log_dir))
+    if run_marker is None:
+        monkeypatch.delenv(RUN_VARIABLE, raising=False)
+    else:
+        monkeypatch.setenv(RUN_VARIABLE, run_marker)
+    notebook = Path(canvodpy.__file__).parent / "cli" / "dashboards" / "performance.py"
+    spec = importlib.util.spec_from_file_location("performance_notebook", notebook)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    outputs, _ = module.app.run()
+    return "\n".join(getattr(output, "text", "") for output in outputs)
+
+
+def _ended_run_marker() -> str:
+    """The marker of a run that has ended."""
+    run = subprocess.Popen([sys.executable, "-c", "pass"])
+    marker = f"{run.pid} {psutil.Process(run.pid).create_time()!r}"
+    run.wait()
+    return marker
+
+
+def test_dashboard_offers_the_shutdown_after_the_run(
+    tmp_path: Path, monkeypatch
+) -> None:
+    outputs = _cell_outputs(tmp_path, monkeypatch, _ended_run_marker())
+
+    assert "The run has finished." in outputs
+    assert "Shut the dashboard down" in outputs
+
+
+def test_dashboard_offers_the_shutdown_during_the_run(
+    tmp_path: Path, monkeypatch
+) -> None:
+    outputs = _cell_outputs(tmp_path, monkeypatch, run_marker())
+
+    assert "The run is still going." in outputs
+    assert "Shut the dashboard down" in outputs
+
+
+def test_dashboard_without_a_run_has_no_shutdown(tmp_path: Path, monkeypatch) -> None:
+    # Started by `canvodpy dashboard`: it stops with Ctrl+C in its terminal.
+    outputs = _cell_outputs(tmp_path, monkeypatch, None)
+
+    assert "Shut the dashboard down" not in outputs
 
 
 def test_dashboard_exports_without_run_history(tmp_path: Path) -> None:
