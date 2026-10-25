@@ -1,16 +1,11 @@
-"""Tests for the opt-in zarr async chunk-write concurrency cap.
+"""Tests for the deprecated zarr async chunk-write concurrency cap (#188).
 
-Zarr v3's async codec pipeline issues a chunk-write burst per array write via
-asyncio.gather, sized by zarr.config's "async.concurrency" (default 10). A
-captured production traceback plus retry-attempt timing showed the burst
-reliably tripping connection-abort errors on a CIFS-mounted store within
-seconds of every write attempt, regardless of retry backoff length --
-widening the backoff couldn't fix a fault that isn't about staleness.
-
-Capping concurrency costs write throughput, so it's opt-in
-(IcechunkConfig.zarr_async_concurrency, default None) rather than forced on
-every store -- local/fast-storage deployments should see zero behavior
-change by default.
+``MyIcechunkStore._to_icechunk_throttled`` capped Zarr v3's per-array
+chunk-write burst (zarr.config's "async.concurrency", default 10) when
+IcechunkConfig.zarr_async_concurrency was set. It covered only the
+store's own write methods, so it is deprecated: the store writes through
+``_to_icechunk`` and the setting has no effect. The deprecated method
+keeps its behavior until v2.0.0.
 """
 
 from __future__ import annotations
@@ -25,6 +20,36 @@ from canvod.config.models import IcechunkConfig
 from canvod.store_metadata.testing import create_test_store
 
 from canvod.store import open_vod_store
+
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:`_to_icechunk_throttled` is left over:FutureWarning"
+)
+
+
+@pytest.mark.filterwarnings("default")
+def test_throttled_write_is_deprecated(tmp_path: Path) -> None:
+    store = open_vod_store(create_test_store(tmp_path / "site" / "vod_store"))
+
+    with mock.patch("canvod.store.store.to_icechunk", lambda *a, **k: None):
+        with store.writable_session() as session:
+            with pytest.warns(FutureWarning, match="Use `_to_icechunk` instead"):
+                store._to_icechunk_throttled(xr.Dataset(), session, group="x", mode="w")
+
+
+def test_store_writes_ignore_the_configured_cap(tmp_path: Path) -> None:
+    store = open_vod_store(create_test_store(tmp_path / "site" / "vod_store"))
+    store._zarr_async_concurrency = 2
+    before = zarr.config.get("async.concurrency")
+    observed: dict[str, int] = {}
+
+    def fake_to_icechunk(dataset, session, **kwargs) -> None:
+        observed["during"] = zarr.config.get("async.concurrency")
+
+    with mock.patch("canvod.store.store.to_icechunk", fake_to_icechunk):
+        with store.writable_session() as session:
+            store._to_icechunk(xr.Dataset(), session, group="x", mode="w")
+
+    assert observed["during"] == before
 
 
 def test_default_config_does_not_throttle(tmp_path: Path) -> None:
