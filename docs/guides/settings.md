@@ -119,28 +119,28 @@ Publisher contact email (ACDD `publisher_email`)
 
 #### `processing.metadata.project` {#processing-metadata-project}
 
-The project(s) that originated the data, comma-separated (ACDD project)
+The project(s) that originated the data, comma-separated (ACDD `project`)
 
 - Type: text, or null
 - Default: `null`
 
 #### `processing.metadata.acknowledgement` {#processing-metadata-acknowledgement}
 
-Support to acknowledge, for example funding (ACDD acknowledgement)
+Support to acknowledge, for example funding (ACDD `acknowledgement`)
 
 - Type: text, or null
 - Default: `null`
 
 #### `processing.metadata.comment` {#processing-metadata-comment}
 
-Further information about the data, not given elsewhere (ACDD comment)
+Further information about the data, not given elsewhere (ACDD `comment`)
 
 - Type: text, or null
 - Default: `null`
 
 ### `processing.metadata.source` {#processing-metadata-source}
 
-How the data were produced, per store type: gnss, vod (ACDD source)
+How the data were produced, per store type: gnss, vod (ACDD `source`)
 
 #### `processing.metadata.source.gnss` {#processing-metadata-source-gnss}
 

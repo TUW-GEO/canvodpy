@@ -106,37 +106,37 @@ class MetadataConfig(_StrictModel):
     )
     publisher_url: str | None = Field(None, description="Publisher URL")
     publisher_email: EmailStr | None = Field(
-        None, description="Publisher contact email (ACDD publisher_email)"
+        None, description="Publisher contact email (ACDD 'publisher_email')"
     )
     project: str | None = Field(
         None,
         description=(
-            "The project(s) that originated the data, comma-separated (ACDD project)"
+            "The project(s) that originated the data, comma-separated (ACDD 'project')"
         ),
     )
     acknowledgement: str | None = Field(
         None,
         description=(
-            "Support to acknowledge, for example funding (ACDD acknowledgement)"
+            "Support to acknowledge, for example funding (ACDD 'acknowledgement')"
         ),
     )
     comment: str | None = Field(
         None,
         description=(
-            "Further information about the data, not given elsewhere (ACDD comment)"
+            "Further information about the data, not given elsewhere (ACDD 'comment')"
         ),
     )
     source: StoreTypeText | None = Field(
         None,
         description=(
-            "How the data were produced, per store type: gnss, vod (ACDD source)"
+            "How the data were produced, per store type: gnss, vod (ACDD 'source')"
         ),
     )
     processing_level: StoreTypeText | None = Field(
         None,
         description=(
             "The processing level of the data, per store type: gnss, vod "
-            "(ACDD processing_level)"
+            "(ACDD 'processing_level')"
         ),
     )
     naming_authority: str | None = Field(
