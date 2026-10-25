@@ -345,10 +345,14 @@ For advanced metadata customization, create `.zenodo.json`:
   "keywords": ["GNSS", "VOD", "vegetation", "remote sensing"],
   "license": "Apache-2.0",
   "communities": [
-    {"identifier": "zenodo"}
+    {"identifier": "canvodpy"}
   ]
 }
 ```
+
+`communities` adds every archived release to the
+[canVODpy community](https://zenodo.org/communities/canvodpy) on Zenodo.
+canvodpy, canvodpy-extensions and canvodpy-test-data all set it.
 
 **Note:** CITATION.cff is usually enough.
 
