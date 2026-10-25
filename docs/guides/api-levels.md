@@ -53,7 +53,7 @@ Dates are `YYYYDDD`: the year and the day of year, for example
 | `--config` | `CANVOD_CONFIG_FILE` | [Overlay file](configuration.md#overlay-file) applied on top of `canvod-settings.yaml`. |
 | `--ephemeris-source` | `processing.params.ephemeris_source` in the settings | `final` (orbit and clock products of an analysis center) or `broadcast` (the satellite angles an SBF file holds); see [Ephemeris sources](../packages/readers/ephemeris-sources.md). |
 | `--vod-calculator` | `VodComputer(site, calculator=...)` | VOD calculator; `tau_omega` unless a [plugin](plugins.md) adds others. |
-| `--dashboard` | None; run `canvodpy dashboard` | Start the performance dashboard for the run's logs. `--dashboard-host` and `--dashboard-port` set its address. |
+| `--dashboard` | None; run `canvodpy dashboard` | Start the performance dashboard for the run's logs. `--dashboard-host` and `--dashboard-port` set its address. It stays up after the run until its button shuts it down; `--dashboard-stop-at-end` stops it with the run. |
 
 Options you leave out take their values from the settings file. In
 Python, set `CANVOD_CONFIG_DIR` and `CANVOD_CONFIG_FILE` before you

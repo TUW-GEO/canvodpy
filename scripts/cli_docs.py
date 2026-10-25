@@ -44,6 +44,34 @@ text in the terminal. For a walk through a first run, see
 
 """
 
+OUTRO = """\
+## In the terminal
+
+`canvodpy --help-all` lists every command with its options on one screen;
+`canvodpy COMMAND --help` describes one command.
+
+`canvodpy` without a command, `canvodpy --version` and `canvodpy run`
+start with the canVODpy logo, the website, the version, the support
+address, the author and the licence. The logo is shown only in an
+interactive terminal at least 81 columns wide, never when the output
+goes to a file, a pipe or a cron job. To turn it off, for example to
+save the second it takes at the start of a run, set
+`CANVODPY_NO_BANNER=1`.
+
+The colours of the help, the messages and the progress bars follow the
+terminal's background, dark or light. canVODpy asks the terminal for it,
+which most current terminals answer, and otherwise reads `COLORFGBG` or
+takes dark. If it picks the wrong one, set `CANVODPY_TERMINAL_THEME=dark`
+or `CANVODPY_TERMINAL_THEME=light`. The colours avoid red and keep apart
+with red-green colour blindness, and every status comes with its symbol:
+✓ done, ⚠️ needs attention, ❌ failed. `NO_COLOR=1` turns the colours
+off. Log lines written to a file or a pipe carry no colour codes.
+
+After `canvodpy --install-completion`, the command prints how to load
+the completion in the open terminal (for example `exec zsh`), so you
+don't need to open a new one.
+"""
+
 
 def _trim_help(command: TyperCommand | TyperGroup) -> None:
     """Cut each help text the way ``--help`` shows it, for all commands."""
@@ -69,7 +97,7 @@ def render() -> str:
         obj=command, ctx=ctx, name="canvodpy", title="Command line"
     )
     title, rest = body.strip().split("\n", 1)
-    return HEADER + title + "\n\n" + INTRO + rest.lstrip("\n") + "\n"
+    return HEADER + title + "\n\n" + INTRO + rest.strip("\n") + "\n\n" + OUTRO
 
 
 def main() -> int:

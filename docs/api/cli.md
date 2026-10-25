@@ -26,6 +26,7 @@ $ canvodpy [OPTIONS] COMMAND [ARGS]...
 * `--version`: Show canvodpy's version and exit.
 * `--install-completion`: Install completion for the current shell.
 * `--show-completion`: Show completion for the current shell, to copy it or customize the installation.
+* `--help-all`: Show every command with its options, and exit. One command with descriptions: canvodpy COMMAND --help; all of them: https://canvodpy.eu/api/cli/
 * `--help`: Show this message and exit.
 
 **Commands**:
@@ -71,6 +72,7 @@ $ canvodpy run [OPTIONS]
 * `--dashboard`: Start the marimo performance dashboard next to this run, in a process of its own. Its startup messages go to a log file, not to this terminal.
 * `--dashboard-host <str>`: Host for --dashboard to bind to.  [default: 127.0.0.1]
 * `--dashboard-port <int>`: Port for --dashboard to bind to. Default: a free port that the operating system picks.
+* `--dashboard-stop-at-end`: Stop the dashboard of --dashboard when the run ends. Default: it stays up to show the finished run until you shut it down with its button.
 * `--help`: Show this message and exit.
 
 ## `canvodpy vod`
@@ -345,19 +347,22 @@ Show the commit history as a graph, or the store operations with --ops.
 **Usage**:
 
 ```console
-$ canvodpy store log [OPTIONS] {site}
+$ canvodpy store log [OPTIONS] [site]
 ```
 
 **Arguments**:
 
-* `site`: Site name, as defined under sites: in canvod-settings.yaml  [required]
+* `site`: Site name, as defined under sites: in canvod-settings.yaml. Omit when using --path.
 
 **Options**:
 
-* `--store gnss|vod`: Store to open.  [default: gnss]
+* `--store gnss|vod`: Store of the site to open. Default: gnss. Not with --path.
+* `--path STORE`: Open the store at this local path or s3://bucket/prefix instead of a site's store, for example a copy. Needs no settings file.
 * `--branch <str>`: Show the history of this branch only. Default: all branches.
 * `--ops`: Show the operations on the store instead of the commit graph.
 * `--limit <int>`: Number of operations that --ops shows.  [default: 50]
+* `--svg FILE`: Write the commit graph to this SVG file instead of printing it.
+* `--plain`: Draw the commit graph without colors, for a file or a CI log.
 * `-c, --config-dir <path|url>`: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
 
@@ -673,3 +678,29 @@ $ canvodpy stac release [OPTIONS] {tag}
 * `--root <path>`: Data root to catalog. Default: storage.stores_root_dir in the settings.
 * `-c, --config-dir <path|url>`: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--help`: Show this message and exit.
+
+## In the terminal
+
+`canvodpy --help-all` lists every command with its options on one screen;
+`canvodpy COMMAND --help` describes one command.
+
+`canvodpy` without a command, `canvodpy --version` and `canvodpy run`
+start with the canVODpy logo, the website, the version, the support
+address, the author and the licence. The logo is shown only in an
+interactive terminal at least 81 columns wide, never when the output
+goes to a file, a pipe or a cron job. To turn it off, for example to
+save the second it takes at the start of a run, set
+`CANVODPY_NO_BANNER=1`.
+
+The colours of the help, the messages and the progress bars follow the
+terminal's background, dark or light. canVODpy asks the terminal for it,
+which most current terminals answer, and otherwise reads `COLORFGBG` or
+takes dark. If it picks the wrong one, set `CANVODPY_TERMINAL_THEME=dark`
+or `CANVODPY_TERMINAL_THEME=light`. The colours avoid red and keep apart
+with red-green colour blindness, and every status comes with its symbol:
+✓ done, ⚠️ needs attention, ❌ failed. `NO_COLOR=1` turns the colours
+off. Log lines written to a file or a pipe carry no colour codes.
+
+After `canvodpy --install-completion`, the command prints how to load
+the completion in the open terminal (for example `exec zsh`), so you
+don't need to open a new one.

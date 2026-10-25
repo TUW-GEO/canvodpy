@@ -152,7 +152,7 @@ def _processing_progress(disable: bool = False) -> Progress:
     """Create a Rich progress bar for RINEX processing tasks."""
     return Progress(
         SpinnerColumn(),
-        TextColumn("[bold blue]{task.description}"),
+        TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         MofNCompleteColumn(),
         TimeElapsedColumn(),
@@ -2886,9 +2886,9 @@ class RinexDataProcessor:
         3. One independent fork per group, dispatched into a thread pool
            (`_write_group_into_fork`) -- not a process pool: PHASE 2 already
            holds all datasets in this process's memory, PHASE 3 is I/O-bound
-           (releases the GIL), and threads keep `zarr_async_concurrency` at
-           its configured per-process value instead of multiplying it by
-           worker count against a CIFS/NFS mount.
+           (releases the GIL), and threads share one process's Zarr
+           chunk-write concurrency instead of multiplying it by worker
+           count against a CIFS/NFS mount.
         4. Fail-fast: if any group's write raises, do not merge or commit --
            groups before it in today's sequential loop stay committed on
            retry, but under one shared batch commit that property is

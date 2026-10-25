@@ -372,9 +372,16 @@ canvodpy dashboard --logs-dir /path/to/logs
 canvodpy dashboard --host 0.0.0.0 --port 8080
 ```
 
-To start it together with a run, use `canvodpy run --dashboard`; the
-dashboard keeps running after the run ends. `--dashboard-host` and
-`--dashboard-port` set its address.
+To start it together with a run, use `canvodpy run --dashboard`.
+`--dashboard-host` and `--dashboard-port` set its address. The dashboard
+keeps running after the run ends, so you can look at the finished run,
+and a line at the end of the run says so. At the top, the dashboard says
+whether the run is still going and has a button, **Shut the dashboard
+down**, which stops the dashboard but never the run. To stop the
+dashboard when the run ends, add `--dashboard-stop-at-end`. It then
+stops even when the run fails or you stop the run with Ctrl-C. Whoever
+can open the dashboard can press the button, so with
+`--dashboard-host 0.0.0.0` that's anyone who can reach its address.
 
 No runs of your own yet? `canvodpy.demo_data("run_history")` downloads
 an anonymized example: nine runs of the same seven days of two
@@ -422,7 +429,9 @@ run history queries only:
   of a day, added up over the day's receivers; a stage that names no day
   (such as `day_block_growth`) takes the median of its records; a unit
   of days is split evenly over its days. A long bar is a stage that
-  takes a lot of the run.
+  takes a lot of the run. Each bar has its value at its end, so a stage
+  far shorter than the longest still shows on the linear axis, where its
+  bar is too thin to see.
 - **Time per day:** the stage seconds of a data day, added up over all
   its receivers, as a line over the days so a trend over the run is easy
   to see. A run that works in units of days splits a unit's record

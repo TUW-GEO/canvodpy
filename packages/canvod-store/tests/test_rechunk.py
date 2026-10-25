@@ -215,13 +215,13 @@ class TestPromoteBranch:
         from canvod.store.store import BranchMovedError
 
         store, group, _ = store_with_data
-        write = store._to_icechunk_throttled
+        write = store._to_icechunk
 
         def write_after_other_writer(*args, **kwargs):
             store.set_root_attrs({"other_writer": "yes"}, branch="main")
             return write(*args, **kwargs)
 
-        monkeypatch.setattr(store, "_to_icechunk_throttled", write_after_other_writer)
+        monkeypatch.setattr(store, "_to_icechunk", write_after_other_writer)
 
         with pytest.raises(BranchMovedError):
             store.rechunk_group(group, chunks={"epoch": 360, "sid": -1})
