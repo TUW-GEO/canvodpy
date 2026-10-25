@@ -196,15 +196,17 @@ test-network:
     os.environ["CANVOD_CONFIG_DIR"] = {{ quote(config_dir) }}
     from canvod.config import load_config
 
+    loaded = True
     try:
         mail = load_config().nasa_earthdata_acc_mail
-    except Exception:
-        mail = None
+    except Exception as error:
+        print(f"Settings not loaded ({error}); NASA CDDIS is not checked.")
+        mail, loaded = None, False
     env = {**os.environ, "CANVOD_NETWORK_TESTS": "1"}
     env.pop("CANVOD_CONFIG_DIR")
     if mail:
         env["CANVOD_CDDIS_MAIL"] = str(mail)
-    else:
+    elif loaded:
         print("NASA CDDIS not checked (no NASA Earthdata e-mail in the settings).")
     failed = 0
     for tests in ("packages/canvod-auxiliary/tests", "canvodpy/tests"):

@@ -80,9 +80,17 @@ def test_cod_final_download_matches_the_test_data(server: str, tmp_path) -> None
         (Sp3File, "01_SP3", spec.sp3_filenames(DAY)),
         (ClkFile, "02_CLK", spec.clk_filenames(DAY)),
     ):
-        name = next(n for n in names if (TEST_DATA_AUX / folder / n).exists())
+        local = [n for n in names if (TEST_DATA_AUX / folder / n).exists()]
+        assert local, f"no COD final {folder} file of {DAY} in {TEST_DATA_AUX}"
+        name = local[0]
         path = spec.ftp_path_pattern.format(gps_week=week, file=f"{name}.gz")
-        downloaded = downloader.download(f"{server}{path}", tmp_path / name)
+        try:
+            downloaded = downloader.download(f"{server}{path}", tmp_path / name)
+        except Exception as error:
+            pytest.fail(
+                f"{server}{path} not downloaded ({error}); the server may no "
+                f"longer keep {DAY}: then move DAY and the test data on"
+            )
 
         assert _sha256(downloaded) == _sha256(TEST_DATA_AUX / folder / name)
         assert reader.from_file(downloaded).data.sizes["epoch"] > 0
