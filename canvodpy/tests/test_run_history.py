@@ -6,6 +6,7 @@ import threading
 import time
 from contextlib import closing
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from canvodpy.run_history import (
@@ -176,16 +177,54 @@ def test_runs_started_together_on_a_new_run_history_all_open_it(tmp_path):
             assert db.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
 
 
+def test_a_run_history_another_process_holds_is_opened_once_it_lets_go(
+    tmp_path, monkeypatch
+):
+    # A writer holds the file (BEGIN IMMEDIATE), so the WAL switch fails at
+    # once instead of waiting for the busy timeout, and open() tries again
+    # (#340). The holder lets go at the second wait, so every run of this
+    # test goes through the retry, not only the racing test by chance.
+    path = run_history.run_history_path(tmp_path)
+    with closing(sqlite3.connect(path, isolation_level=None)) as holder:
+        holder.execute("BEGIN IMMEDIATE")
+        waits = []
+
+        def sleep(seconds):
+            waits.append(seconds)
+            if len(waits) == 2:
+                holder.execute("ROLLBACK")
+
+        clock = SimpleNamespace(monotonic=time.monotonic, sleep=sleep)
+        monkeypatch.setattr(run_history, "time", clock)
+        with RunHistory.open(tmp_path):
+            pass
+
+    assert waits == [run_history.WAL_SWITCH_RETRY_SECONDS] * 2
+    with closing(sqlite3.connect(path)) as db:
+        assert db.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+
+
 def test_a_run_history_locked_longer_than_the_busy_timeout_is_not_opened(
     tmp_path, monkeypatch
 ):
+    # BEGIN IMMEDIATE, not EXCLUSIVE: with EXCLUSIVE the first try waits out
+    # the busy timeout itself and open() gives up without trying again.
     monkeypatch.setattr(run_history, "BUSY_TIMEOUT_SECONDS", 0.5)
+    waits = []
+
+    def sleep(seconds):
+        waits.append(seconds)
+        time.sleep(seconds)
+
+    clock = SimpleNamespace(monotonic=time.monotonic, sleep=sleep)
+    monkeypatch.setattr(run_history, "time", clock)
     path = run_history.run_history_path(tmp_path)
     with closing(sqlite3.connect(path, isolation_level=None)) as holder:
-        holder.execute("BEGIN EXCLUSIVE")
+        holder.execute("BEGIN IMMEDIATE")
         with pytest.raises(sqlite3.OperationalError, match="locked"):
             RunHistory.open(tmp_path)
         holder.execute("ROLLBACK")
+    assert waits
 
 
 N_ROWS = 300
