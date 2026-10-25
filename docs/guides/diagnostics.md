@@ -417,7 +417,9 @@ run history queries only:
   of a day, added up over the day's receivers; a stage that names no day
   (such as `day_block_growth`) takes the median of its records; a unit
   of days is split evenly over its days. A long bar is a stage that
-  takes a lot of the run.
+  takes a lot of the run. Each bar has its value at its end, so a stage
+  far shorter than the longest still shows on the linear axis, where its
+  bar is too thin to see.
 - **Time per day:** the stage seconds of a data day, added up over all
   its receivers, as a line over the days so a trend over the run is easy
   to see. A run that works in units of days splits a unit's record

@@ -275,6 +275,7 @@ def _():
         chart_categories,
         chart_palette,
         day_rows,
+        stage_bars,
         stage_stats,
         store_rows,
         time_bars,
@@ -425,6 +426,7 @@ def _():
         chart_style,
         chart_palette,
         chart_categories,
+        stage_bars,
         time_bars,
         time_line,
         comparison_view,
@@ -790,6 +792,7 @@ def _(
     chart_style,
     mo,
     run_view,
+    stage_bars,
     time_axis,
     time_bars,
     time_line,
@@ -832,30 +835,27 @@ def _(
             total_rows, total_time = time_bars(
                 "x", "Total (s)", "Total (s)", stage_rows, time_axis.value
             )
+
             median_chart = chart_style(
-                alt.Chart({"values": median_rows})  # type: ignore
-                .mark_bar(color=chart_series[0])
-                .encode(
-                    y=alt.Y("Stage:N", sort=stage_order, axis=alt.Axis(title="Stage")),
-                    **median_time,
-                    tooltip=[
-                        "Stage:N",
-                        alt.Tooltip(
-                            "Median (s):Q", title="Median per day (s)", format=".2f"
-                        ),
-                    ],
+                stage_bars(
+                    median_rows,
+                    median_time,
+                    "Median (s)",
+                    "Median per day (s)",
+                    ".2f",
+                    stage_order,
+                    chart_series[0],
                 )
             )
             total_chart = chart_style(
-                alt.Chart({"values": total_rows})  # type: ignore
-                .mark_bar(color=chart_series[0])
-                .encode(
-                    y=alt.Y("Stage:N", sort=stage_order, axis=alt.Axis(title="Stage")),
-                    **total_time,
-                    tooltip=[
-                        "Stage:N",
-                        alt.Tooltip("Total (s):Q", title="Total (s)", format=".1f"),
-                    ],
+                stage_bars(
+                    total_rows,
+                    total_time,
+                    "Total (s)",
+                    "Total (s)",
+                    ".1f",
+                    stage_order,
+                    chart_series[0],
                 )
             )
             chart_items.append(mo.hstack([median_chart, total_chart]))
