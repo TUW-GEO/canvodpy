@@ -152,7 +152,7 @@ def _processing_progress(disable: bool = False) -> Progress:
     """Create a Rich progress bar for RINEX processing tasks."""
     return Progress(
         SpinnerColumn(),
-        TextColumn("[bold blue]{task.description}"),
+        TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         MofNCompleteColumn(),
         TimeElapsedColumn(),

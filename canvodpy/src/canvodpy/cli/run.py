@@ -309,6 +309,10 @@ def _main_impl(args: SimpleNamespace) -> int:
     if args.ephemeris_source is not None:
         config.processing.params.ephemeris_source = args.ephemeris_source
 
+    from canvodpy.cli.banner import show_banner
+
+    show_banner()  # interactive terminals only, as the progress display
+
     from canvodpy.api import Site, _passed
     from canvodpy.vod_computer import VodComputer
 

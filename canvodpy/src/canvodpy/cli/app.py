@@ -10,7 +10,6 @@ already lives.
 import functools
 import shutil
 import textwrap
-from importlib.metadata import version as _pkg_version
 from typing import Annotated, Any
 
 import typer
@@ -71,10 +70,11 @@ main_app.command(
 
 def _version_callback(value: bool) -> None:
     if value:
-        try:
-            typer.echo(f"canvodpy {_pkg_version('canvodpy')}")
-        except Exception:
-            typer.echo("canvodpy 0.0.0+unknown")
+        from canvodpy.cli.banner import show_banner, version_line
+
+        # In an interactive terminal the logo shows the version below it.
+        if not show_banner():
+            typer.echo(version_line())
         raise typer.Exit()
 
 
@@ -221,13 +221,20 @@ def _main_callback(
 ) -> None:
     """Process GNSS observations into VOD and inspect the stores."""
     if ctx.invoked_subcommand is None:
-        # No command: the help, and a clean exit.
+        # No command: the logo, website and version (interactive
+        # terminals only), then the help.
+        from canvodpy.cli.banner import show_banner
+
+        show_banner()
         typer.echo(ctx.get_help())
         raise typer.Exit()
 
 
 def main() -> None:
     """Run the CLI entry point."""
+    from canvodpy.cli.theme import apply_colors
+
+    apply_colors()  # canVODpy's palette, interactive terminals only
     main_app()
 
 

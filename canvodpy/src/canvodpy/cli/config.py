@@ -17,7 +17,6 @@ from typing import Annotated
 
 import typer
 import yaml
-from rich.console import Console
 from rich.prompt import Prompt
 from rich.table import Table
 
@@ -39,6 +38,7 @@ from canvodpy.cli.options import (
     CONFIG_FILE_OPTION,
     LOCAL_CONFIG_DIR_OPTION,
 )
+from canvodpy.cli.theme import console
 
 # Config subcommand
 config_app = typer.Typer(
@@ -46,8 +46,6 @@ config_app = typer.Typer(
     help="Create, check, show, and edit canvod-settings.yaml.",
     no_args_is_help=True,
 )
-
-console = Console()
 
 
 @config_app.callback()
@@ -150,11 +148,15 @@ def _run_interactive_wizard(canvod_dest: Path) -> None:
     try:
         load_config(canvod_dest.parent)
     except ConfigValidationError as e:
-        console.print("[yellow]⚠️  A few things still need attention:[/yellow]\n")
+        console.print(
+            "[canvod.warning]⚠️  A few things still need attention:[/canvod.warning]\n"
+        )
         console.print(format_validation_error(e))
         console.print()
     else:
-        console.print("[green]✓ Configuration is valid: you're ready to go![/green]\n")
+        console.print(
+            "[canvod.ok]✓ Configuration is valid: you're ready to go![/canvod.ok]\n"
+        )
 
 
 def _store_file_comment(store: str) -> str:
@@ -232,7 +234,9 @@ def _init_from_store(config_dir: Path, store: str, no_interactive: bool) -> None
 
     canvod_dest = config_dir / "canvod-settings.yaml"
     if canvod_dest.exists():
-        console.print(f"[red]❌ {canvod_dest} already exists; not overwritten.[/red]")
+        console.print(
+            f"[canvod.error]❌ {canvod_dest} already exists; not overwritten.[/canvod.error]"
+        )
         console.print(
             "  Use a different --config-dir, or remove the file and run it again."
         )
@@ -241,7 +245,7 @@ def _init_from_store(config_dir: Path, store: str, no_interactive: bool) -> None
     try:
         settings = settings_from_store(store)
     except (ValueError, OSError) as e:
-        console.print(f"[red]❌ {e}[/red]", highlight=False)
+        console.print(f"[canvod.error]❌ {e}[/canvod.error]", highlight=False)
         raise typer.Exit(1) from e
 
     site_name = next(iter(settings["sites"]))
@@ -255,7 +259,7 @@ def _init_from_store(config_dir: Path, store: str, no_interactive: bool) -> None
 
     text = _store_file_comment(store) + yaml.safe_dump(settings, sort_keys=False)
     canvod_dest.write_text(text)
-    console.print(f"[green]✓ Wrote {canvod_dest}[/green]")
+    console.print(f"[canvod.ok]✓ Wrote {canvod_dest}[/canvod.ok]")
     console.print(
         "\n[i]The content settings are the store's and must stay as they are; "
         "the TODO values are yours to fill in.[/i]"
@@ -341,7 +345,7 @@ def init(
 
     if not template_dir.exists():
         console.print(
-            f"[red]❌ Template directory not found: {template_dir}[/red]",
+            f"[canvod.error]❌ Template directory not found: {template_dir}[/canvod.error]",
         )
         console.print("\nThis looks like a broken canvod-config install; reinstall it.")
         raise typer.Exit(1)
@@ -359,16 +363,18 @@ def init(
             shutil.copy(canvod_example, canvod_dest)
             files_created.append(canvod_dest)
     else:
-        console.print(f"[yellow]⚠️  Template not found: {canvod_example}[/yellow]")
+        console.print(
+            f"[canvod.warning]⚠️  Template not found: {canvod_example}[/canvod.warning]"
+        )
 
     # Show results
     if files_created:
-        console.print("[green]✓ Created:[/green]")
+        console.print("[canvod.ok]✓ Created:[/canvod.ok]")
         for f in files_created:
             console.print(f"  {f}")
 
     if files_skipped:
-        console.print("\n[yellow]⊘ Skipped (already exist):[/yellow]")
+        console.print("\n[canvod.warning]⊘ Skipped (already exist):[/canvod.warning]")
         for f in files_skipped:
             console.print(f"  {f}")
         console.print("\n  Use --force to overwrite")
@@ -388,8 +394,8 @@ def init(
 
     if interactive:
         console.print(
-            "\n[yellow]⊘ canvod-settings.yaml already exists; skipping interactive "
-            "setup.[/yellow] Use --force to start over.\n"
+            "\n[canvod.warning]⊘ canvod-settings.yaml already exists; skipping interactive "
+            "setup.[/canvod.warning] Use --force to start over.\n"
         )
 
     # Next steps
@@ -425,17 +431,17 @@ def _print_site_report(report) -> None:
         console.print(text, soft_wrap=True, highlight=False)
 
     for error in report.errors:
-        say(f"  [red]❌ {report.site}: {escape(error)}[/red]")
+        say(f"  [canvod.error]❌ {report.site}: {escape(error)}[/canvod.error]")
     for rx in report.receivers.values():
         label = f"{report.site}/{rx.name}"
         if rx.errors:
-            say(f"  [red]❌ {label}[/red]")
+            say(f"  [canvod.error]❌ {label}[/canvod.error]")
         elif rx.files:
             recipe = f", recipe '{rx.recipe}'" if rx.recipe else ""
             say(
-                f"  [green]✓ {label} ({rx.identity}): {rx.files} files on "
+                f"  [canvod.ok]✓ {label} ({rx.identity}): {rx.files} files on "
                 f"{len(rx.days)} days, {rx.days[0]} to {rx.days[-1]} "
-                f"({rx.reader_format}{recipe})[/green]"
+                f"({rx.reader_format}{recipe})[/canvod.ok]"
             )
             if rx.sampling_checked:
                 intervals = ", ".join(
@@ -446,11 +452,11 @@ def _print_site_report(report) -> None:
                     f"{len(rx.sampling_checked)} file(s) checked: {intervals}"
                 )
         else:
-            say(f"  [yellow]⚠️  {label}[/yellow]")
+            say(f"  [canvod.warning]⚠️  {label}[/canvod.warning]")
         for error in rx.errors:
-            say(f"      [red]{escape(error)}[/red]")
+            say(f"      [canvod.error]{escape(error)}[/canvod.error]")
         for warning in rx.warnings:
-            say(f"      [yellow]{escape(warning)}[/yellow]")
+            say(f"      [canvod.warning]{escape(warning)}[/canvod.warning]")
         if rx.compressed:
             say("      Compressed, not processed, by file type:")
             for kind, count, example in group_by_file_type(rx.compressed):
@@ -543,8 +549,8 @@ def validate(
     placeholders = _todo_placeholders(config_dir)
     if placeholders:
         console.print(
-            f"\n[yellow]⚠️  {len(placeholders)} placeholder value(s) (TODO) "
-            "in canvod-settings.yaml:[/yellow]\n"
+            f"\n[canvod.warning]⚠️  {len(placeholders)} placeholder value(s) (TODO) "
+            "in canvod-settings.yaml:[/canvod.warning]\n"
         )
         for key in placeholders:
             console.print(f"    {key}")
@@ -555,17 +561,17 @@ def validate(
     try:
         config = load_config(config_dir)
     except ConfigValidationError as e:
-        console.print("[red]❌ Validation failed:[/red]\n")
+        console.print("[canvod.error]❌ Validation failed:[/canvod.error]\n")
         console.print(format_validation_error(e))
         console.print()
         raise typer.Exit(1) from e
     except Exception as e:
-        console.print("[red]❌ Validation failed:[/red]\n")
+        console.print("[canvod.error]❌ Validation failed:[/canvod.error]\n")
         console.print(str(e))
         console.print()
         raise typer.Exit(1) from e
 
-    console.print("[green]✓ Configuration is valid![/green]\n")
+    console.print("[canvod.ok]✓ Configuration is valid![/canvod.ok]\n")
 
     console.print(f"  Sites: {len(config.sites.sites)}")
     for name in config.sites.sites.keys():
@@ -580,7 +586,7 @@ def validate(
         try:
             spec = check_product(aux.agency, aux.product_type, aux.fetch_clock)
         except (KeyError, ValueError) as e:
-            console.print(f"\n[red]❌ Orbit product:[/red]\n{e}\n")
+            console.print(f"\n[canvod.error]❌ Orbit product:[/canvod.error]\n{e}\n")
             raise typer.Exit(1) from e
         console.print(f"  Orbit product: {spec.prefix} ({spec.description})")
 
@@ -590,15 +596,17 @@ def validate(
     email = config.processing.credentials.nasa_earthdata_acc_mail
     if email:
         console.print(f"  NASA Earthdata email: {email}")
-        console.print("  [green]✓ NASA CDDIS enabled[/green]")
+        console.print("  [canvod.ok]✓ NASA CDDIS enabled[/canvod.ok]")
     else:
-        console.print("  [yellow]⊘ NASA CDDIS disabled (ESA only)[/yellow]")
+        console.print(
+            "  [canvod.warning]⊘ NASA CDDIS disabled (ESA only)[/canvod.warning]"
+        )
 
     unknown = [s for s in site or [] if s not in config.sites.sites]
     if unknown:
         console.print(
-            f"\n[red]❌ Unknown site(s): {', '.join(unknown)}. Configured: "
-            f"{', '.join(config.sites.sites) or '(none)'}[/red]\n"
+            f"\n[canvod.error]❌ Unknown site(s): {', '.join(unknown)}. Configured: "
+            f"{', '.join(config.sites.sites) or '(none)'}[/canvod.error]\n"
         )
         raise typer.Exit(1)
 
@@ -613,8 +621,8 @@ def validate(
     failed = [r.site for r in reports if not r.ok]
     if failed:
         console.print(
-            f"\n[red]❌ Receiver data of {', '.join(failed)} would not be "
-            f"processed correctly. Fix the errors above.[/red]\n"
+            f"\n[canvod.error]❌ Receiver data of {', '.join(failed)} would not be "
+            f"processed correctly. Fix the errors above.[/canvod.error]\n"
         )
         raise typer.Exit(1)
     console.print()
@@ -652,11 +660,11 @@ def show(
         config = load_config(config_dir)
     except ConfigValidationError as e:
         console.print(
-            f"\n[red]❌ Error loading config:[/red]\n\n{format_validation_error(e)}\n"
+            f"\n[canvod.error]❌ Error loading config:[/canvod.error]\n\n{format_validation_error(e)}\n"
         )
         raise typer.Exit(1) from e
     except Exception as e:
-        console.print(f"\n[red]❌ Error loading config:[/red] {e}\n")
+        console.print(f"\n[canvod.error]❌ Error loading config:[/canvod.error] {e}\n")
         raise typer.Exit(1) from e
 
     console.print("\n[bold]Current Configuration[/bold]\n")
@@ -694,7 +702,7 @@ def edit(
     file_path = config_dir / "canvod-settings.yaml"
 
     if not file_path.exists():
-        console.print(f"[red]File not found:[/red] {file_path}")
+        console.print(f"[canvod.error]❌ File not found:[/canvod.error] {file_path}")
         console.print("\nRun: canvodpy config init")
         raise typer.Exit(1)
 
@@ -720,7 +728,7 @@ def _show_processing(config: ProcessingConfig) -> None:
     email = config.credentials.nasa_earthdata_acc_mail
     table.add_row(
         "NASA Earthdata Email",
-        email or "[yellow]Not set (ESA only)[/yellow]",
+        email or "[canvod.warning]Not set (ESA only)[/canvod.warning]",
     )
     if email:
         table.add_row("FTP Priority", "NASA CDDIS -> ESA (fallback)")
@@ -782,7 +790,9 @@ def _show_processing(config: ProcessingConfig) -> None:
     lg = config.logging
     console.print("[bold]Logging:[/bold]")
     log_dir = (
-        str(lg.log_dir) if lg.log_dir else "[red]not set (required for a run)[/red]"
+        str(lg.log_dir)
+        if lg.log_dir
+        else "[canvod.error]❌ not set (required for a run)[/canvod.error]"
     )
     console.print(f"  Log directory:     {log_dir}")
     console.print(
@@ -817,7 +827,7 @@ def _show_sites(config: SitesConfig) -> None:
     for site_name, site in config.sites.items():
         base_path = site.get_base_path()
 
-        console.print(f"\n  [bold cyan]{site_name}[/bold cyan]")
+        console.print(f"\n  [canvod.heading]{site_name}[/canvod.heading]")
         console.print(f"    Data root: {site.gnss_site_data_root}")
 
         # Store paths
@@ -838,7 +848,7 @@ def _show_sites(config: SitesConfig) -> None:
             abs_dir = str(base_path / recv.directory)
             type_color = "magenta" if recv.type == "reference" else "blue"
             console.print(
-                f"      [green]{recv_name}[/green] "
+                f"      [canvod.name]{recv_name}[/canvod.name] "
                 f"[{type_color}]({recv.type})[/{type_color}]"
             )
             console.print(f"        dir: {abs_dir}")
@@ -859,7 +869,7 @@ def _show_sites(config: SitesConfig) -> None:
             pair_table = Table(
                 show_header=True, padding=(0, 1), box=None, pad_edge=False
             )
-            pair_table.add_column("Store Group", style="green")
+            pair_table.add_column("Store Group", style="canvod.name")
             pair_table.add_column("Reference")
             pair_table.add_column("Position From")
 
@@ -877,7 +887,7 @@ def _show_sites(config: SitesConfig) -> None:
             vod_table = Table(
                 show_header=True, padding=(0, 1), box=None, pad_edge=False
             )
-            vod_table.add_column("Name", style="green")
+            vod_table.add_column("Name", style="canvod.name")
             vod_table.add_column("Canopy")
             vod_table.add_column("Reference")
 
@@ -947,6 +957,6 @@ def explain(
     try:
         text = settings_help.explain(setting)
     except settings_help.UnknownSettingError as exc:
-        console.print(f"[red]{exc.args[0]}[/red]", highlight=False)
+        console.print(f"[canvod.error]❌ {exc.args[0]}[/canvod.error]", highlight=False)
         raise typer.Exit(1) from exc
     console.print(text, markup=False, highlight=False, soft_wrap=True)

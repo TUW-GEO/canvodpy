@@ -38,6 +38,11 @@ from canvodpy.logging.run_history_handler import RunHistoryHandler
 # Log folder that file logging currently writes to; None while console only.
 _active_log_dir: Path | None = None
 
+#: Colours of the log in the terminal, set by the CLI for the terminal's
+#: background (:func:`set_console_colors`); ``None``: structlog's own.
+_console_colors: tuple[structlog.dev.ColumnStyles, dict[str, str]] | None = None
+_CONSOLE_HANDLER = "canvodpy-console"
+
 # Log files of worker processes: the process ID before the extension, e.g.
 # ``agent.12345.json``, ``main.12345.log.2026-10-09``.
 _WORKER_LOG_FILE = re.compile(r"^[a-z]+\.\d+\.(json|log)")
@@ -352,20 +357,80 @@ def _reset_root_logger() -> logging.Logger:
     return root_logger
 
 
+def _stdout_is_terminal() -> bool:
+    """Whether stdout is a terminal (not a file or a pipe)."""
+    return sys.stdout.isatty()
+
+
+def _console_renderer() -> structlog.dev.ConsoleRenderer:
+    """Return structlog's console renderer, in the colours set for the CLI.
+
+    Colours only in a terminal and without ``NO_COLOR`` (as Rich): written
+    to a file or a pipe, the lines carry no escape codes.
+    """
+    if not _stdout_is_terminal() or os.environ.get("NO_COLOR"):
+        return structlog.dev.ConsoleRenderer(colors=False)
+    if _console_colors is None:
+        return structlog.dev.ConsoleRenderer()
+    column_styles, level_styles = _console_colors
+
+    class Renderer(structlog.dev.ConsoleRenderer):
+        @classmethod
+        def get_default_column_styles(
+            cls, colors: bool, force_colors: bool = False
+        ) -> structlog.dev.ColumnStyles:
+            if not colors:
+                return super().get_default_column_styles(colors, force_colors)
+            return column_styles
+
+    renderer = Renderer(level_styles=level_styles)
+    if not renderer.colors:  # e.g. Windows without colorama
+        return structlog.dev.ConsoleRenderer(colors=False)
+    return renderer
+
+
+def _console_formatter(
+    shared_processors: list[Callable[..., Any]],
+) -> logging.Formatter:
+    """Return the formatter of the stdout handler."""
+    return structlog.stdlib.ProcessorFormatter(
+        foreign_pre_chain=shared_processors,
+        processors=[
+            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+            _console_renderer(),
+        ],
+    )
+
+
 def _console_handler(shared_processors: list[Callable[..., Any]]) -> logging.Handler:
     """Return the stdout handler: warnings and errors only."""
     console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.set_name(_CONSOLE_HANDLER)
     console_handler.setLevel(logging.WARNING)
-    console_handler.setFormatter(
-        structlog.stdlib.ProcessorFormatter(
-            foreign_pre_chain=shared_processors,
-            processors=[
-                structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-                structlog.dev.ConsoleRenderer(),
-            ],
-        )
-    )
+    console_handler.setFormatter(_console_formatter(shared_processors))
     return console_handler
+
+
+def set_console_colors(
+    column_styles: structlog.dev.ColumnStyles, level_styles: dict[str, str]
+) -> None:
+    """Set the colours of the log in the terminal, now and for later handlers.
+
+    The CLI calls this with its palette (``canvodpy.cli.theme``), so that
+    warnings and errors look like the rest of its output.
+
+    Parameters
+    ----------
+    column_styles : structlog.dev.ColumnStyles
+        Escape codes of the timestamp, the keys, the values, ...
+    level_styles : dict[str, str]
+        Escape code of each log level.
+    """
+    global _console_colors
+    _console_colors = (column_styles, level_styles)
+    for handler in logging.getLogger().handlers:
+        if handler.get_name() == _CONSOLE_HANDLER:
+            handler.setFormatter(_console_formatter(_shared_processors()))
 
 
 def _configure_structlog(shared_processors: list[Callable[..., Any]]) -> None:

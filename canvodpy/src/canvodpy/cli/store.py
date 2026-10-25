@@ -14,12 +14,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 
 import typer
-from rich.console import Console
 from rich.table import Table
 from rich.tree import Tree
 
 from canvod.store_metadata.location import S3StoreLocation
 from canvodpy.cli.options import CONFIG_DIR_OPTION
+from canvodpy.cli.theme import console
 
 if TYPE_CHECKING:
     from canvod.store_metadata import StoreMetadata
@@ -30,7 +30,6 @@ store_app = typer.Typer(
     no_args_is_help=True,
 )
 
-console = Console()
 
 _STORE_KINDS = ("gnss", "vod")
 
@@ -47,14 +46,14 @@ def _store_path(site_name: str, store_kind: str) -> tuple[Path | str, str]:
 
     if store_kind not in _STORE_KINDS:
         console.print(
-            f"[red]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/red]"
+            f"[canvod.error]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/canvod.error]"
         )
         raise typer.Exit(1)
 
     config = load_config()
     sites = config.sites.sites
     if site_name not in sites:
-        console.print(f"[red]❌ Unknown site:[/red] {site_name}")
+        console.print(f"[canvod.error]❌ Unknown site:[/canvod.error] {site_name}")
         known = ", ".join(sites) or "(none configured)"
         console.print(f"  Known sites: {known}")
         raise typer.Exit(1)
@@ -69,7 +68,7 @@ def _store_path(site_name: str, store_kind: str) -> tuple[Path | str, str]:
 
     if not store_exists(path):
         console.print(
-            f"[yellow]⊘ No {store_kind} store yet for '{site_name}'[/yellow] ({path})"
+            f"[canvod.warning]⊘ No {store_kind} store yet for '{site_name}'[/canvod.warning] ({path})"
         )
         raise typer.Exit(1)
 
@@ -97,7 +96,7 @@ def list_stores(
     sites = config.sites.sites
 
     if not sites:
-        console.print("[yellow]No sites configured.[/yellow]")
+        console.print("[canvod.warning]No sites configured.[/canvod.warning]")
         return
 
     table = Table(show_header=True)
@@ -114,7 +113,7 @@ def list_stores(
         for kind, get_path in path_getters.items():
             path = get_path(site_name)
             status = (
-                "[green]✓ exists[/green]"
+                "[canvod.ok]✓ exists[/canvod.ok]"
                 if store_exists(path)
                 else "[dim]not yet created[/dim]"
             )
@@ -147,7 +146,7 @@ def info(
     """Show branches, groups, and stats for one site's store."""
     if store not in _STORE_KINDS:
         console.print(
-            f"[red]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/red]"
+            f"[canvod.error]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/canvod.error]"
         )
         raise typer.Exit(1)
 
@@ -197,7 +196,7 @@ def _print_group_content(icestore, group_name: str, branch: str) -> None:
         ds = icestore.read_group(group_name, branch=branch)
         tree.add(f"[bold]Dataset[/bold]\n{ds}")
     except Exception as e:
-        tree.add(f"[red]Failed to load dataset: {e}[/red]")
+        tree.add(f"[canvod.error]❌ Failed to load dataset: {e}[/canvod.error]")
 
     try:
         with icestore.readonly_session(branch) as session:
@@ -244,7 +243,7 @@ def log(
     """Show the commit history as a graph, or the store operations with --ops."""
     if store not in _STORE_KINDS:
         console.print(
-            f"[red]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/red]"
+            f"[canvod.error]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/canvod.error]"
         )
         raise typer.Exit(1)
 
@@ -306,7 +305,7 @@ def maintain(
     """
     if store not in _STORE_KINDS:
         console.print(
-            f"[red]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/red]"
+            f"[canvod.error]❌ --store must be one of: {', '.join(_STORE_KINDS)}[/canvod.error]"
         )
         raise typer.Exit(1)
 
@@ -318,7 +317,7 @@ def maintain(
 
     if not execute or on_s3:
         console.print(
-            f"\n[bold]{site}[/bold]: {store} store, [yellow]DRY RUN[/yellow] "
+            f"\n[bold]{site}[/bold]: {store} store, [canvod.warning]DRY RUN[/canvod.warning] "
             f"(cutoff: {cutoff.isoformat()})\n"
         )
 
@@ -352,7 +351,7 @@ def maintain(
         if on_s3:
             console.print(
                 "\n[dim]Nothing was deleted or expired.[/dim]\n"
-                "[yellow]--execute is not supported on S3 yet.[/yellow]"
+                "[canvod.warning]--execute is not supported on S3 yet.[/canvod.warning]"
             )
         else:
             console.print(
@@ -364,20 +363,20 @@ def maintain(
         return
 
     console.print(
-        f"\n[bold red]About to run maintenance on {site} ({store} store)[/bold red]"
+        f"\n[canvod.danger]About to run maintenance on {site} ({store} store)[/canvod.danger]"
     )
     console.print(f"  Cutoff: {cutoff.isoformat()} ({expire_days} days)")
     console.print(f"  Garbage collection: {'yes' if gc else 'no'}")
     console.print(
-        "\n[yellow]This is an administrative operation. Do not run it while "
-        "a pipeline run is active against this store.[/yellow]"
+        "\n[canvod.warning]This is an administrative operation. Do not run it while "
+        "a pipeline run is active against this store.[/canvod.warning]"
     )
     if not typer.confirm("Proceed?"):
         console.print("Aborted.")
         raise typer.Exit(0)
 
     results = icestore.maintenance(expire_days=expire_days, run_gc=gc)
-    console.print("\n[bold green]Maintenance complete:[/bold green]")
+    console.print("\n[canvod.done]Maintenance complete:[/canvod.done]")
     console.print(f"  Expired snapshots: {results['expired_snapshots']}")
     console.print(f"  Deleted branches:  {results['deleted_branches']}")
     if results["gc_summary"] is not None:
@@ -437,12 +436,14 @@ def maintain_due(
         store_kinds = (store,)
     else:
         console.print(
-            f"[red]❌ --store must be one of: both, {', '.join(_STORE_KINDS)}[/red]"
+            f"[canvod.error]❌ --store must be one of: both, {', '.join(_STORE_KINDS)}[/canvod.error]"
         )
         raise typer.Exit(1)
 
     if bool(site) == all_sites:
-        console.print("[red]❌ Pass exactly one of: a site name, or --all-sites[/red]")
+        console.print(
+            "[canvod.error]❌ Pass exactly one of: a site name, or --all-sites[/canvod.error]"
+        )
         raise typer.Exit(1)
 
     from canvod.config import load_config
@@ -461,8 +462,8 @@ def maintain_due(
 
     if is_pipeline_running():
         console.print(
-            "[yellow]⊘ A canvodpy run is active on this host -- skipping "
-            "(never run maintenance alongside active writes).[/yellow]"
+            "[canvod.warning]⊘ A canvodpy run is active on this host -- skipping "
+            "(never run maintenance alongside active writes).[/canvod.warning]"
         )
         return
 
@@ -474,7 +475,7 @@ def maintain_due(
         # narrows the type for ty rather than leaving it `str | None`.
         assert site is not None
         if site not in config.sites.sites:
-            console.print(f"[red]❌ Unknown site:[/red] {site}")
+            console.print(f"[canvod.error]❌ Unknown site:[/canvod.error] {site}")
             raise typer.Exit(1)
         site_names = [site]
 
@@ -533,7 +534,7 @@ def maintain_due(
                     if on_s3
                     else "DRY RUN (maintenance.dry_run_until_confirmed=true)"
                 )
-                console.print(f"[yellow]{header}[/yellow]")
+                console.print(f"[canvod.warning]{header}[/canvod.warning]")
                 if due["gc_due"]:
                     gc_result = icestore.garbage_collect(
                         days=mcfg.retention_days, dry_run=True
@@ -668,7 +669,7 @@ def _migrate_metadata(
         old = read_metadata(path)
     except KeyError:
         console.print(
-            f"[red]❌ The {store} store of '{site}' has no store metadata.[/red]"
+            f"[canvod.error]❌ The {store} store of '{site}' has no store metadata.[/canvod.error]"
         )
         raise typer.Exit(1) from None
     store_type = old.identity.store_type
@@ -688,7 +689,7 @@ def _migrate_metadata(
     try:
         unlabelled = epochs_to_label(path, gnss_store=gnss_store)
     except ValueError as exc:
-        console.print(f"[red]❌ {exc}[/red]")
+        console.print(f"[canvod.error]❌ {exc}[/canvod.error]")
         raise typer.Exit(1) from None
 
     asked = False
@@ -706,8 +707,8 @@ def _migrate_metadata(
         asked = True
     elif values:
         console.print(
-            f"[red]❌ The {store} store of '{site}' is already migrated; change "
-            f"{', '.join(values)} with canvodpy store amend.[/red]"
+            f"[canvod.error]❌ The {store} store of '{site}' is already migrated; change "
+            f"{', '.join(values)} with canvodpy store amend.[/canvod.error]"
         )
         raise typer.Exit(1)
     if unlabelled:
@@ -731,7 +732,7 @@ def _migrate_metadata(
         and not asked
     ):
         console.print(
-            f"[green]✓ The {store} store of '{site}' is already migrated.[/green]"
+            f"[canvod.ok]✓ The {store} store of '{site}' is already migrated.[/canvod.ok]"
         )
 
 
@@ -759,10 +760,10 @@ def _label_epoch_time_system(
     try:
         _, snapshot_id = label_epoch_time_system(path, gnss_store=gnss_store)
     except ValueError as exc:
-        console.print(f"[red]❌ {exc}[/red]")
+        console.print(f"[canvod.error]❌ {exc}[/canvod.error]")
         raise typer.Exit(1) from None
     console.print(
-        f"[green]✓ Epochs recorded as GPS time[/green] "
+        f"[canvod.ok]✓ Epochs recorded as GPS time[/canvod.ok] "
         f"(snapshot {(snapshot_id or '')[:12]})"
     )
 
@@ -856,9 +857,9 @@ def _migrate_repository_metadata(
             set_option=set_option,
         )
     except ValueError as exc:
-        console.print(f"[red]❌ {exc}[/red]")
+        console.print(f"[canvod.error]❌ {exc}[/canvod.error]")
         raise typer.Exit(1) from None
-    console.print(f"[green]✓ Migrated[/green] (snapshot {snapshot_id[:12]})")
+    console.print(f"[canvod.ok]✓ Migrated[/canvod.ok] (snapshot {snapshot_id[:12]})")
 
 
 def _fields_from_settings(site: str, old: StoreMetadata) -> dict[str, object]:
@@ -976,14 +977,16 @@ def _migrate_content_settings(
 
     if store_type not in CONTENT_STORE_TYPES:
         if values:
-            console.print(f"[red]❌ A {store} store keeps no content settings.[/red]")
+            console.print(
+                f"[canvod.error]❌ A {store} store keeps no content settings.[/canvod.error]"
+            )
             raise typer.Exit(1)
         return False
     if read_repository_metadata(path).get(CONTENT_SETTINGS_FIELD):
         if values:
             console.print(
-                f"[red]❌ The {store} store of '{site}' already has content "
-                "settings; they never change. Write to a new store instead.[/red]"
+                f"[canvod.error]❌ The {store} store of '{site}' already has content "
+                "settings; they never change. Write to a new store instead.[/canvod.error]"
             )
             raise typer.Exit(1)
         return False
@@ -1009,10 +1012,10 @@ def _migrate_content_settings(
             set_option=set_option,
         )
     except ValueError as exc:
-        console.print(f"[red]❌ {exc}[/red]")
+        console.print(f"[canvod.error]❌ {exc}[/canvod.error]")
         raise typer.Exit(1) from None
     console.print(
-        f"[green]✓ Content settings written[/green] (snapshot {snapshot_id[:12]})"
+        f"[canvod.ok]✓ Content settings written[/canvod.ok] (snapshot {snapshot_id[:12]})"
     )
     return True
 
@@ -1025,8 +1028,8 @@ def _who() -> str:
     who = load_config().processing.metadata.initials
     if not who or not who.strip():
         console.print(
-            "[red]❌ A change of store metadata records who made it: set "
-            f"{INITIALS_SETTING} in the settings (e.g. 'NFB').[/red]"
+            "[canvod.error]❌ A change of store metadata records who made it: set "
+            f"{INITIALS_SETTING} in the settings (e.g. 'NFB').[/canvod.error]"
         )
         raise typer.Exit(1)
     return who.strip()
@@ -1053,12 +1056,14 @@ def _amend_changes(
     for item in set_values:
         field, sep, value = item.partition("=")
         if not sep:
-            console.print(f"[red]❌ --set takes field.path=value, not {item!r}[/red]")
+            console.print(
+                f"[canvod.error]❌ --set takes field.path=value, not {item!r}[/canvod.error]"
+            )
             raise typer.Exit(1)
         if not value.strip():
             console.print(
-                f"[red]❌ --set {field.strip()}= has no value; give one after "
-                "the =.[/red]"
+                f"[canvod.error]❌ --set {field.strip()}= has no value; give one after "
+                "the =.[/canvod.error]"
             )
             raise typer.Exit(1)
         changes[field.strip()] = yaml.safe_load(value)
@@ -1067,8 +1072,8 @@ def _amend_changes(
     for name in add_receivers:
         if name not in site_cfg.receivers:
             console.print(
-                f"[red]❌ {name!r} is not a receiver of '{site}' in the settings "
-                f"(sites.{site}.receivers).[/red]"
+                f"[canvod.error]❌ {name!r} is not a receiver of '{site}' in the settings "
+                f"(sites.{site}.receivers).[/canvod.error]"
             )
             raise typer.Exit(1)
         receiver = collect_receiver(site_cfg.receivers[name], site)
@@ -1085,8 +1090,8 @@ def _amend_changes(
     for name in update_recipes:
         if name not in site_cfg.receivers:
             console.print(
-                f"[red]❌ {name!r} is not a receiver of '{site}' in the settings "
-                f"(sites.{site}.receivers).[/red]"
+                f"[canvod.error]❌ {name!r} is not a receiver of '{site}' in the settings "
+                f"(sites.{site}.receivers).[/canvod.error]"
             )
             raise typer.Exit(1)
         recipe = site_cfg.receivers[name].recipe
@@ -1101,8 +1106,8 @@ def _amend_changes(
     for name in add_vod_analyses:
         if name not in analyses:
             console.print(
-                f"[red]❌ {name!r} is not a VOD analysis of '{site}' in the settings "
-                f"(sites.{site}.vod_analyses).[/red]"
+                f"[canvod.error]❌ {name!r} is not a VOD analysis of '{site}' in the settings "
+                f"(sites.{site}.vod_analyses).[/canvod.error]"
             )
             raise typer.Exit(1)
         changes[f"vod_analyses.{name}"] = {
@@ -1116,10 +1121,10 @@ def _refuse_missing_recipe(site: str, receiver: str, recipe: str) -> None:
     from canvodpy.orchestrator.discovery import FILEMAP_INSTALL_HINT
 
     console.print(
-        f"[red]❌ Found no naming recipe {recipe!r} of receiver {receiver!r}, "
+        f"[canvod.error]❌ Found no naming recipe {recipe!r} of receiver {receiver!r}, "
         f"so its sha256 can't be recorded. If canvod-filemap is missing: "
         f"{FILEMAP_INSTALL_HINT} Then check that `canvodpy config validate "
-        f"--site {site}` finds the recipe.[/red]"
+        f"--site {site}` finds the recipe.[/canvod.error]"
     )
     raise typer.Exit(1)
 
@@ -1165,12 +1170,12 @@ def migrate_layout_command(
     try:
         plans = plan_layout_migration(path)
     except (ValueError, LayoutError, CadenceError) as exc:
-        console.print(f"[red]❌ {exc}[/red]")
+        console.print(f"[canvod.error]❌ {exc}[/canvod.error]")
         raise typer.Exit(1) from None
     if all(plan.action == NOTHING for plan in plans):
         console.print(
-            f"[green]✓ The {store} store of '{site}' is made of day blocks "
-            "already.[/green]"
+            f"[canvod.ok]✓ The {store} store of '{site}' is made of day blocks "
+            "already.[/canvod.ok]"
         )
         return
 
@@ -1210,17 +1215,17 @@ def migrate_layout_command(
             path, epoch_chunk=epoch_chunk, dim_chunks=chunks, config=config
         )
     except (ValueError, LayoutError, CadenceError) as exc:
-        console.print(f"[red]❌ {exc}[/red]")
+        console.print(f"[canvod.error]❌ {exc}[/canvod.error]")
         raise typer.Exit(1) from None
     for plan in result.groups:
         if plan.unlogged:
             console.print(
-                f"[yellow]⚠ {plan.group}: {plan.unlogged} epochs are covered "
+                f"[canvod.warning]⚠ {plan.group}: {plan.unlogged} epochs are covered "
                 "by no log-book row; the snapshot summary does not count "
-                "them.[/yellow]"
+                "them.[/canvod.warning]"
             )
     snapshot = (result.snapshot_id or "")[:12]
-    console.print(f"[green]✓ Moved to day blocks[/green] (snapshot {snapshot})")
+    console.print(f"[canvod.ok]✓ Moved to day blocks[/canvod.ok] (snapshot {snapshot})")
 
 
 @store_app.command()
@@ -1316,13 +1321,13 @@ def amend(
         reason = reason or spec.get("reason")
     if not reason:
         console.print(
-            "[red]❌ An amendment needs --reason (or reason: in the --from file).[/red]"
+            "[canvod.error]❌ An amendment needs --reason (or reason: in the --from file).[/canvod.error]"
         )
         raise typer.Exit(1)
     if recipes and store_type != "gnss_store":
         console.print(
-            "[red]❌ --update-recipe records the recipe in the GNSS store, the "
-            "store whose runs read the files: use --store gnss.[/red]"
+            "[canvod.error]❌ --update-recipe records the recipe in the GNSS store, the "
+            "store whose runs read the files: use --store gnss.[/canvod.error]"
         )
         raise typer.Exit(1)
     current = read_repository_metadata(path)
@@ -1330,8 +1335,8 @@ def amend(
     for name in recipes:
         if name not in listed and name not in receivers:
             console.print(
-                f"[red]❌ {name!r} is not in the store; add it with "
-                f"--add-receiver {name}.[/red]"
+                f"[canvod.error]❌ {name!r} is not in the store; add it with "
+                f"--add-receiver {name}.[/canvod.error]"
             )
             raise typer.Exit(1)
     who = _who()
@@ -1341,7 +1346,7 @@ def amend(
     )
     if not changes:
         console.print(
-            "[red]❌ Nothing to change: use --set, --add-receiver, --add-vod-analysis, --update-recipe or --from.[/red]"
+            "[canvod.error]❌ Nothing to change: use --set, --add-receiver, --add-vod-analysis, --update-recipe or --from.[/canvod.error]"
         )
         raise typer.Exit(1)
 
@@ -1349,7 +1354,7 @@ def amend(
         for field in changes:
             check_amendable(field)
     except ValueError as exc:
-        console.print(f"[red]❌ {exc}[/red]")
+        console.print(f"[canvod.error]❌ {exc}[/canvod.error]")
         raise typer.Exit(1) from None
 
     table = Table(title=f"{site}: {store} store", show_lines=False)
@@ -1382,9 +1387,9 @@ def amend(
             },
         )
     except ValueError as exc:
-        console.print(f"[red]❌ {exc}[/red]")
+        console.print(f"[canvod.error]❌ {exc}[/canvod.error]")
         raise typer.Exit(1) from None
-    console.print(f"[green]✓ Amended[/green] (snapshot {snapshot_id[:12]})")
+    console.print(f"[canvod.ok]✓ Amended[/canvod.ok] (snapshot {snapshot_id[:12]})")
 
 
 @store_app.command("migrate")
@@ -1458,13 +1463,13 @@ def migrate_command(
 
     config = load_config()
     if site not in config.sites.sites:
-        console.print(f"[red]❌ Unknown site:[/red] {site}")
+        console.print(f"[canvod.error]❌ Unknown site:[/canvod.error] {site}")
         raise typer.Exit(1)
     storage = config.processing.storage
     if isinstance(storage.stores_root_dir, str):
         console.print(
-            "[red]❌ The stores are on S3, which canVODpy writes stores to "
-            "since v1.0.0 only: they need no migration.[/red]"
+            "[canvod.error]❌ The stores are on S3, which canVODpy writes stores to "
+            "since v1.0.0 only: they need no migration.[/canvod.error]"
         )
         raise typer.Exit(1)
     site_dir = Path(storage.stores_root_dir) / site
@@ -1477,7 +1482,9 @@ def migrate_command(
     now = {kind: moved_to.get(path, path) for kind, path in stores.items()}
     problems += _refused_ids(stores, now)
     if problems:
-        console.print(f"[red]❌ The stores of '{site}' cannot be migrated:[/red]")
+        console.print(
+            f"[canvod.error]❌ The stores of '{site}' cannot be migrated:[/canvod.error]"
+        )
         for problem in problems:
             console.print(f"  - {problem}")
         raise typer.Exit(1)
@@ -1499,7 +1506,7 @@ def migrate_command(
     }
     others = _stores_left_out(site_dir, renames, now)
     if not renames and not any(steps.values()):
-        console.print(f"[green]✓ The stores of '{site}' are migrated.[/green]")
+        console.print(f"[canvod.ok]✓ The stores of '{site}' are migrated.[/canvod.ok]")
         _print_left_out(others)
         return
     console.print(f"\n[bold]{site}[/bold]: stores in {site_dir}")
@@ -1521,7 +1528,7 @@ def migrate_command(
 
     for old, new in renames:
         _move_store_folder(old, new)
-        console.print(f"[green]✓ Moved {old.name}/ to {new.name}/[/green]")
+        console.print(f"[canvod.ok]✓ Moved {old.name}/ to {new.name}/[/canvod.ok]")
     for kind in ("gnss", "vod"):
         if [step for step in steps[kind] if step != FOLLOW_STEP]:
             _migrate_store(site, kind, naming_authority, set_values[kind], config)
@@ -1535,7 +1542,9 @@ def _parse_renames(pairs: list[str]) -> dict[str, str]:
     for pair in pairs:
         old, sep, new = pair.partition("=")
         if not sep or not old.strip() or not new.strip():
-            console.print(f"[red]❌ --rename {pair!r}: write OLD=NEW.[/red]")
+            console.print(
+                f"[canvod.error]❌ --rename {pair!r}: write OLD=NEW.[/canvod.error]"
+            )
             raise typer.Exit(1)
         renames[old.strip()] = new.strip()
     return renames
@@ -1655,10 +1664,10 @@ def _print_left_out(folders: list[Path]) -> None:
     for folder in folders:
         kind = kind_of_store_name(folder.name) or "gnss"
         console.print(
-            f"  [yellow]{folder.name}/ is not one of the stores your settings "
+            f"  [canvod.warning]{folder.name}/ is not one of the stores your settings "
             f"name, so it is only moved, not migrated. To migrate it, set "
             f"processing.storage.{kind}_store_name: {folder.name} and run the "
-            "command again.[/yellow]"
+            "command again.[/canvod.warning]"
         )
 
 
@@ -1786,7 +1795,7 @@ def _migrate_store(
         path, _ = _store_path(site, kind)
         if drop_clock(path, who=_who(), config=config):
             console.print(
-                "[green]✓ Removed the clock variable; fetch_clock: false[/green]"
+                "[canvod.ok]✓ Removed the clock variable; fetch_clock: false[/canvod.ok]"
             )
     migrate_layout_command(site, store=kind, yes=True)
 
@@ -1802,10 +1811,10 @@ def _follow_gnss_hash(site: str, stores: dict[str, Path], config: object) -> Non
             stores["vod"], stores["gnss"], who=_who(), config=config
         )
     except ValueError as exc:
-        console.print(f"[red]❌ {exc}[/red]")
+        console.print(f"[canvod.error]❌ {exc}[/canvod.error]")
         raise typer.Exit(1) from None
     if followed:
         console.print(
-            "[green]✓ The VOD store records the GNSS store's new "
-            "content-settings hash[/green]"
+            "[canvod.ok]✓ The VOD store records the GNSS store's new "
+            "content-settings hash[/canvod.ok]"
         )
