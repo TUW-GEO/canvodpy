@@ -2,7 +2,6 @@
 
 import io
 import os
-import termios
 import time
 
 import pytest
@@ -243,6 +242,8 @@ def pty_stdin(monkeypatch):
     Returns the terminal's end to answer from, and a function that makes
     stdout a terminal (call it in the test body, as for ``terminal``).
     """
+    import termios  # POSIX only: imported here so Windows can collect the module
+
     terminal_end, process_end = os.openpty()
     # No echo, as a terminal's answers aren't echoed: an echo nobody reads
     # would keep the restore (TCSADRAIN) waiting.
@@ -295,6 +296,8 @@ class TestQueryBackground:
         assert banner._query_background(timeout_s=0.05) == b""
 
     def test_restores_the_settings(self, pty_stdin):
+        import termios
+
         terminal, stdout = pty_stdin
         stdout()
 
@@ -317,6 +320,8 @@ class TestQueryBackground:
         assert out.getvalue() == ""
 
     def test_a_terminal_without_settings_gives_no_answer(self, pty_stdin, monkeypatch):
+        import termios
+
         terminal, stdout = pty_stdin
         stdout()
 

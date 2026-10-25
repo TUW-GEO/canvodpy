@@ -157,10 +157,13 @@ class TestHelpAll:
         assert CLI_REFERENCE in result.output
 
     def test_is_in_the_main_help_just_before_help(self):
+        import click
+
         result = runner.invoke(main_app, ["--help"], env={"COLUMNS": "200"})
+        # CI forces colour: without the escape codes, each line starts with the box.
         options = [
             line.split()[1]
-            for line in result.output.splitlines()
+            for line in click.unstyle(result.output).splitlines()
             if line.startswith("│ --")
         ]
         assert options[-2:] == ["--help-all", "--help"]

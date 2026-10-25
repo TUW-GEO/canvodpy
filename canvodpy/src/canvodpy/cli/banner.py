@@ -166,7 +166,7 @@ def _query_background(timeout_s: float = 1.0) -> bytes:
         try:
             termios.tcsetattr(fd, termios.TCSADRAIN, saved)
         except termios.error, OSError:
-            pass
+            pass  # the terminal is gone; nothing to restore
     return answer
 
 
