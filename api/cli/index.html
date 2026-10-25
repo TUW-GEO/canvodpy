@@ -4733,7 +4733,7 @@ text in the terminal. For a walk through a first run, see
 <li><code>--version</code>: Show canvodpy's version and exit.</li>
 <li><code>--install-completion</code>: Install completion for the current shell.</li>
 <li><code>--show-completion</code>: Show completion for the current shell, to copy it or customize the installation.</li>
-<li><code>--help-all</code>: Show every command with its options, and exit. One command with descriptions: canvodpy COMMAND --help; all of them: https://canvodpy.eu/api/cli/</li>
+<li><code>--help-all</code>: Show every command with its options, and exit. One command with descriptions: canvodpy COMMAND --help; all of them: <a href="https://canvodpy.eu/api/cli/">https://canvodpy.eu/api/cli/</a></li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <p><strong>Commands</strong>:</p>
@@ -4765,7 +4765,7 @@ the run stopped.</p>
 <li><code>--label &lt;str&gt;</code>: Free-text label of the run, stored in the run history, for example to group the repetitions of a benchmark.</li>
 <li><code>--dry-run / --no-dry-run</code>: Preview processing plan without executing.  [default: no-dry-run]</li>
 <li><code>--workers &lt;int&gt;</code>: Number of worker processes. Default: from the resource settings in canvod-settings.yaml.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--config &lt;str&gt;</code>: Settings file whose values replace those of canvod-settings.yaml.</li>
 <li><code>--ephemeris-source &lt;final|broadcast&gt;</code>: Where the satellite orbits and clocks come from: final uses the <abbr title="Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)">SP3</abbr> and <abbr title="Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits">CLK</abbr> products of an analysis center, broadcast uses the SatVisibility blocks of the <abbr title="Septentrio Binary Format — proprietary binary telemetry from Septentrio receivers; embeds satellite geometry">SBF</abbr> files. Default: from canvod-settings.yaml.</li>
 <li><code>--vod-calculator &lt;tau_omega&gt;</code>: <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> calculator to use.  [default: tau_omega]</li>
@@ -4788,7 +4788,7 @@ the run stopped.</p>
 <li><code>--start &lt;str&gt;</code>: First day in YYYYDOY format, for example 2025001. Default: the first day of the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store.</li>
 <li><code>--end &lt;str&gt;</code>: Last day in YYYYDOY format, for example 2025007. Default: the last day of the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store.</li>
 <li><code>--calculator &lt;tau_omega&gt;</code>: <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> calculator to use.  [default: tau_omega]</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h2 id="canvodpy-vod-reconcile"><code>canvodpy vod-reconcile</code><a class="headerlink" href="#canvodpy-vod-reconcile" title="Permanent link">&para;</a></h2>
@@ -4802,7 +4802,7 @@ the run stopped.</p>
 <li><code>--analysis &lt;str&gt;</code>: <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> analysis name, as defined in site.vod_analyses  [required]</li>
 <li><code>--calculator &lt;tau_omega&gt;</code>: <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> calculator to use.  [default: tau_omega]</li>
 <li><code>--execute</code>: Compute the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> of the dates found. Without this flag, the command only reports them.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h2 id="canvodpy-doctor"><code>canvodpy doctor</code><a class="headerlink" href="#canvodpy-doctor" title="Permanent link">&para;</a></h2>
@@ -4812,7 +4812,7 @@ the run stopped.</p>
 </code></pre></div>
 <p><strong>Options</strong>:</p>
 <ul>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h2 id="canvodpy-dashboard"><code>canvodpy dashboard</code><a class="headerlink" href="#canvodpy-dashboard" title="Permanent link">&para;</a></h2>
@@ -4878,7 +4878,7 @@ listed, and the command exits with code 1.</p>
 </code></pre></div>
 <p><strong>Options</strong>:</p>
 <ul>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--config &lt;path&gt;</code>: Settings file whose values replace those of canvod-settings.yaml.</li>
 <li><code>--site &lt;str&gt;</code>: Check the data of this site only. Repeat for several sites. Default: all sites.</li>
 <li><code>--check-sampling / --no-check-sampling</code>: Read the first file of the first and the last day of each receiver and compare the sampling interval of its data with the one in its canonical name.  [default: check-sampling]</li>
@@ -4891,7 +4891,7 @@ listed, and the command exits with code 1.</p>
 </code></pre></div>
 <p><strong>Options</strong>:</p>
 <ul>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>-s, --section processing|sites|sids</code>: Show this section only. Default: all sections.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
@@ -4950,7 +4950,7 @@ sites.my_site.receivers.reference_01.directory.</p>
 </code></pre></div>
 <p><strong>Options</strong>:</p>
 <ul>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h3 id="canvodpy-store-info"><code>canvodpy store info</code><a class="headerlink" href="#canvodpy-store-info" title="Permanent link">&para;</a></h3>
@@ -4967,7 +4967,7 @@ sites.my_site.receivers.reference_01.directory.</p>
 <li><code>--store gnss|vod</code>: Store to open.  [default: gnss]</li>
 <li><code>--branch &lt;str&gt;</code>: Branch to inspect  [default: main]</li>
 <li><code>--group &lt;str&gt;</code>: Show the full content of one group: its dataset and its metadata table.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h3 id="canvodpy-store-log"><code>canvodpy store log</code><a class="headerlink" href="#canvodpy-store-log" title="Permanent link">&para;</a></h3>
@@ -4988,7 +4988,7 @@ sites.my_site.receivers.reference_01.directory.</p>
 <li><code>--limit &lt;int&gt;</code>: Number of operations that --ops shows.  [default: 50]</li>
 <li><code>--svg FILE</code>: Write the commit graph to this SVG file instead of printing it.</li>
 <li><code>--plain</code>: Draw the commit graph without colors, for a file or a <abbr title="Continuous Integration — automated build and test on every commit">CI</abbr> log.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h3 id="canvodpy-store-maintain"><code>canvodpy store maintain</code><a class="headerlink" href="#canvodpy-store-maintain" title="Permanent link">&para;</a></h3>
@@ -5015,7 +5015,7 @@ only the report is printed.</p>
 <li><code>--expire-days &lt;int&gt;</code>: Keep the snapshots of this many past days. Use weeks to months, not hours.  [default: 90]</li>
 <li><code>--gc / --no-gc</code>: Run garbage collection  [default: gc]</li>
 <li><code>--execute</code>: Expire snapshots and collect garbage, after you confirm. Without this flag the command only reports and changes nothing.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h3 id="canvodpy-store-maintain-due"><code>canvodpy store maintain-due</code><a class="headerlink" href="#canvodpy-store-maintain-due" title="Permanent link">&para;</a></h3>
@@ -5056,7 +5056,7 @@ fail overnight).</p>
 <ul>
 <li><code>--all-sites</code>: Run for every site in canvod-settings.yaml.</li>
 <li><code>--store gnss|vod|both</code>: Store to maintain.  [default: both]</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h3 id="canvodpy-store-migrate-metadata"><code>canvodpy store migrate-metadata</code><a class="headerlink" href="#canvodpy-store-migrate-metadata" title="Permanent link">&para;</a></h3>
@@ -5102,7 +5102,7 @@ from the data: canVODpy 0.x recorded settings its runs didn't follow.</p>
 <li><code>--naming-authority &lt;str&gt;</code>: Your institution's domain in reverse order, for example org.middle-earth. Default: the store's own, if it is a reverse DNS name; otherwise processing.metadata.naming_authority in the settings.</li>
 <li><code>--set field.path=value</code>: A field or content setting the store lacks, for example identity.description=Beech forest site, or sites.my_site.receivers.reference_01.paired_canopies=[canopy_01]. Repeat for more.</li>
 <li><code>--yes</code>: Migrate without asking.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h3 id="canvodpy-store-migrate-layout"><code>canvodpy store migrate-layout</code><a class="headerlink" href="#canvodpy-store-migrate-layout" title="Permanent link">&para;</a></h3>
@@ -5128,7 +5128,7 @@ metadata is moved with canvodpy store migrate SITE.</p>
 <ul>
 <li><code>--store gnss|vod</code>: Store to move.  [default: gnss]</li>
 <li><code>--yes</code>: Move without asking.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h3 id="canvodpy-store-amend"><code>canvodpy store amend</code><a class="headerlink" href="#canvodpy-store-amend" title="Permanent link">&para;</a></h3>
@@ -5155,7 +5155,7 @@ processing.metadata.initials.</p>
 <li><code>--from &lt;path&gt;</code>: YAML file with the keys reason, set (field paths and values), and the lists add_receivers, add_vod_analyses and update_recipes.</li>
 <li><code>--reason &lt;str&gt;</code>: Why the fields change; recorded with each one.</li>
 <li><code>--yes</code>: Amend without asking.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h3 id="canvodpy-store-migrate"><code>canvodpy store migrate</code><a class="headerlink" href="#canvodpy-store-migrate" title="Permanent link">&para;</a></h3>
@@ -5192,7 +5192,7 @@ migration: canVODpy writes stores to S3 since v1.0.0 only.</p>
 <li><code>--gnss-set field.path=value</code>: A field or content setting the <abbr title="Global Navigation Satellite System — umbrella term for GPS, Galileo, GLONASS, BeiDou, etc. (Navipedia: GNSS)">GNSS</abbr> store lacks (migrate-metadata --set). Repeat for more.</li>
 <li><code>--vod-set field.path=value</code>: A field or content setting the <abbr title="Vegetation Optical Depth — dimensionless measure of microwave attenuation through vegetation canopy (τ = −ln(T)·cos θ)">VOD</abbr> store lacks (migrate-metadata --set). Repeat for more.</li>
 <li><code>--yes</code>: Migrate without asking.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h2 id="canvodpy-stac"><code>canvodpy stac</code><a class="headerlink" href="#canvodpy-stac" title="Permanent link">&para;</a></h2>
@@ -5219,7 +5219,7 @@ every such store with its reason and exits with code 1.</p>
 <p><strong>Options</strong>:</p>
 <ul>
 <li><code>--root &lt;path&gt;</code>: Data root to catalog. Default: storage.stores_root_dir in the settings.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h3 id="canvodpy-stac-release"><code>canvodpy stac release</code><a class="headerlink" href="#canvodpy-stac-release" title="Permanent link">&para;</a></h3>
@@ -5240,7 +5240,7 @@ catalog is written.</p>
 <p><strong>Options</strong>:</p>
 <ul>
 <li><code>--root &lt;path&gt;</code>: Data root to catalog. Default: storage.stores_root_dir in the settings.</li>
-<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
+<li><code>-c, --config-dir &lt;path|url&gt;</code>: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (<a href="https://raw.githubusercontent.com/">https://raw.githubusercontent.com/</a><account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.</li>
 <li><code>--help</code>: Show this message and exit.</li>
 </ul>
 <h2 id="in-the-terminal">In the terminal<a class="headerlink" href="#in-the-terminal" title="Permanent link">&para;</a></h2>
