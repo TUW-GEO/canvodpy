@@ -136,7 +136,8 @@ def fetch_overlay_recipes(
             continue
         where = f"in the overlay {overlay} on the settings file {url}"
         files[relative] = _fetch_recipe(remote, relative, site, receiver, name, where)
-    # Other runs of the process may load the same folder at the same time.
+    # Threads of this process may load the same folder at the same time;
+    # other processes write their own partial files (see _copy_into).
     with _LOCK:
         _copy_into(Path(config_dir), files)
 
@@ -249,14 +250,19 @@ def _config_folder(files: dict[str, Path]) -> Path:
 def _copy_into(folder: Path, files: dict[str, Path]) -> None:
     """Copy ``files`` (relative path -> fetched file) into ``folder``.
 
-    Each file is copied next to its target and then renamed, so a reader
-    sees the whole file or none, also when a copy fails.
+    Each file is copied to a partial file of its own next to the target
+    and then renamed, so a reader sees the whole file or none, also when a
+    copy fails or another process copies the same file.
     """
     try:
         for relative, path in files.items():
             target = folder / relative
             target.parent.mkdir(parents=True, exist_ok=True)
-            partial = target.with_name(f".{target.name}.partial")
+            handle, name = tempfile.mkstemp(
+                dir=target.parent, prefix=f".{target.name}.", suffix=".partial"
+            )
+            os.close(handle)
+            partial = Path(name)
             try:
                 shutil.copyfile(path, partial)
                 os.replace(partial, target)
