@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from .base import _StrictModel
 
@@ -126,11 +126,9 @@ class IcechunkConfig(_StrictModel):
         None,
         ge=1,
         description=(
-            "Limit on Zarr's concurrent chunk writes per array, for the writes "
-            "made through the store's own write methods; null keeps Zarr's "
-            "default of 10. The GNSS store writes of 'canvodpy run' and the "
-            "day-block writes don't use it. A lower value, for example 2 to 4, "
-            "makes the writes it covers slower."
+            "Deprecated: has no effect and will be removed with the next "
+            "major version. It limited Zarr's concurrent chunk writes for only "
+            "some of the store's writes."
         ),
     )
     cache_num_chunk_refs: int | None = Field(
@@ -223,3 +221,18 @@ class IcechunkConfig(_StrictModel):
             "file (null = Icechunk's default, currently 30,000)"
         ),
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_zarr_async_concurrency(cls, data: object) -> object:
+        if isinstance(data, dict) and data.get("zarr_async_concurrency") is not None:
+            import warnings
+
+            warnings.warn(
+                "The Icechunk setting 'zarr_async_concurrency' is left over from development and will be removed with the next major version. "
+                "It has no effect: it limited Zarr's concurrent chunk writes for only some of the store's writes. "
+                "Remove it from your settings.",
+                FutureWarning,
+                stacklevel=2,
+            )
+        return data

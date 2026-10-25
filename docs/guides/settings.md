@@ -396,7 +396,7 @@ Limit on concurrent storage requests (null = Icechunk's default)
 
 #### `processing.icechunk.zarr_async_concurrency` {#processing-icechunk-zarr_async_concurrency}
 
-Limit on Zarr's concurrent chunk writes per array, for the writes made through the store's own write methods; null keeps Zarr's default of 10. The GNSS store writes of `canvodpy run` and the day-block writes don't use it. A lower value, for example 2 to 4, makes the writes it covers slower.
+Deprecated: has no effect and will be removed with the next major version. It limited Zarr's concurrent chunk writes for only some of the store's writes.
 
 - Type: whole number, or null
 - Limits: >= 1
