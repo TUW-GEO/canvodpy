@@ -94,8 +94,8 @@ packages share one namespace.
 The repository is a uv workspace. One `uv sync` installs every package in
 editable mode, from one lock file, so all packages are developed and tested
 against the same versions of their dependencies. Each package is
-published to PyPI on its own, all of them except `canvod-preflight` so
-far, so you can install only the parts you need:
+published to PyPI on its own, so you can install only the parts you
+need:
 
 ```bash
 uv add canvod-readers   # the readers only
