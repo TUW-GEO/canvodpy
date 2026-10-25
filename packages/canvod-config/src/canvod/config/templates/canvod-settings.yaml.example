@@ -79,7 +79,7 @@ processing:
     # https://canvodpy.eu/guides/settings/#processing-aux_data-agency
     agency: COD              # Analysis center: COD, GFZ, IGS, ESA, etc.
     # https://canvodpy.eu/guides/settings/#processing-aux_data-product_type
-    product_type: final      # final, rapid, ultra-rapid
+    product_type: final      # final, rapid
     # https://canvodpy.eu/guides/settings/#processing-aux_data-ftp_timeout_s
     # ftp_timeout_s: 30      # FTP connection timeout in seconds
     # https://canvodpy.eu/guides/settings/#processing-aux_data-fetch_clock
