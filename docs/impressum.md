@@ -88,13 +88,11 @@ intellectual property rights over any part of this work.
 
 ---
 
-## Copyright and licensing
+## Licensing
 
 canVODpy is released under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
 ```
-Copyright 2026 Nicolas François Bader, TU Wien
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
