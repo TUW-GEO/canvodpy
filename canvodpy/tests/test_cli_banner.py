@@ -202,7 +202,7 @@ def test_website_and_version_below_the_logo(terminal, flights):
     text = out.getvalue()
     assert banner.WEBSITE in text
     assert banner.version_line() in text
-    assert banner.LICENSE in text
+    assert f"{banner.HOLDER} · {banner.LICENSE}" in text
     assert (
         text.index(banner.WEBSITE)
         < text.index(banner.version_line())

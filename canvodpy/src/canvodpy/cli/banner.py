@@ -58,8 +58,11 @@ WEBSITE = "https://canvodpy.eu"
 #: Support address, shown below the version as a mail link.
 SUPPORT_EMAIL = "support@canvodpy.eu"
 
-#: The licence, shown last.
+#: The licence, at the end of the last line.
 LICENSE = "Apache-2.0"
+
+#: The authors, on the last line before the licence.
+HOLDER = "2026 Nicolas François Bader, CLIMERS, TU Wien"
 
 #: Frames per second of the flight: its 25 frames take about 0.8 s.
 FRAME_RATE = 30
@@ -245,7 +248,7 @@ def show_banner() -> bool:
     console.print(
         Text(_centred(SUPPORT_EMAIL), style=f"{color} link mailto:{SUPPORT_EMAIL}")
     )
-    console.print(Text(_centred(LICENSE), style=f"dim {color}"))
+    console.print(Text(_centred(f"{HOLDER} · {LICENSE}"), style=f"dim {color}"))
     console.print()
     return True
 

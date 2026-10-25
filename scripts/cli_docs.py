@@ -52,10 +52,11 @@ OUTRO = """\
 
 `canvodpy` without a command, `canvodpy --version` and `canvodpy run`
 start with the canVODpy logo, the website, the version, the support
-address and the licence. The logo is shown only in an interactive terminal at least 81
-columns wide, never when the output goes to a file, a pipe or a cron
-job. To turn it off, for example to save the second it takes at the
-start of a run, set `CANVODPY_NO_BANNER=1`.
+address, the author and the licence. The logo is shown only in an
+interactive terminal at least 81 columns wide, never when the output
+goes to a file, a pipe or a cron job. To turn it off, for example to
+save the second it takes at the start of a run, set
+`CANVODPY_NO_BANNER=1`.
 
 The colours of the help, the messages and the progress bars follow the
 terminal's background, dark or light. canVODpy asks the terminal for it,
