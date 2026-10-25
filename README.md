@@ -67,12 +67,12 @@
 | packages/canvod-auxiliary/src/canvod/auxiliary/augmentation.py                  |      220 |      114 |     48% |170, 181, 413-453, 468-488, 517-535, 562-614, 624-672, 685-689, 749-794, 798-818 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/cache\_fingerprint.py            |        9 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/clock/\_\_init\_\_.py            |        4 |        0 |    100% |           |
-| packages/canvod-auxiliary/src/canvod/auxiliary/clock/parser.py                  |       56 |       49 |     12% |40-63, 92-138, 156-166 |
+| packages/canvod-auxiliary/src/canvod/auxiliary/clock/parser.py                  |       54 |       47 |     13% |40-61, 90-138, 156-166 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/clock/reader.py                  |       55 |       24 |     56% |77-81, 103, 124-141, 158-179, 196-218 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/clock/validator.py               |       32 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/container.py                     |       10 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/core/\_\_init\_\_.py             |        3 |        0 |    100% |           |
-| packages/canvod-auxiliary/src/canvod/auxiliary/core/base.py                     |      144 |       32 |     78% |71, 76, 114-115, 145-153, 185-187, 226, 230-231, 246-247, 261, 268, 278-279, 300, 318, 323, 377-381, 415 |
+| packages/canvod-auxiliary/src/canvod/auxiliary/core/base.py                     |      145 |       32 |     78% |72, 77, 119-120, 152-160, 192-194, 233, 237-238, 253-254, 268, 275, 285-286, 307, 325, 330, 384-388, 422 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/core/downloader.py               |      183 |       71 |     61% |34, 105-107, 139, 143, 171, 179-181, 232-237, 252-257, 272, 282-292, 296, 317, 325-327, 330-332, 338-392, 420, 432, 436-437, 449-451 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/ephemeris/\_\_init\_\_.py        |        5 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/ephemeris/parser.py              |       91 |       79 |     13% |28-29, 46-141, 150-158, 178-179, 208-221, 225 |
@@ -92,7 +92,7 @@
 | packages/canvod-auxiliary/src/canvod/auxiliary/products/\_\_init\_\_.py         |        3 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/products/check.py                |       95 |       38 |     60% |70-85, 119, 164-165, 170-194, 198 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/products/models.py               |      103 |       19 |     82% |109, 165-174, 190-204 |
-| packages/canvod-auxiliary/src/canvod/auxiliary/products/registry\_config.py     |      148 |        8 |     95% |37, 132, 142, 173, 243, 349, 430, 435 |
+| packages/canvod-auxiliary/src/canvod/auxiliary/products/registry\_config.py     |      155 |       14 |     91% |37, 132, 142, 173, 243, 325-335, 379, 460, 465 |
 | packages/canvod-config/src/canvod/config/\_\_init\_\_.py                        |        3 |        0 |    100% |           |
 | packages/canvod-config/src/canvod/config/loader.py                              |      117 |        5 |     96% |193, 201-202, 249-250 |
 | packages/canvod-config/src/canvod/config/models/\_\_init\_\_.py                 |       14 |        0 |    100% |           |
@@ -176,7 +176,7 @@
 | packages/canvod-readers/src/canvod/readers/nmea/\_\_init\_\_.py                 |        2 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/exceptions.py                   |       10 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/nmea/v4\_00.py                       |      387 |       51 |     87% |74-75, 184, 192, 197, 204, 258-259, 265, 272-273, 311, 319-320, 409-410, 414-416, 420-421, 491-492, 519, 523, 527, 531-535, 539, 543-547, 553, 587-588, 611, 641-643, 737, 742-743, 798-799, 824-825 |
-| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      164 |        8 |     95% |164, 168-176, 182, 250, 319, 331 |
+| packages/canvod-readers/src/canvod/readers/preprocessing.py                     |      164 |        8 |     95% |164, 168-176, 182, 250, 326, 331 |
 | packages/canvod-readers/src/canvod/readers/rinex/\_\_init\_\_.py                |        4 |        0 |    100% |           |
 | packages/canvod-readers/src/canvod/readers/rinex/v2\_11.py                      |      716 |      569 |     21% |158-159, 162-164, 168-171, 186-192, 200-202, 263-265, 275-283, 291-485, 490, 493, 499-500, 516-539, 544-547, 611-622, 683-688, 692, 697, 700, 708, 714-726, 730, 736, 740-754, 758-760, 764, 768-772, 794-833, 860-872, 882-911, 929-966, 977-1062, 1082, 1096-1105, 1109, 1113-1131, 1147-1427, 1461-1514, 1522-1538, 1543-1556, 1559-1602, 1632-1654, 1679-1684 |
 | packages/canvod-readers/src/canvod/readers/rinex/v3\_04.py                      |      821 |      622 |     24% |102-105, 138-148, 156-180, 223-230, 253-264, 277-282, 362-369, 377-387, 409-549, 559-589, 606-611, 630-639, 656-663, 712-714, 747-755, 774-787, 806-838, 857-866, 871, 876, 880, 888-889, 960-982, 994, 998, 1007, 1018-1022, 1038, 1050, 1062-1067, 1079-1081, 1093, 1105-1109, 1127-1141, 1169-1244, 1259-1270, 1303-1322, 1331-1333, 1337-1340, 1354, 1370, 1384-1389, 1419-1440, 1467-1470, 1489-1499, 1518-1519, 1533-1550, 1561-1576, 1601-1608, 1643-1670, 1696-1713, 1733-1798, 1802, 1811-1824, 1847-1887, 1912-2007, 2022-2088, 2100-2113, 2141-2146, 2195-2246, 2285-2311, 2314-2359, 2374-2375 |
@@ -247,7 +247,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 127-136 |
-| **TOTAL**                                                                       | **29724** | **8360** | **72%** |           |
+| **TOTAL**                                                                       | **29730** | **8364** | **72%** |           |
 
 
 ## Setup coverage badge
