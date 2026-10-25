@@ -105,12 +105,12 @@ Tests marked with `@pytest.mark.integration`:
 
 ### Network Tests
 
-Tests marked with `@pytest.mark.network`:
-- File downloading
-- FTP connection tests
-- Product URL validation
-
-*Note: Network tests are skipped by default*
+Tests marked with `@pytest.mark.network` reach the FTP servers
+(`test_network_products.py`): every registry product's files for 2025-001,
+and a download of the COD final files compared with the test data. They are
+skipped unless `CANVOD_NETWORK_TESTS=1`; run them with `just test-network`,
+which also checks NASA CDDIS when the settings hold the NASA Earthdata
+e-mail. GitHub CI never runs them.
 
 ## Fixtures
 

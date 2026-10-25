@@ -152,6 +152,7 @@ just agent-skills                     # the agent workflow plugin (Claude Code)
 uv sync --group filemap               # plus canvod-filemap (naming recipes)
 just check                            # ruff lint + format, ty, agent docs
 just test-fast                        # tests without the integration marker
+just test-network                     # tests that reach the download servers (never in CI)
 just test                             # all tests
 just test-package canvod-readers      # one package
 just docs                             # preview the docs site

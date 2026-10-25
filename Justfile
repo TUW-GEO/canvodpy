@@ -183,6 +183,36 @@ test:
 test-fast:
     uv run pytest -m "not integration"
 
+# run the network tests: every registry product on the FTP servers, real
+# SP3/CLK downloads, a run that downloads its products (never in CI; NASA
+# CDDIS only when the settings hold the NASA Earthdata e-mail)
+[group('tests')]
+test-network:
+    #!/usr/bin/env -S uv run python
+    import os
+    import subprocess
+    import sys
+
+    os.environ["CANVOD_CONFIG_DIR"] = {{ quote(config_dir) }}
+    from canvod.config import load_config
+
+    try:
+        mail = load_config().nasa_earthdata_acc_mail
+    except Exception:
+        mail = None
+    env = {**os.environ, "CANVOD_NETWORK_TESTS": "1"}
+    env.pop("CANVOD_CONFIG_DIR")
+    if mail:
+        env["CANVOD_CDDIS_MAIL"] = str(mail)
+    else:
+        print("NASA CDDIS not checked (no NASA Earthdata e-mail in the settings).")
+    failed = 0
+    for tests in ("packages/canvod-auxiliary/tests", "canvodpy/tests"):
+        failed |= subprocess.call(
+            ["uv", "run", "pytest", "-m", "network", "--no-cov", tests], env=env
+        )
+    sys.exit(failed)
+
 # run tests for all supported Python versions
 [group('tests')]
 testall:
