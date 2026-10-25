@@ -47,5 +47,10 @@
       "scheme": "url",
       "resource_type": "software"
     }
+  ],
+  "communities": [
+    {
+      "identifier": "canvodpy"
+    }
   ]
 }
