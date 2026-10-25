@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 
+import typer.main
 from canvodpy.cli.app import main_app
 from typer.testing import CliRunner
 
@@ -120,3 +121,45 @@ class TestDeprecatedDaysPerBatch:
         result = runner.invoke(main_app, ["run", "--help"])
 
         assert "--days-per-batch" not in result.output
+
+
+class TestHelpAll:
+    def test_lists_every_command_and_option(self):
+        result = runner.invoke(main_app, ["--help-all"], env={"COLUMNS": "100"})
+        assert result.exit_code == 0
+        words = set(result.output.split())
+
+        def walk(command, path):
+            if hasattr(command, "commands"):
+                for name, sub in command.commands.items():
+                    if not sub.hidden:
+                        walk(sub, [*path, name])
+                return
+            assert path[-1] in words
+            for param in command.params:
+                if getattr(param, "hidden", False) or param.name == "help":
+                    continue
+                name = (
+                    next(o for o in param.opts if o.startswith("--"))
+                    if param.param_type_name == "option"
+                    else param.name.upper()
+                )
+                assert name in words, f"{' '.join(path)}: {name}"
+
+        walk(typer.main.get_command(main_app), [])
+
+    def test_points_to_one_command_help_and_the_reference(self):
+        from canvodpy.cli.app import CLI_REFERENCE
+
+        result = runner.invoke(main_app, ["--help-all"])
+        assert "canvodpy COMMAND --help" in result.output
+        assert CLI_REFERENCE in result.output
+
+    def test_is_in_the_main_help_just_before_help(self):
+        result = runner.invoke(main_app, ["--help"], env={"COLUMNS": "200"})
+        options = [
+            line.split()[1]
+            for line in result.output.splitlines()
+            if line.startswith("│ --")
+        ]
+        assert options[-2:] == ["--help-all", "--help"]

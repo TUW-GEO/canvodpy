@@ -26,6 +26,7 @@ $ canvodpy [OPTIONS] COMMAND [ARGS]...
 * `--version`: Show canvodpy's version and exit.
 * `--install-completion`: Install completion for the current shell.
 * `--show-completion`: Show completion for the current shell, to copy it or customize the installation.
+* `--help-all`: Show every command with its options, and exit. One command with descriptions: canvodpy COMMAND --help; all of them: https://canvodpy.eu/api/cli/
 * `--help`: Show this message and exit.
 
 **Commands**:
