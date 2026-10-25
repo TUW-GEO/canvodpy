@@ -46,6 +46,28 @@ The notebooks download their test data on first use (about 350 MB).
 
 ## Install
 
+For the command line, install canVODpy as a
+[uv tool](https://docs.astral.sh/uv/guides/tools/):
+
+```bash
+uv tool install canvodpy
+uv tool update-shell   # once: puts the tool folder on your PATH
+```
+
+With the extension for naming recipes (file names that don't follow the
+canVOD convention):
+
+```bash
+uv tool install canvodpy --with canvod-filemap
+```
+
+For reproducible runs, pin the versions:
+`uv tool install canvodpy==1.0.0 --with canvod-filemap==1.0.0`.
+`uv tool upgrade canvodpy` updates the tool, `uv tool uninstall canvodpy`
+removes it.
+
+To use canVODpy from Python, add it to your uv project instead:
+
 ```bash
 uv add canvodpy
 ```

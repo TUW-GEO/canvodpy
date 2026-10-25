@@ -130,6 +130,9 @@ uv add canvod-readers canvod-store   # subset
 uv add canvodpy                      # everything
 ```
 
+For the command line, install canVODpy as a uv tool instead:
+`uv tool install canvodpy` (see [Install canVODpy](users/index.md#1-install-canvodpy)).
+
 ---
 
 ## Verification

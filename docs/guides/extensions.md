@@ -26,6 +26,15 @@ Each extension is a package on PyPI, released on its own under the tag
 `<package>-v<version>` (for example `canvod-filemap-v1.0.0`). None has
 extras: each package brings what it needs.
 
+With canVODpy installed as a uv tool for the command line, install the
+extension into the tool with `--with`:
+
+```bash
+uv tool install canvodpy --with canvod-filemap
+```
+
+To use an extension from Python, add it to your uv project:
+
 ```bash
 uv add canvod-filemap
 uv add canvod-airflow

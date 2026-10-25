@@ -88,6 +88,51 @@ You need:
 
 ## 1. Install canVODpy
 
+=== "Command line"
+
+    Install canVODpy as a uv tool:
+
+    ```bash
+    uv tool install canvodpy
+    uv tool update-shell   # once: puts the tool folder on your PATH
+    ```
+
+    uv installs canVODpy into an environment of its own and puts the
+    `canvodpy` command into a folder on your `PATH`, the list of folders
+    in which the terminal looks for commands
+    (see [Using tools](https://docs.astral.sh/uv/guides/tools/)). Open a
+    new terminal, and you can run the command from any folder, without
+    `uv run`:
+
+    ```bash
+    canvodpy --help
+    ```
+
+    If your receivers' file names don't follow the canVOD convention, you
+    need the extension for naming recipes (see [File names](#file-names)).
+    Install it into the tool with `--with`:
+
+    ```bash
+    uv tool install canvodpy --with canvod-filemap
+    ```
+
+    For reproducible runs, pin the versions:
+
+    ```bash
+    uv tool install canvodpy==1.0.0 --with canvod-filemap==1.0.0
+    ```
+
+    canVODpy pins only its own packages exactly. The versions of the other
+    packages it needs (pandas, netCDF4, ...) and the Python patch version
+    depend on the day of the install. To record them with your results:
+
+    ```bash
+    uv pip freeze --python "$(uv tool dir)/canvodpy/bin/python"
+    ```
+
+    To update or remove the tool, run `uv tool upgrade canvodpy` or
+    `uv tool uninstall canvodpy`.
+
 === "Python"
 
     Add canVODpy to the uv project you work in. A uv project is a folder
@@ -117,29 +162,6 @@ You need:
 
     This page writes the commands as `canvodpy ...`; in a project, type
     `uv run canvodpy ...`.
-
-=== "Command line"
-
-    Install canVODpy as a uv tool:
-
-    ```bash
-    uv tool install canvodpy
-    uv tool update-shell   # once: puts the tool folder on your PATH
-    ```
-
-    uv installs canVODpy into an environment of its own and puts the
-    `canvodpy` command into a folder on your `PATH`, the list of folders
-    in which the terminal looks for commands
-    (see [Using tools](https://docs.astral.sh/uv/guides/tools/)). Open a
-    new terminal, and you can run the command from any folder, without
-    `uv run`:
-
-    ```bash
-    canvodpy --help
-    ```
-
-    To update or remove the tool, run `uv tool upgrade canvodpy` or
-    `uv tool uninstall canvodpy`.
 
 ??? note "Run the command from a clone of the repository"
 
