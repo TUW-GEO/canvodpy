@@ -126,7 +126,6 @@ class RichReporter:
         self._current_end = ""
         self._live: Live | None = None
 
-        from rich.console import Console
         from rich.progress import (
             BarColumn,
             MofNCompleteColumn,
@@ -138,13 +137,13 @@ class RichReporter:
             TimeRemainingColumn,
         )
 
-        self._console = Console()
+        from canvodpy.cli.theme import console
+
+        self._console = console
         self._progress = Progress(
             SpinnerColumn(),
             TextColumn("  [bold]{task.description}[/bold]"),
-            BarColumn(
-                bar_width=None, complete_style="green3", finished_style="dim green"
-            ),
+            BarColumn(bar_width=None),
             MofNCompleteColumn(),
             TextColumn("[dim]days[/dim]"),
             TimeElapsedColumn(),
@@ -167,7 +166,7 @@ class RichReporter:
         site4 = self._current_site[:4].upper() if self._current_site else "----"
         content = f"─[◉]─  canvod · {site4} · {self._current_start}–{self._current_end}"
         return Group(
-            Panel(content, border_style="dim green", padding=(0, 1)),
+            Panel(content, border_style="canvod.border", padding=(0, 1)),
             self._progress,
         )
 
@@ -199,7 +198,9 @@ class RichReporter:
         self._current_start = start
         self._current_end = end
         self._live_obj.update(self._render())
-        self._live_obj.console.print(f"\n[bold green]═══ {site} ═══[/bold green]")
+        self._live_obj.console.print(
+            f"\n[canvod.heading]═══ {site} ═══[/canvod.heading]"
+        )
 
     def print_header(self, site: str, start: str, end: str, config, args=None) -> None:
         proc = config.processing.params
@@ -231,8 +232,8 @@ class RichReporter:
     def on_done(self, total_days: int, total_vod: int, dt_total: float) -> None:
         self._live_obj.console.print()
         self._live_obj.console.print(
-            f"[bold green]Done  {total_days} days  "
-            f"{total_vod} VOD analyses  {dt_total:.0f}s total[/bold green]"
+            f"[canvod.done]Done  {total_days} days  "
+            f"{total_vod} VOD analyses  {dt_total:.0f}s total[/canvod.done]"
         )
 
 

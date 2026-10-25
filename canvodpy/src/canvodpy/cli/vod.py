@@ -15,14 +15,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
 
 import typer
-from rich.console import Console
 
 from canvodpy.cli.options import CONFIG_DIR_OPTION, VodCalculatorChoice
+from canvodpy.cli.theme import console
 
 if TYPE_CHECKING:
     from canvodpy.orchestrator.vod_phase import VodUnitReport
-
-console = Console()
 
 
 def _to_datetime(yyyydoy: str, *, end_of_day: bool) -> datetime.datetime:
@@ -90,7 +88,9 @@ def vod(
 
     site_obj = Site(site)
     if analysis not in site_obj.vod_analyses:
-        console.print(f"[red]❌ Unknown VOD analysis:[/red] {analysis}")
+        console.print(
+            f"[canvod.error]❌ Unknown VOD analysis:[/canvod.error] {analysis}"
+        )
         console.print(f"  Available: {list(site_obj.vod_analyses)}")
         raise typer.Exit(1)
 
@@ -98,7 +98,9 @@ def vod(
 
     days = vod_computer.gnss_days(analysis, start=start_dt, end=end_dt)
     if not days:
-        console.print(f"[yellow]No GNSS data for {analysis} in this range.[/yellow]")
+        console.print(
+            f"[canvod.warning]No GNSS data for {analysis} in this range.[/canvod.warning]"
+        )
         raise typer.Exit(1)
     console.print(
         f"Computing VOD for [bold]{site}[/bold]/{analysis} (calculator={calculator}), "
@@ -112,11 +114,13 @@ def _print_report(report: VodUnitReport, analysis: str, calculator: str) -> None
     written = report.written.get(analysis, [])
     stored = report.stored.get(analysis, [])
     console.print(
-        f"[green]✓[/green] {len(written)} day(s) written to '{calculator}/{analysis}'"
+        f"[canvod.ok]✓[/canvod.ok] {len(written)} day(s) written to '{calculator}/{analysis}'"
         + (f", {len(stored)} already stored from the same GNSS files" if stored else "")
     )
     for day, reason in report.missing.get(analysis, []):
-        console.print(f"[yellow]  {_yyyydoy(day)}: no VOD, {reason}[/yellow]")
+        console.print(
+            f"[canvod.warning]  {_yyyydoy(day)}: no VOD, {reason}[/canvod.warning]"
+        )
 
 
 def _yyyydoy(day: Any) -> str:
@@ -170,14 +174,16 @@ def vod_reconcile(
 
     site_obj = Site(site)
     if analysis not in site_obj.vod_analyses:
-        console.print(f"[red]❌ Unknown VOD analysis:[/red] {analysis}")
+        console.print(
+            f"[canvod.error]❌ Unknown VOD analysis:[/canvod.error] {analysis}"
+        )
         console.print(f"  Available: {list(site_obj.vod_analyses)}")
         raise typer.Exit(1)
 
     gaps = find_vod_backfill_gaps(site_obj, analysis, calculator)
     if not gaps:
         console.print(
-            f"[green]✓[/green] No VOD gaps for [bold]{site}[/bold]/{analysis} "
+            f"[canvod.ok]✓[/canvod.ok] No VOD gaps for [bold]{site}[/bold]/{analysis} "
             f"(calculator={calculator})."
         )
         return
@@ -185,7 +191,7 @@ def vod_reconcile(
     ranges = _group_into_ranges(gaps)
     range_str = ", ".join(s if s == e else f"{s}-{e}" for s, e in ranges)
     console.print(
-        f"[yellow]{len(gaps)} date(s)[/yellow] have RINEX data but no VOD for "
+        f"[canvod.warning]{len(gaps)} date(s)[/canvod.warning] have RINEX data but no VOD for "
         f"[bold]{site}[/bold]/{analysis} (calculator={calculator}): {range_str}"
     )
 

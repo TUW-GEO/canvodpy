@@ -48,7 +48,7 @@ def _log_server_choice(nasa_first: bool) -> None:
 def _download_progress() -> Progress:
     """Create a Rich progress bar configured for file downloads."""
     return Progress(
-        TextColumn("[bold blue]{task.description}"),
+        TextColumn("[progress.description]{task.description}"),
         BarColumn(),
         DownloadColumn(),
         TransferSpeedColumn(),
