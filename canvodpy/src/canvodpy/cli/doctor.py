@@ -22,11 +22,8 @@ import sys
 from pathlib import Path
 from typing import Annotated
 
-from rich.console import Console
-
 from canvodpy.cli.options import CONFIG_DIR_OPTION
-
-console = Console()
+from canvodpy.cli.theme import console
 
 
 def _uv_version() -> str | None:
@@ -80,7 +77,7 @@ def doctor(
     console.print(f"  Python:        {sys.version.split()[0]} ({sys.executable})")
     uv_version = _uv_version()
     console.print(
-        f"  uv:            {uv_version or '[yellow]not found on PATH[/yellow]'}"
+        f"  uv:            {uv_version or '[canvod.warning]not found on PATH[/canvod.warning]'}"
     )
 
     # --- Config resolution ----------------------------------------------------
@@ -110,10 +107,10 @@ def doctor(
         and (template_dir / "canvod-settings.yaml.example").exists()
     )
     if template_ok:
-        console.print(f"  Templates reachable: [green]✓[/green] {template_dir}")
+        console.print(f"  Templates reachable: [canvod.ok]✓[/canvod.ok] {template_dir}")
     else:
         console.print(
-            f"  Templates reachable: [red]❌ not found at {template_dir}[/red]"
+            f"  Templates reachable: [canvod.error]❌ not found at {template_dir}[/canvod.error]"
         )
         console.print(
             "    This looks like a broken canvod-config install; reinstall it."
@@ -123,7 +120,7 @@ def doctor(
     settings_file = config_dir / "canvod-settings.yaml"
     if not settings_file.exists():
         console.print(
-            f"  canvod-settings.yaml: [yellow]⊘ not found[/yellow] ({settings_file})"
+            f"  canvod-settings.yaml: [canvod.warning]⊘ not found[/canvod.warning] ({settings_file})"
         )
         console.print("    Run: canvodpy config init --interactive")
     else:
@@ -131,17 +128,17 @@ def doctor(
             load_config(config_dir)
         except ConfigValidationError as e:
             console.print(
-                f"  canvod-settings.yaml: [red]❌ invalid[/red] ({settings_file})\n"
+                f"  canvod-settings.yaml: [canvod.error]❌ invalid[/canvod.error] ({settings_file})\n"
             )
             console.print(format_validation_error(e))
         except Exception as e:
             console.print(
-                f"  canvod-settings.yaml: [red]❌ error loading[/red] ({settings_file})\n"
+                f"  canvod-settings.yaml: [canvod.error]❌ error loading[/canvod.error] ({settings_file})\n"
             )
             console.print(f"    {e}")
         else:
             console.print(
-                f"  canvod-settings.yaml: [green]✓ valid[/green] ({settings_file})"
+                f"  canvod-settings.yaml: [canvod.ok]✓ valid[/canvod.ok] ({settings_file})"
             )
 
     console.print()

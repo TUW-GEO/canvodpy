@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import Annotated, NoReturn
 
 import typer
-from rich.console import Console
 from rich.markup import escape
 
 from canvodpy.cli.options import CONFIG_DIR_OPTION
+from canvodpy.cli.theme import console
 
 stac_app = typer.Typer(
     name="stac",
@@ -22,7 +22,6 @@ stac_app = typer.Typer(
     no_args_is_help=True,
 )
 
-console = Console()
 
 ROOT_OPTION = typer.Option(
     "--root",
@@ -55,7 +54,7 @@ def write(
         catalog = write_catalog(_data_root(root))
     except ValueError as error:
         _refused(error)
-    console.print(f"[green]✓ Catalog written:[/green] {catalog}")
+    console.print(f"[canvod.ok]✓ Catalog written:[/canvod.ok] {catalog}")
 
 
 @stac_app.command("release")
@@ -81,12 +80,12 @@ def release(
         catalog = create_release(_data_root(root), tag)
     except ValueError as error:
         _refused(error)
-    console.print(f"[green]✓ Release {escape(tag)} written:[/green] {catalog}")
+    console.print(f"[canvod.ok]✓ Release {escape(tag)} written:[/canvod.ok] {catalog}")
 
 
 def _refused(error: ValueError) -> NoReturn:
     first, *rest = str(error).splitlines()
-    console.print(f"[red]❌ {escape(first)}[/red]", soft_wrap=True)
+    console.print(f"[canvod.error]❌ {escape(first)}[/canvod.error]", soft_wrap=True)
     for line in rest:
         console.print(line, markup=False, highlight=False, soft_wrap=True)
     raise typer.Exit(1) from None

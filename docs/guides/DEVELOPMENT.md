@@ -189,6 +189,50 @@ worker process reach the log and the dashboard only.
 
 ---
 
+## Colours in the terminal
+
+The CLI's colours come from one module, `canvodpy.cli.theme`; its
+docstring gives the rules and the reasons. In short: structure (commands,
+names, descriptions, borders) uses the brand's greens by lightness, and
+status uses three added colours, each always with its symbol. There is no
+red, and the colours keep apart with red-green colour blindness.
+
+In a command, print through the shared console and use the roles, not
+colour names:
+
+```python
+from canvodpy.cli.theme import console
+
+console.print(f"[canvod.ok]✓ Wrote {path}[/canvod.ok]")
+console.print("[canvod.warning]⚠️ No recipe for canopy_01[/canvod.warning]")
+console.print(f"[canvod.error]❌ File not found: {path}[/canvod.error]")
+```
+
+| Role | For |
+|---|---|
+| `canvod.ok`, `canvod.done` | done, valid, written (✓); `done` in bold, for the end of a run |
+| `canvod.warning` | needs attention, skipped, not set (⚠️, ⊘) |
+| `canvod.error` | failed, invalid, refused (❌) |
+| `canvod.danger` | before a step that can't be undone |
+| `canvod.heading`, `canvod.name` | headings; names and values |
+| `canvod.text` | descriptions |
+| `canvod.border` | panel borders |
+
+`test_cli_theme.py` fails on a colour name (`[red]`, `style="green"`) or
+an unknown role in a CLI module, and checks each colour's contrast to the
+background and the distance between the colours as seen with red-green
+colour blindness. To change a colour, change `PALETTES` in `theme.py` and
+keep those tests passing for both backgrounds.
+
+The logo of the banner (`canvodpy.cli.banner`) is drawn from the SVG in
+`docs/assets/logo` by `scripts/render_logo.py`. When the logo changes,
+draw its frames again:
+
+```bash
+uv run scripts/render_logo.py docs/assets/logo/canvodpy_logo_dark_mode.svg \
+    canvodpy/src/canvodpy/cli/logo_frames.txt.gz
+```
+
 ## Keeping your fork in sync
 
 If you are working from a fork (rather than a direct clone), periodically pull updates from the upstream repository:

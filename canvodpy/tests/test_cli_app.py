@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 
+import pytest
+import typer.main
 from canvodpy.cli.app import main_app
 from typer.testing import CliRunner
 
@@ -120,3 +122,127 @@ class TestDeprecatedDaysPerBatch:
         result = runner.invoke(main_app, ["run", "--help"])
 
         assert "--days-per-batch" not in result.output
+
+
+class TestHelpAll:
+    def test_lists_every_command_and_option(self):
+        result = runner.invoke(main_app, ["--help-all"], env={"COLUMNS": "100"})
+        assert result.exit_code == 0
+        words = set(result.output.split())
+
+        def walk(command, path):
+            if hasattr(command, "commands"):
+                for name, sub in command.commands.items():
+                    if not sub.hidden:
+                        walk(sub, [*path, name])
+                return
+            assert path[-1] in words
+            for param in command.params:
+                if getattr(param, "hidden", False) or param.name == "help":
+                    continue
+                name = (
+                    next(o for o in param.opts if o.startswith("--"))
+                    if param.param_type_name == "option"
+                    else param.name.upper()
+                )
+                assert name in words, f"{' '.join(path)}: {name}"
+
+        walk(typer.main.get_command(main_app), [])
+
+    def test_points_to_one_command_help_and_the_reference(self):
+        from canvodpy.cli.app import CLI_REFERENCE
+
+        result = runner.invoke(main_app, ["--help-all"])
+        assert "canvodpy COMMAND --help" in result.output
+        assert CLI_REFERENCE in result.output
+
+    def test_is_in_the_main_help_just_before_help(self):
+        import click
+
+        result = runner.invoke(main_app, ["--help"], env={"COLUMNS": "200"})
+        # CI forces colour: without the escape codes, each line starts with the box.
+        options = [
+            line.split()[1]
+            for line in click.unstyle(result.output).splitlines()
+            if line.startswith("│ --")
+        ]
+        assert options[-2:] == ["--help-all", "--help"]
+
+
+class TestInstallCompletionReloadHint:
+    @staticmethod
+    def _installed(_ctx, _param, _value):
+        raise SystemExit(0)  # as Typer's install ends
+
+    @pytest.mark.parametrize(
+        ("shell", "hint"),
+        [
+            ("zsh", "exec zsh"),
+            ("bash", "exec bash"),
+            ("fish", "exec fish"),
+            ("pwsh", ". $PROFILE"),
+            ("powershell", ". $PROFILE"),
+        ],
+    )
+    def test_hint_for_the_shell_it_runs_in(self, monkeypatch, capsys, shell, hint):
+        from canvodpy.cli import app
+
+        monkeypatch.setattr(app, "_current_shell", lambda: shell)
+        with pytest.raises(SystemExit):
+            app._with_reload_hint(self._installed)(None, None, True)
+
+        assert capsys.readouterr().out.strip().endswith(hint)
+
+    @pytest.mark.parametrize("shell", ["tcsh", None])
+    def test_no_hint_for_another_or_undetected_shell(self, monkeypatch, capsys, shell):
+        from canvodpy.cli import app
+
+        monkeypatch.setattr(app, "_current_shell", lambda: shell)
+        with pytest.raises(SystemExit):
+            app._with_reload_hint(self._installed)(None, None, True)
+
+        assert capsys.readouterr().out == ""
+
+    def test_the_login_shell_does_not_decide(self, monkeypatch, capsys):
+        """$SHELL is the login shell; Typer installs for the one running."""
+        from canvodpy.cli import app
+
+        monkeypatch.setenv("SHELL", "/bin/zsh")
+        monkeypatch.setattr(app, "_current_shell", lambda: "bash")
+        with pytest.raises(SystemExit):
+            app._with_reload_hint(self._installed)(None, None, True)
+
+        assert "exec bash" in capsys.readouterr().out
+
+    def test_hint_for_the_shell_named(self, monkeypatch, capsys):
+        """A shell named to Typer (detection off) wins over the one running."""
+        from canvodpy.cli import app
+
+        monkeypatch.setattr(app, "_current_shell", lambda: "zsh")
+        with pytest.raises(SystemExit):
+            app._with_reload_hint(self._installed)(None, None, "bash")
+
+        assert capsys.readouterr().out.strip().endswith("exec bash")
+
+    def test_hint_after_typers_own_install(self, monkeypatch, tmp_path):
+        """Through Typer's real callback: fails if a Typer upgrade drops the hint."""
+        import typer.completion
+        from canvodpy.cli import app
+
+        monkeypatch.setattr(app, "_current_shell", lambda: "zsh")
+        monkeypatch.setattr(
+            typer.completion,
+            "install",
+            lambda shell=None: ("zsh", tmp_path / ".zshrc"),
+        )
+        result = runner.invoke(main_app, ["--install-completion"])
+
+        assert result.exit_code == 0
+        assert "completion installed" in result.output
+        assert result.output.strip().endswith("exec zsh")
+
+    def test_canvodpy_uses_the_wrapped_install(self):
+        command = typer.main.get_command(main_app)
+        install = next(p for p in command.params if p.name == "install_completion")
+
+        assert install.callback.__wrapped__ is not None
