@@ -84,6 +84,9 @@ and only maintainers can create, move or delete release tags (`v*`).
    and the built site passes the link check (`just docs-links`); CI runs
    both (`.github/workflows/docs_quality.yml`), the link check of pull
    requests on links between our pages only, external links weekly.
+   Where a page shows the same step for the command line and for Python
+   in tabs, the `Command line` tab comes first, so readers see it by
+   default, and the `Python` tab second.
 4. **Demo notebooks**: if the change breaks or outdates a notebook of
    canvodpy-demo (the `demo` submodule), adapt it there.
 5. **Verify**: `just check`, then `just test-package <package>` for every

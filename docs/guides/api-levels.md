@@ -18,6 +18,12 @@ This page lists the options of both. For a first run, start with
 
 ## Process a period
 
+=== "Command line"
+
+    ```bash
+    canvodpy run --site ExampleSite --start 2025001 --end 2025007
+    ```
+
 === "Python"
 
     ```python
@@ -27,12 +33,6 @@ This page lists the options of both. For a first run, start with
     with site.pipeline() as pipeline:
         for unit in pipeline.run("2025001", "2025007"):
             print(sorted(unit.days), unit.vod.written)
-    ```
-
-=== "Command line"
-
-    ```bash
-    canvodpy run --site ExampleSite --start 2025001 --end 2025007
     ```
 
 Dates are `YYYYDDD`: the year and the day of year, for example
@@ -229,6 +229,17 @@ Writing VOD this way (`write=True`, `write_day`) is deprecated; see
 From observations already in the GNSS store, for example after you
 change the VOD settings, computed and written in the worker pool:
 
+=== "Command line"
+
+    ```bash
+    canvodpy vod --site ExampleSite --analysis canopy_01_vs_reference_01 \
+        --start 2025001 --end 2025031
+    ```
+
+    The command runs `site.vod.compute_days` for whole days, from
+    `--start` to `--end`; without them, for every day of the GNSS store.
+    It lists the days without VOD.
+
 === "Python"
 
     ```python
@@ -269,17 +280,6 @@ change the VOD settings, computed and written in the worker pool:
     reads the range into memory and computes the VOD there, without the
     worker pool, and writes nothing. `site.vod.compute_bulk_all` computes
     every pair.
-
-=== "Command line"
-
-    ```bash
-    canvodpy vod --site ExampleSite --analysis canopy_01_vs_reference_01 \
-        --start 2025001 --end 2025031
-    ```
-
-    The command runs `site.vod.compute_days` for whole days, from
-    `--start` to `--end`; without them, for every day of the GNSS store.
-    It lists the days without VOD.
 
 A day can end up in the GNSS store but not in the VOD store, for example
 when writing the VOD failed. `canvodpy run` warns about such days. To

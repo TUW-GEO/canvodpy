@@ -88,6 +88,29 @@ You need:
 
 ## 1. Install canVODpy
 
+=== "Command line"
+
+    Install canVODpy as a uv tool:
+
+    ```bash
+    uv tool install canvodpy
+    uv tool update-shell   # once: puts the tool folder on your PATH
+    ```
+
+    uv installs canVODpy into an environment of its own and puts the
+    `canvodpy` command into a folder on your `PATH`, the list of folders
+    in which the terminal looks for commands
+    (see [Using tools](https://docs.astral.sh/uv/guides/tools/)). Open a
+    new terminal, and you can run the command from any folder, without
+    `uv run`:
+
+    ```bash
+    canvodpy --help
+    ```
+
+    To update or remove the tool, run `uv tool upgrade canvodpy` or
+    `uv tool uninstall canvodpy`.
+
 === "Python"
 
     Add canVODpy to the uv project you work in. A uv project is a folder
@@ -117,29 +140,6 @@ You need:
 
     This page writes the commands as `canvodpy ...`; in a project, type
     `uv run canvodpy ...`.
-
-=== "Command line"
-
-    Install canVODpy as a uv tool:
-
-    ```bash
-    uv tool install canvodpy
-    uv tool update-shell   # once: puts the tool folder on your PATH
-    ```
-
-    uv installs canVODpy into an environment of its own and puts the
-    `canvodpy` command into a folder on your `PATH`, the list of folders
-    in which the terminal looks for commands
-    (see [Using tools](https://docs.astral.sh/uv/guides/tools/)). Open a
-    new terminal, and you can run the command from any folder, without
-    `uv run`:
-
-    ```bash
-    canvodpy --help
-    ```
-
-    To update or remove the tool, run `uv tool upgrade canvodpy` or
-    `uv tool uninstall canvodpy`.
 
 ??? note "Run the command from a clone of the repository"
 
@@ -312,24 +312,6 @@ cover the same time.
 canVODpy names a day by its year and day of year, as `YYYYDDD`. For
 example, `2025001` is January 1, 2025 and `2025032` is February 1, 2025.
 
-=== "Python"
-
-    ```python
-    from canvodpy import Site
-
-    site = Site("ExampleSite")
-    with site.pipeline() as pipeline:
-        for unit in pipeline.run("2025001", "2025001"):
-            print(unit.days, unit.vod.written)
-    ```
-
-    `run` reads the files of each receiver, adds the satellite positions
-    from the ephemeris products, and writes the observations to the
-    site's Icechunk store. Then it computes VOD for every receiver pair in
-    `vod_analyses` and writes it to the site's VOD store. To work with the
-    observations in Python, `pipeline.process_date("2025001")` returns
-    one dataset per receiver, read back from the store.
-
 === "Command line"
 
     ```bash
@@ -351,6 +333,24 @@ example, `2025001` is January 1, 2025 and `2025032` is February 1, 2025.
 
     To see what a run would process without running it, add `--dry-run`.
 
+=== "Python"
+
+    ```python
+    from canvodpy import Site
+
+    site = Site("ExampleSite")
+    with site.pipeline() as pipeline:
+        for unit in pipeline.run("2025001", "2025001"):
+            print(unit.days, unit.vod.written)
+    ```
+
+    `run` reads the files of each receiver, adds the satellite positions
+    from the ephemeris products, and writes the observations to the
+    site's Icechunk store. Then it computes VOD for every receiver pair in
+    `vod_analyses` and writes it to the site's VOD store. To work with the
+    observations in Python, `pipeline.process_date("2025001")` returns
+    one dataset per receiver, read back from the store.
+
 Files that are already in the store are skipped.
 
 !!! example "Try it in a notebook"
@@ -360,20 +360,6 @@ Files that are already in the store are skipped.
 ---
 
 ## 6. Process a period
-
-=== "Python"
-
-    `run` processes the days in units of several days and yields what
-    it stored and computed for each unit:
-
-    ```python
-    with site.pipeline() as pipeline:
-        for unit in pipeline.run("2025001", "2025031"):
-            print(sorted(unit.days), unit.vod.missing)
-    ```
-
-    `process_range("2025001", "2025031")` yields the datasets of one day
-    at a time instead, read back from the store.
 
 === "Command line"
 
@@ -391,6 +377,20 @@ Files that are already in the store are skipped.
 
     A run processes one site; for several, run it once per site
     ([Several sites](../guides/api-levels.md#several-sites)).
+
+=== "Python"
+
+    `run` processes the days in units of several days and yields what
+    it stored and computed for each unit:
+
+    ```python
+    with site.pipeline() as pipeline:
+        for unit in pipeline.run("2025001", "2025031"):
+            print(sorted(unit.days), unit.vod.missing)
+    ```
+
+    `process_range("2025001", "2025031")` yields the datasets of one day
+    at a time instead, read back from the store.
 
 By default, canVODpy uses all but two of the machine's CPU cores. To set
 limits, see [Parallel processing](../guides/parallel-processing.md).
