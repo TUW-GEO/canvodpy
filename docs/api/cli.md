@@ -71,6 +71,7 @@ $ canvodpy run [OPTIONS]
 * `--dashboard`: Start the marimo performance dashboard next to this run, in a process of its own. Its startup messages go to a log file, not to this terminal.
 * `--dashboard-host <str>`: Host for --dashboard to bind to.  [default: 127.0.0.1]
 * `--dashboard-port <int>`: Port for --dashboard to bind to. Default: a free port that the operating system picks.
+* `--dashboard-stop-at-end`: Stop the dashboard of --dashboard when the run ends. Default: it stays up to show the finished run until you shut it down with its button.
 * `--help`: Show this message and exit.
 
 ## `canvodpy vod`
