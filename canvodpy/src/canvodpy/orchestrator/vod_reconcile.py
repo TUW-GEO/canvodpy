@@ -2,10 +2,10 @@
 
 A run can complete RINEX ingestion for a date
 range cleanly, then fail before (or during) the corresponding VOD-store
-write, leaving those dates permanently un-backfilled: a run without
-dates (``cli/run.py``) only processes days with files the GNSS store
-doesn't hold, so an already-RINEX-complete date is never re-yielded
-for VOD computation on a later run. This module finds that gap cheaply
+write, leaving those dates permanently un-backfilled: a later run
+computes VOD only for the days it stores, and ``--update-to-latest``
+starts on the last stored day of the receivers with new files, so an
+already-RINEX-complete date is never re-yielded for VOD computation. This module finds that gap cheaply
 -- two whole-table metadata reads (RINEX group + VOD group), not one
 query per candidate date -- so it scales fine to a site's full history.
 
