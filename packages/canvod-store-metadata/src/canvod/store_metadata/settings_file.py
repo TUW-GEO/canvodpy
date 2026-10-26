@@ -12,7 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .content import MissingContentSettingsError
+from .content import MissingContentSettingsError, with_current_names
 from .io import read_repository_metadata
 from .machine import set_machine_settings
 
@@ -101,7 +101,8 @@ def settings_from_store(store: Any) -> dict[str, Any]:
     Returns
     -------
     dict
-        The settings mapping: the store's content settings (unchanged), the
+        The settings mapping: the store's content settings (renamed values
+        under their current names), the
         site and receivers from its repository metadata, ``stores_root_dir``
         and ``gnss_store_name`` from ``store``, and ``TODO`` for the machine
         values (``gnss_site_data_root``, each receiver ``directory``,
@@ -118,7 +119,7 @@ def settings_from_store(store: Any) -> dict[str, Any]:
         them.
     """
     repository = read_repository_metadata(store)
-    content = _content_settings(repository, store)
+    content = with_current_names(_content_settings(repository, store))
     settings = dict(content)
     site_name = next(iter(content["sites"]))
     site = content["sites"][site_name]

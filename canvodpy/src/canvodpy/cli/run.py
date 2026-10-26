@@ -321,9 +321,10 @@ def _main_impl(args: SimpleNamespace) -> int:
         return 1
 
     if args.ephemeris_source is not None:
-        from canvod.config.models.processing_params import ephemeris_source_name
+        from canvod.config.models.processing_params import current_ephemeris_source
 
-        config.processing.params.ephemeris_source = ephemeris_source_name(
+        # Assigning skips the settings check, so the old name is mapped here.
+        config.processing.params.ephemeris_source = current_ephemeris_source(
             args.ephemeris_source
         )
 

@@ -189,6 +189,22 @@ def test_a_store_from_before_precise_accepts_a_run_with_precise(settings):
     assert differences(stored, run, testing.SITE_KEY) == []
 
 
+def test_a_run_that_assigned_final_accepts_a_store_with_precise(settings):
+    """Assigning an attribute skips the settings check, so ``final`` can arrive."""
+    from canvod.store_metadata.content import (
+        differences,
+        new_content_settings,
+        run_content_settings,
+    )
+
+    stored = new_content_settings(settings, testing.SITE_KEY)
+    other = settings.model_copy(deep=True)
+    other.processing.params.ephemeris_source = "final"  # ty: ignore[invalid-assignment]
+    run = run_content_settings(other, testing.SITE_KEY)
+
+    assert differences(stored, run, testing.SITE_KEY) == []
+
+
 def test_a_broadcast_run_differs_from_a_store_from_before_precise(settings):
     from canvod.store_metadata.content import (
         differences,

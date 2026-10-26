@@ -29,6 +29,8 @@ from importlib import metadata as importlib_metadata
 from pathlib import Path
 from typing import Any
 
+from canvod.config.models.processing_params import RENAMED_EPHEMERIS_SOURCES
+
 from .location import StoreLocation
 
 #: Version of the stored form; a reader refuses a newer one.
@@ -102,9 +104,8 @@ CHANGES_FIELD = "changes"
 RECEIVER_KEYS = ("type", "reader_format", "paired_canopies")
 
 #: Values of content settings that were renamed, old name to new name: a
-#: store that records the old name compares equal to a run with the new one.
-#: ``final`` became ``precise`` in v1.0.1 (ADR 0023).
-RENAMED_VALUES = {"processing.params.ephemeris_source": {"final": "precise"}}
+#: store or a run with the old name compares equal to one with the new name.
+RENAMED_VALUES = {"processing.params.ephemeris_source": RENAMED_EPHEMERIS_SOURCES}
 
 #: The key of the resolved SID list (the preset's or custom list, ``None``
 #: for all SIDs); not a key of the settings file.
@@ -174,6 +175,20 @@ def settings_hash(
         hashed["gnss_content_hash"] = gnss_hash
     text = json.dumps(hashed, sort_keys=True, default=str)
     return hashlib.sha256(text.encode()).hexdigest()
+
+
+def with_current_names(settings: Mapping[str, Any]) -> dict[str, Any]:
+    """``settings`` (nested, as in the settings file) with renamed values new.
+
+    For a settings file written from a store that records an old name
+    (:data:`RENAMED_VALUES`).
+    """
+    current = json.loads(json.dumps(dict(settings), default=str))
+    for key, renamed in RENAMED_VALUES.items():
+        value = _get(current, key)
+        if value in renamed:
+            _put(current, key, renamed[value])
+    return current
 
 
 def receiver_content_settings(receiver: Any) -> dict[str, Any]:
@@ -477,8 +492,8 @@ def differences(
     :func:`run_content_settings`. A receiver only one side lists is not
     compared: a receiver the store doesn't list is refused by its own check
     (it is added on purpose, with ``canvodpy store amend``), and a run may
-    leave out receivers of its site. A value the store records under an old
-    name (:data:`RENAMED_VALUES`) is compared under its new name.
+    leave out receivers of its site. A value under an old name
+    (:data:`RENAMED_VALUES`) is compared under its new name.
     """
     receivers = f"sites.{site_name}.receivers"
     stored_settings = dict(stored["settings"])
@@ -497,8 +512,8 @@ def differences(
     left.pop("sites", None)
     right.pop("sites", None)
     for key, renamed in RENAMED_VALUES.items():
-        if left.get(key) in renamed:
-            left[key] = renamed[left[key]]
+        for side in (left, right):
+            side[key] = renamed.get(side.get(key), side.get(key))
     return [
         Difference(key, left.get(key), right.get(key))
         for key in sorted(set(left) | set(right))

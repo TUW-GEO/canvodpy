@@ -11,24 +11,26 @@ from pydantic import Field, model_validator
 
 from .base import _StrictModel
 
+#: Old names of ephemeris sources, to their current names. ``final`` became
+#: ``precise`` in v1.0.1 (ADR 0023); the old name works until v2.0.0.
+RENAMED_EPHEMERIS_SOURCES = {"final": "precise"}
 
-def ephemeris_source_name[T](value: T) -> T | Literal["precise"]:
-    """The current name of an ephemeris source; ``final`` warns.
 
-    ``final`` is the old name of ``precise`` (ADR 0023) and works until
-    v2.0.0. Any other value is returned unchanged for the settings model
-    to check.
+def current_ephemeris_source[T](value: T) -> T | Literal["precise"]:
+    """The current name of the ephemeris source ``value``; an old name warns.
+
+    Any other value is returned unchanged for the settings model to check.
     """
-    if value != "final":
+    if value not in RENAMED_EPHEMERIS_SOURCES:
         return value
     warnings.warn(
-        "The ephemeris source 'final' is now called 'precise' (ADR 0023): "
-        "orbits and clocks of an analysis center, as final or rapid products "
+        "The ephemeris source 'final' is now called 'precise': orbits and "
+        "clocks of an analysis center, as final or rapid products "
         "(processing.aux_data.product_type). The old name will be removed "
         "with the next major version. Write ephemeris_source: precise in "
         "your settings.",
         FutureWarning,
-        stacklevel=3,
+        stacklevel=2,
     )
     return "precise"
 
@@ -234,7 +236,7 @@ class ProcessingParams(_StrictModel):
         if isinstance(data, dict) and "ephemeris_source" in data:
             data = {
                 **data,
-                "ephemeris_source": ephemeris_source_name(data["ephemeris_source"]),
+                "ephemeris_source": current_ephemeris_source(data["ephemeris_source"]),
             }
         return data
 

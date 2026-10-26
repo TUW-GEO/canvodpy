@@ -80,6 +80,28 @@ def test_settings_reproduce_the_stores_content_settings(tmp_path):
     assert differences(stored, run_content_settings(config, SITE), SITE) == []
 
 
+def test_settings_from_a_store_from_before_precise_say_precise(tmp_path):
+    """A store created with ``final`` (v1.0.0) gives ``precise`` (ADR 0023)."""
+    config = _settings(tmp_path)
+    # Assigning skips the settings check: the store records the old name.
+    config.processing.params.ephemeris_source = "final"  # ty: ignore[invalid-assignment]
+    store = tmp_path / "root" / SITE / "gnss"
+    ensure_store_metadata(
+        store,
+        config=config,
+        site_name=SITE,
+        store_type="gnss_store",
+        source_format="rinex3",
+        names=CONTENT_NAMES,
+    )
+    stored = read_repository_metadata(store)["content_settings"]["settings"]
+    assert stored["processing"]["params"]["ephemeris_source"] == "final"
+
+    settings = settings_from_store(store)
+
+    assert settings["processing"]["params"]["ephemeris_source"] == "precise"
+
+
 _RECIPE = (
     "name: rx\nsite: FAN\nagency: INK\nreceiver_number: 1\n"
     "glob: '*.rnx'\nfields:\n  - skip: 3\n"

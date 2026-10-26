@@ -1001,7 +1001,7 @@ def process_sbf(
         "receivers_processed": receivers_processed,
         "files_written": total_files_written,
         "sbf_obs_written": sbf_obs_written,
-        "ephemeris_source": "broadcast" if use_broadcast else "agency",
+        "ephemeris_source": "broadcast" if use_broadcast else "precise",
         "store_radial_distance": config.processing.processing.store_radial_distance,
         "store_sbf_raw_observables": config.processing.processing.store_sbf_raw_observables,
     }
