@@ -25,7 +25,7 @@ params:
   store_delta_snr: false
   store_radial_diff: false
   receiver_position_mode: shared
-  ephemeris_source: final  # 'final' (SP3/CLK) or 'broadcast' (SBF SatVisibility)
+  ephemeris_source: precise  # 'precise' (SP3/CLK) or 'broadcast' (SBF SatVisibility)
   resource_mode: auto
   # n_max_threads, cpu_affinity, nice_priority
   # are only used when resource_mode: manual

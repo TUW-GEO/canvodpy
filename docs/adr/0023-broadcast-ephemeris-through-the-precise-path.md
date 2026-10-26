@@ -52,7 +52,7 @@ recipe.
 
 ## Considered options
 
-- **georinex for reading and positions.** It read one receiver-day of
+- **`georinex` for reading and positions.** It read one receiver-day of
   the test data (96 navigation files) in 20.5 s, against about 3.4 s for
   the whole preparation of a day. Its position routine covers GPS and
   Galileo only and evaluates only at the record times.

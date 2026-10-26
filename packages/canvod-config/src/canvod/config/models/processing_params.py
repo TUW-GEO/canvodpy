@@ -12,6 +12,27 @@ from pydantic import Field, model_validator
 from .base import _StrictModel
 
 
+def ephemeris_source_name[T](value: T) -> T | Literal["precise"]:
+    """The current name of an ephemeris source; ``final`` warns.
+
+    ``final`` is the old name of ``precise`` (ADR 0023) and works until
+    v2.0.0. Any other value is returned unchanged for the settings model
+    to check.
+    """
+    if value != "final":
+        return value
+    warnings.warn(
+        "The ephemeris source 'final' is now called 'precise' (ADR 0023): "
+        "orbits and clocks of an analysis center, as final or rapid products "
+        "(processing.aux_data.product_type). The old name will be removed "
+        "with the next major version. Write ephemeris_source: precise in "
+        "your settings.",
+        FutureWarning,
+        stacklevel=3,
+    )
+    return "precise"
+
+
 class ProcessingParams(_StrictModel):
     """Processing parameters.
 
@@ -157,13 +178,16 @@ class ProcessingParams(_StrictModel):
             "the parsing of RINEX text."
         ),
     )
-    ephemeris_source: Literal["final", "broadcast"] = Field(
-        "final",
+    ephemeris_source: Literal["precise", "broadcast"] = Field(
+        "precise",
         description=(
-            "'final': compute satellite coordinates from agency final products "
-            "(SP3/CLK). 'broadcast': use broadcast ephemerides from SBF "
-            "SatVisibility blocks (SBF reader_format only, skips SP3/CLK "
-            "download). Broadcast is faster but less accurate (~1-2 m orbit)."
+            "'precise': compute satellite coordinates from the precise "
+            "ephemeris of an analysis center (SP3/CLK products; agency and "
+            "product type under aux_data). 'broadcast': use the broadcast "
+            "ephemeris the receiver recorded, from SBF SatVisibility blocks "
+            "(SBF reader_format only, skips the SP3/CLK download). Broadcast "
+            "is faster but less accurate (~1-2 m orbit). 'final' is a "
+            "deprecated name for 'precise'."
         ),
     )
     store_sbf_raw_observables: bool = Field(
@@ -202,6 +226,16 @@ class ProcessingParams(_StrictModel):
                 FutureWarning,
                 stacklevel=2,
             )
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def _rename_final_ephemeris(cls, data: object) -> object:
+        if isinstance(data, dict) and "ephemeris_source" in data:
+            data = {
+                **data,
+                "ephemeris_source": ephemeris_source_name(data["ephemeris_source"]),
+            }
         return data
 
     @model_validator(mode="after")

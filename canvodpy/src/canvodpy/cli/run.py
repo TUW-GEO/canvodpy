@@ -138,8 +138,10 @@ def _start_dashboard(log_dir: Path, host: str, port: int) -> subprocess.Popen:
 
 
 class EphemerisSourceChoice(enum.StrEnum):
-    final = "final"
+    precise = "precise"
     broadcast = "broadcast"
+    # Old name of precise (ADR 0023), removed in v2.0.0.
+    final = "final"
 
 
 def _today_yyyydoy() -> str:
@@ -319,7 +321,11 @@ def _main_impl(args: SimpleNamespace) -> int:
         return 1
 
     if args.ephemeris_source is not None:
-        config.processing.params.ephemeris_source = args.ephemeris_source
+        from canvod.config.models.processing_params import ephemeris_source_name
+
+        config.processing.params.ephemeris_source = ephemeris_source_name(
+            args.ephemeris_source
+        )
 
     from canvodpy.cli.banner import show_banner
 
@@ -688,10 +694,11 @@ def run(
         typer.Option(
             "--ephemeris-source",
             help=(
-                "Where the satellite orbits and clocks come from: final "
+                "Where the satellite orbits and clocks come from: precise "
                 "uses the SP3 and CLK products of an analysis center, "
-                "broadcast uses the SatVisibility blocks of the SBF files. "
-                "Default: from canvod-settings.yaml."
+                "broadcast uses the SatVisibility blocks of the SBF files "
+                "(final: old name of precise). Default: from "
+                "canvod-settings.yaml."
             ),
         ),
     ] = None,

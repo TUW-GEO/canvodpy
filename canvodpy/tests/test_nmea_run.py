@@ -38,7 +38,7 @@ def hainich_settings(tmp_path, monkeypatch):
     path = testing.write_settings(folder)
     settings = json.loads(path.read_text())
     settings["processing"]["aux_data"] = {"agency": "COD", "product_type": "final"}
-    settings["processing"]["params"] = {"ephemeris_source": "final"}
+    settings["processing"]["params"] = {"ephemeris_source": "precise"}
     settings["sites"][testing.SITE_KEY] = {
         "gnss_site_data_root": str(HAINICH),
         "store_description": "One hour of NMEA observations from the test data.",

@@ -6,8 +6,10 @@ description: Three levels of satellite ephemeris for computing observation geome
 # Ephemeris sources
 
 Computing satellite geometry (theta, phi) requires knowing where each satellite
-is at each observation epoch. canvodpy supports two ephemeris sources; a third
-(RINEX navigation files) is planned.
+is at each observation epoch. canvodpy supports two ephemeris sources: the
+precise ephemeris of an analysis center (`ephemeris_source: precise`) and the
+broadcast ephemeris the receiver recorded (`ephemeris_source: broadcast`, SBF
+files for now; RINEX navigation files are planned).
 
 ---
 
@@ -15,18 +17,18 @@ is at each observation epoch. canvodpy supports two ephemeris sources; a third
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-trophy: &nbsp; **Agency Final Products (SP3/CLK)**
+-   :fontawesome-solid-trophy: &nbsp; **Precise ephemeris (SP3/CLK)**
 
     ---
 
-    Precise orbits (and, by default, clocks) from analysis centers (CODE,
-    ESA, IGS). Downloaded via FTP. Final products are published about two
-    weeks after observation.
+    Orbits (and, optionally, clocks) computed afterwards by analysis
+    centers (CODE, ESA, IGS), as final or rapid products. Downloaded via
+    FTP. Final products are published about two weeks after observation.
 
     **Input:** SP3 (+ CLK, optional, see `aux_data.fetch_clock`) files (downloaded)
     **Output:** ECEF XYZ $\rightarrow$ $\theta$, $\varphi$, $r$
 
--   :fontawesome-solid-satellite: &nbsp; **SBF Broadcast (SatVisibility)**
+-   :fontawesome-solid-satellite: &nbsp; **Broadcast ephemeris, SBF (SatVisibility)**
 
     ---
 
@@ -37,7 +39,7 @@ is at each observation epoch. canvodpy supports two ephemeris sources; a third
     **Input:** SBF binary file (SatVisibility block)
     **Output:** theta, phi directly
 
--   :fontawesome-solid-file-lines: &nbsp; **RINEX NAV Broadcast (planned)**
+-   :fontawesome-solid-file-lines: &nbsp; **Broadcast ephemeris, RINEX NAV (planned)**
 
     ---
 
@@ -62,9 +64,12 @@ two sources on its test data; until then, do not mix them in one analysis.
 
 ---
 
-## Agency final products (SP3/CLK)
+## Precise ephemeris (SP3/CLK)
 
-The default path of `canvodpy run` (`ephemeris_source: final`).
+The default path of `canvodpy run` (`ephemeris_source: precise`). The
+products are chosen by `aux_data.agency` and `aux_data.product_type`
+(`final` or `rapid`). Before v1.0.1 this source was called `final`; that name
+still works until v2.0.0 and warns.
 
 ### Pipeline
 
@@ -90,7 +95,7 @@ default, which skips step 1's clock download and step 4 entirely.
 # canvod-settings.yaml
 processing:
   params:
-    ephemeris_source: "final"
+    ephemeris_source: "precise"
   aux_data:
     agency: "COD"
     product_type: "final"
@@ -110,7 +115,7 @@ processing:
 
 ---
 
-## SBF broadcast
+## Broadcast ephemeris from SBF
 
 Available when the receiver is a Septentrio unit outputting SBF binary format,
 with `ephemeris_source: broadcast`.
@@ -236,16 +241,16 @@ target epoch, not simply the first record found.
 
 ## Choosing an ephemeris source
 
-??? question "When to use agency final products"
+??? question "When to use the precise ephemeris"
 
-    Use `ephemeris_source: "final"` when:
+    Use `ephemeris_source: "precise"` when:
 
     - The receivers write RINEX or NMEA (the only source for them)
     - Final products are available for the days (about two weeks after
       observation)
     - You have internet access during processing
 
-??? question "When to use broadcast ephemerides"
+??? question "When to use the broadcast ephemeris"
 
     Use `ephemeris_source: "broadcast"` when:
 

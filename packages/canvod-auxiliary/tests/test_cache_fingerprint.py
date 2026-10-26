@@ -14,7 +14,7 @@ def _fp(**overrides) -> str:
     defaults = {
         "agency": "COD",
         "product_type": "final",
-        "ephemeris_source": "final",
+        "ephemeris_source": "precise",
         "canonical_grid_seconds": CANONICAL_AUX_GRID_SECONDS,
         "source_file_paths": {"ephemerides": None, "clock": None},
         "aggregate_glonass_fdma": True,
@@ -36,7 +36,7 @@ def test_sensitive_to_product_type() -> None:
 
 
 def test_sensitive_to_ephemeris_source() -> None:
-    assert _fp(ephemeris_source="final") != _fp(ephemeris_source="broadcast")
+    assert _fp(ephemeris_source="precise") != _fp(ephemeris_source="broadcast")
 
 
 def test_sensitive_to_canonical_grid_seconds() -> None:

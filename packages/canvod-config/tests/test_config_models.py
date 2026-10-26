@@ -191,6 +191,14 @@ class TestProcessingParams:
             params = ProcessingParams(days_per_batch=3)
         assert params.days_per_batch == 3
 
+    def test_precise_ephemeris_is_the_default(self):
+        assert ProcessingParams().ephemeris_source == "precise"
+
+    def test_final_is_a_deprecated_name_for_precise(self):
+        with pytest.warns(FutureWarning, match="'final'.*'precise'"):
+            params = ProcessingParams(ephemeris_source="final")
+        assert params.ephemeris_source == "precise"
+
     def test_without_days_per_batch_nothing_warns(self):
         import warnings
 

@@ -101,6 +101,11 @@ CHANGES_FIELD = "changes"
 #: ``sites.<site>.receivers.<receiver>``.
 RECEIVER_KEYS = ("type", "reader_format", "paired_canopies")
 
+#: Values of content settings that were renamed, old name to new name: a
+#: store that records the old name compares equal to a run with the new one.
+#: ``final`` became ``precise`` in v1.0.1 (ADR 0023).
+RENAMED_VALUES = {"processing.params.ephemeris_source": {"final": "precise"}}
+
 #: The key of the resolved SID list (the preset's or custom list, ``None``
 #: for all SIDs); not a key of the settings file.
 RESOLVED_SIDS = "sids (resolved list)"
@@ -472,7 +477,8 @@ def differences(
     :func:`run_content_settings`. A receiver only one side lists is not
     compared: a receiver the store doesn't list is refused by its own check
     (it is added on purpose, with ``canvodpy store amend``), and a run may
-    leave out receivers of its site.
+    leave out receivers of its site. A value the store records under an old
+    name (:data:`RENAMED_VALUES`) is compared under its new name.
     """
     receivers = f"sites.{site_name}.receivers"
     stored_settings = dict(stored["settings"])
@@ -490,6 +496,9 @@ def differences(
     right[RESOLVED_SIDS] = run.get("resolved_sids")
     left.pop("sites", None)
     right.pop("sites", None)
+    for key, renamed in RENAMED_VALUES.items():
+        if left.get(key) in renamed:
+            left[key] = renamed[left[key]]
     return [
         Difference(key, left.get(key), right.get(key))
         for key in sorted(set(left) | set(right))

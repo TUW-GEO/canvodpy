@@ -313,10 +313,10 @@ Threads per worker process; null lets the scheduler decide. More than 1 helps ar
 
 #### `processing.params.ephemeris_source` {#processing-params-ephemeris_source}
 
-`final`: compute satellite coordinates from agency final products (SP3/CLK). `broadcast`: use broadcast ephemerides from SBF SatVisibility blocks (SBF `reader_format` only, skips SP3/CLK download). Broadcast is faster but less accurate (~1-2 m orbit).
+`precise`: compute satellite coordinates from the precise ephemeris of an analysis center (SP3/CLK products; agency and product type under `aux_data`). `broadcast`: use the broadcast ephemeris the receiver recorded, from SBF SatVisibility blocks (SBF `reader_format` only, skips the SP3/CLK download). Broadcast is faster but less accurate (~1-2 m orbit). `final` is a deprecated name for `precise`.
 
-- Type: one of `final`, `broadcast`
-- Default: `final`
+- Type: one of `precise`, `broadcast`
+- Default: `precise`
 
 #### `processing.params.store_sbf_raw_observables` {#processing-params-store_sbf_raw_observables}
 

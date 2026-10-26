@@ -223,6 +223,7 @@ All of these are replaced by one entry point: `canvodpy run`, or
 | `processing.storage.vod_store_strategy` | nothing (no effect); to recompute VOD, set `vod_store_name` to another name, such as `vod-recompute` |
 | `processing.logging.log_file_name` | nothing (no effect); log files have fixed names under `log_dir` |
 | `processing.icechunk.zarr_async_concurrency` | nothing (no effect); it limited Zarr's concurrent chunk writes for only some of the store's writes |
+| `processing.params.ephemeris_source: final`, `canvodpy run --ephemeris-source final` (since v1.0.1) | `precise`, the same source under its new name ([ADR 0023](../adr/0023-broadcast-ephemeris-through-the-precise-path.md)); stores created with `final` accept runs with `precise` |
 | `processing.params.days_per_batch`, `canvodpy run --days-per-batch`, argument `days_per_batch` of `Site.pipeline()` and `Pipeline` | nothing; the run sizes its units of days from `max_memory_gb`. Until v2.0.0 the value only caps the days per unit |
 
 ### Python API

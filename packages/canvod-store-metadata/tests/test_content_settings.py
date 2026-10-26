@@ -173,6 +173,41 @@ def test_a_changed_sid_preset_counts(store, settings):
         _start(store, other)
 
 
+def test_a_store_from_before_precise_accepts_a_run_with_precise(settings):
+    """``final`` is the old name of ``precise`` (ADR 0023): no difference."""
+    from canvod.store_metadata.content import (
+        differences,
+        new_content_settings,
+        run_content_settings,
+    )
+
+    stored = new_content_settings(settings, testing.SITE_KEY)
+    stored["settings"]["processing"]["params"]["ephemeris_source"] = "final"
+    run = run_content_settings(settings, testing.SITE_KEY)
+
+    assert run["settings"]["processing"]["params"]["ephemeris_source"] == "precise"
+    assert differences(stored, run, testing.SITE_KEY) == []
+
+
+def test_a_broadcast_run_differs_from_a_store_from_before_precise(settings):
+    from canvod.store_metadata.content import (
+        differences,
+        new_content_settings,
+        run_content_settings,
+    )
+
+    stored = new_content_settings(settings, testing.SITE_KEY)
+    stored["settings"]["processing"]["params"]["ephemeris_source"] = "final"
+    other = settings.model_copy(deep=True)
+    other.processing.params.ephemeris_source = "broadcast"
+
+    run = run_content_settings(other, testing.SITE_KEY)
+
+    found = differences(stored, run, testing.SITE_KEY)
+
+    assert [d.key for d in found] == ["processing.params.ephemeris_source"]
+
+
 def test_a_store_without_content_settings_is_refused(tmp_path, settings):
     path = give_test_metadata(tmp_path / "gnss", receivers={"canopy_01": "canopy"})
 

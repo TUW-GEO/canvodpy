@@ -25,7 +25,7 @@ from canvod.auxiliary.cache_fingerprint import (
 FINGERPRINT = compute_aux_cache_fingerprint(
     agency="COD",
     product_type="final",
-    ephemeris_source="final",
+    ephemeris_source="precise",
     canonical_grid_seconds=CANONICAL_AUX_GRID_SECONDS,
     source_file_paths={},
     aggregate_glonass_fdma=True,
@@ -39,7 +39,7 @@ def _fake_self(tmp_path: Path) -> SimpleNamespace:
     config = mock.MagicMock()
     config.processing.aux_data.agency = "COD"
     config.processing.aux_data.product_type = "final"
-    config.processing.params.ephemeris_source = "final"
+    config.processing.params.ephemeris_source = "precise"
     config.processing.params.aggregate_glonass_fdma = True
     return SimpleNamespace(
         _logger=logger,

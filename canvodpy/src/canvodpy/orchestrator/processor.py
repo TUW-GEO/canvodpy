@@ -1267,7 +1267,7 @@ class RinexDataProcessor:
         self._keeper_tags_enabled: bool = config.processing.storage.keeper_tags
         self.keep_sids = config.sids.get_sids()
 
-        # Resolve ephemeris source: explicit param > config > default (final)
+        # Resolve ephemeris source: explicit param > config > default (precise)
         if self._use_sbf_geometry_override:
             self.use_sbf_geometry = True
         else:

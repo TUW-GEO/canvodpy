@@ -356,7 +356,7 @@ processing:
     store_radial_distance: false   # store satellite distance (r)
     receiver_position_mode: shared # or per_receiver
     file_pairing: complete         # or paired
-    ephemeris_source: final        # or broadcast (SBF only)
+    ephemeris_source: precise      # or broadcast (SBF only)
 
     # --- Resource management ---
     resource_mode: auto            # auto or manual
@@ -406,8 +406,8 @@ processing:
 | `params.rinex_v3_parser`        | `validated`, `unvalidated_fast` | How RINEX v3 files are parsed. `validated` (default) checks every epoch and drops (and logs) epochs that fail. `unvalidated_fast` is **dangerous**: no checks, corrupted records can enter the store, and the results are entirely your responsibility; every use emits an `UnvalidatedParserWarning`. Both give the identical dataset for a valid file. |
 | `params.receiver_position_mode` | `shared`, `per_receiver` | `shared` uses canopy receiver position for all receivers (enables 1:1 SNR comparison). `per_receiver` uses each receiver's own position.                                                 |
 | `params.file_pairing`           | `complete`, `paired`     | `complete` ingests all files per receiver independently. `paired` only processes dates where both receivers have data.                                                                   |
-| `params.ephemeris_source`       | `final`, `broadcast`     | `final` computes satellite positions from agency SP3/CLK products. `broadcast` uses the satellite angles the receiver computed from the broadcast ephemeris (SBF SatVisibility blocks; almanac-based angles are not used; SBF only, no SP3/CLK download, faster but less accurate). |
-| `aux_data.fetch_clock`          | `true`, `false`          | Whether to download and interpolate CLK clock-correction files alongside SP3 (only applies to `ephemeris_source: final`). Default `false`: VOD does not use clock data. `true` adds each satellite's clock correction to the GNSS store as the variable `clock`. |
+| `params.ephemeris_source`       | `precise`, `broadcast`   | `precise` computes satellite positions from the SP3/CLK products of an analysis center (`final` is the old name of `precise`; it works until v2.0.0 and warns). `broadcast` uses the satellite angles the receiver computed from the broadcast ephemeris (SBF SatVisibility blocks; almanac-based angles are not used; SBF only, no SP3/CLK download, faster but less accurate). |
+| `aux_data.fetch_clock`          | `true`, `false`          | Whether to download and interpolate CLK clock-correction files alongside SP3 (only applies to `ephemeris_source: precise`). Default `false`: VOD does not use clock data. `true` adds each satellite's clock correction to the GNSS store as the variable `clock`. |
 | `params.days_per_batch`         | 1–30                     | Deprecated, removed in v2.0.0; prints a `FutureWarning`. Only caps the days per unit, which the run sizes from the memory budget ([Parallel processing](parallel-processing.md)). Leave it out. |
 | `params.resource_mode`          | `auto`, `manual`         | `auto` starts one worker per physical CPU core and leaves at least two CPU threads free for the operating system. `manual` uses the limits you set (`n_max_threads` is then required); use it on shared servers.      |
 | `params.store_radial_distance`  | `true`, `false`          | Whether to store satellite radial distance in the output.                                                                                                                                |
