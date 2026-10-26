@@ -243,7 +243,10 @@ def plan_memory(
     tasks_per_day
         The tasks of a day, on average over the run's days; for the log.
     max_workers
-        The worker cap: ``n_max_threads``, or the cores minus two.
+        The worker cap the caller passes: the pipeline's
+        ``n_max_workers``, else ``os.cpu_count()``, else 4. In
+        ``resource_mode: auto``, ``n_max_workers`` is one per physical
+        core, at most the logical cores minus two, at least 1.
     days_to_run
         The days the run processes.
     budget_source
