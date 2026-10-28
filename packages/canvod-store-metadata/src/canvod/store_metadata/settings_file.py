@@ -12,6 +12,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from canvod.config.models.aux_data import PRECISE_ONLY_SETTINGS
+
 from .content import MissingContentSettingsError, with_current_names
 from .io import read_repository_metadata
 from .machine import set_machine_settings
@@ -120,6 +122,12 @@ def settings_from_store(store: Any) -> dict[str, Any]:
     """
     repository = read_repository_metadata(store)
     content = with_current_names(_content_settings(repository, store))
+    # A broadcast store records the settings of the precise ephemeris as
+    # empty; the settings file leaves them out, so the defaults load.
+    aux_data = content.get("processing", {}).get("aux_data", {})
+    for name in PRECISE_ONLY_SETTINGS:
+        if name in aux_data and aux_data[name] is None:
+            del aux_data[name]
     settings = dict(content)
     site_name = next(iter(content["sites"]))
     site = content["sites"][site_name]

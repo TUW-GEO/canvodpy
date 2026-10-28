@@ -224,6 +224,83 @@ def test_a_broadcast_run_differs_from_a_store_from_before_precise(settings):
     assert [d.key for d in found] == ["processing.params.ephemeris_source"]
 
 
+def _broadcast(settings):
+    """``settings`` with the broadcast ephemeris (assigning skips the warning)."""
+    other = settings.model_copy(deep=True)
+    other.processing.params.ephemeris_source = "broadcast"
+    return other
+
+
+def test_a_broadcast_store_records_no_product(settings):
+    """Agency and product type do not apply to the broadcast ephemeris (#574)."""
+    from canvod.store_metadata.content import new_content_settings
+
+    stored = new_content_settings(_broadcast(settings), testing.SITE_KEY)
+
+    aux = stored["settings"]["processing"]["aux_data"]
+    assert aux["agency"] is None
+    assert aux["product_type"] is None
+
+
+def test_a_precise_store_records_its_product(settings):
+    from canvod.store_metadata.content import new_content_settings
+
+    stored = new_content_settings(settings, testing.SITE_KEY)
+
+    aux = stored["settings"]["processing"]["aux_data"]
+    assert (aux["agency"], aux["product_type"]) == ("COD", "final")
+
+
+def test_a_broadcast_run_ignores_the_product_of_any_setting(settings):
+    """A run with another agency or product writes to the same broadcast store."""
+    from canvod.store_metadata.content import (
+        differences,
+        new_content_settings,
+        run_content_settings,
+    )
+
+    stored = new_content_settings(_broadcast(settings), testing.SITE_KEY)
+    other = _broadcast(settings)
+    other.processing.aux_data.agency = "GFZ"
+    other.processing.aux_data.product_type = "rapid"
+
+    run = run_content_settings(other, testing.SITE_KEY)
+
+    assert differences(stored, run, testing.SITE_KEY) == []
+
+
+def test_a_broadcast_store_from_before_574_accepts_a_broadcast_run(settings):
+    """A broadcast store of v1.0.0 recorded the default product: no difference."""
+    from canvod.store_metadata.content import (
+        differences,
+        new_content_settings,
+        run_content_settings,
+    )
+
+    stored = new_content_settings(_broadcast(settings), testing.SITE_KEY)
+    stored["settings"]["processing"]["aux_data"].update(
+        {"agency": "COD", "product_type": "final"}
+    )
+    run = run_content_settings(_broadcast(settings), testing.SITE_KEY)
+
+    assert differences(stored, run, testing.SITE_KEY) == []
+
+
+def test_a_precise_run_differs_from_a_broadcast_store_in_the_source_only(settings):
+    from canvod.store_metadata.content import (
+        differences,
+        new_content_settings,
+        run_content_settings,
+    )
+
+    stored = new_content_settings(_broadcast(settings), testing.SITE_KEY)
+    run = run_content_settings(settings, testing.SITE_KEY)
+
+    found = differences(stored, run, testing.SITE_KEY)
+
+    assert [d.key for d in found] == ["processing.params.ephemeris_source"]
+
+
 def test_a_store_without_content_settings_is_refused(tmp_path, settings):
     path = give_test_metadata(tmp_path / "gnss", receivers={"canopy_01": "canopy"})
 

@@ -155,14 +155,14 @@ The orbit and clock products to download
 
 #### `processing.aux_data.agency` {#processing-aux_data-agency}
 
-Analysis center code
+Analysis center code. Only for the precise ephemeris: with `ephemeris_source` broadcast it is ignored (a value other than the default warns), and the store records it as empty.
 
 - Type: text
 - Default: `COD`
 
 #### `processing.aux_data.product_type` {#processing-aux_data-product_type}
 
-Product type. The agency must publish it: see the product registry of canvod-auxiliary (`products.toml`).
+Product type. The agency must publish it: see the product registry of canvod-auxiliary (`products.toml`). Only for the precise ephemeris: with `ephemeris_source` broadcast it is ignored (a value other than the default warns), and the store records it as empty.
 
 - Type: one of `final`, `rapid`
 - Default: `final`

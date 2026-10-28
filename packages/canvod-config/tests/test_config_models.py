@@ -791,6 +791,48 @@ class TestAuxDataProductType:
         assert AuxDataConfig(product_type="rapid").product_type == "rapid"
 
 
+class TestBroadcastIgnoresTheProduct:
+    """With the broadcast ephemeris, agency and product type do not apply (#574)."""
+
+    @pytest.fixture
+    def processing(self, tmp_path):
+        def make(source: str, **aux) -> ProcessingConfig:
+            return ProcessingConfig(
+                metadata=MetadataConfig(
+                    author="J. R. R. Tolkien",
+                    email="jrrt@example.com",
+                    institution="Fangorn",
+                ),
+                storage=StorageConfig(stores_root_dir=tmp_path),
+                aux_data=AuxDataConfig(**aux),
+                params=ProcessingParams(ephemeris_source=source),
+            )
+
+        return make
+
+    @pytest.mark.parametrize(
+        ("aux", "named"),
+        [
+            ({"agency": "GFZ"}, "agency"),
+            ({"product_type": "rapid"}, "product_type"),
+            ({"agency": "GFZ", "product_type": "rapid"}, "agency, product_type"),
+        ],
+    )
+    def test_a_product_set_with_broadcast_warns(self, processing, aux, named):
+        with pytest.warns(UserWarning, match=f"broadcast.*ignores {named}"):
+            processing("broadcast", **aux)
+
+    def test_the_default_product_with_broadcast_does_not_warn(self, processing):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            processing("broadcast", agency="COD", product_type="final")
+
+    def test_a_product_set_with_precise_does_not_warn(self, processing):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            processing("precise", agency="GFZ", product_type="rapid")
+
+
 class TestChunkStrategies:
     def test_defaults_for_both_stores(self):
         ic = IcechunkConfig()
