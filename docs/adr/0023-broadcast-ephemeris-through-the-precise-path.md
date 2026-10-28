@@ -6,8 +6,9 @@ A run takes satellite angles from one ephemeris per store
 (`ephemeris_source`, ADR 0019): the precise ephemeris (agency products,
 SP3/CLK) or the broadcast ephemeris. Until now the broadcast ephemeris
 worked only for SBF, whose SatVisibility blocks hold the angles the
-receiver computed. RINEX receivers record the same navigation messages
-in RINEX navigation files, which hold orbit parameters, not angles.
+receiver computed. Many receivers can also record the navigation
+messages in RINEX navigation files, which hold orbit parameters, not
+angles.
 It is not settled that the precise ephemeris gives better VOD, and the
 broadcast ephemeris is available in real time.
 
@@ -71,7 +72,7 @@ recipe.
 
 ## Consequences
 
-- RINEX users can process without agency products, and in real time.
+- RINEX files can be processed without agency products, and in real time.
 - `final` in settings files gives a warning until v2.0.0.
 - The angles of SBF and RINEX broadcast stores come from the same
   receiver, and can be compared.
