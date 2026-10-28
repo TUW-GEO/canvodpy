@@ -30,9 +30,9 @@ Every canVOD-compatible GNSS file follows this naming format:
 | `DOY` | 3 | Day of year (001--366) | `001` |
 | `HHMM` | 4 | Start time (hours + minutes) | `0000` |
 | `PERIOD` | 3 | Batch duration: value + unit | `01D`, `15M` |
-| `SAMPLING` | 3 | Data frequency: value + unit | `05S`, `01S` |
+| `SAMPLING` | 3 | Data frequency: value + unit; `00U` (unspecified) for navigation files | `05S`, `01S`, `00U` |
 | `CONTENT` | 2 | User field, filled as needed (`AA` by default) | `AA` |
-| `TYPE` | 2--8 | File format, lowercase; runs read `rnx`, `sbf` and `nmea`, and the type of each installed [reader plugin](../../guides/plugins.md) | `rnx`, `sbf`, `nmea`, `ubx` |
+| `TYPE` | 2--8 | File format, lowercase; runs read `rnx`, `sbf` and `nmea`, and the type of each installed [reader plugin](../../guides/plugins.md); `nav` is a RINEX navigation file | `rnx`, `sbf`, `nmea`, `ubx`, `nav` |
 | `COMPRESSION` | -- | Optional compression extension; runs do not read compressed files (warning `compressed_files_not_processed`), decompress them first | `zip`, `gz` |
 
 ### Duration codes
@@ -43,6 +43,7 @@ Every canVOD-compatible GNSS file follows this naming format:
 | `M` | Minutes | `15M` = 15 minutes |
 | `H` | Hours | `01H` = 1 hour |
 | `D` | Days | `01D` = 1 day |
+| `U` | Unspecified, only `00U`, only for navigation files (RINEX 4.00, Table A1) | `00U` |
 
 ### Example
 

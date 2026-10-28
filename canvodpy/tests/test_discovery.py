@@ -765,3 +765,15 @@ def test_a_cached_scan_serves_only_the_days_it_listed(tmp_path: Path) -> None:
     assert added in [f.path.name for f in second.days["2025002"]]
     # Lookups without days read the latest scan.
     assert scan_directory(tmp_path) is second
+
+
+def test_navigation_files_found_by_their_type(tmp_path: Path) -> None:
+    """``nav`` files are found as navigation files, never read as observations."""
+    nav = [
+        "FANA01INK_R_20250010000_15M_00U_AA.nav",
+        "FANA01INK_R_20250010015_15M_00U_AA.nav",
+    ]
+    _touch(tmp_path, CANONICAL, *nav)
+    assert _names(tmp_path, "nav") == nav
+    assert _names(tmp_path, "rinex3") == [CANONICAL]
+    assert _names(tmp_path, "auto") == [CANONICAL]

@@ -280,8 +280,8 @@ def _load_recipe(recipe_path: Path) -> Any:
     return NamingRecipe.load(recipe_path)
 
 
-#: File types each built-in reader format reads (``None``/``"auto"``: all of
-#: them); a reader plugin reads its reader's ``file_type``. RINEX 2 and 3
+#: File types each built-in reader format reads (``None``/``"auto"``: all
+#: observation types); ``"nav"`` selects navigation files; a reader plugin reads its reader's ``file_type``. RINEX 2 and 3
 #: share the canonical type ``rnx``; the header tells them apart.
 _READER_FILE_TYPES: dict[str | None, frozenset[str]] = {
     "sbf": frozenset({"sbf"}),
@@ -290,6 +290,7 @@ _READER_FILE_TYPES: dict[str | None, frozenset[str]] = {
     "rinex2": frozenset({"rnx"}),
     "rinex": frozenset({"rnx"}),
     "nmea": frozenset({"nmea"}),
+    "nav": frozenset({"nav"}),  # navigation files, never observations
 }
 _ALL_FILE_TYPES = frozenset({"rnx", "sbf", "nmea"})
 
@@ -835,7 +836,8 @@ def discover_files(
         Receiver, its directory, the day and its recipe.
     reader_format : str | None
         Receiver reader format (``"rinex3"``, ``"rinex"``, ``"sbf"``, or
-        ``None``/``"auto"`` for all recognized types). Ignored with a recipe,
+        ``None``/``"auto"`` for all observation types, ``"nav"`` for the
+        navigation files). Ignored with a recipe,
         whose ``file_type`` selects the files.
 
     Returns
