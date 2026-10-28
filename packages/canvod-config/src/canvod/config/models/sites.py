@@ -118,6 +118,17 @@ class ReceiverConfig(_StrictModel):
             )
         return v
 
+    nav_directory: str | None = Field(
+        None,
+        description=(
+            "Subdirectory for the receiver's RINEX navigation files, relative "
+            "to the site data root like 'directory' (it may be the same "
+            "folder). Needed with ephemeris_source broadcast for a receiver "
+            "with RINEX files: the satellite positions come from these files. "
+            "They need canonical names of type 'nav' (or a naming recipe)."
+        ),
+    )
+
     recipe: str | None = Field(
         None,
         description=(
@@ -205,6 +216,10 @@ _FILE_FORMAT: dict[str, str] = {"rinex3_stripped": "rinex3"}
 
 #: Reader formats of canvodpy itself; plugins add more (:func:`reader_formats`).
 BUILT_IN_READER_FORMATS = ("auto", "rinex3", "rinex3_stripped", "rinex2", "sbf", "nmea")
+
+#: Reader formats of RINEX observation files: with the broadcast ephemeris,
+#: a receiver with one of them needs ``nav_directory`` (ADR 0023).
+RINEX_READER_FORMATS = ("rinex3", "rinex3_stripped", "rinex2")
 
 
 def reader_formats() -> list[str]:

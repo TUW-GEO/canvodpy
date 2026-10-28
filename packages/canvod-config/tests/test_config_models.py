@@ -1005,3 +1005,51 @@ class TestCanvodConfig:
             sids=SidsConfig(),
         )
         assert cfg.nasa_earthdata_acc_mail == "user@nasa.gov"
+
+
+class TestNavDirectory:
+    """With the broadcast ephemeris, receivers with RINEX files name their
+    navigation files with nav_directory (#567, ADR 0023)."""
+
+    def _config(self, source: str, reader_format: str, **nav_directories):
+        def receiver(name: str, **kwargs):
+            return ReceiverConfig(
+                directory=name,
+                reader_format=reader_format,
+                nav_directory=nav_directories.get(name),
+                **kwargs,
+            )
+
+        return CanvodConfig(
+            processing=ProcessingConfig(
+                metadata=MetadataConfig(author="A", email="a@b.com", institution="U"),
+                storage=StorageConfig(stores_root_dir=Path("/path/to/stores")),
+                params=ProcessingParams(ephemeris_source=source),
+            ),
+            sites=SitesConfig(
+                sites={
+                    "s": SiteConfig(
+                        gnss_site_data_root="/data",
+                        receivers={
+                            "c": receiver("c", type="canopy"),
+                            "r": receiver("r", type="reference", paired_canopies="all"),
+                        },
+                    )
+                }
+            ),
+            sids=SidsConfig(),
+        )
+
+    def test_broadcast_rinex_receiver_without_nav_directory_is_refused(self):
+        with pytest.raises(ValidationError, match=r"nav_directory for s\.r\b"):
+            self._config("broadcast", "rinex3", c="c_nav")
+
+    def test_broadcast_rinex_receivers_with_nav_directory(self):
+        cfg = self._config("broadcast", "rinex3", c="c_nav", r="r")
+        assert cfg.sites.sites["s"].receivers["c"].nav_directory == "c_nav"
+
+    def test_precise_needs_no_nav_directory(self):
+        self._config("precise", "rinex3")
+
+    def test_sbf_receivers_need_no_nav_directory(self):
+        self._config("broadcast", "sbf")

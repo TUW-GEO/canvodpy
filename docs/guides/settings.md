@@ -1029,6 +1029,13 @@ Reader for the receiver's files: `rinex3` (RINEX 3), `rinex3_stripped` (RINEX 3 
 - Type: text
 - Default: `auto`
 
+#### `sites.<site>.receivers.<receiver>.nav_directory` {#sites-site-receivers-receiver-nav_directory}
+
+Subdirectory for the receiver's RINEX navigation files, relative to the site data root like `directory` (it may be the same folder). Needed with `ephemeris_source` broadcast for a receiver with RINEX files: the satellite positions come from these files. They need canonical names of type `nav` (or a naming recipe).
+
+- Type: text, or null
+- Default: `null`
+
 #### `sites.<site>.receivers.<receiver>.recipe` {#sites-site-receivers-receiver-recipe}
 
 Naming recipe: a name (for example `examplesite_reference`), read from &lt;config dir&gt;/recipes/&lt;site&gt;/{recipe}.yaml, or a raw GitHub URL, fetched by every run (`https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../{name}.yaml`); stores record only its file name. A recipe in a private repository needs a token in `GH_TOKEN` or `GITHUB_TOKEN`. Without a recipe, only files with canonical canVOD names are processed.
