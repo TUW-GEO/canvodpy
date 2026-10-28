@@ -281,8 +281,9 @@ def _load_recipe(recipe_path: Path) -> Any:
 
 
 #: File types each built-in reader format reads (``None``/``"auto"``: all
-#: observation types); ``"nav"`` selects navigation files; a reader plugin reads its reader's ``file_type``. RINEX 2 and 3
-#: share the canonical type ``rnx``; the header tells them apart.
+#: observation types); ``"nav"`` selects navigation files; a reader plugin
+#: reads its reader's ``file_type``. RINEX 2 and 3 share the canonical type
+#: ``rnx``; the header tells them apart.
 _READER_FILE_TYPES: dict[str | None, frozenset[str]] = {
     "sbf": frozenset({"sbf"}),
     "rinex3": frozenset({"rnx"}),
