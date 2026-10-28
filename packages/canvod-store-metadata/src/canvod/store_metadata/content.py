@@ -29,6 +29,7 @@ from importlib import metadata as importlib_metadata
 from pathlib import Path
 from typing import Any
 
+from canvod.config.models.aux_data import PRECISE_ONLY_SETTINGS
 from canvod.config.models.processing_params import RENAMED_EPHEMERIS_SOURCES
 
 from .location import StoreLocation
@@ -105,7 +106,15 @@ RECEIVER_KEYS = ("type", "reader_format", "paired_canopies")
 
 #: Values of content settings that were renamed, old name to new name: a
 #: store or a run with the old name compares equal to one with the new name.
-RENAMED_VALUES = {"processing.params.ephemeris_source": RENAMED_EPHEMERIS_SOURCES}
+EPHEMERIS_SOURCE = "processing.params.ephemeris_source"
+RENAMED_VALUES = {EPHEMERIS_SOURCE: RENAMED_EPHEMERIS_SOURCES}
+
+#: The content settings that apply only to the precise ephemeris. A
+#: broadcast store records them as empty, and a comparison with a broadcast
+#: side ignores them (#574).
+PRECISE_ONLY_KEYS = tuple(
+    f"processing.aux_data.{name}" for name in PRECISE_ONLY_SETTINGS
+)
 
 #: The key of the resolved SID list (the preset's or custom list, ``None``
 #: for all SIDs); not a key of the settings file.
@@ -191,6 +200,11 @@ def with_current_names(settings: Mapping[str, Any]) -> dict[str, Any]:
     return current
 
 
+def _is_broadcast(source: Any) -> bool:
+    """Whether the ephemeris source ``source`` (old or new name) is broadcast."""
+    return RENAMED_EPHEMERIS_SOURCES.get(source, source) == "broadcast"
+
+
 def receiver_content_settings(receiver: Any) -> dict[str, Any]:
     """The content settings of one receiver, from its settings."""
     return {key: _json(getattr(receiver, key)) for key in RECEIVER_KEYS}
@@ -220,6 +234,9 @@ def run_content_settings(
     keys = CONTENT_KEYS if store_type == "gnss_store" else VOD_CONTENT_KEYS
     for key in keys:
         _put(settings, key, _json(_get(config, key)))
+    if store_type == "gnss_store" and _is_broadcast(_get(settings, EPHEMERIS_SOURCE)):
+        for key in PRECISE_ONLY_KEYS:
+            _put(settings, key, None)
     resolved_sids: Any = None
     if store_type == "gnss_store":
         receivers = {
@@ -493,7 +510,11 @@ def differences(
     compared: a receiver the store doesn't list is refused by its own check
     (it is added on purpose, with ``canvodpy store amend``), and a run may
     leave out receivers of its site. A value under an old name
-    (:data:`RENAMED_VALUES`) is compared under its new name.
+    (:data:`RENAMED_VALUES`) is compared under its new name. When either
+    side uses the broadcast ephemeris, the settings of the precise ephemeris
+    (:data:`PRECISE_ONLY_KEYS`) are not compared: a broadcast store created
+    before they were recorded as empty keeps the defaults, and between a
+    precise and a broadcast side the ephemeris source is the difference.
     """
     receivers = f"sites.{site_name}.receivers"
     stored_settings = dict(stored["settings"])
@@ -514,6 +535,9 @@ def differences(
     for key, renamed in RENAMED_VALUES.items():
         for side in (left, right):
             side[key] = renamed.get(side.get(key), side.get(key))
+    if any(_is_broadcast(side.get(EPHEMERIS_SOURCE)) for side in (left, right)):
+        for key in PRECISE_ONLY_KEYS:
+            left[key] = right[key] = None
     return [
         Difference(key, left.get(key), right.get(key))
         for key in sorted(set(left) | set(right))

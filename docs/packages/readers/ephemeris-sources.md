@@ -71,6 +71,12 @@ products are chosen by `aux_data.agency` and `aux_data.product_type`
 (`final` or `rapid`). Before v1.0.1 this source was called `final`; that name
 still works until v2.0.0 and warns.
 
+The agency and the product type apply only to the precise ephemeris. With
+`ephemeris_source: broadcast`, a store records them as empty in its content
+settings, and a value other than the default (`COD`, `final`) warns that it
+is ignored. A broadcast store created before v1.0.1 recorded them as they
+were set; runs still write to it, since broadcast stores do not compare them.
+
 ### Pipeline
 
 ```
