@@ -7,9 +7,9 @@ records of one or more files into one dataset per system, each with a
 
 Read so far: GPS (RINEX 3.05, Table A6), Galileo (Table A8), GLONASS
 (Table A10), QZSS (Table A12), BeiDou (Table A14) and SBAS (Table A16).
-Records of the other systems are skipped. Times of clock are converted to GPS time, like the
-observation epochs; times of ephemeris and weeks stay as written, in the
-system's time.
+Records of the other systems are skipped. Times of clock are converted to
+GPS time, like the observation epochs; times of ephemeris and weeks stay
+as written, in the system's time.
 
 The record layout is fixed-width: a record starts with the satellite
 (``A1,I2.2``) and its epoch on the first line, followed by lines of four
@@ -321,10 +321,10 @@ def read_rinex_nav(paths: Iterable[Path]) -> dict[str, xr.Dataset]:
     -------
     dict[str, xr.Dataset]
         One dataset per system letter found (``"G"``, ``"E"``, ``"R"``,
-        ``"J"``, ``"C"``, ``"S"``), with one entry per record along ``record``, sorted by
-        satellite and time of clock: coordinates ``sv`` (e.g. ``"G01"``)
-        and ``toc`` (time of clock, GPS time), and one variable per field
-        of the system's table in :data:`FIELDS`.
+        ``"J"``, ``"C"``, ``"S"``), with one entry per record along
+        ``record``, sorted by satellite and time of clock: coordinates
+        ``sv`` (e.g. ``"G01"``) and ``toc`` (time of clock, GPS time), and
+        one variable per field of the system's table in :data:`FIELDS`.
 
     Raises
     ------

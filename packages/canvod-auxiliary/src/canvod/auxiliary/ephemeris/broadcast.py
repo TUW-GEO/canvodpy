@@ -96,8 +96,9 @@ ORBIT_SYSTEMS: tuple[str, ...] = (*KEPLER_SYSTEMS, "R", "S")
 
 #: An SBAS record is used within this many seconds of its time of clock:
 #: the time-out of the GEO navigation message (MT9) for en route, terminal
-#: and non-precision approach (RTCA DO-229, as tabulated in ESA Navipedia,
-#: "The EGNOS SBAS Message Format Explained", Table 7).
+#: and non-precision approach (RTCA DO-229C, Table A-25, as reproduced in
+#: Table 7 of the ESA Navipedia page "The EGNOS SBAS Message Format
+#: Explained").
 SBAS_VALIDITY_S = 360.0
 
 #: BeiDou GEO satellites (BDS-SIS-ICD-B1I-3.0, Table 4-1: SV IDs 1-5 and

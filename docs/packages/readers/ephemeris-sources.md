@@ -230,8 +230,8 @@ record is used within 15 minutes of its time, the interval over which the
 ICD keeps its luni-solar acceleration constant (A.3.1.2). GLONASS records
 are in UTC; canvodpy converts them to GPS time with the leap seconds of
 the date. An SBAS record is used within 6 minutes of its time, the
-time-out of the GEO navigation message (RTCA DO-229, as listed in Table 7
-of the ESA Navipedia page
+time-out of the GEO navigation message (RTCA DO-229C, Table A-25, as
+reproduced in Table 7 of the ESA Navipedia page
 [The EGNOS SBAS Message Format Explained](https://gssc.esa.int/navipedia/index.php/The_EGNOS_SBAS_Message_Format_Explained)).
 
 Records flagged unhealthy are still used. G01 and G22 sent such records on
