@@ -189,9 +189,10 @@ With `ephemeris_source: broadcast`, a receiver with RINEX files takes the
 satellite positions from its own RINEX 3.04/3.05 navigation files (ADR 0023).
 So far GPS, Galileo, BeiDou, and QZSS: the signals of the other systems
 are stored without $\theta$ and $\varphi$, so they get no VOD; the run log
-names the systems with angles for each receiver and day. The files sit in the folder `nav_directory` names, relative to the
-site data root like `directory` (it may be the same folder), and need
-canonical names of type `nav` with sampling `00U`, for example
+names the systems with angles for each receiver and day. The files sit in
+the folder `nav_directory` names, relative to the site data root like
+`directory` (it may be the same folder), and need canonical names of type
+`nav` with sampling `00U`, for example
 `FANA01INK_R_20250010000_15M_00U_AA.nav`.
 
 ### How it works

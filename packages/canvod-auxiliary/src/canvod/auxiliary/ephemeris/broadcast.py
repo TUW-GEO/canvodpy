@@ -40,8 +40,9 @@ class KeplerSystem:
     omega_e_dot : float
         Earth's rotation rate of the system, rad/s.
     fit_interval_h : float
-        Hours around the time of ephemeris a record is used, unless the
-        record gives a longer fit interval (GPS).
+        Fit interval, hours: a record is used within half of it on either
+        side of its time of ephemeris, unless the record gives a longer
+        fit interval (GPS).
     week_offset : int
         GPS week of the system's week 0.
     time_offset_s : float
