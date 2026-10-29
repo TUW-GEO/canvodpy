@@ -1031,7 +1031,7 @@ Reader for the receiver's files: `rinex3` (RINEX 3), `rinex3_stripped` (RINEX 3 
 
 #### `sites.<site>.receivers.<receiver>.nav_directory` {#sites-site-receivers-receiver-nav_directory}
 
-Subdirectory for the receiver's RINEX navigation files, relative to the site data root like `directory` (it may be the same folder). Needed with `ephemeris_source` broadcast for a receiver with RINEX files: the satellite positions come from these files. They need canonical names of type `nav` (or a naming recipe).
+Subdirectory for the receiver's RINEX navigation files, relative to the site data root like `directory` (it may be the same folder). Needed with `ephemeris_source` broadcast for a receiver with RINEX files: the satellite positions come from these files. They need canonical names of type `nav`.
 
 - Type: text, or null
 - Default: `null`

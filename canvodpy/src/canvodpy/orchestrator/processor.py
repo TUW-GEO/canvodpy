@@ -119,6 +119,13 @@ from canvodpy.orchestrator.forked_writes import (
 # ============================================================================
 
 
+class MissingNavigationFilesError(RuntimeError):
+    """A broadcast run of RINEX files found no navigation files for a day.
+
+    The run stops (ADR 0023): there is no fallback to the precise ephemeris.
+    """
+
+
 def _worker_init_with_run_id(
     nice: int,
     affinity: list[int] | None,
@@ -1264,6 +1271,8 @@ class RinexDataProcessor:
         # Physical path -> canonical canVOD filename, filled by
         # _get_rinex_files and read when building log-book rows.
         self._canonical_names: dict[Path, str] = {}
+        # Aux store of each receiver's navigation files (broadcast, RINEX)
+        self._broadcast_aux_paths: dict[str, Path] = {}
         self._keeper_tags_enabled: bool = config.processing.storage.keeper_tags
         self.keep_sids = config.sids.get_sids()
 
@@ -1413,11 +1422,16 @@ class RinexDataProcessor:
         reader_format: str | None = None,
         group: str | None = None,
         grid_seconds: float | None = None,
+        ephem_ds: xr.Dataset | None = None,
     ) -> float:
         """Preprocess auxiliary data using proper interpolation strategies.
 
         Parameters
         ----------
+        ephem_ds : xr.Dataset | None
+            Orbits to interpolate instead of the agency products of the aux
+            pipeline: the broadcast ephemeris of a receiver's navigation
+            files (:meth:`_broadcast_aux_store`). No clocks then.
         group : str | None
             Zarr group to write under (e.g. a shared-cache fingerprint
             path). ``None`` (default) writes to the store root, unchanged
@@ -1501,13 +1515,16 @@ class RinexDataProcessor:
 
         # 2. Interpolate orbits (Hermite) and clocks (piecewise linear,
         # unless fetch_clock is disabled -- see AuxDataConfig.fetch_clock)
-        assert self.aux_pipeline is not None, "aux_pipeline must be initialized"
-        ephem_ds = self.aux_pipeline.get("ephemerides")
-        clock_ds = (
-            self.aux_pipeline.get("clock")
-            if self.aux_pipeline.is_loaded("clock")
-            else None
-        )
+        if ephem_ds is not None:
+            clock_ds = None
+        else:
+            assert self.aux_pipeline is not None, "aux_pipeline must be initialized"
+            ephem_ds = self.aux_pipeline.get("ephemerides")
+            clock_ds = (
+                self.aux_pipeline.get("clock")
+                if self.aux_pipeline.is_loaded("clock")
+                else None
+            )
         t2 = time.perf_counter()
         aux_processed = interpolate_aux_day(ephem_ds, clock_ds, target_epochs)
         t3 = time.perf_counter()
@@ -2006,6 +2023,97 @@ class RinexDataProcessor:
             raise
 
         return aux_zarr_path, None
+
+    def _broadcast_aux_store(
+        self,
+        receiver: str,
+        rinex_files: list[Path],
+        reader_format: str | None,
+    ) -> Path:
+        """Orbits of the day from a receiver's RINEX navigation files (ADR 0023).
+
+        The navigation files are found in the receiver's ``nav_directory``
+        by their canonical names (type ``nav``). Their records give the
+        satellite positions on a 5-minute grid, which is interpolated onto
+        the observations' epoch grid like the agency products and written
+        once per receiver and day.
+
+        Parameters
+        ----------
+        receiver : str
+            Receiver name in the site configuration.
+        rinex_files : list[Path]
+            The receiver's observation files of the day, for the sampling
+            interval.
+        reader_format : str | None
+            Reader format of ``rinex_files``.
+
+        Returns
+        -------
+        Path
+            The aux Zarr store of the receiver and day.
+
+        Raises
+        ------
+        MissingNavigationFilesError
+            If the receiver has no ``nav_directory`` or it holds no
+            navigation files of the day.
+        """
+        import shutil
+
+        from canvod.auxiliary.ephemeris.broadcast import broadcast_ephemerides
+
+        date_str = self.matched_data_dirs.yyyydoy.to_str()
+        path = self._broadcast_aux_paths.get(receiver)
+        if path is not None:
+            return path
+
+        site_config = self._get_site_config()
+        nav_directory = site_config.receivers[receiver].nav_directory
+        if nav_directory is None:
+            raise MissingNavigationFilesError(
+                f"Receiver {receiver} has RINEX files and ephemeris_source "
+                "'broadcast', but no nav_directory: set the folder of its "
+                "RINEX navigation files."
+            )
+        nav_dir = site_config.get_base_path() / nav_directory
+        nav_files = [
+            f.path
+            for f in discover_files(ReceiverDay(receiver, nav_dir, date_str), "nav")
+        ]
+        if not nav_files:
+            raise MissingNavigationFilesError(
+                f"No navigation files of receiver {receiver} for {date_str} in "
+                f"{nav_dir}. ephemeris_source 'broadcast' takes the satellite "
+                "positions from them; they need canonical names of type nav, "
+                f"e.g. ..._{date_str}0000_01D_00U_AA.nav."
+            )
+        day_start = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
+        ephem_ds = broadcast_ephemerides(
+            nav_files,
+            day_start,
+            keep_sids=self.keep_sids,
+            aggregate_glonass_fdma=(
+                self._config.processing.params.aggregate_glonass_fdma
+            ),
+        )
+        aux_dir = self._config.processing.storage.get_aux_data_dir() / "00_aux_zarr"
+        aux_dir.mkdir(parents=True, exist_ok=True)
+        path = aux_dir / f"aux_{date_str}_{receiver}_nav.zarr"
+        if path.exists():
+            shutil.rmtree(path)
+        self._logger.info(
+            "broadcast_aux_preprocessing",
+            receiver=receiver,
+            nav_files=len(nav_files),
+            output_path=str(path),
+        )
+        self._preprocess_aux_data_with_hermite(
+            rinex_files, path, reader_format=reader_format, ephem_ds=ephem_ds
+        )
+        sanitize_directory(path)
+        self._broadcast_aux_paths[receiver] = path
+        return path
 
     def _ensure_shared_aux_cache(
         self,
@@ -5179,6 +5287,14 @@ class RinexDataProcessor:
             receiver_file_map.append((receiver_name, rinex_files))
 
             effective_reader = reader_format or self._reader_name
+            receiver_aux_path, receiver_aux_group = aux_zarr_path, aux_group
+            if self.use_sbf_geometry and effective_reader != "sbf":
+                # Broadcast ephemeris of RINEX files: the receiver's own
+                # navigation files (ADR 0023)
+                receiver_aux_path = self._broadcast_aux_store(
+                    data_dir.receiver, rinex_files, effective_reader
+                )
+                receiver_aux_group = None
             for rnx_file in rinex_files:
                 # For reference receivers in broadcast + shared mode, the
                 # file of the paired canopy that starts at the same time
@@ -5210,7 +5326,7 @@ class RinexDataProcessor:
                         is_reference_fanout=False,
                         rnx_file=rnx_file,
                         keep_vars=keep_vars,
-                        aux_zarr_path=aux_zarr_path,
+                        aux_zarr_path=receiver_aux_path,
                         receiver_position=receiver_position,
                         receiver_type=receiver_name,
                         keep_sids=self.keep_sids,
@@ -5220,7 +5336,7 @@ class RinexDataProcessor:
                         store_sbf_raw_observables=store_sbf_raw_observables,
                         broadcast_canopy_file=broadcast_canopy_file,
                         broadcast_canopy_fmt=canopy_reader_fmt,
-                        aux_group=aux_group,
+                        aux_group=receiver_aux_group,
                         rinex_v3_parser=rinex_v3_parser,
                         aggregate_glonass_fdma=aggregate_glonass_fdma,
                         date_key=self.matched_data_dirs.yyyydoy.to_str(),

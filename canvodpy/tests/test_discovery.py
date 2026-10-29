@@ -777,3 +777,15 @@ def test_navigation_files_found_by_their_type(tmp_path: Path) -> None:
     assert _names(tmp_path, "nav") == nav
     assert _names(tmp_path, "rinex3") == [CANONICAL]
     assert _names(tmp_path, "auto") == [CANONICAL]
+
+
+def test_navigation_files_are_not_reported_unprocessed(tmp_path: Path) -> None:
+    """Navigation files next to the observations are not files a run skips.
+
+    A receiver's nav_directory may be its data directory (#567); its
+    navigation files are read for the satellite positions, not skipped.
+    """
+    nav = "FANA01INK_R_20250010000_15M_00U_AA.nav"
+    _touch(tmp_path, CANONICAL, nav)
+    assert tmp_path / nav not in unprocessed_files(tmp_path, "rinex3")
+    assert tmp_path / nav not in unprocessed_files(tmp_path, None)

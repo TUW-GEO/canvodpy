@@ -880,7 +880,8 @@ def unprocessed_files(
 
     These are the compressed files (:func:`is_compressed`), the files
     neither the recipe nor the naming convention recognizes, and the
-    recognized files of another file type than ``reader_format`` reads.
+    recognized files of another file type than ``reader_format`` reads,
+    except navigation files (type ``nav``).
 
     Parameters
     ----------
@@ -903,8 +904,13 @@ def unprocessed_files(
         for files in scan.days.values()
         for f in _of_format(files, reader_format, recipe)
     }
+    # Navigation files are read for the satellite positions (ADR 0023), so
+    # they are not files a run skips.
     other_type = sorted(
-        f.path for files in scan.days.values() for f in files if f.path not in read
+        f.path
+        for files in scan.days.values()
+        for f in files
+        if f.path not in read and not f.canonical_name.endswith(".nav")
     )
     return [*scan.compressed, *scan.unrecognized, *other_type]
 

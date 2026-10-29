@@ -125,7 +125,7 @@ class ReceiverConfig(_StrictModel):
             "to the site data root like 'directory' (it may be the same "
             "folder). Needed with ephemeris_source broadcast for a receiver "
             "with RINEX files: the satellite positions come from these files. "
-            "They need canonical names of type 'nav' (or a naming recipe)."
+            "They need canonical names of type 'nav'."
         ),
     )
 
