@@ -46,7 +46,7 @@ from SBF files or from RINEX navigation files).
     Orbit parameters the satellites broadcast, recorded by the receiver
     in RINEX navigation files. Satellite positions on a 5-minute grid,
     then the same interpolation as the precise ephemeris. GPS, Galileo,
-    GLONASS, BeiDou, and QZSS so far.
+    GLONASS, BeiDou, QZSS, and SBAS so far.
 
     **Input:** RINEX 3.04/3.05 navigation files (`nav_directory`)
     **Output:** ECEF XYZ $\rightarrow$ $\theta$, $\varphi$, $r$
@@ -76,6 +76,13 @@ COD final orbits on the test day (2025-001, every 30 s):
 COD final has no BeiDou GEO satellite of that day. For C05, a GEO
 satellite, the angles differed from the receiver's own SatVisibility
 angles by at most $0.016^\circ$.
+
+COD final has no SBAS satellite either. The EGNOS satellites S23 and S36
+were compared with a satellite at rest on the equator at the slot
+longitude EGNOS publishes (EGNOS Service Notice 33, Table 1): at most
+$0.0002^\circ$ apart. EGNOS broadcasts these nominal slots, flagged as not
+for ranging (URA index 15, RINEX 3.05, Section 5.4.4), so the angles are as
+good as the satellite keeps its slot.
 
 ---
 
@@ -188,7 +195,7 @@ processing:
 
 With `ephemeris_source: broadcast`, a receiver with RINEX files takes the
 satellite positions from its own RINEX 3.04/3.05 navigation files (ADR 0023).
-So far GPS, Galileo, GLONASS, BeiDou, and QZSS: the signals of the other systems
+So far GPS, Galileo, GLONASS, BeiDou, QZSS, and SBAS: the signals of the other systems
 are stored without $\theta$ and $\varphi$, so they get no VOD; the run log
 names the systems with angles for each receiver and day. The files sit in
 the folder `nav_directory` names, relative to the site data root like
@@ -207,7 +214,9 @@ the folder `nav_directory` names, relative to the site data root like
    of BDS-SIS-ICD-B1I-3.0, Table 5-11); velocities from the positions
    0.5 s before and after. GLONASS: the record's position, velocity and
    luni-solar acceleration, integrated to the grid time (ICD GLONASS,
-   Edition 5.1, A.3.1.2), which also gives the velocity
+   Edition 5.1, A.3.1.2), which also gives the velocity. SBAS: the
+   record's position, moved with its velocity and acceleration to the grid
+   time (RINEX 3.05, Table A16)
 4. From here as the precise ephemeris: Hermite interpolation onto the epoch
    grid, Zarr cache 00_aux_zarr/aux_{date}_{site}_{receiver}_nav.zarr,
    theta/phi
@@ -220,7 +229,10 @@ hours too, 2 hours on either side of their time of ephemeris. A GLONASS
 record is used within 15 minutes of its time, the interval over which the
 ICD keeps its luni-solar acceleration constant (A.3.1.2). GLONASS records
 are in UTC; canvodpy converts them to GPS time with the leap seconds of
-the date.
+the date. An SBAS record is used within 6 minutes of its time, the
+time-out of the GEO navigation message (RTCA DO-229, as listed in Table 7
+of the ESA Navipedia page
+[The EGNOS SBAS Message Format Explained](https://gssc.esa.int/navipedia/index.php/The_EGNOS_SBAS_Message_Format_Explained)).
 
 Records flagged unhealthy are still used. G01 and G22 sent such records on
 the test day; their angles differed from those of the COD final
@@ -262,7 +274,7 @@ format but that has no `nav_directory` are refused.
 |-----------|--------|:---:|:---:|---|
 | `.YYo` / `.rnx` | RINEX 3 OBS | :fontawesome-solid-check: | No | Primary observation data |
 | `.YY_` / `.sbf` | SBF binary | :fontawesome-solid-check: | :fontawesome-solid-check: | Observations + broadcast geometry |
-| `.YYp` / `.nav` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Broadcast ephemeris (GPS, Galileo, GLONASS, BeiDou, QZSS so far), canonical type `nav` |
+| `.YYp` / `.nav` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Broadcast ephemeris (GPS, Galileo, GLONASS, BeiDou, QZSS, SBAS so far), canonical type `nav` |
 | `.YYn` | RINEX 2 NAV (GPS) | No | :fontawesome-solid-check: | Not read (planned) |
 | `.YYg` | RINEX 2 NAV (GLONASS) | No | :fontawesome-solid-check: | Not read (planned) |
 | `.nmea` | NMEA 0183 | SNR only | No | Observations (`NmeaObs`); geometry from SP3 |

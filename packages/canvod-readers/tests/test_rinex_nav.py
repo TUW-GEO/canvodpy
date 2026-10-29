@@ -124,10 +124,37 @@ def test_glonass_record_of_rinex_3_05_has_a_fifth_line(tmp_path: Path) -> None:
 
 
 @pytest.mark.integration
+def test_sbas_records_of_a_file(nav_file: Path) -> None:
+    """The file's 14 SBAS records, with the values written in the file.
+
+    EGNOS broadcasts the nominal slot of its satellites with URA index 15
+    (RINEX 3.05, Section 5.4.4: health bit 5, URA 32767 m): S23 at 23.5 deg
+    East, no velocity, no acceleration. Times are GPS time (Table A16).
+    """
+    nav = read_rinex_nav([nav_file])["S"]
+    assert nav.sizes["record"] == 14
+    assert sorted(set(nav.sv.values)) == ["S23", "S36"]
+
+    toc = np.datetime64("2025-01-01T00:01:36", "ns")
+    s23 = nav.isel(record=int(np.flatnonzero(nav.toc.values == toc)[0]))
+    assert s23.sv.item() == "S23"
+    assert s23.transmission_time.item() == 2.59296e05
+    assert s23.x.item() == 3.8667964e04
+    assert s23.y.item() == 1.6813308e04
+    assert s23.z.item() == 0.0
+    assert s23.vx.item() == 0.0
+    assert s23.ax.item() == 0.0
+    assert s23.health.item() == 63.0
+    assert s23.ura.item() == 32767.0
+    assert s23.iodn.item() == 243.0
+    assert nav.toc.attrs["time_system"] == "GPS"
+
+
+@pytest.mark.integration
 def test_records_read_twice_are_kept_once(nav_file: Path) -> None:
     once = read_rinex_nav([nav_file])
     twice = read_rinex_nav([nav_file, nav_file])
-    assert set(twice) == set(once) == {"G", "E", "R", "C"}
+    assert set(twice) == set(once) == {"G", "E", "R", "C", "S"}
     for system, records in once.items():
         assert twice[system].sizes["record"] == records.sizes["record"]
 
@@ -254,15 +281,15 @@ def test_not_a_navigation_file_is_refused(tmp_path: Path) -> None:
 
 
 def test_a_file_without_records_of_a_known_system_is_refused(tmp_path: Path) -> None:
-    path = tmp_path / "FANA01INK_R_20250010000_01D_SN.rnx"
+    path = tmp_path / "FANA01INK_R_20250010000_01D_IN.rnx"
     path.write_text(
-        "     3.04           N: GNSS NAV DATA    S: SBAS             "
+        "     3.04           N: GNSS NAV DATA    I: IRNSS            "
         "RINEX VERSION / TYPE\n"
         "                                                            END OF HEADER\n"
-        "S20 2025 01 01 00 00 00 1.000000000000D-04 0.000000000000D+00"
+        "I01 2025 01 01 00 00 00 1.000000000000D-04 0.000000000000D+00"
         " 0.000000000000D+00\n"
     )
-    with pytest.raises(ValueError, match=r"_01D_SN\.rnx.*no record"):
+    with pytest.raises(ValueError, match=r"_01D_IN\.rnx.*no record"):
         read_rinex_nav([path])
 
 

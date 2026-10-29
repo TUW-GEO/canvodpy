@@ -15,7 +15,9 @@ Galileo (Galileo OS SIS ICD, Issue 2.1, Table 66), QZSS (IS-QZSS-PNT-005,
 Section 5.6.1) and BeiDou (BDS-SIS-ICD-B1I-3.0, Table 5-11), with
 velocities from central differences of the positions over 1 s; GLONASS by
 numerical integration (ICD GLONASS, Edition 5.1, A.3.1.2,
-:mod:`canvod.auxiliary.ephemeris.glonass`), with the integrated velocities.
+:mod:`canvod.auxiliary.ephemeris.glonass`), with the integrated velocities;
+SBAS from the position, velocity and acceleration of each record
+(:func:`sbas_states`).
 """
 
 from __future__ import annotations
@@ -27,7 +29,7 @@ from pathlib import Path
 import numpy as np
 import xarray as xr
 
-from canvod.auxiliary.ephemeris.glonass import glonass_states, glonass_valid_record
+from canvod.auxiliary.ephemeris.glonass import GLONASS_VALIDITY_S, glonass_states
 
 #: Spacing of the orbit grid, seconds.
 GRID_STEP_S = 300.0
@@ -90,7 +92,13 @@ KEPLER_SYSTEMS: dict[str, KeplerSystem] = {
 }
 
 #: Systems whose navigation records give orbits here, by system letter.
-ORBIT_SYSTEMS: tuple[str, ...] = (*KEPLER_SYSTEMS, "R")
+ORBIT_SYSTEMS: tuple[str, ...] = (*KEPLER_SYSTEMS, "R", "S")
+
+#: An SBAS record is used within this many seconds of its time of clock:
+#: the time-out of the GEO navigation message (MT9) for en route, terminal
+#: and non-precision approach (RTCA DO-229, as tabulated in ESA Navipedia,
+#: "The EGNOS SBAS Message Format Explained", Table 7).
+SBAS_VALIDITY_S = 360.0
 
 #: BeiDou GEO satellites (BDS-SIS-ICD-B1I-3.0, Table 4-1: SV IDs 1-5 and
 #: 59-63). Their orbits take the extra rotations of Table 5-11.
@@ -187,6 +195,45 @@ def kepler_positions(records: xr.Dataset, t: np.ndarray, sv: str) -> np.ndarray:
     return np.stack([cz * x_g + sz * y_g, -sz * x_g + cz * y_g, z_g], axis=-1)
 
 
+def sbas_states(records: xr.Dataset, dt: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Positions and velocities of SBAS records ``dt`` seconds after ``toc``.
+
+    A record gives the satellite's ECEF position, velocity and acceleration
+    at its time of clock (RINEX 3.05, Table A16); the position moves with
+    the velocity and the acceleration from there: ``x + v dt + a dt^2 / 2``.
+
+    Parameters
+    ----------
+    records : xr.Dataset
+        SBAS records along ``record`` (fields of
+        :data:`canvod.readers.rinex.nav.SBAS_FIELDS`, km), one per value of
+        ``dt``.
+    dt : np.ndarray
+        Seconds from each record's time of clock.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray]
+        ``(len(dt), 3)`` ECEF positions (m) and velocities (m/s).
+    """
+
+    def vector(names: tuple[str, str, str]) -> np.ndarray:
+        return np.stack([records[name].values for name in names], axis=-1) * 1000.0
+
+    pos = vector(("x", "y", "z"))
+    vel = vector(("vx", "vy", "vz"))
+    acc = vector(("ax", "ay", "az"))
+    dt = np.asarray(dt, dtype=np.float64)[:, None]
+    return pos + vel * dt + acc * dt**2 / 2, vel + acc * dt
+
+
+def _nearest_record(toc: np.ndarray, t: np.ndarray, validity_s: float) -> np.ndarray:
+    """Index of the record nearest to each of ``t``, -1 beyond ``validity_s``."""
+    nearest = np.abs(t[:, None] - toc[None, :]).argmin(axis=1)
+    valid = np.abs(t - toc[nearest]) <= validity_s
+    return np.where(valid, nearest, -1)
+
+
 def _valid_record(records: xr.Dataset, t: np.ndarray, sv: str) -> np.ndarray:
     """Index of the record to use at each of ``t``, -1 where none is valid.
 
@@ -206,6 +253,14 @@ def _valid_record(records: xr.Dataset, t: np.ndarray, sv: str) -> np.ndarray:
     nearest = np.abs(t[:, None] - toe[None, :]).argmin(axis=1)
     valid = np.abs(t - toe[nearest]) <= fit_h[nearest] * 3600 / 2
     return np.where(valid, nearest, -1)
+
+
+#: Systems whose records give the state at the time of clock: how long a
+#: record is used around it, seconds, and the states it gives.
+_STATE_SYSTEMS = {
+    "R": (GLONASS_VALIDITY_S, glonass_states),
+    "S": (SBAS_VALIDITY_S, sbas_states),
+}
 
 
 def broadcast_orbits(
@@ -251,12 +306,13 @@ def broadcast_orbits(
     vel = np.full_like(pos, np.nan)
     for j, sv in enumerate(svs):
         recs = by_sv[sv]
-        if sv[0] == "R":
-            tb = _gps_seconds(recs.toc.values)
-            index = glonass_valid_record(tb, t)
+        if sv[0] in _STATE_SYSTEMS:
+            validity_s, states = _STATE_SYSTEMS[sv[0]]
+            toc = _gps_seconds(recs.toc.values)
+            index = _nearest_record(toc, t, validity_s)
             ok = index >= 0
-            pos[ok, j], vel[ok, j] = glonass_states(
-                recs.isel(record=index[ok]), t[ok] - tb[index[ok]]
+            pos[ok, j], vel[ok, j] = states(
+                recs.isel(record=index[ok]), t[ok] - toc[index[ok]]
             )
             continue
         index = _valid_record(recs, t, sv)

@@ -28,7 +28,14 @@ pytestmark = [
 
 
 #: One signal of each system for the test observations.
-SIGNAL = {"G": "L1|C", "E": "E1|C", "R": "G1|C", "C": "B1I|I", "J": "L1|C"}
+SIGNAL = {
+    "G": "L1|C",
+    "E": "E1|C",
+    "R": "G1|C",
+    "C": "B1I|I",
+    "J": "L1|C",
+    "S": "L1|C",
+}
 
 
 def _observations(epochs: np.ndarray, svs: list[str]) -> xr.Dataset:
@@ -219,3 +226,79 @@ def test_no_glonass_angles_beyond_15_minutes_of_a_record() -> None:
     after = ds.epoch.values > DAY + np.timedelta64(35, "m")
     assert np.isnan(ds.theta.values[after]).all()
     assert np.isfinite(ds.theta.values[~after]).any()
+
+
+#: Orbital slots of the EGNOS satellites, deg East (EGNOS Service Notice 33,
+#: 2025-08-08, Table 1: ASTRA SES-5 PRN 136, ASTRA 5-B PRN 123, Eutelsat 5
+#: West B PRN 121; RINEX numbers SBAS satellites PRN - 100).
+EGNOS_SLOTS = {"S36": 5.0, "S23": 23.5, "S21": -5.0}
+
+#: Radius of the geostationary orbit, m: (mu / omega^2)^(1/3) with the
+#: WGS 84 values of IS-GPS-200N, Table 20-IV.
+GEO_RADIUS_M = (3.986005e14 / 7.2921151467e-5**2) ** (1 / 3)
+
+
+def test_sbas_angles_agree_with_the_published_orbital_slots() -> None:
+    """EGNOS theta/phi within 0.01 deg of the satellites' published slots.
+
+    COD final has no SBAS satellite. The reference is a satellite at rest on
+    the equator at the geostationary radius and the slot longitude of EGNOS
+    Service Notice 33, Table 1. EGNOS broadcasts the nominal slot (URA index
+    15, RINEX 3.05, Section 5.4.4). Measured: max 0.0002 deg; the limit is
+    a guardrail, not a scientific requirement (#570). The files hold no S36
+    record from 07:27 to 10:37.
+    """
+    svs = ["S23", "S36"]
+    epochs = DAY + np.arange(0, 86_400, 30) * np.timedelta64(1, "s")
+    ds = _broadcast_angles(epochs, svs)
+
+    lon = np.deg2rad([EGNOS_SLOTS[sv] for sv in svs])
+    xyz = [
+        np.broadcast_to(c, (epochs.size, len(svs)))
+        for c in (
+            GEO_RADIUS_M * np.cos(lon),
+            GEO_RADIUS_M * np.sin(lon),
+            np.zeros(len(svs)),
+        )
+    ]
+    _, theta_ref, phi_ref = compute_spherical_coordinates(*xyz, RECEIVER)
+    sep = _separation_deg(ds.theta.values, ds.phi.values, theta_ref, phi_ref)
+    assert np.isfinite(sep).mean() > 0.9
+    assert np.nanmax(sep) < 0.01
+
+
+def test_sbas_positions_follow_velocity_and_acceleration() -> None:
+    """An SBAS record moves its position with its velocity and acceleration
+    from its time of clock (RINEX 3.05, Table A16).
+
+    Worked example, 300 s after the record: x = 42000 km + 0.001 km/s * 300 s
+    + 1e-7 km/s2 * (300 s)^2 / 2 = 42000304.5 m; vx = 1 m/s + 1e-4 m/s2 *
+    300 s = 1.03 m/s.
+    """
+    from canvod.auxiliary.ephemeris.broadcast import broadcast_orbits
+
+    record = {name: ("record", [0.0]) for name in ("y", "vy", "ay", "z", "vz", "az")}
+    sbas = xr.Dataset(
+        record
+        | {"x": ("record", [42_000.0]), "vx": ("record", [0.001])}
+        | {"ax": ("record", [1e-7])},
+        coords={"sv": ("record", ["S23"]), "toc": ("record", [DAY])},
+    )
+    grid = broadcast_orbits({"S": sbas}, DAY).sel(sv="S23")
+    at = grid.sel(epoch=DAY + np.timedelta64(300, "s"))
+    np.testing.assert_allclose(at.X.item(), 42_000_304.5, rtol=0, atol=1e-6)
+    np.testing.assert_allclose(at.Vx.item(), 1.03, rtol=0, atol=1e-9)
+
+
+def test_no_sbas_angles_beyond_six_minutes_of_a_record() -> None:
+    """An SBAS record is used within 360 s of its time of clock, the time-out
+    of the GEO navigation message. The files of the day hold S21 records
+    from 11:22:24 to 18:16:48 only.
+    """
+    epochs = DAY + np.arange(0, 86_400, 30) * np.timedelta64(1, "s")
+    ds = _broadcast_angles(epochs, ["S21"])
+    first = DAY + np.timedelta64(11 * 3600 + 22 * 60 + 24 - 360, "s")
+    last = DAY + np.timedelta64(18 * 3600 + 16 * 60 + 48 + 360, "s")
+    outside = (ds.epoch.values < first) | (ds.epoch.values > last)
+    assert np.isnan(ds.theta.values[outside]).all()
+    assert np.isfinite(ds.theta.values[~outside]).any()

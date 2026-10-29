@@ -117,15 +117,3 @@ def glonass_states(
         pos = pos + h / 6 * (k1p + 2 * k2p + 2 * k3p + k4p)
         vel = vel + h / 6 * (k1v + 2 * k2v + 2 * k3v + k4v)
     return pos, vel
-
-
-def glonass_valid_record(tb: np.ndarray, t: np.ndarray) -> np.ndarray:
-    """Index of the record to use at each of ``t``, -1 where none is valid.
-
-    The record with the nearest time ``tb``, if ``t`` lies within
-    :data:`GLONASS_VALIDITY_S` of it. ``tb`` and ``t`` are seconds on the
-    same time scale.
-    """
-    nearest = np.abs(t[:, None] - tb[None, :]).argmin(axis=1)
-    valid = np.abs(t - tb[nearest]) <= GLONASS_VALIDITY_S
-    return np.where(valid, nearest, -1)

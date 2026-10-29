@@ -6,8 +6,8 @@ records of one or more files into one dataset per system, each with a
 ``record`` dimension.
 
 Read so far: GPS (RINEX 3.05, Table A6), Galileo (Table A8), GLONASS
-(Table A10), QZSS (Table A12) and BeiDou (Table A14). Records of the other
-systems are skipped. Times of clock are converted to GPS time, like the
+(Table A10), QZSS (Table A12), BeiDou (Table A14) and SBAS (Table A16).
+Records of the other systems are skipped. Times of clock are converted to GPS time, like the
 observation epochs; times of ephemeris and weeks stay as written, in the
 system's time.
 
@@ -161,6 +161,27 @@ GLONASS_FIELDS: tuple[str | None, ...] = (
     "health_flags",
 )
 
+#: The fields of an SBAS record in file order (RINEX 3.05, Table A16):
+#: position, velocity and acceleration in ECEF at the time of clock, in km,
+#: km/s and km/s2, from the GEO navigation message (MT9).
+SBAS_FIELDS: tuple[str | None, ...] = (
+    "af0",  # SV clock bias (s), aGf0
+    "af1",  # SV relative frequency bias, aGf1
+    "transmission_time",  # (s of GPS week)
+    "x",
+    "vx",
+    "ax",
+    "health",  # bits 0-3 MT17 health, bit 4 no MT17, bit 5 URA index 15
+    "y",
+    "vy",
+    "ay",
+    "ura",  # (m), 32767 for URA index 15 (Section 5.4.4)
+    "z",
+    "vz",
+    "az",
+    "iodn",  # issue of data navigation
+)
+
 #: Fields of each system read, by system letter.
 FIELDS: dict[str, tuple[str | None, ...]] = {
     "G": GPS_FIELDS,
@@ -168,6 +189,7 @@ FIELDS: dict[str, tuple[str | None, ...]] = {
     "R": GLONASS_FIELDS,
     "J": QZSS_FIELDS,
     "C": BEIDOU_FIELDS,
+    "S": SBAS_FIELDS,
 }
 
 #: Fields that, with satellite and time of clock, identify a record: a
@@ -179,12 +201,13 @@ _RECORD_KEYS: dict[str, tuple[str, ...]] = {
     "R": (),
     "J": ("iode",),
     "C": ("aode",),
+    "S": ("iodn",),
 }
 
 #: Time of clock minus GPS time, by system (RINEX 3.05, Table 1 and 2:
-#: BDT = GPS - 14 s; GAL and QZS equal GPS). GLONASS times of clock are
-#: UTC (Table A10), which differs from GPS time by the leap seconds of the
-#: date: :func:`_utc_minus_gps`.
+#: BDT = GPS - 14 s; GAL and QZS equal GPS; SBAS is GPS time, Section
+#: 5.4.4). GLONASS times of clock are UTC (Table A10), which differs from
+#: GPS time by the leap seconds of the date: :func:`_utc_minus_gps`.
 _TOC_MINUS_GPS = {"C": np.timedelta64(-14, "s")}
 
 #: Source of each system's records.
@@ -194,6 +217,7 @@ _SOURCES = {
     "R": "RINEX 3.05, Table A10",
     "J": "RINEX 3.05, Table A12",
     "C": "RINEX 3.05, Table A14",
+    "S": "RINEX 3.05, Table A16",
 }
 
 _FIELD_WIDTH = 19
@@ -296,8 +320,8 @@ def read_rinex_nav(paths: Iterable[Path]) -> dict[str, xr.Dataset]:
     Returns
     -------
     dict[str, xr.Dataset]
-        One dataset per system letter found (``"G"``, ``"E"``, ``"J"``,
-        ``"C"``), with one entry per record along ``record``, sorted by
+        One dataset per system letter found (``"G"``, ``"E"``, ``"R"``,
+        ``"J"``, ``"C"``, ``"S"``), with one entry per record along ``record``, sorted by
         satellite and time of clock: coordinates ``sv`` (e.g. ``"G01"``)
         and ``toc`` (time of clock, GPS time), and one variable per field
         of the system's table in :data:`FIELDS`.
