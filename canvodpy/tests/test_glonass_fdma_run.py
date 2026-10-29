@@ -38,7 +38,11 @@ class _FakeReader:
     def to_ds_and_auxiliary(self, **_kwargs):
         ds = xr.Dataset(
             {"SNR": (("epoch", "sid"), [[40.0]])},
-            coords={"epoch": EPOCHS, "sid": SIDS},
+            coords={
+                "epoch": EPOCHS,
+                "sid": SIDS,
+                "sv": ("sid", [s.split("|")[0] for s in SIDS]),
+            },
         )
         return ds, {}
 

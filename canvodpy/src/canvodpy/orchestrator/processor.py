@@ -74,7 +74,7 @@ from canvod.store.day_blocks import (
     stored_epoch_chunk,
     write_file_region,
 )
-from canvod.store.prepare import prepare_write
+from canvod.store.prepare import NO_POSITION_ATTR, prepare_write
 from canvod.store.store import StoredOverlapError, _with_run_id
 from canvod.store.time_encoding import with_time_units
 from canvod.store_metadata.io import commit_lock, commit_with_rebase, store_command
@@ -414,8 +414,12 @@ def _preprocess_file(
                     keep_sids=keep_sids,
                 )
                 ((name, receiver_position),) = receiver_positions.items()
+                observations = ds
                 ds = provider.augment_dataset(
                     ds, receiver_position, aux_datasets=aux_datasets
+                )
+                ds.attrs[NO_POSITION_ATTR] = json.dumps(
+                    satellites_without_position(observations, ds["theta"])
                 )
                 sid_issues = flush_sid_accumulators()
                 sid_issues["dropped_no_ephemeris"] = []
@@ -461,7 +465,9 @@ def _preprocess_file(
                     f"and aux data ({len(aux_sids)} sids)"
                 )
 
-            # Filter both datasets to common SIDs
+            # Filter both datasets to common SIDs; the observations of the
+            # signals without ephemeris are kept to report them (#571).
+            observations = ds
             rinex_only = rinex_sids - aux_sids
             aux_only = aux_sids - rinex_sids
             ds = ds.sel(sid=common_sids)
@@ -503,6 +509,15 @@ def _preprocess_file(
                 if not store_radial_distance and "r" in ds_name:
                     ds_name = ds_name.drop_vars("r")
                 ds_augmented[name] = ds_name
+            # The angles are NaN where the satellite has no position, the
+            # same for every receiver position.
+            no_position = json.dumps(
+                satellites_without_position(
+                    observations, next(iter(ds_augmented.values()))["theta"]
+                )
+            )
+            for ds_name in ds_augmented.values():
+                ds_name.attrs[NO_POSITION_ATTR] = no_position
             t_coords = time.perf_counter()
 
             log.info(
@@ -752,6 +767,52 @@ def _compute_spherical_coords_fast(
         rinex_ds = rinex_ds.assign({"clock": aux_ds["clock"]})
 
     return rinex_ds
+
+
+#: Variables of an augmented dataset that are not observations.
+_GEOMETRY_VARS = frozenset({"phi", "theta", "r", "clock"})
+
+
+def satellites_without_position(
+    observations: xr.Dataset, theta: xr.DataArray
+) -> dict[str, int]:
+    """Epochs per satellite with observations but no position (#571).
+
+    A satellite has no position at an epoch when its polar angle is NaN:
+    no ephemeris covers the epoch. Its angles stay NaN, never extrapolated.
+    An epoch counts when any signal of the satellite has an observation (a
+    finite value of any float variable over ``epoch`` and ``sid``).
+
+    Parameters
+    ----------
+    observations : xr.Dataset
+        The file's observations, with every signal the file has.
+    theta : xr.DataArray
+        The polar angle of the signals with ephemerides; a signal of
+        ``observations`` missing here has no position at all.
+
+    Returns
+    -------
+    dict[str, int]
+        ``{satellite: epochs}``, sorted by satellite; empty when every
+        observed satellite has a position.
+    """
+    observed = np.zeros((observations.sizes["epoch"], observations.sizes["sid"]), bool)
+    for name, var in observations.data_vars.items():
+        if (
+            name in _GEOMETRY_VARS
+            or set(var.dims) != {"epoch", "sid"}
+            or not np.issubdtype(var.dtype, np.floating)
+        ):
+            continue
+        observed |= np.isfinite(var.transpose("epoch", "sid").values)
+    angles = theta.reindex(sid=observations.sid).transpose("epoch", "sid").values
+    lacking = observed & np.isnan(angles)
+    svs = np.asarray(observations["sv"].values).astype(str)
+    return {
+        str(sv): int(lacking[:, svs == sv].any(axis=1).sum())
+        for sv in sorted(set(svs[lacking.any(axis=0)]))
+    }
 
 
 # ============================================================================

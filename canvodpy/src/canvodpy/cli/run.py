@@ -220,6 +220,14 @@ def _print_days_without_vod(
     emit(f"  no VOD on {len(days)} {noun}, {receiver} has no files: {_first_ten(days)}")
 
 
+def _print_satellites_without_position(
+    emit: Callable[[str], None], receiver: str, day: str, satellites: dict[str, int]
+) -> None:
+    """Say through ``emit`` which satellites a receiver-day saw without a position."""
+    listed = _first_ten([f"{sv} ({n} epochs)" for sv, n in satellites.items()])
+    emit(f"  no position: {receiver} on {day}: {listed}")
+
+
 def _report_vod_unit(unit, reporter) -> int:
     """Say what the VOD phase did with a unit's days; return the VOD days written.
 
@@ -510,6 +518,9 @@ def _process_days(
                 on_discovery_end=on_discovery_end,
                 on_incomplete_day=partial(_print_incomplete_day, reporter.log),
                 on_days_without_vod=partial(_print_days_without_vod, reporter.log),
+                on_satellites_without_position=partial(
+                    _print_satellites_without_position, reporter.log
+                ),
             ) as pipeline:
                 # The GNSS phase stores a unit of days, then the VOD
                 # phase computes their VOD in the same worker pool

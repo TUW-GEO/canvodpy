@@ -187,10 +187,34 @@ log says why the receiver-day failed:
   VOD canopy_01_vs_reference_01: skipped, no data of canopy_01 on 2025001 (the log says why)
 ```
 
-In Python, `site.pipeline(on_incomplete_day=..., on_days_without_vod=...)`
-receives the same findings: `(receiver, day, files_found, files_expected)`
-for each incomplete receiver-day, and a receiver with its days without
-VOD.
+### Satellites without a position
+
+A satellite has no position at an epoch when no orbit covers it: no
+navigation record of the satellite is valid then (a broadcast run), or
+the orbit product lacks the satellite (a run with precise orbits). Its
+angles (`theta`, `phi`) are NaN there, never extrapolated, so these
+observations get no VOD. For each receiver-day with such satellites,
+the run prints one line with the epochs per satellite and logs a
+`satellites_without_position` warning, which the run history also
+keeps:
+
+```
+  no position: canopy_01 on 2025001: G08 (360 epochs), R19 (12 epochs)
+```
+
+The epochs count the epochs of the day's files at which the satellite
+has an observation but no position. The log book of the receiver's
+group keeps the same list per file, in the column
+`satellites_without_position` (JSON, for example `{"G08": 180}`; `{}`
+when every satellite had a position, empty in rows written before
+canVODpy checked this).
+
+In Python, `site.pipeline(on_incomplete_day=..., on_days_without_vod=...,
+on_satellites_without_position=...)` receives the same findings:
+`(receiver, day, files_found, files_expected)` for each incomplete
+receiver-day, a receiver with its days without VOD, and
+`(receiver, day, {satellite: epochs})` for each receiver-day with
+satellites without a position.
 
 ### Search the logs
 

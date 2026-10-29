@@ -203,6 +203,9 @@ class Site:
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
         on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
         on_days_without_vod: Callable[[str, list[str]], None] | None = None,
+        on_satellites_without_position: (
+            Callable[[str, str, dict[str, int]], None] | None
+        ) = None,
     ) -> Pipeline:
         """Create a processing pipeline for this site.
 
@@ -253,6 +256,11 @@ class Site:
             Called with a receiver and the days in the range on which it has
             no files while its pair has: those days are not processed and
             get no VOD.
+        on_satellites_without_position : Callable[[str, str, dict[str, int]], None], optional
+            Called with ``(receiver, YYYYDOY, {satellite: epochs})`` for each
+            processed receiver-day with satellites observed at epochs
+            without a position (no orbit record or product): their angles
+            are NaN.
 
         Returns
         -------
@@ -282,6 +290,7 @@ class Site:
                 on_discovery_end=on_discovery_end,
                 on_incomplete_day=on_incomplete_day,
                 on_days_without_vod=on_days_without_vod,
+                on_satellites_without_position=on_satellites_without_position,
             )
 
     def __repr__(self) -> str:
@@ -374,6 +383,10 @@ class Pipeline:
         Called with a receiver and the days in the range on which it has no
         files while its pair has: those days are not processed and get no
         VOD.
+    on_satellites_without_position : Callable[[str, str, dict[str, int]], None], optional
+        Called with ``(receiver, YYYYDOY, {satellite: epochs})`` for each
+        processed receiver-day with satellites observed at epochs without a
+        position (no orbit record or product): their angles are NaN.
 
     A pipeline that is not a dry run is a run: it records itself in the run
     history of the log folder (ADR 0018) from its creation until
@@ -424,6 +437,9 @@ class Pipeline:
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
         on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
         on_days_without_vod: Callable[[str, list[str]], None] | None = None,
+        on_satellites_without_position: (
+            Callable[[str, str, dict[str, int]], None] | None
+        ) = None,
     ) -> None:
         # Handle both Site object and string
         if isinstance(site, str):
@@ -519,6 +535,7 @@ class Pipeline:
                     on_discovery_end=on_discovery_end,
                     on_incomplete_day=on_incomplete_day,
                     on_days_without_vod=on_days_without_vod,
+                    on_satellites_without_position=on_satellites_without_position,
                     config=config,
                     run=active_run,
                     **_passed(days_per_batch=days_per_batch),

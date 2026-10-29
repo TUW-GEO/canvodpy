@@ -237,6 +237,11 @@ time-out of the GEO navigation message (RTCA DO-229C, Table A-25, as
 reproduced in Table 7 of the ESA Navipedia page
 [The EGNOS SBAS Message Format Explained](https://gssc.esa.int/navipedia/index.php/The_EGNOS_SBAS_Message_Format_Explained)).
 
+A satellite with no valid record at an epoch has NaN angles there,
+never extrapolated ones. The run names these satellites with their
+epochs, per receiver-day and in the log book (see
+[Satellites without a position](../../guides/diagnostics.md#satellites-without-a-position)).
+
 Records flagged unhealthy are still used. G01 and G22 sent such records on
 the test day; their angles differed from those of the COD final
 orbits by at most $0.00002^\circ$ (G01, the largest difference of the day).
