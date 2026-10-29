@@ -218,8 +218,9 @@ The fit interval is the one in the record for GPS (at least 4 hours) and
 interface specifications give none; canvodpy uses those records for 4
 hours too, 2 hours on either side of their time of ephemeris. A GLONASS
 record is used within 15 minutes of its time, the interval over which the
-ICD keeps its luni-solar acceleration constant (A.3.1.2). GLONASS records are in UTC; canvodpy converts
-them to GPS time with the leap seconds of the date.
+ICD keeps its luni-solar acceleration constant (A.3.1.2). GLONASS records
+are in UTC; canvodpy converts them to GPS time with the leap seconds of
+the date.
 
 Records flagged unhealthy are still used. G01 and G22 sent such records on
 the test day; their angles differed from those of the COD final
