@@ -124,6 +124,15 @@ def test_a_broadcast_run_of_rinex_files_writes_gps_angles(tmp_path, monkeypatch)
     assert np.isfinite(gps["theta"].values).any()
     assert np.isfinite(gps["phi"].values).any()
 
+    # One aux store per site, receiver and day: runs of other sites with the
+    # same receiver names share the aux folder
+    nav_stores = sorted(
+        p.name for p in (stores.parents[1] / "aux" / "00_aux_zarr").glob("*_nav.zarr")
+    )
+    assert nav_stores == [
+        f"aux_{DAY}_{testing.SITE_KEY}_{name}_nav.zarr" for name in sorted(RECEIVERS)
+    ]
+
 
 def test_a_day_without_navigation_files_stops_the_run(tmp_path, monkeypatch):
     _settings(tmp_path, monkeypatch, with_nav=False)

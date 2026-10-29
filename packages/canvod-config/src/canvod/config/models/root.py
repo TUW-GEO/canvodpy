@@ -61,11 +61,24 @@ class CanvodConfig(BaseSettings):
     def _broadcast_rinex_needs_nav_directory(self) -> CanvodConfig:
         """With the broadcast ephemeris, receivers with RINEX files need nav files.
 
-        A receiver whose ``reader_format`` is ``auto`` is checked by the run,
-        once its files show the format.
+        NMEA receivers are refused: their angles come only from the precise
+        ephemeris. A receiver whose ``reader_format`` is ``auto`` or a plugin
+        format is checked by the run, once its files show the format.
         """
         if self.processing.params.ephemeris_source != "broadcast":
             return self
+        nmea = [
+            f"{site_name}.{name}"
+            for site_name, site in self.sites.sites.items()
+            for name, receiver in site.receivers.items()
+            if receiver.reader_format == "nmea"
+        ]
+        if nmea:
+            msg = (
+                "ephemeris_source 'broadcast' supports SBF and RINEX files; "
+                f"{', '.join(nmea)} read nmea: use ephemeris_source 'precise'."
+            )
+            raise ValueError(msg)
         missing = [
             f"{site_name}.{name}"
             for site_name, site in self.sites.sites.items()

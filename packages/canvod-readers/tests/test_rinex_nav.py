@@ -97,3 +97,18 @@ def test_not_a_navigation_file_is_refused(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="not a RINEX navigation file"):
         read_rinex_nav([path])
+
+
+def test_a_file_without_gps_records_is_refused(tmp_path: Path) -> None:
+    path = tmp_path / "FANA01INK_R_20250010000_01D_EN.rnx"
+    path.write_text(
+        "     3.04           N: GNSS NAV DATA    E: GALILEO          "
+        "RINEX VERSION / TYPE\n"
+        "                                                            END OF HEADER\n"
+        "E01 2025 01 01 00 00 00 1.000000000000D-04 0.000000000000D+00"
+        " 0.000000000000D+00\n"
+    )
+    with pytest.raises(
+        ValueError, match=r"FANA01INK_R_20250010000_01D_EN\.rnx.*no GPS"
+    ):
+        read_rinex_nav([path])

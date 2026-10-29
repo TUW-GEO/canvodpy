@@ -59,6 +59,7 @@ from canvod.config.models import (
     PREPROCESSING_ATTR,
     reference_store_group,
 )
+from canvod.config.models.sites import RINEX_READER_FORMATS
 from canvod.ops import preprocess_files
 from canvod.readers import DataDirMatcher, MatchedDirs
 from canvod.readers.gnss_specs.exceptions import NmeaError, RinexError
@@ -2036,7 +2037,7 @@ class RinexDataProcessor:
         by their canonical names (type ``nav``). Their records give the
         satellite positions on a 5-minute grid, which is interpolated onto
         the observations' epoch grid like the agency products and written
-        once per receiver and day.
+        once per site, receiver and day.
 
         Parameters
         ----------
@@ -2051,7 +2052,7 @@ class RinexDataProcessor:
         Returns
         -------
         Path
-            The aux Zarr store of the receiver and day.
+            The aux Zarr store of the site, receiver and day.
 
         Raises
         ------
@@ -2099,7 +2100,9 @@ class RinexDataProcessor:
         )
         aux_dir = self._config.processing.storage.get_aux_data_dir() / "00_aux_zarr"
         aux_dir.mkdir(parents=True, exist_ok=True)
-        path = aux_dir / f"aux_{date_str}_{receiver}_nav.zarr"
+        # The site in the name: concurrent runs of sites with the same
+        # receiver names share the aux folder
+        path = aux_dir / f"aux_{date_str}_{self.site.site_name}_{receiver}_nav.zarr"
         if path.exists():
             shutil.rmtree(path)
         self._logger.info(
@@ -2107,6 +2110,13 @@ class RinexDataProcessor:
             receiver=receiver,
             nav_files=len(nav_files),
             output_path=str(path),
+        )
+        self._logger.info(
+            "broadcast_angles_gps_only",
+            receiver=receiver,
+            date=date_str,
+            reason="navigation records of the other systems are not read yet: "
+            "their signals are stored without theta and phi and get no VOD",
         )
         self._preprocess_aux_data_with_hermite(
             rinex_files, path, reader_format=reader_format, ephem_ds=ephem_ds
@@ -5289,6 +5299,13 @@ class RinexDataProcessor:
             effective_reader = reader_format or self._reader_name
             receiver_aux_path, receiver_aux_group = aux_zarr_path, aux_group
             if self.use_sbf_geometry and effective_reader != "sbf":
+                if effective_reader not in RINEX_READER_FORMATS:
+                    msg = (
+                        "ephemeris_source 'broadcast' supports SBF and RINEX "
+                        f"files; receiver {data_dir.receiver} reads "
+                        f"{effective_reader}: use ephemeris_source 'precise'."
+                    )
+                    raise ValueError(msg)
                 # Broadcast ephemeris of RINEX files: the receiver's own
                 # navigation files (ADR 0023)
                 receiver_aux_path = self._broadcast_aux_store(

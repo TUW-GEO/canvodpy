@@ -29,8 +29,8 @@ GRID_STEP_S = 300.0
 GPS_MU = 3.986005e14
 GPS_OMEGA_E_DOT = 7.2921151467e-5
 
-#: Fit interval of a GPS record whose fit interval field is 0 or blank,
-#: hours: fit interval flag 0 (IS-GPS-200N, 20.3.3.4.3.1).
+#: Fit interval of a GPS record whose fit interval field is below 4 or
+#: blank, hours: fit interval flag 0 (IS-GPS-200N, 20.3.3.4.3.1).
 GPS_DEFAULT_FIT_INTERVAL_H = 4.0
 
 _SECONDS_PER_WEEK = 604_800
@@ -100,11 +100,16 @@ def _valid_record(records: xr.Dataset, t: np.ndarray) -> np.ndarray:
 
     The record with the nearest time of ephemeris, if ``t`` lies within half
     its fit interval of it (RINEX 3.05, Table A6: fit interval in hours).
+    GPS fit intervals are 4 hours or longer (IS-GPS-200N, 20.3.3.4.3.1);
+    a smaller value, as some converters write the fit interval flag (0 or
+    1) instead of the hours, counts as 4 hours.
     """
     toe = records["week"].values * _SECONDS_PER_WEEK + records["toe"].values
     fit_h = records["fit_interval"].values
     fit_h = np.where(
-        np.isfinite(fit_h) & (fit_h > 0), fit_h, GPS_DEFAULT_FIT_INTERVAL_H
+        np.isfinite(fit_h) & (fit_h >= GPS_DEFAULT_FIT_INTERVAL_H),
+        fit_h,
+        GPS_DEFAULT_FIT_INTERVAL_H,
     )
     nearest = np.abs(t[:, None] - toe[None, :]).argmin(axis=1)
     valid = np.abs(t - toe[nearest]) <= fit_h[nearest] * 3600 / 2

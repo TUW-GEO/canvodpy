@@ -62,6 +62,10 @@ path computes $\theta$ and $\varphi$ from interpolated satellite positions and t
 receiver position. canvodpy has not quantified the difference between the
 two sources on its test data; until then, do not mix them in one analysis.
 
+The angles from RINEX navigation files were compared with those from the
+COD final orbits on the test day (2025-001, GPS, every 30 s): the largest
+difference was $0.00002^\circ$, the median $0.000002^\circ$.
+
 ---
 
 ## Precise ephemeris (SP3/CLK)
@@ -173,10 +177,12 @@ processing:
 
 With `ephemeris_source: broadcast`, a receiver with RINEX files takes the
 satellite positions from its own RINEX 3.04/3.05 navigation files (ADR 0023).
-So far GPS: the other systems get no angles yet. The files sit in the
-folder `nav_directory` names, relative to the site data root like `directory`
-(it may be the same folder), and need canonical names of type `nav` with
-sampling `00U`, for example `FANA01INK_R_20250010000_15M_00U_AA.nav`.
+So far GPS: the signals of the other systems are stored without $\theta$
+and $\varphi$, so they get no VOD; the run log says so for each receiver
+and day. The files sit in the folder `nav_directory` names, relative to the
+site data root like `directory` (it may be the same folder), and need
+canonical names of type `nav` with sampling `00U`, for example
+`FANA01INK_R_20250010000_15M_00U_AA.nav`.
 
 ### How it works
 
@@ -187,8 +193,18 @@ sampling `00U`, for example `FANA01INK_R_20250010000_15M_00U_AA.nav`.
 3. GPS orbit from the record's Keplerian elements (IS-GPS-200N, Table 20-IV);
    velocities from the positions 0.5 s before and after
 4. From here as the precise ephemeris: Hermite interpolation onto the epoch
-   grid, Zarr cache 00_aux_zarr/aux_{date}_{receiver}_nav.zarr, theta/phi
+   grid, Zarr cache 00_aux_zarr/aux_{date}_{site}_{receiver}_nav.zarr,
+   theta/phi
 ```
+
+Records flagged unhealthy are still used. G01 and G22 sent such records on
+the test day; their angles differed from those of the COD final
+orbits by at most $0.00002^\circ$ (G01, the largest difference of the day).
+
+`ephemeris_source: broadcast` supports SBF and RINEX files. An NMEA
+receiver takes its angles from the precise ephemeris only: the settings
+check refuses it under `broadcast`, and so does the run for a receiver
+whose format shows only in its files.
 
 A day without navigation files stops the run, with an error that names the
 receiver, the day, and the folder searched. There is no fallback to the

@@ -1053,3 +1053,7 @@ class TestNavDirectory:
 
     def test_sbf_receivers_need_no_nav_directory(self):
         self._config("broadcast", "sbf")
+
+    def test_broadcast_nmea_receiver_is_refused(self):
+        with pytest.raises(ValidationError, match=r"s\.c, s\.r.*nmea.*precise"):
+            self._config("broadcast", "nmea")

@@ -123,13 +123,14 @@ def read_rinex_nav(paths: Iterable[Path]) -> xr.Dataset:
     Raises
     ------
     ValueError
-        If a file is not a RINEX 3.04/3.05 navigation file.
+        If a file is not a RINEX 3.04/3.05 navigation file, or the files
+        hold no GPS record.
     """
+    paths = [Path(path) for path in paths]
     svs: list[str] = []
     epochs: list[str] = []
     texts: list[list[str]] = []
     for path in paths:
-        path = Path(path)
         lines = path.read_text().splitlines()
         for record in _records(lines, _header(lines, path)):
             sv = record[0][:3]
@@ -140,6 +141,11 @@ def read_rinex_nav(paths: Iterable[Path]) -> xr.Dataset:
             epochs.append(f"{year}-{month}-{day}T{hour}:{minute}:{second}")
             fields = _fields(record)
             texts.append((fields + [""] * len(GPS_FIELDS))[: len(GPS_FIELDS)])
+    if not texts:
+        raise ValueError(
+            f"{', '.join(str(path) for path in paths)} hold no GPS record; "
+            "navigation records of the other systems are not read yet"
+        )
 
     values = np.char.replace(
         np.array(texts, dtype=str).reshape(-1, len(GPS_FIELDS)), "D", "E"
