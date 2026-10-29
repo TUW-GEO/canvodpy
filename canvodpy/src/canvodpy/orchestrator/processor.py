@@ -5381,6 +5381,18 @@ class RinexDataProcessor:
                     if position_mode == "shared" and position_data_dir
                     else data_dir.receiver
                 )
+                own_nav = (
+                    self._get_site_config().receivers[data_dir.receiver].nav_directory
+                )
+                if nav_receiver != data_dir.receiver and own_nav is not None:
+                    self._logger.info(
+                        "own_navigation_files_not_read",
+                        receiver=data_dir.receiver,
+                        canopy=nav_receiver,
+                        nav_directory=own_nav,
+                        reason="shared-position mode: the reference takes the "
+                        "angles from its canopy's navigation files",
+                    )
                 receiver_aux_path = self._broadcast_aux_store(
                     nav_receiver, position_files, effective_reader
                 )

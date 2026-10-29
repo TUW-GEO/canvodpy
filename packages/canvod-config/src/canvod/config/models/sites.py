@@ -126,8 +126,8 @@ class ReceiverConfig(_StrictModel):
             "folder). Needed with ephemeris_source broadcast for a receiver "
             "with RINEX files: the satellite positions come from these files. "
             "In shared-position mode a reference receiver uses its canopy's "
-            "files instead and needs none. They need canonical names of type "
-            "'nav'."
+            "files instead: it needs none, and its own are not read. They "
+            "need canonical names of type 'nav'."
         ),
     )
 
