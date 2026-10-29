@@ -112,7 +112,7 @@ def _run():
     )
 
 
-def test_a_broadcast_run_of_rinex_files_writes_gps_angles(tmp_path, monkeypatch):
+def test_a_broadcast_run_of_rinex_files_writes_angles(tmp_path, monkeypatch):
     stores = _settings(tmp_path, monkeypatch, with_nav=True)
 
     result = _run()
@@ -120,9 +120,10 @@ def test_a_broadcast_run_of_rinex_files_writes_gps_angles(tmp_path, monkeypatch)
     assert result.exit_code == 0, result.output
     gnss = MyIcechunkStore(stores / "gnss", store_type="gnss_store")
     canopy = gnss.read_group("canopy_01", drop_empty=True)
-    gps = canopy.sel(sid=[s for s in canopy.sid.values if str(s).startswith("G")])
-    assert np.isfinite(gps["theta"].values).any()
-    assert np.isfinite(gps["phi"].values).any()
+    for system in "GEC":
+        sids = [s for s in canopy.sid.values if str(s).startswith(system)]
+        assert np.isfinite(canopy["theta"].sel(sid=sids).values).any(), system
+        assert np.isfinite(canopy["phi"].sel(sid=sids).values).any(), system
 
     # One aux store per site, receiver and day: runs of other sites with the
     # same receiver names share the aux folder

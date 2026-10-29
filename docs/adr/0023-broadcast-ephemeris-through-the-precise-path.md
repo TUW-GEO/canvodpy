@@ -29,7 +29,8 @@ receiver with RINEX files names the folder of its navigation files with
 path.** For each satellite, the record whose reference time is nearest
 gives the ECEF position and velocity on a 5-minute grid, where that
 record is valid (the fit interval in the record for GPS, the validity
-from each system's interface specification for the others). GPS,
+from each system's interface specification for the others, 4 hours where
+it gives none). GPS,
 Galileo, BeiDou and QZSS records are orbital elements, evaluated in
 closed form; GLONASS and SBAS records are a position, velocity and
 acceleration, integrated to the grid. The positions and velocities then

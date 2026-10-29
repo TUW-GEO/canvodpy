@@ -37,6 +37,23 @@ GEORINEX_NAMES = {
 }
 
 
+# georinex names of the Galileo fields (RINEX 3.05, Table A8)
+GALILEO_GEORINEX_NAMES = {
+    name: GEORINEX_NAMES[name]
+    for name in GEORINEX_NAMES
+    if name not in ("iode", "week", "health", "fit_interval")
+} | {
+    "iodnav": "IODnav",
+    "data_sources": "DataSrc",
+    "week": "GALWeek",
+    "sisa": "SISA",
+    "health": "health",
+    "bgd_e5a_e1": "BGDe5a",
+    "bgd_e5b_e1": "BGDe5b",
+    "transmission_time": "TransTime",
+}
+
+
 @pytest.fixture
 def nav_file(test_data_dir: Path) -> Path:
     path = test_data_dir / "valid" / NAV_DIR / "ract001a00.25p"
@@ -48,9 +65,8 @@ def nav_file(test_data_dir: Path) -> Path:
 @pytest.mark.integration
 def test_gps_records_of_a_file(nav_file: Path) -> None:
     """The file's 11 GPS records, with the values written in the file."""
-    nav = read_rinex_nav([nav_file])
-    gps = nav.where(nav.sv.str.startswith("G"), drop=True)
-    assert gps.sizes["record"] == 11
+    nav = read_rinex_nav([nav_file])["G"]
+    assert nav.sizes["record"] == 11
 
     g01 = nav.isel(record=int(np.flatnonzero(nav.sv.values == "G01")[0]))
     assert g01.toc.values == np.datetime64("2025-01-01T02:00:00", "ns")
@@ -65,27 +81,121 @@ def test_gps_records_of_a_file(nav_file: Path) -> None:
 
 @pytest.mark.integration
 def test_records_read_twice_are_kept_once(nav_file: Path) -> None:
-    assert (
-        read_rinex_nav([nav_file, nav_file]).sizes["record"]
-        == read_rinex_nav([nav_file]).sizes["record"]
+    once = read_rinex_nav([nav_file])
+    twice = read_rinex_nav([nav_file, nav_file])
+    assert set(twice) == set(once) == {"G", "E", "C"}
+    for system, records in once.items():
+        assert twice[system].sizes["record"] == records.sizes["record"]
+
+
+@pytest.mark.integration
+def test_galileo_records_of_a_file(nav_file: Path) -> None:
+    """Galileo records keep their GST times, which equal GPS time.
+
+    The file holds the 23:40 batch of E11 twice: from F/NAV (data sources
+    258) and from I/NAV (517). Both are kept.
+    """
+    nav = read_rinex_nav([nav_file])["E"]
+    batch = (nav.sv.values == "E11") & (nav.iodnav.values == 49)
+    assert sorted(nav.data_sources.values[batch]) == [258, 517]
+    e11 = nav.isel(record=int(np.flatnonzero(batch & (nav.data_sources == 517))[0]))
+    assert e11.toc.values == np.datetime64("2024-12-31T23:40:00", "ns")
+    assert e11.iodnav.item() == 49
+    assert e11.sqrt_a.item() == 5.440609739304e03
+    assert e11.toe.item() == 2.58e05
+    assert e11.data_sources.item() == 517
+    assert e11.week.item() == 2347
+    assert e11.transmission_time.item() == 2.59235e05
+    assert nav.toc.attrs["time_system"] == "GPS"
+
+
+@pytest.mark.integration
+def test_beidou_records_of_a_file(nav_file: Path) -> None:
+    """BeiDou times of clock become GPS time: BDT + 14 s (RINEX 3.05, Table 1)."""
+    nav = read_rinex_nav([nav_file])["C"]
+    assert nav.sizes["record"] == 10
+    c29 = nav.isel(record=int(np.flatnonzero(nav.sv.values == "C29")[0]))
+    assert c29.toc.values == np.datetime64("2025-01-01T00:00:14", "ns")
+    assert c29.aode.item() == 1
+    assert c29.sqrt_a.item() == 5.282626367569e03
+    assert c29.toe.item() == 2.592e05  # seconds of the BDT week, as written
+    assert c29.week.item() == 991  # BDT week, as written
+    assert c29.aodc.item() == 1
+    assert nav.toc.attrs["time_system"] == "GPS"
+
+
+def test_qzss_records(tmp_path: Path) -> None:
+    """The QZSS example of RINEX 3.05, Table A13."""
+    path = tmp_path / "FANA01INK_R_20141330000_01D_JN.rnx"
+    path.write_text(
+        "     3.05           N: GNSS NAV DATA    J: QZSS             "
+        "RINEX VERSION / TYPE\n"
+        "                                                            END OF HEADER\n"
+        "J01 2014 05 13 08 15 12 3.323303535581D-04-1.818989403546D-11"
+        " 0.000000000000D+00\n"
+        "     6.900000000000D+01-4.927812500000D+02 2.222949737636D-09"
+        " 7.641996743610D-01\n"
+        "    -1.654587686062D-05 7.542252133135D-02 1.197867095470D-05"
+        " 6.492895933151D+03\n"
+        "     2.025120000000D+05-8.381903171539D-07-9.211997910060D-01"
+        "-2.041459083557D-06\n"
+        "     7.082252892260D-01-1.558437500000D+02-1.575843337115D+00"
+        "-2.349740733276D-09\n"
+        "    -6.793140104410D-10 2.000000000000D+00 1.792000000000D+03"
+        " 1.000000000000D+00\n"
+        "     2.000000000000D+00 1.000000000000D+00-4.656612873077D-09"
+        " 6.900000000000D+01\n"
+        "     1.989000000000D+05 0.000000000000D+00\n"
     )
+    nav = read_rinex_nav([path])
+    assert set(nav) == {"J"}
+    j01 = nav["J"].isel(record=0)
+    assert str(j01.sv.values) == "J01"
+    assert j01.toc.values == np.datetime64("2014-05-13T08:15:12", "ns")
+    assert j01.e.item() == 7.542252133135e-02
+    assert j01.week.item() == 1792
+    assert j01.fit_interval_flag.item() == 0
 
 
 @pytest.mark.integration
 def test_gps_records_agree_with_georinex(nav_file: Path) -> None:
     georinex = pytest.importorskip("georinex")
 
-    ours = read_rinex_nav([nav_file])
+    ours = read_rinex_nav([nav_file])["G"]
     ref = georinex.load(nav_file, use="G")
     for i in range(ours.sizes["record"]):
         rec = ours.isel(record=i)
-        if not str(rec.sv.values).startswith("G"):
-            continue
         expected = ref.sel(sv=str(rec.sv.values), time=rec.toc.values)
         for ours_name, ref_name in GEORINEX_NAMES.items():
             assert rec[ours_name].item() == pytest.approx(
                 expected[ref_name].item(), rel=1e-12, abs=0
             ), (str(rec.sv.values), ours_name)
+
+
+@pytest.mark.integration
+def test_galileo_records_agree_with_georinex(nav_file: Path) -> None:
+    georinex = pytest.importorskip("georinex")
+
+    ours = read_rinex_nav([nav_file])["E"]
+    # georinex names a second record of a satellite and time "E02_1"
+    ref = georinex.load(nav_file, use="E").stack(record=("sv", "time"))
+    ref = ref.isel(record=np.flatnonzero(ref["sqrtA"].notnull().values))
+    assert ref.sizes["record"] == ours.sizes["record"]
+    for i in range(ref.sizes["record"]):
+        expected = ref.isel(record=i)
+        sv, toc = expected.record.item()
+        sv = sv.split("_")[0]
+        match = np.flatnonzero(
+            (ours.sv.values == sv)
+            & (ours.toc.values == toc)
+            & (ours.data_sources.values == expected["DataSrc"].item())
+        )
+        assert match.size == 1, (sv, toc)
+        rec = ours.isel(record=int(match[0]))
+        for ours_name, ref_name in GALILEO_GEORINEX_NAMES.items():
+            assert rec[ours_name].item() == pytest.approx(
+                expected[ref_name].item(), rel=1e-12, abs=0
+            ), (sv, ours_name)
 
 
 def test_not_a_navigation_file_is_refused(tmp_path: Path) -> None:
@@ -99,18 +209,16 @@ def test_not_a_navigation_file_is_refused(tmp_path: Path) -> None:
         read_rinex_nav([path])
 
 
-def test_a_file_without_gps_records_is_refused(tmp_path: Path) -> None:
-    path = tmp_path / "FANA01INK_R_20250010000_01D_EN.rnx"
+def test_a_file_without_records_of_a_known_system_is_refused(tmp_path: Path) -> None:
+    path = tmp_path / "FANA01INK_R_20250010000_01D_SN.rnx"
     path.write_text(
-        "     3.04           N: GNSS NAV DATA    E: GALILEO          "
+        "     3.04           N: GNSS NAV DATA    S: SBAS             "
         "RINEX VERSION / TYPE\n"
         "                                                            END OF HEADER\n"
-        "E01 2025 01 01 00 00 00 1.000000000000D-04 0.000000000000D+00"
+        "S20 2025 01 01 00 00 00 1.000000000000D-04 0.000000000000D+00"
         " 0.000000000000D+00\n"
     )
-    with pytest.raises(
-        ValueError, match=r"FANA01INK_R_20250010000_01D_EN\.rnx.*no GPS"
-    ):
+    with pytest.raises(ValueError, match=r"_01D_SN\.rnx.*no record"):
         read_rinex_nav([path])
 
 

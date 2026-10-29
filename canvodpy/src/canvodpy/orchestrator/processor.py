@@ -2062,7 +2062,10 @@ class RinexDataProcessor:
         """
         import shutil
 
-        from canvod.auxiliary.ephemeris.broadcast import broadcast_ephemerides
+        from canvod.auxiliary.ephemeris.broadcast import (
+            ORBIT_SYSTEMS,
+            broadcast_ephemerides,
+        )
 
         date_str = self.matched_data_dirs.yyyydoy.to_str()
         path = self._broadcast_aux_paths.get(receiver)
@@ -2112,9 +2115,10 @@ class RinexDataProcessor:
             output_path=str(path),
         )
         self._logger.info(
-            "broadcast_angles_gps_only",
+            "broadcast_angles_systems",
             receiver=receiver,
             date=date_str,
+            systems=",".join(ORBIT_SYSTEMS),
             reason="navigation records of the other systems are not read yet: "
             "their signals are stored without theta and phi and get no VOD",
         )

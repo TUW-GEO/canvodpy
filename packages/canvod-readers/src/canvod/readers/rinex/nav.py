@@ -2,10 +2,13 @@
 
 A navigation file holds one record per satellite and reference time: the
 orbit parameters the satellite broadcasts. :func:`read_rinex_nav` reads the
-records of one or more files into one dataset with a ``record`` dimension.
+records of one or more files into one dataset per system, each with a
+``record`` dimension.
 
-Read so far: GPS (RINEX 3.05, Table A6). Records of the other systems are
-skipped. Times are GPS time, like the observation epochs.
+Read so far: GPS (RINEX 3.05, Table A6), Galileo (Table A8), QZSS
+(Table A12) and BeiDou (Table A14). Records of the other systems are
+skipped. Times of clock are converted to GPS time, like the observation
+epochs; times of ephemeris and weeks stay as written, in the system's time.
 
 The record layout is fixed-width: a record starts with the satellite
 (``A1,I2.2``) and its epoch on the first line, followed by lines of four
@@ -23,9 +26,9 @@ import xarray as xr
 #: RINEX versions this reader knows.
 SUPPORTED_VERSIONS = ("3.04", "3.05")
 
-#: The fields of a GPS record in file order (RINEX 3.05, Table A6), ``None``
-#: for spares. Angles are radians, times seconds of the GPS week.
-GPS_FIELDS = (
+#: The fields of a GPS record in file order (RINEX 3.05, Table A6). Angles
+#: are radians, times seconds of the GPS week.
+GPS_FIELDS: tuple[str | None, ...] = (
     "af0",  # SV clock bias (s)
     "af1",  # SV clock drift (s/s)
     "af2",  # SV clock drift rate (s/s2)
@@ -56,6 +59,108 @@ GPS_FIELDS = (
     "transmission_time",  # (s of GPS week)
     "fit_interval",  # (hours)
 )
+
+#: The fields of a Galileo record in file order (RINEX 3.05, Table A8),
+#: ``None`` for spares. Times are seconds of the GAL week, which is the
+#: continuous GPS week (Table A8, note *****).
+GALILEO_FIELDS: tuple[str | None, ...] = (
+    "af0",
+    "af1",
+    "af2",
+    "iodnav",
+    "crs",
+    "delta_n",
+    "m0",
+    "cuc",
+    "e",
+    "cus",
+    "sqrt_a",
+    "toe",
+    "cic",
+    "omega0",
+    "cis",
+    "i0",
+    "crc",
+    "omega",
+    "omega_dot",
+    "idot",
+    "data_sources",  # bit 0 I/NAV E1-B, bit 1 F/NAV E5a-I, bit 2 I/NAV E5b-I
+    "week",  # GAL week of toe, continuous, aligned to the GPS week
+    None,
+    "sisa",  # (m)
+    "health",
+    "bgd_e5a_e1",  # (s)
+    "bgd_e5b_e1",  # (s)
+    "transmission_time",  # (s of GAL week)
+)
+
+#: The fields of a QZSS record in file order (RINEX 3.05, Table A12): those
+#: of GPS, with the fit interval flag (0: 2 hours) in place of the hours.
+QZSS_FIELDS: tuple[str | None, ...] = (*GPS_FIELDS[:-1], "fit_interval_flag")
+
+#: The fields of a BeiDou record in file order (RINEX 3.05, Table A14),
+#: ``None`` for spares. Times are seconds of the BDT week.
+BEIDOU_FIELDS: tuple[str | None, ...] = (
+    "af0",
+    "af1",
+    "af2",
+    "aode",
+    "crs",
+    "delta_n",
+    "m0",
+    "cuc",
+    "e",
+    "cus",
+    "sqrt_a",
+    "toe",  # (s of BDT week)
+    "cic",
+    "omega0",
+    "cis",
+    "i0",
+    "crc",
+    "omega",
+    "omega_dot",
+    "idot",
+    None,
+    "week",  # BDT week of toe, continuous; BDT week 0 is GPS week 1356
+    None,
+    "sv_accuracy",  # (m)
+    "sat_h1",
+    "tgd1",  # B1/B3 (s)
+    "tgd2",  # B2/B3 (s)
+    "transmission_time",  # (s of BDT week)
+    "aodc",
+)
+
+#: Fields of each system read, by system letter.
+FIELDS: dict[str, tuple[str | None, ...]] = {
+    "G": GPS_FIELDS,
+    "E": GALILEO_FIELDS,
+    "J": QZSS_FIELDS,
+    "C": BEIDOU_FIELDS,
+}
+
+#: Fields that, with satellite and time of clock, identify a record: a
+#: record repeats in every file written while it was current. Galileo sends
+#: the same issue of data in I/NAV and F/NAV records.
+_RECORD_KEYS: dict[str, tuple[str, ...]] = {
+    "G": ("iode",),
+    "E": ("iodnav", "data_sources"),
+    "J": ("iode",),
+    "C": ("aode",),
+}
+
+#: Time of clock minus GPS time, by system (RINEX 3.05, Table 1 and 2:
+#: BDT = GPS - 14 s; GAL and QZS equal GPS).
+_TOC_MINUS_GPS = {"C": np.timedelta64(-14, "s")}
+
+#: Source of each system's records.
+_SOURCES = {
+    "G": "RINEX 3.05, Table A6",
+    "E": "RINEX 3.05, Table A8",
+    "J": "RINEX 3.05, Table A12",
+    "C": "RINEX 3.05, Table A14",
+}
 
 _FIELD_WIDTH = 19
 
@@ -104,7 +209,38 @@ def _fields(record: list[str]) -> list[str]:
     return fields
 
 
-def read_rinex_nav(paths: Iterable[Path]) -> xr.Dataset:
+def _system_records(
+    system: str, svs: list[str], epochs: list[str], texts: list[list[str]]
+) -> xr.Dataset:
+    """The records of one system as a dataset along ``record``."""
+    fields = FIELDS[system]
+    values = np.char.replace(np.array(texts, dtype=str), "D", "E")
+    values = np.where(np.char.strip(values) == "", "nan", values).astype(np.float64)
+    toc = np.array(epochs, dtype="datetime64[ns]")
+    toc = toc - _TOC_MINUS_GPS.get(system, np.timedelta64(0, "s"))
+    sv = np.array(svs, dtype=str)
+
+    keys = [sv, toc] + [
+        np.nan_to_num(values[:, fields.index(name)], nan=-1.0)
+        for name in _RECORD_KEYS[system]
+    ]
+    _, first = np.unique(np.rec.fromarrays(keys), return_index=True)
+    order = first[np.lexsort((toc[first], sv[first]))]
+
+    ds = xr.Dataset(
+        {
+            name: ("record", values[order, i])
+            for i, name in enumerate(fields)
+            if name is not None
+        },
+        coords={"sv": ("record", sv[order]), "toc": ("record", toc[order])},
+    )
+    ds["toc"].attrs["time_system"] = "GPS"
+    ds.attrs["source"] = f"RINEX navigation files ({_SOURCES[system]})"
+    return ds
+
+
+def read_rinex_nav(paths: Iterable[Path]) -> dict[str, xr.Dataset]:
     """Read the broadcast ephemeris records of RINEX navigation files.
 
     Parameters
@@ -115,57 +251,46 @@ def read_rinex_nav(paths: Iterable[Path]) -> xr.Dataset:
 
     Returns
     -------
-    xr.Dataset
-        One entry per record along ``record``, sorted by satellite and time
-        of clock: coordinates ``sv`` (e.g. ``"G01"``) and ``toc`` (time of
-        clock, GPS time), and one variable per field of :data:`GPS_FIELDS`.
+    dict[str, xr.Dataset]
+        One dataset per system letter found (``"G"``, ``"E"``, ``"J"``,
+        ``"C"``), with one entry per record along ``record``, sorted by
+        satellite and time of clock: coordinates ``sv`` (e.g. ``"G01"``)
+        and ``toc`` (time of clock, GPS time), and one variable per field
+        of the system's table in :data:`FIELDS`.
 
     Raises
     ------
     ValueError
         If no files are given, a file is not a RINEX 3.04/3.05 navigation
-        file, or the files hold no GPS record.
+        file, or the files hold no record of a system read.
     """
     paths = [Path(path) for path in paths]
     if not paths:
         raise ValueError("no navigation files given")
-    svs: list[str] = []
-    epochs: list[str] = []
-    texts: list[list[str]] = []
+    found: dict[str, tuple[list[str], list[str], list[list[str]]]] = {}
     for path in paths:
         lines = path.read_text().splitlines()
         for record in _records(lines, _header(lines, path)):
-            sv = record[0][:3]
-            if sv[0] != "G":
+            system = record[0][0]
+            fields = FIELDS.get(system)
+            if fields is None:
                 continue
-            year, month, day, hour, minute, second = record[0][4:23].split()
+            # QZSS writes the number as I2, the others as I2.2 (Table A12)
+            sv = f"{system}{int(record[0][1:3]):02d}"
+            year, month, day, hour, minute, second = map(int, record[0][4:23].split())
+            svs, epochs, texts = found.setdefault(system, ([], [], []))
             svs.append(sv)
-            epochs.append(f"{year}-{month}-{day}T{hour}:{minute}:{second}")
-            fields = _fields(record)
-            texts.append((fields + [""] * len(GPS_FIELDS))[: len(GPS_FIELDS)])
-    if not texts:
+            epochs.append(
+                f"{year:04d}-{month:02d}-{day:02d}T{hour:02d}:{minute:02d}:{second:02d}"
+            )
+            texts.append((_fields(record) + [""] * len(fields))[: len(fields)])
+    if not found:
         raise ValueError(
-            f"{', '.join(str(path) for path in paths)} hold no GPS record; "
-            "navigation records of the other systems are not read yet"
+            f"{', '.join(str(path) for path in paths)} hold no record of "
+            f"{', '.join(sorted(FIELDS))}; navigation records of the other "
+            "systems are not read yet"
         )
-
-    values = np.char.replace(
-        np.array(texts, dtype=str).reshape(-1, len(GPS_FIELDS)), "D", "E"
-    )
-    values = np.where(np.char.strip(values) == "", "nan", values).astype(np.float64)
-    toc = np.array(epochs, dtype="datetime64[ns]")
-    sv = np.array(svs, dtype=str)
-
-    # A record repeats in every file written while it was current.
-    iode = values[:, GPS_FIELDS.index("iode")]
-    keys = np.rec.fromarrays([sv, toc, np.nan_to_num(iode, nan=-1.0)])
-    _, first = np.unique(keys, return_index=True)
-    order = first[np.lexsort((toc[first], sv[first]))]
-
-    ds = xr.Dataset(
-        {name: ("record", values[order, i]) for i, name in enumerate(GPS_FIELDS)},
-        coords={"sv": ("record", sv[order]), "toc": ("record", toc[order])},
-    )
-    ds["toc"].attrs["time_system"] = "GPS"
-    ds.attrs["source"] = "RINEX navigation files (RINEX 3.05, Table A6)"
-    return ds
+    return {
+        system: _system_records(system, *columns)
+        for system, columns in sorted(found.items())
+    }

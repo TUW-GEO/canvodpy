@@ -45,7 +45,8 @@ from SBF files or from RINEX navigation files).
 
     Orbit parameters the satellites broadcast, recorded by the receiver
     in RINEX navigation files. Satellite positions on a 5-minute grid,
-    then the same interpolation as the precise ephemeris. GPS so far.
+    then the same interpolation as the precise ephemeris. GPS, Galileo,
+    BeiDou, and QZSS so far.
 
     **Input:** RINEX 3.04/3.05 navigation files (`nav_directory`)
     **Output:** ECEF XYZ $\rightarrow$ $\theta$, $\varphi$, $r$
@@ -63,8 +64,17 @@ receiver position. canvodpy has not quantified the difference between the
 two sources on its test data; until then, do not mix them in one analysis.
 
 The angles from RINEX navigation files were compared with those from the
-COD final orbits on the test day (2025-001, GPS, every 30 s): the largest
-difference was $0.00002^\circ$, the median $0.000002^\circ$.
+COD final orbits on the test day (2025-001, every 30 s):
+
+| System | Largest difference | Median |
+|---|---|---|
+| GPS | $0.00002^\circ$ | $0.000002^\circ$ |
+| Galileo | $0.00002^\circ$ | below $0.000001^\circ$ |
+| BeiDou (not GEO) | $0.000007^\circ$ | below $0.000001^\circ$ |
+
+COD final has no BeiDou GEO satellite of that day. For C05, a GEO
+satellite, the angles differed from the receiver's own SatVisibility
+angles by at most $0.016^\circ$.
 
 ---
 
@@ -177,9 +187,9 @@ processing:
 
 With `ephemeris_source: broadcast`, a receiver with RINEX files takes the
 satellite positions from its own RINEX 3.04/3.05 navigation files (ADR 0023).
-So far GPS: the signals of the other systems are stored without $\theta$
-and $\varphi$, so they get no VOD; the run log says so for each receiver
-and day. The files sit in the folder `nav_directory` names, relative to the
+So far GPS, Galileo, BeiDou, and QZSS: the signals of the other systems
+are stored without $\theta$ and $\varphi$, so they get no VOD; the run log
+names the systems with angles for each receiver and day. The files sit in the folder `nav_directory` names, relative to the
 site data root like `directory` (it may be the same folder), and need
 canonical names of type `nav` with sampling `00U`, for example
 `FANA01INK_R_20250010000_15M_00U_AA.nav`.
@@ -190,12 +200,19 @@ canonical names of type `nav` with sampling `00U`, for example
 1. Read the day's navigation files of the receiver (canvod-readers, rinex/nav.py)
 2. Per satellite and 5-minute grid time, the record with the nearest time of
    ephemeris, if the time lies within half its fit interval; elsewhere NaN
-3. GPS orbit from the record's Keplerian elements (IS-GPS-200N, Table 20-IV);
-   velocities from the positions 0.5 s before and after
+3. Orbit from the record's Keplerian elements (IS-GPS-200N, Table 20-IV,
+   with each system's constants; BeiDou GEO satellites with the rotations
+   of BDS-SIS-ICD-B1I-3.0, Table 5-11); velocities from the positions
+   0.5 s before and after
 4. From here as the precise ephemeris: Hermite interpolation onto the epoch
    grid, Zarr cache 00_aux_zarr/aux_{date}_{site}_{receiver}_nav.zarr,
    theta/phi
 ```
+
+The fit interval is the one in the record for GPS (at least 4 hours) and
+2 hours for QZSS (IS-QZSS-PNT-005, Table 4.1.1-2). The Galileo and BeiDou
+interface specifications give none; canvodpy uses those records for 4
+hours too, 2 hours on either side of their time of ephemeris.
 
 Records flagged unhealthy are still used. G01 and G22 sent such records on
 the test day; their angles differed from those of the COD final
@@ -237,7 +254,7 @@ format but that has no `nav_directory` are refused.
 |-----------|--------|:---:|:---:|---|
 | `.YYo` / `.rnx` | RINEX 3 OBS | :fontawesome-solid-check: | No | Primary observation data |
 | `.YY_` / `.sbf` | SBF binary | :fontawesome-solid-check: | :fontawesome-solid-check: | Observations + broadcast geometry |
-| `.YYp` / `.nav` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Broadcast ephemeris (GPS so far), canonical type `nav` |
+| `.YYp` / `.nav` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Broadcast ephemeris (GPS, Galileo, BeiDou, QZSS so far), canonical type `nav` |
 | `.YYn` | RINEX 2 NAV (GPS) | No | :fontawesome-solid-check: | Not read (planned) |
 | `.YYg` | RINEX NAV (GLONASS) | No | :fontawesome-solid-check: | Not read (planned) |
 | `.nmea` | NMEA 0183 | SNR only | No | Observations (`NmeaObs`); geometry from SP3 |
