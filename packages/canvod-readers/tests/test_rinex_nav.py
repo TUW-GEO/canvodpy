@@ -80,10 +80,54 @@ def test_gps_records_of_a_file(nav_file: Path) -> None:
 
 
 @pytest.mark.integration
+def test_glonass_records_of_a_file(nav_file: Path) -> None:
+    """The file's 6 GLONASS records, with the values written in the file.
+
+    The time of clock is UTC in the file (RINEX 3.05, Table A10): 00:15:00
+    UTC is 00:15:18 GPS time on 2025-01-01 (18 leap seconds).
+    """
+    nav = read_rinex_nav([nav_file])["R"]
+    assert nav.sizes["record"] == 6
+
+    r20 = nav.isel(record=int(np.flatnonzero(nav.sv.values == "R20")[0]))
+    assert r20.toc.values == np.datetime64("2025-01-01T00:15:18", "ns")
+    assert r20.minus_tau_n.item() == -1.240530982614e-04
+    assert r20.frame_time.item() == 2.592e05
+    assert r20.x.item() == 1.602356640625e04
+    assert r20.vy.item() == 1.888092041016e00
+    assert r20.az.item() == 9.313225746155e-10
+    assert r20.health.item() == 0.0
+    assert r20.frequency_number.item() == 2.0
+    assert np.isnan(r20.status_flags.item())  # RINEX 3.04: no fifth line
+    assert nav.toc.attrs["time_system"] == "GPS"
+
+
+def test_glonass_record_of_rinex_3_05_has_a_fifth_line(tmp_path: Path) -> None:
+    """RINEX 3.05 adds a fifth line to GLONASS records (Table A10)."""
+    path = tmp_path / "FANA01INK_R_20250010000_01D_RN.rnx"
+    orbit = "     " + "1.000000000000D+00 " * 3 + "{:.12E}"
+    path.write_text(
+        "     3.05           N: GNSS NAV DATA    R: GLONASS          "
+        "RINEX VERSION / TYPE\n"
+        "                                                            END OF HEADER\n"
+        "R07 2025 01 01 00 15 00 1.000000000000D-04 0.000000000000D+00"
+        " 2.592000000000D+05\n"
+        + "\n".join(orbit.format(v).replace("     ", "    ", 1) for v in (0, -5, 0))
+        + "\n     2.000000000000E+00 9.999999999990E+08 1.500000000000E+01"
+        " 1.000000000000E+00\n"
+    )
+    r07 = read_rinex_nav([path])["R"].isel(record=0)
+    assert r07.frequency_number.item() == -5.0
+    assert r07.status_flags.item() == 2.0
+    assert r07.urai.item() == 15.0
+    assert r07.health_flags.item() == 1.0
+
+
+@pytest.mark.integration
 def test_records_read_twice_are_kept_once(nav_file: Path) -> None:
     once = read_rinex_nav([nav_file])
     twice = read_rinex_nav([nav_file, nav_file])
-    assert set(twice) == set(once) == {"G", "E", "C"}
+    assert set(twice) == set(once) == {"G", "E", "R", "C"}
     for system, records in once.items():
         assert twice[system].sizes["record"] == records.sizes["record"]
 

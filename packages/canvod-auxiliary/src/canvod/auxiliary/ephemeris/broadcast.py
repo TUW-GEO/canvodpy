@@ -8,12 +8,14 @@ interpolation of the precise ephemeris
 
 For each grid time and satellite, the record whose time of ephemeris is
 nearest is used where it is valid; elsewhere the satellite has no position
-(NaN). Velocities are central differences of the positions over 1 s.
+(NaN).
 
-Systems so far, all from Keplerian elements: GPS (IS-GPS-200N, Table
-20-IV), Galileo (Galileo OS SIS ICD, Issue 2.1, Table 66), QZSS
-(IS-QZSS-PNT-005, Section 5.6.1) and BeiDou (BDS-SIS-ICD-B1I-3.0,
-Table 5-11).
+Systems so far: from Keplerian elements GPS (IS-GPS-200N, Table 20-IV),
+Galileo (Galileo OS SIS ICD, Issue 2.1, Table 66), QZSS (IS-QZSS-PNT-005,
+Section 5.6.1) and BeiDou (BDS-SIS-ICD-B1I-3.0, Table 5-11), with
+velocities from central differences of the positions over 1 s; GLONASS by
+numerical integration (ICD GLONASS, Edition 5.1, A.3.1.2,
+:mod:`canvod.auxiliary.ephemeris.glonass`), with the integrated velocities.
 """
 
 from __future__ import annotations
@@ -24,6 +26,8 @@ from pathlib import Path
 
 import numpy as np
 import xarray as xr
+
+from canvod.auxiliary.ephemeris.glonass import glonass_states, glonass_valid_record
 
 #: Spacing of the orbit grid, seconds.
 GRID_STEP_S = 300.0
@@ -86,7 +90,7 @@ KEPLER_SYSTEMS: dict[str, KeplerSystem] = {
 }
 
 #: Systems whose navigation records give orbits here, by system letter.
-ORBIT_SYSTEMS: tuple[str, ...] = tuple(KEPLER_SYSTEMS)
+ORBIT_SYSTEMS: tuple[str, ...] = (*KEPLER_SYSTEMS, "R")
 
 #: BeiDou GEO satellites (BDS-SIS-ICD-B1I-3.0, Table 4-1: SV IDs 1-5 and
 #: 59-63). Their orbits take the extra rotations of Table 5-11.
@@ -239,7 +243,7 @@ def broadcast_orbits(
             record=np.flatnonzero(system_records.sv.values == sv)
         )
         for system, system_records in records.items()
-        if system in KEPLER_SYSTEMS
+        if system in ORBIT_SYSTEMS
         for sv in np.unique(system_records.sv.values)
     }
     svs = sorted(by_sv)
@@ -247,6 +251,14 @@ def broadcast_orbits(
     vel = np.full_like(pos, np.nan)
     for j, sv in enumerate(svs):
         recs = by_sv[sv]
+        if sv[0] == "R":
+            tb = _gps_seconds(recs.toc.values)
+            index = glonass_valid_record(tb, t)
+            ok = index >= 0
+            pos[ok, j], vel[ok, j] = glonass_states(
+                recs.isel(record=index[ok]), t[ok] - tb[index[ok]]
+            )
+            continue
         index = _valid_record(recs, t, sv)
         ok = index >= 0
         chosen = recs.isel(record=index[ok])

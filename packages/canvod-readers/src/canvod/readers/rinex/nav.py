@@ -5,10 +5,11 @@ orbit parameters the satellite broadcasts. :func:`read_rinex_nav` reads the
 records of one or more files into one dataset per system, each with a
 ``record`` dimension.
 
-Read so far: GPS (RINEX 3.05, Table A6), Galileo (Table A8), QZSS
-(Table A12) and BeiDou (Table A14). Records of the other systems are
-skipped. Times of clock are converted to GPS time, like the observation
-epochs; times of ephemeris and weeks stay as written, in the system's time.
+Read so far: GPS (RINEX 3.05, Table A6), Galileo (Table A8), GLONASS
+(Table A10), QZSS (Table A12) and BeiDou (Table A14). Records of the other
+systems are skipped. Times of clock are converted to GPS time, like the
+observation epochs; times of ephemeris and weeks stay as written, in the
+system's time.
 
 The record layout is fixed-width: a record starts with the satellite
 (``A1,I2.2``) and its epoch on the first line, followed by lines of four
@@ -22,6 +23,8 @@ from pathlib import Path
 
 import numpy as np
 import xarray as xr
+
+from canvod.readers.gnss_specs.leap_seconds import gps_minus_utc
 
 #: RINEX versions this reader knows.
 SUPPORTED_VERSIONS = ("3.04", "3.05")
@@ -132,10 +135,37 @@ BEIDOU_FIELDS: tuple[str | None, ...] = (
     "aodc",
 )
 
+#: The fields of a GLONASS record in file order (RINEX 3.05, Table A10):
+#: position, velocity and luni-solar acceleration in the PZ-90 frame, in
+#: km, km/s and km/s2. The last four fields are the fifth line RINEX 3.05
+#: added; NaN in RINEX 3.04 files.
+GLONASS_FIELDS: tuple[str | None, ...] = (
+    "minus_tau_n",  # SV clock bias (s), -TauN
+    "gamma_n",  # SV relative frequency bias, +GammaN
+    "frame_time",  # message frame time tk + nd*86400 (s of the UTC week)
+    "x",
+    "vx",
+    "ax",
+    "health",  # 0 healthy, 1 unhealthy (MSB of Bn)
+    "y",
+    "vy",
+    "ay",
+    "frequency_number",  # -7...+13
+    "z",
+    "vz",
+    "az",
+    "age",  # age of operational information E (days)
+    "status_flags",
+    "delta_tau_l1_l2",  # L1/L2 group delay difference (s)
+    "urai",
+    "health_flags",
+)
+
 #: Fields of each system read, by system letter.
 FIELDS: dict[str, tuple[str | None, ...]] = {
     "G": GPS_FIELDS,
     "E": GALILEO_FIELDS,
+    "R": GLONASS_FIELDS,
     "J": QZSS_FIELDS,
     "C": BEIDOU_FIELDS,
 }
@@ -146,18 +176,22 @@ FIELDS: dict[str, tuple[str | None, ...]] = {
 _RECORD_KEYS: dict[str, tuple[str, ...]] = {
     "G": ("iode",),
     "E": ("iodnav", "data_sources"),
+    "R": (),
     "J": ("iode",),
     "C": ("aode",),
 }
 
 #: Time of clock minus GPS time, by system (RINEX 3.05, Table 1 and 2:
-#: BDT = GPS - 14 s; GAL and QZS equal GPS).
+#: BDT = GPS - 14 s; GAL and QZS equal GPS). GLONASS times of clock are
+#: UTC (Table A10), which differs from GPS time by the leap seconds of the
+#: date: :func:`_utc_minus_gps`.
 _TOC_MINUS_GPS = {"C": np.timedelta64(-14, "s")}
 
 #: Source of each system's records.
 _SOURCES = {
     "G": "RINEX 3.05, Table A6",
     "E": "RINEX 3.05, Table A8",
+    "R": "RINEX 3.05, Table A10",
     "J": "RINEX 3.05, Table A12",
     "C": "RINEX 3.05, Table A14",
 }
@@ -209,6 +243,13 @@ def _fields(record: list[str]) -> list[str]:
     return fields
 
 
+def _utc_minus_gps(toc: np.ndarray) -> np.ndarray:
+    """UTC minus GPS time at UTC times: minus the leap seconds of each."""
+    times = np.unique(toc)
+    leap = [gps_minus_utc(t.astype("datetime64[us]").item()) for t in times]
+    return -np.array(leap, dtype="timedelta64[s]")[np.searchsorted(times, toc)]
+
+
 def _system_records(
     system: str, svs: list[str], epochs: list[str], texts: list[list[str]]
 ) -> xr.Dataset:
@@ -217,7 +258,10 @@ def _system_records(
     values = np.char.replace(np.array(texts, dtype=str), "D", "E")
     values = np.where(np.char.strip(values) == "", "nan", values).astype(np.float64)
     toc = np.array(epochs, dtype="datetime64[ns]")
-    toc = toc - _TOC_MINUS_GPS.get(system, np.timedelta64(0, "s"))
+    if system == "R":
+        toc = toc - _utc_minus_gps(toc)
+    else:
+        toc = toc - _TOC_MINUS_GPS.get(system, np.timedelta64(0, "s"))
     sv = np.array(svs, dtype=str)
 
     keys = [sv, toc] + [

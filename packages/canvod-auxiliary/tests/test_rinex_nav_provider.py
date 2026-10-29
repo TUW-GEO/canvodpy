@@ -28,7 +28,7 @@ pytestmark = [
 
 
 #: One signal of each system for the test observations.
-SIGNAL = {"G": "L1|C", "E": "E1|C", "C": "B1I|I", "J": "L1|C"}
+SIGNAL = {"G": "L1|C", "E": "E1|C", "R": "G1|C", "C": "B1I|I", "J": "L1|C"}
 
 
 def _observations(epochs: np.ndarray, svs: list[str]) -> xr.Dataset:
@@ -101,18 +101,20 @@ def _broadcast_angles(epochs: np.ndarray, svs: list[str]) -> xr.Dataset:
 
 
 @pytest.mark.parametrize(
-    "system, svs",
+    "system, svs, limit",
     [
-        ("E", [f"E{n:02d}" for n in range(1, 37)]),
-        ("C", [f"C{n:02d}" for n in range(6, 63)]),
+        ("E", [f"E{n:02d}" for n in range(1, 37)], 0.002),
+        ("C", [f"C{n:02d}" for n in range(6, 63)], 0.002),
+        ("R", [f"R{n:02d}" for n in range(1, 25)], 0.001),
     ],
 )
-def test_angles_agree_with_cod_final(system: str, svs: list[str]) -> None:
-    """Galileo and BeiDou theta/phi within 0.002 deg of COD final.
+def test_angles_agree_with_cod_final(system: str, svs: list[str], limit: float) -> None:
+    """Galileo, BeiDou and GLONASS theta/phi within ``limit`` deg of COD final.
 
-    Prototype: max 0.0011 deg (Galileo), 0.0000 deg (BeiDou). The limit is
-    a guardrail that catches regressions, not a scientific requirement
-    (#568). COD final has no BeiDou GEO satellite of the day (C05).
+    Prototype: max 0.0011 deg (Galileo), 0.0000 deg (BeiDou, GLONASS). The
+    limits are guardrails that catch regressions, not scientific
+    requirements (#568, #569). COD final has no BeiDou GEO satellite of the
+    day (C05).
     """
     epochs = DAY + np.arange(0, 86_400, 30) * np.timedelta64(1, "s")
     ds = _broadcast_angles(epochs, svs)
@@ -120,7 +122,7 @@ def test_angles_agree_with_cod_final(system: str, svs: list[str]) -> None:
     theta_ref, phi_ref = _cod_final_angles(epochs, svs)
     sep = _separation_deg(ds.theta.values, ds.phi.values, theta_ref, phi_ref)
     assert np.isfinite(sep).sum() > 0.2 * sep.size
-    assert np.nanmax(sep) < 0.002, system
+    assert np.nanmax(sep) < limit, system
 
 
 @pytest.mark.skipif(not SBF_DIR.exists(), reason="SBF test data not initialized")
@@ -203,3 +205,17 @@ def test_qzss_orbits_follow_the_gps_algorithm_within_two_hours() -> None:
         )
     assert np.isnan(grid["X"].sel(sv="J01").values[~within]).all()
     assert np.isfinite(grid["X"].sel(sv="G01").values[np.abs(hours) <= 2]).all()
+
+
+def test_no_glonass_angles_beyond_15_minutes_of_a_record() -> None:
+    """A GLONASS record is used within 15 minutes of its time (ICD GLONASS,
+    A.3.1.2). The first file of the day holds one R20 record, of 00:15 UTC
+    (00:15:18 GPS time): grid times 00:05 to 00:30 only.
+    """
+    epochs = DAY + np.arange(0, 2 * 3600, 30) * np.timedelta64(1, "s")
+    provider = RinexNavProvider(nav_files=[NAV_DIR / "ract001a00.25p"])
+    provider.preprocess_day("2025001", site_config=None)
+    ds = provider.augment_dataset(_observations(epochs, ["R20"]), RECEIVER)
+    after = ds.epoch.values > DAY + np.timedelta64(35, "m")
+    assert np.isnan(ds.theta.values[after]).all()
+    assert np.isfinite(ds.theta.values[~after]).any()

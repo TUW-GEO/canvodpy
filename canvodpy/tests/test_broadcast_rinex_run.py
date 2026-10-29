@@ -120,7 +120,7 @@ def test_a_broadcast_run_of_rinex_files_writes_angles(tmp_path, monkeypatch):
     assert result.exit_code == 0, result.output
     gnss = MyIcechunkStore(stores / "gnss", store_type="gnss_store")
     canopy = gnss.read_group("canopy_01", drop_empty=True)
-    for system in "GEC":
+    for system in "GERC":
         sids = [s for s in canopy.sid.values if str(s).startswith(system)]
         assert np.isfinite(canopy["theta"].sel(sid=sids).values).any(), system
         assert np.isfinite(canopy["phi"].sel(sid=sids).values).any(), system

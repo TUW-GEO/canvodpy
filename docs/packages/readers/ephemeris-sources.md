@@ -46,7 +46,7 @@ from SBF files or from RINEX navigation files).
     Orbit parameters the satellites broadcast, recorded by the receiver
     in RINEX navigation files. Satellite positions on a 5-minute grid,
     then the same interpolation as the precise ephemeris. GPS, Galileo,
-    BeiDou, and QZSS so far.
+    GLONASS, BeiDou, and QZSS so far.
 
     **Input:** RINEX 3.04/3.05 navigation files (`nav_directory`)
     **Output:** ECEF XYZ $\rightarrow$ $\theta$, $\varphi$, $r$
@@ -70,6 +70,7 @@ COD final orbits on the test day (2025-001, every 30 s):
 |---|---|---|
 | GPS | $0.00002^\circ$ | $0.000002^\circ$ |
 | Galileo | $0.00002^\circ$ | below $0.000001^\circ$ |
+| GLONASS | $0.00003^\circ$ | $0.000004^\circ$ |
 | BeiDou (not GEO) | $0.000007^\circ$ | below $0.000001^\circ$ |
 
 COD final has no BeiDou GEO satellite of that day. For C05, a GEO
@@ -187,7 +188,7 @@ processing:
 
 With `ephemeris_source: broadcast`, a receiver with RINEX files takes the
 satellite positions from its own RINEX 3.04/3.05 navigation files (ADR 0023).
-So far GPS, Galileo, BeiDou, and QZSS: the signals of the other systems
+So far GPS, Galileo, GLONASS, BeiDou, and QZSS: the signals of the other systems
 are stored without $\theta$ and $\varphi$, so they get no VOD; the run log
 names the systems with angles for each receiver and day. The files sit in
 the folder `nav_directory` names, relative to the site data root like
@@ -204,7 +205,9 @@ the folder `nav_directory` names, relative to the site data root like
 3. Orbit from the record's Keplerian elements (IS-GPS-200N, Table 20-IV,
    with each system's constants; BeiDou GEO satellites with the rotations
    of BDS-SIS-ICD-B1I-3.0, Table 5-11); velocities from the positions
-   0.5 s before and after
+   0.5 s before and after. GLONASS: the record's position, velocity and
+   luni-solar acceleration, integrated to the grid time (ICD GLONASS,
+   Edition 5.1, A.3.1.2), which also gives the velocity
 4. From here as the precise ephemeris: Hermite interpolation onto the epoch
    grid, Zarr cache 00_aux_zarr/aux_{date}_{site}_{receiver}_nav.zarr,
    theta/phi
@@ -213,7 +216,10 @@ the folder `nav_directory` names, relative to the site data root like
 The fit interval is the one in the record for GPS (at least 4 hours) and
 2 hours for QZSS (IS-QZSS-PNT-005, Table 4.1.1-2). The Galileo and BeiDou
 interface specifications give none; canvodpy uses those records for 4
-hours too, 2 hours on either side of their time of ephemeris.
+hours too, 2 hours on either side of their time of ephemeris. A GLONASS
+record is used within 15 minutes of its time, the interval over which the
+ICD keeps its luni-solar acceleration constant (A.3.1.2). GLONASS records are in UTC; canvodpy converts
+them to GPS time with the leap seconds of the date.
 
 Records flagged unhealthy are still used. G01 and G22 sent such records on
 the test day; their angles differed from those of the COD final
@@ -255,9 +261,9 @@ format but that has no `nav_directory` are refused.
 |-----------|--------|:---:|:---:|---|
 | `.YYo` / `.rnx` | RINEX 3 OBS | :fontawesome-solid-check: | No | Primary observation data |
 | `.YY_` / `.sbf` | SBF binary | :fontawesome-solid-check: | :fontawesome-solid-check: | Observations + broadcast geometry |
-| `.YYp` / `.nav` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Broadcast ephemeris (GPS, Galileo, BeiDou, QZSS so far), canonical type `nav` |
+| `.YYp` / `.nav` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Broadcast ephemeris (GPS, Galileo, GLONASS, BeiDou, QZSS so far), canonical type `nav` |
 | `.YYn` | RINEX 2 NAV (GPS) | No | :fontawesome-solid-check: | Not read (planned) |
-| `.YYg` | RINEX NAV (GLONASS) | No | :fontawesome-solid-check: | Not read (planned) |
+| `.YYg` | RINEX 2 NAV (GLONASS) | No | :fontawesome-solid-check: | Not read (planned) |
 | `.nmea` | NMEA 0183 | SNR only | No | Observations (`NmeaObs`); geometry from SP3 |
 | `.ubx` | u-blox binary | :fontawesome-solid-check: | :fontawesome-solid-check: | Not supported |
 
