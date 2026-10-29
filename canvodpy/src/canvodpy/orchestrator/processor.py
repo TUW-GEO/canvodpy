@@ -2042,9 +2042,11 @@ class RinexDataProcessor:
         Parameters
         ----------
         receiver : str
-            Receiver name in the site configuration.
+            Receiver name in the site configuration whose navigation files
+            are read: the receiver itself, or in shared-position mode the
+            canopy a reference takes its position from.
         rinex_files : list[Path]
-            The receiver's observation files of the day, for the sampling
+            That receiver's observation files of the day, for the sampling
             interval.
         reader_format : str | None
             Reader format of ``rinex_files``.
@@ -5311,9 +5313,15 @@ class RinexDataProcessor:
                     )
                     raise ValueError(msg)
                 # Broadcast ephemeris of RINEX files: the receiver's own
-                # navigation files (ADR 0023)
+                # navigation files, or in shared-position mode those of the
+                # canopy it takes its position from, as for SBF (ADR 0023)
+                nav_receiver = (
+                    position_data_dir.receiver
+                    if position_mode == "shared" and position_data_dir
+                    else data_dir.receiver
+                )
                 receiver_aux_path = self._broadcast_aux_store(
-                    data_dir.receiver, rinex_files, effective_reader
+                    nav_receiver, position_files, effective_reader
                 )
                 receiver_aux_group = None
             for rnx_file in rinex_files:

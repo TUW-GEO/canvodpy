@@ -1011,7 +1011,13 @@ class TestNavDirectory:
     """With the broadcast ephemeris, receivers with RINEX files name their
     navigation files with nav_directory (#567, ADR 0023)."""
 
-    def _config(self, source: str, reader_format: str, **nav_directories):
+    def _config(
+        self,
+        source: str,
+        reader_format: str,
+        position_mode: str = "per_receiver",
+        **nav_directories,
+    ):
         def receiver(name: str, **kwargs):
             return ReceiverConfig(
                 directory=name,
@@ -1024,7 +1030,10 @@ class TestNavDirectory:
             processing=ProcessingConfig(
                 metadata=MetadataConfig(author="A", email="a@b.com", institution="U"),
                 storage=StorageConfig(stores_root_dir=Path("/path/to/stores")),
-                params=ProcessingParams(ephemeris_source=source),
+                params=ProcessingParams(
+                    ephemeris_source=source,
+                    receiver_position_mode=position_mode,
+                ),
             ),
             sites=SitesConfig(
                 sites={
@@ -1043,6 +1052,14 @@ class TestNavDirectory:
     def test_broadcast_rinex_receiver_without_nav_directory_is_refused(self):
         with pytest.raises(ValidationError, match=r"nav_directory for s\.r\b"):
             self._config("broadcast", "rinex3", c="c_nav")
+
+    def test_shared_position_reference_needs_no_nav_directory(self):
+        # The reference takes the angles from its canopy's navigation files
+        self._config("broadcast", "rinex3", "shared", c="c_nav")
+
+    def test_shared_position_canopy_without_nav_directory_is_refused(self):
+        with pytest.raises(ValidationError, match=r"nav_directory for s\.c\b"):
+            self._config("broadcast", "rinex3", "shared", r="r_nav")
 
     def test_broadcast_rinex_receivers_with_nav_directory(self):
         cfg = self._config("broadcast", "rinex3", c="c_nav", r="r")

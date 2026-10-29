@@ -195,6 +195,9 @@ processing:
 
 With `ephemeris_source: broadcast`, a receiver with RINEX files takes the
 satellite positions from its own RINEX 3.04/3.05 navigation files (ADR 0023).
+In shared-position mode (`receiver_position_mode: shared`, the default) a
+reference receiver takes them from the navigation files of the canopy it is
+paired with, as with SBF files, and needs none of its own.
 So far GPS, Galileo, GLONASS, BeiDou, QZSS, and SBAS: the signals of the other systems
 are stored without $\theta$ and $\varphi$, so they get no VOD; the run log
 names the systems with angles for each receiver and day. The files sit in
@@ -264,7 +267,8 @@ sites:
 ```
 
 Settings with `broadcast` and a receiver whose `reader_format` is a RINEX
-format but that has no `nav_directory` are refused.
+format but that has no `nav_directory` are refused; in shared-position
+mode, reference receivers are exempt.
 
 ---
 

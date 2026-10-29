@@ -62,8 +62,10 @@ class CanvodConfig(BaseSettings):
         """With the broadcast ephemeris, receivers with RINEX files need nav files.
 
         NMEA receivers are refused: their angles come only from the precise
-        ephemeris. A receiver whose ``reader_format`` is ``auto`` or a plugin
-        format is checked by the run, once its files show the format.
+        ephemeris. In shared-position mode a reference receiver takes the
+        angles from its canopy's navigation files and needs none of its own.
+        A receiver whose ``reader_format`` is ``auto`` or a plugin format is
+        checked by the run, once its files show the format.
         """
         if self.processing.params.ephemeris_source != "broadcast":
             return self
@@ -79,12 +81,14 @@ class CanvodConfig(BaseSettings):
                 f"{', '.join(nmea)} read nmea: use ephemeris_source 'precise'."
             )
             raise ValueError(msg)
+        shared = self.processing.params.receiver_position_mode == "shared"
         missing = [
             f"{site_name}.{name}"
             for site_name, site in self.sites.sites.items()
             for name, receiver in site.receivers.items()
             if receiver.reader_format in RINEX_READER_FORMATS
             and receiver.nav_directory is None
+            and not (shared and receiver.type == "reference")
         ]
         if missing:
             msg = (
