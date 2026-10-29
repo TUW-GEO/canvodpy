@@ -201,10 +201,11 @@ Records flagged unhealthy are still used. G01 and G22 sent such records on
 the test day; their angles differed from those of the COD final
 orbits by at most $0.00002^\circ$ (G01, the largest difference of the day).
 
-`ephemeris_source: broadcast` supports SBF and RINEX files. An NMEA
-receiver takes its angles from the precise ephemeris only: the settings
-check refuses it under `broadcast`, and so does the run for a receiver
-whose format shows only in its files.
+`ephemeris_source: broadcast` supports SBF and RINEX files. NMEA receivers
+and receivers read by a reader plugin take their angles from the precise
+ephemeris only: under `broadcast`, the settings check refuses NMEA
+receivers, and the run refuses the others once their files show the
+format.
 
 A day without navigation files stops the run, with an error that names the
 receiver, the day, and the folder searched. There is no fallback to the

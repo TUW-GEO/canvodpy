@@ -123,10 +123,12 @@ def read_rinex_nav(paths: Iterable[Path]) -> xr.Dataset:
     Raises
     ------
     ValueError
-        If a file is not a RINEX 3.04/3.05 navigation file, or the files
-        hold no GPS record.
+        If no files are given, a file is not a RINEX 3.04/3.05 navigation
+        file, or the files hold no GPS record.
     """
     paths = [Path(path) for path in paths]
+    if not paths:
+        raise ValueError("no navigation files given")
     svs: list[str] = []
     epochs: list[str] = []
     texts: list[list[str]] = []

@@ -112,3 +112,8 @@ def test_a_file_without_gps_records_is_refused(tmp_path: Path) -> None:
         ValueError, match=r"FANA01INK_R_20250010000_01D_EN\.rnx.*no GPS"
     ):
         read_rinex_nav([path])
+
+
+def test_no_files_are_refused() -> None:
+    with pytest.raises(ValueError, match="no navigation files given"):
+        read_rinex_nav([])
