@@ -8,8 +8,8 @@ description: Three levels of satellite ephemeris for computing observation geome
 Computing satellite geometry (theta, phi) requires knowing where each satellite
 is at each observation epoch. canvodpy supports two ephemeris sources: the
 precise ephemeris of an analysis center (`ephemeris_source: precise`) and the
-broadcast ephemeris the receiver recorded (`ephemeris_source: broadcast`, SBF
-files for now; RINEX navigation files are planned).
+broadcast ephemeris the receiver recorded (`ephemeris_source: broadcast`,
+from SBF files or from RINEX navigation files).
 
 ---
 
@@ -23,7 +23,7 @@ files for now; RINEX navigation files are planned).
 
     Orbits (and, optionally, clocks) computed afterwards by analysis
     centers (CODE, ESA, IGS), as final or rapid products. Downloaded via
-    FTP. Final products are published about two weeks after observation.
+    FTP. Final products are published only after a delay.
 
     **Input:** SP3 (+ CLK, optional, see `aux_data.fetch_clock`) files (downloaded)
     **Output:** ECEF XYZ $\rightarrow$ $\theta$, $\varphi$, $r$
@@ -39,15 +39,15 @@ files for now; RINEX navigation files are planned).
     **Input:** SBF binary file (SatVisibility block)
     **Output:** theta, phi directly
 
--   :fontawesome-solid-file-lines: &nbsp; **Broadcast ephemeris, RINEX NAV (planned)**
+-   :fontawesome-solid-file-lines: &nbsp; **Broadcast ephemeris, RINEX navigation files**
 
     ---
 
-    Not implemented yet. Keplerian orbital elements from RINEX navigation files (`.YYp`).
-    Propagated to target epochs using the Keplerian model (GPS/Galileo/BeiDou)
-    or RK4 integration (GLONASS state vectors). Immediate, no internet.
+    Orbit parameters the satellites broadcast, recorded by the receiver
+    in RINEX navigation files. Satellite positions on a 5-minute grid,
+    then the same interpolation as the precise ephemeris. GPS so far.
 
-    **Input:** `.YYp` / `.YYn` / `.YYg` nav files
+    **Input:** RINEX 3.04/3.05 navigation files (`nav_directory`)
     **Output:** ECEF XYZ $\rightarrow$ $\theta$, $\varphi$, $r$
 
 </div>
@@ -169,58 +169,48 @@ processing:
 
 ---
 
-## RINEX NAV broadcast
+## Broadcast ephemeris from RINEX navigation files
 
-!!! abstract "Status: not implemented"
+With `ephemeris_source: broadcast`, a receiver with RINEX files takes the
+satellite positions from its own RINEX 3.04/3.05 navigation files (ADR 0023).
+So far GPS: the other systems get no angles yet. The files sit in the
+folder `nav_directory` names, relative to the site data root like `directory`
+(it may be the same folder), and need canonical names of type `nav` with
+sampling `00U`, for example `FANA01INK_R_20250010000_15M_00U_AA.nav`.
 
-    A `RinexNavProvider` is planned but not built. This section records
-    the intended design.
-
-For RINEX receivers, broadcast ephemerides are available in navigation files
-(`.YYp` for mixed GNSS, `.YYn` for GPS, `.YYg` for GLONASS) that sit alongside
-observation files in the same directory.
-
-### Keplerian propagation
-
-GPS, Galileo, and BeiDou use a common 16-parameter Keplerian orbital model
-(IS-GPS-200, Galileo ICD, BeiDou ICD):
+### How it works
 
 ```
-Input: orbital elements (a, e, i₀, Ω₀, ω, M₀) + correction terms
-       from navigation message
-
-Steps:
-  1. Mean motion:  n = √(μ/a³) + Δn
-  2. Mean anomaly: M = M₀ + n·(t - tₒₑ)
-  3. Kepler's equation: E - e·sin(E) = M  (iterate ~10×)
-  4. True anomaly: ν = atan2(√(1-e²)·sin(E), cos(E)-e)
-  5. Argument of latitude with corrections
-  6. Radius with corrections
-  7. Inclination with corrections
-  8. ECEF rotation from orbital plane
-
-Output: satellite ECEF (X, Y, Z) in meters
+1. Read the day's navigation files of the receiver (canvod-readers, rinex/nav.py)
+2. Per satellite and 5-minute grid time, the record with the nearest time of
+   ephemeris, if the time lies within half its fit interval; elsewhere NaN
+3. GPS orbit from the record's Keplerian elements (IS-GPS-200N, Table 20-IV);
+   velocities from the positions 0.5 s before and after
+4. From here as the precise ephemeris: Hermite interpolation onto the epoch
+   grid, Zarr cache 00_aux_zarr/aux_{date}_{receiver}_nav.zarr, theta/phi
 ```
 
-### GLONASS exception
+A day without navigation files stops the run, with an error that names the
+receiver, the day, and the folder searched. There is no fallback to the
+precise ephemeris.
 
-GLONASS broadcasts state vectors ($x$, $y$, $z$, $v_x$, $v_y$, $v_z$) in PZ-90 frame
-instead of Keplerian elements. Propagation uses fourth-order Runge-Kutta
-numerical integration.
+### Configuration
 
-### NAV file types
+```yaml
+processing:
+  params:
+    ephemeris_source: "broadcast"
+sites:
+  <site>:
+    receivers:
+      canopy_01:
+        directory: 02_canopy
+        nav_directory: 02_canopy_nav
+        reader_format: rinex3
+```
 
-| Extension | Content | Constellations |
-|-----------|---------|----------------|
-| `.YYp` | Mixed GNSS navigation | All (GPS, GLONASS, Galileo, BeiDou, and others) |
-| `.YYn` | GPS-only navigation | GPS |
-| `.YYg` | GLONASS-only navigation | GLONASS |
-
-### Validity intervals
-
-Broadcast ephemerides are valid for ~2-4 hours around their reference epoch
-(toe). The propagator must select the closest valid ephemeris set for each
-target epoch, not simply the first record found.
+Settings with `broadcast` and a receiver whose `reader_format` is a RINEX
+format but that has no `nav_directory` are refused.
 
 ---
 
@@ -230,7 +220,7 @@ target epoch, not simply the first record found.
 |-----------|--------|:---:|:---:|---|
 | `.YYo` / `.rnx` | RINEX 3 OBS | :fontawesome-solid-check: | No | Primary observation data |
 | `.YY_` / `.sbf` | SBF binary | :fontawesome-solid-check: | :fontawesome-solid-check: | Observations + broadcast geometry |
-| `.YYp` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Not read (planned) |
+| `.YYp` / `.nav` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Broadcast ephemeris (GPS so far), canonical type `nav` |
 | `.YYn` | RINEX 2 NAV (GPS) | No | :fontawesome-solid-check: | Not read (planned) |
 | `.YYg` | RINEX NAV (GLONASS) | No | :fontawesome-solid-check: | Not read (planned) |
 | `.nmea` | NMEA 0183 | SNR only | No | Observations (`NmeaObs`); geometry from SP3 |
@@ -251,15 +241,16 @@ target epoch, not simply the first record found.
 
     Use `ephemeris_source: "precise"` when:
 
-    - The receivers write RINEX or NMEA (the only source for them)
-    - Final products are available for the days (about two weeks after
-      observation)
+    - The receivers write NMEA (the only source for them), or RINEX
+      without navigation files
+    - Final products are available for the days
     - You have internet access during processing
 
 ??? question "When to use the broadcast ephemeris"
 
     Use `ephemeris_source: "broadcast"` when:
 
-    - The receivers write SBF (the geometry is embedded in the file)
+    - The receivers write SBF (the geometry is embedded in the file), or
+      RINEX navigation files next to their RINEX observations
     - Processing recent data, before final products are published
     - Working offline

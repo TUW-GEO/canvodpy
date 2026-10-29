@@ -21,8 +21,9 @@ type do not apply and the content settings record them as empty.
 **The broadcast ephemeris comes from the canopy receiver.** A satellite
 the canopy does not receive needs no position. SBF and RINEX follow the
 same rule: each receiver uses its own broadcast data, and in
-shared-position mode the reference receiver uses the canopy's. A RINEX
-receiver names its navigation files with `nav_directory`.
+shared-position mode the reference receiver uses the canopy's. A
+receiver with RINEX files names the folder of its navigation files with
+`nav_directory`.
 
 **Navigation records become satellite positions, then follow the precise
 path.** For each satellite, the record whose reference time is nearest

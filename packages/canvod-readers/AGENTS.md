@@ -12,6 +12,7 @@ other package and canvodpy-extensions check against.
 | `builder.py` | `DatasetBuilder`, `sid_coords`: how SIDs and their coordinates are built |
 | `rinex/v3_04.py` | RINEX 3 (`Rnxv3Obs`) |
 | `rinex/v2_11.py` | RINEX 2.11 (`Rnxv2Obs`) |
+| `rinex/nav.py` | RINEX 3.04/3.05 navigation files (`read_rinex_nav`): broadcast ephemeris records, not an observation reader |
 | `sbf/reader.py` | Septentrio SBF (`SbfReader`) |
 | `nmea/v4_00.py` | NMEA (`NmeaObs`) |
 | `gnss_specs/` | Constellations, bands, signals, satellite catalog |
