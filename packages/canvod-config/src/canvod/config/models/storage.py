@@ -149,7 +149,10 @@ class StorageConfig(_StrictModel):
             "site's cache is in aux_data_dir and rebuilt every run. Orbit and "
             "clock products are the same for every site, so sites that point at "
             "the same folder share one cache entry per agency, product and date "
-            "instead of each building its own."
+            "instead of each building its own. With ephemeris_source broadcast "
+            "the orbits of the navigation files are cached there too, one entry "
+            "per date and content of the navigation files: receivers with the "
+            "same files share it, and a changed or added file gives a new one."
         ),
     )
     gnss_store_strategy: Literal["skip", "overwrite", "unsafe_append"] = Field(

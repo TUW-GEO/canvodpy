@@ -282,3 +282,43 @@ class TestCanVODFilenameFromFilename:
             compression="",
         )
         assert f.compression is None
+
+
+class TestNavigationFilenames:
+    """Navigation files: type ``nav``, sampling ``00U`` (RINEX 4.00, Table A1)."""
+
+    NAV = "FANA01INK_R_20250010000_15M_00U_AA.nav"
+
+    def test_parse(self):
+        f = CanVODFilename.from_filename(self.NAV)
+        assert f.file_type == "nav"
+        assert f.sampling == "00U"
+        assert f.batch_duration == timedelta(minutes=15)
+
+    def test_build(self):
+        f = CanVODFilename(
+            site="FAN",
+            receiver_type=ReceiverType.ACTIVE,
+            receiver_number=1,
+            agency="INK",
+            year=2025,
+            doy=1,
+            period="15M",
+            sampling="00U",
+            file_type=FileType.NAV,
+        )
+        assert f.name == self.NAV
+
+    def test_nav_needs_unspecified_sampling(self):
+        with pytest.raises(ValueError) as excinfo:
+            CanVODFilename.from_filename("FANA01INK_R_20250010000_15M_05S_AA.nav")
+        assert "have sampling 00U" in str(excinfo.value)
+
+    def test_unspecified_sampling_only_for_nav(self):
+        with pytest.raises(ValueError, match="only for navigation files"):
+            CanVODFilename.from_filename("FANA01INK_R_20250010000_15M_00U_AA.rnx")
+
+    def test_nav_has_no_sampling_interval(self):
+        f = CanVODFilename.from_filename(self.NAV)
+        with pytest.raises(ValueError, match="no sampling interval"):
+            _ = f.sampling_interval

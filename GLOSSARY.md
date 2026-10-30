@@ -47,10 +47,20 @@ The time of an observation, always GPS time.
 _Avoid_: timestamp, time step
 
 **Ephemeris**:
-The orbit (and clock) of the satellites, from agency products or from
-the receiver's broadcast navigation data; gives each epoch's polar angle
-and azimuth.
+The orbit (and clock) of the satellites, either a precise ephemeris or
+the broadcast ephemeris; gives each epoch's polar angle and azimuth.
 _Avoid_: aux data, orbit file (for the data itself)
+
+**Precise ephemeris**:
+Satellite orbits and clocks computed afterwards by an analysis center,
+as final or rapid products.
+_Avoid_: final (for the source), SP3 (for the data)
+
+**Broadcast ephemeris**:
+Satellite orbits and clocks from the navigation message the satellites
+transmit and the receiver records, either as the receiver's own angles
+or as navigation files; available in real time.
+_Avoid_: nav data (for the source), real-time orbit
 
 **Hemisphere grid**:
 A division of the sky seen from the receiver into cells, used to

@@ -7,7 +7,7 @@ import os
 import time
 import warnings
 from collections import Counter, defaultdict
-from collections.abc import Generator, Iterable, Mapping, Sequence
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass, field
@@ -41,6 +41,7 @@ from rich.progress import (
 from canvod.auxiliary.cache_fingerprint import (
     CANONICAL_AUX_GRID_SECONDS,
     compute_aux_cache_fingerprint,
+    compute_broadcast_cache_fingerprint,
 )
 from canvod.auxiliary.interpolation import (
     aux_epoch_grid,
@@ -53,12 +54,14 @@ from canvod.auxiliary.position import (
     add_spherical_coords_to_dataset,
     compute_spherical_coordinates,
 )
+from canvod.auxiliary.preprocessing import aux_for_sids, sid_to_sv
 from canvod.auxiliary.products import check_product
 from canvod.config import CanvodConfig, load_config
 from canvod.config.models import (
     PREPROCESSING_ATTR,
     reference_store_group,
 )
+from canvod.config.models.sites import RINEX_READER_FORMATS
 from canvod.ops import preprocess_files
 from canvod.readers import DataDirMatcher, MatchedDirs
 from canvod.readers.gnss_specs.exceptions import NmeaError, RinexError
@@ -73,7 +76,7 @@ from canvod.store.day_blocks import (
     stored_epoch_chunk,
     write_file_region,
 )
-from canvod.store.prepare import prepare_write
+from canvod.store.prepare import NO_POSITION_ATTR, prepare_write
 from canvod.store.store import StoredOverlapError, _with_run_id
 from canvod.store.time_encoding import with_time_units
 from canvod.store_metadata.io import commit_lock, commit_with_rebase, store_command
@@ -96,6 +99,7 @@ from canvodpy.orchestrator.discovery import (
     ReceiverDay,
     canonical_name_for,
     discover_files,
+    navigation_files,
     parse_sampling_interval_from_filename,
     recipe_file,
 )
@@ -117,6 +121,13 @@ from canvodpy.orchestrator.forked_writes import (
 # ============================================================================
 # MODULE-LEVEL FUNCTIONS (Required for loky / ProcessPoolExecutor serialization)
 # ============================================================================
+
+
+class MissingNavigationFilesError(RuntimeError):
+    """A broadcast run of RINEX files found no navigation files for a day.
+
+    The run stops (ADR 0023): there is no fallback to the precise ephemeris.
+    """
 
 
 def _worker_init_with_run_id(
@@ -406,8 +417,12 @@ def _preprocess_file(
                     keep_sids=keep_sids,
                 )
                 ((name, receiver_position),) = receiver_positions.items()
+                observations = ds
                 ds = provider.augment_dataset(
                     ds, receiver_position, aux_datasets=aux_datasets
+                )
+                ds.attrs[NO_POSITION_ATTR] = json.dumps(
+                    satellites_without_position(observations, ds["theta"])
                 )
                 sid_issues = flush_sid_accumulators()
                 sid_issues["dropped_no_ephemeris"] = []
@@ -453,11 +468,13 @@ def _preprocess_file(
                     f"and aux data ({len(aux_sids)} sids)"
                 )
 
-            # Filter both datasets to common SIDs
+            # Filter both datasets to common SIDs; the observations of the
+            # signals without ephemeris are kept to report them (#571).
+            observations = ds
             rinex_only = rinex_sids - aux_sids
             aux_only = aux_sids - rinex_sids
             ds = ds.sel(sid=common_sids)
-            aux_slice = aux_slice.sel(sid=common_sids)
+            aux_slice = aux_for_sids(aux_slice, common_sids)
             t_sid = time.perf_counter()
 
             log.debug(
@@ -495,6 +512,15 @@ def _preprocess_file(
                 if not store_radial_distance and "r" in ds_name:
                     ds_name = ds_name.drop_vars("r")
                 ds_augmented[name] = ds_name
+            # The angles are NaN where the satellite has no position, the
+            # same for every receiver position.
+            no_position = json.dumps(
+                satellites_without_position(
+                    observations, next(iter(ds_augmented.values()))["theta"]
+                )
+            )
+            for ds_name in ds_augmented.values():
+                ds_name.attrs[NO_POSITION_ATTR] = no_position
             t_coords = time.perf_counter()
 
             log.info(
@@ -744,6 +770,52 @@ def _compute_spherical_coords_fast(
         rinex_ds = rinex_ds.assign({"clock": aux_ds["clock"]})
 
     return rinex_ds
+
+
+#: Variables of an augmented dataset that are not observations.
+_GEOMETRY_VARS = frozenset({"phi", "theta", "r", "clock"})
+
+
+def satellites_without_position(
+    observations: xr.Dataset, theta: xr.DataArray
+) -> dict[str, int]:
+    """Epochs per satellite with observations but no position (#571).
+
+    A satellite has no position at an epoch when its polar angle is NaN:
+    no ephemeris covers the epoch. Its angles stay NaN, never extrapolated.
+    An epoch counts when any signal of the satellite has an observation (a
+    finite value of any float variable over ``epoch`` and ``sid``).
+
+    Parameters
+    ----------
+    observations : xr.Dataset
+        The file's observations, with every signal the file has.
+    theta : xr.DataArray
+        The polar angle of the signals with ephemerides; a signal of
+        ``observations`` missing here has no position at all.
+
+    Returns
+    -------
+    dict[str, int]
+        ``{satellite: epochs}``, sorted by satellite; empty when every
+        observed satellite has a position.
+    """
+    observed = np.zeros((observations.sizes["epoch"], observations.sizes["sid"]), bool)
+    for name, var in observations.data_vars.items():
+        if (
+            name in _GEOMETRY_VARS
+            or set(var.dims) != {"epoch", "sid"}
+            or not np.issubdtype(var.dtype, np.floating)
+        ):
+            continue
+        observed |= np.isfinite(var.transpose("epoch", "sid").values)
+    angles = theta.reindex(sid=observations.sid).transpose("epoch", "sid").values
+    lacking = observed & np.isnan(angles)
+    svs = np.asarray(observations["sv"].values).astype(str)
+    return {
+        str(sv): int(lacking[:, svs == sv].any(axis=1).sum())
+        for sv in sorted(set(svs[lacking.any(axis=0)]))
+    }
 
 
 # ============================================================================
@@ -1264,10 +1336,13 @@ class RinexDataProcessor:
         # Physical path -> canonical canVOD filename, filled by
         # _get_rinex_files and read when building log-book rows.
         self._canonical_names: dict[Path, str] = {}
+        # Aux store and group of each receiver's navigation files
+        # (broadcast, RINEX)
+        self._broadcast_aux_paths: dict[str, tuple[Path, str | None]] = {}
         self._keeper_tags_enabled: bool = config.processing.storage.keeper_tags
         self.keep_sids = config.sids.get_sids()
 
-        # Resolve ephemeris source: explicit param > config > default (final)
+        # Resolve ephemeris source: explicit param > config > default (precise)
         if self._use_sbf_geometry_override:
             self.use_sbf_geometry = True
         else:
@@ -1355,7 +1430,15 @@ class RinexDataProcessor:
                 product_type=self._product_type,
                 ftp_server=self._ftp_server,
                 user_email=user_email,
-                keep_sids=self.keep_sids,
+                # All signals for the shared cache: its entry is shared by
+                # sites that keep other signals, and its fingerprint leaves
+                # keep_sids out. Every reader keeps its own (step 2 of
+                # preprocess_with_hermite_aux).
+                keep_sids=(
+                    None
+                    if config.processing.storage.get_shared_aux_cache_dir() is not None
+                    else self.keep_sids
+                ),
                 aggregate_glonass_fdma=config.processing.params.aggregate_glonass_fdma,
             )
             t2 = time.perf_counter()
@@ -1413,11 +1496,17 @@ class RinexDataProcessor:
         reader_format: str | None = None,
         group: str | None = None,
         grid_seconds: float | None = None,
+        ephem_ds: xr.Dataset | None = None,
+        per_satellite: bool = False,
     ) -> float:
         """Preprocess auxiliary data using proper interpolation strategies.
 
         Parameters
         ----------
+        ephem_ds : xr.Dataset | None
+            Orbits to interpolate instead of the agency products of the aux
+            pipeline: the broadcast ephemeris of a receiver's navigation
+            files (:meth:`_broadcast_aux_store`). No clocks then.
         group : str | None
             Zarr group to write under (e.g. a shared-cache fingerprint
             path). ``None`` (default) writes to the store root, unchanged
@@ -1429,6 +1518,11 @@ class RinexDataProcessor:
             for the cache entry to be safely shared across sites with
             different sampling rates. ``sampling_interval`` is still
             detected and returned either way.
+        per_satellite : bool
+            Interpolate and write the orbits and clocks once per satellite
+            (``sv`` dimension, with the signals in the coordinate ``sid``)
+            instead of once per signal. For the shared cache (#573), which
+            holds all signals: a satellite has about 16 of them.
         """
         t0 = time.perf_counter()
         self._logger.info(
@@ -1501,15 +1595,29 @@ class RinexDataProcessor:
 
         # 2. Interpolate orbits (Hermite) and clocks (piecewise linear,
         # unless fetch_clock is disabled -- see AuxDataConfig.fetch_clock)
-        assert self.aux_pipeline is not None, "aux_pipeline must be initialized"
-        ephem_ds = self.aux_pipeline.get("ephemerides")
-        clock_ds = (
-            self.aux_pipeline.get("clock")
-            if self.aux_pipeline.is_loaded("clock")
-            else None
-        )
+        if ephem_ds is not None:
+            clock_ds = None
+        else:
+            assert self.aux_pipeline is not None, "aux_pipeline must be initialized"
+            ephem_ds = self.aux_pipeline.get("ephemerides")
+            clock_ds = (
+                self.aux_pipeline.get("clock")
+                if self.aux_pipeline.is_loaded("clock")
+                else None
+            )
         t2 = time.perf_counter()
+        if per_satellite:
+            sids = sorted(
+                set(ephem_ds["sid"].values)
+                | (set() if clock_ds is None else set(clock_ds["sid"].values))
+            )
+            ephem_ds = sid_to_sv(ephem_ds)
+            clock_ds = None if clock_ds is None else sid_to_sv(clock_ds)
         aux_processed = interpolate_aux_day(ephem_ds, clock_ds, target_epochs)
+        if per_satellite:
+            aux_processed = aux_processed.assign_coords(
+                sid=("sid", np.array(sids, dtype=object))
+            )
         t3 = time.perf_counter()
         self._logger.info(
             "aux_interpolation_complete",
@@ -1864,8 +1972,9 @@ class RinexDataProcessor:
                 common_sids = sorted(
                     set(ds_no_scs.sid.values) & set(aux_store.sid.values)
                 )
-                aux_slice = aux_store.sel(epoch=ds_no_scs.epoch, method="nearest").sel(
-                    sid=common_sids
+                aux_slice = aux_for_sids(
+                    aux_store.sel(epoch=ds_no_scs.epoch, method="nearest"),
+                    common_sids,
                 )
                 ds_recomputed = _compute_spherical_coords_fast(
                     ds_no_scs, aux_slice, receiver_position
@@ -2007,6 +2116,162 @@ class RinexDataProcessor:
 
         return aux_zarr_path, None
 
+    def _broadcast_aux_store(
+        self,
+        receiver: str,
+        rinex_files: list[Path],
+        reader_format: str | None,
+    ) -> tuple[Path, str | None]:
+        """Orbits of the day from a receiver's RINEX navigation files (ADR 0023).
+
+        The navigation files are found in the receiver's ``nav_directory``
+        by their canonical names (type ``nav``). Their records give the
+        satellite positions on a 5-minute grid, which is interpolated onto
+        the observations' epoch grid like the agency products and written
+        once per site, receiver and day.
+
+        With ``StorageConfig.shared_aux_cache_dir`` set, the interpolated
+        orbits are cached like the agency products (#573): one entry per
+        day and content of the navigation files, for all signals, so a
+        rerun of the day and every receiver with the same navigation files
+        reuse it.
+
+        Parameters
+        ----------
+        receiver : str
+            Receiver name in the site configuration whose navigation files
+            are read: the receiver itself, or in shared-position mode the
+            canopy a reference takes its position from.
+        rinex_files : list[Path]
+            That receiver's observation files of the day, for the sampling
+            interval.
+        reader_format : str | None
+            Reader format of ``rinex_files``.
+
+        Returns
+        -------
+        tuple[Path, str | None]
+            ``(store_path, group)``: the shared cache and the group of the
+            entry, or without the cache the aux Zarr store of the site,
+            receiver and day and ``None`` (the store root).
+
+        Raises
+        ------
+        MissingNavigationFilesError
+            If the receiver has no ``nav_directory`` or it holds no
+            navigation files of the day.
+        """
+        import shutil
+
+        from canvod.auxiliary.ephemeris.broadcast import (
+            ORBIT_SYSTEMS,
+            broadcast_ephemerides,
+        )
+
+        date_str = self.matched_data_dirs.yyyydoy.to_str()
+        cached = self._broadcast_aux_paths.get(receiver)
+        if cached is not None:
+            return cached
+
+        site_config = self._get_site_config()
+        receiver_config = site_config.receivers[receiver]
+        nav_directory = receiver_config.nav_directory
+        if nav_directory is None:
+            raise MissingNavigationFilesError(
+                f"Receiver {receiver} has RINEX files and ephemeris_source "
+                "'broadcast', but no nav_directory: set the folder of its "
+                "RINEX navigation files."
+            )
+        nav_dir = site_config.get_base_path() / nav_directory
+        nav_files = [
+            f.path
+            for f in navigation_files(
+                self.site.site_name,
+                receiver,
+                nav_dir,
+                receiver_config.nav_recipe,
+                date_str,
+            )
+        ]
+        if not nav_files:
+            named_by = (
+                f"its nav_recipe '{receiver_config.nav_recipe}' finds none"
+                if receiver_config.nav_recipe
+                else "they need canonical names of type nav, e.g. "
+                f"..._{date_str}0000_01D_00U_AA.nav, or a nav_recipe"
+            )
+            raise MissingNavigationFilesError(
+                f"No navigation files of receiver {receiver} for {date_str} in "
+                f"{nav_dir}. ephemeris_source 'broadcast' takes the satellite "
+                f"positions from them; {named_by}."
+            )
+        day_start = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
+        aggregate_glonass_fdma = self._config.processing.params.aggregate_glonass_fdma
+        self._logger.info(
+            "broadcast_angles_systems",
+            receiver=receiver,
+            date=date_str,
+            systems=",".join(ORBIT_SYSTEMS),
+            reason="navigation records of the other systems are not read yet: "
+            "their signals are stored without theta and phi and get no VOD",
+        )
+        shared_cache_dir = self._config.processing.storage.get_shared_aux_cache_dir()
+        if shared_cache_dir is not None:
+            cache_root = shared_cache_dir / "aux_cache.zarr"
+            fingerprint = compute_broadcast_cache_fingerprint(
+                nav_files=nav_files,
+                canonical_grid_seconds=CANONICAL_AUX_GRID_SECONDS,
+                aggregate_glonass_fdma=aggregate_glonass_fdma,
+            )
+            result = self._shared_aux_cache_entry(
+                cache_root,
+                fingerprint,
+                date_str,
+                lambda group: self._preprocess_aux_data_with_hermite(
+                    rinex_files,
+                    cache_root,
+                    reader_format=reader_format,
+                    group=group,
+                    grid_seconds=CANONICAL_AUX_GRID_SECONDS,
+                    per_satellite=True,
+                    # All signals: every reader keeps its own (step 2 of
+                    # preprocess_with_hermite_aux)
+                    ephem_ds=broadcast_ephemerides(
+                        nav_files,
+                        day_start,
+                        aggregate_glonass_fdma=aggregate_glonass_fdma,
+                    ),
+                ),
+            )
+            self._broadcast_aux_paths[receiver] = result
+            return result
+
+        ephem_ds = broadcast_ephemerides(
+            nav_files,
+            day_start,
+            keep_sids=self.keep_sids,
+            aggregate_glonass_fdma=aggregate_glonass_fdma,
+        )
+        aux_dir = self._config.processing.storage.get_aux_data_dir() / "00_aux_zarr"
+        aux_dir.mkdir(parents=True, exist_ok=True)
+        # The site in the name: concurrent runs of sites with the same
+        # receiver names share the aux folder
+        path = aux_dir / f"aux_{date_str}_{self.site.site_name}_{receiver}_nav.zarr"
+        if path.exists():
+            shutil.rmtree(path)
+        self._logger.info(
+            "broadcast_aux_preprocessing",
+            receiver=receiver,
+            nav_files=len(nav_files),
+            output_path=str(path),
+        )
+        self._preprocess_aux_data_with_hermite(
+            rinex_files, path, reader_format=reader_format, ephem_ds=ephem_ds
+        )
+        sanitize_directory(path)
+        self._broadcast_aux_paths[receiver] = (path, None)
+        return path, None
+
     def _ensure_shared_aux_cache(
         self,
         canopy_files: list[Path],
@@ -2030,9 +2295,6 @@ class RinexDataProcessor:
         this is meant to protect, which has already dropped mid-operation
         three times this week for unrelated reasons.
         """
-        import shutil
-        import uuid
-
         cache_root = shared_cache_dir / "aux_cache.zarr"
         assert self.aux_pipeline is not None, "aux_pipeline must be initialized"
         fingerprint = compute_aux_cache_fingerprint(
@@ -2045,6 +2307,48 @@ class RinexDataProcessor:
                 self._config.processing.params.aggregate_glonass_fdma
             ),
         )
+        return self._shared_aux_cache_entry(
+            cache_root,
+            fingerprint,
+            date_str,
+            lambda group: self._preprocess_aux_data_with_hermite(
+                canopy_files,
+                cache_root,
+                reader_format=reader_format,
+                group=group,
+                grid_seconds=CANONICAL_AUX_GRID_SECONDS,
+                per_satellite=True,
+            ),
+        )
+
+    def _shared_aux_cache_entry(
+        self,
+        cache_root: Path,
+        fingerprint: str,
+        date_str: str,
+        populate: Callable[[str], object],
+    ) -> tuple[Path, str]:
+        """Group of a day's entry in the shared aux cache, written on a miss.
+
+        Parameters
+        ----------
+        cache_root : Path
+            The shared cache store.
+        fingerprint : str
+            Fingerprint of the entry's inputs.
+        date_str : str
+            Date string (e.g., '2025213').
+        populate : Callable[[str], object]
+            Writes the entry into the given group of ``cache_root``.
+
+        Returns
+        -------
+        tuple[Path, str]
+            ``(cache_root, group)``.
+        """
+        import shutil
+        import uuid
+
         group = f"{fingerprint}/{date_str}"
 
         if (cache_root / group).exists():
@@ -2060,13 +2364,7 @@ class RinexDataProcessor:
         self._logger.info("aux_cache_miss", fingerprint=fingerprint, date=date_str)
         tmp_group = f"{fingerprint}/.tmp-{date_str}-{uuid.uuid4().hex[:8]}"
         try:
-            self._preprocess_aux_data_with_hermite(
-                canopy_files,
-                cache_root,
-                reader_format=reader_format,
-                group=tmp_group,
-                grid_seconds=CANONICAL_AUX_GRID_SECONDS,
-            )
+            populate(tmp_group)
             if not (cache_root / tmp_group).exists():
                 raise RuntimeError(
                     f"Aux preprocessing completed but group not found: "
@@ -5179,6 +5477,38 @@ class RinexDataProcessor:
             receiver_file_map.append((receiver_name, rinex_files))
 
             effective_reader = reader_format or self._reader_name
+            receiver_aux_path, receiver_aux_group = aux_zarr_path, aux_group
+            if self.use_sbf_geometry and effective_reader != "sbf":
+                if effective_reader not in RINEX_READER_FORMATS:
+                    msg = (
+                        "ephemeris_source 'broadcast' supports SBF and RINEX "
+                        f"files; receiver {data_dir.receiver} reads "
+                        f"{effective_reader}: use ephemeris_source 'precise'."
+                    )
+                    raise ValueError(msg)
+                # Broadcast ephemeris of RINEX files: the receiver's own
+                # navigation files, or in shared-position mode those of the
+                # canopy it takes its position from, as for SBF (ADR 0023)
+                nav_receiver = (
+                    position_data_dir.receiver
+                    if position_mode == "shared" and position_data_dir
+                    else data_dir.receiver
+                )
+                own_nav = (
+                    self._get_site_config().receivers[data_dir.receiver].nav_directory
+                )
+                if nav_receiver != data_dir.receiver and own_nav is not None:
+                    self._logger.info(
+                        "own_navigation_files_not_read",
+                        receiver=data_dir.receiver,
+                        canopy=nav_receiver,
+                        nav_directory=own_nav,
+                        reason="shared-position mode: the reference takes the "
+                        "angles from its canopy's navigation files",
+                    )
+                receiver_aux_path, receiver_aux_group = self._broadcast_aux_store(
+                    nav_receiver, position_files, effective_reader
+                )
             for rnx_file in rinex_files:
                 # For reference receivers in broadcast + shared mode, the
                 # file of the paired canopy that starts at the same time
@@ -5210,7 +5540,7 @@ class RinexDataProcessor:
                         is_reference_fanout=False,
                         rnx_file=rnx_file,
                         keep_vars=keep_vars,
-                        aux_zarr_path=aux_zarr_path,
+                        aux_zarr_path=receiver_aux_path,
                         receiver_position=receiver_position,
                         receiver_type=receiver_name,
                         keep_sids=self.keep_sids,
@@ -5220,7 +5550,7 @@ class RinexDataProcessor:
                         store_sbf_raw_observables=store_sbf_raw_observables,
                         broadcast_canopy_file=broadcast_canopy_file,
                         broadcast_canopy_fmt=canopy_reader_fmt,
-                        aux_group=aux_group,
+                        aux_group=receiver_aux_group,
                         rinex_v3_parser=rinex_v3_parser,
                         aggregate_glonass_fdma=aggregate_glonass_fdma,
                         date_key=self.matched_data_dirs.yyyydoy.to_str(),

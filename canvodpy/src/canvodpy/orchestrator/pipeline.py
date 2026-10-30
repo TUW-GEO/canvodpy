@@ -10,7 +10,7 @@ import queue
 import threading
 import time as _time
 import warnings
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Callable, Generator, Hashable, Iterable, Sequence
 from concurrent.futures import (
     FIRST_COMPLETED,
@@ -43,6 +43,7 @@ from canvod.ops import preprocess_files
 from canvod.preflight import CanVODFilename
 from canvod.readers import MatchedDirs
 from canvod.store import GnssResearchSite
+from canvod.store.prepare import NO_POSITION_ATTR
 from canvod.store.store import _with_run_id
 from canvod.store_metadata import (
     check_content_settings,
@@ -365,6 +366,18 @@ def _build_ordered_tasks(
     return all_tasks
 
 
+def _sum_no_position(attrs: Iterable[dict[str, Any]]) -> dict[str, int]:
+    """Epochs per satellite without a position, summed over files (#571).
+
+    ``attrs`` are the dataset attributes of the files, with
+    :data:`~canvod.store.prepare.NO_POSITION_ATTR` as the worker set it.
+    """
+    total: Counter[str] = Counter()
+    for file_attrs in attrs:
+        total.update(json.loads(str(file_attrs.get(NO_POSITION_ATTR) or "{}")))
+    return dict(sorted(total.items()))
+
+
 def _stored_day(canonical_name: str, start: np.datetime64) -> str:
     """The day (YYYYDOY) of a stored file: from its name, else its first epoch."""
     try:
@@ -429,6 +442,10 @@ class PipelineOrchestrator:
         Called with a receiver and the days in the range on which it has no
         files while its pair has (:meth:`_warn_days_without_vod`). Default
         None (no-op).
+    on_satellites_without_position : Callable[[str, str, dict[str, int]], None] | None
+        Called with ``(receiver, YYYYDOY, {satellite: epochs})`` for each
+        processed receiver-day with satellites observed without a position
+        (:meth:`_warn_satellites_without_position`). Default None (no-op).
 
     """
 
@@ -455,6 +472,9 @@ class PipelineOrchestrator:
         on_discovery_end: Callable[[str, int, int, float], None] | None = None,
         on_incomplete_day: Callable[[str, str, int, int], None] | None = None,
         on_days_without_vod: Callable[[str, list[str]], None] | None = None,
+        on_satellites_without_position: (
+            Callable[[str, str, dict[str, int]], None] | None
+        ) = None,
         config: CanvodConfig | None = None,
         run: ActiveRun | None = None,
     ) -> None:
@@ -474,6 +494,7 @@ class PipelineOrchestrator:
         self._on_discovery_end = on_discovery_end
         self._on_incomplete_day = on_incomplete_day
         self._on_days_without_vod = on_days_without_vod
+        self._on_satellites_without_position = on_satellites_without_position
         self._days_without_pair: dict[str, set[str]] = {}
         self._run = run
         self._logger = structlog.get_logger(__name__).bind(site=site.site_name)
@@ -1083,6 +1104,38 @@ class PipelineOrchestrator:
             )
             if self._on_days_without_vod is not None:
                 self._on_days_without_vod(receiver, in_range)
+
+    #: Class default, so an orchestrator made without ``__init__`` (tests)
+    #: has it too.
+    _on_satellites_without_position: (
+        Callable[[str, str, dict[str, int]], None] | None
+    ) = None
+
+    def _warn_satellites_without_position(
+        self, receiver: str, date_key: str, attrs: Iterable[dict[str, Any]]
+    ) -> None:
+        """Warn of the satellites a receiver-day observed without a position (#571).
+
+        A satellite without a position at an epoch has no orbit record (or
+        product) for it: its angles are NaN. ``attrs`` are the dataset
+        attributes of the day's files; their epochs are summed per
+        satellite. The warning is logged, so it reaches the run history, and
+        passed to ``on_satellites_without_position``. Each file's satellites
+        are also in its log-book row.
+        """
+        satellites = _sum_no_position(attrs)
+        if not satellites:
+            return
+        listed = ", ".join(f"{sv} ({n} epochs)" for sv, n in satellites.items())
+        self._logger.warning(
+            "satellites_without_position",
+            receiver=receiver,
+            date=date_key,
+            satellites=satellites,
+            summary=f"{receiver} has satellites without a position on {date_key}: {listed}",
+        )
+        if self._on_satellites_without_position is not None:
+            self._on_satellites_without_position(receiver, date_key, satellites)
 
     def _split_stored_dates(
         self,
@@ -2033,6 +2086,11 @@ class PipelineOrchestrator:
                             day_result: DayResult = (
                                 "written" if bytes_added else "skipped"
                             )
+                            self._warn_satellites_without_position(
+                                receiver_name,
+                                date_key,
+                                (ds.attrs for _, ds in augmented),
+                            )
 
                             # Build the daily dataset: from in-memory parts when
                             # nothing was skipped by dedup (avoids a full store
@@ -2555,6 +2613,11 @@ class PipelineOrchestrator:
                 continue
             bytes_added = result.total_nbytes
             day_result: DayResult = "written" if bytes_added else "skipped"
+            self._warn_satellites_without_position(
+                receiver_name,
+                date_key,
+                (row.get("dataset_attrs", {}) for row in result.metadata_records),
+            )
             t_read = _time.monotonic()
             try:
                 daily_ds = (

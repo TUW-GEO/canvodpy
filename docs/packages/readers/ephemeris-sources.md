@@ -1,13 +1,56 @@
 ---
 title: Ephemeris Sources
-description: Three levels of satellite ephemeris for computing observation geometry
+description: The precise and the broadcast ephemeris, how to choose between them, and how to set up navigation files
 ---
 
 # Ephemeris sources
 
 Computing satellite geometry (theta, phi) requires knowing where each satellite
-is at each observation epoch. canvodpy supports two ephemeris sources; a third
-(RINEX navigation files) is planned.
+is at each observation epoch. canvodpy supports two ephemeris sources: the
+precise ephemeris of an analysis center (`ephemeris_source: precise`) and the
+broadcast ephemeris the receiver recorded (`ephemeris_source: broadcast`,
+from SBF files or from RINEX navigation files). A store holds one
+ephemeris: its content settings record the source, and a run with the
+other source stops at an existing store. Give that run a store of its own
+(another `gnss_store_name`).
+
+## Setting up a run
+
+1. Choose the source (see [Choosing an ephemeris source](#choosing-an-ephemeris-source)).
+2. With `broadcast`, give each receiver with RINEX files the folder of its
+   navigation files as `nav_directory`, and a `nav_recipe` if their names
+   don't follow the convention. In shared-position mode (the default)
+   only the canopy receivers need them (see
+   [Broadcast ephemeris from RINEX navigation files](#broadcast-ephemeris-from-rinex-navigation-files)).
+   SBF files need nothing more.
+3. Check the settings, then run:
+
+=== "Command line"
+
+    ```bash
+    canvodpy config validate
+    canvodpy run --site ExampleSite --start 2025001 --end 2025007 \
+        --ephemeris-source broadcast
+    ```
+
+    Without `--ephemeris-source`, the run takes
+    `processing.params.ephemeris_source` from the settings file. A site
+    whose store was made with the other source stops; see the start of
+    this page.
+
+=== "Python"
+
+    ```python
+    from canvodpy import Site
+
+    site = Site("ExampleSite")
+    with site.pipeline() as pipeline:
+        for unit in pipeline.run("2025001", "2025007"):
+            print(sorted(unit.days), unit.vod.written)
+    ```
+
+    The pipeline takes `processing.params.ephemeris_source` from the
+    settings file.
 
 ---
 
@@ -15,18 +58,18 @@ is at each observation epoch. canvodpy supports two ephemeris sources; a third
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-trophy: &nbsp; **Agency Final Products (SP3/CLK)**
+-   :fontawesome-solid-trophy: &nbsp; **Precise ephemeris (SP3/CLK)**
 
     ---
 
-    Precise orbits (and, by default, clocks) from analysis centers (CODE,
-    ESA, IGS). Downloaded via FTP. Final products are published about two
-    weeks after observation.
+    Orbits (and, optionally, clocks) computed afterwards by analysis
+    centers (CODE, ESA, IGS), as final or rapid products. Downloaded via
+    FTP. Final products are published only after a delay.
 
     **Input:** SP3 (+ CLK, optional, see `aux_data.fetch_clock`) files (downloaded)
     **Output:** ECEF XYZ $\rightarrow$ $\theta$, $\varphi$, $r$
 
--   :fontawesome-solid-satellite: &nbsp; **SBF Broadcast (SatVisibility)**
+-   :fontawesome-solid-satellite: &nbsp; **Broadcast ephemeris, SBF (SatVisibility)**
 
     ---
 
@@ -37,15 +80,16 @@ is at each observation epoch. canvodpy supports two ephemeris sources; a third
     **Input:** SBF binary file (SatVisibility block)
     **Output:** theta, phi directly
 
--   :fontawesome-solid-file-lines: &nbsp; **RINEX NAV Broadcast (planned)**
+-   :fontawesome-solid-file-lines: &nbsp; **Broadcast ephemeris, RINEX navigation files**
 
     ---
 
-    Not implemented yet. Keplerian orbital elements from RINEX navigation files (`.YYp`).
-    Propagated to target epochs using the Keplerian model (GPS/Galileo/BeiDou)
-    or RK4 integration (GLONASS state vectors). Immediate, no internet.
+    Orbit parameters the satellites broadcast, recorded by the receiver
+    in RINEX navigation files. Satellite positions on a 5-minute grid,
+    then the same interpolation as the precise ephemeris. GPS, Galileo,
+    GLONASS, BeiDou, QZSS, and SBAS so far.
 
-    **Input:** `.YYp` / `.YYn` / `.YYg` nav files
+    **Input:** RINEX 3.04/3.05 navigation files (`nav_directory`)
     **Output:** ECEF XYZ $\rightarrow$ $\theta$, $\varphi$, $r$
 
 </div>
@@ -54,17 +98,28 @@ is at each observation epoch. canvodpy supports two ephemeris sources; a third
 
 ## Accuracy
 
-The SBF angles are stored by the receiver with a resolution of $0.01^\circ$
-(SatVisibility block), so they cannot be more precise than that. The SP3
-path computes $\theta$ and $\varphi$ from interpolated satellite positions and the
-receiver position. canvodpy has not quantified the difference between the
-two sources on its test data; until then, do not mix them in one analysis.
+To date, no in-depth scientific analysis or comparison of the precise and
+the broadcast ephemeris has been done. It is up to you to decide which one
+to use for which task and to what end.
+
+The receiver stores the SatVisibility angles of SBF files with a
+resolution of $0.01^\circ$ (SatVisibility block; Septentrio AsteRx SB3
+ProBase Firmware v4.14.0 Reference Guide, p. 400).
 
 ---
 
-## Agency final products (SP3/CLK)
+## Precise ephemeris (SP3/CLK)
 
-The default path of `canvodpy run` (`ephemeris_source: final`).
+The default source (`ephemeris_source: precise`). The
+products are chosen by `aux_data.agency` and `aux_data.product_type`
+(`final` or `rapid`). Before v1.1.0 this source was called `final`; that name
+still works until v2.0.0 and warns.
+
+The agency and the product type apply only to the precise ephemeris. With
+`ephemeris_source: broadcast`, a store records them as empty in its content
+settings, and a value other than the default (`COD`, `final`) warns that it
+is ignored. A broadcast store created before v1.1.0 recorded them as they
+were set; runs still write to it, since broadcast stores do not compare them.
 
 ### Pipeline
 
@@ -74,7 +129,8 @@ The default path of `canvodpy run` (`ephemeris_source: final`).
    observations (1 s with a shared aux cache), in GPS time like the SP3 file
 3. Hermite interpolation: SP3 positions → epoch grid
 4. Clock piecewise linear interpolation (skipped if fetch_clock=False)
-5. Write Zarr cache: 00_aux_zarr/aux_{date}.zarr
+5. Write Zarr cache: 00_aux_zarr/aux_{date}.zarr; with a shared aux cache an
+   entry of aux_cache.zarr, one value per satellite for all its signals
 6. Per file: open Zarr → nearest grid epoch per observation epoch
    → compute_spherical_coordinates()
 7. Output: ds["theta"], ds["phi"], ds["r"]
@@ -90,7 +146,7 @@ default, which skips step 1's clock download and step 4 entirely.
 # canvod-settings.yaml
 processing:
   params:
-    ephemeris_source: "final"
+    ephemeris_source: "precise"
   aux_data:
     agency: "COD"
     product_type: "final"
@@ -110,7 +166,7 @@ processing:
 
 ---
 
-## SBF broadcast
+## Broadcast ephemeris from SBF
 
 Available when the receiver is a Septentrio unit outputting SBF binary format,
 with `ephemeris_source: broadcast`.
@@ -158,58 +214,100 @@ processing:
 
 ---
 
-## RINEX NAV broadcast
+## Broadcast ephemeris from RINEX navigation files
 
-!!! abstract "Status: not implemented"
+With `ephemeris_source: broadcast`, a receiver with RINEX files takes the
+satellite positions from its own RINEX 3.04/3.05 navigation files (ADR 0023).
+In shared-position mode (`receiver_position_mode: shared`, the default) a
+reference receiver takes them from the navigation files of the canopy it is
+paired with, as with SBF files, and needs none of its own.
+So far GPS, Galileo, GLONASS, BeiDou, QZSS, and SBAS: the signals of the other systems
+are stored without $\theta$ and $\varphi$, so they get no VOD; the run log
+names the systems with angles for each receiver and day. The files sit in
+the folder `nav_directory` names, relative to the site data root like
+`directory` (it may be the same folder), and need canonical names of type
+`nav` with sampling `00U`, for example
+`FANA01INK_R_20250010000_15M_00U_AA.nav`. Navigation files with other
+names need a naming recipe with `file_type: nav`, set as the receiver's
+`nav_recipe` (given like `recipe`; see
+[Files that don't follow the convention](../naming/overview.md#files-that-dont-follow-the-convention)).
+In per-receiver mode (`receiver_position_mode: per_receiver`) every
+receiver with RINEX files reads its own navigation files.
 
-    A `RinexNavProvider` is planned but not built. This section records
-    the intended design.
-
-For RINEX receivers, broadcast ephemerides are available in navigation files
-(`.YYp` for mixed GNSS, `.YYn` for GPS, `.YYg` for GLONASS) that sit alongside
-observation files in the same directory.
-
-### Keplerian propagation
-
-GPS, Galileo, and BeiDou use a common 16-parameter Keplerian orbital model
-(IS-GPS-200, Galileo ICD, BeiDou ICD):
+### How it works
 
 ```
-Input: orbital elements (a, e, i₀, Ω₀, ω, M₀) + correction terms
-       from navigation message
-
-Steps:
-  1. Mean motion:  n = √(μ/a³) + Δn
-  2. Mean anomaly: M = M₀ + n·(t - tₒₑ)
-  3. Kepler's equation: E - e·sin(E) = M  (iterate ~10×)
-  4. True anomaly: ν = atan2(√(1-e²)·sin(E), cos(E)-e)
-  5. Argument of latitude with corrections
-  6. Radius with corrections
-  7. Inclination with corrections
-  8. ECEF rotation from orbital plane
-
-Output: satellite ECEF (X, Y, Z) in meters
+1. Read the day's navigation files of the receiver (canvod-readers, rinex/nav.py)
+2. Per satellite and 5-minute grid time, the record with the nearest time of
+   ephemeris, if the time lies within half its fit interval; elsewhere NaN
+3. Orbit from the record's Keplerian elements (IS-GPS-200N, Table 20-IV,
+   with each system's constants; BeiDou GEO satellites with the rotations
+   of BDS-SIS-ICD-B1I-3.0, Table 5-11); velocities from the positions
+   0.5 s before and after. GLONASS: the record's position, velocity and
+   luni-solar acceleration, integrated to the grid time (ICD GLONASS,
+   Edition 5.1, A.3.1.2), which also gives the velocity. SBAS: the
+   record's position, moved with its velocity and acceleration to the grid
+   time (RINEX 3.05, Table A16)
+4. From here as the precise ephemeris: Hermite interpolation onto the epoch
+   grid, Zarr cache 00_aux_zarr/aux_{date}_{site}_{receiver}_nav.zarr,
+   theta/phi. With `shared_aux_cache_dir` the interpolated orbits go to the
+   shared cache instead, one entry per date and content of the navigation
+   files (SHA-256), so a rerun of the day computes nothing again and a
+   changed or added navigation file gives a new entry
 ```
 
-### GLONASS exception
+The fit interval is the one in the record for GPS (at least 4 hours) and
+2 hours for QZSS (IS-QZSS-PNT-005, Table 4.1.1-2). The Galileo and BeiDou
+interface specifications give none; canvodpy uses those records for 4
+hours too, 2 hours on either side of their time of ephemeris. A GLONASS
+record is used within 15 minutes of its time, the interval over which the
+ICD keeps its luni-solar acceleration constant (A.3.1.2). GLONASS records
+are in UTC; canvodpy converts them to GPS time with the leap seconds of
+the date. An SBAS record is used within 6 minutes of its time, the
+time-out of the GEO navigation message for en route, terminal and
+non-precision approach (RTCA DO-229D, Table 2-1 and Table A-25). The
+standard counts the time-out from the end of reception; a RINEX
+navigation file keeps no reception time, so canvodpy takes the 6 minutes
+on either side of the record's time.
 
-GLONASS broadcasts state vectors ($x$, $y$, $z$, $v_x$, $v_y$, $v_z$) in PZ-90 frame
-instead of Keplerian elements. Propagation uses fourth-order Runge-Kutta
-numerical integration.
+A satellite with no valid record at an epoch has NaN angles there,
+never extrapolated ones. The run names these satellites with their
+epochs, per receiver-day and in the log book (see
+[Satellites without a position](../../guides/diagnostics.md#satellites-without-a-position)).
 
-### NAV file types
+Records flagged unhealthy are still used.
 
-| Extension | Content | Constellations |
-|-----------|---------|----------------|
-| `.YYp` | Mixed GNSS navigation | All (GPS, GLONASS, Galileo, BeiDou, and others) |
-| `.YYn` | GPS-only navigation | GPS |
-| `.YYg` | GLONASS-only navigation | GLONASS |
+`ephemeris_source: broadcast` supports SBF and RINEX files. NMEA receivers
+and receivers read by a reader plugin take their angles from the precise
+ephemeris only: under `broadcast`, the settings check refuses NMEA
+receivers, and the run refuses the others once their files show the
+format.
 
-### Validity intervals
+A day without navigation files stops the run, with an error that names the
+receiver, the day, and the folder searched. There is no fallback to the
+precise ephemeris.
 
-Broadcast ephemerides are valid for ~2-4 hours around their reference epoch
-(toe). The propagator must select the closest valid ephemeris set for each
-target epoch, not simply the first record found.
+### Configuration
+
+```yaml
+processing:
+  params:
+    ephemeris_source: "broadcast"
+sites:
+  <site>:
+    receivers:
+      canopy_01:
+        directory: 02_canopy
+        nav_directory: 02_canopy_nav
+        nav_recipe: my_site_canopy_nav  # only for names outside the convention
+        reader_format: rinex3
+```
+
+Settings with `broadcast` and a receiver whose `reader_format` is a RINEX
+format but that has no `nav_directory` are refused; in shared-position
+mode, reference receivers are exempt. A `nav_recipe` without
+`nav_directory` is refused too. In Airflow, `check_day` waits for the
+navigation files as it waits for the observation files.
 
 ---
 
@@ -219,9 +317,9 @@ target epoch, not simply the first record found.
 |-----------|--------|:---:|:---:|---|
 | `.YYo` / `.rnx` | RINEX 3 OBS | :fontawesome-solid-check: | No | Primary observation data |
 | `.YY_` / `.sbf` | SBF binary | :fontawesome-solid-check: | :fontawesome-solid-check: | Observations + broadcast geometry |
-| `.YYp` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Not read (planned) |
+| `.YYp` / `.nav` | RINEX 3 NAV (mixed) | No | :fontawesome-solid-check: | Broadcast ephemeris (GPS, Galileo, GLONASS, BeiDou, QZSS, SBAS so far), canonical type `nav` |
 | `.YYn` | RINEX 2 NAV (GPS) | No | :fontawesome-solid-check: | Not read (planned) |
-| `.YYg` | RINEX NAV (GLONASS) | No | :fontawesome-solid-check: | Not read (planned) |
+| `.YYg` | RINEX 2 NAV (GLONASS) | No | :fontawesome-solid-check: | Not read (planned) |
 | `.nmea` | NMEA 0183 | SNR only | No | Observations (`NmeaObs`); geometry from SP3 |
 | `.ubx` | u-blox binary | :fontawesome-solid-check: | :fontawesome-solid-check: | Not supported |
 
@@ -236,19 +334,20 @@ target epoch, not simply the first record found.
 
 ## Choosing an ephemeris source
 
-??? question "When to use agency final products"
+??? question "When to use the precise ephemeris"
 
-    Use `ephemeris_source: "final"` when:
+    Use `ephemeris_source: "precise"` when:
 
-    - The receivers write RINEX or NMEA (the only source for them)
-    - Final products are available for the days (about two weeks after
-      observation)
+    - The receivers write NMEA (the only source for them), or RINEX
+      without navigation files
+    - Final products are available for the days
     - You have internet access during processing
 
-??? question "When to use broadcast ephemerides"
+??? question "When to use the broadcast ephemeris"
 
     Use `ephemeris_source: "broadcast"` when:
 
-    - The receivers write SBF (the geometry is embedded in the file)
+    - The receivers write SBF (the geometry is embedded in the file), or
+      RINEX navigation files next to their RINEX observations
     - Processing recent data, before final products are published
     - Working offline

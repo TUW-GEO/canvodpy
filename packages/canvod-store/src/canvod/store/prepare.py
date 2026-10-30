@@ -13,6 +13,29 @@ from canvod.store_metadata.layout import LayoutError, is_day_block_group
 
 from canvod.store.time_encoding import prepare_times
 
+#: Dataset attribute listing the satellites of a file that have
+#: observations but no position, with their epochs (#571): a JSON object
+#: ``{satellite: epochs}``, ``{}`` when every satellite has one. Like the
+#: preprocessing record, it goes into the log book (column
+#: :data:`NO_POSITION_COLUMN`), never into the stored data.
+NO_POSITION_ATTR = "Satellites Without Position"
+
+#: Log-book column of :data:`NO_POSITION_ATTR`; empty in rows of files
+#: written before canVODpy checked the positions.
+NO_POSITION_COLUMN = "satellites_without_position"
+
+
+def split_no_position(attrs: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    """Split :data:`NO_POSITION_ATTR` off dataset attributes.
+
+    Returns
+    -------
+    tuple[dict[str, Any], str]
+        The attributes without it, and its value ("" when absent).
+    """
+    rest = {k: v for k, v in attrs.items() if k != NO_POSITION_ATTR}
+    return rest, str(attrs.get(NO_POSITION_ATTR, ""))
+
 
 class GroupVariablesMismatchError(Exception):
     """A write does not carry the same variables as the store group.
@@ -69,9 +92,11 @@ def prepare_write(
 
     Drops the in-memory preprocessing record (it goes into the log book, see
     ``canvod.config.models.PREPROCESSING_ATTR``), so stored data have the
-    signature of data without preprocessing, and checks and sets the time
-    encoding (:func:`~canvod.store.time_encoding.prepare_times`). Call it
-    right before every write into a store group.
+    signature of data without preprocessing, and the satellites without a
+    position (:data:`NO_POSITION_ATTR`, also for the log book), and checks
+    and sets the time encoding
+    (:func:`~canvod.store.time_encoding.prepare_times`). Call it right
+    before every write into a store group.
 
     Parameters
     ----------
@@ -101,6 +126,7 @@ def prepare_write(
         check_append_variables(ds, store, group, append_dim)
         check_append_coordinates(ds, store, group, append_dim)
     attrs, _ = split_preprocessing(ds.attrs)
+    attrs, _ = split_no_position(attrs)
     ds = ds.copy(deep=False)
     ds.attrs = attrs
     return prepare_times(ds, store, group)

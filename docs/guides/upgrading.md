@@ -223,6 +223,7 @@ All of these are replaced by one entry point: `canvodpy run`, or
 | `processing.storage.vod_store_strategy` | nothing (no effect); to recompute VOD, set `vod_store_name` to another name, such as `vod-recompute` |
 | `processing.logging.log_file_name` | nothing (no effect); log files have fixed names under `log_dir` |
 | `processing.icechunk.zarr_async_concurrency` | nothing (no effect); it limited Zarr's concurrent chunk writes for only some of the store's writes |
+| `processing.params.ephemeris_source: final`, `canvodpy run --ephemeris-source final` (since v1.1.0) | `precise`, the same source under its new name ([ADR 0023](../adr/0023-broadcast-ephemeris-through-the-precise-path.md)); stores created with `final` accept runs with `precise`, and `canvodpy config init --from-store` writes `precise`. A shared aux cache from v1.0.0 is computed again once, since its key holds the name. The Airflow task `process_day` reports `"ephemeris_source": "precise"` instead of `"agency"` |
 | `processing.params.days_per_batch`, `canvodpy run --days-per-batch`, argument `days_per_batch` of `Site.pipeline()` and `Pipeline` | nothing; the run sizes its units of days from `max_memory_gb`. Until v2.0.0 the value only caps the days per unit |
 
 ### Python API
@@ -265,6 +266,18 @@ All of these are replaced by one entry point: `canvodpy run`, or
     | `canvod.readers.rinex.v2_11._register_factory()` | nothing: it never registered anything |
 
 ---
+
+## New in v1.1.0
+
+- **Broadcast ephemeris from RINEX navigation files**: with
+  `ephemeris_source: broadcast`, receivers with RINEX files take the
+  satellite positions from their own navigation files. Set the new
+  receiver setting `nav_directory` to the folder of those files on each
+  receiver with RINEX files (in shared-position mode, only the canopy
+  receivers), and `nav_recipe` if their names don't follow the
+  convention
+  ([Ephemeris sources](../packages/readers/ephemeris-sources.md#broadcast-ephemeris-from-rinex-navigation-files)).
+  Nothing changes for SBF files or for the precise ephemeris.
 
 ## New in v1.0.0
 

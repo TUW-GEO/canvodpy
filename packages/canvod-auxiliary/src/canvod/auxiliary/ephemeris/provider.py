@@ -6,7 +6,8 @@ angular coordinates (theta, phi).  Three implementations:
 - ``AgencyEphemerisProvider`` — SP3/CLK from analysis centers (COD, ESA, IGS),
   Hermite interpolation.  Extracted from the orchestrator's aux data pipeline.
 - ``SbfBroadcastProvider`` — theta/phi directly from SBF SatVisibility blocks.
-- ``RinexNavProvider`` — (future) parses RINEX NAV files.
+- ``RinexNavProvider`` — the broadcast ephemeris of RINEX navigation files,
+  through the same Hermite interpolation as the agency products (ADR 0023).
 
 Examples
 --------
@@ -238,10 +239,6 @@ class AgencyEphemerisProvider(EphemerisProvider):
         import xarray as xr
 
         from canvod.auxiliary.interpolation import sampling_interval_from_epochs
-        from canvod.auxiliary.position.spherical_coords import (
-            add_spherical_coords_to_dataset,
-            compute_spherical_coordinates,
-        )
 
         if self._ephem_ds is None:
             raise RuntimeError(
@@ -267,27 +264,156 @@ class AgencyEphemerisProvider(EphemerisProvider):
 
         ds = ds.sel(sid=common_sids)
         aux_slice = aux_slice.sel(sid=common_sids)
+        return _add_angles(ds, aux_slice, receiver_position, self.store_radial_distance)
 
-        # Compute spherical coordinates
-        sat_x = aux_slice["X"].values
-        sat_y = aux_slice["Y"].values
-        sat_z = aux_slice["Z"].values
-        r, theta, phi = compute_spherical_coordinates(
-            sat_x,
-            sat_y,
-            sat_z,
-            receiver_position,
+
+def _add_angles(
+    ds: xr.Dataset,
+    aux_slice: xr.Dataset,
+    receiver_position: ECEFPosition,
+    store_radial_distance: bool,
+) -> xr.Dataset:
+    """theta, phi (and r) of the satellite positions in ``aux_slice``.
+
+    ``aux_slice`` holds ``X``, ``Y``, ``Z`` (and optionally ``clock``) on the
+    epochs and SIDs of ``ds``.
+    """
+    from canvod.auxiliary.position.spherical_coords import (
+        add_spherical_coords_to_dataset,
+        compute_spherical_coordinates,
+    )
+
+    r, theta, phi = compute_spherical_coordinates(
+        aux_slice["X"].values,
+        aux_slice["Y"].values,
+        aux_slice["Z"].values,
+        receiver_position,
+    )
+    ds = add_spherical_coords_to_dataset(ds, r, theta, phi)
+    if not store_radial_distance and "r" in ds:
+        ds = ds.drop_vars("r")
+    if "clock" in aux_slice.data_vars:
+        ds = ds.assign({"clock": aux_slice["clock"]})
+    return ds
+
+
+class RinexNavProvider(EphemerisProvider):
+    """Broadcast ephemeris from RINEX navigation files (ADR 0023).
+
+    The navigation records give satellite positions and velocities on a
+    5-minute grid (:mod:`canvod.auxiliary.ephemeris.broadcast`), which go
+    through the Hermite interpolation of the agency products. A satellite
+    without a valid record gets NaN angles at those times.
+
+    Parameters
+    ----------
+    nav_files : list[Path]
+        RINEX 3.04/3.05 navigation files of the day, of the receiver whose
+        broadcast data are used.
+    keep_sids : list[str], optional
+        SIDs to keep.
+    store_radial_distance : bool
+        Whether to keep ``r`` in the output.
+    aggregate_glonass_fdma : bool
+        As for the observations.
+    """
+
+    def __init__(
+        self,
+        nav_files: list[Path],
+        keep_sids: list[str] | None = None,
+        store_radial_distance: bool = False,
+        aggregate_glonass_fdma: bool = True,
+    ) -> None:
+        self.nav_files = list(nav_files)
+        self.keep_sids = keep_sids
+        self.store_radial_distance = store_radial_distance
+        self.aggregate_glonass_fdma = aggregate_glonass_fdma
+        self._day_start: Any = None
+        self._ephem_ds: xr.Dataset | None = None
+
+    def preprocess_day(
+        self,
+        date: str,
+        site_config: Any,
+    ) -> Path | None:
+        """Read the navigation files and compute the day's orbit grid.
+
+        Parameters
+        ----------
+        date : str
+            Date in ``YYYYDOY`` format.
+        site_config : Any
+            Unused; the navigation files are given to the constructor.
+
+        Returns
+        -------
+        None
+            Nothing is written to disk.
+
+        Raises
+        ------
+        ValueError
+            If no navigation files were given.
+        """
+        import numpy as np
+        from canvod.utils.tools import YYYYDOY
+
+        from canvod.auxiliary.ephemeris.broadcast import broadcast_ephemerides
+
+        if not self.nav_files:
+            raise ValueError(f"No navigation files for {date}")
+        self._day_start = np.datetime64(YYYYDOY.from_str(date).date, "D")
+        self._ephem_ds = broadcast_ephemerides(
+            self.nav_files,
+            self._day_start,
+            keep_sids=self.keep_sids,
+            aggregate_glonass_fdma=self.aggregate_glonass_fdma,
         )
-        ds = add_spherical_coords_to_dataset(ds, r, theta, phi)
+        return None
 
-        if not self.store_radial_distance and "r" in ds:
-            ds = ds.drop_vars("r")
+    def augment_dataset(
+        self,
+        ds: xr.Dataset,
+        receiver_position: ECEFPosition,
+    ) -> xr.Dataset:
+        """Add theta/phi from the broadcast orbit grid.
 
-        # Add clock if available
-        if "clock" in aux_slice.data_vars:
-            ds = ds.assign({"clock": aux_slice["clock"]})
+        Parameters
+        ----------
+        ds : xr.Dataset
+            GNSS observation dataset.
+        receiver_position : ECEFPosition
+            Receiver ECEF position.
 
-        return ds
+        Returns
+        -------
+        xr.Dataset
+            ``ds`` with theta, phi (and optionally r); NaN for a satellite
+            without a valid navigation record.
+
+        Raises
+        ------
+        RuntimeError
+            If ``preprocess_day()`` has not been called.
+        """
+        from canvod.auxiliary.interpolation import (
+            aux_epoch_grid,
+            interpolate_aux_day,
+            sampling_interval_from_epochs,
+        )
+
+        if self._ephem_ds is None:
+            raise RuntimeError(
+                "Call preprocess_day() before augment_dataset(). "
+                "The navigation files must be read first."
+            )
+        interval_s = sampling_interval_from_epochs(ds.epoch.values)
+        aux = interpolate_aux_day(
+            self._ephem_ds, None, aux_epoch_grid(self._day_start, interval_s)
+        )
+        aux_slice = aux.sel(epoch=ds.epoch, method="nearest").reindex(sid=ds.sid)
+        return _add_angles(ds, aux_slice, receiver_position, self.store_radial_distance)
 
 
 class SbfBroadcastProvider(EphemerisProvider):

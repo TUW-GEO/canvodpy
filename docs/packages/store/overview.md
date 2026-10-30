@@ -89,8 +89,11 @@ canopy_01/
 example `rise_set` and `pvt_mode`), NaN for floating-point values.
 
 The log book (`metadata/table`) records each stored file: its hash, start,
-end, filename, the dataset attributes, and the preprocessing record (see
-[Preprocessing during a run](../ops/overview.md#the-preprocessing-record)).
+end, filename, the dataset attributes, the preprocessing record (see
+[Preprocessing during a run](../ops/overview.md#the-preprocessing-record)),
+and the satellites observed without a position, with their epochs
+(`satellites_without_position`, see
+[Satellites without a position](../../guides/diagnostics.md#satellites-without-a-position)).
 In a group made of day blocks, it also records how many epochs of the file
 were stored (`epochs`). Every other value in it is text, JSON, or a time.
 

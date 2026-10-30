@@ -8,6 +8,10 @@ from pydantic import Field, field_validator
 
 from .base import _StrictModel
 
+#: The aux_data settings that apply only to the precise ephemeris: with
+#: ``ephemeris_source: broadcast`` a store records them as empty (#574).
+PRECISE_ONLY_SETTINGS = ("agency", "product_type")
+
 
 class AuxDataConfig(_StrictModel):
     """Auxiliary data source configuration.
@@ -17,12 +21,22 @@ class AuxDataConfig(_StrictModel):
     This is a Pydantic model for configuration validation.
     """
 
-    agency: str = Field("COD", description="Analysis center code")
+    agency: str = Field(
+        "COD",
+        description=(
+            "Analysis center code. Only for the precise ephemeris: with "
+            "ephemeris_source broadcast it is ignored (a value other than the "
+            "default warns), and the store records it as empty."
+        ),
+    )
     product_type: Literal["final", "rapid"] = Field(
         "final",
         description=(
             "Product type. The agency must publish it: see the product "
-            "registry of canvod-auxiliary (products.toml)."
+            "registry of canvod-auxiliary (products.toml). Only for the "
+            "precise ephemeris: with ephemeris_source broadcast it is ignored "
+            "(a value other than the default warns), and the store records "
+            "it as empty."
         ),
     )
     ftp_timeout_s: int = Field(

@@ -25,7 +25,7 @@ from canvod.auxiliary.cache_fingerprint import (
 FINGERPRINT = compute_aux_cache_fingerprint(
     agency="COD",
     product_type="final",
-    ephemeris_source="final",
+    ephemeris_source="precise",
     canonical_grid_seconds=CANONICAL_AUX_GRID_SECONDS,
     source_file_paths={},
     aggregate_glonass_fdma=True,
@@ -39,14 +39,18 @@ def _fake_self(tmp_path: Path) -> SimpleNamespace:
     config = mock.MagicMock()
     config.processing.aux_data.agency = "COD"
     config.processing.aux_data.product_type = "final"
-    config.processing.params.ephemeris_source = "final"
+    config.processing.params.ephemeris_source = "precise"
     config.processing.params.aggregate_glonass_fdma = True
-    return SimpleNamespace(
+    fake_self = SimpleNamespace(
         _logger=logger,
         aux_pipeline=aux_pipeline,
         _config=config,
         _preprocess_aux_data_with_hermite=mock.MagicMock(),
     )
+    fake_self._shared_aux_cache_entry = lambda *args: (
+        RinexDataProcessor._shared_aux_cache_entry(fake_self, *args)
+    )
+    return fake_self
 
 
 def test_cache_hit_skips_preprocessing(tmp_path: Path) -> None:
@@ -70,7 +74,12 @@ def test_cache_miss_builds_and_promotes(tmp_path: Path) -> None:
     cache_root = shared_cache_dir / "aux_cache.zarr"
 
     def fake_preprocess(
-        _files, output_path, reader_format=None, group=None, grid_seconds=None
+        _files,
+        output_path,
+        reader_format=None,
+        group=None,
+        grid_seconds=None,
+        per_satellite=False,
     ):
         (output_path / group).mkdir(parents=True)
 
@@ -89,6 +98,8 @@ def test_cache_miss_builds_and_promotes(tmp_path: Path) -> None:
     fake_self._preprocess_aux_data_with_hermite.assert_called_once()
     call_kwargs = fake_self._preprocess_aux_data_with_hermite.call_args.kwargs
     assert call_kwargs["grid_seconds"] == CANONICAL_AUX_GRID_SECONDS
+    # Once per satellite: the entry holds all signals, about 16 per satellite
+    assert call_kwargs["per_satellite"] is True
     assert call_kwargs["group"].startswith(f"{FINGERPRINT}/.tmp-2025213-")
 
 
@@ -114,7 +125,12 @@ def test_second_miss_after_a_successful_populate_is_a_hit(tmp_path: Path) -> Non
     cache_root = shared_cache_dir / "aux_cache.zarr"
 
     def fake_preprocess(
-        _files, output_path, reader_format=None, group=None, grid_seconds=None
+        _files,
+        output_path,
+        reader_format=None,
+        group=None,
+        grid_seconds=None,
+        per_satellite=False,
     ):
         (output_path / group).mkdir(parents=True)
 
@@ -129,3 +145,33 @@ def test_second_miss_after_a_successful_populate_is_a_hit(tmp_path: Path) -> Non
 
     fake_self._preprocess_aux_data_with_hermite.assert_called_once()
     assert (cache_root / FINGERPRINT / "2025213").exists()
+
+
+@pytest.mark.parametrize(
+    ("shared_cache", "expected"),
+    [(True, None), (False, ["G01|L1|C"])],
+    ids=["shared cache: all signals", "no shared cache: the site's"],
+)
+def test_the_orbits_for_the_shared_cache_keep_all_signals(
+    tmp_path: Path, shared_cache: bool, expected: list[str] | None
+) -> None:
+    # The entry's fingerprint leaves keep_sids out, so a site keeping more
+    # signals reuses it: it must hold every signal, not the first site's
+    fake_self = _fake_self(tmp_path)
+    fake_self._config.processing.storage.get_shared_aux_cache_dir.return_value = (
+        tmp_path / "shared" if shared_cache else None
+    )
+    fake_self.keep_sids = ["G01|L1|C"]
+    fake_self.aux_file_path = tmp_path
+    fake_self._agency = "COD"
+    fake_self._product_type = "final"
+    fake_self._ftp_server = None
+    fake_self.matched_data_dirs = mock.MagicMock()
+    fake_self.matched_data_dirs.yyyydoy.to_str.return_value = "2025213"
+
+    with mock.patch(
+        "canvodpy.orchestrator.processor.AuxDataPipeline.create_standard"
+    ) as create_standard:
+        RinexDataProcessor._initialize_aux_pipeline(fake_self)
+
+    assert create_standard.call_args.kwargs["keep_sids"] == expected

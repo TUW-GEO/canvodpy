@@ -191,6 +191,14 @@ class TestProcessingParams:
             params = ProcessingParams(days_per_batch=3)
         assert params.days_per_batch == 3
 
+    def test_precise_ephemeris_is_the_default(self):
+        assert ProcessingParams().ephemeris_source == "precise"
+
+    def test_final_is_a_deprecated_name_for_precise(self):
+        with pytest.warns(FutureWarning, match="'final'.*'precise'"):
+            params = ProcessingParams(ephemeris_source="final")
+        assert params.ephemeris_source == "precise"
+
     def test_without_days_per_batch_nothing_warns(self):
         import warnings
 
@@ -783,6 +791,48 @@ class TestAuxDataProductType:
         assert AuxDataConfig(product_type="rapid").product_type == "rapid"
 
 
+class TestBroadcastIgnoresTheProduct:
+    """With the broadcast ephemeris, agency and product type do not apply (#574)."""
+
+    @pytest.fixture
+    def processing(self, tmp_path):
+        def make(source: str, **aux) -> ProcessingConfig:
+            return ProcessingConfig(
+                metadata=MetadataConfig(
+                    author="J. R. R. Tolkien",
+                    email="jrrt@example.com",
+                    institution="Fangorn",
+                ),
+                storage=StorageConfig(stores_root_dir=tmp_path),
+                aux_data=AuxDataConfig(**aux),
+                params=ProcessingParams(ephemeris_source=source),
+            )
+
+        return make
+
+    @pytest.mark.parametrize(
+        ("aux", "named"),
+        [
+            ({"agency": "GFZ"}, "agency"),
+            ({"product_type": "rapid"}, "product_type"),
+            ({"agency": "GFZ", "product_type": "rapid"}, "agency, product_type"),
+        ],
+    )
+    def test_a_product_set_with_broadcast_warns(self, processing, aux, named):
+        with pytest.warns(UserWarning, match=f"broadcast.*ignores {named}"):
+            processing("broadcast", **aux)
+
+    def test_the_default_product_with_broadcast_does_not_warn(self, processing):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            processing("broadcast", agency="COD", product_type="final")
+
+    def test_a_product_set_with_precise_does_not_warn(self, processing):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            processing("precise", agency="GFZ", product_type="rapid")
+
+
 class TestChunkStrategies:
     def test_defaults_for_both_stores(self):
         ic = IcechunkConfig()
@@ -955,3 +1005,85 @@ class TestCanvodConfig:
             sids=SidsConfig(),
         )
         assert cfg.nasa_earthdata_acc_mail == "user@nasa.gov"
+
+
+class TestNavDirectory:
+    """With the broadcast ephemeris, receivers with RINEX files name their
+    navigation files with nav_directory (#567, ADR 0023)."""
+
+    def _config(
+        self,
+        source: str,
+        reader_format: str,
+        position_mode: str = "per_receiver",
+        **nav_directories,
+    ):
+        def receiver(name: str, **kwargs):
+            return ReceiverConfig(
+                directory=name,
+                reader_format=reader_format,
+                nav_directory=nav_directories.get(name),
+                **kwargs,
+            )
+
+        return CanvodConfig(
+            processing=ProcessingConfig(
+                metadata=MetadataConfig(author="A", email="a@b.com", institution="U"),
+                storage=StorageConfig(stores_root_dir=Path("/path/to/stores")),
+                params=ProcessingParams(
+                    ephemeris_source=source,
+                    receiver_position_mode=position_mode,
+                ),
+            ),
+            sites=SitesConfig(
+                sites={
+                    "s": SiteConfig(
+                        gnss_site_data_root="/data",
+                        receivers={
+                            "c": receiver("c", type="canopy"),
+                            "r": receiver("r", type="reference", paired_canopies="all"),
+                        },
+                    )
+                }
+            ),
+            sids=SidsConfig(),
+        )
+
+    def test_broadcast_rinex_receiver_without_nav_directory_is_refused(self):
+        with pytest.raises(ValidationError, match=r"nav_directory for s\.r\b"):
+            self._config("broadcast", "rinex3", c="c_nav")
+
+    def test_shared_position_reference_needs_no_nav_directory(self):
+        # The reference takes the angles from its canopy's navigation files
+        self._config("broadcast", "rinex3", "shared", c="c_nav")
+
+    def test_shared_position_canopy_without_nav_directory_is_refused(self):
+        with pytest.raises(ValidationError, match=r"nav_directory for s\.c\b"):
+            self._config("broadcast", "rinex3", "shared", r="r_nav")
+
+    def test_broadcast_rinex_receivers_with_nav_directory(self):
+        cfg = self._config("broadcast", "rinex3", c="c_nav", r="r")
+        assert cfg.sites.sites["s"].receivers["c"].nav_directory == "c_nav"
+
+    def test_precise_needs_no_nav_directory(self):
+        self._config("precise", "rinex3")
+
+    def test_sbf_receivers_need_no_nav_directory(self):
+        self._config("broadcast", "sbf")
+
+    def test_broadcast_nmea_receiver_is_refused(self):
+        with pytest.raises(ValidationError, match=r"s\.c, s\.r.*nmea.*precise"):
+            self._config("broadcast", "nmea")
+
+    def test_nav_recipe_without_nav_directory_is_refused(self):
+        with pytest.raises(ValidationError, match="set nav_directory as well"):
+            ReceiverConfig(type="canopy", directory="c", nav_recipe="fangorn_nav")
+
+    def test_nav_recipe_with_nav_directory(self):
+        rc = ReceiverConfig(
+            type="canopy",
+            directory="c",
+            nav_directory="c_nav",
+            nav_recipe="fangorn_nav",
+        )
+        assert rc.nav_recipe == "fangorn_nav"

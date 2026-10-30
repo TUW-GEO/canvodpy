@@ -28,6 +28,7 @@ from typing import Any
 
 import yaml
 
+from canvod.config.models.sites import RECIPE_SETTINGS
 from canvod.utils.remote_file import (
     RemoteFetchError,
     RemoteURLError,
@@ -150,7 +151,9 @@ def _settings_check(url: str):
 
 
 def _recipe_names(settings: dict[str, Any]) -> list[tuple[str, str, str]]:
-    """(site, receiver, recipe name) of each receiver whose recipe is a name.
+    """(site, receiver, recipe name) of each recipe setting that is a name.
+
+    A receiver names up to two recipes, ``recipe`` and ``nav_recipe``.
 
     Settings that don't have the expected shape are skipped here; loading
     the settings reports them.
@@ -164,24 +167,26 @@ def _recipe_names(settings: dict[str, Any]) -> list[tuple[str, str, str]]:
         for receiver, receiver_settings in (
             receivers if isinstance(receivers, dict) else {}
         ).items():
-            name = (
-                receiver_settings.get("recipe")
-                if isinstance(receiver_settings, dict)
-                else None
-            )
-            if not isinstance(name, str) or not name or is_url(name):
-                continue
-            if (
-                any(c in name for c in "/\\")
-                or name.startswith(".")
-                or "/" in str(site)
-            ):
-                msg = (
-                    f"Receiver '{receiver}' of site '{site}' has the recipe name "
-                    f"'{name}': a recipe name is a file name without folders."
+            for key in RECIPE_SETTINGS:
+                name = (
+                    receiver_settings.get(key)
+                    if isinstance(receiver_settings, dict)
+                    else None
                 )
-                raise RemoteURLError(msg)
-            found.append((str(site), str(receiver), name))
+                if not isinstance(name, str) or not name or is_url(name):
+                    continue
+                if (
+                    any(c in name for c in "/\\")
+                    or name.startswith(".")
+                    or "/" in str(site)
+                ):
+                    msg = (
+                        f"Receiver '{receiver}' of site '{site}' has the {key} "
+                        f"name '{name}': a recipe name is a file name without "
+                        "folders."
+                    )
+                    raise RemoteURLError(msg)
+                found.append((str(site), str(receiver), name))
     return found
 
 

@@ -80,6 +80,60 @@ def test_settings_reproduce_the_stores_content_settings(tmp_path):
     assert differences(stored, run_content_settings(config, SITE), SITE) == []
 
 
+def test_settings_from_a_store_from_before_precise_say_precise(tmp_path):
+    """A store created with ``final`` (v1.0.0) gives ``precise`` (ADR 0023)."""
+    config = _settings(tmp_path)
+    # Assigning skips the settings check: the store records the old name.
+    config.processing.params.ephemeris_source = "final"  # ty: ignore[invalid-assignment]
+    store = tmp_path / "root" / SITE / "gnss"
+    ensure_store_metadata(
+        store,
+        config=config,
+        site_name=SITE,
+        store_type="gnss_store",
+        source_format="rinex3",
+        names=CONTENT_NAMES,
+    )
+    stored = read_repository_metadata(store)["content_settings"]["settings"]
+    assert stored["processing"]["params"]["ephemeris_source"] == "final"
+
+    settings = settings_from_store(store)
+
+    assert settings["processing"]["params"]["ephemeris_source"] == "precise"
+
+
+def test_settings_from_a_broadcast_store_load_and_match_it(tmp_path):
+    """A broadcast store records no product (#574); its settings still load."""
+    config = _settings(tmp_path)
+    config.processing.params.ephemeris_source = "broadcast"
+    store = tmp_path / "root" / SITE / "gnss"
+    ensure_store_metadata(
+        store,
+        config=config,
+        site_name=SITE,
+        store_type="gnss_store",
+        source_format="rinex3",
+        names=CONTENT_NAMES,
+    )
+    settings = _fill_todo(settings_from_store(store), tmp_path)
+
+    assert "agency" not in settings["processing"].get("aux_data", {})
+    assert "product_type" not in settings["processing"].get("aux_data", {})
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    metadata = settings["processing"]["metadata"]
+    metadata["author"] = "J. R. R. Tolkien"
+    metadata["email"] = "jrrt@example.com"
+    metadata["institution"] = "Fangorn"
+    (config_dir / "canvod-settings.yaml").write_text(
+        yaml.safe_dump(settings, sort_keys=False)
+    )
+    loaded = load_config(config_dir=config_dir)
+
+    stored = read_repository_metadata(store)["content_settings"]
+    assert differences(stored, run_content_settings(loaded, SITE), SITE) == []
+
+
 _RECIPE = (
     "name: rx\nsite: FAN\nagency: INK\nreceiver_number: 1\n"
     "glob: '*.rnx'\nfields:\n  - skip: 3\n"

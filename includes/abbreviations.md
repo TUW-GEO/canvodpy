@@ -31,7 +31,7 @@
 *[SCS]: Signal Comparison Strategy — comparing canopy vs reference receiver SNR to isolate vegetation attenuation
 
 <!-- Ephemerides and orbits -->
-*[SP3]: Standard Product 3 — precise satellite orbit (position ± ~2 cm) file format, produced by IGS analysis centres (Navipedia: SP3)
+*[SP3]: Standard Product 3 — precise satellite orbit file format, produced by IGS analysis centres (Navipedia: SP3)
 *[CLK]: Clock — precise satellite and station clock correction file (30 s intervals), companion to SP3 orbits
 *[IGS]: International GNSS Service — global network of 500+ stations providing orbits, clocks, and reference frame products (Navipedia: IGS)
 *[PVT]: Position, Velocity, Time — the receiver navigation solution computed from pseudoranges (Navipedia: GNSS Basic Observables)

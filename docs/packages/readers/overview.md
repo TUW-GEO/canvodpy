@@ -104,9 +104,9 @@ the store refuses to append to them (`EpochTimeSystemError`).
 
 ```mermaid
 graph TD
-    A1["RINEX v3 File (.rnx)"] --> B1["Rnxv3Obs (+ SP3/CLK)"]
+    A1["RINEX v3 File (.rnx)"] --> B1["Rnxv3Obs (+ SP3/CLK or RINEX nav)"]
     A2["SBF File (.sbf)"] --> B2["SbfReader"]
-    A3["RINEX v2 File (.YYo)"] --> B3["Rnxv2Obs (+ SP3/CLK)"]
+    A3["RINEX v2 File (.YYo)"] --> B3["Rnxv2Obs (+ SP3/CLK or RINEX nav)"]
     A4["NMEA File (.nmea)"] --> B4["NmeaObs (+ SP3/CLK)"]
     B1 --> C["validate_dataset()"]
     B3 --> C

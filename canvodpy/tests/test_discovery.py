@@ -18,6 +18,7 @@ from canvodpy.orchestrator.discovery import (
     detect_reader_format,
     discover_files,
     is_compressed,
+    navigation_files,
     receiver_days,
     recipe_fields_note,
     recipe_file,
@@ -274,6 +275,50 @@ def test_recipe_drives_discovery(
 
     assert [f.path.name for f in found] == ["rref001a15.25o"]
     assert found[0].canonical_name == "FANR01INK_R_20250010015_15M_05S_AA.rnx"
+
+
+NAV = "FANA01INK_R_20250010000_15M_00U_AA.nav"
+
+
+def test_navigation_files_without_a_recipe_are_the_canonical_nav_files(
+    tmp_path: Path,
+) -> None:
+    """Observation files next to the navigation files are not taken."""
+    _touch(tmp_path / "nav", NAV, CANONICAL, "ract001a00.25p")
+
+    found = navigation_files("fangorn", "canopy_01", tmp_path / "nav", None, DAY)
+
+    assert [f.path.name for f in found] == [NAV]
+
+
+#: A recipe for RINEX 3 navigation file names such as ``ract001a00.25p``.
+_FANGORN_NAV_RECIPE = (
+    _FANGORN_RECIPE.replace("name: ros_ref", "name: ros_nav")
+    .replace("receiver_type: reference", "receiver_type: canopy")
+    .replace("sampling: '05S'", "sampling: '00U'")
+    .replace("file_type: rnx", "file_type: nav")
+    .replace("glob: '*.??o'", "glob: '*.??p'")
+)
+
+
+def test_nav_recipe_drives_navigation_file_discovery(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A nav_recipe selects non-canonical navigation files (story 15 of #565)."""
+    pytest.importorskip("canvod.filemap.recipe_files")
+    from canvod.filemap.recipe import NamingRecipe
+
+    if "nav" not in NamingRecipe.model_fields["file_type"].annotation.__args__:
+        pytest.skip("canvod-filemap has no file type nav yet (extensions #110)")
+    (tmp_path / "recipes" / "fangorn").mkdir(parents=True)
+    (tmp_path / "recipes" / "fangorn" / "ros_nav.yaml").write_text(_FANGORN_NAV_RECIPE)
+    monkeypatch.setenv("CANVOD_CONFIG_DIR", str(tmp_path))
+    _touch(tmp_path / "nav", "ract001a00.25p", "ract002a00.25p")
+
+    found = navigation_files("fangorn", "canopy_01", tmp_path / "nav", "ros_nav", DAY)
+
+    assert [f.path.name for f in found] == ["ract001a00.25p"]
+    assert found[0].canonical_name == "FANA01INK_R_20250010000_15M_00U_AA.nav"
 
 
 def test_a_recipe_url_on_another_host_is_refused(
@@ -765,3 +810,27 @@ def test_a_cached_scan_serves_only_the_days_it_listed(tmp_path: Path) -> None:
     assert added in [f.path.name for f in second.days["2025002"]]
     # Lookups without days read the latest scan.
     assert scan_directory(tmp_path) is second
+
+
+def test_navigation_files_found_by_their_type(tmp_path: Path) -> None:
+    """``nav`` files are found as navigation files, never read as observations."""
+    nav = [
+        "FANA01INK_R_20250010000_15M_00U_AA.nav",
+        "FANA01INK_R_20250010015_15M_00U_AA.nav",
+    ]
+    _touch(tmp_path, CANONICAL, *nav)
+    assert _names(tmp_path, "nav") == nav
+    assert _names(tmp_path, "rinex3") == [CANONICAL]
+    assert _names(tmp_path, "auto") == [CANONICAL]
+
+
+def test_navigation_files_are_not_reported_unprocessed(tmp_path: Path) -> None:
+    """Navigation files next to the observations are not files a run skips.
+
+    A receiver's nav_directory may be its data directory (#567); its
+    navigation files are read for the satellite positions, not skipped.
+    """
+    nav = "FANA01INK_R_20250010000_15M_00U_AA.nav"
+    _touch(tmp_path, CANONICAL, nav)
+    assert tmp_path / nav not in unprocessed_files(tmp_path, "rinex3")
+    assert tmp_path / nav not in unprocessed_files(tmp_path, None)

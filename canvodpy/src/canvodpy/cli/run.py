@@ -138,8 +138,10 @@ def _start_dashboard(log_dir: Path, host: str, port: int) -> subprocess.Popen:
 
 
 class EphemerisSourceChoice(enum.StrEnum):
-    final = "final"
+    precise = "precise"
     broadcast = "broadcast"
+    # Old name of precise (ADR 0023), removed in v2.0.0.
+    final = "final"
 
 
 def _today_yyyydoy() -> str:
@@ -216,6 +218,14 @@ def _print_days_without_vod(
     """Say through ``emit`` which days get no VOD as ``receiver`` has no files."""
     noun = "day" if len(days) == 1 else "days"
     emit(f"  no VOD on {len(days)} {noun}, {receiver} has no files: {_first_ten(days)}")
+
+
+def _print_satellites_without_position(
+    emit: Callable[[str], None], receiver: str, day: str, satellites: dict[str, int]
+) -> None:
+    """Say through ``emit`` which satellites a receiver-day saw without a position."""
+    listed = _first_ten([f"{sv} ({n} epochs)" for sv, n in satellites.items()])
+    emit(f"  no position: {receiver} on {day}: {listed}")
 
 
 def _report_vod_unit(unit, reporter) -> int:
@@ -319,7 +329,12 @@ def _main_impl(args: SimpleNamespace) -> int:
         return 1
 
     if args.ephemeris_source is not None:
-        config.processing.params.ephemeris_source = args.ephemeris_source
+        from canvod.config.models.processing_params import current_ephemeris_source
+
+        # Assigning skips the settings check, so the old name is mapped here.
+        config.processing.params.ephemeris_source = current_ephemeris_source(
+            args.ephemeris_source
+        )
 
     from canvodpy.cli.banner import show_banner
 
@@ -503,6 +518,9 @@ def _process_days(
                 on_discovery_end=on_discovery_end,
                 on_incomplete_day=partial(_print_incomplete_day, reporter.log),
                 on_days_without_vod=partial(_print_days_without_vod, reporter.log),
+                on_satellites_without_position=partial(
+                    _print_satellites_without_position, reporter.log
+                ),
             ) as pipeline:
                 # The GNSS phase stores a unit of days, then the VOD
                 # phase computes their VOD in the same worker pool
@@ -688,10 +706,11 @@ def run(
         typer.Option(
             "--ephemeris-source",
             help=(
-                "Where the satellite orbits and clocks come from: final "
+                "Where the satellite orbits and clocks come from: precise "
                 "uses the SP3 and CLK products of an analysis center, "
-                "broadcast uses the SatVisibility blocks of the SBF files. "
-                "Default: from canvod-settings.yaml."
+                "broadcast uses the SatVisibility blocks of the SBF files "
+                "(final: old name of precise). Default: from "
+                "canvod-settings.yaml."
             ),
         ),
     ] = None,

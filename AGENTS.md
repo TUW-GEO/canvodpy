@@ -26,7 +26,7 @@ Read before changing scientific logic.
 | SNR | Signal-to-noise ratio, dB-Hz, the observable VOD uses | data variable `SNR`; SBF quantizes to 0.25 dB |
 | SID | Signal ID `SV\|band\|code`, e.g. `G01\|L1\|C` | dimension `sid`; one satellite has many SIDs |
 | θ, φ | Polar angle and azimuth of the satellite, seen from the receiver | `theta`, `phi`, radians; the code prefers polar angle over elevation |
-| Ephemeris | Satellite orbits: agency final products (SP3/CLK) or the receiver's broadcast navigation data (SBF) | canvod-auxiliary |
+| Ephemeris | Satellite orbits: the precise ephemeris of an analysis center (SP3/CLK, final or rapid products) or the broadcast ephemeris the receiver recorded (SBF, RINEX navigation files) | canvod-auxiliary |
 | Epoch | Observation time; each reader records its time scale | coordinate `epoch`, `epoch.attrs["time_system"]` |
 | Hemisphere grid | Cells of the sky seen from the receiver; equal-area is the default | canvod-grids |
 
@@ -209,6 +209,10 @@ The rules every change follows (free tools only, explicit over implicit,
 one implementation per job, composition over inheritance, deprecate don't
 delete, optional processing stays optional, write for scientists) are in
 `CODING_STANDARDS.md`, with their reasons in `docs/adr/`.
+
+Docs and deprecation messages name the version that brings a change; pick
+it as `docs/VERSIONING.md` ("Which version a change goes into") says, and
+ask the maintainers when unsure.
 
 ## Guardrails
 

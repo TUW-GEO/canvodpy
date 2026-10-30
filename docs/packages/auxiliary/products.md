@@ -43,8 +43,10 @@ carry the issue hour. The settings reject `product_type: ultra-rapid`.
 
 Systems: G GPS, R GLONASS, E Galileo, C BeiDou, J QZSS, read from the SP3
 header of 2026-09-01. A run drops the observations of satellites the product
-has no orbits for (warning `sids_dropped_no_ephemeris`, once per file), so those
-signals get no VOD: choose a product that covers the systems of your
+has no orbits for (warning `sids_dropped_no_ephemeris`, once per file, and
+[Satellites without a position](../../guides/diagnostics.md#satellites-without-a-position)
+per receiver-day), so those signals get no VOD: choose a product that
+covers the systems of your
 [signal selection](../../guides/configuration.md), or narrow the selection.
 
 | Code | Agency | Final | Rapid |

@@ -280,9 +280,10 @@ def _load_recipe(recipe_path: Path) -> Any:
     return NamingRecipe.load(recipe_path)
 
 
-#: File types each built-in reader format reads (``None``/``"auto"``: all of
-#: them); a reader plugin reads its reader's ``file_type``. RINEX 2 and 3
-#: share the canonical type ``rnx``; the header tells them apart.
+#: File types each built-in reader format reads (``None``/``"auto"``: all
+#: observation types); ``"nav"`` selects navigation files; a reader plugin
+#: reads its reader's ``file_type``. RINEX 2 and 3 share the canonical type
+#: ``rnx``; the header tells them apart.
 _READER_FILE_TYPES: dict[str | None, frozenset[str]] = {
     "sbf": frozenset({"sbf"}),
     "rinex3": frozenset({"rnx"}),
@@ -290,6 +291,7 @@ _READER_FILE_TYPES: dict[str | None, frozenset[str]] = {
     "rinex2": frozenset({"rnx"}),
     "rinex": frozenset({"rnx"}),
     "nmea": frozenset({"nmea"}),
+    "nav": frozenset({"nav"}),  # navigation files, never observations
 }
 _ALL_FILE_TYPES = frozenset({"rnx", "sbf", "nmea"})
 
@@ -835,7 +837,8 @@ def discover_files(
         Receiver, its directory, the day and its recipe.
     reader_format : str | None
         Receiver reader format (``"rinex3"``, ``"rinex"``, ``"sbf"``, or
-        ``None``/``"auto"`` for all recognized types). Ignored with a recipe,
+        ``None``/``"auto"`` for all observation types, ``"nav"`` for the
+        navigation files). Ignored with a recipe,
         whose ``file_type`` selects the files.
 
     Returns
@@ -846,6 +849,35 @@ def discover_files(
     """
     index = scan_directory(Path(day.directory), day.recipe).days
     return _of_format(index.get(day.yyyydoy, ()), reader_format, day.recipe)
+
+
+def navigation_files(
+    site: str,
+    receiver: str,
+    nav_directory: Path,
+    nav_recipe: str | None,
+    yyyydoy: str,
+) -> list[DiscoveredFile]:
+    """The RINEX navigation files of ``receiver`` for ``yyyydoy`` (ADR 0023).
+
+    Selected like :func:`discover_files`: by the receiver's ``nav_recipe``,
+    or, without one, by canonical canVOD names of type ``nav``.
+
+    Parameters
+    ----------
+    site : str
+        Site name in the settings file, which selects the recipe folder.
+    receiver : str
+        Receiver name in the site configuration.
+    nav_directory : Path
+        The receiver's ``nav_directory``, joined to the site data root.
+    nav_recipe : str | None
+        The receiver's ``nav_recipe`` setting.
+    yyyydoy : str
+        Day in ``YYYYDOY`` format.
+    """
+    day = ReceiverDay(receiver, nav_directory, yyyydoy, recipe_file(site, nav_recipe))
+    return discover_files(day, "nav")
 
 
 def files_per_day(files: list[DiscoveredFile]) -> int:
@@ -877,7 +909,8 @@ def unprocessed_files(
 
     These are the compressed files (:func:`is_compressed`), the files
     neither the recipe nor the naming convention recognizes, and the
-    recognized files of another file type than ``reader_format`` reads.
+    recognized files of another file type than ``reader_format`` reads,
+    except navigation files (type ``nav``).
 
     Parameters
     ----------
@@ -900,8 +933,13 @@ def unprocessed_files(
         for files in scan.days.values()
         for f in _of_format(files, reader_format, recipe)
     }
+    # Navigation files are read for the satellite positions (ADR 0023), so
+    # they are not files a run skips.
     other_type = sorted(
-        f.path for files in scan.days.values() for f in files if f.path not in read
+        f.path
+        for files in scan.days.values()
+        for f in files
+        if f.path not in read and not f.canonical_name.endswith(".nav")
     )
     return [*scan.compressed, *scan.unrecognized, *other_type]
 

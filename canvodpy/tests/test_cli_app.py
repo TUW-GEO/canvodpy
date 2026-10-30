@@ -124,6 +124,52 @@ class TestDeprecatedDaysPerBatch:
         assert "--days-per-batch" not in result.output
 
 
+class TestDeprecatedFinalEphemeris:
+    """``--ephemeris-source final`` is the old name of ``precise`` (ADR 0023)."""
+
+    def test_final_warns_and_the_run_uses_precise(self, monkeypatch):
+        import canvodpy.api
+
+        import canvod.config
+
+        loaded: list = []
+        real_load = canvod.config.load_config
+
+        def load(*args, **kwargs):
+            loaded.append(real_load(*args, **kwargs))
+            return loaded[-1]
+
+        class _Stop(Exception):
+            pass
+
+        class _Site:
+            def __init__(self, _name):
+                raise _Stop
+
+        monkeypatch.setattr(canvod.config, "load_config", load)
+        monkeypatch.setattr(canvodpy.api, "Site", _Site)
+        with pytest.warns(FutureWarning, match="'final'.*'precise'"):
+            runner.invoke(
+                main_app,
+                [
+                    "run",
+                    "--site",
+                    "fangorn",
+                    "--start",
+                    "2025001",
+                    "--ephemeris-source",
+                    "final",
+                ],
+            )
+
+        assert loaded[-1].processing.params.ephemeris_source == "precise"
+
+    def test_precise_is_a_choice_in_the_help(self):
+        result = runner.invoke(main_app, ["run", "--help"])
+
+        assert "precise" in result.output
+
+
 class TestHelpAll:
     def test_lists_every_command_and_option(self):
         result = runner.invoke(main_app, ["--help-all"], env={"COLUMNS": "100"})

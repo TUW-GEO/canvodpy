@@ -4,7 +4,8 @@ Auxiliary-data preprocessing pipelines.
 Composes the SID-space primitives from :mod:`canvod.readers.preprocessing`
 (sv->sid conversion, global SID padding, dtype/encoding normalization) into
 the two pipelines specific to auxiliary (SP3/CLK) data: preparing a dataset
-for Icechunk storage, and preparing one for interpolation.
+for Icechunk storage, and preparing one for interpolation. The shared aux
+cache keeps them once per satellite (:func:`sid_to_sv`, :func:`aux_for_sids`).
 
 The primitives themselves live in ``canvod-readers`` because they only
 depend on GNSS signal/constellation definitions (``canvod.readers.gnss_specs``),
@@ -130,3 +131,77 @@ def preprocess_aux_for_interpolation(
         return prep_aux_ds(aux_ds, fill_value, aggregate_glonass_fdma)
     else:
         return map_aux_sv_to_sid(aux_ds, fill_value, aggregate_glonass_fdma)
+
+
+def sid_to_sv(aux_ds: xr.Dataset) -> xr.Dataset:
+    """One value per satellite of a dataset on the ``sid`` dimension.
+
+    The inverse of :func:`map_aux_sv_to_sid`: orbits and clocks are values
+    of a satellite, which that function copies to each of its signals.
+    Interpolating them per satellite instead of per signal saves the
+    copies' work (#573).
+
+    Parameters
+    ----------
+    aux_ds : xr.Dataset
+        Dataset with a ``sid`` dimension whose signals of one satellite
+        hold the same values.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with an ``sv`` dimension instead of ``sid``; the signal
+        coordinates (band, code, frequencies) are dropped.
+
+    Raises
+    ------
+    ValueError
+        If two signals of a satellite hold different values.
+    """
+    svs = np.array([str(sid).split("|", 1)[0] for sid in aux_ds["sid"].values])
+    unique_svs, first, inverse = np.unique(svs, return_index=True, return_inverse=True)
+    signal_coords = [
+        name
+        for name, coord in aux_ds.coords.items()
+        if name != "sid" and "sid" in coord.dims
+    ]
+    per_sv = aux_ds.drop_vars(signal_coords).isel(sid=first)
+    for name, var in aux_ds.data_vars.items():
+        if "sid" in var.dims and not np.array_equal(
+            per_sv[name].isel(sid=inverse).values, var.values, equal_nan=True
+        ):
+            msg = (
+                f"The signals of a satellite hold different values of {name!r}, "
+                "so it cannot be stored once per satellite."
+            )
+            raise ValueError(msg)
+    return per_sv.rename({"sid": "sv"}).assign_coords(sv=unique_svs)
+
+
+def aux_for_sids(aux_ds: xr.Dataset, sids: list[str]) -> xr.Dataset:
+    """The auxiliary values of the signals ``sids``.
+
+    Parameters
+    ----------
+    aux_ds : xr.Dataset
+        Auxiliary data on the ``sid`` dimension, or once per satellite
+        (``sv`` dimension, see :func:`sid_to_sv`) with the signals they
+        hold in the coordinate ``sid``.
+    sids : list[str]
+        Signals to select; each must be in ``aux_ds["sid"]``.
+
+    Returns
+    -------
+    xr.Dataset
+        The values on the ``sid`` dimension, in the order of ``sids``; a
+        satellite's values are copied to each of its signals.
+    """
+    if "sv" not in aux_ds.dims:
+        return aux_ds.sel(sid=sids)
+    svs = [str(sid).split("|", 1)[0] for sid in sids]
+    return (
+        aux_ds.drop_vars("sid")
+        .sel(sv=svs)
+        .rename({"sv": "sid"})
+        .assign_coords(sid=np.array(sids, dtype=object))
+    )

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from pydantic import Field
+import warnings
+
+from pydantic import Field, model_validator
 
 from canvod.utils.tools import deprecated
 
-from .aux_data import AuxDataConfig
+from .aux_data import PRECISE_ONLY_SETTINGS, AuxDataConfig
 from .base import _StrictModel
 from .compression import IcechunkConfig, NetcdfCompressionConfig
 from .logging import LoggingConfig
@@ -63,6 +65,33 @@ class ProcessingConfig(_StrictModel):
         default_factory=ReferencesConfig,
         description="Publication and funding references",
     )
+
+    @model_validator(mode="after")
+    def _warn_product_with_broadcast(self) -> ProcessingConfig:
+        """Agency and product type set together with the broadcast ephemeris warn.
+
+        They apply only to the precise ephemeris; a broadcast store records
+        them as empty. Values other than the defaults count as set: the
+        package defaults and the settings template both write the defaults.
+        """
+        if self.params.ephemeris_source != "broadcast":
+            return self
+        fields = AuxDataConfig.model_fields
+        named = [
+            name
+            for name in PRECISE_ONLY_SETTINGS
+            if getattr(self.aux_data, name) != fields[name].default
+        ]
+        if named:
+            warnings.warn(
+                f"ephemeris_source 'broadcast' ignores {', '.join(named)} "
+                "(processing.aux_data): they apply only to the precise "
+                "ephemeris, and the store records them as empty. Remove them "
+                "from your settings.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return self
 
     @property
     @deprecated(

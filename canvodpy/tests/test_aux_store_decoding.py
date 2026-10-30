@@ -68,7 +68,11 @@ class _FakeReader:
         rng = np.random.default_rng(42)
         ds = xr.Dataset(
             {"SNR": (("epoch", "sid"), rng.uniform(30, 50, CLOCK.shape))},
-            coords={"epoch": EPOCHS, "sid": SIDS},
+            coords={
+                "epoch": EPOCHS,
+                "sid": SIDS,
+                "sv": ("sid", [s.split("|")[0] for s in SIDS]),
+            },
         )
         return ds, {}
 

@@ -317,6 +317,7 @@ def test_a_run_history_of_schema_version_1_gets_the_file_index(tmp_path, monkeyp
 
 
 URL = "https://raw.githubusercontent.com/the-inklings/red-book/main/recipes/x.yaml"
+NAV_URL = URL.replace("x.yaml", "x_nav.yaml")
 
 
 def test_settings_and_problems_keep_only_the_file_name_of_a_url(tmp_path):
@@ -326,7 +327,13 @@ def test_settings_and_problems_keep_only_the_file_name_of_a_url(tmp_path):
             rid,
             site=SITE_KEY,
             settings={
-                "sites": {SITE_KEY: {"receivers": {"c": {"recipe": URL}}}},
+                "sites": {
+                    SITE_KEY: {
+                        "receivers": {
+                            "c": {"recipe": URL, "nav_recipe": NAV_URL},
+                        },
+                    },
+                },
                 "processing": {"metadata": {"website": "https://example.org/fan"}},
             },
             canvodpy_version="1.0.0",
@@ -338,7 +345,9 @@ def test_settings_and_problems_keep_only_the_file_name_of_a_url(tmp_path):
         history.end_run(rid, "failed", error=f"Recipe not found: {URL}.")
         run = history.run(rid)
         (problem,) = history.problems(rid)
-    assert run.settings["sites"][SITE_KEY]["receivers"]["c"]["recipe"] == "x.yaml"
+    receiver = run.settings["sites"][SITE_KEY]["receivers"]["c"]
+    assert receiver["recipe"] == "x.yaml"
+    assert receiver["nav_recipe"] == "x_nav.yaml"
     # Other links of the settings stay.
     assert run.settings["processing"]["metadata"]["website"] == (
         "https://example.org/fan"

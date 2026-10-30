@@ -538,7 +538,7 @@ theta = sbf_obs["broadcast_theta"].where(from_ephemeris)  # polar angle (rad)
 phi = sbf_obs["broadcast_phi"].where(from_ephemeris)  # geographic azimuth (rad)
 ```
 
-!!! tip "When to use broadcast vs agency final"
+!!! tip "When to use the broadcast or the precise ephemeris"
 
     The receiver reports the angles in steps of $0.01^\circ$. Almanac-based angles
     are not used: on the 2025-001 test data they differed from the

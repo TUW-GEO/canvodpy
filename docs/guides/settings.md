@@ -155,14 +155,14 @@ The orbit and clock products to download
 
 #### `processing.aux_data.agency` {#processing-aux_data-agency}
 
-Analysis center code
+Analysis center code. Only for the precise ephemeris: with `ephemeris_source` broadcast it is ignored (a value other than the default warns), and the store records it as empty.
 
 - Type: text
 - Default: `COD`
 
 #### `processing.aux_data.product_type` {#processing-aux_data-product_type}
 
-Product type. The agency must publish it: see the product registry of canvod-auxiliary (`products.toml`).
+Product type. The agency must publish it: see the product registry of canvod-auxiliary (`products.toml`). Only for the precise ephemeris: with `ephemeris_source` broadcast it is ignored (a value other than the default warns), and the store records it as empty.
 
 - Type: one of `final`, `rapid`
 - Default: `final`
@@ -313,10 +313,10 @@ Threads per worker process; null lets the scheduler decide. More than 1 helps ar
 
 #### `processing.params.ephemeris_source` {#processing-params-ephemeris_source}
 
-`final`: compute satellite coordinates from agency final products (SP3/CLK). `broadcast`: use broadcast ephemerides from SBF SatVisibility blocks (SBF `reader_format` only, skips SP3/CLK download). Broadcast is faster but less accurate (~1-2 m orbit).
+`precise`: compute satellite coordinates from the precise ephemeris of an analysis center (SP3/CLK products; agency and product type under `aux_data`). `broadcast`: use the broadcast ephemeris the receiver recorded: the SatVisibility angles of SBF files, or for RINEX files the receiver's navigation files (`nav_directory`); no SP3/CLK download. `final` is a deprecated name for `precise`.
 
-- Type: one of `final`, `broadcast`
-- Default: `final`
+- Type: one of `precise`, `broadcast`
+- Default: `precise`
 
 #### `processing.params.store_sbf_raw_observables` {#processing-params-store_sbf_raw_observables}
 
@@ -573,7 +573,7 @@ Directory for downloaded auxiliary files (SP3, CLK) and transient Zarr caches. R
 
 #### `processing.storage.shared_aux_cache_dir` {#processing-storage-shared_aux_cache_dir}
 
-Folder of an orbit and clock cache that several sites share (SP3 and CLK, interpolated). null (default): no shared cache; each site's cache is in `aux_data_dir` and rebuilt every run. Orbit and clock products are the same for every site, so sites that point at the same folder share one cache entry per agency, product and date instead of each building its own.
+Folder of an orbit and clock cache that several sites share (SP3 and CLK, interpolated). null (default): no shared cache; each site's cache is in `aux_data_dir` and rebuilt every run. Orbit and clock products are the same for every site, so sites that point at the same folder share one cache entry per agency, product and date instead of each building its own. With `ephemeris_source` broadcast the orbits of the navigation files are cached there too, one entry per date and content of the navigation files: receivers with the same files share it, and a changed or added file gives a new one.
 
 - Type: path, or null
 - Default: `null`
@@ -1028,6 +1028,20 @@ Reader for the receiver's files: `rinex3` (RINEX 3), `rinex3_stripped` (RINEX 3 
 
 - Type: text
 - Default: `auto`
+
+#### `sites.<site>.receivers.<receiver>.nav_directory` {#sites-site-receivers-receiver-nav_directory}
+
+Subdirectory for the receiver's RINEX navigation files, relative to the site data root like `directory` (it may be the same folder). Needed with `ephemeris_source` broadcast for a receiver with RINEX files: the satellite positions come from these files. In shared-position mode a reference receiver uses its canopy's files instead: it needs none, and its own are not read. They need canonical names of type `nav`, or a `nav_recipe`.
+
+- Type: text, or null
+- Default: `null`
+
+#### `sites.<site>.receivers.<receiver>.nav_recipe` {#sites-site-receivers-receiver-nav_recipe}
+
+Naming recipe of the files in `nav_directory`, given like `recipe` (a name or a raw GitHub URL), with `file_type` `nav`. Without it, only navigation files with canonical canVOD names are read.
+
+- Type: text, or null
+- Default: `null`
 
 #### `sites.<site>.receivers.<receiver>.recipe` {#sites-site-receivers-receiver-recipe}
 

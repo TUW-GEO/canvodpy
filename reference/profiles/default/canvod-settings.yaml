@@ -27,7 +27,7 @@ processing:
     aggregate_glonass_fdma: true
     receiver_position_mode: shared
     file_pairing: complete
-    ephemeris_source: final
+    ephemeris_source: precise
     resource_mode: auto
   storage:
     gnss_store_strategy: skip

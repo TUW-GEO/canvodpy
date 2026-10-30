@@ -13,10 +13,12 @@ Convention::
     DOY         3-digit day of year (001-366)
     HHMM        Start time, hours + minutes
     PERIOD      Batch size: 2-digit value + unit      (e.g. 01D, 15M, 01H)
-    SAMPLING    Data frequency: 2-digit value + unit  (e.g. 01S, 05S, 05M)
+    SAMPLING    Data frequency: 2-digit value + unit  (e.g. 01S, 05S, 05M);
+                00U (unspecified) for navigation files, as in RINEX
+                file names (RINEX 4.00, Table A1)
     CONTENT     2-char user field, filled as needed; default 'AA'
-    TYPE        File type, lowercase                  (rnx, sbf, ubx, nmea, or
-                the type of an installed reader plugin)
+    TYPE        File type, lowercase                  (rnx, sbf, ubx, nmea, nav,
+                or the type of an installed reader plugin)
     COMPRESSION Optional compression extension        (zip, gz, bz2, zst, ...)
 
 Examples::
@@ -24,6 +26,7 @@ Examples::
     ORTA01MEA_R_20250010000_01D_01S_AA.rnx.zip
     FANR01INK_R_20250010000_01D_05S_AA.rnx
     FANR35INK_R_20232221530_15M_05S_AA.sbf
+    FANA01INK_R_20250010000_15M_00U_AA.nav
 """
 
 from __future__ import annotations
@@ -34,7 +37,13 @@ from datetime import datetime, timedelta
 from enum import StrEnum
 from typing import Annotated, Self
 
-from pydantic import ConfigDict, Field, StringConstraints, field_validator
+from pydantic import (
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 from pydantic.dataclasses import dataclass
 
 # -- Constrained string types ------------------------------------------------
@@ -52,6 +61,17 @@ AgencyId = Annotated[
 Duration = Annotated[
     str,
     StringConstraints(to_upper=True, strip_whitespace=True, pattern=r"^\d{2}[SMHD]$"),
+]
+
+#: Sampling of a navigation file: unspecified data frequency
+#: (RINEX 4.00, Table A1, unit U).
+UNSPECIFIED_SAMPLING = "00U"
+
+Sampling = Annotated[
+    str,
+    StringConstraints(
+        to_upper=True, strip_whitespace=True, pattern=r"^(\d{2}[SMHD]|00U)$"
+    ),
 ]
 
 ContentCode = Annotated[
@@ -76,6 +96,8 @@ class FileType(StrEnum):
     SBF = "sbf"
     UBX = "ubx"
     NMEA = "nmea"
+    NAV = "nav"
+    """Broadcast navigation data (RINEX navigation file)."""
 
 
 _FILE_TYPE_RE = re.compile(r"^[a-z][a-z0-9]{1,7}$")
@@ -126,7 +148,7 @@ _FILENAME_RE = re.compile(
     r"_R"
     r"_(?P<year>\d{4})(?P<doy>\d{3})(?P<hour>\d{2})(?P<minute>\d{2})"
     r"_(?P<period>\d{2}[SMHD])"
-    r"_(?P<sampling>\d{2}[SMHD])"
+    r"_(?P<sampling>\d{2}[SMHD]|00U)"
     r"_(?P<content>[A-Z0-9]{2})"
     r"\.(?P<file_type>[a-z][a-z0-9]{1,7})"
     r"(?:\.(?P<compression>[a-z0-9]+))?$"
@@ -160,7 +182,7 @@ class CanVODFilename:
     hour: Annotated[int, Field(ge=0, le=23)] = 0
     minute: Annotated[int, Field(ge=0, le=59)] = 0
     period: Duration = "01D"
-    sampling: Duration = "05S"
+    sampling: Sampling = "05S"
     content: ContentCode = "AA"
     file_type: str = FileType.RNX.value
     compression: str | None = None
@@ -187,11 +209,34 @@ class CanVODFilename:
                 return None
         return v
 
+    @model_validator(mode="after")
+    def _validate_nav_sampling(self) -> Self:
+        is_nav = self.file_type == FileType.NAV.value
+        if is_nav and self.sampling != UNSPECIFIED_SAMPLING:
+            raise ValueError(
+                f"Navigation files (type nav) have sampling {UNSPECIFIED_SAMPLING} "
+                f"(unspecified, RINEX 4.00 Table A1), not {self.sampling}"
+            )
+        if not is_nav and self.sampling == UNSPECIFIED_SAMPLING:
+            raise ValueError(
+                f"Sampling {UNSPECIFIED_SAMPLING} (unspecified) is only for "
+                f"navigation files (type nav), not type {self.file_type}"
+            )
+        return self
+
     # -- Computed properties --------------------------------------------------
 
     @property
     def sampling_interval(self) -> timedelta:
-        """Sampling frequency as a timedelta."""
+        """Sampling frequency as a timedelta.
+
+        Raises
+        ------
+        ValueError
+            For a navigation file, whose sampling is unspecified.
+        """
+        if self.sampling == UNSPECIFIED_SAMPLING:
+            raise ValueError(f"{self.name} has no sampling interval (00U)")
         return _duration_to_timedelta(self.sampling)
 
     @property
