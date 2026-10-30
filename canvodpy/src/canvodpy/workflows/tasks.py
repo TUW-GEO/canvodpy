@@ -224,7 +224,9 @@ def check_day(site: str, yyyydoy: str) -> dict:
     ------
     RuntimeError
         If files are missing for any receiver (stops the DAG run so Airflow
-        can retry later).
+        can retry later). With ``ephemeris_source: broadcast`` this includes
+        the navigation files of a receiver with RINEX files, which a run
+        needs for the satellite positions.
     DiscoveryError
         If the receivers' files cannot be assigned unambiguously, e.g. two
         files cover the same time. Retrying does not help; the data
@@ -264,6 +266,14 @@ def _check_files(site: str, yyyydoy: str, reader_format: str | None, kind: str) 
         )
         logger.warning(msg)
         raise RuntimeError(msg)
+    nav_missing = _missing_navigation(config, site, site_cfg, date_obj, day_files)
+    if nav_missing:
+        msg = (
+            f"Navigation files not yet available for {site} {date_obj.to_str()}: "
+            f"missing receivers {nav_missing}"
+        )
+        logger.warning(msg)
+        raise RuntimeError(msg)
 
     logger.info(
         "check_%s: %s %s, all receivers ready",
@@ -277,6 +287,65 @@ def _check_files(site: str, yyyydoy: str, reader_format: str | None, kind: str) 
         "ready": True,
         "receivers": receivers,
     }
+
+
+def _missing_navigation(
+    config: Any,
+    site: str,
+    site_cfg: Any,
+    date_obj: YYYYDOY,
+    day_files: dict[str, list[DiscoveredFile]],
+) -> list[str]:
+    """Receivers whose RINEX day has no navigation files, as a run needs them.
+
+    Only with ``ephemeris_source: broadcast``: a receiver with RINEX files
+    takes the satellite positions from its navigation files (ADR 0023). In
+    shared-position mode a reference receiver uses its canopy's files, so
+    only the canopy is checked. Receivers without files of the day are left
+    to the caller.
+
+    Raises
+    ------
+    ValueError
+        If a receiver with RINEX files has no ``nav_directory``; retrying
+        does not help.
+    """
+    from canvod.config.models.sites import RINEX_READER_FORMATS
+    from canvodpy.orchestrator.discovery import (
+        detect_reader_format,
+        navigation_files,
+    )
+
+    params = config.processing.params
+    if params.ephemeris_source != "broadcast":
+        return []
+    shared = params.receiver_position_mode == "shared"
+    missing = []
+    for name, rcfg in site_cfg.receivers.items():
+        files = day_files[name]
+        if not files or (shared and rcfg.type == "reference"):
+            continue
+        reader_format = rcfg.reader_format
+        if reader_format == "auto":
+            reader_format = detect_reader_format(files)
+        if reader_format not in RINEX_READER_FORMATS:
+            continue
+        if rcfg.nav_directory is None:
+            msg = (
+                f"Receiver {name} has RINEX files and ephemeris_source "
+                "'broadcast', but no nav_directory: set the folder of its "
+                "RINEX navigation files."
+            )
+            raise ValueError(msg)
+        if not navigation_files(
+            site,
+            name,
+            site_cfg.get_base_path() / rcfg.nav_directory,
+            rcfg.nav_recipe,
+            date_obj.to_str(),
+        ):
+            missing.append(name)
+    return missing
 
 
 @deprecated(
