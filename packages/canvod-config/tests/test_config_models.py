@@ -1074,3 +1074,16 @@ class TestNavDirectory:
     def test_broadcast_nmea_receiver_is_refused(self):
         with pytest.raises(ValidationError, match=r"s\.c, s\.r.*nmea.*precise"):
             self._config("broadcast", "nmea")
+
+    def test_nav_recipe_without_nav_directory_is_refused(self):
+        with pytest.raises(ValidationError, match="set nav_directory as well"):
+            ReceiverConfig(type="canopy", directory="c", nav_recipe="fangorn_nav")
+
+    def test_nav_recipe_with_nav_directory(self):
+        rc = ReceiverConfig(
+            type="canopy",
+            directory="c",
+            nav_directory="c_nav",
+            nav_recipe="fangorn_nav",
+        )
+        assert rc.nav_recipe == "fangorn_nav"

@@ -190,6 +190,77 @@ class TestCheckDay:
                 check_day("TestSite", "2025001")
 
 
+class TestCheckDayNavigation:
+    """With the broadcast ephemeris, check_day waits for the navigation files
+    a run of RINEX files needs (ADR 0023)."""
+
+    @pytest.fixture()
+    def broadcast_site(self, tmp_path):
+        for directory, name in (("canopy", CANOPY_RNX), ("reference", REFERENCE_RNX)):
+            (tmp_path / directory).mkdir()
+            (tmp_path / directory / name).touch()
+            (tmp_path / f"{directory}_nav").mkdir()
+        config = _site_config(tmp_path)
+        config.processing.params.ephemeris_source = "broadcast"
+        config.processing.params.receiver_position_mode = "per_receiver"
+        receivers = config.sites.sites["TestSite"].receivers
+        for name, directory in (("canopy_01", "canopy"), ("reference_01", "reference")):
+            receivers[name].reader_format = "rinex3"
+            receivers[name].nav_directory = f"{directory}_nav"
+        return config
+
+    @staticmethod
+    def _add_nav(config, directory: str, identity: str) -> None:
+        base = config.sites.sites["TestSite"].get_base_path()
+        (base / f"{directory}_nav" / f"{identity}_R_20250010000_15M_00U_AA.nav").touch()
+
+    def test_missing_navigation_files_raise(self, broadcast_site):
+        self._add_nav(broadcast_site, "reference", "FANR01INK")
+        with patch("canvodpy.workflows.tasks.load_config", return_value=broadcast_site):
+            with pytest.raises(
+                RuntimeError,
+                match=r"Navigation files not yet available.*\['canopy_01'\]",
+            ):
+                check_day("TestSite", "2025001")
+
+    def test_navigation_files_present(self, broadcast_site):
+        self._add_nav(broadcast_site, "canopy", "FANA01INK")
+        self._add_nav(broadcast_site, "reference", "FANR01INK")
+        with patch("canvodpy.workflows.tasks.load_config", return_value=broadcast_site):
+            assert check_day("TestSite", "2025001")["ready"] is True
+
+    def test_shared_position_checks_only_the_canopy(self, broadcast_site):
+        # The reference takes the angles from its canopy's navigation files
+        broadcast_site.processing.params.receiver_position_mode = "shared"
+        self._add_nav(broadcast_site, "canopy", "FANA01INK")
+        with patch("canvodpy.workflows.tasks.load_config", return_value=broadcast_site):
+            assert check_day("TestSite", "2025001")["ready"] is True
+
+    def test_precise_ephemeris_needs_no_navigation_files(self, broadcast_site):
+        broadcast_site.processing.params.ephemeris_source = "precise"
+        with patch("canvodpy.workflows.tasks.load_config", return_value=broadcast_site):
+            assert check_day("TestSite", "2025001")["ready"] is True
+
+    def test_sbf_receivers_need_no_navigation_files(self, tmp_path):
+        for directory, name in (("canopy", CANOPY_RNX), ("reference", REFERENCE_RNX)):
+            (tmp_path / directory).mkdir()
+            (tmp_path / directory / name.replace(".rnx", ".sbf")).touch()
+        config = _site_config(tmp_path)
+        config.processing.params.ephemeris_source = "broadcast"
+        config.processing.params.receiver_position_mode = "per_receiver"
+        for receiver in config.sites.sites["TestSite"].receivers.values():
+            receiver.reader_format = "sbf"
+        with patch("canvodpy.workflows.tasks.load_config", return_value=config):
+            assert check_day("TestSite", "2025001")["ready"] is True
+
+    def test_rinex_receiver_without_nav_directory_is_an_error(self, broadcast_site):
+        receiver = broadcast_site.sites.sites["TestSite"].receivers["canopy_01"]
+        receiver.nav_directory = None
+        with patch("canvodpy.workflows.tasks.load_config", return_value=broadcast_site):
+            with pytest.raises(ValueError, match=r"canopy_01.*no nav_directory"):
+                check_day("TestSite", "2025001")
+
+
 @pytest.mark.filterwarnings("ignore:`check_sbf` is left over:FutureWarning")
 class TestCheckSbf:
     """Test check_sbf (deprecated) with mock config and filesystem."""

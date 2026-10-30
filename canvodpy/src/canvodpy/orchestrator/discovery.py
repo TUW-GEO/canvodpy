@@ -851,6 +851,35 @@ def discover_files(
     return _of_format(index.get(day.yyyydoy, ()), reader_format, day.recipe)
 
 
+def navigation_files(
+    site: str,
+    receiver: str,
+    nav_directory: Path,
+    nav_recipe: str | None,
+    yyyydoy: str,
+) -> list[DiscoveredFile]:
+    """The RINEX navigation files of ``receiver`` for ``yyyydoy`` (ADR 0023).
+
+    Selected like :func:`discover_files`: by the receiver's ``nav_recipe``,
+    or, without one, by canonical canVOD names of type ``nav``.
+
+    Parameters
+    ----------
+    site : str
+        Site name in the settings file, which selects the recipe folder.
+    receiver : str
+        Receiver name in the site configuration.
+    nav_directory : Path
+        The receiver's ``nav_directory``, joined to the site data root.
+    nav_recipe : str | None
+        The receiver's ``nav_recipe`` setting.
+    yyyydoy : str
+        Day in ``YYYYDOY`` format.
+    """
+    day = ReceiverDay(receiver, nav_directory, yyyydoy, recipe_file(site, nav_recipe))
+    return discover_files(day, "nav")
+
+
 def files_per_day(files: list[DiscoveredFile]) -> int:
     """How many files a whole day has at the file length of ``files``.
 

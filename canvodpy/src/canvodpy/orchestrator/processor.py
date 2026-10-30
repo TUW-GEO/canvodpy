@@ -99,6 +99,7 @@ from canvodpy.orchestrator.discovery import (
     ReceiverDay,
     canonical_name_for,
     discover_files,
+    navigation_files,
     parse_sampling_interval_from_filename,
     recipe_file,
 )
@@ -2173,7 +2174,8 @@ class RinexDataProcessor:
             return cached
 
         site_config = self._get_site_config()
-        nav_directory = site_config.receivers[receiver].nav_directory
+        receiver_config = site_config.receivers[receiver]
+        nav_directory = receiver_config.nav_directory
         if nav_directory is None:
             raise MissingNavigationFilesError(
                 f"Receiver {receiver} has RINEX files and ephemeris_source "
@@ -2183,14 +2185,25 @@ class RinexDataProcessor:
         nav_dir = site_config.get_base_path() / nav_directory
         nav_files = [
             f.path
-            for f in discover_files(ReceiverDay(receiver, nav_dir, date_str), "nav")
+            for f in navigation_files(
+                self.site.site_name,
+                receiver,
+                nav_dir,
+                receiver_config.nav_recipe,
+                date_str,
+            )
         ]
         if not nav_files:
+            named_by = (
+                f"its nav_recipe '{receiver_config.nav_recipe}' finds none"
+                if receiver_config.nav_recipe
+                else "they need canonical names of type nav, e.g. "
+                f"..._{date_str}0000_01D_00U_AA.nav, or a nav_recipe"
+            )
             raise MissingNavigationFilesError(
                 f"No navigation files of receiver {receiver} for {date_str} in "
                 f"{nav_dir}. ephemeris_source 'broadcast' takes the satellite "
-                "positions from them; they need canonical names of type nav, "
-                f"e.g. ..._{date_str}0000_01D_00U_AA.nav."
+                f"positions from them; {named_by}."
             )
         day_start = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
         aggregate_glonass_fdma = self._config.processing.params.aggregate_glonass_fdma
