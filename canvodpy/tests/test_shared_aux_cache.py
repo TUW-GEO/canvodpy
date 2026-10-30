@@ -133,3 +133,33 @@ def test_second_miss_after_a_successful_populate_is_a_hit(tmp_path: Path) -> Non
 
     fake_self._preprocess_aux_data_with_hermite.assert_called_once()
     assert (cache_root / FINGERPRINT / "2025213").exists()
+
+
+@pytest.mark.parametrize(
+    ("shared_cache", "expected"),
+    [(True, None), (False, ["G01|L1|C"])],
+    ids=["shared cache: all signals", "no shared cache: the site's"],
+)
+def test_the_orbits_for_the_shared_cache_keep_all_signals(
+    tmp_path: Path, shared_cache: bool, expected: list[str] | None
+) -> None:
+    # The entry's fingerprint leaves keep_sids out, so a site keeping more
+    # signals reuses it: it must hold every signal, not the first site's
+    fake_self = _fake_self(tmp_path)
+    fake_self._config.processing.storage.get_shared_aux_cache_dir.return_value = (
+        tmp_path / "shared" if shared_cache else None
+    )
+    fake_self.keep_sids = ["G01|L1|C"]
+    fake_self.aux_file_path = tmp_path
+    fake_self._agency = "COD"
+    fake_self._product_type = "final"
+    fake_self._ftp_server = None
+    fake_self.matched_data_dirs = mock.MagicMock()
+    fake_self.matched_data_dirs.yyyydoy.to_str.return_value = "2025213"
+
+    with mock.patch(
+        "canvodpy.orchestrator.processor.AuxDataPipeline.create_standard"
+    ) as create_standard:
+        RinexDataProcessor._initialize_aux_pipeline(fake_self)
+
+    assert create_standard.call_args.kwargs["keep_sids"] == expected

@@ -1367,7 +1367,15 @@ class RinexDataProcessor:
                 product_type=self._product_type,
                 ftp_server=self._ftp_server,
                 user_email=user_email,
-                keep_sids=self.keep_sids,
+                # All signals for the shared cache: its entry is shared by
+                # sites that keep other signals, and its fingerprint leaves
+                # keep_sids out. Every reader keeps its own (step 2 of
+                # preprocess_with_hermite_aux).
+                keep_sids=(
+                    None
+                    if config.processing.storage.get_shared_aux_cache_dir() is not None
+                    else self.keep_sids
+                ),
                 aggregate_glonass_fdma=config.processing.params.aggregate_glonass_fdma,
             )
             t2 = time.perf_counter()
