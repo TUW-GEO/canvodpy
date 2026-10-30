@@ -54,6 +54,7 @@ from canvod.auxiliary.position import (
     add_spherical_coords_to_dataset,
     compute_spherical_coordinates,
 )
+from canvod.auxiliary.preprocessing import aux_for_sids, sid_to_sv
 from canvod.auxiliary.products import check_product
 from canvod.config import CanvodConfig, load_config
 from canvod.config.models import (
@@ -466,7 +467,7 @@ def _preprocess_file(
             rinex_only = rinex_sids - aux_sids
             aux_only = aux_sids - rinex_sids
             ds = ds.sel(sid=common_sids)
-            aux_slice = aux_slice.sel(sid=common_sids)
+            aux_slice = aux_for_sids(aux_slice, common_sids)
             t_sid = time.perf_counter()
 
             log.debug(
@@ -1434,6 +1435,7 @@ class RinexDataProcessor:
         group: str | None = None,
         grid_seconds: float | None = None,
         ephem_ds: xr.Dataset | None = None,
+        per_satellite: bool = False,
     ) -> float:
         """Preprocess auxiliary data using proper interpolation strategies.
 
@@ -1454,6 +1456,11 @@ class RinexDataProcessor:
             for the cache entry to be safely shared across sites with
             different sampling rates. ``sampling_interval`` is still
             detected and returned either way.
+        per_satellite : bool
+            Interpolate and write the orbits and clocks once per satellite
+            (``sv`` dimension, with the signals in the coordinate ``sid``)
+            instead of once per signal. For the shared cache (#573), which
+            holds all signals: a satellite has about 16 of them.
         """
         t0 = time.perf_counter()
         self._logger.info(
@@ -1537,7 +1544,18 @@ class RinexDataProcessor:
                 else None
             )
         t2 = time.perf_counter()
+        if per_satellite:
+            sids = sorted(
+                set(ephem_ds["sid"].values)
+                | (set() if clock_ds is None else set(clock_ds["sid"].values))
+            )
+            ephem_ds = sid_to_sv(ephem_ds)
+            clock_ds = None if clock_ds is None else sid_to_sv(clock_ds)
         aux_processed = interpolate_aux_day(ephem_ds, clock_ds, target_epochs)
+        if per_satellite:
+            aux_processed = aux_processed.assign_coords(
+                sid=("sid", np.array(sids, dtype=object))
+            )
         t3 = time.perf_counter()
         self._logger.info(
             "aux_interpolation_complete",
@@ -1892,8 +1910,9 @@ class RinexDataProcessor:
                 common_sids = sorted(
                     set(ds_no_scs.sid.values) & set(aux_store.sid.values)
                 )
-                aux_slice = aux_store.sel(epoch=ds_no_scs.epoch, method="nearest").sel(
-                    sid=common_sids
+                aux_slice = aux_for_sids(
+                    aux_store.sel(epoch=ds_no_scs.epoch, method="nearest"),
+                    common_sids,
                 )
                 ds_recomputed = _compute_spherical_coords_fast(
                     ds_no_scs, aux_slice, receiver_position
@@ -2140,6 +2159,7 @@ class RinexDataProcessor:
                     reader_format=reader_format,
                     group=group,
                     grid_seconds=CANONICAL_AUX_GRID_SECONDS,
+                    per_satellite=True,
                     # All signals: every reader keeps its own (step 2 of
                     # preprocess_with_hermite_aux)
                     ephem_ds=broadcast_ephemerides(
@@ -2223,6 +2243,7 @@ class RinexDataProcessor:
                 reader_format=reader_format,
                 group=group,
                 grid_seconds=CANONICAL_AUX_GRID_SECONDS,
+                per_satellite=True,
             ),
         )
 

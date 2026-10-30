@@ -107,7 +107,8 @@ were set; runs still write to it, since broadcast stores do not compare them.
    observations (1 s with a shared aux cache), in GPS time like the SP3 file
 3. Hermite interpolation: SP3 positions → epoch grid
 4. Clock piecewise linear interpolation (skipped if fetch_clock=False)
-5. Write Zarr cache: 00_aux_zarr/aux_{date}.zarr
+5. Write Zarr cache: 00_aux_zarr/aux_{date}.zarr; with a shared aux cache an
+   entry of aux_cache.zarr, one value per satellite for all its signals
 6. Per file: open Zarr → nearest grid epoch per observation epoch
    → compute_spherical_coordinates()
 7. Output: ds["theta"], ds["phi"], ds["r"]

@@ -223,9 +223,17 @@ def _cache_entries(cache: Path) -> set[str]:
     return {p.name for p in (cache / "aux_cache.zarr").iterdir() if p.is_dir()}
 
 
+def _cheap_cache_grid(monkeypatch) -> None:
+    """The cache grid at the files' 5 s instead of 1 s: a fifth of the work."""
+    from canvodpy.orchestrator import processor
+
+    monkeypatch.setattr(processor, "CANONICAL_AUX_GRID_SECONDS", 5.0)
+
+
 def test_a_rerun_reuses_the_cached_orbits(tmp_path, monkeypatch):
     cache = tmp_path / "cache"
     stores = _settings(tmp_path, monkeypatch, shared_cache=cache)
+    _cheap_cache_grid(monkeypatch)
     computed = _count_orbit_computations(monkeypatch)
 
     result = _run()
@@ -236,6 +244,13 @@ def test_a_rerun_reuses_the_cached_orbits(tmp_path, monkeypatch):
     assert len(computed) == 2
     entries = _cache_entries(cache)
     assert len(entries) == 2
+    # Once per satellite, with the signals they hold
+    for entry in entries:
+        cached = xr.open_zarr(
+            cache / "aux_cache.zarr", group=f"{entry}/{DAY}", consolidated=False
+        )
+        assert cached["X"].dims == ("epoch", "sv")
+        assert cached.sizes["sid"] > cached.sizes["sv"]
     gnss = MyIcechunkStore(stores / "gnss", store_type="gnss_store")
     theta = gnss.read_group("canopy_01", drop_empty=True)["theta"].load()
 
@@ -255,6 +270,7 @@ def test_a_rerun_reuses_the_cached_orbits(tmp_path, monkeypatch):
 def test_a_changed_navigation_file_gives_a_new_cache_entry(tmp_path, monkeypatch):
     cache = tmp_path / "cache"
     stores = _settings(tmp_path, monkeypatch, shared_cache=cache)
+    _cheap_cache_grid(monkeypatch)
     computed = _count_orbit_computations(monkeypatch)
     assert _run().exit_code == 0
     entries = _cache_entries(cache)

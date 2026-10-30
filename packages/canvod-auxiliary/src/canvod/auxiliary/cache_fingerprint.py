@@ -26,7 +26,8 @@ CANONICAL_AUX_GRID_SECONDS = 1.0
 # Version of the cached content. Bump it when the computed values change for
 # the same input files, so entries written by older code are not reused.
 # 2: CLK clock bias read in seconds (was divided by 1e6).
-AUX_CACHE_FORMAT_VERSION = 2
+# 3: one entry per satellite (sv), not per signal (#573).
+AUX_CACHE_FORMAT_VERSION = 3
 
 
 def compute_aux_cache_fingerprint(
