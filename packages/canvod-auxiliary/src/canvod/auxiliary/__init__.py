@@ -68,8 +68,10 @@ from canvod.auxiliary.position import (
 
 # Preprocessing
 from canvod.auxiliary.preprocessing import (
+    aux_for_sids,
     prep_aux_ds,
     preprocess_aux_for_interpolation,
+    sid_to_sv,
 )
 
 # Product registry
@@ -123,6 +125,7 @@ __all__ = [
     "Sp3InterpolationStrategy",
     "add_future_datavars",
     "add_spherical_coords_to_dataset",
+    "aux_for_sids",
     "compute_aux_cache_fingerprint",
     "compute_broadcast_cache_fingerprint",
     "compute_spherical_coordinates",
@@ -140,5 +143,6 @@ __all__ = [
     "prep_aux_ds",
     # Preprocessing
     "preprocess_aux_for_interpolation",
+    "sid_to_sv",
     "strip_fillvalue",
 ]

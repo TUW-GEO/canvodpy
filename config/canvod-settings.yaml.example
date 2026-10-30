@@ -252,6 +252,8 @@ processing:
     # cache entry per (agency, product, date) instead of each site rebuilding
     # it independently; ephemeris products are satellite-based, not
     # site-based, so this is safe across sites with different sampling rates.
+    # With ephemeris_source broadcast it also caches the orbits of the
+    # navigation files, one entry per date and content of those files.
     # https://canvodpy.eu/guides/settings/#processing-storage-shared_aux_cache_dir
     # shared_aux_cache_dir: /path/to/shared/aux_cache
 

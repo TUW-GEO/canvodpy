@@ -9,11 +9,15 @@ auxiliary-specific, and living here made canvod-readers depend on
 canvod-auxiliary, which already depends on canvod-readers.
 """
 
+import numpy as np
+import pytest
 import xarray as xr
 
 from canvod.auxiliary.preprocessing import (
+    aux_for_sids,
     prep_aux_ds,
     preprocess_aux_for_interpolation,
+    sid_to_sv,
 )
 
 
@@ -120,3 +124,52 @@ class TestPreprocessingIntegration:
         # Some overlap expected
         overlap = preprocessed_sids & rinex_sids
         assert len(overlap) > 0
+
+
+class TestPerSatellite:
+    """sid_to_sv and aux_for_sids: the shared cache's per-satellite entries."""
+
+    def test_a_satellite_keeps_one_value(self, sample_sp3_data):
+        per_sid = prep_aux_ds(sample_sp3_data)
+
+        per_sv = sid_to_sv(per_sid)
+
+        assert "sid" not in per_sv.sizes
+        svs = {str(sid).split("|", 1)[0] for sid in per_sid.sid.values}
+        assert set(per_sv.sv.values) == svs
+
+    def test_the_signals_get_their_satellites_values(self, sample_sp3_data):
+        per_sid = prep_aux_ds(sample_sp3_data)
+        per_sv = sid_to_sv(per_sid).assign_coords(sid=per_sid.sid.values)
+        sids = [
+            str(sid)
+            for sid in per_sid.sid.values
+            if np.isfinite(per_sid["X"].sel(sid=sid).values).any()
+        ][::-7]
+
+        result = aux_for_sids(per_sv, sids)
+
+        assert list(result.sid.values) == sids
+        for name in ("X", "Y", "Z"):
+            np.testing.assert_array_equal(
+                result[name].transpose("epoch", "sid").values,
+                per_sid[name].sel(sid=sids).transpose("epoch", "sid").values,
+            )
+
+    def test_signals_of_a_satellite_with_different_values_fail(self, sample_sp3_data):
+        per_sid = prep_aux_ds(sample_sp3_data)
+        x = per_sid["X"].copy()
+        # A signal of a satellite with orbits
+        i = int(
+            np.flatnonzero(np.isfinite(x.values).any(axis=x.dims.index("epoch")))[0]
+        )
+        x[{"sid": i}] = x[{"sid": i}] + 1.0
+
+        with pytest.raises(ValueError, match="different values of 'X'"):
+            sid_to_sv(per_sid.assign(X=x))
+
+    def test_data_on_signals_is_selected_as_is(self, sample_sp3_data):
+        per_sid = prep_aux_ds(sample_sp3_data)
+        sids = list(per_sid.sid.values[:3])
+
+        xr.testing.assert_identical(aux_for_sids(per_sid, sids), per_sid.sel(sid=sids))

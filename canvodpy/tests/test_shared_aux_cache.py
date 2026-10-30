@@ -74,7 +74,12 @@ def test_cache_miss_builds_and_promotes(tmp_path: Path) -> None:
     cache_root = shared_cache_dir / "aux_cache.zarr"
 
     def fake_preprocess(
-        _files, output_path, reader_format=None, group=None, grid_seconds=None
+        _files,
+        output_path,
+        reader_format=None,
+        group=None,
+        grid_seconds=None,
+        per_satellite=False,
     ):
         (output_path / group).mkdir(parents=True)
 
@@ -93,6 +98,8 @@ def test_cache_miss_builds_and_promotes(tmp_path: Path) -> None:
     fake_self._preprocess_aux_data_with_hermite.assert_called_once()
     call_kwargs = fake_self._preprocess_aux_data_with_hermite.call_args.kwargs
     assert call_kwargs["grid_seconds"] == CANONICAL_AUX_GRID_SECONDS
+    # Once per satellite: the entry holds all signals, about 16 per satellite
+    assert call_kwargs["per_satellite"] is True
     assert call_kwargs["group"].startswith(f"{FINGERPRINT}/.tmp-2025213-")
 
 
@@ -118,7 +125,12 @@ def test_second_miss_after_a_successful_populate_is_a_hit(tmp_path: Path) -> Non
     cache_root = shared_cache_dir / "aux_cache.zarr"
 
     def fake_preprocess(
-        _files, output_path, reader_format=None, group=None, grid_seconds=None
+        _files,
+        output_path,
+        reader_format=None,
+        group=None,
+        grid_seconds=None,
+        per_satellite=False,
     ):
         (output_path / group).mkdir(parents=True)
 
