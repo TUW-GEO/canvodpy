@@ -49,6 +49,7 @@ from typing import Any, Literal, Self
 
 import psutil
 
+from canvod.config.models.sites import RECIPE_SETTINGS
 from canvod.utils.remote_file import recorded_name, without_urls
 
 FILE_NAME = "run_history.sqlite"
@@ -393,11 +394,11 @@ def is_network_filesystem(fs_type: str) -> bool:
 
 
 def _without_recipe_urls(settings: Any) -> Any:
-    """``settings`` with each ``recipe`` URL replaced by its file name."""
+    """``settings`` with each recipe URL replaced by its file name."""
     if isinstance(settings, dict):
         return {
             key: recorded_name(value)
-            if key == "recipe" and isinstance(value, str)
+            if key in RECIPE_SETTINGS and isinstance(value, str)
             else _without_recipe_urls(value)
             for key, value in settings.items()
         }

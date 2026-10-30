@@ -127,7 +127,17 @@ class ReceiverConfig(_StrictModel):
             "with RINEX files: the satellite positions come from these files. "
             "In shared-position mode a reference receiver uses its canopy's "
             "files instead: it needs none, and its own are not read. They "
-            "need canonical names of type 'nav'."
+            "need canonical names of type 'nav', or a 'nav_recipe'."
+        ),
+    )
+
+    nav_recipe: str | None = Field(
+        None,
+        description=(
+            "Naming recipe of the files in 'nav_directory', given like "
+            "'recipe' (a name or a raw GitHub URL), with file_type 'nav'. "
+            "Without it, only navigation files with canonical canVOD names "
+            "are read."
         ),
     )
 
@@ -176,6 +186,17 @@ class ReceiverConfig(_StrictModel):
         return data
 
     @model_validator(mode="after")
+    def _nav_recipe_needs_nav_directory(self) -> ReceiverConfig:
+        """``nav_recipe`` names the files of ``nav_directory``; refused without it."""
+        if self.nav_recipe is not None and self.nav_directory is None:
+            msg = (
+                "nav_recipe names the files in nav_directory: set nav_directory "
+                "as well, or remove nav_recipe"
+            )
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
     def validate_paired_canopies(self) -> ReceiverConfig:
         """Validate paired_canopies is required for reference, forbidden for canopy."""
         if self.type == "reference" and self.paired_canopies is None:
@@ -218,6 +239,9 @@ _FILE_FORMAT: dict[str, str] = {"rinex3_stripped": "rinex3"}
 
 #: Reader formats of canvodpy itself; plugins add more (:func:`reader_formats`).
 BUILT_IN_READER_FORMATS = ("auto", "rinex3", "rinex3_stripped", "rinex2", "sbf", "nmea")
+
+#: Receiver settings that name a naming recipe (a name or a URL).
+RECIPE_SETTINGS = ("recipe", "nav_recipe")
 
 #: Reader formats of RINEX observation files: with the broadcast ephemeris,
 #: a receiver with one of them needs ``nav_directory`` (ADR 0023).

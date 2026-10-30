@@ -27,11 +27,18 @@ RECIPE = f"name: {testing.SITE_KEY}_canopy\n".encode()
 RECIPE_URL = f"{BASE}/recipes/{testing.SITE_KEY}/{testing.SITE_KEY}_canopy.yaml"
 
 
-def _settings(tmp_path: Path, recipe: str | None = None) -> bytes:
-    """The made-up settings, with ``recipe`` on the canopy receiver."""
+def _settings(
+    tmp_path: Path, recipe: str | None = None, nav_recipe: str | None = None
+) -> bytes:
+    """The made-up settings, with ``recipe`` and ``nav_recipe`` on the canopy
+    receiver."""
     data = json.loads(testing.write_settings(tmp_path / "written").read_text())
+    canopy = data["sites"][testing.SITE_KEY]["receivers"]["canopy_01"]
     if recipe is not None:
-        data["sites"][testing.SITE_KEY]["receivers"]["canopy_01"]["recipe"] = recipe
+        canopy["recipe"] = recipe
+    if nav_recipe is not None:
+        canopy["nav_directory"] = "canopy_01_nav"
+        canopy["nav_recipe"] = nav_recipe
     return json.dumps(data, indent=2).encode()
 
 
@@ -87,6 +94,23 @@ def test_a_recipe_name_is_read_at_the_same_link(server, tmp_path):
 
     recipe = folder / "recipes" / testing.SITE_KEY / f"{testing.SITE_KEY}_canopy.yaml"
     assert recipe.read_bytes() == RECIPE
+
+
+def test_a_nav_recipe_name_is_read_at_the_same_link(server, tmp_path):
+    nav_recipe = f"{testing.SITE_KEY}_canopy_nav"
+    server.serve(SETTINGS_URL, _settings(tmp_path, nav_recipe=nav_recipe))
+    server.serve(RECIPE_URL.replace("_canopy.yaml", "_canopy_nav.yaml"), RECIPE)
+
+    folder = resolve_config_dir(SETTINGS_URL)
+
+    assert (folder / "recipes" / testing.SITE_KEY / f"{nav_recipe}.yaml").is_file()
+
+
+def test_a_nav_recipe_name_that_is_a_path_is_refused(server, tmp_path):
+    server.serve(SETTINGS_URL, _settings(tmp_path, nav_recipe="../secrets"))
+
+    with pytest.raises(RemoteURLError, match="nav_recipe name"):
+        resolve_config_dir(SETTINGS_URL)
 
 
 @pytest.mark.parametrize(
