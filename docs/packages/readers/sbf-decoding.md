@@ -37,6 +37,24 @@ start at 23:59:42 of the previous day.)
 
 ---
 
+## Satellite names
+
+**Source:** `SVID` (u1), RefGuide-4.14.0 Table 4.1.9, p.255.
+
+Each block names a satellite by Septentrio's internal number, the SVID.
+The reader turns it into the RINEX satellite name (RINEX 3.04 §8.4), the
+same name the RINEX readers give, so SIDs from SBF and RINEX files match.
+For SBAS the RINEX number is the PRN minus 100:
+
+| SVID | PRN | Name |
+|---|---|---|
+| 120–140 | SVID | `S20`–`S40` |
+| 198–215 | SVID − 57 | `S41`–`S58` |
+
+For example, EGNOS PRN 123 (SVID 123) is `S23`.
+
+---
+
 ## Signal number decoding
 
 **Source:** `MeasEpochChannelType1.Type` (u1), p.261, and `ObsInfo` (u1), p.262.
@@ -367,6 +385,7 @@ Page references: DOP block p.348, PVTGeodetic pp.337–339, ReceiverStatus pp.39
 | **$\theta$ (polar angle)** | Elevation $\rightarrow$ co-elevation ($90^\circ - \text{elevation}$), then degrees $\rightarrow$ radians |
 | **$\varphi$ (azimuth)** | Scale $0.01^\circ$/LSB, degrees $\rightarrow$ radians |
 | **GLONASS frequencies** | Slot-dependent FDMA formula required for $\lambda$ and Type2 Doppler |
+| **Satellite name** | SBAS: PRN $-$ 100, as in RINEX (PRN 123 $\rightarrow$ `S23`) |
 | **Epoch** | GPS week + TOW (ms) $\rightarrow$ `datetime64[ns]` in GPS time (no leap seconds) |
 | **CN0HighRes** | Bit-field extraction (bits 0–2) then scale 1/32 dB-Hz/LSB |
 | **CarMPCorr** | Integer division by 512 to convert i1 to fractional cycles |
@@ -378,3 +397,4 @@ Page references: DOP block p.348, PVTGeodetic pp.337–339, ReceiverStatus pp.39
 - Septentrio AsteRx SB3 ProBase Firmware v4.14.0 Reference Guide
 - Septentrio AsteRx SB3 ProBase Firmware v4.15.1 Reference Guide
 - RINEX 3.04 signal nomenclature, used verbatim for SID code strings
+- RINEX 3.04 §8.4, satellite numbers (SBAS: PRN $-$ 100)

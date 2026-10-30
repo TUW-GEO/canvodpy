@@ -56,7 +56,12 @@ from canvod.readers.gnss_specs.metadata import (
     OBSERVABLES_METADATA,
     epoch_coord_attrs,
 )
-from canvod.readers.sbf._registry import FDMA_SIGNAL_NUMS, SIGNAL_TABLE, decode_svid
+from canvod.readers.sbf._registry import (
+    FDMA_SIGNAL_NUMS,
+    SIGNAL_TABLE,
+    decode_svid,
+    svid_to_sv,
+)
 from canvod.readers.sbf._scaling import (
     cn0_dbhz,
     decode_offsets_msb,
@@ -1046,8 +1051,7 @@ def _extract_tracking_info(
             svid = int(sat["SVID"])
             if svid == 0:  # Do-Not-Use
                 continue
-            sys_code, prn = decode_svid(svid)
-            sv = f"{sys_code}{prn:02d}"
+            sv = svid_to_sv(svid)
             for state in sat.get("StateInfo") or []:
                 if int(state.get("Antenna", 0)) == 0:  # Main antenna
                     out.append(
@@ -1084,8 +1088,8 @@ def _sid_props(svid: int, sig_num: int, freq_nr: int) -> dict[str, Any] | None:
     sig_def = SIGNAL_TABLE.get(sig_num)
     if sig_def is None:
         return None
-    system, prn = decode_svid(svid)
-    sv = f"{system}{prn:02d}"
+    system, _ = decode_svid(svid)
+    sv = svid_to_sv(svid)
     band = sig_def.band
 
     if sig_num in FDMA_SIGNAL_NUMS:
@@ -1517,7 +1521,7 @@ class SbfReader(GNSSDataReader):
         """
         return len(
             {
-                f"{obs.system}{obs.prn:02d}"
+                svid_to_sv(obs.svid)
                 for ep in self.iter_epochs()
                 for obs in ep.observations
             }
@@ -2041,8 +2045,7 @@ class SbfReader(GNSSDataReader):
                     svid = int(sat["SVID"])
                     if svid in (_SVID_DNU, _SVID_GLONASS_UNKNOWN_SLOT):
                         continue
-                    system, prn = decode_svid(svid)
-                    cols = cols_of_sv.get(f"{system}{prn:02d}")
+                    cols = cols_of_sv.get(svid_to_sv(svid))
                     if not cols:
                         continue
                     elev = int(sat["Elevation"])

@@ -21,7 +21,7 @@ import pytest
 import sbf_parser
 import xarray as xr
 
-from canvod.readers.sbf._registry import SIGNAL_TABLE, decode_svid
+from canvod.readers.sbf._registry import SIGNAL_TABLE, svid_to_sv
 from canvod.readers.sbf.reader import (
     SbfReader,
     _decode_observations,
@@ -102,7 +102,7 @@ def test_iter_epochs_matches_to_ds(fpath: Path) -> None:
         )
         for obs in epoch.observations:
             sig = SIGNAL_TABLE[obs.signal_num]
-            j = col[f"{obs.system}{obs.prn:02d}|{sig.band}|{sig.code}"]
+            j = col[f"{svid_to_sv(obs.svid)}|{sig.band}|{sig.code}"]
             for var, value in (
                 ("SNR", obs.cn0),
                 ("Pseudorange", obs.pseudorange),
@@ -143,8 +143,7 @@ def test_satvisibility_from_same_epoch() -> None:
             svid = int(sat["SVID"])
             if svid in (0, 62) or int(sat["Elevation"]) == -32768:
                 continue
-            system, prn = decode_svid(svid)
-            sv = f"{system}{prn:02d}"
+            sv = svid_to_sv(svid)
             for s, sv_s in enumerate(sv_of_sid):
                 if sv_s != sv:
                     continue
