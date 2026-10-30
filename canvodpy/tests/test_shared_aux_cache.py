@@ -41,12 +41,16 @@ def _fake_self(tmp_path: Path) -> SimpleNamespace:
     config.processing.aux_data.product_type = "final"
     config.processing.params.ephemeris_source = "precise"
     config.processing.params.aggregate_glonass_fdma = True
-    return SimpleNamespace(
+    fake_self = SimpleNamespace(
         _logger=logger,
         aux_pipeline=aux_pipeline,
         _config=config,
         _preprocess_aux_data_with_hermite=mock.MagicMock(),
     )
+    fake_self._shared_aux_cache_entry = lambda *args: (
+        RinexDataProcessor._shared_aux_cache_entry(fake_self, *args)
+    )
+    return fake_self
 
 
 def test_cache_hit_skips_preprocessing(tmp_path: Path) -> None:

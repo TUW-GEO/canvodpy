@@ -1,5 +1,8 @@
 """Fingerprinting for the network-wide aux (SP3/CLK Hermite) cache.
 
+The broadcast ephemeris of navigation files shares the cache with its own
+fingerprint (:func:`compute_broadcast_cache_fingerprint`).
+
 The aux cache is keyed by a fingerprint that is
 deliberately site-independent -- ephemeris products are satellite-based, not
 site-based, so the same fingerprint should hit for every site sharing the
@@ -65,6 +68,35 @@ def compute_aux_cache_fingerprint(
             )
             for name, path in sorted(source_file_paths.items())
         },
+    }
+    return hashlib.sha256(
+        json.dumps(sections, sort_keys=True, default=str).encode()
+    ).hexdigest()
+
+
+def compute_broadcast_cache_fingerprint(
+    *,
+    nav_files: list[Path],
+    canonical_grid_seconds: float,
+    aggregate_glonass_fdma: bool,
+) -> str:
+    """Compute a stable fingerprint for one day's broadcast aux cache entry.
+
+    The broadcast counterpart of :func:`compute_aux_cache_fingerprint`:
+    the orbits come from a receiver's navigation files, so the fingerprint
+    holds the SHA-256 of each file's content instead of an agency product.
+    A changed or added navigation file gives a new fingerprint; receivers
+    and sites with the same navigation files share the entry. The section
+    ``ephemeris_source`` keeps it apart from every precise entry.
+    """
+    sections = {
+        "format_version": AUX_CACHE_FORMAT_VERSION,
+        "ephemeris_source": "broadcast",
+        "canonical_grid_seconds": canonical_grid_seconds,
+        "aggregate_glonass_fdma": aggregate_glonass_fdma,
+        "nav_files": sorted(
+            hashlib.sha256(path.read_bytes()).hexdigest() for path in nav_files
+        ),
     }
     return hashlib.sha256(
         json.dumps(sections, sort_keys=True, default=str).encode()

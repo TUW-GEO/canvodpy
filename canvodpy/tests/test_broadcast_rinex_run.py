@@ -4,13 +4,15 @@ Half an hour of the Rosalia RINEX test data (both receivers, 2025-001)
 through ``canvodpy run`` with ``ephemeris_source: broadcast``: the satellite
 positions come from RINEX navigation files, so no orbit products are read
 (#567). Each receiver uses its own navigation files; in shared-position
-mode the reference uses the canopy's (#572). Locally only: it reads the test data, which CI never
+mode the reference uses the canopy's (#572). With the shared aux cache a
+rerun reuses the interpolated orbits (#573). Locally only: it reads the test data, which CI never
 checks out.
 """
 
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -67,9 +69,11 @@ def _settings(
     nav: tuple[str, ...] = tuple(RECEIVERS),
     position_mode: str = "per_receiver",
     nav_files: bool = True,
+    shared_cache: Path | None = None,
 ) -> Path:
     """Settings of a broadcast run; the receivers in ``nav`` get a
-    ``nav_directory``, with their navigation files if ``nav_files``."""
+    ``nav_directory``, with their navigation files if ``nav_files``; the
+    aux data are cached in ``shared_cache`` if given."""
     folder = tmp_path / "settings"
     path = testing.write_settings(folder)
     settings = json.loads(path.read_text())
@@ -77,6 +81,8 @@ def _settings(
         "ephemeris_source": "broadcast",
         "receiver_position_mode": position_mode,
     }
+    if shared_cache is not None:
+        settings["processing"]["storage"]["shared_aux_cache_dir"] = str(shared_cache)
     data = tmp_path / "data"
     for name in RECEIVERS:
         _link_receiver(data, name, with_nav=nav_files and name in nav)
@@ -196,3 +202,76 @@ def test_a_day_without_navigation_files_stops_the_run(tmp_path, monkeypatch):
     assert "canopy_01" in message or "reference_01" in message
     assert DAY in message
     assert "_nav" in message
+
+
+def _count_orbit_computations(monkeypatch) -> list[list[str]]:
+    """The navigation files of each orbit computation of the run."""
+    from canvod.auxiliary.ephemeris import broadcast
+
+    calls: list[list[str]] = []
+    compute = broadcast.broadcast_ephemerides
+
+    def counting(nav_files, *args, **kwargs):
+        calls.append(sorted(Path(f).name for f in nav_files))
+        return compute(nav_files, *args, **kwargs)
+
+    monkeypatch.setattr(broadcast, "broadcast_ephemerides", counting)
+    return calls
+
+
+def _cache_entries(cache: Path) -> set[str]:
+    return {p.name for p in (cache / "aux_cache.zarr").iterdir() if p.is_dir()}
+
+
+def test_a_rerun_reuses_the_cached_orbits(tmp_path, monkeypatch):
+    cache = tmp_path / "cache"
+    stores = _settings(tmp_path, monkeypatch, shared_cache=cache)
+    computed = _count_orbit_computations(monkeypatch)
+
+    result = _run()
+
+    assert result.exit_code == 0, result.output
+    _assert_angles(stores)
+    # One entry per receiver: each has its own navigation files
+    assert len(computed) == 2
+    entries = _cache_entries(cache)
+    assert len(entries) == 2
+    gnss = MyIcechunkStore(stores / "gnss", store_type="gnss_store")
+    theta = gnss.read_group("canopy_01", drop_empty=True)["theta"].load()
+
+    # The day again into new stores: the orbits come from the cache
+    shutil.rmtree(stores.parent)
+    result = _run()
+
+    assert result.exit_code == 0, result.output
+    assert len(computed) == 2
+    assert _cache_entries(cache) == entries
+    gnss = MyIcechunkStore(stores / "gnss", store_type="gnss_store")
+    xr.testing.assert_equal(
+        gnss.read_group("canopy_01", drop_empty=True)["theta"], theta
+    )
+
+
+def test_a_changed_navigation_file_gives_a_new_cache_entry(tmp_path, monkeypatch):
+    cache = tmp_path / "cache"
+    stores = _settings(tmp_path, monkeypatch, shared_cache=cache)
+    computed = _count_orbit_computations(monkeypatch)
+    assert _run().exit_code == 0
+    entries = _cache_entries(cache)
+
+    # The canopy's second navigation file now holds other records
+    _, _, identity = RECEIVERS["canopy_01"]
+    _, short, _ = RECEIVERS["reference_01"]
+    nav = tmp_path / "data" / "canopy_01_nav" / f"{identity}_R_{DAY}0015_15M_00U_AA.nav"
+    nav.unlink()
+    nav.symlink_to(NAV / "01_reference" / f"{short}{DAY[4:]}a15.25p")
+    shutil.rmtree(stores.parent)
+    result = _run()
+
+    assert result.exit_code == 0, result.output
+    # Only the canopy's orbits are computed again, into a new entry
+    assert len(computed) == 3
+    assert computed[-1][-1] == nav.name
+    new = _cache_entries(cache) - entries
+    assert len(new) == 1
+    assert entries < _cache_entries(cache)
