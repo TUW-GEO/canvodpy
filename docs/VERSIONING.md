@@ -99,13 +99,13 @@ For each package in a release:
 ## Which version a change goes into
 
 Docs, upgrade notes and deprecation messages name the version that brings
-a change ("since v1.1.0", "New in v1.1.0"). That version follows from the
+a change, such as "since v1.1.0" or "New in v1.1.0." That version follows from the
 kind of change:
 
 | Change | Goes into |
 |---|---|
 | Bug fix only | the next patch version |
-| A new setting, feature or deprecation | the next minor version |
+| A new setting, a new feature, or a deprecation | the next minor version |
 | Removal of deprecated code, or a change to the store format | the next major version |
 
 The next versions are the

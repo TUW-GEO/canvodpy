@@ -103,7 +103,8 @@ the broadcast ephemeris has been done. It is up to you to decide which one
 to use for which task and to what end.
 
 The receiver stores the SatVisibility angles of SBF files with a
-resolution of $0.01^\circ$ (SatVisibility block).
+resolution of $0.01^\circ$ (SatVisibility block; Septentrio AsteRx SB3
+ProBase Firmware v4.14.0 Reference Guide, p. 400).
 
 ---
 
