@@ -186,10 +186,10 @@ class ProcessingParams(_StrictModel):
             "'precise': compute satellite coordinates from the precise "
             "ephemeris of an analysis center (SP3/CLK products; agency and "
             "product type under aux_data). 'broadcast': use the broadcast "
-            "ephemeris the receiver recorded, from SBF SatVisibility blocks "
-            "(SBF reader_format only, skips the SP3/CLK download). Broadcast "
-            "is faster but less accurate (~1-2 m orbit). 'final' is a "
-            "deprecated name for 'precise'."
+            "ephemeris the receiver recorded: the SatVisibility angles of SBF "
+            "files, or for RINEX files the receiver's navigation files "
+            "(nav_directory); no SP3/CLK download. 'final' is a deprecated "
+            "name for 'precise'."
         ),
     )
     store_sbf_raw_observables: bool = Field(

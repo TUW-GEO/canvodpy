@@ -267,6 +267,16 @@ All of these are replaced by one entry point: `canvodpy run`, or
 
 ---
 
+## New in v1.0.1
+
+- **Broadcast ephemeris from RINEX navigation files**: with
+  `ephemeris_source: broadcast`, receivers with RINEX files take the
+  satellite positions from their own navigation files. Set the new
+  receiver setting `nav_directory` to the folder of the canopy receiver's
+  navigation files
+  ([Ephemeris sources](../packages/readers/ephemeris-sources.md#broadcast-ephemeris-from-rinex-navigation-files)).
+  Nothing changes for SBF files or for the precise ephemeris.
+
 ## New in v1.0.0
 
 - **Stores on S3, experimental**: runs write GNSS and VOD stores to

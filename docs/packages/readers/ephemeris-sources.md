@@ -1,6 +1,6 @@
 ---
 title: Ephemeris Sources
-description: Three levels of satellite ephemeris for computing observation geometry
+description: The precise and the broadcast ephemeris, how to choose between them, and how to set up navigation files
 ---
 
 # Ephemeris sources
@@ -9,7 +9,43 @@ Computing satellite geometry (theta, phi) requires knowing where each satellite
 is at each observation epoch. canvodpy supports two ephemeris sources: the
 precise ephemeris of an analysis center (`ephemeris_source: precise`) and the
 broadcast ephemeris the receiver recorded (`ephemeris_source: broadcast`,
-from SBF files or from RINEX navigation files).
+from SBF files or from RINEX navigation files). A store holds one
+ephemeris: its content settings record the source, and a run with the
+other source writes to a store of its own.
+
+## Setting up a run
+
+1. Choose the source (see [Choosing an ephemeris source](#choosing-an-ephemeris-source)).
+2. With `broadcast` and RINEX files, put the canopy receiver's navigation
+   files in a folder and name it as `nav_directory` of that receiver (see
+   [Broadcast ephemeris from RINEX navigation files](#broadcast-ephemeris-from-rinex-navigation-files)).
+   SBF files need nothing more.
+3. Check the settings, then run:
+
+=== "Command line"
+
+    ```bash
+    canvodpy config validate
+    canvodpy run --site ExampleSite --start 2025001 --end 2025007 \
+        --ephemeris-source broadcast
+    ```
+
+    Without `--ephemeris-source`, the run takes
+    `processing.params.ephemeris_source` from the settings file.
+
+=== "Python"
+
+    ```python
+    from canvodpy import Site
+
+    site = Site("ExampleSite")
+    with site.pipeline() as pipeline:
+        for unit in pipeline.run("2025001", "2025007"):
+            print(sorted(unit.days), unit.vod.written)
+    ```
+
+    The pipeline takes `processing.params.ephemeris_source` from the
+    settings file.
 
 ---
 
@@ -57,14 +93,12 @@ from SBF files or from RINEX navigation files).
 
 ## Accuracy
 
-The SBF angles are stored by the receiver with a resolution of $0.01^\circ$
-(SatVisibility block), so they cannot be more precise than that. The SP3
-path computes $\theta$ and $\varphi$ from interpolated satellite positions and the
-receiver position. canvodpy has not quantified the difference between the
-two sources on its test data; until then, do not mix them in one analysis.
+The numbers below come from the canopy receiver of the test data on
+2025-001. The reference is the angles from the final multi-GNSS orbits of
+CODE (`COD0MGXFIN_20250010000_01D_05M_ORB.SP3`), that is,
+`ephemeris_source: precise` with `agency: COD`.
 
-The angles from RINEX navigation files were compared with those from the
-COD final orbits on the test day (2025-001, every 30 s):
+The angles from RINEX navigation files (every 30 s):
 
 | System | Largest difference | Median |
 |---|---|---|
@@ -84,11 +118,25 @@ $0.0002^\circ$ apart. EGNOS broadcasts these nominal slots, flagged as not
 for ranging (URA index 15, RINEX 3.05, Section 5.4.4), so the angles are as
 good as the satellite keeps its slot.
 
+The receiver's SatVisibility angles from the SBF files of the same
+receiver and day, at the epochs with observations:
+
+| System | Largest difference | Median |
+|---|---|---|
+| GPS | $0.031^\circ$ | $0.015^\circ$ |
+| Galileo | $0.027^\circ$ | $0.013^\circ$ |
+| GLONASS | $0.036^\circ$ | $0.018^\circ$ |
+| BeiDou | $5.4^\circ$ | $0.011^\circ$ |
+
+The receiver stores these angles with a resolution of $0.01^\circ$
+(SatVisibility block). The BeiDou angles are about $5^\circ$ off in short
+stretches ([#564](https://github.com/TUW-GEO/canvodpy/issues/564)).
+
 ---
 
 ## Precise ephemeris (SP3/CLK)
 
-The default path of `canvodpy run` (`ephemeris_source: precise`). The
+The default source (`ephemeris_source: precise`). The
 products are chosen by `aux_data.agency` and `aux_data.product_type`
 (`final` or `rapid`). Before v1.0.1 this source was called `final`; that name
 still works until v2.0.0 and warns.
