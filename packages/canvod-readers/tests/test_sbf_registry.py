@@ -17,6 +17,7 @@ from canvod.readers.sbf._registry import (
     SIGNAL_TABLE,
     SignalDef,
     decode_svid,
+    svid_to_sv,
 )
 
 # ===================================================================
@@ -99,6 +100,28 @@ class TestDecodeSvid:
         system, prn = decode_svid(svid)
         assert system == "S"
         assert prn == expected_prn
+
+    # --- SBAS names: RINEX Snn, nn = PRN - 100 (RINEX 3.04, Section 8.4) ---
+
+    @pytest.mark.parametrize(
+        "svid,expected_sv",
+        [
+            (120, "S20"),  # PRN 120
+            (123, "S23"),  # PRN 123 (EGNOS)
+            (140, "S40"),  # PRN 140
+            (198, "S41"),  # PRN 141
+            (215, "S58"),  # PRN 158
+        ],
+    )
+    def test_sbas_sv_name_follows_rinex(self, svid, expected_sv):
+        assert svid_to_sv(svid) == expected_sv
+
+    @pytest.mark.parametrize(
+        "svid,expected_sv",
+        [(1, "G01"), (71, "E01"), (141, "C01"), (181, "J01"), (245, "C63")],
+    )
+    def test_sv_name_of_other_systems(self, svid, expected_sv):
+        assert svid_to_sv(svid) == expected_sv
 
     # --- BeiDou: SVID 141-180 (C01-C40), 223-245 (C41-C63) ---
 

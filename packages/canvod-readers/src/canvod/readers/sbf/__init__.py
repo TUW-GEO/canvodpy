@@ -6,12 +6,13 @@ receivers running firmware v4.14.x.
 Quick Start
 -----------
 >>> from canvod.readers.sbf import SbfReader
+>>> from canvod.readers.sbf._registry import svid_to_sv
 >>> reader = SbfReader(fpath=Path("rref213a00.25_"))
 >>> print(reader.header.rx_version)
 4.14.4
 >>> for epoch in reader.iter_epochs():
 ...     for obs in epoch.observations:
-...         print(f"{obs.system}{obs.prn:02d}  CN0={obs.cn0:.1f} dB-Hz")
+...         print(f"{svid_to_sv(obs.svid)}  CN0={obs.cn0:.1f} dB-Hz")
 
 Data Models
 -----------
