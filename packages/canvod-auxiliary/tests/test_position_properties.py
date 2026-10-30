@@ -378,15 +378,13 @@ class TestSpecialCases:
             f"Prime meridian should have Y≈0, got Y={ecef.y:.3f} m"
         )
 
-    @given(lat=st.floats(-90.0, 90.0), alt=st.floats(-1000.0, 10000.0))
+    @given(alt=st.floats(-1000.0, 10000.0))
     @settings(max_examples=30, deadline=3000)
-    def test_equator_conversion(self, lat, alt):
+    def test_equator_conversion(self, alt):
         """Equator (lat=0°) should convert correctly.
 
         Property: Positions on the equator should have Z=0 (or very small).
         """
-        assume(abs(lat) < 0.1)  # Near equator
-
         pos = GeodeticPosition(lat=0.0, lon=0.0, alt=alt)
         ecef = pos.to_ecef()
 
