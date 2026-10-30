@@ -109,13 +109,16 @@ flowchart LR
     OVERLAY["Overlay file<br/>optional"] -.-> SETTINGS
     RECIPE["Naming recipe<br/>optional, local file or GitHub link"] -.-> READ
     READ --> ANGLES["Satellite angles"]
-    ORBITS["SP3 orbits"] --> ANGLES
+    PRECISE["Precise ephemeris<br/>SP3 orbits"] -- "precise" --> ANGLES
+    BROADCAST["Broadcast ephemeris<br/>SBF SatVisibility or RINEX navigation files"] -- "or broadcast" --> ANGLES
     ANGLES --> GSTORE["GNSS store"]
     GSTORE --> VOD["VOD retrieval"]
     VOD --> VSTORE["VOD store"]
     VSTORE --> PLOT["Hemispheric grids and plots"]
 ```
 
+The satellite angles come from one of two ephemerides, chosen in the
+settings ([Ephemeris sources](packages/readers/ephemeris-sources.md)).
 Dashed arrows are optional inputs: an overlay file changes settings for
 one run ([Configuration](guides/configuration.md#overlay-file)), and a
 naming recipe recognizes files with other names
