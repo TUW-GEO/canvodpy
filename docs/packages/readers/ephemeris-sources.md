@@ -222,7 +222,10 @@ the folder `nav_directory` names, relative to the site data root like
    time (RINEX 3.05, Table A16)
 4. From here as the precise ephemeris: Hermite interpolation onto the epoch
    grid, Zarr cache 00_aux_zarr/aux_{date}_{site}_{receiver}_nav.zarr,
-   theta/phi
+   theta/phi. With `shared_aux_cache_dir` the interpolated orbits go to the
+   shared cache instead, one entry per date and content of the navigation
+   files (SHA-256), so a rerun of the day computes nothing again and a
+   changed or added navigation file gives a new entry
 ```
 
 The fit interval is the one in the record for GPS (at least 4 hours) and

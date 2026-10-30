@@ -7,7 +7,7 @@ import os
 import time
 import warnings
 from collections import Counter, defaultdict
-from collections.abc import Generator, Iterable, Mapping, Sequence
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass, field
@@ -41,6 +41,7 @@ from rich.progress import (
 from canvod.auxiliary.cache_fingerprint import (
     CANONICAL_AUX_GRID_SECONDS,
     compute_aux_cache_fingerprint,
+    compute_broadcast_cache_fingerprint,
 )
 from canvod.auxiliary.interpolation import (
     aux_epoch_grid,
@@ -1333,8 +1334,9 @@ class RinexDataProcessor:
         # Physical path -> canonical canVOD filename, filled by
         # _get_rinex_files and read when building log-book rows.
         self._canonical_names: dict[Path, str] = {}
-        # Aux store of each receiver's navigation files (broadcast, RINEX)
-        self._broadcast_aux_paths: dict[str, Path] = {}
+        # Aux store and group of each receiver's navigation files
+        # (broadcast, RINEX)
+        self._broadcast_aux_paths: dict[str, tuple[Path, str | None]] = {}
         self._keeper_tags_enabled: bool = config.processing.storage.keeper_tags
         self.keep_sids = config.sids.get_sids()
 
@@ -1426,7 +1428,15 @@ class RinexDataProcessor:
                 product_type=self._product_type,
                 ftp_server=self._ftp_server,
                 user_email=user_email,
-                keep_sids=self.keep_sids,
+                # All signals for the shared cache: its entry is shared by
+                # sites that keep other signals, and its fingerprint leaves
+                # keep_sids out. Every reader keeps its own (step 2 of
+                # preprocess_with_hermite_aux).
+                keep_sids=(
+                    None
+                    if config.processing.storage.get_shared_aux_cache_dir() is not None
+                    else self.keep_sids
+                ),
                 aggregate_glonass_fdma=config.processing.params.aggregate_glonass_fdma,
             )
             t2 = time.perf_counter()
@@ -2091,7 +2101,7 @@ class RinexDataProcessor:
         receiver: str,
         rinex_files: list[Path],
         reader_format: str | None,
-    ) -> Path:
+    ) -> tuple[Path, str | None]:
         """Orbits of the day from a receiver's RINEX navigation files (ADR 0023).
 
         The navigation files are found in the receiver's ``nav_directory``
@@ -2099,6 +2109,12 @@ class RinexDataProcessor:
         satellite positions on a 5-minute grid, which is interpolated onto
         the observations' epoch grid like the agency products and written
         once per site, receiver and day.
+
+        With ``StorageConfig.shared_aux_cache_dir`` set, the interpolated
+        orbits are cached like the agency products (#573): one entry per
+        day and content of the navigation files, for all signals, so a
+        rerun of the day and every receiver with the same navigation files
+        reuse it.
 
         Parameters
         ----------
@@ -2114,8 +2130,10 @@ class RinexDataProcessor:
 
         Returns
         -------
-        Path
-            The aux Zarr store of the site, receiver and day.
+        tuple[Path, str | None]
+            ``(store_path, group)``: the shared cache and the group of the
+            entry, or without the cache the aux Zarr store of the site,
+            receiver and day and ``None`` (the store root).
 
         Raises
         ------
@@ -2131,9 +2149,9 @@ class RinexDataProcessor:
         )
 
         date_str = self.matched_data_dirs.yyyydoy.to_str()
-        path = self._broadcast_aux_paths.get(receiver)
-        if path is not None:
-            return path
+        cached = self._broadcast_aux_paths.get(receiver)
+        if cached is not None:
+            return cached
 
         site_config = self._get_site_config()
         nav_directory = site_config.receivers[receiver].nav_directory
@@ -2156,13 +2174,50 @@ class RinexDataProcessor:
                 f"e.g. ..._{date_str}0000_01D_00U_AA.nav."
             )
         day_start = np.datetime64(self.matched_data_dirs.yyyydoy.date, "D")
+        aggregate_glonass_fdma = self._config.processing.params.aggregate_glonass_fdma
+        self._logger.info(
+            "broadcast_angles_systems",
+            receiver=receiver,
+            date=date_str,
+            systems=",".join(ORBIT_SYSTEMS),
+            reason="navigation records of the other systems are not read yet: "
+            "their signals are stored without theta and phi and get no VOD",
+        )
+        shared_cache_dir = self._config.processing.storage.get_shared_aux_cache_dir()
+        if shared_cache_dir is not None:
+            cache_root = shared_cache_dir / "aux_cache.zarr"
+            fingerprint = compute_broadcast_cache_fingerprint(
+                nav_files=nav_files,
+                canonical_grid_seconds=CANONICAL_AUX_GRID_SECONDS,
+                aggregate_glonass_fdma=aggregate_glonass_fdma,
+            )
+            result = self._shared_aux_cache_entry(
+                cache_root,
+                fingerprint,
+                date_str,
+                lambda group: self._preprocess_aux_data_with_hermite(
+                    rinex_files,
+                    cache_root,
+                    reader_format=reader_format,
+                    group=group,
+                    grid_seconds=CANONICAL_AUX_GRID_SECONDS,
+                    # All signals: every reader keeps its own (step 2 of
+                    # preprocess_with_hermite_aux)
+                    ephem_ds=broadcast_ephemerides(
+                        nav_files,
+                        day_start,
+                        aggregate_glonass_fdma=aggregate_glonass_fdma,
+                    ),
+                ),
+            )
+            self._broadcast_aux_paths[receiver] = result
+            return result
+
         ephem_ds = broadcast_ephemerides(
             nav_files,
             day_start,
             keep_sids=self.keep_sids,
-            aggregate_glonass_fdma=(
-                self._config.processing.params.aggregate_glonass_fdma
-            ),
+            aggregate_glonass_fdma=aggregate_glonass_fdma,
         )
         aux_dir = self._config.processing.storage.get_aux_data_dir() / "00_aux_zarr"
         aux_dir.mkdir(parents=True, exist_ok=True)
@@ -2177,20 +2232,12 @@ class RinexDataProcessor:
             nav_files=len(nav_files),
             output_path=str(path),
         )
-        self._logger.info(
-            "broadcast_angles_systems",
-            receiver=receiver,
-            date=date_str,
-            systems=",".join(ORBIT_SYSTEMS),
-            reason="navigation records of the other systems are not read yet: "
-            "their signals are stored without theta and phi and get no VOD",
-        )
         self._preprocess_aux_data_with_hermite(
             rinex_files, path, reader_format=reader_format, ephem_ds=ephem_ds
         )
         sanitize_directory(path)
-        self._broadcast_aux_paths[receiver] = path
-        return path
+        self._broadcast_aux_paths[receiver] = (path, None)
+        return path, None
 
     def _ensure_shared_aux_cache(
         self,
@@ -2215,9 +2262,6 @@ class RinexDataProcessor:
         this is meant to protect, which has already dropped mid-operation
         three times this week for unrelated reasons.
         """
-        import shutil
-        import uuid
-
         cache_root = shared_cache_dir / "aux_cache.zarr"
         assert self.aux_pipeline is not None, "aux_pipeline must be initialized"
         fingerprint = compute_aux_cache_fingerprint(
@@ -2230,6 +2274,47 @@ class RinexDataProcessor:
                 self._config.processing.params.aggregate_glonass_fdma
             ),
         )
+        return self._shared_aux_cache_entry(
+            cache_root,
+            fingerprint,
+            date_str,
+            lambda group: self._preprocess_aux_data_with_hermite(
+                canopy_files,
+                cache_root,
+                reader_format=reader_format,
+                group=group,
+                grid_seconds=CANONICAL_AUX_GRID_SECONDS,
+            ),
+        )
+
+    def _shared_aux_cache_entry(
+        self,
+        cache_root: Path,
+        fingerprint: str,
+        date_str: str,
+        populate: Callable[[str], object],
+    ) -> tuple[Path, str]:
+        """Group of a day's entry in the shared aux cache, written on a miss.
+
+        Parameters
+        ----------
+        cache_root : Path
+            The shared cache store.
+        fingerprint : str
+            Fingerprint of the entry's inputs.
+        date_str : str
+            Date string (e.g., '2025213').
+        populate : Callable[[str], object]
+            Writes the entry into the given group of ``cache_root``.
+
+        Returns
+        -------
+        tuple[Path, str]
+            ``(cache_root, group)``.
+        """
+        import shutil
+        import uuid
+
         group = f"{fingerprint}/{date_str}"
 
         if (cache_root / group).exists():
@@ -2245,13 +2330,7 @@ class RinexDataProcessor:
         self._logger.info("aux_cache_miss", fingerprint=fingerprint, date=date_str)
         tmp_group = f"{fingerprint}/.tmp-{date_str}-{uuid.uuid4().hex[:8]}"
         try:
-            self._preprocess_aux_data_with_hermite(
-                canopy_files,
-                cache_root,
-                reader_format=reader_format,
-                group=tmp_group,
-                grid_seconds=CANONICAL_AUX_GRID_SECONDS,
-            )
+            populate(tmp_group)
             if not (cache_root / tmp_group).exists():
                 raise RuntimeError(
                     f"Aux preprocessing completed but group not found: "
@@ -5393,10 +5472,9 @@ class RinexDataProcessor:
                         reason="shared-position mode: the reference takes the "
                         "angles from its canopy's navigation files",
                     )
-                receiver_aux_path = self._broadcast_aux_store(
+                receiver_aux_path, receiver_aux_group = self._broadcast_aux_store(
                     nav_receiver, position_files, effective_reader
                 )
-                receiver_aux_group = None
             for rnx_file in rinex_files:
                 # For reference receivers in broadcast + shared mode, the
                 # file of the paired canopy that starts at the same time

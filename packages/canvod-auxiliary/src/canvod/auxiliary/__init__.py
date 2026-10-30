@@ -27,6 +27,7 @@ from canvod.auxiliary.augmentation import (
 from canvod.auxiliary.cache_fingerprint import (
     CANONICAL_AUX_GRID_SECONDS,
     compute_aux_cache_fingerprint,
+    compute_broadcast_cache_fingerprint,
 )
 
 # Core abstractions
@@ -123,6 +124,7 @@ __all__ = [
     "add_future_datavars",
     "add_spherical_coords_to_dataset",
     "compute_aux_cache_fingerprint",
+    "compute_broadcast_cache_fingerprint",
     "compute_spherical_coordinates",
     "create_interpolator_from_attrs",
     "create_sv_to_sid_mapping",
