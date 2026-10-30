@@ -718,3 +718,21 @@ class TestSbfObsUnknownMarker:
             unknown = (meta_ds[name] == -1).values
             assert back[name].isnull().values[unknown].all(), name
             assert not back[name].isnull().values[~unknown].any(), name
+
+
+class TestSbasNames:
+    """SBAS satellites are named the RINEX way, Snn with nn = PRN - 100
+    (RINEX 3.04, Section 8.4), so they fit the global SID space."""
+
+    def test_sbas_sids_follow_rinex(self, obs_ds: xr.Dataset) -> None:
+        sbas = {s.split("|")[0] for s in obs_ds.sid.values if s.startswith("S")}
+        assert sbas == {"S21", "S23", "S27", "S28", "S36", "S44", "S45", "S48"}
+
+    def test_sbas_snr_kept_when_padded(self, reader: SbfReader) -> None:
+        padded = reader.to_ds(pad_global_sid=True)
+        snr = padded["SNR"].sel(sid=["S23|L1|C", "S44|L1|C"])
+        assert snr.notnull().any(dim="epoch").all()
+
+    def test_sbas_broadcast_angles(self, meta_ds: xr.Dataset) -> None:
+        theta = meta_ds["broadcast_theta"].sel(sid="S23|L1|C")
+        assert theta.notnull().any()

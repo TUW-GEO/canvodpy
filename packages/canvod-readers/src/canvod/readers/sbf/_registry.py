@@ -71,12 +71,12 @@ _SVID_RANGES: tuple[_SvidRange, ...] = (
     _SvidRange(63, 68, "R", 38, "GLONASS R25-R30"),
     _SvidRange(71, 106, "E", 70, "Galileo E01-E36"),
     _SvidRange(107, 119, "L", 0, "L-Band MSS (see LBandBeams block)"),
-    _SvidRange(120, 140, "S", 0, "SBAS S120-S140 (PRN = SVID)"),
+    _SvidRange(120, 140, "S", 0, "SBAS PRN 120-140 (PRN = SVID)"),
     _SvidRange(141, 180, "C", 140, "BeiDou C01-C40"),
     _SvidRange(181, 187, "J", 180, "QZSS J01-J07"),
     # NOTE: v4.15.1 extends QZSS to 181-190 (J01-J10).  Only 181-187 in v4.14.x.
     _SvidRange(191, 197, "I", 190, "NavIC/IRNSS I01-I07"),
-    _SvidRange(198, 215, "S", 57, "SBAS S141-S158  (RINEX: Snn, nn = SVID - 57)"),
+    _SvidRange(198, 215, "S", 57, "SBAS PRN 141-158 (PRN = SVID - 57)"),
     _SvidRange(216, 222, "I", 208, "NavIC I08-I14"),
     _SvidRange(223, 245, "C", 182, "BeiDou C41-C63"),
 )
@@ -108,6 +108,36 @@ def decode_svid(svid: int) -> tuple[str, int]:
         if r.lo <= svid <= r.hi:
             return r.system, svid - r.prn_offset
     return "?", svid
+
+
+#: RINEX numbers SBAS satellites Snn with nn = PRN - 100
+#: (RINEX 3.04, Section 8.4; RINEX 2.11, Section 9.1).
+_SBAS_RINEX_PRN_OFFSET = 100
+
+
+def svid_to_sv(svid: int) -> str:
+    """Map a Septentrio internal SVID to its RINEX satellite name.
+
+    Parameters
+    ----------
+    svid : int
+        Septentrio internal satellite identifier (field type ``u1``).
+
+    Returns
+    -------
+    str
+        System letter and two-digit number, e.g. ``"G01"``. SBAS satellites
+        are ``Snn`` with nn = PRN - 100 (PRN 123 is ``"S23"``), as in RINEX
+        and the global SID space.
+
+    Notes
+    -----
+    Source: RefGuide-4.14.0, Table 4.1.9, p. 255; RINEX 3.04, Section 8.4.
+    """
+    system, prn = decode_svid(svid)
+    if system == "S":
+        prn -= _SBAS_RINEX_PRN_OFFSET
+    return f"{system}{prn:02d}"
 
 
 # ---------------------------------------------------------------------------
