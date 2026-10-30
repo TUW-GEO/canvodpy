@@ -11,13 +11,16 @@ precise ephemeris of an analysis center (`ephemeris_source: precise`) and the
 broadcast ephemeris the receiver recorded (`ephemeris_source: broadcast`,
 from SBF files or from RINEX navigation files). A store holds one
 ephemeris: its content settings record the source, and a run with the
-other source writes to a store of its own.
+other source stops at an existing store. Give that run a store of its own
+(another `gnss_store_name`).
 
 ## Setting up a run
 
 1. Choose the source (see [Choosing an ephemeris source](#choosing-an-ephemeris-source)).
-2. With `broadcast` and RINEX files, put the canopy receiver's navigation
-   files in a folder and name it as `nav_directory` of that receiver (see
+2. With `broadcast`, give each receiver with RINEX files the folder of its
+   navigation files as `nav_directory`, and a `nav_recipe` if their names
+   don't follow the convention. In shared-position mode (the default)
+   only the canopy receivers need them (see
    [Broadcast ephemeris from RINEX navigation files](#broadcast-ephemeris-from-rinex-navigation-files)).
    SBF files need nothing more.
 3. Check the settings, then run:
@@ -31,7 +34,9 @@ other source writes to a store of its own.
     ```
 
     Without `--ephemeris-source`, the run takes
-    `processing.params.ephemeris_source` from the settings file.
+    `processing.params.ephemeris_source` from the settings file. A site
+    whose store was made with the other source stops; see the start of
+    this page.
 
 === "Python"
 
@@ -93,44 +98,14 @@ other source writes to a store of its own.
 
 ## Accuracy
 
-The numbers below come from the canopy receiver of the test data on
-2025-001. The reference is the angles from the final multi-GNSS orbits of
-CODE (`COD0MGXFIN_20250010000_01D_05M_ORB.SP3`), that is,
-`ephemeris_source: precise` with `agency: COD`.
+The receiver stores the SatVisibility angles of SBF files with a
+resolution of $0.01^\circ$ (SatVisibility block). In short stretches the
+BeiDou SatVisibility angles are off
+([#564](https://github.com/TUW-GEO/canvodpy/issues/564)).
 
-The angles from RINEX navigation files (every 30 s):
-
-| System | Largest difference | Median |
-|---|---|---|
-| GPS | $0.00002^\circ$ | $0.000002^\circ$ |
-| Galileo | $0.00002^\circ$ | below $0.000001^\circ$ |
-| GLONASS | $0.00003^\circ$ | $0.000004^\circ$ |
-| BeiDou (not GEO) | $0.000007^\circ$ | below $0.000001^\circ$ |
-
-COD final has no BeiDou GEO satellite of that day. For C05, a GEO
-satellite, the angles differed from the receiver's own SatVisibility
-angles by at most $0.016^\circ$.
-
-COD final has no SBAS satellite either. The EGNOS satellites S23 and S36
-were compared with a satellite at rest on the equator at the slot
-longitude EGNOS publishes (EGNOS Service Notice 33, Table 1): at most
-$0.0002^\circ$ apart. EGNOS broadcasts these nominal slots, flagged as not
-for ranging (URA index 15, RINEX 3.05, Section 5.4.4), so the angles are as
-good as the satellite keeps its slot.
-
-The receiver's SatVisibility angles from the SBF files of the same
-receiver and day, at the epochs with observations:
-
-| System | Largest difference | Median |
-|---|---|---|
-| GPS | $0.031^\circ$ | $0.015^\circ$ |
-| Galileo | $0.027^\circ$ | $0.013^\circ$ |
-| GLONASS | $0.036^\circ$ | $0.018^\circ$ |
-| BeiDou | $5.4^\circ$ | $0.011^\circ$ |
-
-The receiver stores these angles with a resolution of $0.01^\circ$
-(SatVisibility block). The BeiDou angles are about $5^\circ$ off in short
-stretches ([#564](https://github.com/TUW-GEO/canvodpy/issues/564)).
+For SBAS satellites, EGNOS broadcasts its nominal orbital slots, flagged as
+not for ranging (URA index 15, RINEX 3.05, Section 5.4.4), so their angles
+are as good as the satellite keeps its slot.
 
 ---
 
@@ -253,7 +228,12 @@ names the systems with angles for each receiver and day. The files sit in
 the folder `nav_directory` names, relative to the site data root like
 `directory` (it may be the same folder), and need canonical names of type
 `nav` with sampling `00U`, for example
-`FANA01INK_R_20250010000_15M_00U_AA.nav`.
+`FANA01INK_R_20250010000_15M_00U_AA.nav`. Navigation files with other
+names need a naming recipe with `file_type: nav`, set as the receiver's
+`nav_recipe` (given like `recipe`; see
+[Files that don't follow the convention](../naming/overview.md#files-that-dont-follow-the-convention)).
+In per-receiver mode (`receiver_position_mode: per_receiver`) every
+receiver with RINEX files reads its own navigation files.
 
 ### How it works
 
@@ -296,9 +276,7 @@ never extrapolated ones. The run names these satellites with their
 epochs, per receiver-day and in the log book (see
 [Satellites without a position](../../guides/diagnostics.md#satellites-without-a-position)).
 
-Records flagged unhealthy are still used. G01 and G22 sent such records on
-the test day; their angles differed from those of the COD final
-orbits by at most $0.00002^\circ$ (G01, the largest difference of the day).
+Records flagged unhealthy are still used.
 
 `ephemeris_source: broadcast` supports SBF and RINEX files. NMEA receivers
 and receivers read by a reader plugin take their angles from the precise
@@ -322,12 +300,15 @@ sites:
       canopy_01:
         directory: 02_canopy
         nav_directory: 02_canopy_nav
+        nav_recipe: my_site_canopy_nav  # only for names outside the convention
         reader_format: rinex3
 ```
 
 Settings with `broadcast` and a receiver whose `reader_format` is a RINEX
 format but that has no `nav_directory` are refused; in shared-position
-mode, reference receivers are exempt.
+mode, reference receivers are exempt. A `nav_recipe` without
+`nav_directory` is refused too. In Airflow, `check_day` waits for the
+navigation files as it waits for the observation files.
 
 ---
 

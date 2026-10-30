@@ -1031,7 +1031,14 @@ Reader for the receiver's files: `rinex3` (RINEX 3), `rinex3_stripped` (RINEX 3 
 
 #### `sites.<site>.receivers.<receiver>.nav_directory` {#sites-site-receivers-receiver-nav_directory}
 
-Subdirectory for the receiver's RINEX navigation files, relative to the site data root like `directory` (it may be the same folder). Needed with `ephemeris_source` broadcast for a receiver with RINEX files: the satellite positions come from these files. In shared-position mode a reference receiver uses its canopy's files instead: it needs none, and its own are not read. They need canonical names of type `nav`.
+Subdirectory for the receiver's RINEX navigation files, relative to the site data root like `directory` (it may be the same folder). Needed with `ephemeris_source` broadcast for a receiver with RINEX files: the satellite positions come from these files. In shared-position mode a reference receiver uses its canopy's files instead: it needs none, and its own are not read. They need canonical names of type `nav`, or a `nav_recipe`.
+
+- Type: text, or null
+- Default: `null`
+
+#### `sites.<site>.receivers.<receiver>.nav_recipe` {#sites-site-receivers-receiver-nav_recipe}
+
+Naming recipe of the files in `nav_directory`, given like `recipe` (a name or a raw GitHub URL), with `file_type` `nav`. Without it, only navigation files with canonical canVOD names are read.
 
 - Type: text, or null
 - Default: `null`
