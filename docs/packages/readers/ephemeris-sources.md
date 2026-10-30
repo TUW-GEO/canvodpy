@@ -233,9 +233,11 @@ record is used within 15 minutes of its time, the interval over which the
 ICD keeps its luni-solar acceleration constant (A.3.1.2). GLONASS records
 are in UTC; canvodpy converts them to GPS time with the leap seconds of
 the date. An SBAS record is used within 6 minutes of its time, the
-time-out of the GEO navigation message (RTCA DO-229C, Table A-25, as
-reproduced in Table 7 of the ESA Navipedia page
-[The EGNOS SBAS Message Format Explained](https://gssc.esa.int/navipedia/index.php/The_EGNOS_SBAS_Message_Format_Explained)).
+time-out of the GEO navigation message for en route, terminal and
+non-precision approach (RTCA DO-229D, Table 2-1 and Table A-25). The
+standard counts the time-out from the end of reception; a RINEX
+navigation file keeps no reception time, so canvodpy takes the 6 minutes
+on either side of the record's time.
 
 A satellite with no valid record at an epoch has NaN angles there,
 never extrapolated ones. The run names these satellites with their
