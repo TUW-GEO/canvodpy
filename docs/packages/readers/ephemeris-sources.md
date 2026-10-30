@@ -98,14 +98,12 @@ other source stops at an existing store. Give that run a store of its own
 
 ## Accuracy
 
-The receiver stores the SatVisibility angles of SBF files with a
-resolution of $0.01^\circ$ (SatVisibility block). In short stretches the
-BeiDou SatVisibility angles are off
-([#564](https://github.com/TUW-GEO/canvodpy/issues/564)).
+To date, no in-depth scientific analysis or comparison of the precise and
+the broadcast ephemeris has been done. It is up to you to decide which one
+to use for which task and to what end.
 
-For SBAS satellites, EGNOS broadcasts its nominal orbital slots, flagged as
-not for ranging (URA index 15, RINEX 3.05, Section 5.4.4), so their angles
-are as good as the satellite keeps its slot.
+The receiver stores the SatVisibility angles of SBF files with a
+resolution of $0.01^\circ$ (SatVisibility block).
 
 ---
 
@@ -113,13 +111,13 @@ are as good as the satellite keeps its slot.
 
 The default source (`ephemeris_source: precise`). The
 products are chosen by `aux_data.agency` and `aux_data.product_type`
-(`final` or `rapid`). Before v1.0.1 this source was called `final`; that name
+(`final` or `rapid`). Before v1.1.0 this source was called `final`; that name
 still works until v2.0.0 and warns.
 
 The agency and the product type apply only to the precise ephemeris. With
 `ephemeris_source: broadcast`, a store records them as empty in its content
 settings, and a value other than the default (`COD`, `final`) warns that it
-is ignored. A broadcast store created before v1.0.1 recorded them as they
+is ignored. A broadcast store created before v1.1.0 recorded them as they
 were set; runs still write to it, since broadcast stores do not compare them.
 
 ### Pipeline

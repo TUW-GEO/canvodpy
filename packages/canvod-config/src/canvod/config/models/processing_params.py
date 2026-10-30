@@ -12,7 +12,7 @@ from pydantic import Field, model_validator
 from .base import _StrictModel
 
 #: Old names of ephemeris sources, to their current names. ``final`` became
-#: ``precise`` in v1.0.1 (ADR 0023); the old name works until v2.0.0.
+#: ``precise`` in v1.1.0 (ADR 0023); the old name works until v2.0.0.
 RENAMED_EPHEMERIS_SOURCES = {"final": "precise"}
 
 

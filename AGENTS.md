@@ -210,6 +210,10 @@ one implementation per job, composition over inheritance, deprecate don't
 delete, optional processing stays optional, write for scientists) are in
 `CODING_STANDARDS.md`, with their reasons in `docs/adr/`.
 
+Docs and deprecation messages name the version that brings a change; pick
+it as `docs/VERSIONING.md` ("Which version a change goes into") says, and
+ask the maintainers when unsure.
+
 ## Guardrails
 
 Scientific correctness and data integrity. Understand the science before

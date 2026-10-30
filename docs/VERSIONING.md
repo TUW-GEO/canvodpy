@@ -96,6 +96,26 @@ For each package in a release:
 
 ---
 
+## Which version a change goes into
+
+Docs, upgrade notes and deprecation messages name the version that brings
+a change ("since v1.1.0", "New in v1.1.0"). That version follows from the
+kind of change:
+
+| Change | Goes into |
+|---|---|
+| Bug fix only | the next patch version |
+| A new setting, feature or deprecation | the next minor version |
+| Removal of deprecated code, or a change to the store format | the next major version |
+
+The next versions are the
+[milestones](https://github.com/TUW-GEO/canvodpy/milestones) of the
+repository (for example v1.1.0 and v2.0.0); name the milestone the change
+belongs to. If it is unclear which one, ask the maintainers instead of
+guessing.
+
+---
+
 ## Requirements between packages
 
 - `canvodpy` requires each package at exactly one version
