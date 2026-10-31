@@ -99,8 +99,11 @@ def _(mo):
     canvodpy run --site Fangorn --start 2025001 --end 2025007
     ```
 
-    Settings with `broadcast` and a RINEX receiver without
-    `nav_directory` are refused. With `shared_aux_cache_dir`, the orbits of
+    Under `broadcast`, both commands refuse a site with a RINEX receiver
+    without `nav_directory`. A run checks only the site it processes, and
+    `canvodpy config validate --site Fangorn` only that site, so one
+    settings file can also hold sites a broadcast run can't process.
+    With `shared_aux_cache_dir`, the orbits of
     the navigation files are cached too, one entry per date and content of
     the files, so a second run of the day computes nothing again. In
     Airflow, `check_day` waits for the navigation files as it waits for the
@@ -385,9 +388,8 @@ def _(mo):
     - **Shared aux cache:** an entry keeps the signals of every site.
       Before, the first site's signals were cached, and a second site
       keeping more signals got no angles for the extra ones, without an
-      error. The cache now holds the orbits once per satellite, which
-      makes building an entry much faster; existing entries are computed
-      again once.
+      error. The cache now holds the orbits once per satellite;
+      existing entries are computed again once.
     - The clock files of JPL and IAC are read.
     - The hint for a missing `canvod-filemap` points at PyPI.
     """)
