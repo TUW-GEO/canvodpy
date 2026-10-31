@@ -72,21 +72,22 @@ commits matter to its users, at the increment they call for.
 
 A minor or major release of canvodpy gets a marimo notebook that shows
 what is new and how to use it, next to the changelog. It is
-`releases/vX.Y.Z.py` in
-[canvodpy-demo](https://github.com/TUW-GEO/canvodpy-demo), made from
-`releases/_template.py`:
+`release-notes/vX.Y.Z.py` in this repository, made from
+`release-notes/_template.py`:
 
 - It pins the release it describes (`"canvodpy==1.1.0"`).
 - One section per change that users notice: what it does, a link to its
   docs page, and the code or command that uses it. A cell runs on the
   demo data (`canvodpy.demo_data()`) where it can; otherwise it shows the
   code and says what it needs.
-- It doesn't have to run from top to bottom; CI checks its format only.
+- It doesn't have to run from top to bottom; CI checks its format only
+  (`just check-release-notes`).
 
-Open the pull request in canvodpy-demo now and merge it before step 7:
-the draft release links the notebook only if it is on canvodpy-demo's
-`main` when the tag is pushed. Link it from [What's new](whats-new.md)
-as well. A patch release needs no notebook.
+Add it to the table in `release-notes/README.md`, link it from
+[What's new](whats-new.md), and merge it in a pull request of its own
+before step 4: `just release` commits only the release files. The draft
+release (step 8) links the notebook when `release-notes/vX.Y.Z.py` is in
+the tagged commit. A patch release needs no notebook.
 
 ### 4. Create the release
 

@@ -119,6 +119,7 @@ unfixable = []
 "__init__.py" = ["E402", "F401"]           # re-exports and lazy imports
 "**/{tests}/*" = ["S101", "PLR2004"]       # assert and magic values OK in tests
 "**/demo/**" = ["F811", "F821", "F401", "E402"]  # marimo notebooks: cross-cell refs, re-exports
+"release-notes/*.py" = ["F811", "F821", "F401", "E402"]  # marimo release notebooks, as demo/
 
 [tool.ruff.lint.isort]
 known-first-party = ["canvod"]
