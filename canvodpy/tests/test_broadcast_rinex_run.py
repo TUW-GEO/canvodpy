@@ -204,6 +204,36 @@ def test_a_day_without_navigation_files_stops_the_run(tmp_path, monkeypatch):
     assert "_nav" in message
 
 
+def test_a_receiver_without_nav_directory_stops_the_run(tmp_path, monkeypatch):
+    _settings(tmp_path, monkeypatch, nav=("reference_01",))
+
+    result = _run()
+
+    assert result.exit_code != 0
+    message = " ".join(f"{result.output} {result.exception}".split())
+    assert f"nav_directory for {testing.SITE_KEY}.canopy_01" in message
+
+
+def test_sites_the_run_does_not_process_are_not_checked(tmp_path, monkeypatch):
+    # The same settings file holds an NMEA site, which a broadcast run
+    # could not process; the run of the RINEX site goes through
+    stores = _settings(tmp_path, monkeypatch)
+    path = tmp_path / "settings" / "canvod-settings.yaml"
+    settings = json.loads(path.read_text())
+    nmea_site = json.loads(json.dumps(settings["sites"][testing.SITE_KEY]))
+    for receiver in nmea_site["receivers"].values():
+        receiver["reader_format"] = "nmea"
+        receiver.pop("nav_directory", None)
+    settings["sites"]["nmea_site"] = nmea_site
+    path.write_text(json.dumps(settings))
+    config_loader_module._load_config_cached.cache_clear()
+
+    result = _run()
+
+    assert result.exit_code == 0, result.output
+    _assert_angles(stores)
+
+
 def _count_orbit_computations(monkeypatch) -> list[list[str]]:
     """The navigation files of each orbit computation of the run."""
     from canvod.auxiliary.ephemeris import broadcast

@@ -279,9 +279,9 @@ Records flagged unhealthy are still used.
 
 `ephemeris_source: broadcast` supports SBF and RINEX files. NMEA receivers
 and receivers read by a reader plugin take their angles from the precise
-ephemeris only: under `broadcast`, the settings check refuses NMEA
-receivers, and the run refuses the others once their files show the
-format.
+ephemeris only: under `broadcast`, `canvodpy run` and
+`canvodpy config validate` refuse a site with NMEA receivers, and the run
+refuses the others once their files show the format.
 
 A day without navigation files stops the run, with an error that names the
 receiver, the day, and the folder searched. There is no fallback to the
@@ -303,10 +303,12 @@ sites:
         reader_format: rinex3
 ```
 
-Settings with `broadcast` and a receiver whose `reader_format` is a RINEX
-format but that has no `nav_directory` are refused; in shared-position
-mode, reference receivers are exempt. A `nav_recipe` without
-`nav_directory` is refused too. In Airflow, `check_day` waits for the
+Under `broadcast`, `canvodpy run` and `canvodpy config validate` refuse a
+site with a receiver whose `reader_format` is a RINEX format but that has
+no `nav_directory`; in shared-position mode, reference receivers are
+exempt. Only the site a run processes is checked, so one settings file
+can hold sites that a broadcast run can't process. A `nav_recipe` without
+`nav_directory` is refused when the settings load. In Airflow, `check_day` waits for the
 navigation files as it waits for the observation files.
 
 ---

@@ -6,6 +6,7 @@ on the configuration models. No YAML files or filesystem config required.
 
 from __future__ import annotations
 
+import re
 import warnings
 from pathlib import Path
 
@@ -31,6 +32,7 @@ from canvod.config.models import (
     SitesConfig,
     StorageConfig,
     VodAnalysisConfig,
+    broadcast_ephemeris_error,
     reference_store_group,
 )
 from canvod.utils import testing
@@ -1009,15 +1011,10 @@ class TestCanvodConfig:
 
 class TestNavDirectory:
     """With the broadcast ephemeris, receivers with RINEX files name their
-    navigation files with nav_directory (#567, ADR 0023)."""
+    navigation files with nav_directory (#567, ADR 0023). The check is per
+    site: a run checks the site it processes."""
 
-    def _config(
-        self,
-        source: str,
-        reader_format: str,
-        position_mode: str = "per_receiver",
-        **nav_directories,
-    ):
+    def _site(self, reader_format: str, **nav_directories) -> SiteConfig:
         def receiver(name: str, **kwargs):
             return ReceiverConfig(
                 directory=name,
@@ -1026,54 +1023,66 @@ class TestNavDirectory:
                 **kwargs,
             )
 
-        return CanvodConfig(
-            processing=ProcessingConfig(
-                metadata=MetadataConfig(author="A", email="a@b.com", institution="U"),
-                storage=StorageConfig(stores_root_dir=Path("/path/to/stores")),
-                params=ProcessingParams(
-                    ephemeris_source=source,
-                    receiver_position_mode=position_mode,
-                ),
-            ),
-            sites=SitesConfig(
-                sites={
-                    "s": SiteConfig(
-                        gnss_site_data_root="/data",
-                        receivers={
-                            "c": receiver("c", type="canopy"),
-                            "r": receiver("r", type="reference", paired_canopies="all"),
-                        },
-                    )
-                }
-            ),
-            sids=SidsConfig(),
+        return SiteConfig(
+            gnss_site_data_root="/data",
+            receivers={
+                "c": receiver("c", type="canopy"),
+                "r": receiver("r", type="reference", paired_canopies="all"),
+            },
+        )
+
+    def _error(
+        self,
+        reader_format: str,
+        position_mode: str = "per_receiver",
+        **nav_directories,
+    ) -> str | None:
+        return broadcast_ephemeris_error(
+            "s", self._site(reader_format, **nav_directories), position_mode
         )
 
     def test_broadcast_rinex_receiver_without_nav_directory_is_refused(self):
-        with pytest.raises(ValidationError, match=r"nav_directory for s\.r\b"):
-            self._config("broadcast", "rinex3", c="c_nav")
+        assert re.search(r"nav_directory for s\.r\b", self._error("rinex3", c="c_nav"))
 
     def test_shared_position_reference_needs_no_nav_directory(self):
         # The reference takes the angles from its canopy's navigation files
-        self._config("broadcast", "rinex3", "shared", c="c_nav")
+        assert self._error("rinex3", "shared", c="c_nav") is None
 
     def test_shared_position_canopy_without_nav_directory_is_refused(self):
-        with pytest.raises(ValidationError, match=r"nav_directory for s\.c\b"):
-            self._config("broadcast", "rinex3", "shared", r="r_nav")
+        error = self._error("rinex3", "shared", r="r_nav")
+        assert re.search(r"nav_directory for s\.c\b", error)
 
     def test_broadcast_rinex_receivers_with_nav_directory(self):
-        cfg = self._config("broadcast", "rinex3", c="c_nav", r="r")
-        assert cfg.sites.sites["s"].receivers["c"].nav_directory == "c_nav"
-
-    def test_precise_needs_no_nav_directory(self):
-        self._config("precise", "rinex3")
+        assert self._error("rinex3", c="c_nav", r="r") is None
 
     def test_sbf_receivers_need_no_nav_directory(self):
-        self._config("broadcast", "sbf")
+        assert self._error("sbf") is None
 
     def test_broadcast_nmea_receiver_is_refused(self):
-        with pytest.raises(ValidationError, match=r"s\.c, s\.r.*nmea.*precise"):
-            self._config("broadcast", "nmea")
+        assert re.search(r"s\.c, s\.r.*nmea.*precise", self._error("nmea"))
+
+    def test_settings_with_sites_a_broadcast_run_cannot_process_load(self):
+        # One settings file, an SBF site and an NMEA site: a broadcast run
+        # of the SBF site works, one of the NMEA site is refused
+        cfg = CanvodConfig(
+            processing=ProcessingConfig(
+                metadata=MetadataConfig(author="A", email="a@b.com", institution="U"),
+                storage=StorageConfig(stores_root_dir=Path("/path/to/stores")),
+                params=ProcessingParams(ephemeris_source="broadcast"),
+            ),
+            sites=SitesConfig(
+                sites={"sbf_site": self._site("sbf"), "nmea_site": self._site("nmea")}
+            ),
+            sids=SidsConfig(),
+        )
+        sites = cfg.sites.sites
+        assert (
+            broadcast_ephemeris_error("sbf_site", sites["sbf_site"], "per_receiver")
+            is None
+        )
+        assert "nmea_site.c" in broadcast_ephemeris_error(
+            "nmea_site", sites["nmea_site"], "per_receiver"
+        )
 
     def test_nav_recipe_without_nav_directory_is_refused(self):
         with pytest.raises(ValidationError, match="set nav_directory as well"):

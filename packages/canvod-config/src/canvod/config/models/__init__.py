@@ -53,6 +53,7 @@ from .sites import (
     SiteConfig,
     SitesConfig,
     VodAnalysisConfig,
+    broadcast_ephemeris_error,
     mixed_format_error,
     reference_store_group,
 )
@@ -93,6 +94,7 @@ __all__ = [
     "TemporalAggregationConfig",
     "VodAnalysisConfig",
     "_StrictModel",
+    "broadcast_ephemeris_error",
     "describe_preprocessing",
     "describe_settings",
     "mixed_format_error",
