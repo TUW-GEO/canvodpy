@@ -708,7 +708,9 @@ def run(
             help=(
                 "Where the satellite orbits and clocks come from: precise "
                 "uses the SP3 and CLK products of an analysis center, "
-                "broadcast uses the SatVisibility blocks of the SBF files "
+                "broadcast uses the broadcast ephemeris the receiver "
+                "recorded: the SatVisibility blocks of SBF files, or the "
+                "RINEX navigation files in each receiver's nav_directory "
                 "(final: old name of precise). Default: from "
                 "canvod-settings.yaml."
             ),
