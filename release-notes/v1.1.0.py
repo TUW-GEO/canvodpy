@@ -196,6 +196,25 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md(r"""
+    ## Orbit interpolation
+
+    The orbits of the precise ephemeris and of RINEX navigation files are
+    interpolated onto the epochs of a day with a polynomial of degree 10
+    through the 11 nearest orbit epochs, as RTKLIB does. Before, a cubic
+    Hermite spline with velocities estimated from the positions did this.
+    The angles `theta` and `phi` and the distance `r` change between the
+    orbit epochs. Days processed after the update get the new values; days
+    already in a store keep theirs. A shared aux cache from v1.0.0 is
+    computed again once.
+
+    More: [Interpolation methods](https://canvodpy.eu/packages/auxiliary/interpolation/#polynomial-of-degree-10-orbits).
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
     ## Satellites without a position
 
     A satellite has no position at an epoch when no orbit covers it: no
@@ -365,25 +384,6 @@ def _(mo):
       the completion in the open terminal.
 
     More: [Command line](https://canvodpy.eu/api/cli/#in-the-terminal).
-    """)
-    return
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""
-    ## Orbit interpolation
-
-    The orbits of the precise ephemeris and of RINEX navigation files are
-    interpolated onto the epochs of a day with a polynomial of degree 10
-    through the 11 nearest orbit epochs, as RTKLIB does. Before, a cubic
-    Hermite spline with velocities estimated from the positions did this.
-    The angles `theta` and `phi` and the distance `r` change between the
-    orbit epochs. Days processed after the update get the new values; days
-    already in a store keep theirs. A shared aux cache from v1.0.0 is
-    computed again once.
-
-    More: [Interpolation methods](https://canvodpy.eu/packages/auxiliary/interpolation/#polynomial-of-degree-10-orbits).
     """)
     return
 
