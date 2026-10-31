@@ -356,7 +356,7 @@ processing:
     store_radial_distance: false   # store satellite distance (r)
     receiver_position_mode: shared # or per_receiver
     file_pairing: complete         # or paired
-    ephemeris_source: precise      # or broadcast (SBF only)
+    ephemeris_source: precise      # or broadcast (SBF, or RINEX with nav_directory)
 
     # --- Resource management ---
     resource_mode: auto            # auto or manual
