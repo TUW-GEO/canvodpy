@@ -104,8 +104,9 @@ class HTMBuilder(BaseGridBuilder):
 
     References
     ----------
-    Kunszt et al. (2001): "The Hierarchical Triangular Mesh"
-    https://www.sdss.org/dr12/algorithms/htm/
+    Kunszt, Szalay and Thakar (2001): "The Hierarchical Triangular Mesh",
+    Mining the Sky, ESO Astrophysics Symposia, pp. 631-637.
+    https://doi.org/10.1007/10849171_83
 
     """
 
