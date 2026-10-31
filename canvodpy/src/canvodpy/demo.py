@@ -23,7 +23,7 @@ demo store that is written to never changes what the check compares with.
 
 ``ARCHIVES`` is the single list of what each archive holds;
 ``just demo-archives`` builds the zips from it. The sha256 values are
-those of zips built from the test data at commit 2024c42 of
+those of zips built from the test data at commit d4ab73e of
 ``packages/canvod-readers/tests/test_data`` (the run history at commit
 f0764c45); its releases are archived on Zenodo
 (10.5281/zenodo.19708759). The zips are in the Hugging Face dataset
@@ -46,7 +46,7 @@ from typing import Literal
 
 DemoKind = Literal["rinex", "sbf", "aux", "run_history", "stores"]
 
-DEMO_DATA_VERSION = "2"
+DEMO_DATA_VERSION = "3"
 """Folder name under the cache; raise it when the archives change."""
 
 # Attempts per download; a server can drop a connection mid-file.
@@ -55,7 +55,7 @@ DOWNLOAD_ATTEMPTS = 5
 # The Hugging Face dataset at one commit; a new commit means new archives.
 _HF_FILES = (
     "https://huggingface.co/datasets/nfb2021/canvodpy-demo-data/resolve/"
-    "034363cc4583d1d400b2d53a71f34b2e2eb427b7/"
+    "f1b4ff2c19a3fe87b876eec09ff1bfd93dc17ada/"
 )
 
 
@@ -121,7 +121,7 @@ ARCHIVES: tuple[DemoArchive, ...] = (
         name="canvodpy-demo-aux.zip",
         kind="aux",
         url=_HF_FILES + "canvodpy-demo-aux.zip",
-        sha256="d9ccb764bb8031ccff484559255e1b156bafa962e91c9142fd2fd8065d781256",
+        sha256="47fef192d648317c98f54f146bedf5538e98385e7f7aa6f305ef7ef907cfc2f6",
         members=(
             "aux_data/01_SP3/COD0MGXFIN_*_01D_05M_ORB.SP3",
             "aux_data/02_CLK/COD0MGXFIN_*_01D_30S_CLK.CLK",
