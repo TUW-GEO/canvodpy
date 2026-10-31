@@ -100,8 +100,9 @@ def _(mo):
     ```
 
     Under `broadcast`, both commands refuse a site with a RINEX receiver
-    without `nav_directory`; only the site a run processes is checked, so
-    one settings file can also hold sites a broadcast run can't process.
+    without `nav_directory`. A run checks only the site it processes, and
+    `canvodpy config validate --site Fangorn` only that site, so one
+    settings file can also hold sites a broadcast run can't process.
     With `shared_aux_cache_dir`, the orbits of
     the navigation files are cached too, one entry per date and content of
     the files, so a second run of the day computes nothing again. In
