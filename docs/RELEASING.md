@@ -12,8 +12,8 @@ Before starting a release:
 - [ ] All CI checks passing on `main`
 - [ ] `main` branch is stable
 - [ ] All changes committed and pushed
-- [ ] You are a maintainer: `main` requires a PR (step 4), and only
-      maintainers can create release tags (step 5)
+- [ ] You are a maintainer: `main` requires a PR (step 6), and only
+      maintainers can create release tags (step 7)
 - [ ] The release files (`pyproject.toml` files, `uv.lock`, the
       `CHANGELOG.md` files, `CITATION.cff`, `.zenodo.json`,
       `codemeta.json`) have no uncommitted changes; `just release`
@@ -68,7 +68,28 @@ For each package: its version, its last release tag, and the commits since
 that tag that touched the package's folder. Release a package when its
 commits matter to its users, at the increment they call for.
 
-### 3. Create the release
+### 3. Write the release notebook (minor and major releases)
+
+A minor or major release of canvodpy gets a marimo notebook that shows
+what is new and how to use it, next to the changelog. It is
+`release-notes/vX.Y.Z.py` in this repository, made from
+`release-notes/_template.py`:
+
+- It pins the release it describes (`"canvodpy==1.1.0"`).
+- One section per change that users notice: what it does, a link to its
+  docs page, and the code or command that uses it. A cell runs on the
+  demo data (`canvodpy.demo_data()`) where it can; otherwise it shows the
+  code and says what it needs.
+- It doesn't have to run from top to bottom; CI checks its format only
+  (`just check-release-notes`).
+
+Add it to the table in `release-notes/README.md`, link it from
+[What's new](whats-new.md), and merge it in a pull request of its own
+before step 4: `just release` commits only the release files. The draft
+release (step 8) links the notebook when `release-notes/vX.Y.Z.py` is in
+the tagged commit. A patch release needs no notebook.
+
+### 4. Create the release
 
 ```bash
 just release canvod-store=1.1.0 canvod-grids=1.0.1 canvodpy=1.1.0
@@ -94,9 +115,9 @@ This command:
    exactly the release files:
    `bump: canvodpy 1.1.0 (canvod-store 1.1.0, canvod-grids 1.0.1)`
 
-It creates no tag: the tags belong on the merged commit on `main` (step 6).
+It creates no tag: the tags belong on the merged commit on `main` (step 7).
 
-### 4. Review
+### 5. Review
 
 ```bash
 git show --stat     # the version files, uv.lock and CHANGELOG.md files, nothing else
@@ -105,7 +126,7 @@ git show --stat     # the version files, uv.lock and CHANGELOG.md files, nothing
 The changelog sections are generated from commit subjects; edit them in
 the release branch if a line needs it.
 
-### 5. Open a PR for the release commit
+### 6. Open a PR for the release commit
 
 `main` requires a PR. Push the branch and open one:
 
@@ -116,7 +137,7 @@ gh pr create --title "bump: canvodpy 1.1.0 (canvod-store 1.1.0, canvod-grids 1.0
 
 Merge the PR once CI passes.
 
-### 6. Tag the merged commit
+### 7. Tag the merged commit
 
 A merge can give the release a different commit than the one on the
 branch, so the tags are created only now, on `main`:
@@ -139,18 +160,19 @@ so a canvodpy tag pushed together with the package tags gets no draft
 release. The package tags start no workflow, so they can go in one push,
 however many there are.
 
-### 7. Publish the draft release
+### 8. Publish the draft release
 
 The `.github/workflows/release.yml` workflow detects the canvodpy tag
 (`v1.1.0`) and creates a **draft** release whose notes are canvodpy's
-`CHANGELOG.md` section, including the package versions. Package tags get no
+`CHANGELOG.md` section, including the package versions, and a link that
+opens the release notebook (step 3) in molab. Package tags get no
 GitHub release of their own. Review and publish at
 [github.com/TUW-GEO/canvodpy/releases](https://github.com/TUW-GEO/canvodpy/releases).
 
 Pushing the tags does **not** publish to PyPI: tagging and PyPI
-publishing are deliberately decoupled (see step 8).
+publishing are deliberately decoupled (see step 9).
 
-### 8. Publish to PyPI (separate, manual, whenever you decide)
+### 9. Publish to PyPI (separate, manual, whenever you decide)
 
 Not automatic. Trigger `publish_pypi.yml` on the canvodpy tag, either from
 the
@@ -168,7 +190,7 @@ commit (`scripts/release.py tagged`), here canvodpy, canvod-store and
 canvod-grids. You can create several releases before ever running this: a
 tag existing is not a promise that PyPI has it.
 
-### 9. Post-release
+### 10. Post-release
 
 - Monitor issues for regressions
 - Check the Zenodo record the release created: its version must be
@@ -217,9 +239,9 @@ tag existing is not a promise that PyPI has it.
     Verify the canvodpy tag matches the pattern `v*.*.*` at
     [github.com/TUW-GEO/canvodpy/actions](https://github.com/TUW-GEO/canvodpy/actions),
     and that `CHANGELOG.md` has a section `## v1.1.0 (...)`.
-    (PyPI publishing never triggers from a tag push at all; see step 8.)
+    (PyPI publishing never triggers from a tag push at all; see step 9.)
     If no run started, the canvodpy tag was pushed in one push of more
-    than three tags (step 6). Create the draft with the notes the workflow
+    than three tags (step 7). Create the draft with the notes the workflow
     would use, from the tagged `CHANGELOG.md`:
 
     ```bash

@@ -631,6 +631,12 @@ notebooks:
     @echo "{{ GREEN }}{{ BOLD }}Available notebooks:{{ NORMAL }}"
     @ls demo/[0-9]*.py | sed 's|demo/||' | sort
 
+# check the format of the release notebooks (release-notes/); they are not
+# run, since some cells only show code that needs the reader's own data
+[group('notebooks')]
+check-release-notes:
+    uv run marimo check --strict release-notes/*.py
+
 # open a marimo notebook for editing (e.g. just open-notebook grids_overview.py)
 # uvx (not `uv run`) so this never touches the workspace venv/uv.lock --
 # --sandbox installs the notebook's own PEP 723 deps into a throwaway venv
