@@ -1951,11 +1951,19 @@ class RinexDataProcessor:
         cached_datasets: list,
         aux_zarr_path,
         receiver_position,
+        aux_group: str | None = None,
     ) -> list:
         """Recompute spherical coordinates for a new receiver position.
 
         Opens the aux Zarr once (hoisted outside the per-file loop) and
         recomputes theta/phi/r for every cached dataset using the new position.
+
+        Parameters
+        ----------
+        aux_group : str | None, default None
+            Zarr group within ``aux_zarr_path`` that Wave A read: the entry
+            of the shared aux cache (``{fingerprint}/{date}``), or ``None``
+            for the root of a per-site aux store.
         """
         if aux_zarr_path is None:
             raise RuntimeError(
@@ -1963,7 +1971,7 @@ class RinexDataProcessor:
                 "not available with SBF geometry"
             )
         # Hoist open_zarr outside the per-file loop (was reopened per file)
-        aux_store = _open_aux_store(aux_zarr_path)
+        aux_store = _open_aux_store(aux_zarr_path, group=aux_group)
         augmented_datasets = []
         try:
             for fpath, ds in cached_datasets:
@@ -5875,7 +5883,10 @@ class RinexDataProcessor:
                 )
                 t = time.perf_counter()
                 result = self._recompute_scs_for_position(
-                    cached_aug, aux_zarr_path, positions[job_name]
+                    cached_aug,
+                    aux_zarr_path,
+                    positions[job_name],
+                    aux_group=aux_group,
                 )
                 return result, time.perf_counter() - t
 
