@@ -99,8 +99,10 @@ def _(mo):
     canvodpy run --site Fangorn --start 2025001 --end 2025007
     ```
 
-    Settings with `broadcast` and a RINEX receiver without
-    `nav_directory` are refused. With `shared_aux_cache_dir`, the orbits of
+    Under `broadcast`, both commands refuse a site with a RINEX receiver
+    without `nav_directory`; only the site a run processes is checked, so
+    one settings file can also hold sites a broadcast run can't process.
+    With `shared_aux_cache_dir`, the orbits of
     the navigation files are cached too, one entry per date and content of
     the files, so a second run of the day computes nothing again. In
     Airflow, `check_day` waits for the navigation files as it waits for the
