@@ -45,7 +45,7 @@ def _parsed_file() -> tuple[Path, xr.Dataset]:
         {"SNR": (("epoch", "sid"), np.full((len(EPOCHS), len(SIDS)), 40.0))},
         coords={"epoch": EPOCHS, "sid": SIDS},
     )
-    return Path("ROSA01TUW_R_20250010000_01D_30S_AA.rnx"), ds
+    return Path("FANR01INK_R_20250010000_01D_30S_AA.rnx"), ds
 
 
 def test_recompute_reads_the_group_of_the_shared_cache(shared_cache: Path):
