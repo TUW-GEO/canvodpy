@@ -170,7 +170,8 @@ def _():
 
     with warnings.catch_warnings(record=True) as _caught:
         warnings.simplefilter("always")
-        _params = ProcessingParams(ephemeris_source="final")
+        # as a settings file with the old name gives it
+        _params = ProcessingParams.model_validate({"ephemeris_source": "final"})
 
     print("ephemeris_source:", _params.ephemeris_source)
     for _warning in _caught:
