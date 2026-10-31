@@ -66,7 +66,7 @@ $ canvodpy run [OPTIONS]
 * `--workers <int>`: Number of worker processes. Default: from the resource settings in canvod-settings.yaml.
 * `-c, --config-dir <path|url>`: Configuration directory, holding canvod-settings.yaml and recipes/, or the URL of a settings file in a GitHub repository, fetched by each run (https://raw.githubusercontent.com/<account>/<repo>/<commit, tag or branch>/.../canvod-settings.yaml). Default: $CANVOD_CONFIG_DIR, else config/ of the canvodpy checkout, else ~/.config/canvodpy.
 * `--config <str>`: Settings file whose values replace those of canvod-settings.yaml.
-* `--ephemeris-source <precise|broadcast|final>`: Where the satellite orbits and clocks come from: precise uses the SP3 and CLK products of an analysis center, broadcast uses the SatVisibility blocks of the SBF files (final: old name of precise). Default: from canvod-settings.yaml.
+* `--ephemeris-source <precise|broadcast|final>`: Where the satellite orbits and clocks come from: precise uses the SP3 and CLK products of an analysis center, broadcast uses the broadcast ephemeris the receiver recorded: the SatVisibility blocks of SBF files, or the RINEX navigation files in each receiver's nav_directory (final: old name of precise). Default: from canvod-settings.yaml.
 * `--vod-calculator <tau_omega>`: VOD calculator to use.  [default: tau_omega]
 * `--write-catalog`: After the run, write the latest STAC catalog of every store under the data root, as `canvodpy stac write` does.
 * `--dashboard`: Start the marimo performance dashboard next to this run, in a process of its own. Its startup messages go to a log file, not to this terminal.

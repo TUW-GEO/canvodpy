@@ -49,6 +49,8 @@ jobs:
                   tool: just
             - name: Lint with ruff
               run: just check-lint-only
+            - name: Check the format of the release notebooks
+              run: just check-release-notes
 
     formatting:
         runs-on: ubuntu-latest

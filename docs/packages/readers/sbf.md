@@ -600,15 +600,15 @@ See [:octicons-arrow-right-24: Satellite Catalog](satellite-catalog.md) for the 
 | Format | Plain text | Binary |
 | File extension | `.rnx` | `.sbf` |
 | Header | Structured text | `ReceiverSetup` block |
-| Geometry ($\theta$, $\varphi$) | Requires SP3 download | **Embedded in file** |
+| Geometry ($\theta$, $\varphi$) | SP3 download, or the receiver's RINEX navigation files | **Embedded in file** |
 | Metadata | Header only | Full PVT + quality monitoring |
 | `source_format` | `"rinex3"` | `"sbf"` |
 | `to_ds()` | ✓ | ✓ |
 | `iter_epochs()` | ✓ | ✓ |
 | `to_ds_and_auxiliary()` | Returns `{}` aux | Returns `{"sbf_obs": meta_ds}` |
-| Broadcast ephemeris | Not supported (needs a navigation file) | Built-in via SatVisibility |
+| Broadcast ephemeris | From RINEX navigation files (`nav_directory`) | Built-in via SatVisibility |
 | SID discovery | Header-based (all declared SVs) | Observation-based (tracked SVs only) |
-| SNR quantization | ~0.001 dB | 0.25 dB-Hz; 0.03125 dB-Hz with MeasExtra |
+| SNR quantization | 0.001 (format F14.3, RINEX 3.04 Table A3) | 0.25 dB-Hz; 0.03125 dB-Hz with MeasExtra |
 
 ---
 

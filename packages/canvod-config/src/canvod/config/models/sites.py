@@ -289,6 +289,53 @@ def mixed_format_error(
     )
 
 
+def broadcast_ephemeris_error(
+    site_name: str, site: SiteConfig, receiver_position_mode: str
+) -> str | None:
+    """Error message if a site's receivers cannot use the broadcast ephemeris.
+
+    NMEA receivers are refused: their angles come only from the precise
+    ephemeris. Receivers with RINEX files need ``nav_directory``; in
+    shared-position mode a reference receiver takes the angles from its
+    canopy's navigation files and needs none of its own. A receiver whose
+    ``reader_format`` is ``auto`` or a plugin format is checked by the run,
+    once its files show the format.
+
+    The check is per site: a settings file can hold sites that a run with
+    ``ephemeris_source: broadcast`` does not process.
+
+    Returns
+    -------
+    str | None
+        The message, or ``None`` if every receiver of the site can use it.
+    """
+    nmea = [
+        f"{site_name}.{name}"
+        for name, receiver in site.receivers.items()
+        if receiver.reader_format == "nmea"
+    ]
+    if nmea:
+        return (
+            "ephemeris_source 'broadcast' supports SBF and RINEX files; "
+            f"{', '.join(nmea)} read nmea: use ephemeris_source 'precise'."
+        )
+    shared = receiver_position_mode == "shared"
+    missing = [
+        f"{site_name}.{name}"
+        for name, receiver in site.receivers.items()
+        if receiver.reader_format in RINEX_READER_FORMATS
+        and receiver.nav_directory is None
+        and not (shared and receiver.type == "reference")
+    ]
+    if missing:
+        return (
+            "ephemeris_source 'broadcast' takes the satellite positions for "
+            "RINEX files from navigation files: set nav_directory "
+            f"for {', '.join(missing)} (sites.<site>.receivers.<receiver>)."
+        )
+    return None
+
+
 class VodAnalysisConfig(_StrictModel):
     """VOD analysis pair configuration."""
 
