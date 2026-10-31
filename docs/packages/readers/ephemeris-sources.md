@@ -217,7 +217,7 @@ processing:
   one to two hours, flagged as computed from the broadcast ephemeris,
   while the ephemerides it recorded in the same files give the right
   angles ([#564](https://github.com/TUW-GEO/canvodpy/issues/564)). For
-  angles that canvodpy computes from the orbits, use the precise ephemeris
+  angles that canvodpy computes from the orbits, use the precise ephemeris.
 
 ---
 
