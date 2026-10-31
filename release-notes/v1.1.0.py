@@ -385,9 +385,8 @@ def _(mo):
     - **Shared aux cache:** an entry keeps the signals of every site.
       Before, the first site's signals were cached, and a second site
       keeping more signals got no angles for the extra ones, without an
-      error. The cache now holds the orbits once per satellite, which
-      makes building an entry much faster; existing entries are computed
-      again once.
+      error. The cache now holds the orbits once per satellite;
+      existing entries are computed again once.
     - The clock files of JPL and IAC are read.
     - The hint for a missing `canvod-filemap` points at PyPI.
     """)
