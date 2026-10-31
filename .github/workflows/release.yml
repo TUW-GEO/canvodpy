@@ -42,6 +42,22 @@ jobs:
           fi
           cat release-notes.md
 
+      - name: Link the release notebook
+        # Minor and major releases have a notebook in canvodpy-demo
+        # (docs/RELEASING.md, step 3); a patch release has none, and its
+        # notes get no link.
+        run: |
+          notebook="releases/${GITHUB_REF_NAME}.py"
+          if curl --silent --fail --head --output /dev/null \
+              "https://raw.githubusercontent.com/TUW-GEO/canvodpy-demo/main/${notebook}"; then
+            {
+              echo
+              echo "**What is new, and how to use it:** [open the release notebook in molab](https://molab.marimo.io/github/TUW-GEO/canvodpy-demo/blob/main/${notebook})"
+            } >> release-notes.md
+          else
+            echo "No release notebook ${notebook} in canvodpy-demo: the notes get no link."
+          fi
+
       - name: Extract version from tag
         id: version
         run: |
