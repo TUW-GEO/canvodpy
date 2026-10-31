@@ -145,7 +145,7 @@ Dashed arrows are optional inputs.
 3. **Prepare each day.** For each day, the run gets the satellite orbits
    (SP3) and, if `aux_data.fetch_clock` is `true`, the satellite
    clocks (CLK), and interpolates them onto the epochs of the day: orbits
-   with cubic Hermite splines, clocks piecewise linearly. Without a NASA
+   with a polynomial of degree 10, clocks piecewise linearly. Without a NASA
    Earthdata account in the settings, the files come from ESA; with one,
    from NASA CDDIS first and from ESA if that fails. For SBF files, the
    setting `ephemeris_source: broadcast` uses the satellite angles that the

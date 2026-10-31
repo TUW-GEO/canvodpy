@@ -75,11 +75,7 @@ class Sp3File(AuxFile):
 
     def get_interpolation_strategy(self) -> Interpolator:
         """Get appropriate interpolation strategy for SP3 files."""
-        config = Sp3Config(
-            use_velocities=bool(self.add_velocities),
-            fallback_method="linear",
-        )
-        return Sp3InterpolationStrategy(config=config)
+        return Sp3InterpolationStrategy(config=Sp3Config())
 
     def candidate_filenames(self) -> list[str]:
         """SP3 file names, one per sampling the product has been published with.

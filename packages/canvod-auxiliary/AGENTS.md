@@ -9,8 +9,8 @@ observation epochs, receiver position, and θ/φ per epoch and SID.
 | Path (under `src/canvod/auxiliary/`) | What |
 |---|---|
 | `ephemeris/provider.py` | `EphemerisProvider` ABC; `AgencyEphemerisProvider` (SP3/CLK), `SbfBroadcastProvider` (SBF SatVisibility angles), `RinexNavProvider` (RINEX navigation files) |
-| `ephemeris/broadcast.py` | Broadcast orbits: navigation records to positions and velocities on a 5-minute grid, the input of the Hermite interpolation (ADR 0023) |
-| `interpolation/` | The one interpolation module: Hermite for orbits, clock interpolation, and the day grid (`interpolation/day_grid.py`) |
+| `ephemeris/broadcast.py` | Broadcast orbits: navigation records to positions and velocities on a 5-minute grid, the input of the orbit interpolation (ADR 0023) |
+| `interpolation/` | The one interpolation module: orbits (polynomial of degree 10 through the 11 nearest epochs, as RTKLIB), clock interpolation, and the day grid (`interpolation/day_grid.py`) |
 | `position/` | `ECEFPosition`, geodetic position, spherical coordinates (θ, φ) |
 | `products/` | Product registry (`products/products.toml`): which final/rapid agency products exist, their samplings and GNSS, where to fetch them; `products/check.py` checks it against the servers (`just check-products`) |
 | `augmentation.py`, `pipeline.py` | Adding the auxiliary data to an observation dataset |
@@ -32,7 +32,7 @@ Background: `docs/packages/auxiliary/overview.md`,
 - **Broadcast geometry**: SBF files take θ/φ from `SbfBroadcastProvider`
   (θ/φ the receiver derived from the almanac are masked; the source of
   each value is recorded). RINEX files take the receiver's navigation
-  files through `ephemeris/broadcast.py` and the same Hermite
+  files through `ephemeris/broadcast.py` and the same orbit
   interpolation as the agency products; never a second interpolation
   path, never a fallback to the agency products (ADR 0023).
 - CLK clock bias is read in seconds. When a change alters cached

@@ -58,11 +58,10 @@ def clock_ds() -> xr.Dataset:
 
 
 def test_sp3_interpolators_agree(ephem_ds):
-    kw = {"use_velocities": True, "fallback_method": "linear"}
-    a = orch.Sp3InterpolationStrategy(config=orch.Sp3Config(**kw)).interpolate(
+    a = orch.Sp3InterpolationStrategy(config=orch.Sp3Config()).interpolate(
         ephem_ds, TARGET
     )
-    b = aux.Sp3InterpolationStrategy(config=aux.Sp3Config(**kw)).interpolate(
+    b = aux.Sp3InterpolationStrategy(config=aux.Sp3Config()).interpolate(
         ephem_ds, TARGET
     )
     _assert_same(a, b)

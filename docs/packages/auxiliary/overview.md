@@ -56,17 +56,15 @@ Different data types require different methods based on the underlying physics:
 
 <div class="grid cards" markdown>
 
--   :fontawesome-solid-circle-nodes: &nbsp; **SP3 (Hermite cubic splines)**
+-   :fontawesome-solid-circle-nodes: &nbsp; **SP3 (polynomial of degree 10)**
 
     ---
 
-    Satellite orbital motion is smooth and predictable.
-    Hermite splines exploit available velocity data for C1-continuity
-    and sub-millimeter interpolation accuracy.
+    Each position comes from the polynomial through the 11 nearest orbit
+    epochs, as in RTKLIB; the velocities are its derivative.
 
     ```python
-    config = Sp3Config(use_velocities=True, fallback="linear")
-    strategy = Sp3InterpolationStrategy(config=config)
+    strategy = Sp3InterpolationStrategy(config=Sp3Config())
     ```
 
 -   :fontawesome-solid-clock: &nbsp; **CLK (piecewise linear)**
@@ -182,7 +180,7 @@ Different data types require different methods based on the underlying physics:
         Preprocessor-->>User: {epoch: 96, sid: 384}
 
         User->>Interpolator: interpolate onto the day's epoch grid
-        Interpolator->>Interpolator: Hermite splines
+        Interpolator->>Interpolator: polynomial of degree 10
         Interpolator-->>User: {epoch: 2880, sid: 384}
 
         User->>Coordinates: compute_spherical_coordinates()
