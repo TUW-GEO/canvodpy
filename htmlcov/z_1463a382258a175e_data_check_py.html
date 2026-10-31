@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for canvodpy/src/canvodpy/orchestrator/data_check.py: 91%</title>
+    <title>Coverage for canvodpy/src/canvodpy/orchestrator/data_check.py: 89%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_c827f16f.png">
     <link rel="stylesheet" href="style_cb_4667309f.css" type="text/css">
     <script src="coverage_html_cb_54cfdca1.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>canvodpy<span class="sep">/</span>src<span class="sep">/</span>canvodpy<span class="sep">/</span>orchestrator<span class="sep">/</span>data_check.py</b>:
-            <span class="pc_cov">91%</span>
+            <span class="pc_cov">89%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -54,9 +54,9 @@
             </div>
         </aside>
         <h2>
-            <span class="text">153 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">139<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">14<span class="text"> missing</span></button>
+            <span class="text">157 statements &nbsp;</span>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">140<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">17<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_1463a382258a175e_discovery_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-10-31 19:42 +0000
+            created at 2026-10-31 19:45 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -101,7 +101,7 @@
     <p class="pln"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t"><span class="key">import</span> <span class="nam">numpy</span> <span class="key">as</span> <span class="nam">np</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">config</span><span class="op">.</span><span class="nam">models</span> <span class="key">import</span> <span class="nam">mixed_format_error</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t"><span class="key">from</span> <span class="nam">canvod</span><span class="op">.</span><span class="nam">config</span><span class="op">.</span><span class="nam">models</span> <span class="key">import</span> <span class="nam">broadcast_ephemeris_error</span><span class="op">,</span> <span class="nam">mixed_format_error</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t23" href="#t23">23</a></span><span class="t"><span class="key">from</span> <span class="nam">canvodpy</span><span class="op">.</span><span class="nam">orchestrator</span><span class="op">.</span><span class="nam">discovery</span> <span class="key">import</span> <span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t24" href="#t24">24</a></span><span class="t">    <span class="nam">COMPRESSION_SUFFIXES</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t25" href="#t25">25</a></span><span class="t">    <span class="nam">DiscoveredFile</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -446,24 +446,30 @@
     <p class="run"><span class="n"><a id="t364" href="#t364">364</a></span><span class="t">    <span class="nam">clear_discovery_cache</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t365" href="#t365">365</a></span><span class="t">    <span class="nam">report</span> <span class="op">=</span> <span class="nam">SiteReport</span><span class="op">(</span><span class="nam">site</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t366" href="#t366">366</a></span><span class="t">    <span class="nam">report</span><span class="op">.</span><span class="nam">errors</span><span class="op">.</span><span class="nam">extend</span><span class="op">(</span><span class="nam">missing_store_settings_errors</span><span class="op">(</span><span class="nam">site</span><span class="op">,</span> <span class="nam">site_config</span><span class="op">,</span> <span class="nam">config</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t367" href="#t367">367</a></span><span class="t">    <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t368" href="#t368">368</a></span><span class="t">        <span class="nam">check_receivers</span><span class="op">(</span><span class="nam">receivers</span><span class="op">,</span> <span class="nam">base_path</span><span class="op">,</span> <span class="nam">site</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t369" href="#t369">369</a></span><span class="t">    <span class="key">except</span> <span class="nam">DiscoveryError</span> <span class="key">as</span> <span class="nam">exc</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t370" href="#t370">370</a></span><span class="t">        <span class="nam">report</span><span class="op">.</span><span class="nam">errors</span><span class="op">.</span><span class="nam">append</span><span class="op">(</span><span class="nam">str</span><span class="op">(</span><span class="nam">exc</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t371" href="#t371">371</a></span><span class="t">    <span class="key">for</span> <span class="nam">name</span><span class="op">,</span> <span class="nam">cfg</span> <span class="key">in</span> <span class="nam">receivers</span><span class="op">.</span><span class="nam">items</span><span class="op">(</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t372" href="#t372">372</a></span><span class="t">        <span class="nam">report</span><span class="op">.</span><span class="nam">receivers</span><span class="op">[</span><span class="nam">name</span><span class="op">]</span> <span class="op">=</span> <span class="nam">check_receiver_data</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t373" href="#t373">373</a></span><span class="t">            <span class="nam">name</span><span class="op">,</span> <span class="nam">cfg</span><span class="op">,</span> <span class="nam">base_path</span><span class="op">,</span> <span class="nam">site</span><span class="op">,</span> <span class="nam">check_sampling</span><span class="op">,</span> <span class="nam">reader_options</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t374" href="#t374">374</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t375" href="#t375">375</a></span><span class="t">    <span class="key">for</span> <span class="nam">ref</span><span class="op">,</span> <span class="nam">canopy</span> <span class="key">in</span> <span class="nam">site_config</span><span class="op">.</span><span class="nam">get_reference_canopy_pairs</span><span class="op">(</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t376" href="#t376">376</a></span><span class="t">        <span class="nam">mixed</span> <span class="op">=</span> <span class="nam">mixed_format_error</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t377" href="#t377">377</a></span><span class="t">            <span class="nam">canopy</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t378" href="#t378">378</a></span><span class="t">            <span class="nam">report</span><span class="op">.</span><span class="nam">receivers</span><span class="op">[</span><span class="nam">canopy</span><span class="op">]</span><span class="op">.</span><span class="nam">reader_format</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t379" href="#t379">379</a></span><span class="t">            <span class="nam">ref</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t380" href="#t380">380</a></span><span class="t">            <span class="nam">report</span><span class="op">.</span><span class="nam">receivers</span><span class="op">[</span><span class="nam">ref</span><span class="op">]</span><span class="op">.</span><span class="nam">reader_format</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t381" href="#t381">381</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t382" href="#t382">382</a></span><span class="t">        <span class="key">if</span> <span class="nam">mixed</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t383" href="#t383">383</a></span><span class="t">            <span class="nam">report</span><span class="op">.</span><span class="nam">errors</span><span class="op">.</span><span class="nam">append</span><span class="op">(</span><span class="nam">mixed</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t384" href="#t384">384</a></span><span class="t">    <span class="key">return</span> <span class="nam">report</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t367" href="#t367">367</a></span><span class="t">    <span class="key">if</span> <span class="nam">config</span><span class="op">.</span><span class="nam">processing</span><span class="op">.</span><span class="nam">params</span><span class="op">.</span><span class="nam">ephemeris_source</span> <span class="op">==</span> <span class="str">&quot;broadcast&quot;</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t368" href="#t368">368</a></span><span class="t">        <span class="nam">broadcast_error</span> <span class="op">=</span> <span class="nam">broadcast_ephemeris_error</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t369" href="#t369">369</a></span><span class="t">            <span class="nam">site</span><span class="op">,</span> <span class="nam">site_config</span><span class="op">,</span> <span class="nam">config</span><span class="op">.</span><span class="nam">processing</span><span class="op">.</span><span class="nam">params</span><span class="op">.</span><span class="nam">receiver_position_mode</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t370" href="#t370">370</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t371" href="#t371">371</a></span><span class="t">        <span class="key">if</span> <span class="nam">broadcast_error</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t372" href="#t372">372</a></span><span class="t">            <span class="nam">report</span><span class="op">.</span><span class="nam">errors</span><span class="op">.</span><span class="nam">append</span><span class="op">(</span><span class="nam">broadcast_error</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t373" href="#t373">373</a></span><span class="t">    <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t374" href="#t374">374</a></span><span class="t">        <span class="nam">check_receivers</span><span class="op">(</span><span class="nam">receivers</span><span class="op">,</span> <span class="nam">base_path</span><span class="op">,</span> <span class="nam">site</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t375" href="#t375">375</a></span><span class="t">    <span class="key">except</span> <span class="nam">DiscoveryError</span> <span class="key">as</span> <span class="nam">exc</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t376" href="#t376">376</a></span><span class="t">        <span class="nam">report</span><span class="op">.</span><span class="nam">errors</span><span class="op">.</span><span class="nam">append</span><span class="op">(</span><span class="nam">str</span><span class="op">(</span><span class="nam">exc</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t377" href="#t377">377</a></span><span class="t">    <span class="key">for</span> <span class="nam">name</span><span class="op">,</span> <span class="nam">cfg</span> <span class="key">in</span> <span class="nam">receivers</span><span class="op">.</span><span class="nam">items</span><span class="op">(</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t378" href="#t378">378</a></span><span class="t">        <span class="nam">report</span><span class="op">.</span><span class="nam">receivers</span><span class="op">[</span><span class="nam">name</span><span class="op">]</span> <span class="op">=</span> <span class="nam">check_receiver_data</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t379" href="#t379">379</a></span><span class="t">            <span class="nam">name</span><span class="op">,</span> <span class="nam">cfg</span><span class="op">,</span> <span class="nam">base_path</span><span class="op">,</span> <span class="nam">site</span><span class="op">,</span> <span class="nam">check_sampling</span><span class="op">,</span> <span class="nam">reader_options</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t380" href="#t380">380</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t381" href="#t381">381</a></span><span class="t">    <span class="key">for</span> <span class="nam">ref</span><span class="op">,</span> <span class="nam">canopy</span> <span class="key">in</span> <span class="nam">site_config</span><span class="op">.</span><span class="nam">get_reference_canopy_pairs</span><span class="op">(</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t382" href="#t382">382</a></span><span class="t">        <span class="nam">mixed</span> <span class="op">=</span> <span class="nam">mixed_format_error</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t383" href="#t383">383</a></span><span class="t">            <span class="nam">canopy</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t384" href="#t384">384</a></span><span class="t">            <span class="nam">report</span><span class="op">.</span><span class="nam">receivers</span><span class="op">[</span><span class="nam">canopy</span><span class="op">]</span><span class="op">.</span><span class="nam">reader_format</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t385" href="#t385">385</a></span><span class="t">            <span class="nam">ref</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t386" href="#t386">386</a></span><span class="t">            <span class="nam">report</span><span class="op">.</span><span class="nam">receivers</span><span class="op">[</span><span class="nam">ref</span><span class="op">]</span><span class="op">.</span><span class="nam">reader_format</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t387" href="#t387">387</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t388" href="#t388">388</a></span><span class="t">        <span class="key">if</span> <span class="nam">mixed</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t389" href="#t389">389</a></span><span class="t">            <span class="nam">report</span><span class="op">.</span><span class="nam">errors</span><span class="op">.</span><span class="nam">append</span><span class="op">(</span><span class="nam">mixed</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t390" href="#t390">390</a></span><span class="t">    <span class="key">return</span> <span class="nam">report</span>&nbsp;</span><span class="r"></span></p>
 </main>
 <footer>
     <div class="content">
@@ -473,7 +479,7 @@
             <a class="nav" href="z_1463a382258a175e_discovery_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-10-31 19:42 +0000
+            created at 2026-10-31 19:45 +0000
         </p>
     </div>
 </footer>
