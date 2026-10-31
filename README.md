@@ -77,11 +77,11 @@
 | packages/canvod-auxiliary/src/canvod/auxiliary/ephemeris/\_\_init\_\_.py        |        5 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/ephemeris/parser.py              |       91 |       79 |     13% |28-29, 46-141, 150-158, 178-179, 208-221, 225 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/ephemeris/provider.py            |      136 |       87 |     36% |120-130, 158-187, 191-213, 239-267, 281-297, 328-333, 359-373, 400-416, 466, 504-510, 514 |
-| packages/canvod-auxiliary/src/canvod/auxiliary/ephemeris/reader.py              |       78 |       36 |     54% |78-82, 156-174, 178-193, 207-210, 229-253, 260-267 |
+| packages/canvod-auxiliary/src/canvod/auxiliary/ephemeris/reader.py              |       77 |       35 |     55% |78, 152-170, 174-189, 203-206, 225-249, 256-263 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/ephemeris/validator.py           |       36 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/interpolation/\_\_init\_\_.py    |        3 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/interpolation/day\_grid.py       |       31 |        0 |    100% |           |
-| packages/canvod-auxiliary/src/canvod/auxiliary/interpolation/interpolator.py    |      158 |        2 |     99% |  156, 455 |
+| packages/canvod-auxiliary/src/canvod/auxiliary/interpolation/interpolator.py    |      188 |        2 |     99% |  177, 536 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/matching/\_\_init\_\_.py         |        2 |        0 |    100% |           |
 | packages/canvod-auxiliary/src/canvod/auxiliary/matching/dataset\_matcher.py     |       41 |        6 |     85% |128, 152, 172, 199, 239, 251 |
 | packages/canvod-auxiliary/src/canvod/auxiliary/pipeline.py                      |      146 |        8 |     95% |283, 355-368, 488, 510 |
@@ -248,7 +248,7 @@
 | packages/canvod-viz/src/canvod/viz/widgets/hemisphere\_widgets.py               |       27 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/\_\_init\_\_.py                              |        4 |        0 |    100% |           |
 | packages/canvod-vod/src/canvod/vod/calculator.py                                |       76 |        8 |     89% |55, 77, 127-136 |
-| **TOTAL**                                                                       | **30101** | **8422** | **72%** |           |
+| **TOTAL**                                                                       | **30130** | **8421** | **72%** |           |
 
 
 ## Setup coverage badge
