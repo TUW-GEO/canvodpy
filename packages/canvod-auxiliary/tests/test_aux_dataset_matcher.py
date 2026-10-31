@@ -23,7 +23,7 @@ def _orbits() -> xr.Dataset:
         coords={"epoch": _T0 + seconds.astype("m8[s]"), "sid": _SIDS},
     )
     ds.attrs["interpolator_config"] = Sp3InterpolationStrategy(
-        config=Sp3Config(use_velocities=False)
+        config=Sp3Config()
     ).to_attrs()
     return ds
 

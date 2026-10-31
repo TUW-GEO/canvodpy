@@ -15,26 +15,9 @@ from canvod.auxiliary.interpolation.interpolator import _detect_jumps
 class TestSp3Config:
     """Test Sp3Config dataclass."""
 
-    def test_default_config(self):
-        """Test default configuration."""
-        config = Sp3Config()
-
-        assert config.use_velocities is True
-        assert config.fallback_method == "linear"
-
-    def test_custom_config(self):
-        """Test custom configuration."""
-        config = Sp3Config(use_velocities=False, fallback_method="cubic")
-
-        assert config.use_velocities is False
-        assert config.fallback_method == "cubic"
-
-    def test_config_fields_accessible(self):
-        """Test config fields are accessible."""
-        config = Sp3Config(use_velocities=True, fallback_method="nearest")
-
-        assert hasattr(config, "use_velocities")
-        assert hasattr(config, "fallback_method")
+    def test_records_the_method(self):
+        """The record in the aux store names the method and its epochs."""
+        assert Sp3Config().to_dict() == {"method": "lagrange", "points": 11}
 
 
 class TestClockConfig:
@@ -68,7 +51,7 @@ class TestSp3InterpolationStrategy:
 
     def test_interpolate_increases_epochs(self, sample_preprocessed_sp3):
         """Test interpolation increases number of epochs."""
-        config = Sp3Config(use_velocities=False)  # Simpler test
+        config = Sp3Config()
         strategy = Sp3InterpolationStrategy(config=config)
 
         # Create target epochs (more than input)
@@ -82,7 +65,7 @@ class TestSp3InterpolationStrategy:
 
     def test_interpolate_preserves_sid(self, sample_preprocessed_sp3):
         """Test interpolation preserves sid dimension."""
-        config = Sp3Config(use_velocities=False)
+        config = Sp3Config()
         strategy = Sp3InterpolationStrategy(config=config)
 
         base_time = np.datetime64("2024-01-01T00:00:00")
@@ -93,7 +76,7 @@ class TestSp3InterpolationStrategy:
 
     def test_interpolate_all_variables(self, sample_preprocessed_sp3):
         """Test all position variables are interpolated."""
-        config = Sp3Config(use_velocities=False)
+        config = Sp3Config()
         strategy = Sp3InterpolationStrategy(config=config)
 
         base_time = np.datetime64("2024-01-01T00:00:00")
@@ -104,18 +87,25 @@ class TestSp3InterpolationStrategy:
         assert "Y" in result.data_vars
         assert "Z" in result.data_vars
 
-    def test_interpolated_values_reasonable(self, sample_preprocessed_sp3):
-        """Test interpolated values are within reasonable range."""
-        config = Sp3Config(use_velocities=False)
-        strategy = Sp3InterpolationStrategy(config=config)
+    def test_interpolated_values_reasonable(self):
+        """Interpolated positions of a circular orbit stay on its radius."""
+        t = np.arange(0.0, 86_400.0 + 1, 900.0)
+        epochs = np.datetime64("2024-01-01T00:00:00") + (t * 1e9).astype(
+            "timedelta64[ns]"
+        )
+        pos = _circular_orbit(t)
+        ds = xr.Dataset(
+            {c: (("epoch", "sv"), pos[:, k : k + 1]) for k, c in enumerate("XYZ")},
+            coords={"epoch": epochs, "sv": ["G01"]},
+        )
+        target_epochs = epochs[0] + np.arange(288) * np.timedelta64(5, "m")
 
-        base_time = np.datetime64("2024-01-01T00:00:00")
-        target_epochs = base_time + np.arange(288) * np.timedelta64(5, "m")
-        result = strategy.interpolate(sample_preprocessed_sp3, target_epochs)
+        result = Sp3InterpolationStrategy(config=Sp3Config()).interpolate(
+            ds, target_epochs
+        )
 
-        # Position values should be similar to input range
-        assert result["X"].min() > 1e7
-        assert result["X"].max() < 4e7
+        radius = np.sqrt(sum(result[c].values[:, 0] ** 2 for c in "XYZ"))
+        np.testing.assert_allclose(radius, 26_560e3, atol=1.0)
 
     def test_with_velocities(self):
         """Test interpolation using velocities."""
@@ -136,7 +126,7 @@ class TestSp3InterpolationStrategy:
             coords={"epoch": epochs, "sid": sids},
         )
 
-        config = Sp3Config(use_velocities=True)
+        config = Sp3Config()
         strategy = Sp3InterpolationStrategy(config=config)
 
         target_base = np.datetime64("2024-01-01T00:00:00")
@@ -294,7 +284,7 @@ class TestInterpolationIntegration:
 
     def test_sp3_to_rinex_alignment(self, sample_preprocessed_sp3, sample_rinex_data):
         """Test SP3 can be interpolated to RINEX epochs."""
-        config = Sp3Config(use_velocities=False)
+        config = Sp3Config()
         strategy = Sp3InterpolationStrategy(config=config)
 
         # Use RINEX epochs as target
@@ -313,7 +303,7 @@ class TestInterpolationIntegration:
         preprocessed = preprocess_aux_for_interpolation(sample_sp3_data)
 
         # Step 2: Interpolate
-        config = Sp3Config(use_velocities=False)
+        config = Sp3Config()
         strategy = Sp3InterpolationStrategy(config=config)
 
         base_time = np.datetime64("2024-01-01T00:00:00")
@@ -336,7 +326,7 @@ class TestInterpolationIntegration:
         base_time = np.datetime64("2024-01-01T00:00:00")
         target_epochs = base_time + np.arange(2880) * np.timedelta64(30, "s")
 
-        sp3_config = Sp3Config(use_velocities=False)
+        sp3_config = Sp3Config()
         sp3_strategy = Sp3InterpolationStrategy(config=sp3_config)
         sp3_interp = sp3_strategy.interpolate(sp3_prep, target_epochs)
 
@@ -353,7 +343,7 @@ class TestInterpolationEdgeCases:
 
     def test_extrapolation_before_first_epoch(self, sample_preprocessed_sp3):
         """Test extrapolation before first epoch."""
-        config = Sp3Config(use_velocities=False, fallback_method="nearest")
+        config = Sp3Config()
         strategy = Sp3InterpolationStrategy(config=config)
 
         # Target epochs before input data
@@ -366,7 +356,7 @@ class TestInterpolationEdgeCases:
 
     def test_extrapolation_after_last_epoch(self, sample_preprocessed_sp3):
         """Test extrapolation after last epoch."""
-        config = Sp3Config(use_velocities=False, fallback_method="nearest")
+        config = Sp3Config()
         strategy = Sp3InterpolationStrategy(config=config)
 
         # Target epochs after input data
@@ -379,7 +369,7 @@ class TestInterpolationEdgeCases:
 
     def test_single_target_epoch(self, sample_preprocessed_sp3):
         """Test interpolation to single epoch."""
-        config = Sp3Config(use_velocities=False)
+        config = Sp3Config()
         strategy = Sp3InterpolationStrategy(config=config)
 
         # Use middle epoch from input
@@ -391,3 +381,106 @@ class TestInterpolationEdgeCases:
         result = strategy.interpolate(sample_preprocessed_sp3, target_epochs)
 
         assert result.sizes["epoch"] == 1
+
+
+def _circular_orbit(t: np.ndarray, rate: bool = False) -> np.ndarray:
+    """ECEF positions (m) of a circular orbit at GPS height, inclined 55°.
+
+    With ``rate=True``, the velocities (m/s) instead, differentiated by hand.
+    """
+    radius, period, incl = 26_560e3, 43_082.0, np.radians(55.0)
+    earth_rate = 7.2921151467e-5  # rad/s; turns the orbit into ECEF, as in SP3
+    n = 2 * np.pi / period
+    u, rot = n * t, earth_rate * t
+    x, y = radius * np.cos(u), radius * np.cos(incl) * np.sin(u)
+    z = radius * np.sin(incl) * np.sin(u)
+    if not rate:
+        return np.stack(
+            [np.cos(rot) * x + np.sin(rot) * y, -np.sin(rot) * x + np.cos(rot) * y, z],
+            axis=-1,
+        )
+    dx, dy = -n * radius * np.sin(u), n * radius * np.cos(incl) * np.cos(u)
+    dz = n * radius * np.sin(incl) * np.cos(u)
+    w = earth_rate
+    return np.stack(
+        [
+            np.cos(rot) * dx
+            + np.sin(rot) * dy
+            - w * np.sin(rot) * x
+            + w * np.cos(rot) * y,
+            -np.sin(rot) * dx
+            + np.cos(rot) * dy
+            - w * np.cos(rot) * x
+            - w * np.sin(rot) * y,
+            dz,
+        ],
+        axis=-1,
+    )
+
+
+class TestSp3OrbitAccuracy:
+    """Interpolated orbits between the epochs of a product (#563)."""
+
+    @staticmethod
+    def _orbit_dataset(step_s: float) -> xr.Dataset:
+        t = np.arange(-3600.0, 86_400.0 + 3600.0 + 1, step_s)
+        pos = _circular_orbit(t)
+        epochs = np.datetime64("2025-01-01T00:00:00") + (t * 1e9).astype(
+            "timedelta64[ns]"
+        )
+        return xr.Dataset(
+            {c: (("epoch", "sv"), pos[:, k : k + 1]) for k, c in enumerate("XYZ")},
+            coords={"epoch": epochs, "sv": ["G01"]},
+        )
+
+    def test_positions_between_15_minute_epochs(self):
+        ds = self._orbit_dataset(900.0)
+        t = np.arange(0.0, 86_400.0, 30.0)
+        target = np.datetime64("2025-01-01T00:00:00") + (t * 1e9).astype(
+            "timedelta64[ns]"
+        )
+
+        result = Sp3InterpolationStrategy(config=Sp3Config()).interpolate(ds, target)
+
+        got = np.stack([result[c].values[:, 0] for c in "XYZ"], axis=-1)
+        error = np.linalg.norm(got - _circular_orbit(t), axis=1)
+        # The resolution of SP3 positions: km as F14.6, i.e. 1 mm (SP3-d,
+        # Hilla 2016, p. 11, the Position and Clock Record)
+        assert error.max() < 1e-3
+
+    def test_velocities_are_the_derivative_of_the_orbit(self):
+        ds = self._orbit_dataset(900.0)
+        t = np.arange(0.0, 86_400.0, 30.0)
+        target = np.datetime64("2025-01-01T00:00:00") + (t * 1e9).astype(
+            "timedelta64[ns]"
+        )
+
+        result = Sp3InterpolationStrategy(config=Sp3Config()).interpolate(ds, target)
+
+        got = np.stack([result[v].values[:, 0] for v in ("Vx", "Vy", "Vz")], axis=-1)
+        assert np.abs(got - _circular_orbit(t, rate=True)).max() < 1e-5  # m/s
+
+    def test_positions_at_the_epochs_are_the_product_values(self):
+        ds = self._orbit_dataset(900.0)
+
+        result = Sp3InterpolationStrategy(config=Sp3Config()).interpolate(
+            ds, ds.epoch.values
+        )
+
+        np.testing.assert_allclose(result["X"].values, ds["X"].values, atol=1e-6)
+
+
+class TestSp3ConfigDeprecatedArguments:
+    def test_use_velocities_warns_and_changes_nothing(self):
+        import pytest
+
+        with pytest.warns(FutureWarning, match="use_velocities"):
+            config = Sp3Config(use_velocities=False)
+        assert config.to_dict() == Sp3Config().to_dict()
+
+    def test_fallback_method_warns_and_changes_nothing(self):
+        import pytest
+
+        with pytest.warns(FutureWarning, match="fallback_method"):
+            config = Sp3Config(fallback_method="nearest")
+        assert config.to_dict() == Sp3Config().to_dict()

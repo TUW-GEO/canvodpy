@@ -246,7 +246,7 @@ processing:
     # https://canvodpy.eu/guides/settings/#processing-storage-aux_data_dir
     # aux_data_dir: /path/to/aux_data
 
-    # Network-wide, fingerprint-keyed aux (SP3/CLK Hermite) cache root.
+    # Network-wide, fingerprint-keyed cache root of interpolated SP3/CLK data.
     # Unset by default: falls back to per-site aux_data_dir, rebuilt every
     # run. Point every site in a network at the SAME path here to share one
     # cache entry per (agency, product, date) instead of each site rebuilding

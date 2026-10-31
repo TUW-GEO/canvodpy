@@ -117,21 +117,8 @@ def _make_clock_ds(n_epochs: int = 20, n_sids: int = 3) -> xr.Dataset:
 class TestSp3Config:
     """Tests for Sp3Config."""
 
-    def test_defaults(self):
-        cfg = Sp3Config()
-        assert cfg.use_velocities is True
-        assert cfg.fallback_method == "linear"
-
-    def test_custom(self):
-        cfg = Sp3Config(use_velocities=False, fallback_method="nearest")
-        assert cfg.use_velocities is False
-        assert cfg.fallback_method == "nearest"
-
     def test_to_dict(self):
-        cfg = Sp3Config()
-        d = cfg.to_dict()
-        assert d["use_velocities"] is True
-        assert d["fallback_method"] == "linear"
+        assert Sp3Config().to_dict() == {"method": "lagrange", "points": 11}
 
 
 class TestClockConfig:
@@ -163,7 +150,7 @@ class TestSp3InterpolationStrategy:
 
     def test_interpolate_with_velocities(self):
         ds = _make_sp3_ds(n_epochs=10)
-        config = Sp3Config(use_velocities=True)
+        config = Sp3Config()
         interp = Sp3InterpolationStrategy(config=config)
 
         # Target epochs between source epochs
@@ -185,7 +172,7 @@ class TestSp3InterpolationStrategy:
         ds = _make_sp3_ds(n_epochs=10)
         # Remove velocities
         ds = ds.drop_vars(["Vx", "Vy", "Vz"])
-        config = Sp3Config(use_velocities=True)
+        config = Sp3Config()
         interp = Sp3InterpolationStrategy(config=config)
 
         target = np.array(
@@ -202,7 +189,7 @@ class TestSp3InterpolationStrategy:
     def test_interpolate_fallback_method(self):
         ds = _make_sp3_ds(n_epochs=10)
         ds = ds.drop_vars(["Vx", "Vy", "Vz"])
-        config = Sp3Config(use_velocities=False)
+        config = Sp3Config()
         interp = Sp3InterpolationStrategy(config=config)
 
         target = np.array(
@@ -237,7 +224,7 @@ class TestSp3InterpolationStrategy:
             data[:, 0] = np.nan
             ds[var] = (["epoch", "sid"], data)
 
-        config = Sp3Config(use_velocities=True)
+        config = Sp3Config()
         interp = Sp3InterpolationStrategy(config=config)
 
         target = np.array(

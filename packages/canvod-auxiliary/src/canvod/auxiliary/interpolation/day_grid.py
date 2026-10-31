@@ -91,7 +91,7 @@ def interpolate_aux_day(
 ) -> xr.Dataset:
     """Interpolate one day of orbits (and clocks) onto ``target_epochs``.
 
-    Orbits: cubic Hermite spline with the satellite velocities
+    Orbits: polynomial of degree 10 through the 11 nearest epochs
     (:class:`Sp3InterpolationStrategy`). Clocks: piecewise linear between
     clock jumps (:class:`ClockInterpolationStrategy`). Each part records its
     interpolator in ``attrs["interpolator_config"]``.
@@ -110,9 +110,7 @@ def interpolate_aux_day(
     xr.Dataset
         Interpolated orbits, merged with the interpolated clocks if given.
     """
-    sp3 = Sp3InterpolationStrategy(
-        config=Sp3Config(use_velocities=True, fallback_method="linear")
-    )
+    sp3 = Sp3InterpolationStrategy(config=Sp3Config())
     ephem_interp = sp3.interpolate(ephem_ds, target_epochs)
     ephem_interp.attrs["interpolator_config"] = sp3.to_attrs()
     if clock_ds is None:

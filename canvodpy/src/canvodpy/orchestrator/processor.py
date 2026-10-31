@@ -1529,7 +1529,7 @@ class RinexDataProcessor:
             "aux_preprocessing_started",
             rinex_files=len(rinex_files),
             output_path=str(output_path),
-            interpolation_method="hermite_cubic",
+            interpolation_method="lagrange_degree_10",
         )
 
         # 1. Sampling interval: from the file name, else from the first file
@@ -2079,7 +2079,7 @@ class RinexDataProcessor:
         self._logger.info(
             "aux_preprocessing_required",
             output_path=str(aux_zarr_path),
-            interpolation="hermite_cubic",
+            interpolation="lagrange_degree_10",
             cache_cleared=had_cache,
             rmtree_seconds=round(t1 - t0, 4) if had_cache else 0,
         )
