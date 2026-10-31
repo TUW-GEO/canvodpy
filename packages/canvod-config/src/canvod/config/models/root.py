@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import Field, model_validator
+from pydantic import Field
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -11,7 +11,7 @@ from pydantic_settings import (
 
 from .processing import ProcessingConfig
 from .sids import SidsConfig
-from .sites import RINEX_READER_FORMATS, SitesConfig
+from .sites import SitesConfig
 
 
 class CanvodConfig(BaseSettings):
@@ -56,48 +56,6 @@ class CanvodConfig(BaseSettings):
         ..., description="The research sites, their receivers, and VOD analyses"
     )
     sids: SidsConfig = Field(..., description="Which signals are kept")
-
-    @model_validator(mode="after")
-    def _broadcast_rinex_needs_nav_directory(self) -> CanvodConfig:
-        """With the broadcast ephemeris, receivers with RINEX files need nav files.
-
-        NMEA receivers are refused: their angles come only from the precise
-        ephemeris. In shared-position mode a reference receiver takes the
-        angles from its canopy's navigation files and needs none of its own.
-        A receiver whose ``reader_format`` is ``auto`` or a plugin format is
-        checked by the run, once its files show the format.
-        """
-        if self.processing.params.ephemeris_source != "broadcast":
-            return self
-        nmea = [
-            f"{site_name}.{name}"
-            for site_name, site in self.sites.sites.items()
-            for name, receiver in site.receivers.items()
-            if receiver.reader_format == "nmea"
-        ]
-        if nmea:
-            msg = (
-                "ephemeris_source 'broadcast' supports SBF and RINEX files; "
-                f"{', '.join(nmea)} read nmea: use ephemeris_source 'precise'."
-            )
-            raise ValueError(msg)
-        shared = self.processing.params.receiver_position_mode == "shared"
-        missing = [
-            f"{site_name}.{name}"
-            for site_name, site in self.sites.sites.items()
-            for name, receiver in site.receivers.items()
-            if receiver.reader_format in RINEX_READER_FORMATS
-            and receiver.nav_directory is None
-            and not (shared and receiver.type == "reference")
-        ]
-        if missing:
-            msg = (
-                "ephemeris_source 'broadcast' takes the satellite positions for "
-                "RINEX files from navigation files: set nav_directory "
-                f"for {', '.join(missing)} (sites.<site>.receivers.<receiver>)."
-            )
-            raise ValueError(msg)
-        return self
 
     @classmethod
     def settings_customise_sources(

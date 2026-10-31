@@ -19,7 +19,7 @@ from typing import Any
 
 import numpy as np
 
-from canvod.config.models import mixed_format_error
+from canvod.config.models import broadcast_ephemeris_error, mixed_format_error
 from canvodpy.orchestrator.discovery import (
     COMPRESSION_SUFFIXES,
     DiscoveredFile,
@@ -364,6 +364,12 @@ def check_site_data(
     clear_discovery_cache()
     report = SiteReport(site)
     report.errors.extend(missing_store_settings_errors(site, site_config, config))
+    if config.processing.params.ephemeris_source == "broadcast":
+        broadcast_error = broadcast_ephemeris_error(
+            site, site_config, config.processing.params.receiver_position_mode
+        )
+        if broadcast_error:
+            report.errors.append(broadcast_error)
     try:
         check_receivers(receivers, base_path, site)
     except DiscoveryError as exc:

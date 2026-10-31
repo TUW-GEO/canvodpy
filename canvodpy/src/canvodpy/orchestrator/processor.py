@@ -59,6 +59,7 @@ from canvod.auxiliary.products import check_product
 from canvod.config import CanvodConfig, load_config
 from canvod.config.models import (
     PREPROCESSING_ATTR,
+    broadcast_ephemeris_error,
     reference_store_group,
 )
 from canvod.config.models.sites import RINEX_READER_FORMATS
@@ -1349,6 +1350,16 @@ class RinexDataProcessor:
             self.use_sbf_geometry = (
                 config.processing.params.ephemeris_source == "broadcast"
             )
+        if config.processing.params.ephemeris_source == "broadcast":
+            # Before any file is read; the settings may hold sites this run
+            # does not process
+            broadcast_error = broadcast_ephemeris_error(
+                site.site_name,
+                self._get_site_config(),
+                config.processing.params.receiver_position_mode,
+            )
+            if broadcast_error:
+                raise ValueError(broadcast_error)
 
         # Cache config values formerly in globals
         aux_cfg = config.processing.aux_data
