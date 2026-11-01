@@ -1500,6 +1500,60 @@ class RinexDataProcessor:
         parse_sampling_interval_from_filename
     )
 
+    def _detect_sampling_interval(
+        self, rinex_files: list[Path], reader_format: str | None = None
+    ) -> float:
+        """Sampling interval of the day's files, in seconds.
+
+        From the canonical name of the first file, else from the epochs
+        of the first file (slow: it reads the file).
+        """
+        t0 = time.perf_counter()
+        sampling_interval = self._parse_sampling_interval_from_filename(
+            rinex_files[0].name,
+        )
+        if sampling_interval is not None:
+            t1 = time.perf_counter()
+            self._logger.info(
+                "sampling_detected",
+                sampling_interval_seconds=sampling_interval,
+                source="filename",
+                detection_seconds=round(t1 - t0, 4),
+            )
+        else:
+            # Fallback: read first GNSS file (slow path)
+            self._logger.debug(
+                "sampling_detection_started",
+                sample_file=rinex_files[0].name,
+                reason="filename_parse_failed",
+            )
+            first_rnx = self._make_reader(rinex_files[0], reader_format)
+            first_ds = first_rnx.to_ds(
+                keep_data_vars=[],
+                write_global_attrs=True,
+            )
+            t1 = time.perf_counter()
+            sampling_interval = sampling_interval_from_epochs(first_ds.epoch.values)
+            # The caller's day_start stays as derived from the known YYYYDOY:
+            # do NOT re-derive it from first_ds.epoch. A file's first epoch can
+            # fall a few seconds before the day boundary (SBF epochs did, by
+            # the 18 leap seconds, while they were stored in UTC). Truncating
+            # that epoch to a date used to silently shift the whole day's
+            # target_epochs grid back by 24h, which pushed nearly every real
+            # observation epoch outside the aux data's interpolated range --
+            # .sel(..., method="nearest") then clamped every one of them to
+            # the grid's last (wrong-day) point, producing a single constant,
+            # usually-wrong satellite position reused for the entire day
+            # (canvodpy #geometry-augmentation-bug round 2, 2026-08).
+            self._logger.info(
+                "sampling_detected",
+                sampling_interval_seconds=sampling_interval,
+                source="full_rinex_read",
+                rinex_read_seconds=round(t1 - t0, 2),
+            )
+
+        return sampling_interval
+
     def _preprocess_aux_data_with_hermite(
         self,
         rinex_files: list[Path],
@@ -1509,11 +1563,15 @@ class RinexDataProcessor:
         grid_seconds: float | None = None,
         ephem_ds: xr.Dataset | None = None,
         per_satellite: bool = False,
+        sampling_interval: float | None = None,
     ) -> float:
         """Preprocess auxiliary data using proper interpolation strategies.
 
         Parameters
         ----------
+        sampling_interval : float | None
+            Sampling interval of the files in seconds, if the caller has
+            detected it already; ``None`` detects it here.
         ephem_ds : xr.Dataset | None
             Orbits to interpolate instead of the agency products of the aux
             pipeline: the broadcast ephemeris of a receiver's navigation
@@ -1544,52 +1602,14 @@ class RinexDataProcessor:
         )
 
         # 1. Sampling interval: from the file name, else from the first file
-        sampling_interval = self._parse_sampling_interval_from_filename(
-            rinex_files[0].name,
-        )
+        if sampling_interval is None:
+            sampling_interval = self._detect_sampling_interval(
+                rinex_files, reader_format
+            )
+        t1 = time.perf_counter()
         # Derive day_start from the YYYYDOY we already know
         day_date = self.matched_data_dirs.yyyydoy.date
         day_start = np.datetime64(day_date, "D")
-
-        if sampling_interval is not None:
-            t1 = time.perf_counter()
-            self._logger.info(
-                "sampling_detected",
-                sampling_interval_seconds=sampling_interval,
-                source="filename",
-                detection_seconds=round(t1 - t0, 4),
-            )
-        else:
-            # Fallback: read first GNSS file (slow path)
-            self._logger.debug(
-                "sampling_detection_started",
-                sample_file=rinex_files[0].name,
-                reason="filename_parse_failed",
-            )
-            first_rnx = self._make_reader(rinex_files[0], reader_format)
-            first_ds = first_rnx.to_ds(
-                keep_data_vars=[],
-                write_global_attrs=True,
-            )
-            t1 = time.perf_counter()
-            sampling_interval = sampling_interval_from_epochs(first_ds.epoch.values)
-            # day_start stays as derived from the known YYYYDOY -- do NOT
-            # re-derive it from first_ds.epoch here. A file's first epoch can
-            # fall a few seconds before the day boundary (SBF epochs did, by
-            # the 18 leap seconds, while they were stored in UTC). Truncating
-            # that epoch to a date used to silently shift the whole day's
-            # target_epochs grid back by 24h, which pushed nearly every real
-            # observation epoch outside the aux data's interpolated range --
-            # .sel(..., method="nearest") then clamped every one of them to
-            # the grid's last (wrong-day) point, producing a single constant,
-            # usually-wrong satellite position reused for the entire day
-            # (canvodpy #geometry-augmentation-bug round 2, 2026-08).
-            self._logger.info(
-                "sampling_detected",
-                sampling_interval_seconds=sampling_interval,
-                source="full_rinex_read",
-                rinex_read_seconds=round(t1 - t0, 2),
-            )
 
         effective_grid_seconds = (
             grid_seconds if grid_seconds is not None else sampling_interval
@@ -2079,11 +2099,29 @@ class RinexDataProcessor:
         aux_base_dir = self._config.processing.storage.get_aux_data_dir()
         # Nest alongside canvod-auxiliary's 01_SP3/02_CLK download subdirs
         # instead of littering aux_base_dir's root with one aux_*.zarr per date.
-        aux_zarr_path = aux_base_dir / "00_aux_zarr" / f"aux_{date_str}.zarr"
+        # The site and the sampling interval in the name: the store's content
+        # depends on both, and concurrent runs share aux_base_dir (#576)
+        try:
+            sampling_interval = self._detect_sampling_interval(
+                canopy_files, reader_format
+            )
+        except Exception as e:
+            self._logger.error(
+                "aux_preprocessing_failed",
+                error=str(e),
+                exception=type(e).__name__,
+                path=str(aux_base_dir / "00_aux_zarr"),
+            )
+            raise
+        aux_zarr_path = (
+            aux_base_dir
+            / "00_aux_zarr"
+            / f"aux_{date_str}_{self.site.site_name}_{sampling_interval:g}s.zarr"
+        )
         aux_zarr_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Always reprocess from raw SP3/CLK files — the Hermite interpolation
-        # is cheap and this avoids stale caches when SIDs change.
+        # Always reprocess from raw SP3/CLK files: this avoids stale caches
+        # when SIDs change.
         had_cache = aux_zarr_path.exists()
         if had_cache:
             try:
@@ -2104,7 +2142,10 @@ class RinexDataProcessor:
         )
         try:
             self._preprocess_aux_data_with_hermite(
-                canopy_files, aux_zarr_path, reader_format=reader_format
+                canopy_files,
+                aux_zarr_path,
+                reader_format=reader_format,
+                sampling_interval=sampling_interval,
             )
 
             if not aux_zarr_path.exists():
