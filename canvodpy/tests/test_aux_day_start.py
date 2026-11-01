@@ -68,7 +68,7 @@ def _fake_self(tmp_path: Path) -> SimpleNamespace:
     fake_reader = mock.MagicMock()
     fake_reader.to_ds.return_value = xr.Dataset(coords={"epoch": sbf_like_epochs})
 
-    return SimpleNamespace(
+    fake = SimpleNamespace(
         _logger=mock.MagicMock(),
         _config=config,
         aux_pipeline=aux_pipeline,
@@ -78,6 +78,10 @@ def _fake_self(tmp_path: Path) -> SimpleNamespace:
         ),
         _make_reader=mock.MagicMock(return_value=fake_reader),
     )
+    fake._detect_sampling_interval = lambda files, reader_format=None: (
+        RinexDataProcessor._detect_sampling_interval(fake, files, reader_format)
+    )
+    return fake
 
 
 def test_day_start_not_shifted_by_fallback_first_epoch(tmp_path: Path) -> None:
