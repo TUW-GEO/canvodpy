@@ -2101,7 +2101,18 @@ class RinexDataProcessor:
         # instead of littering aux_base_dir's root with one aux_*.zarr per date.
         # The site and the sampling interval in the name: the store's content
         # depends on both, and concurrent runs share aux_base_dir (#576)
-        sampling_interval = self._detect_sampling_interval(canopy_files, reader_format)
+        try:
+            sampling_interval = self._detect_sampling_interval(
+                canopy_files, reader_format
+            )
+        except Exception as e:
+            self._logger.error(
+                "aux_preprocessing_failed",
+                error=str(e),
+                exception=type(e).__name__,
+                path=str(aux_base_dir / "00_aux_zarr"),
+            )
+            raise
         aux_zarr_path = (
             aux_base_dir
             / "00_aux_zarr"
@@ -2109,8 +2120,8 @@ class RinexDataProcessor:
         )
         aux_zarr_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Always reprocess from raw SP3/CLK files — the Hermite interpolation
-        # is cheap and this avoids stale caches when SIDs change.
+        # Always reprocess from raw SP3/CLK files: this avoids stale caches
+        # when SIDs change.
         had_cache = aux_zarr_path.exists()
         if had_cache:
             try:
