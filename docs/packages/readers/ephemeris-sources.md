@@ -127,7 +127,7 @@ were set; runs still write to it, since broadcast stores do not compare them.
 1. AuxDataPipeline: download SP3 (+ CLK, if aux_data.fetch_clock) from FTP (CODE/ESA/IGS)
 2. Epoch grid of the day: 00:00 plus multiples of the sampling interval of the
    observations (1 s with a shared aux cache), in GPS time like the SP3 file
-3. Hermite interpolation: SP3 positions → epoch grid
+3. Interpolation (polynomial of degree 10): SP3 positions → epoch grid
 4. Clock piecewise linear interpolation (skipped if fetch_clock=False)
 5. Write Zarr cache: 00_aux_zarr/aux_{date}_{site}_{sampling}s.zarr; with a shared aux cache an
    entry of aux_cache.zarr, one value per satellite for all its signals
@@ -160,7 +160,7 @@ processing:
 |-----------|---------|--------|
 | SP3/CLK download | canvod-auxiliary | `pipeline.py` |
 | FTP with fallback | canvod-auxiliary | `core/downloader.py` |
-| Hermite interpolation | canvod-auxiliary | `interpolation/interpolator.py` |
+| Orbit interpolation | canvod-auxiliary | `interpolation/interpolator.py` |
 | Clock interpolation (optional, `aux_data.fetch_clock`) | canvod-auxiliary | `interpolation/interpolator.py` |
 | ECEF $\rightarrow$ $\theta$, $\varphi$, $r$ | canvod-auxiliary | `position/spherical_coords.py` |
 
@@ -212,11 +212,8 @@ processing:
   position is inaccurate (poor fix), geometry is slightly affected
 - No satellite distance ($r$), only angles
 - The angles are used as the receiver writes them: canvodpy does not
-  check them against an orbit. In the test data, the receiver wrote the
-  angles of four BeiDou satellites several degrees off for stretches of
-  one to two hours, flagged as computed from the broadcast ephemeris,
-  while the ephemerides it recorded in the same files give the right
-  angles ([#564](https://github.com/TUW-GEO/canvodpy/issues/564)). For
+  check them against an orbit
+  ([#564](https://github.com/TUW-GEO/canvodpy/issues/564)). For
   angles that canvodpy computes from the orbits, use the precise ephemeris.
 
 ---
@@ -255,7 +252,7 @@ receiver with RINEX files reads its own navigation files.
    Edition 5.1, A.3.1.2), which also gives the velocity. SBAS: the
    record's position, moved with its velocity and acceleration to the grid
    time (RINEX 3.05, Table A16)
-4. From here as the precise ephemeris: Hermite interpolation onto the epoch
+4. From here as the precise ephemeris: interpolation onto the epoch
    grid, Zarr cache 00_aux_zarr/aux_{date}_{site}_{receiver}_nav.zarr,
    theta/phi. With `shared_aux_cache_dir` the interpolated orbits go to the
    shared cache instead, one entry per date and content of the navigation

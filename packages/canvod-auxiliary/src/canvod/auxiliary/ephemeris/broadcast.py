@@ -2,7 +2,7 @@
 
 The records of the navigation files (:func:`canvod.readers.rinex.nav.read_rinex_nav`)
 give ECEF positions and velocities on a regular grid over the day, the same
-layout as an SP3 product (ADR 0023). The grid then goes through the Hermite
+layout as an SP3 product (ADR 0023). The grid then goes through the orbit
 interpolation of the precise ephemeris
 (:func:`canvod.auxiliary.interpolation.interpolate_aux_day`).
 

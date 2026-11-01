@@ -4,10 +4,10 @@ Provides a unified interface for augmenting GNSS datasets with satellite
 angular coordinates (theta, phi).  Three implementations:
 
 - ``AgencyEphemerisProvider`` — SP3/CLK from analysis centers (COD, ESA, IGS),
-  Hermite interpolation.  Extracted from the orchestrator's aux data pipeline.
+  orbit interpolation.  Extracted from the orchestrator's aux data pipeline.
 - ``SbfBroadcastProvider`` — theta/phi directly from SBF SatVisibility blocks.
 - ``RinexNavProvider`` — the broadcast ephemeris of RINEX navigation files,
-  through the same Hermite interpolation as the agency products (ADR 0023).
+  through the same orbit interpolation as the agency products (ADR 0023).
 
 Examples
 --------
@@ -88,7 +88,7 @@ class AgencyEphemerisProvider(EphemerisProvider):
     """SP3/CLK-based ephemeris from analysis centers.
 
     Downloads final or rapid products from COD, ESA, IGS etc.,
-    interpolates via Hermite cubic splines, and computes theta/phi
+    interpolates the orbits with a polynomial of degree 10, and computes theta/phi
     via ECEF→spherical coordinate transformation.
 
     Parameters
@@ -302,7 +302,7 @@ class RinexNavProvider(EphemerisProvider):
 
     The navigation records give satellite positions and velocities on a
     5-minute grid (:mod:`canvod.auxiliary.ephemeris.broadcast`), which go
-    through the Hermite interpolation of the agency products. A satellite
+    through the orbit interpolation of the agency products. A satellite
     without a valid record gets NaN angles at those times.
 
     Parameters

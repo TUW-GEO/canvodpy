@@ -98,9 +98,7 @@ def _with_velocities(ds: xr.Dataset) -> xr.Dataset:
 
 
 class TestInterpolationWithGaps:
-    interp = Sp3InterpolationStrategy(
-        config=Sp3Config(use_velocities=True, fallback_method="linear")
-    )
+    interp = Sp3InterpolationStrategy(config=Sp3Config())
 
     def test_no_value_outside_the_data(self):
         ds = _with_velocities(_orbit("2025-01-01T00:00", 96, 15, ["G01"]))  # 23:45

@@ -9,7 +9,7 @@ throughput, so the caller opts in explicitly via its own config knob
 a default. ``IcechunkConfig.zarr_async_concurrency`` is deprecated (#188):
 only the deprecated ``MyIcechunkStore._to_icechunk_throttled`` still reads it.
 
-Extracted out of ``MyIcechunkStore`` so the aux (SP3/CLK Hermite) cache's
+Extracted out of ``MyIcechunkStore`` so the aux (interpolated SP3/CLK) cache's
 plain-Zarr write path -- a separate store, untouched by the Icechunk-only
 fix that originally shipped this -- can use the exact same mechanism.
 """

@@ -1,4 +1,4 @@
-"""Fingerprinting for the network-wide aux (SP3/CLK Hermite) cache.
+"""Fingerprinting for the network-wide cache of interpolated orbits and clocks.
 
 The broadcast ephemeris of navigation files shares the cache with its own
 fingerprint (:func:`compute_broadcast_cache_fingerprint`).
@@ -27,7 +27,9 @@ CANONICAL_AUX_GRID_SECONDS = 1.0
 # the same input files, so entries written by older code are not reused.
 # 2: CLK clock bias read in seconds (was divided by 1e6).
 # 3: one entry per satellite (sv), not per signal (#573).
-AUX_CACHE_FORMAT_VERSION = 3
+# 4: orbits interpolated with a polynomial of degree 10, not a cubic
+#    Hermite spline (#563).
+AUX_CACHE_FORMAT_VERSION = 4
 
 
 def compute_aux_cache_fingerprint(

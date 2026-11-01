@@ -50,8 +50,10 @@ def _(mo):
     uv add canvodpy==1.1.0
     ```
 
-    Nothing changes for a run with the precise ephemeris or with SBF files,
-    apart from the new name of the precise ephemeris below. The full list
+    The orbits are interpolated in a new way (below), which changes
+    `theta`, `phi` and `r` between the epochs of the orbit product. Apart
+    from that and the new name of the precise ephemeris, nothing changes
+    for a run with the precise ephemeris or with SBF files. The full list
     of changes is in the
     [changelog](https://github.com/TUW-GEO/canvodpy/blob/v1.1.0/CHANGELOG.md).
 
@@ -99,8 +101,11 @@ def _(mo):
     canvodpy run --site Fangorn --start 2025001 --end 2025007
     ```
 
-    Settings with `broadcast` and a RINEX receiver without
-    `nav_directory` are refused. With `shared_aux_cache_dir`, the orbits of
+    Under `broadcast`, both commands refuse a site with a RINEX receiver
+    without `nav_directory`. A run checks only the site it processes, and
+    `canvodpy config validate --site Fangorn` only that site, so one
+    settings file can also hold sites a broadcast run can't process.
+    With `shared_aux_cache_dir`, the orbits of
     the navigation files are cached too, one entry per date and content of
     the files, so a second run of the day computes nothing again. In
     Airflow, `check_day` waits for the navigation files as it waits for the
@@ -187,6 +192,25 @@ def _(mo):
     it is ignored, and a new store records them as empty.
 
     More: [Upgrading](https://canvodpy.eu/guides/upgrading/).
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ## Orbit interpolation
+
+    The orbits of the precise ephemeris and of RINEX navigation files are
+    interpolated onto the epochs of a day with a polynomial of degree 10
+    through the 11 nearest orbit epochs, as RTKLIB does. Before, a cubic
+    Hermite spline with velocities estimated from the positions did this.
+    The angles `theta` and `phi` and the distance `r` change between the
+    orbit epochs. Days processed after the update get the new values; days
+    already in a store keep theirs. A shared aux cache from v1.0.0 is
+    computed again once.
+
+    More: [Interpolation methods](https://canvodpy.eu/packages/auxiliary/interpolation/#polynomial-of-degree-10-orbits).
     """)
     return
 
@@ -377,17 +401,19 @@ def _(mo):
     - `processing.icechunk.zarr_async_concurrency` has no effect: it
       limited Zarr's concurrent chunk writes for only some of the store's
       writes. Delete it from your settings.
+    - The arguments `use_velocities` and `fallback_method` of `Sp3Config`
+      have no effect: the orbits are interpolated from the positions
+      alone. Leave them out.
 
-    Both are removed with v2.0.0.
+    All three are removed with v2.0.0.
 
     ## Fixes
 
     - **Shared aux cache:** an entry keeps the signals of every site.
       Before, the first site's signals were cached, and a second site
       keeping more signals got no angles for the extra ones, without an
-      error. The cache now holds the orbits once per satellite, which
-      makes building an entry much faster; existing entries are computed
-      again once.
+      error. The cache now holds the orbits once per satellite;
+      existing entries are computed again once.
     - The clock files of JPL and IAC are read.
     - The hint for a missing `canvod-filemap` points at PyPI.
     """)
