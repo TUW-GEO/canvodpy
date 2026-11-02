@@ -44,6 +44,11 @@ Background: `docs/packages/auxiliary/overview.md`,
   fingerprints. The settings model lists the methods itself (canvod-config
   cannot import this package); `tests/test_interpolation.py` checks that
   both lists agree.
+- Both strategies interpolate each distinct column once and copy the
+  result to the identical ones (`_per_distinct_column`): on `sid`, the
+  signals of a satellite share its orbit and clock (4,429 signals, about
+  120 distinct columns). So a strategy computes a column from that
+  column's data alone; one that reads other columns breaks this.
 - Angles are radians in datasets; polar angle, not elevation.
 - **Products**: only `final` and `rapid`; file names come from
   `ProductSpec.sp3_filenames`/`clk_filenames` (one per listed sampling, tried

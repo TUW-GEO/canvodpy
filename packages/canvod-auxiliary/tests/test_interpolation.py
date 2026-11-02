@@ -1,6 +1,7 @@
 """Tests for interpolation strategies."""
 
 import numpy as np
+import pytest
 import xarray as xr
 
 from canvod.auxiliary.interpolation import (
@@ -594,3 +595,62 @@ def test_the_setting_offers_the_methods_of_the_interpolator():
 
     annotation = AuxDataConfig.model_fields["sp3_interpolation"].annotation
     assert set(get_args(annotation)) == set(SP3_INTERPOLATION_METHODS)
+
+
+def _signals_of_shared_satellites() -> tuple[xr.Dataset, np.ndarray]:
+    """Orbits and clocks on ``sid``, as a run has them: every signal of a
+    satellite carries the satellite's columns, and a padded signal is NaN.
+    """
+    t = np.arange(0.0, 6 * 3600 + 1, 300.0)
+    epochs = np.datetime64("2025-01-01") + (t * 1e9).astype("timedelta64[ns]")
+    sats = {"G01": 0.0, "E05": 7_000.0}
+    sids = ["G01|L1|C", "G01|L2|W", "E05|E1|C", "E05|E5a|Q", "G02|L1|C"]
+    shape = (len(t), len(sids))
+    data = {name: np.full(shape, np.nan) for name in ("X", "Y", "Z", "Vx", "Vy", "Vz")}
+    clock = np.full(shape, np.nan)
+    for j, sid in enumerate(sids):
+        offset = sats.get(sid.split("|")[0])
+        if offset is None:
+            continue  # G02: padded, no data
+        pos, vel = _circular_orbit(t + offset), _circular_orbit(t + offset, rate=True)
+        for k, (p, v) in enumerate(zip("XYZ", ("Vx", "Vy", "Vz"), strict=True)):
+            data[p][:, j], data[v][:, j] = pos[:, k], vel[:, k]
+        clock[:, j] = 1e-4 + offset * 1e-12 * t
+    clock[10, 2] = np.nan  # E05 E1: one epoch without a clock
+    ds = xr.Dataset(
+        {name: (("epoch", "sid"), values) for name, values in data.items()}
+        | {"clock_offset": (("epoch", "sid"), clock)},
+        coords={"epoch": epochs, "sid": sids},
+    )
+    targets = epochs[0] + np.arange(0, 6 * 3600, 30) * np.timedelta64(1, "s")
+    return ds, targets
+
+
+class TestSignalsOfOneSatellite:
+    """Signals with the same data give what each gives alone (#433): each
+    distinct column is interpolated once."""
+
+    @pytest.mark.parametrize("method", ["lagrange", "hermite"])
+    def test_orbits(self, method):
+        ds, targets = _signals_of_shared_satellites()
+        orbits = ds.drop_vars("clock_offset")
+        strategy = Sp3InterpolationStrategy(config=Sp3Config(method=method))
+
+        got = strategy.interpolate(orbits, targets)
+
+        for sid in ds.sid.values:
+            alone = strategy.interpolate(orbits.sel(sid=[sid]), targets)
+            xr.testing.assert_identical(got.sel(sid=[sid]), alone)
+        assert list(got.sid.values) == list(ds.sid.values)
+
+    def test_clocks(self):
+        ds, targets = _signals_of_shared_satellites()
+        clocks = ds[["clock_offset"]]
+        strategy = ClockInterpolationStrategy(config=ClockConfig())
+
+        got = strategy.interpolate(clocks, targets)
+
+        for sid in ds.sid.values:
+            alone = strategy.interpolate(clocks.sel(sid=[sid]), targets)
+            xr.testing.assert_identical(got.sel(sid=[sid]), alone)
+        assert list(got.sid.values) == list(ds.sid.values)
