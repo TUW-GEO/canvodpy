@@ -472,8 +472,8 @@ def create_grid_to_file(
     Warnings
     --------
     The grid file is a pickle: loading a pickle can run any code in the
-    file. Load it only with :func:`assign_grid_cells_to_file`, and only files you wrote
-    yourself with this function.
+    file. Load it only with :func:`assign_grid_cells_to_file`, and only
+    files you wrote yourself with this function.
 
     Examples
     --------
