@@ -566,7 +566,7 @@ Folder of the site's VOD store: `vod`, or `vod-` and a suffix for a second VOD s
 
 #### `processing.storage.aux_data_dir` {#processing-storage-aux_data_dir}
 
-Directory for downloaded auxiliary files (SP3, CLK) and transient Zarr caches. Raw files persist; caches are rebuilt each run. Defaults to system temp directory if not set.
+Directory for downloaded auxiliary files (SP3, CLK) and transient Zarr caches. Raw files persist; caches are rebuilt each run, one per day, site and sampling interval, so runs of different sites can share the directory. Defaults to system temp directory if not set.
 
 - Type: path, or null
 - Default: `null`

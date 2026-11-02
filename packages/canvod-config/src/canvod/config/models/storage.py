@@ -138,7 +138,9 @@ class StorageConfig(_StrictModel):
         description=(
             "Directory for downloaded auxiliary files (SP3, CLK) and "
             "transient Zarr caches. Raw files persist; caches are rebuilt "
-            "each run. Defaults to system temp directory if not set."
+            "each run, one per day, site and sampling interval, so runs of "
+            "different sites can share the directory. Defaults to system "
+            "temp directory if not set."
         ),
     )
     shared_aux_cache_dir: Path | None = Field(
