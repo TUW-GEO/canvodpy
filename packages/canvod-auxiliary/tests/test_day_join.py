@@ -188,6 +188,7 @@ class TestCreateStandardNeighbors:
 
 
 AUX_DATA = Path(__file__).parents[2] / "canvod-readers/tests/test_data/valid/aux_data"
+GOLDEN = Path(__file__).parent / "golden"
 
 
 @pytest.mark.skipif(
@@ -234,6 +235,27 @@ class TestRealNeighborFiles:
         assert ephem["Vx"].sel(sid=sid, epoch=midnight).item() == pytest.approx(
             dx.item() / 600.0
         )
+
+    def test_hermite_gives_the_orbits_of_v1_0_0(self, pipeline):
+        """``sp3_interpolation: hermite`` reproduces canvodpy v1.0.0 exactly.
+
+        The golden values are an extract of the aux cache of the test data
+        as v1.0.0 computed it (test data before
+        TUW-GEO/canvodpy-test-data@d4ab73e): three 10-minute windows of
+        five SIDs, one of them (C30) without positions at the start.
+        """
+        golden = np.load(GOLDEN / "aux_2025001_hermite_v1.0.0.npz")
+
+        got = interpolate_aux_day(
+            pipeline.get("ephemerides"),
+            None,
+            golden["epoch"],
+            sp3_interpolation="hermite",
+        ).sel(sid=list(golden["sid"]))
+
+        for var in ("X", "Y", "Z", "Vx", "Vy", "Vz"):
+            np.testing.assert_array_equal(got[var].values, golden[var])
+        assert np.isnan(golden["X"]).any()
 
     def test_committed_aux_cache_is_what_a_run_computes(self, pipeline):
         cache = xr.open_zarr(AUX_DATA / "aux_2025001.zarr", consolidated=False)

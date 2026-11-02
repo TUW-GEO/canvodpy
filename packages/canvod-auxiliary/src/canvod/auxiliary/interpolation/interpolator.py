@@ -1,25 +1,33 @@
 """Interpolation strategies for GNSS auxiliary data.
 
 Provides specialized interpolation for:
-- SP3 ephemeris: polynomial of degree 10 through the 11 nearest epochs
+- SP3 ephemeris: polynomial of degree 10 through the 11 nearest epochs, or
+  the cubic Hermite spline of canvodpy before v1.1.0
 - CLK clock: Piecewise linear with discontinuity detection
 """
 
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
+from typing import Any, Literal, get_args
 
 import numpy as np
 import xarray as xr
 from canvod.utils.tools import deprecated_argument
-from pydantic import ConfigDict
+from pydantic import ConfigDict, validate_call
 from pydantic.dataclasses import dataclass
-from scipy.interpolate import interp1d
+from scipy.interpolate import CubicHermiteSpline, interp1d
 
 #: Epochs of an orbit product each interpolated position is computed from:
 #: a polynomial of degree 10, as RTKLIB interpolates precise ephemerides
 #: (RTKLIB 2.4.2 p13, src/preceph.c, ``pephpos``, ``NMAX``).
 ORBIT_INTERPOLATION_POINTS = 11
+
+#: The orbit interpolation methods (``processing.aux_data.sp3_interpolation``):
+#: ``lagrange``, the polynomial of degree 10 through the 11 nearest epochs,
+#: and ``hermite``, the cubic Hermite spline through the positions and
+#: velocities, the only method of canvodpy before v1.1.0.
+type Sp3InterpolationMethod = Literal["lagrange", "hermite"]
+SP3_INTERPOLATION_METHODS: tuple[str, ...] = get_args(Sp3InterpolationMethod.__value__)
 
 
 class InterpolatorConfig:
@@ -102,31 +110,51 @@ def _detect_jumps(data: np.ndarray, window_size: int, threshold: float) -> np.nd
 class Sp3Config(InterpolatorConfig):
     """Configuration for SP3 ephemeris interpolation.
 
-    The orbits are interpolated with a polynomial of degree 10 through the
-    11 nearest epochs (:data:`ORBIT_INTERPOLATION_POINTS`); nothing about
-    it is configurable.
+    Parameters
+    ----------
+    method : str
+        ``"lagrange"``: the polynomial of degree 10 through the 11 nearest
+        epochs (:data:`ORBIT_INTERPOLATION_POINTS`). ``"hermite"``: the
+        cubic Hermite spline through the positions and the velocities
+        (``Vx``, ``Vy``, ``Vz``), as canvodpy interpolated before v1.1.0.
+        See :data:`SP3_INTERPOLATION_METHODS`.
+
+    Raises
+    ------
+    pydantic.ValidationError
+        For another method (a ``ValueError``).
     """
 
     @deprecated_argument(
         "use_velocities",
         "The 'use_velocities' argument of Sp3Config is left over from "
-        "development and will be removed with the next major version. The "
-        "orbits are interpolated from the positions alone. Remove the argument.",
+        "development and will be removed with the next major version. It has "
+        "no effect: choose the interpolation with method= ('lagrange' or "
+        "'hermite'). Remove the argument.",
     )
     @deprecated_argument(
         "fallback_method",
         "The 'fallback_method' argument of Sp3Config is left over from "
-        "development and will be removed with the next major version. The "
-        "orbits are interpolated from the positions alone. Remove the argument.",
+        "development and will be removed with the next major version. It has "
+        "no effect: choose the interpolation with method= ('lagrange' or "
+        "'hermite'). Remove the argument.",
     )
+    @validate_call
     def __init__(
-        self, use_velocities: bool | None = None, fallback_method: str | None = None
+        self,
+        use_velocities: bool | None = None,
+        fallback_method: str | None = None,
+        *,
+        method: Sp3InterpolationMethod = "lagrange",
     ) -> None:
+        self.method = method
         self.use_velocities = use_velocities
         self.fallback_method = fallback_method
 
     def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary for attrs storage."""
+        if self.method == "hermite":
+            return {"method": "hermite"}
         return {"method": "lagrange", "points": ORBIT_INTERPOLATION_POINTS}
 
 
@@ -186,13 +214,16 @@ class Interpolator[C: InterpolatorConfig](ABC):
 
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class Sp3InterpolationStrategy(Interpolator[Sp3Config]):
-    """Polynomial interpolation of SP3 ephemeris data.
+    """Interpolation of SP3 ephemeris data.
 
-    Each position is interpolated with the Lagrange polynomial of degree 10
-    through the 11 nearest epochs of the satellite
-    (:data:`ORBIT_INTERPOLATION_POINTS`), as RTKLIB interpolates precise
-    ephemerides (RTKLIB 2.4.2 p13, src/preceph.c, ``pephpos``). The velocities
-    (``Vx``, ``Vy``, ``Vz``) are the derivative of the same polynomial.
+    With ``method="lagrange"`` (the default), each position is interpolated
+    with the Lagrange polynomial of degree 10 through the 11 nearest epochs
+    of the satellite (:data:`ORBIT_INTERPOLATION_POINTS`), as RTKLIB
+    interpolates precise ephemerides (RTKLIB 2.4.2 p13, src/preceph.c,
+    ``pephpos``). With ``method="hermite"``, each coordinate is interpolated
+    with the cubic Hermite spline through the positions and the velocities
+    of the input, as canvodpy did before v1.1.0. Either way the velocities
+    (``Vx``, ``Vy``, ``Vz``) are the derivative of the interpolant.
 
     Examples
     --------
@@ -204,8 +235,19 @@ class Sp3InterpolationStrategy(Interpolator[Sp3Config]):
     >>> sp3_interp = interpolator.interpolate(sp3_data, rinex_epochs)
     """
 
+    #: Checked by pydantic: the type parameter of :class:`Interpolator` is not
+    config: Sp3Config
+
     def interpolate(self, ds: xr.Dataset, target_epochs: np.ndarray) -> xr.Dataset:
         """Interpolate SP3 ephemeris to target epochs."""
+        if self.config.method == "hermite" and not all(
+            v in ds for v in ("Vx", "Vy", "Vz")
+        ):
+            msg = (
+                "The Hermite orbit interpolation needs the velocities Vx, Vy "
+                "and Vz; the orbit data have none."
+            )
+            raise ValueError(msg)
         # Determine satellite dimension (sv or sid)
         sat_dim = "sv" if "sv" in ds.dims else "sid"
         sat_values = ds[sat_dim].values
@@ -286,7 +328,7 @@ class Sp3InterpolationStrategy(Interpolator[Sp3Config]):
         coords: dict[str, np.ndarray],
         vels: dict[str, np.ndarray],
     ) -> None:
-        """Interpolate a single satellite with the Lagrange polynomial.
+        """Interpolate a single satellite with the configured method.
 
         Parameters
         ----------
@@ -308,6 +350,11 @@ class Sp3InterpolationStrategy(Interpolator[Sp3Config]):
             Output velocity arrays to fill.
         """
         step = float(np.median(np.diff(t_source))) if len(t_source) > 1 else 0.0
+        if self.config.method == "hermite":
+            self._hermite_sat(
+                ds, sat, sat_dim, t_source, t_target, idx, coords, vels, step
+            )
+            return
         pos = np.stack([ds[c].sel({sat_dim: sat}).values for c in "XYZ"], axis=-1)
         for coord, vel in [("X", "Vx"), ("Y", "Vy"), ("Z", "Vz")]:
             coords[coord][:, idx] = np.nan
@@ -333,6 +380,49 @@ class Sp3InterpolationStrategy(Interpolator[Sp3Config]):
         for k, (coord, vel) in enumerate([("X", "Vx"), ("Y", "Vy"), ("Z", "Vz")]):
             coords[coord][covered, idx] = value[:, k]
             vels[vel][covered, idx] = rate[:, k]
+
+    @staticmethod
+    def _hermite_sat(
+        ds: xr.Dataset,
+        sat: str,
+        sat_dim: str,
+        t_source: np.ndarray,
+        t_target: np.ndarray,
+        idx: int,
+        coords: dict[str, np.ndarray],
+        vels: dict[str, np.ndarray],
+        step: float,
+    ) -> None:
+        """One satellite with the cubic Hermite spline, as before v1.1.0.
+
+        The code of canvodpy v1.0.0, unchanged, so that a run with
+        ``sp3_interpolation: hermite`` gives the angles of v1.0.0.
+        """
+        for coord, vel in [("X", "Vx"), ("Y", "Vy"), ("Z", "Vz")]:
+            pos = ds[coord].sel({sat_dim: sat}).values
+            vel_data = ds[vel].sel({sat_dim: sat}).values
+            coords[coord][:, idx] = np.nan
+            vels[vel][:, idx] = np.nan
+
+            # The spline is fitted on the epochs with data only (a satellite
+            # can be missing from part of a file, or from one of the joined
+            # days, see AuxFile.join_days)
+            ok = np.isfinite(pos) & np.isfinite(vel_data)
+            if ok.sum() < 2:
+                continue
+            t_ok = t_source[ok]
+
+            # No value where the satellite has no data around the target:
+            # outside its epochs (no extrapolation) or in a gap wider than
+            # 1.5 steps
+            interpolator = CubicHermiteSpline(t_ok, pos[ok], vel_data[ok])
+            right = np.clip(np.searchsorted(t_ok, t_target), 1, len(t_ok) - 1)
+            bracket = t_ok[right] - t_ok[right - 1]
+            covered = (
+                (t_target >= t_ok[0]) & (t_target <= t_ok[-1]) & (bracket <= 1.5 * step)
+            )
+            coords[coord][covered, idx] = interpolator(t_target[covered])
+            vels[vel][covered, idx] = interpolator.derivative()(t_target[covered])
 
 
 def _lagrange(
@@ -431,6 +521,9 @@ class ClockInterpolationStrategy(Interpolator[ClockConfig]):
     >>> # Interpolate to RINEX epochs
     >>> clk_interp = interpolator.interpolate(clk_data, rinex_epochs)
     """
+
+    #: Checked by pydantic: the type parameter of :class:`Interpolator` is not
+    config: ClockConfig
 
     def interpolate(self, ds: xr.Dataset, target_epochs: np.ndarray) -> xr.Dataset:
         """Interpolate clock corrections with discontinuity handling."""
@@ -589,9 +682,11 @@ def create_interpolator_from_attrs(attrs: dict[str, Any]) -> Interpolator:
     config_dict = attrs["interpolator_config"]["config"]
 
     if interpolator_type == "Sp3InterpolationStrategy":
-        # Nothing about the orbit interpolation is configurable; the
-        # settings of stores written before v1.1.0 are not passed on
-        return Sp3InterpolationStrategy(config=Sp3Config())
+        # Attributes written before v1.1.0 record no method: they were
+        # interpolated with the Hermite spline (their use_velocities and
+        # fallback_method are not passed on)
+        method = config_dict.get("method", "hermite")
+        return Sp3InterpolationStrategy(config=Sp3Config(method=method))
     elif interpolator_type == "ClockInterpolationStrategy":
         config = ClockConfig(**config_dict)
         return ClockInterpolationStrategy(config=config)

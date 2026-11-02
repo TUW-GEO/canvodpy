@@ -8,6 +8,7 @@ from canvod.auxiliary.interpolation import (
     ClockInterpolationStrategy,
     Sp3Config,
     Sp3InterpolationStrategy,
+    create_interpolator_from_attrs,
 )
 from canvod.auxiliary.interpolation.interpolator import _detect_jumps
 
@@ -18,6 +19,54 @@ class TestSp3Config:
     def test_records_the_method(self):
         """The record in the aux store names the method and its epochs."""
         assert Sp3Config().to_dict() == {"method": "lagrange", "points": 11}
+
+    def test_records_the_hermite_method(self):
+        assert Sp3Config(method="hermite").to_dict() == {"method": "hermite"}
+
+    def test_refuses_an_unknown_method(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="lagrange"):
+            Sp3Config(method="cubic")
+
+
+class TestInterpolatorConfigTypes:
+    """Each strategy takes its own config only (pydantic checks it)."""
+
+    def test_sp3_strategy_refuses_a_clock_config(self):
+        import pytest
+
+        with pytest.raises(ValueError):
+            Sp3InterpolationStrategy(config=ClockConfig())
+
+    def test_clock_strategy_refuses_an_sp3_config(self):
+        import pytest
+
+        with pytest.raises(ValueError):
+            ClockInterpolationStrategy(config=Sp3Config())
+
+
+class TestInterpolatorFromAttrs:
+    def test_attrs_without_a_method_are_hermite(self):
+        """Attributes written before v1.1.0 record no method: Hermite."""
+        attrs = {
+            "interpolator_config": {
+                "interpolator_type": "Sp3InterpolationStrategy",
+                "config": {"use_velocities": True, "fallback_method": "linear"},
+            }
+        }
+
+        assert create_interpolator_from_attrs(attrs).config.method == "hermite"
+
+    def test_the_recorded_method_is_kept(self):
+        for method in ("lagrange", "hermite"):
+            strategy = Sp3InterpolationStrategy(config=Sp3Config(method=method))
+
+            restored = create_interpolator_from_attrs(
+                {"interpolator_config": strategy.to_attrs()}
+            )
+
+            assert restored.config.method == method
 
 
 class TestClockConfig:
@@ -470,6 +519,51 @@ class TestSp3OrbitAccuracy:
         np.testing.assert_allclose(result["X"].values, ds["X"].values, atol=1e-6)
 
 
+class TestSp3HermiteInterpolation:
+    """The cubic Hermite spline of canvodpy before v1.1.0 (``method="hermite"``)."""
+
+    hermite = Sp3InterpolationStrategy(config=Sp3Config(method="hermite"))
+
+    @staticmethod
+    def _orbit_dataset(step_s: float) -> xr.Dataset:
+        t = np.arange(-3600.0, 86_400.0 + 3600.0 + 1, step_s)
+        pos, vel = _circular_orbit(t), _circular_orbit(t, rate=True)
+        epochs = np.datetime64("2025-01-01T00:00:00") + (t * 1e9).astype(
+            "timedelta64[ns]"
+        )
+        data = {c: (("epoch", "sv"), pos[:, k : k + 1]) for k, c in enumerate("XYZ")}
+        data |= {
+            v: (("epoch", "sv"), vel[:, k : k + 1])
+            for k, v in enumerate(("Vx", "Vy", "Vz"))
+        }
+        return xr.Dataset(data, coords={"epoch": epochs, "sv": ["G01"]})
+
+    def test_values_at_the_epochs_are_the_product_values(self):
+        ds = self._orbit_dataset(900.0)
+
+        result = self.hermite.interpolate(ds, ds.epoch.values)
+
+        for var in ("X", "Y", "Z", "Vx", "Vy", "Vz"):
+            np.testing.assert_allclose(result[var].values, ds[var].values, atol=1e-6)
+
+    def test_needs_the_velocities(self):
+        import pytest
+
+        ds = self._orbit_dataset(900.0).drop_vars(["Vx", "Vy", "Vz"])
+
+        with pytest.raises(ValueError, match="velocities"):
+            self.hermite.interpolate(ds, ds.epoch.values)
+
+    def test_no_value_outside_the_data(self):
+        ds = self._orbit_dataset(900.0)
+        target = ds.epoch.values[-1] + np.array([0, 60], dtype="timedelta64[s]")
+
+        result = self.hermite.interpolate(ds, target)
+
+        assert np.isfinite(result["X"].values[0, 0])
+        assert np.isnan(result["X"].values[1, 0])
+
+
 class TestSp3ConfigDeprecatedArguments:
     def test_use_velocities_warns_and_changes_nothing(self):
         import pytest
@@ -484,3 +578,19 @@ class TestSp3ConfigDeprecatedArguments:
         with pytest.warns(FutureWarning, match="fallback_method"):
             config = Sp3Config(fallback_method="nearest")
         assert config.to_dict() == Sp3Config().to_dict()
+
+
+def test_the_setting_offers_the_methods_of_the_interpolator():
+    """``processing.aux_data.sp3_interpolation`` and the interpolator agree.
+
+    canvod-config cannot import canvod-auxiliary, so the settings model
+    lists the methods itself.
+    """
+    from typing import get_args
+
+    from canvod.config.models.aux_data import AuxDataConfig
+
+    from canvod.auxiliary.interpolation import SP3_INTERPOLATION_METHODS
+
+    annotation = AuxDataConfig.model_fields["sp3_interpolation"].annotation
+    assert set(get_args(annotation)) == set(SP3_INTERPOLATION_METHODS)

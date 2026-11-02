@@ -22,6 +22,7 @@ from canvodpy.orchestrator.processor import (
     preprocess_with_hermite_aux,
 )
 
+from canvod.auxiliary.interpolation import Sp3Config, Sp3InterpolationStrategy
 from canvod.auxiliary.position.position import ECEFPosition
 
 EPOCHS = np.array(
@@ -58,6 +59,11 @@ def _fake_aux_ds() -> xr.Dataset:
             "clock": (("epoch", "sid"), rng.uniform(-1e-5, 1e-5, (n_e, n_s))),
         },
         coords={"epoch": EPOCHS, "sid": SIDS},
+        attrs={
+            "interpolator_config": Sp3InterpolationStrategy(
+                config=Sp3Config()
+            ).to_attrs()
+        },
     )
 
 

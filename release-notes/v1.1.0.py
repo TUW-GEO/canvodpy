@@ -50,10 +50,11 @@ def _(mo):
     uv add canvodpy==1.1.0
     ```
 
-    The orbits are interpolated in a new way (below), which changes
-    `theta`, `phi` and `r` between the epochs of the orbit product. Apart
-    from that and the new name of the precise ephemeris, nothing changes
-    for a run with the precise ephemeris or with SBF files. The full list
+    The orbits are interpolated in a new way by default (below), which
+    changes `theta`, `phi` and `r` between the epochs of the orbit product;
+    the method of v1.0.0 stays available, and a store created with v1.0.0
+    needs it. Apart from that and the new name of the precise ephemeris,
+    nothing changes for a run with the precise ephemeris or with SBF files. The full list
     of changes is in the
     [changelog](https://github.com/TUW-GEO/canvodpy/blob/v1.1.0/CHANGELOG.md).
 
@@ -201,16 +202,31 @@ def _(mo):
     mo.md(r"""
     ## Orbit interpolation
 
-    The orbits of the precise ephemeris and of RINEX navigation files are
-    interpolated onto the epochs of a day with a polynomial of degree 10
-    through the 11 nearest orbit epochs, as RTKLIB does. Before, a cubic
-    Hermite spline with velocities estimated from the positions did this.
-    The angles `theta` and `phi` and the distance `r` change between the
-    orbit epochs. Days processed after the update get the new values; days
-    already in a store keep theirs. A shared aux cache from v1.0.0 is
-    computed again once.
+    The new setting `processing.aux_data.sp3_interpolation` picks how the
+    orbits of the precise ephemeris and of RINEX navigation files are
+    interpolated onto the epochs of a day:
 
-    More: [Interpolation methods](https://canvodpy.eu/packages/auxiliary/interpolation/#polynomial-of-degree-10-orbits).
+    - `lagrange`, the new default: a polynomial of degree 10 through the
+      11 nearest orbit epochs, as RTKLIB does.
+    - `hermite`: the cubic Hermite spline of v1.0.0, kept unchanged. A run
+      with it gives the angles of v1.0.0 exactly.
+
+    The two differ in `theta`, `phi` and `r` between the orbit epochs, so
+    a store records its method and refuses runs with the other one. **A
+    store created with v1.0.0 counts as `hermite`**: to keep writing to
+    it, set
+
+    ```yaml
+    processing:
+      aux_data:
+        sp3_interpolation: hermite
+    ```
+
+    or write to a new store to use `lagrange`. The log book records the
+    method of every file (column `orbit_interpolation`). A shared aux
+    cache from v1.0.0 is computed again once.
+
+    More: [Interpolation methods](https://canvodpy.eu/packages/auxiliary/interpolation/#orbits).
     """)
     return
 
@@ -402,8 +418,8 @@ def _(mo):
       limited Zarr's concurrent chunk writes for only some of the store's
       writes. Delete it from your settings.
     - The arguments `use_velocities` and `fallback_method` of `Sp3Config`
-      have no effect: the orbits are interpolated from the positions
-      alone. Leave them out.
+      have no effect: `Sp3Config(method=...)` picks the interpolation.
+      Leave them out.
 
     All three are removed with v2.0.0.
 

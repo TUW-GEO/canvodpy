@@ -39,6 +39,19 @@ class AuxDataConfig(_StrictModel):
             "it as empty."
         ),
     )
+    sp3_interpolation: Literal["lagrange", "hermite"] = Field(
+        "lagrange",
+        description=(
+            "How the orbits are interpolated onto the epochs of the "
+            "observations. lagrange: the polynomial of degree 10 through the "
+            "11 nearest orbit epochs. hermite: the cubic Hermite spline "
+            "through the positions and velocities, the method of canvodpy "
+            "before v1.1.0. Despite the name, it also applies to the "
+            "broadcast orbits of RINEX navigation files. A store records it "
+            "and refuses runs with the other method; a store created before "
+            "v1.1.0 counts as hermite."
+        ),
+    )
     ftp_timeout_s: int = Field(
         30, ge=1, description="FTP connection timeout in seconds"
     )

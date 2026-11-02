@@ -52,6 +52,7 @@ def _synthetic_ephemeris_ds() -> xr.Dataset:
 def _fake_self(tmp_path: Path) -> SimpleNamespace:
     config = mock.MagicMock()
     config.processing.aux_data.zarr_async_concurrency = None
+    config.processing.aux_data.sp3_interpolation = "lagrange"
 
     aux_pipeline = mock.MagicMock()
     aux_pipeline.get.return_value = _synthetic_ephemeris_ds()

@@ -39,6 +39,7 @@ def _fake_self(tmp_path: Path) -> SimpleNamespace:
     config = mock.MagicMock()
     config.processing.aux_data.agency = "COD"
     config.processing.aux_data.product_type = "final"
+    config.processing.aux_data.sp3_interpolation = "lagrange"
     config.processing.params.ephemeris_source = "precise"
     config.processing.params.aggregate_glonass_fdma = True
     fake_self = SimpleNamespace(

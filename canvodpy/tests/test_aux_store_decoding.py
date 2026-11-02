@@ -18,6 +18,7 @@ from canvodpy.orchestrator.processor import (
     preprocess_with_hermite_aux,
 )
 
+from canvod.auxiliary.interpolation import Sp3Config, Sp3InterpolationStrategy
 from canvod.auxiliary.position.position import ECEFPosition
 
 EPOCHS = np.array(
@@ -47,6 +48,11 @@ def aux_zarr(tmp_path: Path) -> Path:
             "clock_offset": (("epoch", "sid"), CLOCK, {"units": "seconds"}),
         },
         coords={"epoch": EPOCHS, "sid": SIDS},
+        attrs={
+            "interpolator_config": Sp3InterpolationStrategy(
+                config=Sp3Config()
+            ).to_attrs()
+        },
     )
     path = tmp_path / "aux_2025001.zarr"
     ds.to_zarr(path, mode="w", consolidated=False)

@@ -29,7 +29,8 @@ CANONICAL_AUX_GRID_SECONDS = 1.0
 # 3: one entry per satellite (sv), not per signal (#573).
 # 4: orbits interpolated with a polynomial of degree 10, not a cubic
 #    Hermite spline (#563).
-AUX_CACHE_FORMAT_VERSION = 4
+# 5: the orbit interpolation method (lagrange or hermite) in the fingerprint.
+AUX_CACHE_FORMAT_VERSION = 5
 
 
 def compute_aux_cache_fingerprint(
@@ -40,6 +41,7 @@ def compute_aux_cache_fingerprint(
     canonical_grid_seconds: float,
     source_file_paths: dict[str, Path | None],
     aggregate_glonass_fdma: bool,
+    sp3_interpolation: str = "lagrange",
 ) -> str:
     """Compute a stable fingerprint for one day's aux cache entry.
 
@@ -50,7 +52,8 @@ def compute_aux_cache_fingerprint(
     broader/denser shared cache entry is always a valid superset.
 
     ``aggregate_glonass_fdma`` is included because it changes the GLONASS
-    signal IDs of the cached data.
+    signal IDs of the cached data, ``sp3_interpolation`` (``"lagrange"`` or
+    ``"hermite"``) because it changes the interpolated orbits.
 
     Source file mtimes are included so a silent upstream reprocessing (e.g.
     rapid orbit revised to final) produces a new fingerprint rather than
@@ -63,6 +66,7 @@ def compute_aux_cache_fingerprint(
         "ephemeris_source": ephemeris_source,
         "canonical_grid_seconds": canonical_grid_seconds,
         "aggregate_glonass_fdma": aggregate_glonass_fdma,
+        "sp3_interpolation": sp3_interpolation,
         "source_files": {
             name: (
                 {"path": str(path), "mtime": path.stat().st_mtime}
@@ -82,6 +86,7 @@ def compute_broadcast_cache_fingerprint(
     nav_files: list[Path],
     canonical_grid_seconds: float,
     aggregate_glonass_fdma: bool,
+    sp3_interpolation: str = "lagrange",
 ) -> str:
     """Compute a stable fingerprint for one day's broadcast aux cache entry.
 
@@ -97,6 +102,7 @@ def compute_broadcast_cache_fingerprint(
         "ephemeris_source": "broadcast",
         "canonical_grid_seconds": canonical_grid_seconds,
         "aggregate_glonass_fdma": aggregate_glonass_fdma,
+        "sp3_interpolation": sp3_interpolation,
         "nav_files": sorted(
             hashlib.sha256(path.read_bytes()).hexdigest() for path in nav_files
         ),

@@ -286,6 +286,121 @@ def test_a_broadcast_store_from_before_574_accepts_a_broadcast_run(settings):
     assert differences(stored, run, testing.SITE_KEY) == []
 
 
+def _without_sp3_interpolation(stored: dict) -> dict:
+    """``stored`` as a store created before v1.1.0 recorded it."""
+    del stored["settings"]["processing"]["aux_data"]["sp3_interpolation"]
+    return stored
+
+
+def _hermite(settings):
+    other = settings.model_copy(deep=True)
+    other.processing.aux_data.sp3_interpolation = "hermite"
+    return other
+
+
+def test_a_new_store_records_its_sp3_interpolation(settings):
+    from canvod.store_metadata.content import new_content_settings
+
+    stored = new_content_settings(_hermite(settings), testing.SITE_KEY)
+
+    assert stored["settings"]["processing"]["aux_data"]["sp3_interpolation"] == (
+        "hermite"
+    )
+
+
+def test_a_store_refuses_a_run_with_the_other_sp3_interpolation(settings):
+    from canvod.store_metadata.content import (
+        differences,
+        new_content_settings,
+        run_content_settings,
+    )
+
+    stored = new_content_settings(settings, testing.SITE_KEY)
+    run = run_content_settings(_hermite(settings), testing.SITE_KEY)
+
+    found = differences(stored, run, testing.SITE_KEY)
+
+    assert [(d.key, d.store, d.run) for d in found] == [
+        ("processing.aux_data.sp3_interpolation", "lagrange", "hermite")
+    ]
+
+
+def test_a_store_from_before_1_1_0_was_interpolated_with_hermite(settings):
+    """Its content settings have no sp3_interpolation: it counts as hermite."""
+    from canvod.store_metadata.content import (
+        differences,
+        new_content_settings,
+        run_content_settings,
+    )
+
+    stored = _without_sp3_interpolation(
+        new_content_settings(settings, testing.SITE_KEY)
+    )
+
+    lagrange = run_content_settings(settings, testing.SITE_KEY)
+    hermite = run_content_settings(_hermite(settings), testing.SITE_KEY)
+
+    assert [d.key for d in differences(stored, lagrange, testing.SITE_KEY)] == [
+        "processing.aux_data.sp3_interpolation"
+    ]
+    assert differences(stored, hermite, testing.SITE_KEY) == []
+
+
+def test_the_refusal_names_the_setting_that_continues_an_old_store(settings):
+    from canvod.store_metadata.content import (
+        CONTENT_SETTINGS_FIELD,
+        differences,
+        mismatch_message,
+        new_content_settings,
+        run_content_settings,
+    )
+
+    stored = _without_sp3_interpolation(
+        new_content_settings(settings, testing.SITE_KEY)
+    )
+    found = differences(
+        stored, run_content_settings(settings, testing.SITE_KEY), testing.SITE_KEY
+    )
+    repository = {
+        CONTENT_SETTINGS_FIELD: stored,
+        "identity": {"store_type": "gnss_store"},
+    }
+
+    message = mismatch_message(found, repository, "gnss")
+
+    assert "processing.aux_data.sp3_interpolation: hermite" in message
+
+
+def test_a_broadcast_store_from_before_1_1_0_accepts_either_method(settings):
+    """Its angles came from SBF files, without interpolation."""
+    from canvod.store_metadata.content import (
+        differences,
+        new_content_settings,
+        run_content_settings,
+    )
+
+    stored = _without_sp3_interpolation(
+        new_content_settings(_broadcast(settings), testing.SITE_KEY)
+    )
+
+    for run_settings in (_broadcast(settings), _hermite(_broadcast(settings))):
+        run = run_content_settings(run_settings, testing.SITE_KEY)
+        assert differences(stored, run, testing.SITE_KEY) == []
+
+
+def test_settings_from_an_old_store_continue_it_with_hermite(settings):
+    """``canvodpy config init --from-store`` writes the implied value."""
+    from canvod.store_metadata.content import new_content_settings, with_current_names
+
+    stored = _without_sp3_interpolation(
+        new_content_settings(settings, testing.SITE_KEY)
+    )
+
+    current = with_current_names(stored["settings"])
+
+    assert current["processing"]["aux_data"]["sp3_interpolation"] == "hermite"
+
+
 def test_a_precise_run_differs_from_a_broadcast_store_in_the_source_only(settings):
     from canvod.store_metadata.content import (
         differences,

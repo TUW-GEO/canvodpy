@@ -45,6 +45,7 @@ from canvod.auxiliary.cache_fingerprint import (
 )
 from canvod.auxiliary.interpolation import (
     aux_epoch_grid,
+    create_interpolator_from_attrs,
     interpolate_aux_day,
     sampling_interval_from_epochs,
 )
@@ -77,7 +78,11 @@ from canvod.store.day_blocks import (
     stored_epoch_chunk,
     write_file_region,
 )
-from canvod.store.prepare import NO_POSITION_ATTR, prepare_write
+from canvod.store.prepare import (
+    NO_POSITION_ATTR,
+    ORBIT_INTERPOLATION_ATTR,
+    prepare_write,
+)
 from canvod.store.store import StoredOverlapError, _with_run_id
 from canvod.store.time_encoding import with_time_units
 from canvod.store_metadata.io import commit_lock, commit_with_rebase, store_command
@@ -520,8 +525,14 @@ def _preprocess_file(
                     observations, next(iter(ds_augmented.values()))["theta"]
                 )
             )
+            # How the orbits were interpolated, as the aux data record it
+            orbit_interpolation = json.dumps(
+                create_interpolator_from_attrs(aux_store.attrs).config.to_dict(),
+                sort_keys=True,
+            )
             for ds_name in ds_augmented.values():
                 ds_name.attrs[NO_POSITION_ATTR] = no_position
+                ds_name.attrs[ORBIT_INTERPOLATION_ATTR] = orbit_interpolation
             t_coords = time.perf_counter()
 
             log.info(
@@ -1540,7 +1551,7 @@ class RinexDataProcessor:
             "aux_preprocessing_started",
             rinex_files=len(rinex_files),
             output_path=str(output_path),
-            interpolation_method="lagrange_degree_10",
+            interpolation_method=self._config.processing.aux_data.sp3_interpolation,
         )
 
         # 1. Sampling interval: from the file name, else from the first file
@@ -1624,7 +1635,12 @@ class RinexDataProcessor:
             )
             ephem_ds = sid_to_sv(ephem_ds)
             clock_ds = None if clock_ds is None else sid_to_sv(clock_ds)
-        aux_processed = interpolate_aux_day(ephem_ds, clock_ds, target_epochs)
+        aux_processed = interpolate_aux_day(
+            ephem_ds,
+            clock_ds,
+            target_epochs,
+            sp3_interpolation=self._config.processing.aux_data.sp3_interpolation,
+        )
         if per_satellite:
             aux_processed = aux_processed.assign_coords(
                 sid=("sid", np.array(sids, dtype=object))
@@ -2098,7 +2114,7 @@ class RinexDataProcessor:
         self._logger.info(
             "aux_preprocessing_required",
             output_path=str(aux_zarr_path),
-            interpolation="lagrange_degree_10",
+            interpolation=self._config.processing.aux_data.sp3_interpolation,
             cache_cleared=had_cache,
             rmtree_seconds=round(t1 - t0, 4) if had_cache else 0,
         )
@@ -2241,6 +2257,7 @@ class RinexDataProcessor:
                 nav_files=nav_files,
                 canonical_grid_seconds=CANONICAL_AUX_GRID_SECONDS,
                 aggregate_glonass_fdma=aggregate_glonass_fdma,
+                sp3_interpolation=self._config.processing.aux_data.sp3_interpolation,
             )
             result = self._shared_aux_cache_entry(
                 cache_root,
@@ -2325,6 +2342,7 @@ class RinexDataProcessor:
             aggregate_glonass_fdma=(
                 self._config.processing.params.aggregate_glonass_fdma
             ),
+            sp3_interpolation=self._config.processing.aux_data.sp3_interpolation,
         )
         return self._shared_aux_cache_entry(
             cache_root,

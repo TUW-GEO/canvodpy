@@ -10,7 +10,7 @@ observation epochs, receiver position, and θ/φ per epoch and SID.
 |---|---|
 | `ephemeris/provider.py` | `EphemerisProvider` ABC; `AgencyEphemerisProvider` (SP3/CLK), `SbfBroadcastProvider` (SBF SatVisibility angles), `RinexNavProvider` (RINEX navigation files) |
 | `ephemeris/broadcast.py` | Broadcast orbits: navigation records to positions and velocities on a 5-minute grid, the input of the orbit interpolation (ADR 0023) |
-| `interpolation/` | The one interpolation module: orbits (polynomial of degree 10 through the 11 nearest epochs, as RTKLIB), clock interpolation, and the day grid (`interpolation/day_grid.py`) |
+| `interpolation/` | The one interpolation module: orbits (`Sp3Config(method=...)`: `lagrange`, the polynomial of degree 10 through the 11 nearest epochs as RTKLIB, or `hermite`, the cubic Hermite spline of v1.0.0), clock interpolation, and the day grid (`interpolation/day_grid.py`) |
 | `position/` | `ECEFPosition`, geodetic position, spherical coordinates (θ, φ) |
 | `products/` | Product registry (`products/products.toml`): which final/rapid agency products exist, their samplings and GNSS, where to fetch them; `products/check.py` checks it against the servers (`just check-products`) |
 | `augmentation.py`, `pipeline.py` | Adding the auxiliary data to an observation dataset |
@@ -37,6 +37,13 @@ Background: `docs/packages/auxiliary/overview.md`,
   path, never a fallback to the agency products (ADR 0023).
 - CLK clock bias is read in seconds. When a change alters cached
   interpolation results, raise `AUX_CACHE_FORMAT_VERSION`.
+- **Orbit interpolation** (`processing.aux_data.sp3_interpolation`):
+  `hermite` must give the orbits of v1.0.0 bit for bit
+  (`tests/test_day_join.py`, golden values in `tests/golden/`); stores and
+  their content settings rely on it. The method goes into both cache
+  fingerprints. The settings model lists the methods itself (canvod-config
+  cannot import this package); `tests/test_interpolation.py` checks that
+  both lists agree.
 - Angles are radians in datasets; polar angle, not elevation.
 - **Products**: only `final` and `rapid`; file names come from
   `ProductSpec.sp3_filenames`/`clk_filenames` (one per listed sampling, tried

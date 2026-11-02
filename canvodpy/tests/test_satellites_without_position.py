@@ -28,7 +28,9 @@ from canvod.store import MyIcechunkStore
 from canvod.store.prepare import (
     NO_POSITION_ATTR,
     NO_POSITION_COLUMN,
-    split_no_position,
+    ORBIT_INTERPOLATION_ATTR,
+    ORBIT_INTERPOLATION_COLUMN,
+    split_log_book_attrs,
 )
 from canvod.store.store import _json_log_row
 from canvod.store_metadata.log_book import read_log_book
@@ -110,7 +112,20 @@ def test_the_log_book_row_takes_the_list_out_of_the_attributes():
 
     assert row[NO_POSITION_COLUMN] == '{"G08": 3}'
     assert json.loads(row["attrs"]) == {"File Hash": "abc"}
-    assert split_no_position(attrs) == ({"File Hash": "abc"}, '{"G08": 3}')
+    assert split_log_book_attrs(attrs) == (
+        {"File Hash": "abc"},
+        {NO_POSITION_COLUMN: '{"G08": 3}', ORBIT_INTERPOLATION_COLUMN: ""},
+    )
+
+
+def test_the_log_book_row_takes_the_orbit_interpolation_out_of_the_attributes():
+    method = '{"method": "hermite"}'
+    attrs = {"File Hash": "abc", ORBIT_INTERPOLATION_ATTR: method}
+
+    row = _json_log_row({"dataset_attrs": attrs})
+
+    assert row[ORBIT_INTERPOLATION_COLUMN] == method
+    assert json.loads(row["attrs"]) == {"File Hash": "abc"}
 
 
 def _without(nav: Path, satellite: str, out: Path) -> None:
@@ -166,6 +181,11 @@ def test_a_run_names_the_satellites_it_observed_without_a_position(
     assert sum(f.get(MISSING, 0) for f in per_file) == epochs
     assert NO_POSITION_ATTR not in attrs
     assert all(NO_POSITION_ATTR not in json.loads(a) for a in rows["attrs"])
+    # The broadcast orbits went through the default interpolation.
+    recorded = [json.loads(v) for v in rows[ORBIT_INTERPOLATION_COLUMN].to_list()]
+    assert recorded
+    assert all(r == {"method": "lagrange", "points": 11} for r in recorded)
+    assert ORBIT_INTERPOLATION_ATTR not in attrs
 
     with RunHistory.open(stores.parents[1] / "logs", read_only=True) as history:
         (run,) = history.runs()

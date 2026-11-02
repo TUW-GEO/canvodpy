@@ -222,7 +222,7 @@ change; to process with other settings, create a new store.
 | The signals kept | `sids.mode`, `sids.preset`, `sids.custom_sids`, and the list of signals they give |
 | Observables and how they are stored | `processing.params.keep_gnss_observables`, `aggregate_glonass_fdma`, `store_radial_distance`, `store_delta_snr`, `store_radial_diff`, `store_sbf_raw_observables`, `store_sbf_metadata` |
 | How files are read and paired | `processing.params.rinex_v3_parser`, `file_pairing`, `receiver_position_mode`, `ephemeris_source` |
-| The orbit product | `processing.aux_data.agency`, `product_type`, `fetch_clock` |
+| The orbit product and its interpolation | `processing.aux_data.agency`, `product_type`, `fetch_clock`, `sp3_interpolation` |
 | Preprocessing | all of `processing.preprocessing`, statistics included |
 | Store layout | `processing.icechunk.compression_algorithm`, `compression_level`, `inline_chunk_threshold_bytes`, `manifest_splitting_enabled`, `manifest_splitting_epoch_range`, `chunk_strategies.gnss_store` |
 | Maintenance | all of `processing.storage.maintenance` |
@@ -349,6 +349,7 @@ processing:
     agency: COD          # SP3/CLK analysis center code
     product_type: final  # final or rapid; the agency must publish it
     # fetch_clock: false # true adds the CLK files; VOD does not use them
+    # sp3_interpolation: lagrange # or hermite, the orbits as before v1.1.0
 
   params:
     keep_gnss_observables: [SNR]   # observables to keep (SNR, Pseudorange, Phase, Doppler)
@@ -408,6 +409,7 @@ processing:
 | `params.file_pairing`           | `complete`, `paired`     | `complete` ingests all files per receiver independently. `paired` only processes dates where both receivers have data.                                                                   |
 | `params.ephemeris_source`       | `precise`, `broadcast`   | `precise` computes satellite positions from the SP3/CLK products of an analysis center (`final` is the old name of `precise`; it works until v2.0.0 and warns). `broadcast` uses the broadcast ephemeris the receiver recorded: the SatVisibility angles of SBF files (almanac-based angles are not used), or for RINEX files the receiver's navigation files (`nav_directory`); no SP3/CLK download ([Ephemeris sources](../packages/readers/ephemeris-sources.md)). |
 | `aux_data.fetch_clock`          | `true`, `false`          | Whether to download and interpolate CLK clock-correction files alongside SP3 (only applies to `ephemeris_source: precise`). Default `false`: VOD does not use clock data. `true` adds each satellite's clock correction to the GNSS store as the variable `clock`. |
+| `aux_data.sp3_interpolation`    | `lagrange`, `hermite`    | How the orbits are interpolated onto the epochs: `lagrange` (default), the polynomial of degree 10 through the 11 nearest orbit epochs; `hermite`, the cubic Hermite spline of canvodpy before v1.1.0. Also applies to the broadcast orbits of RINEX navigation files. A store created before v1.1.0 counts as `hermite` ([Interpolation](../packages/auxiliary/interpolation.md#orbits)). |
 | `params.days_per_batch`         | 1–30                     | Deprecated, removed in v2.0.0; prints a `FutureWarning`. Only caps the days per unit, which the run sizes from the memory budget ([Parallel processing](parallel-processing.md)). Leave it out. |
 | `params.resource_mode`          | `auto`, `manual`         | `auto` starts one worker per physical CPU core and leaves at least two CPU threads free for the operating system. `manual` uses the limits you set (`n_max_threads` is then required); use it on shared servers.      |
 | `params.store_radial_distance`  | `true`, `false`          | Whether to store satellite radial distance in the output.                                                                                                                                |

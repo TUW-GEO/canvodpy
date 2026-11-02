@@ -13,6 +13,7 @@ from canvodpy.orchestrator.processor import (
     preprocess_with_hermite_aux,
 )
 
+from canvod.auxiliary.interpolation import Sp3Config, Sp3InterpolationStrategy
 from canvod.auxiliary.position.position import ECEFPosition
 from canvod.auxiliary.preprocessing import prep_aux_ds
 from canvod.readers.rinex.v3_04 import Rnxv3Obs
@@ -50,7 +51,13 @@ class _FakeReader:
 def _aux() -> xr.Dataset:
     xyz = (("epoch", "sid"), [[2e7]])
     return xr.Dataset(
-        {"X": xyz, "Y": xyz, "Z": xyz}, coords={"epoch": EPOCHS, "sid": SIDS}
+        {"X": xyz, "Y": xyz, "Z": xyz},
+        coords={"epoch": EPOCHS, "sid": SIDS},
+        attrs={
+            "interpolator_config": Sp3InterpolationStrategy(
+                config=Sp3Config()
+            ).to_attrs()
+        },
     )
 
 

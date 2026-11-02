@@ -35,7 +35,8 @@ Galileo, BeiDou and QZSS records are orbital elements, evaluated in
 closed form; GLONASS and SBAS records are a position, velocity and
 acceleration, integrated to the grid. The positions and velocities then
 go through the existing orbit interpolation (a cubic Hermite spline when
-this was decided, a polynomial of degree 10 since #563) and coordinate
+this was decided, a polynomial of degree 10 by default since #563, the
+Hermite spline still with `sp3_interpolation: hermite`) and coordinate
 transformation, so one implementation interpolates both ephemerides.
 The broadcast clocks are not used.
 

@@ -80,6 +80,8 @@ processing:
     agency: COD              # Analysis center: COD, GFZ, IGS, ESA, etc.
     # https://canvodpy.eu/guides/settings/#processing-aux_data-product_type
     product_type: final      # final, rapid
+    # https://canvodpy.eu/guides/settings/#processing-aux_data-sp3_interpolation
+    # sp3_interpolation: lagrange   # lagrange (default), or hermite as before v1.1.0
     # https://canvodpy.eu/guides/settings/#processing-aux_data-ftp_timeout_s
     # ftp_timeout_s: 30      # FTP connection timeout in seconds
     # https://canvodpy.eu/guides/settings/#processing-aux_data-fetch_clock

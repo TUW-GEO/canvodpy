@@ -93,7 +93,13 @@ end, filename, the dataset attributes, the preprocessing record (see
 [Preprocessing during a run](../ops/overview.md#the-preprocessing-record)),
 and the satellites observed without a position, with their epochs
 (`satellites_without_position`, see
-[Satellites without a position](../../guides/diagnostics.md#satellites-without-a-position)).
+[Satellites without a position](../../guides/diagnostics.md#satellites-without-a-position)),
+and how the orbits were interpolated onto the file's epochs
+(`orbit_interpolation`, JSON, for example
+`{"method": "lagrange", "points": 11}` or `{"method": "hermite"}`; empty
+in rows written before v1.1.0, which used the Hermite spline, and for
+angles the receiver computed, from SBF files; see
+[Interpolation methods](../auxiliary/interpolation.md#orbits)).
 In a group made of day blocks, it also records how many epochs of the file
 were stored (`epochs`). Every other value in it is text, JSON, or a time.
 
