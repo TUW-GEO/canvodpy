@@ -86,54 +86,47 @@ def parse_clk_data(
         - satellites: sorted list of satellite codes
         - clock_offsets: 2D array (epochs × satellites) in seconds
     """
-    # First pass: collect all epochs and satellites
-    epochs = []
-    satellites = set()
-    clock_records = []
-    current_epoch = None
+    # First pass: collect the epochs, and per record its epoch row, satellite
+    # and offset. Records come grouped by epoch, so an epoch is parsed once.
+    epochs: list[datetime.datetime] = []
+    rows: list[int] = []
+    sv_codes: list[str] = []
+    offsets: list[float] = []
+    current_fields = None
 
     for line in file_handle:
         if line.startswith("AS"):
-            parts = line.split()
+            parts = line.split(None, 10)
 
-            # Parse epoch
-            epoch = datetime.datetime(
-                year=int(parts[2]),
-                month=int(parts[3]),
-                day=int(parts[4]),
-                hour=int(parts[5]),
-                minute=int(parts[6]),
-                second=int(float(parts[7])),
-            )
+            epoch_fields = parts[2:8]
+            if epoch_fields != current_fields:
+                current_fields = epoch_fields
+                epoch = datetime.datetime(
+                    year=int(parts[2]),
+                    month=int(parts[3]),
+                    day=int(parts[4]),
+                    hour=int(parts[5]),
+                    minute=int(parts[6]),
+                    second=int(float(parts[7])),
+                )
+                if not epochs or epoch != epochs[-1]:
+                    epochs.append(epoch)
+            rows.append(len(epochs) - 1)
+            sv_codes.append(parts[1])
 
-            # Store unique epochs and satellites
-            if epoch != current_epoch:
-                current_epoch = epoch
-                epochs.append(epoch)
-
-            sv_code = parts[1]
-            satellites.add(sv_code)
-
-            # Store complete record
             # seconds (RINEX clock 3.04, Table A16); some centers (IAC) write
             # Fortran exponents, 0.612D-03
-            clock_offset = float(parts[9].upper().replace("D", "E"))
-            clock_records.append((epoch, sv_code, clock_offset))
+            value = parts[9]
+            if "D" in value or "d" in value:
+                value = value.upper().replace("D", "E")
+            offsets.append(float(value))
 
-    # Create lookup dictionaries for efficient indexing
-    epoch_idx = {epoch: i for i, epoch in enumerate(epochs)}
-    sv_list = sorted(satellites)
+    # Second pass: fill the array, all records at once
+    sv_list = sorted(set(sv_codes))
     sv_idx = {sv: i for i, sv in enumerate(sv_list)}
-
-    # Pre-allocate array with NaN
-    shape = (len(epochs), len(sv_list))
-    clock_offsets = np.full(shape, np.nan)
-
-    # Fill array using collected records
-    for epoch, sv, offset in clock_records:
-        i = epoch_idx[epoch]
-        j = sv_idx[sv]
-        clock_offsets[i, j] = offset
+    clock_offsets = np.full((len(epochs), len(sv_list)), np.nan)
+    columns = np.fromiter((sv_idx[sv] for sv in sv_codes), np.intp, len(sv_codes))
+    clock_offsets[np.asarray(rows, dtype=np.intp), columns] = offsets
 
     return epochs, sv_list, clock_offsets
 
